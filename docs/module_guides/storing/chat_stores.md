@@ -11,8 +11,8 @@ The most basic chat store is `SimpleChatStore`, which stores messages in memory 
 Typically, you will insansiate a chat store and give it to a memory module. Memory modules that use chat stores will default to using `SimpleChatStore` if not provided.
 
 ```python
-from llama_index.storage.chat_store import SimpleChatStore
-from llama_index.memory import ChatMemoryBuffer
+from llama_index.core.storage.chat_store import SimpleChatStore
+from llama_index.core.memory import ChatMemoryBuffer
 
 chat_store = SimpleChatStore()
 
@@ -52,8 +52,8 @@ loaded_chat_store = SimpleChatStore.parse_raw(chat_store_string)
 Using `RedisChatStore`, you can store your chat history remotely, without having to worry abouyt manually persisting and loading the chat history.
 
 ```python
-from llama_index.storage.chat_store import RedisChatStore
-from llama_index.memory import ChatMemoryBuffer
+from llama_index.storage.chat_store.redis import RedisChatStore
+from llama_index.core.memory import ChatMemoryBuffer
 
 chat_store = RedisChatStore(redis_url="redis://localhost:6379", ttl=300)
 

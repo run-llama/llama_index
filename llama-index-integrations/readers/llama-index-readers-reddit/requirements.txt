@@ -1,0 +1,5 @@
+praw~=7.6
+prawcore~=2.3
+requests~=2.28
+update-checker~=0.18
+websocket-client~=1.5

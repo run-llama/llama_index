@@ -3,9 +3,9 @@
 Putting together an agent in LlamaIndex can be done by defining a set of tools and providing them to our ReActAgent implementation. We're using it here with OpenAI, but it can be used with any sufficiently capable LLM:
 
 ```python
-from llama_index.tools import FunctionTool
-from llama_index.llms import OpenAI
-from llama_index.agent import ReActAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+from llama_index.core.agent import ReActAgent
 
 
 # define sample Tool
@@ -26,7 +26,7 @@ agent = ReActAgent.from_tools([multiply_tool], llm=llm, verbose=True)
 These tools can be Python functions as shown above, or they can be LlamaIndex query engines:
 
 ```python
-from llama_index.tools import QueryEngineTool
+from llama_index.core.tools import QueryEngineTool
 
 query_engine_tools = [
     QueryEngineTool(

@@ -14,6 +14,7 @@ env:
 jobs:
   build-n-publish:
     name: Build and publish to PyPI
+    if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
 
     steps:
@@ -31,10 +32,10 @@ jobs:
         run: pip install -e .
       - name: Cache tiktoken and nltk files
         shell: bash
-        run: python -c "from llama_index import get_tokenizer; get_tokenizer()"
+        run: python -c "from llama_index.core import get_tokenizer; get_tokenizer()"
       - name: Clean up zip files
         shell: bash
-        run: rm -rf llama_index/_static/nltk_cache/corpora/stopwords.zip llama_index/_static/nltk_cache/tokenizers/punkt.zip
+        run: rm -rf llama-index-core/llama_index/core/_static/nltk_cache/corpora/stopwords.zip llama-index-core/llama_index/core/_static/nltk_cache/tokenizers/punkt.zip
       - name: Build and publish to pypi
         uses: JRubics/poetry-publish@v1.17
         with:

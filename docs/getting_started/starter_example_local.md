@@ -1,10 +1,10 @@
 # Starter Tutorial (Local Models)
 
 ```{tip}
-Make sure you've followed the [installation](installation.md) steps first.
+Make sure you've followed the [custom installation](installation.md) steps first.
 ```
 
-This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-m3` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
+This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-small-en-v1.5` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
 
 ## Download data
 
@@ -14,7 +14,7 @@ The easiest way to get it is to [download it via this link](https://raw.githubus
 
 ## Setup
 
-Ollama is a tool to help you get setup with LLMs locally (currently supported on OSX and Linux. You can install Ollama on Windows through WSL 2).
+Ollama is a tool to help you get set up with LLMs locally (currently supported on OSX and Linux. You can install Ollama on Windows through WSL 2).
 
 Follow the [README](https://github.com/jmorganca/ollama) to learn how to install it.
 
@@ -27,24 +27,20 @@ To load in a Mistral-7B model just do `ollama pull mistral`
 In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
-from llama_index.embeddings import resolve_embed_model
-from llama_index.llms import Ollama
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core.embeddings import resolve_embed_model
+from llama_index.llms.ollama import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
 
-# bge-m3 embedding model
-embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
+# bge embedding model
+Settings.embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
 
 # ollama
-llm = Ollama(model="mistral", request_timeout=30.0)
-
-service_context = ServiceContext.from_defaults(
-    embed_model=embed_model, llm=llm
-)
+Settings.llm = Ollama(model="mistral", request_timeout=30.0)
 
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents,
 )
 ```
 

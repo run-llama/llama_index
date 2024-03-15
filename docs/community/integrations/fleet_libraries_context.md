@@ -113,7 +113,7 @@ pinecone.describe_index(
 <br>
 
 ```python
-from llama_index.vector_stores import PineconeVectorStore
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 
 pinecone_index = pinecone.Index("quickstart-fleet-context")
 vector_store = PineconeVectorStore(pinecone_index, add_sparse_vector=True)
@@ -164,7 +164,7 @@ Finally, we\'re going to build the Pinecone vector store via LlamaIndex
 and query it to get results.
 
 ```python
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 from IPython.display import Markdown, display
 ```
 

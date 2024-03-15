@@ -15,7 +15,7 @@ In this notebook we showcase how to construct an empty index, manually create Do
 An example code snippet is given below:
 
 ```python
-from llama_index import SummaryIndex, Document
+from llama_index.core import SummaryIndex, Document
 
 index = SummaryIndex([])
 text_chunks = ["text_chunk_1", "text_chunk_2", "text_chunk_3"]

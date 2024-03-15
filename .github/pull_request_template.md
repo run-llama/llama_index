@@ -4,6 +4,13 @@ Please include a summary of the change and which issue is fixed. Please also inc
 
 Fixes # (issue)
 
+## Version Bump?
+
+Did I bump the version in the `pyproject.toml` file of the package I am updating? (Except for the `llama-index-core` package)
+
+- [ ] Yes
+- [ ] No
+
 ## Type of Change
 
 Please delete options that are not relevant.
@@ -13,7 +20,7 @@ Please delete options that are not relevant.
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] This change requires a documentation update
 
-# How Has This Been Tested?
+## How Has This Been Tested?
 
 Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration
 
@@ -21,7 +28,7 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] Added new notebook (that tests end-to-end)
 - [ ] I stared at the code and made sure it makes sense
 
-# Suggested Checklist:
+## Suggested Checklist:
 
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas

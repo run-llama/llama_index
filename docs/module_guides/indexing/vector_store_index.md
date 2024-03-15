@@ -11,7 +11,7 @@ Vector stores accept a list of [`Node` objects](/module_guides/loading/documents
 The simplest way to use a Vector Store is to load a set of documents and build an index from them using `from_documents`:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
 documents = SimpleDirectoryReader(
@@ -41,11 +41,11 @@ This is especially helpful when you are inserting into a remotely hosted vector 
 If you want more control over how your documents are indexed, we recommend using the ingestion pipeline. This allows you to customize the chunking, metadata, and embedding of the nodes.
 
 ```python
-from llama_index import Document
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.extractors import TitleExtractor
-from llama_index.ingestion import IngestionPipeline, IngestionCache
+from llama_index.core import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import TitleExtractor
+from llama_index.core.ingestion import IngestionPipeline, IngestionCache
 
 # create the pipeline with transformations
 pipeline = IngestionPipeline(
@@ -69,7 +69,7 @@ You can learn more about [how to use the ingestion pipeline](/module_guides/load
 If you want total control over your index you can [create and define nodes manually](/module_guides/loading/documents_and_nodes/usage_nodes.md) and pass them directly to the index constructor:
 
 ```python
-from llama_index.schema import TextNode
+from llama_index.core.schema import TextNode
 
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")
@@ -95,8 +95,12 @@ LlamaIndex supports [dozens of vector stores](/module_guides/storing/vector_stor
 
 ```python
 import pinecone
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, StorageContext
-from llama_index.vector_stores import PineconeVectorStore
+from llama_index.core import (
+    VectorStoreIndex,
+    SimpleDirectoryReader,
+    StorageContext,
+)
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 
 # init pinecone
 pinecone.init(api_key="<api_key>", environment="<environment>")
@@ -144,7 +148,7 @@ If these objects are retrieved, they will be automatically ran using the provide
 For example:
 
 ```python
-from llama_index.schema import IndexNode
+from llama_index.core.schema import IndexNode
 
 query_engine = other_index.as_query_engine
 obj = IndexNode(

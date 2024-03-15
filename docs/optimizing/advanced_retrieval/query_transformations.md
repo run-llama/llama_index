@@ -26,11 +26,11 @@ Query transformations have multiple use cases:
 To use HyDE, an example code snippet is shown below.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.indices.query.query_transform.base import HyDEQueryTransform
-from llama_index.query_engine.transform_query_engine import (
-    TransformQueryEngine,
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.indices.query.query_transform.base import (
+    HyDEQueryTransform,
 )
+from llama_index.core.query_engine import TransformQueryEngine
 
 # load documents, build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
@@ -47,55 +47,6 @@ print(response)
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
-### Single-Step Query Decomposition
-
-Some recent approaches (e.g. [self-ask](https://ofir.io/self-ask.pdf), [ReAct](https://arxiv.org/abs/2210.03629)) have suggested that LLM's
-perform better at answering complex questions when they break the question into smaller steps. We have found that this is true for queries that require knowledge augmentation as well.
-
-If your query is complex, different parts of your knowledge base may answer different "subqueries" around the overall query.
-
-Our single-step query decomposition feature transforms a **complicated** question into a simpler one over the data collection to help provide a sub-answer to the original question.
-
-This is especially helpful over a [composed graph](/module_guides/indexing/composability.md). Within a composed graph, a query can be routed to multiple subindexes, each representing a subset of the overall knowledge corpus. Query decomposition allows us to transform the query into a more suitable question over any given index.
-
-An example image is shown below.
-
-![](/_static/query_transformations/single_step_diagram.png)
-
-Here's a corresponding example code snippet over a composed graph.
-
-```python
-# Setting: a summary index composed over multiple vector indices
-# llm_chatgpt corresponds to the ChatGPT LLM interface
-from llama_index.indices.query.query_transform.base import (
-    DecomposeQueryTransform,
-)
-
-decompose_transform = DecomposeQueryTransform(llm_chatgpt, verbose=True)
-
-# initialize indexes and graph
-...
-
-
-# configure retrievers
-vector_query_engine = vector_index.as_query_engine()
-vector_query_engine = TransformQueryEngine(
-    vector_query_engine,
-    query_transform=decompose_transform,
-    transform_extra_info={"index_summary": vector_index.index_struct.summary},
-)
-custom_query_engines = {vector_index.index_id: vector_query_engine}
-
-# query
-query_str = (
-    "Compare and contrast the airports in Seattle, Houston, and Toronto. "
-)
-query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
-response = query_engine.query(query_str)
-```
-
-Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/city_analysis/City_Analysis-Decompose.ipynb) for a full walkthrough.
-
 ### Multi-Step Query Transformations
 
 Multi-step query transformations are a generalization on top of existing single-step query transformation approaches.
@@ -110,7 +61,7 @@ An example image is shown below.
 Here's a corresponding example code snippet.
 
 ```python
-from llama_index.indices.query.query_transform.base import (
+from llama_index.core.indices.query.query_transform.base import (
     StepDecomposeQueryTransform,
 )
 

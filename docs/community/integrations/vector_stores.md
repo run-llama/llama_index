@@ -16,6 +16,7 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
+- ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -34,6 +35,7 @@ as the storage backend for `VectorStoreIndex`.
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
+- TiDB (`TiDBVectorStore`). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
@@ -53,7 +55,7 @@ By default, `VectorStoreIndex` uses an in-memory `SimpleVectorStore`
 that's initialized as part of the default storage context.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 # Load documents and build index
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
@@ -69,8 +71,12 @@ response = query_engine.query("What did the author do growing up?")
 We can query over a custom vector store as follows:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader, StorageContext
-from llama_index.vector_stores import DeepLakeVectorStore
+from llama_index.core import (
+    VectorStoreIndex,
+    SimpleDirectoryReader,
+    StorageContext,
+)
+from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 
 # construct vector store and customize storage context
 storage_context = StorageContext.from_defaults(
@@ -93,7 +99,7 @@ Below we show more examples of how to construct various vector stores we support
 **Apache Cassandra®**
 
 ```python
-from llama_index.vector_stores import CassandraVectorStore
+from llama_index.vector_stores.cassandra import CassandraVectorStore
 import cassio
 
 # To use an Astra DB cloud instance through CQL:
@@ -114,7 +120,7 @@ vector_store = CassandraVectorStore(
 **Astra DB**
 
 ```python
-from llama_index.vector_stores import AstraDBVectorStore
+from llama_index.vector_stores.astra_db import AstraDBVectorStore
 
 astra_db_store = AstraDBVectorStore(
     token="AstraCS:xY3b...",  # Your Astra DB token
@@ -128,7 +134,7 @@ astra_db_store = AstraDBVectorStore(
 
 ```python
 from azure.core.credentials import AzureKeyCredential
-from llama_index.vector_stores import AzureAISearchVectorStore
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 
 search_service_api_key = "YOUR-AZURE-SEARCH-SERVICE-ADMIN-KEY"
 search_service_endpoint = "YOUR-AZURE-SEARCH-SERVICE-ENDPOINT"
@@ -154,7 +160,7 @@ vector_store = AzureAISearchVectorStore(
 
 ```python
 import chromadb
-from llama_index.vector_stores import ChromaVectorStore
+from llama_index.vector_stores.chroma import ChromaVectorStore
 
 # Creating a Chroma client
 # EphemeralClient operates purely in-memory, PersistentClient will also save to disk
@@ -167,11 +173,29 @@ vector_store = ChromaVectorStore(
 )
 ```
 
+**ClickHouse**
+
+```python
+import clickhouse_connect
+from llama_index.vector_stores import ClickHouseVectorStore
+
+# Creating a ClickHouse client
+client = clickhouse_connect.get_client(
+    host="YOUR_CLUSTER_HOST",
+    port=8123,
+    username="YOUR_USERNAME",
+    password="YOUR_CLUSTER_PASSWORD",
+)
+
+# construct vector store
+vector_store = ClickHouseVectorStore(clickhouse_client=client)
+```
+
 **DashVector**
 
 ```python
 import dashvector
-from llama_index.vector_stores import DashVectorStore
+from llama_index.vector_stores.dashvector import DashVectorStore
 
 # init dashvector client
 client = dashvector.Client(
@@ -192,7 +216,7 @@ vector_store = DashVectorStore(collection)
 ```python
 import os
 import getpath
-from llama_index.vector_stores import DeepLakeVectorStore
+from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 
 os.environ["OPENAI_API_KEY"] = getpath.getpath("OPENAI_API_KEY: ")
 os.environ["ACTIVELOOP_TOKEN"] = getpath.getpath("ACTIVELOOP_TOKEN: ")
@@ -205,7 +229,7 @@ vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
 **DocArray**
 
 ```python
-from llama_index.vector_stores import (
+from llama_index.vector_stores.docarray import (
     DocArrayHnswVectorStore,
     DocArrayInMemoryVectorStore,
 )
@@ -235,7 +259,7 @@ docker run -p 9200:9200 \
 Then connect and use Elasticsearch as a vector database with LlamaIndex
 
 ```python
-from llama_index.vector_stores import ElasticsearchStore
+from llama_index.vector_stores.elasticsearch import ElasticsearchStore
 
 vector_store = ElasticsearchStore(
     index_name="llm-project",
@@ -253,7 +277,7 @@ This can be used with the `VectorStoreIndex` to provide a query interface for re
 
 ```python
 from pyepsilla import vectordb
-from llama_index.vector_stores import EpsillaVectorStore
+from llama_index.vector_stores.epsilla import EpsillaVectorStore
 
 # Creating an Epsilla client
 epsilla_client = vectordb.Client()
@@ -272,7 +296,7 @@ https://epsilla-inc.gitbook.io/epsilladb/quick-start
 
 ```python
 import faiss
-from llama_index.vector_stores import FaissVectorStore
+from llama_index.vector_stores.faiss import FaissVectorStore
 
 # create faiss index
 d = 1536
@@ -293,7 +317,7 @@ storage_context.persist()
 
 ```python
 import txtai
-from llama_index.vector_stores import TxtaiVectorStore
+from llama_index.vector_stores.txtai import TxtaiVectorStore
 
 # create txtai index
 txtai_index = txtai.ann.ANNFactory.create(
@@ -307,8 +331,8 @@ vector_store = TxtaiVectorStore(txtai_index)
 **Jaguar**
 
 ```python
-from llama_index.schema import TextNode
-from llama_index.vector_stores.types import VectorStoreQuery
+from llama_index.core.schema import TextNode
+from llama_index.core.vector_stores import VectorStoreQuery
 from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
 from llama_index.vector_stores.jaguar import JaguarVectorStore
 
@@ -367,21 +391,21 @@ node = TextNode(text=text, embedding=embed_of_text)
 true_or_false = vector_store.is_anomalous(node)
 
 # llama_index RAG application
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.storage.storage_context import StorageContext
-from llama_index import VectorStoreIndex, ServiceContext
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import StorageContext
+from llama_index.core import VectorStoreIndex
 
 question = "What did the author do growing up?"
 
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 embed_model = OpenAIEmbedding()
 embed_of_question = [0.7, 0.1, 0.2]
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+
 db_documents = vector_store.load_documents(embed_of_question, 10)
 index = VectorStoreIndex.from_documents(
     db_documents,
+    embed_model=embed_model,
     storage_context=storage_context,
-    service_context=service_context,
 )
 
 query_engine = index.as_query_engine()
@@ -402,7 +426,7 @@ Client side needs to run: "pip install -U jaguardb-http-client"
 
 ```python
 import pymilvus
-from llama_index.vector_stores import MilvusVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
 
 # construct vector store
 vector_store = MilvusVectorStore(
@@ -422,9 +446,9 @@ and try downgrading.
 # Provide URI to constructor, or use environment variable
 import pymongo
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
-from llama_index.indices.vector_store.base import VectorStoreIndex
-from llama_index.storage.storage_context import StorageContext
-from llama_index.readers.file.base import SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex
+from llama_index.core import StorageContext
+from llama_index.core import SimpleDirectoryReader
 
 # mongo_uri = os.environ["MONGO_URI"]
 mongo_uri = (
@@ -449,7 +473,7 @@ index = VectorStoreIndex.from_documents(
 
 ```python
 import clickhouse_connect
-from llama_index.vector_stores import MyScaleVectorStore
+from llama_index.vector_stores.myscale import MyScaleVectorStore
 
 # Creating a MyScale client
 client = clickhouse_connect.get_client(
@@ -469,7 +493,7 @@ vector_store = MyScaleVectorStore(myscale_client=client)
 - Neo4j stores texts, metadata, and embeddings and can be customized to return graph data in the form of metadata.
 
 ```python
-from llama_index.vector_stores import Neo4jVectorStore
+from llama_index.vector_stores.neo4jvector import Neo4jVectorStore
 
 # construct vector store
 neo4j_vector = Neo4jVectorStore(
@@ -484,7 +508,7 @@ neo4j_vector = Neo4jVectorStore(
 
 ```python
 import pinecone
-from llama_index.vector_stores import PineconeVectorStore
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 
 # Creating a Pinecone index
 api_key = "api_key"
@@ -502,7 +526,7 @@ vector_store = PineconeVectorStore(pinecone_index=index)
 
 ```python
 import qdrant_client
-from llama_index.vector_stores import QdrantVectorStore
+from llama_index.vector_stores.qdrant import QdrantVectorStore
 
 # Creating a Qdrant vector store
 client = qdrant_client.QdrantClient(
@@ -528,7 +552,7 @@ docker run --name redis-vecdb -d -p 6379:6379 -p 8001:8001 redis/redis-stack:lat
 Then connect and use Redis as a vector database with LlamaIndex
 
 ```python
-from llama_index.vector_stores import RedisVectorStore
+from llama_index.vector_stores.redis import RedisVectorStore
 
 vector_store = RedisVectorStore(
     index_name="llm-project",
@@ -542,7 +566,7 @@ This can be used with the `VectorStoreIndex` to provide a query interface for re
 **SingleStore**
 
 ```python
-from llama_index.vector_stores import SingleStoreVectorStore
+from llama_index.vector_stores.singlestoredb import SingleStoreVectorStore
 import os
 
 # can set the singlestore db url in env
@@ -557,10 +581,25 @@ vector_store = SingleStoreVectorStore(
 )
 ```
 
+**TiDB**
+
+```python
+from llama_index.vector_stores.tidbvector import TiDBVectorStore
+
+tidbvec = TiDBVectorStore(
+    # connection url format
+    # - mysql+pymysql://root@34.212.137.91:4000/test
+    connection_string="PLACEHOLDER URL",
+    table_name="llama_index_vectorstore",
+    distance_strategy="cosine",
+    vector_dimension=1536,
+)
+```
+
 **Timescale**
 
 ```python
-from llama_index.vector_stores import TimescaleVectorStore
+from llama_index.vector_stores.timescalevector import TimescaleVectorStore
 
 vector_store = TimescaleVectorStore.from_params(
     service_url="YOUR TIMESCALE SERVICE URL",
@@ -571,7 +610,7 @@ vector_store = TimescaleVectorStore.from_params(
 **Upstash**
 
 ```python
-from llama_index.vector_stores import UpstashVectorStore
+from llama_index.vector_stores.upstash import UpstashVectorStore
 
 vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
 ```
@@ -580,7 +619,7 @@ vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
 
 ```python
 import weaviate
-from llama_index.vector_stores import WeaviateVectorStore
+from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 # creating a Weaviate client
 resource_owner_config = weaviate.AuthClientPassword(
@@ -630,7 +669,7 @@ result = retriever.retrieve("What is inception about?")
 
 ```python
 import pymilvus
-from llama_index.vector_stores import MilvusVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
 
 
 # construct vector store
@@ -651,7 +690,7 @@ Chroma stores both documents and vectors. This is an example of how to use Chrom
 
 ```python
 from llama_index.readers.chroma import ChromaReader
-from llama_index.indices import SummaryIndex
+from llama_index.core import SummaryIndex
 
 # The chroma reader loads data from a persisted Chroma collection.
 # This requires a collection name and a persist directory.

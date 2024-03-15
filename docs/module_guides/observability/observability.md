@@ -19,7 +19,7 @@ Each provider has similarities and differences. Take a look below for the full s
 To toggle, you will generally just need to do the following:
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 # general usage
 set_global_handler("<handler_name>", **kwargs)
@@ -41,14 +41,42 @@ This simple observability tool prints every LLM input/output pair to the termina
 #### Usage Pattern
 
 ```python
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("simple")
+llama_index.core.set_global_handler("simple")
 ```
 
 ## Partner `One-Click` Integrations
 
 We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
+
+### Langfuse
+
+[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed traces of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+
+#### Usage Pattern
+
+```python
+from llama_index.core import set_global_handler
+
+# Make sure you've installed the 'llama-index-callbacks-langfuse' integration package.
+
+# NOTE: Set your environment variables 'LANGFUSE_SECRET_KEY', 'LANGFUSE_PUBLIC_KEY' and 'LANGFUSE_HOST'
+# as shown in your langfuse.com project settings.
+
+set_global_handler("langfuse")
+```
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/LangfuseCallbackHandler.ipynb
+```
+
+![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
 ### DeepEval
 
@@ -57,7 +85,7 @@ We offer a rich set of integrations with our partners. A short description + usa
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 set_global_handler("deepeval")
 
@@ -76,26 +104,26 @@ Prompts allows users to log/trace/inspect the execution flow of LlamaIndex durin
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 set_global_handler("wandb", run_args={"project": "llamaindex"})
 
 # NOTE: No need to do the following
-# from llama_index.callbacks import WandbCallbackHandler, CallbackManager
+from llama_index.callbacks.wandb import WandbCallbackHandler
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core import Settings
+
 # wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
-# callback_manager = CallbackManager([wandb_callback])
-# service_context = ServiceContext.from_defaults(
-#     callback_manager=callback_manager
-# )
+# Settings.callback_manager = CallbackManager([wandb_callback])
 
 # access additional methods on handler to persist index + load index
-import llama_index
+import llama_index.core
 
 # persist index
-llama_index.global_handler.persist_index(graph, index_name="composable_graph")
+llama_index.core.global_handler.persist_index(graph, index_name="my_index")
 # load storage context
-storage_context = llama_index.global_handler.load_storage_context(
-    artifact_url="ayut/llamaindex/composable_graph:v0"
+storage_context = llama_index.core.global_handler.load_storage_context(
+    artifact_url="ayut/llamaindex/my_index:v0"
 )
 ```
 
@@ -153,9 +181,9 @@ px.launch_app()
 # The App is initially empty, but as you proceed with the steps below,
 # traces will appear automatically as your LlamaIndex application runs.
 
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("arize_phoenix")
+llama_index.core.set_global_handler("arize_phoenix")
 
 # Run all of your LlamaIndex applications as usual and traces
 # will be collected and displayed in Phoenix.
@@ -180,26 +208,26 @@ Arize Phoenix Tracing Tutorial <https://colab.research.google.com/github/Arize-a
 #### Usage Pattern
 
 ```python
-import llama_index
+import llama_index.core
 
-llama_index.set_global_handler("openinference")
+llama_index.core.set_global_handler("openinference")
 
 # NOTE: No need to do the following
-# from llama_index.callbacks import OpenInferenceCallbackHandler, CallbackManager
+from llama_index.callbacks.openinference import OpenInferenceCallbackHandler
+from llama_index.core.callbacks import CallbackManager
+from llama_index.core import Settings
+
 # callback_handler = OpenInferenceCallbackHandler()
-# callback_manager = CallbackManager([callback_handler])
-# service_context = ServiceContext.from_defaults(
-#     callback_manager=callback_manager
-# )
+# Settings.callback_manager = CallbackManager([callback_handler])
 
 # Run your LlamaIndex application here...
 for query in queries:
     query_engine.query(query)
 
 # View your LLM app data as a dataframe in OpenInference format.
-from llama_index.callbacks.open_inference_callback import as_dataframe
+from llama_index.core.callbacks.open_inference_callback import as_dataframe
 
-query_data_buffer = llama_index.global_handler.flush_query_data_buffer()
+query_data_buffer = llama_index.core.global_handler.flush_query_data_buffer()
 query_dataframe = as_dataframe(query_data_buffer)
 ```
 
@@ -251,7 +279,7 @@ HoneyHive allows users to trace the execution flow of any LLM pipeline. Users ca
 #### Usage Pattern
 
 ```python
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 set_global_handler(
     "honeyhive",
@@ -261,18 +289,17 @@ set_global_handler(
 )
 
 # NOTE: No need to do the following
-# from llama_index import ServiceContext
-# from llama_index.callbacks import CallbackManager
+from llama_index.core.callbacks import CallbackManager
+
 # from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+from llama_index.core import Settings
+
 # hh_tracer = HoneyHiveLlamaIndexTracer(
 #     project="My HoneyHive Project",
 #     name="My LLM Pipeline Name",
 #     api_key="MY HONEYHIVE API KEY",
 # )
-# callback_manager = CallbackManager([hh_tracer])
-# service_context = ServiceContext.from_defaults(
-#     callback_manager=callback_manager
-# )
+# Settings.callback_manager = CallbackManager([hh_tracer])
 ```
 
 ![](/_static/integrations/honeyhive.png)
@@ -299,7 +326,7 @@ import os
 
 os.environ["PROMPTLAYER_API_KEY"] = "pl_7db888a22d8171fb58aab3738aa525a7"
 
-from llama_index import set_global_handler
+from llama_index.core import set_global_handler
 
 # pl_tags are optional, to help you organize your prompts and apps
 set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])

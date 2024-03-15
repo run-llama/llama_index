@@ -20,6 +20,7 @@ For other indexes, check out our guide to [how each index works](/module_guides/
 maxdepth: 1
 hidden: True
 ---
+llama_cloud_index.md
 vector_store_index.md
 index_guide.md
 ```

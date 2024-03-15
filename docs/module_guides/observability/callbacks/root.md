@@ -31,6 +31,7 @@ You can implement your own callback to track and trace these events, or use an e
 
 Currently supported callbacks are as follows:
 
+- [LangfuseCallbackHandler](/examples/callbacks/LangfuseCallbackHandler.ipynb) -> Tracking of events and traces using the open-source platform Langfuse. More details are in the linked notebook or in the [Langfuse docs](https://langfuse.com/docs)
 - [TokenCountingHandler](/examples/callbacks/TokenCountingHandler.ipynb) -> Flexible token counting for prompt, completion, and embedding token usage. See [the migration details](/module_guides/observability/callbacks/token_counting_migration.md)
 - [LlamaDebugHanlder](/examples/callbacks/LlamaDebugHandler.ipynb) -> Basic tracking and tracing for events. Example usage can be found in the notebook below.
 - [WandbCallbackHandler](/examples/callbacks/WandbCallbackHandler.ipynb) -> Tracking of events and traces using the Wandb Prompts frontend. More details are in the notebook below or at [Wandb](https://docs.wandb.ai/guides/prompts/quickstart)
@@ -43,6 +44,7 @@ Currently supported callbacks are as follows:
 maxdepth: 1
 hidden:
 ---
+/examples/callbacks/LangfuseCallbackHandler.ipynb
 /examples/callbacks/TokenCountingHandler.ipynb
 /examples/callbacks/LlamaDebugHandler.ipynb
 /examples/callbacks/WandbCallbackHandler.ipynb

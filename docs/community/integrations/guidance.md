@@ -33,7 +33,7 @@ and supplying a suitable prompt template.
 
 > Note: guidance uses handlebars-style templates, which uses double braces for variable substitution, and single braces for literal braces. This is the opposite convention of Python format strings.
 
-> Note: We provide a utility function `from llama_index.prompts.guidance_utils import convert_to_handlebars` that can convert from the Python format string style template to guidance handlebars-style template.
+from llama_index.core.prompts.guidance_utils import convert_to_handlebars` that can convert from the Python format string style template to guidance handlebars-style template.
 
 ```python
 program = GuidancePydanticProgram(
@@ -77,9 +77,7 @@ intermediate response has the expected structure (so that they can be parsed cor
 As an example, we implement a `GuidanceQuestionGenerator` that can be plugged into a `SubQuestionQueryEngine` to make it more robust than using the default setting.
 
 ```python
-from llama_index.question_gen.guidance_generator import (
-    GuidanceQuestionGenerator,
-)
+from llama_index.question_gen.guidance import GuidanceQuestionGenerator
 from guidance.llms import OpenAI as GuidanceOpenAI
 
 # define guidance based question generator

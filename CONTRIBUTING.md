@@ -8,11 +8,13 @@ The best part of LlamaIndex is our community of users and contributors.
 
 ### What should I work on?
 
-1. 🆕 Extend core modules
-2. 🐛 Fix bugs
-3. 🎉 Add usage examples
-4. 🧪 Add experimental features
-5. 📄 Improve code quality & documentation
+1. 🆕 Extend core modules by contributing an integration
+2. 📦 Contribute a Tool, Reader, Pack, or Dataset (formerly from llama-hub)
+3. 🧠 Add new capabilities to core
+4. 🐛 Fix bugs
+5. 🎉 Add usage examples
+6. 🧪 Add experimental features
+7. 📄 Improve code quality & documentation
 
 Also, join our Discord for ideas and discussions: <https://discord.gg/dGcwcsnxhU>.
 
@@ -22,8 +24,49 @@ The most impactful way to contribute to LlamaIndex is by extending our core modu
 ![LlamaIndex modules](https://github.com/jerryjliu/llama_index/raw/main/docs/_static/contribution/contrib.png)
 
 We welcome contributions in _all_ modules shown above.
-So far, we have implemented a core set of functionalities for each.
-As a contributor, you can help each module unlock its full potential.
+So far, we have implemented a core set of functionalities for each, all of
+which are encapsulated in the LlamaIndex core package. As a contributor,
+you can help each module unlock its full potential. Provided below are
+brief description of these modules. You can also refer to their respective
+folders within this Github repository for some example integrations.
+
+Contributing an integration involves submitting the source code for a new Python
+package. For now, these integrations will live in the LlamaIndex Github repository
+and the team will be responsible for publishing the package to PyPi. (Having
+these packages live outside of this repository and maintained by our community
+members is in consideration.)
+
+#### Creating A New Integration Package
+
+Both `llama-index` and `llama-index-core` come equipped
+with a command-line tool that can be used to initialize a new integration package.
+
+```shell
+cd ./llama-index-integrations/llms
+llamaindex-cli new-package --kind "llms" --name "gemini"
+```
+
+Executing the above commands will create a new folder called `llama-index-llms-gemini`
+within the `llama-index-integrations/llms` directory.
+
+In addition to preparing your source code, we also ask that you fill in some
+metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
+correct information. You do so by adding the required metadata under the `[tool.llamahub]`
+section with your new package's `pyproject.toml`.
+
+Below is the example of the metadata required for all of our integration packages. Please
+replace the default author "llama-index" with your own Github user name.
+
+```toml
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.llms.anthropic"
+
+[tool.llamahub.class_authors]
+Anthropic = "llama-index"
+```
+
+([source](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/llms/llama-index-llms-anthropic/pyproject.toml))
 
 **NOTE**: We are making rapid improvements to the project, and as a result,
 some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
@@ -247,7 +290,60 @@ See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structur
 
 ---
 
-### 2. 🐛 Fix Bugs
+### 2. 📦 Contribute a Pack, Reader, Tool, or Dataset (formerly from llama-hub)
+
+Tools, Readers, and Packs have all been migrated from [llama-hub](https://github.com/run-llama/llama-hub) to the main
+llama-index repo (i.e., this one). Datasets still reside in llama-hub, but will be
+migrated here in the near future.
+
+Contributing a new Reader or Tool involves submitting a new package within
+the [llama-index-integrations/readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) and [llama-index-integrations/tools](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools),
+folders respectively.
+
+The LlamaIndex command-line tool can be used to initialize new Packs and Integrations. (NOTE: `llama-index-cli` comes installed with `llama-index`.)
+
+```shell
+cd ./llama-index-packs
+llamaindex-cli new-package --kind "packs" --name "my new pack"
+
+cd ./llama-index-integrations/readers
+llamaindex-cli new-package --kind "readers" --name "new reader"
+```
+
+Executing the first set of shell commands will create a new folder called `llama-index-packs-my-new-pack`
+within the `llama-index-packs` directory. While the second set will create a new
+package directory called `llama-index-readers-new-reader` within the `llama-index-integrations/readers` directory.
+
+In addition to preparing your source code, we also ask that you fill in some
+metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
+correct information. You do so by adding the required metadata under the `[tool.llamahub]`
+section with your new package's `pyproject.toml`.
+
+Below is the example of the metadata required for packs, readers and tools:
+
+```toml
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.packs.agent_search_retriever"
+
+[tool.llamahub.class_authors]
+AgentSearchRetrieverPack = "logan-markewich"
+```
+
+([source](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-agent-search-retriever/pyproject.toml))
+
+### 3. 🧠 Add new capabilities to core
+
+We would greatly appreciate any and all contributions to our core abstractions
+that represent enhancements from the current set of capabilities.
+General improvements that make these core abstractions more robust and thus
+easier to build on are also welcome!
+
+A [Requests For Contribution Project Board](https://github.com/orgs/run-llama/projects/2)
+has been curated and can provide some ideas for what contributions can be made
+into core.
+
+### 4. 🐛 Fix Bugs
 
 Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/llama_index/issues).
 We try our best in triaging and tagging these issues:
@@ -257,19 +353,19 @@ We try our best in triaging and tagging these issues:
 
 Please feel free to open an issue and/or assign an issue to yourself.
 
-### 3. 🎉 Add Usage Examples
+### 5. 🎉 Add Usage Examples
 
 If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 
-1. a guide: e.g. [guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data.html)
-2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/ComposableIndices-Prior.ipynb)
+1. a guide: e.g. [Guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data.html)
+2. an example notebook: e.g. [Email Info Extraction](/examples/usecases/email_data_extraction.ipynb)
 
-### 4. 🧪 Add Experimental Features
+### 6. 🧪 Add Experimental Features
 
 If you have a crazy idea, make a PR for it!
 Whether if it's the latest research, or what you thought of in the shower, we'd love to see creative ways to improve LlamaIndex.
 
-### 5. 📄 Improve Code Quality & Documentation
+### 7. 📄 Improve Code Quality & Documentation
 
 We would love your help in making the project cleaner, more robust, and more understandable. If you find something confusing, it most likely is for other people as well. Help us be better!
 

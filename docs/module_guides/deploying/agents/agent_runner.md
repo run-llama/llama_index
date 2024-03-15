@@ -40,7 +40,8 @@ Here are some key benefits to using this lower-level API:
 You can either use an `OpenAIAgent` or `ReActAgent`, or create your own via the `AgentRunner` and `AgentWorker`:
 
 ```python
-from llama_index.agent import AgentRunner, OpenAIAgentWorker
+from llama_index.core.agent import AgentRunner
+from llama_index.agent.openai import OpenAIAgentWorker
 
 # construct OpenAIAgent from tools
 openai_step_engine = OpenAIAgentWorker.from_tools(tools, llm=llm, verbose=True)
@@ -68,7 +69,7 @@ print(str(response))
 **NOTE**: The older legacy implementations of `OpenAIAgent` and `ReActAgent` (which did not allow for step-wise execution) are still available via:
 
 ```python
-from llama_index.agent import OldOpenAIAgent, OldReActAgent
+from llama_index.core.agent import OldOpenAIAgent, OldReActAgent
 ```
 
 ## Additional Module Guides

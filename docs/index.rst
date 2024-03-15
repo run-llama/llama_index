@@ -1,9 +1,12 @@
 Welcome to LlamaIndex 🦙 !
 ##########################
 
-LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications to ingest, structure, and access private or domain-specific data. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
+LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications which benefit from context augmentation. Such LLM systems have been termed as RAG systems, standing for "Retrieval-Augmented Generation". LlamaIndex provides the essential abstractions to more easily ingest, structure, and access private or domain-specific data in order to inject these safely and reliably into LLMs for more accurate text generation. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
 
-🚀 Why LlamaIndex?
+.. tip::
+   Updating to LlamaIndex v0.10.0? Check out the `migration guide <./getting_started/v0_10_0_migration.html>`_.
+
+🚀 Why Context Augmentation?
 ******************
 
 LLMs offer a natural language interface between humans and data. Widely available models come pre-trained on huge amounts of publicly available data like Wikipedia, mailing lists, textbooks, source code and more.
@@ -16,24 +19,24 @@ You may choose to **fine-tune** a LLM with your data, but:
 - Due to the cost to train, it's **hard to update** a LLM with latest information.
 - **Observability** is lacking. When you ask a LLM a question, it's not obvious how the LLM arrived at its answer.
 
-LlamaIndex takes a different approach called `Retrieval-Augmented Generation (RAG) <./getting_started/concepts.html>`_. Instead of asking LLM to generate an answer immediately, LlamaIndex:
+Instead of fine-tuning, one can use a context augmentation pattern called `Retrieval-Augmented Generation (RAG) <./getting_started/concepts.html>`_ to obtain more accurate text generation relevant to your specific data. RAG involves the following high level steps:
 
-1. retrieves information from your data sources first,
-2. adds it to your question as context, and
-3. asks the LLM to answer based on the enriched prompt.
+1. Retrieve information from your data sources first,
+2. Add it to your question as context, and
+3. Ask the LLM to answer based on the enriched prompt.
 
-RAG overcomes all three weaknesses of the fine-tuning approach:
+In doing so, RAG overcomes all three weaknesses of the fine-tuning approach:
 
 - There's no training involved, so it's **cheap**.
 - Data is fetched only when you ask for them, so it's **always up to date**.
 - LlamaIndex can show you the retrieved documents, so it's **more trustworthy**.
 
-LlamaIndex imposes no restriction on how you use LLMs. You can still use LLMs as auto-complete, chatbots, semi-autonomous agents, and more (see Use Cases on the left). It only makes LLMs more relevant to you.
-
-🦙 How can LlamaIndex help?
+🦙 Why LlamaIndex for Context Augmentation?
 ***************************
 
-LlamaIndex provides the following tools:
+Firstly, LlamaIndex imposes no restriction on how you use LLMs. You can still use LLMs as auto-complete, chatbots, semi-autonomous agents, and more (see Use Cases on the left). It only makes LLMs more relevant to you.
+
+LlamaIndex provides the following tools to help you quickly stand up production-ready RAG systems:
 
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
@@ -67,7 +70,7 @@ We recommend starting at `how to read these docs <./getting_started/reading.html
 
 To download or contribute, find LlamaIndex on:
 
-- Github: https://github.com/jerryjliu/llama_index
+- Github: https://github.com/run-llama/llama_index
 - PyPi:
 
   - LlamaIndex: https://pypi.org/project/llama-index/.

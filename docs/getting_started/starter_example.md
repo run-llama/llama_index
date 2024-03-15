@@ -24,7 +24,7 @@ LlamaIndex uses OpenAI's `gpt-3.5-turbo` by default. Make sure your API key is a
 export OPENAI_API_KEY=XXXXX
 ```
 
-and on windows it is
+and on Windows it is
 
 ```
 set OPENAI_API_KEY=XXXXX
@@ -35,7 +35,7 @@ set OPENAI_API_KEY=XXXXX
 In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("data").load_data()
 index = VectorStoreIndex.from_documents(documents)
@@ -91,7 +91,7 @@ Of course, you don't get the benefits of persisting unless you load the data. So
 
 ```python
 import os.path
-from llama_index import (
+from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
     StorageContext,
@@ -111,7 +111,7 @@ else:
     storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
     index = load_index_from_storage(storage_context)
 
-# either way we can now query the index
+# Either way we can now query the index
 query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 print(response)

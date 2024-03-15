@@ -1,0 +1,35 @@
+from typing import Optional, Tuple
+
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+
+DEFAULT_ANYSCALE_API_BASE = "https://api.endpoints.anyscale.com/v1"
+DEFAULT_ANYSCALE_API_VERSION = ""
+
+
+def resolve_anyscale_credentials(
+    api_key: Optional[str] = None,
+    api_base: Optional[str] = None,
+    api_version: Optional[str] = None,
+) -> Tuple[Optional[str], str, str]:
+    """
+    "Resolve OpenAI credentials.
+
+    The order of precedence is:
+    1. param
+    2. env
+    3. openai module
+    4. default
+    """
+    # resolve from param or env
+    api_key = get_from_param_or_env("api_key", api_key, "ANYSCALE_API_KEY", "")
+    api_base = get_from_param_or_env("api_base", api_base, "ANYSCALE_API_BASE", "")
+    api_version = get_from_param_or_env(
+        "api_version", api_version, "ANYSCALE_API_VERSION", ""
+    )
+
+    # resolve from openai module or default
+    final_api_key = api_key or ""
+    final_api_base = api_base or DEFAULT_ANYSCALE_API_BASE
+    final_api_version = api_version or DEFAULT_ANYSCALE_API_VERSION
+
+    return final_api_key, str(final_api_base), final_api_version

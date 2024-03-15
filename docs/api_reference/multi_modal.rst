@@ -19,37 +19,37 @@ Multi-Modal LLM Implementations
 
 Multi-Modal LLM Interface
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.multi_modal_llms.base.MultiModalLLM
+.. autoclass:: llama_index.core.multi_modal_llms.base.MultiModalLLM
    :members:
    :inherited-members:
 
 Multi-Modal Embedding
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.embeddings.multi_modal_base.MultiModalEmbedding
+.. autoclass:: llama_index.core.embeddings.multi_modal_base.MultiModalEmbedding
    :members:
    :inherited-members:
 
 Multi-Modal Vector Store Index
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.indices.multi_modal.base.MultiModalVectorStoreIndex
+.. autoclass:: llama_index.core.indices.multi_modal.base.MultiModalVectorStoreIndex
    :members:
    :inherited-members:
 
 Multi-Modal Vector Index Retriever
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.indices.multi_modal.retriever.MultiModalVectorIndexRetriever
+.. autoclass:: llama_index.core.indices.multi_modal.retriever.MultiModalVectorIndexRetriever
    :members:
    :inherited-members:
 
 Multi-Modal Retriever Interface
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.core.base_multi_modal_retriever.MultiModalRetriever
+.. autoclass:: llama_index.core.base.base_multi_modal_retriever.MultiModalRetriever
    :members:
    :inherited-members:
 
 
 Multi-Modal Simple Query Engine
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: llama_index.query_engine.multi_modal.SimpleMultiModalQueryEngine
+.. autoclass:: llama_index.core.query_engine.multi_modal.SimpleMultiModalQueryEngine
    :members:
    :inherited-members:

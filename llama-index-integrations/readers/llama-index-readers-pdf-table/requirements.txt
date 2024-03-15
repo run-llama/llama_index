@@ -1,0 +1,3 @@
+camelot-py
+opencv-python
+ghostscript

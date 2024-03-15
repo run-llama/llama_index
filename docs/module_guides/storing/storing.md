@@ -29,8 +29,8 @@ Many vector stores (except FAISS) will store both the data as well as the index 
 
 ```python
 ## build a new index
-from llama_index import VectorStoreIndex, StorageContext
-from llama_index.vector_stores import DeepLakeVectorStore
+from llama_index.core import VectorStoreIndex, StorageContext
+from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 
 # construct vector store and customize storage context
 vector_store = DeepLakeVectorStore(dataset_path="<dataset_path>")
@@ -50,10 +50,10 @@ See our [Vector Store Module Guide](vector_stores.md) below for more details.
 Note that in general to use storage abstractions, you need to define a `StorageContext` object:
 
 ```python
-from llama_index.storage.docstore import SimpleDocumentStore
-from llama_index.storage.index_store import SimpleIndexStore
-from llama_index.vector_stores import SimpleVectorStore
-from llama_index.storage import StorageContext
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore
+from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core import StorageContext
 
 # create storage context using default stores
 storage_context = StorageContext.from_defaults(

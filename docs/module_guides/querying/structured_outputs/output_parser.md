@@ -11,9 +11,9 @@ by other frameworks. These output parsing modules can be used in the following w
 Guardrails is an open-source Python package for specification/validation/correction of output schemas. See below for a code example.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.output_parsers import GuardrailsOutputParser
-from llama_index.llms import OpenAI
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.output_parsers.guardrails import GuardrailsOutputParser
+from llama_index.llms.openai import OpenAI
 
 
 # load documents, build index
@@ -56,11 +56,7 @@ output_parser = GuardrailsOutputParser.from_rail_string(
 llm = OpenAI(output_parser=output_parser)
 
 # obtain a structured response
-from llama_index import ServiceContext
-
-ctx = ServiceContext.from_defaults(llm=llm)
-
-query_engine = index.as_query_engine(service_context=ctx)
+query_engine = index.as_query_engine(llm=llm)
 response = query_engine.query(
     "What are the three items the author did growing up?",
 )
@@ -78,9 +74,9 @@ Output:
 Langchain also offers output parsing modules that you can use within LlamaIndex.
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.output_parsers import LangchainOutputParser
-from llama_index.llms import OpenAI
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.output_parsers import LangchainOutputParser
+from llama_index.llms.openai import OpenAI
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 
@@ -110,11 +106,7 @@ output_parser = LangchainOutputParser(lc_output_parser)
 llm = OpenAI(output_parser=output_parser)
 
 # obtain a structured response
-from llama_index import ServiceContext
-
-ctx = ServiceContext.from_defaults(llm=llm)
-
-query_engine = index.as_query_engine(service_context=ctx)
+query_engine = index.as_query_engine(llm=llm)
 response = query_engine.query(
     "What are a few things the author did growing up?",
 )

@@ -9,11 +9,11 @@ To see an interactive example of `IngestionPipeline` being put in use, check out
 The simplest usage is to instantiate an `IngestionPipeline` like so:
 
 ```python
-from llama_index import Document
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.extractors import TitleExtractor
-from llama_index.ingestion import IngestionPipeline, IngestionCache
+from llama_index.core import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import TitleExtractor
+from llama_index.core.ingestion import IngestionPipeline, IngestionCache
 
 # create the pipeline with transformations
 pipeline = IngestionPipeline(
@@ -37,11 +37,11 @@ When running an ingestion pipeline, you can also chose to automatically insert t
 Then, you can construct an index from that vector store later on.
 
 ```python
-from llama_index import Document
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.extractors import TitleExtractor
-from llama_index.ingestion import IngestionPipeline
+from llama_index.core import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import TitleExtractor
+from llama_index.core.ingestion import IngestionPipeline
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 
 import qdrant_client
@@ -62,7 +62,7 @@ pipeline = IngestionPipeline(
 pipeline.run(documents=[Document.example()])
 
 # Create your index
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 index = VectorStoreIndex.from_vector_store(vector_store)
 ```
@@ -118,12 +118,12 @@ We support multiple remote storage backends for caches
 Here as an example using the `RedisCache`:
 
 ```python
-from llama_index import Document
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.extractors import TitleExtractor
-from llama_index.ingestion import IngestionPipeline, IngestionCache
-from llama_index.ingestion.cache import RedisCache
+from llama_index.core import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import TitleExtractor
+from llama_index.core.ingestion import IngestionPipeline, IngestionCache
+from llama_index.core.ingestion.cache import RedisCache
 
 
 pipeline = IngestionPipeline(
@@ -173,8 +173,8 @@ It works by:
 **NOTE:** If we do not attach a vector store, we can only check for and remove duplicate inputs.
 
 ```python
-from llama_index.ingestion import IngestionPipeline
-from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.storage.docstore import SimpleDocumentStore
 
 pipeline = IngestionPipeline(
     transformations=[...], docstore=SimpleDocumentStore()
@@ -195,7 +195,7 @@ To execute with parallel processing, set `num_workers` to the number of processe
 you'd like use:
 
 ```python
-from llama_index.ingestion import IngestionPipeline
+from llama_index.core.ingestion import IngestionPipeline
 
 pipeline = IngestionPipeline(
     transformations=[...],

@@ -5,11 +5,10 @@ import re
 from typing import List, Optional, Tuple
 
 import pandas as pd
-from sklearn.model_selection import train_test_split
-
 from llama_index.indices.utils import extract_numbers_given_response
 from llama_index.llms import OpenAI
 from llama_index.prompts import BasePromptTemplate, PromptTemplate
+from sklearn.model_selection import train_test_split
 
 
 def get_train_and_eval_data(

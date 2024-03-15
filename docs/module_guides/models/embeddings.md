@@ -12,22 +12,40 @@ There are many embedding models to pick from. By default, LlamaIndex uses `text-
 
 ## Usage Pattern
 
-Most commonly in LlamaIndex, embedding models will be specified in the `ServiceContext` object, and then used in a vector index. The embedding model will be used to embed the documents used during index construction, as well as embedding any queries you make using the query engine later on.
+Most commonly in LlamaIndex, embedding models will be specified in the `Settings` object, and then used in a vector index. The embedding model will be used to embed the documents used during index construction, as well as embedding any queries you make using the query engine later on. You can also specify embedding models per-index.
+
+If you don't already have your embeddings installed:
+
+```
+pip install llama-index-embeddings-openai
+```
+
+Then:
 
 ```python
-from llama_index import ServiceContext
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import Settings
 
-embed_model = OpenAIEmbedding()
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+# global
+Settings.embed_model = OpenAIEmbedding()
+
+# per-index
+index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
 ```
 
 To save costs, you may want to use a local model.
 
-```python
-from llama_index import ServiceContext
+```
+pip install llama-index-embeddings-huggingface
+```
 
-service_context = ServiceContext.from_defaults(embed_model="local")
+```python
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core import Settings
+
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="BAAI/bge-small-en-v1.5"
+)
 ```
 
 This will use a well-performing and fast default from Hugging Face.
@@ -36,21 +54,17 @@ You can find more usage details and available customization options below.
 
 ## Getting Started
 
-The most common usage for an embedding model will be setting it in the service context object, and then using it to construct an index and query. The input documents will be broken into nodes, and the embedding model will generate an embedding for each node.
+The most common usage for an embedding model will be setting it in the global `Settings` object, and then using it to construct an index and query. The input documents will be broken into nodes, and the embedding model will generate an embedding for each node.
 
 By default, LlamaIndex will use `text-embedding-ada-002`, which is what the example below manually sets up for you.
 
 ```python
-from llama_index import ServiceContext, VectorStoreIndex, SimpleDirectoryReader
-from llama_index.embeddings import OpenAIEmbedding
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import Settings
 
-embed_model = OpenAIEmbedding()
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
-
-# Optionally set a global service context to avoid passing it into other objects every time
-from llama_index import set_global_service_context
-
-set_global_service_context(service_context)
+# global default
+Settings.embed_model = OpenAIEmbedding()
 
 documents = SimpleDirectoryReader("./data").load_data()
 
@@ -81,18 +95,11 @@ embed_model = OpenAIEmbedding(embed_batch_size=42)
 The easiest way to use a local model is:
 
 ```python
-from llama_index import ServiceContext
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core import Settings
 
-service_context = ServiceContext.from_defaults(embed_model="local")
-```
-
-To configure the model used (from Hugging Face hub), add the model name separated by a colon:
-
-```python
-from llama_index import ServiceContext
-
-service_context = ServiceContext.from_defaults(
-    embed_model="local:BAAI/bge-large-en"
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="BAAI/bge-small-en-v1.5"
 )
 ```
 
@@ -104,12 +111,13 @@ Some prerequisites:
 
 ```
 pip install transformers optimum[exporters]
+pip install llama-index-embeddings-huggingface-optimum
 ```
 
 Creation with specifying the model and output path:
 
 ```python
-from llama_index.embeddings import OptimumEmbedding
+from llama_index.embeddings.huggingface_optimum import OptimumEmbedding
 
 OptimumEmbedding.create_and_save_optimum_model(
     "BAAI/bge-small-en-v1.5", "./bge_onnx"
@@ -119,8 +127,7 @@ OptimumEmbedding.create_and_save_optimum_model(
 And then usage:
 
 ```python
-embed_model = OptimumEmbedding(folder_name="./bge_onnx")
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+Settings.embed_model = OptimumEmbedding(folder_name="./bge_onnx")
 ```
 
 ### LangChain Integrations
@@ -129,13 +136,15 @@ We also support any embeddings offered by Langchain [here](https://python.langch
 
 The example below loads a model from Hugging Face, using Langchain's embedding class.
 
+```
+pip install llama-index-embeddings-langchain
+```
+
 ```python
 from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
-from llama_index import ServiceContext
+from llama_index.core import Settings
 
-embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
-
-service_context = ServiceContext.from_defaults(embed_model=embed_model)
+Settings.embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
 ```
 
 (custom_embeddings)=
@@ -149,7 +158,7 @@ The example below uses Instructor Embeddings ([install/setup details here](https
 ```python
 from typing import Any, List
 from InstructorEmbedding import INSTRUCTOR
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.core.embeddings import BaseEmbedding
 
 
 class InstructorEmbeddings(BaseEmbedding):
@@ -176,6 +185,12 @@ class InstructorEmbeddings(BaseEmbedding):
                 [[self._instruction, text] for text in texts]
             )
             return embeddings
+
+        async def _get_query_embedding(self, query: str) -> List[float]:
+            return self._get_query_embedding(query)
+
+        async def _get_text_embedding(self, text: str) -> List[float]:
+            return self._get_text_embedding(text)
 ```
 
 ## Standalone Usage
@@ -213,10 +228,11 @@ maxdepth: 1
 /examples/embeddings/Langchain.ipynb
 /examples/embeddings/llm_rails.ipynb
 /examples/embeddings/mistralai.ipynb
-/examples/embeddings/nomic.ipynb
 /examples/embeddings/OpenAI.ipynb
 /examples/embeddings/sagemaker_embedding_endpoint.ipynb
 /examples/embeddings/text_embedding_inference.ipynb
 /examples/embeddings/together.ipynb
 /examples/embeddings/voyageai.ipynb
+/examples/embeddings/nomic.ipynb
+/examples/embeddings/fireworks.ipynb
 ```

@@ -52,12 +52,9 @@ Concretely speaking, you would explicitly construct a `QueryEngine` object inste
 > Note: You may need to look at API references or example notebooks.
 
 ```python
-from llama_index import (
-    VectorStoreIndex,
-    get_response_synthesizer,
-)
-from llama_index.retrievers import VectorIndexRetriever
-from llama_index.query_engine import RetrieverQueryEngine
+from llama_index.core import VectorStoreIndex, get_response_synthesizer
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
 
 # build index
 index = VectorStoreIndex.from_documents(documents)
@@ -106,12 +103,10 @@ streaming_response.print_response_stream()
 You can also define a custom query engine. Simply subclass the `CustomQueryEngine` class, define any attributes you'd want to have (similar to defining a Pydantic class), and implement a `custom_query` function that returns either a `Response` object or a string.
 
 ```python
-from llama_index.query_engine import CustomQueryEngine
-from llama_index.retrievers import BaseRetriever
-from llama_index.response_synthesizers import (
-    get_response_synthesizer,
-    BaseSynthesizer,
-)
+from llama_index.core.query_engine import CustomQueryEngine
+from llama_index.core.retrievers import BaseRetriever
+from llama_index.core import get_response_synthesizer
+from llama_index.core.response_synthesizers import BaseSynthesizer
 
 
 class RAGQueryEngine(CustomQueryEngine):

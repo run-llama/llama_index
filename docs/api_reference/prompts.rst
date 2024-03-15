@@ -13,24 +13,24 @@ Default Prompts
 ^^^^^^^^^^^^^^^^^
 
 
-* `Completion prompt templates <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompts.py>`_.
-* `Chat prompt templates <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/chat_prompts.py>`_.
-* `Selector prompt templates <https://github.com/jerryjliu/llama_index/blob/main/llama_index/prompts/default_prompt_selectors.py>`_.
+* `Completion prompt templates <https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/default_prompts.py>`_.
+* `Chat prompt templates <https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/chat_prompts.py>`_.
+* `Selector prompt templates <https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/prompts/default_prompt_selectors.py>`_.
 
 
 
 Prompt Classes
 ^^^^^^^^^^^^^^^^^
 
-.. autopydantic_model:: llama_index.prompts.base.BasePromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.BasePromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.PromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.PromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.ChatPromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.ChatPromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.SelectorPromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.SelectorPromptTemplate
 
-.. autopydantic_model:: llama_index.prompts.base.LangchainPromptTemplate
+.. autopydantic_model:: llama_index.core.prompts.base.LangchainPromptTemplate
 
 
 Subclass Prompts (deprecated)

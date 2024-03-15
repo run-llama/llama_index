@@ -21,7 +21,7 @@ If you are using the low-level API to compose the query engine,
 pass `streaming=True` when constructing the `Response Synthesizer`:
 
 ```python
-from llama_index import get_response_synthesizer
+from llama_index.core import get_response_synthesizer
 
 synth = get_response_synthesizer(streaming=True, ...)
 query_engine = RetrieverQueryEngine(response_synthesizer=synth, ...)

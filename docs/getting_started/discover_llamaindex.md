@@ -6,7 +6,7 @@ If you like learning from videos, now's a good time to check out our "Discover L
 
 This is a sub-series within Discover LlamaIndex that shows you how to build a document chatbot from scratch.
 
-We show you how to do this in a "bottoms-up" fashion - start by using the LLMs, data objects as independent modules. Then gradually add higher-level abstractions like indexing, and advanced retrievers/rerankers.
+We show you how to do this in a "bottoms-up" fashion - start by using the LLMs, and data objects as independent modules. Then gradually add higher-level abstractions like indexing, and advanced retrievers/rerankers.
 
 [Full Repo](https://github.com/run-llama/llama_docs_bot)
 [[Part 1] LLMs and Prompts](https://www.youtube.com/watch?v=p0jcvGiBKSA)
@@ -25,7 +25,7 @@ This video covers the `SubQuestionQueryEngine` and how it can be applied to fina
 
 ## Discord Document Management
 
-This video covers managing documents from a source that is constantly updating (i.e Discord) and how you can avoid document duplication and save embedding tokens.
+This video covers managing documents from a source that is constantly updating (i.e. Discord) and how you can avoid document duplication and save embedding tokens.
 
 [Youtube](https://www.youtube.com/watch?v=j6dJcODLd_c)
 

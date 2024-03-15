@@ -1,7 +1,7 @@
 import enum
 from typing import List
 
-from llama_index.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field
 
 
 class NodeType(str, enum.Enum):

@@ -202,8 +202,8 @@ llamaindex-cli download-llamadataset EvaluatingLlmSurveyPaperDataset --download-
 Now, we can create a python file called `llama.py` and put the following code in it.
 
 ```python
-from llama_index import SimpleDirectoryReader
-from llama_index import VectorStoreIndex
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex
 
 
 documents = SimpleDirectoryReader(input_dir="./data/source_files").load_data()
@@ -216,7 +216,7 @@ This code essentially just loads in the dataset files and then initializes Llama
 Llama Index's CLI also downloads a list of questions and answers you can use for testing on their example dataset. If you want to use these questions and answers, you can use the code below.
 
 ```python
-from llama_index.llama_dataset import LabelledRagDataset
+from llama_index.core.llama_dataset import LabelledRagDataset
 
 rag_dataset = LabelledRagDataset.from_json("./data/rag_dataset.json")
 
@@ -244,7 +244,7 @@ Now to score it, we can do the following
 
 ```
 from tonic_validate.metrics import AnswerSimilarityMetric
-from llama_index.evaluation import TonicValidateEvaluator
+from llama_index.evaluation.tonic_validate import TonicValidateEvaluator
 
 
 tonic_validate_evaluator = TonicValidateEvaluator(

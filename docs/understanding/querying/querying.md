@@ -37,13 +37,10 @@ LlamaIndex features a low-level composition API that gives you granular control 
 In this example, we customize our retriever to use a different number for `top_k` and add a post-processing step that requires that the retrieved nodes reach a minimum similarity score to be included. This would give you a lot of data when you have relevant results but potentially no data if you have nothing relevant.
 
 ```python
-from llama_index import (
-    VectorStoreIndex,
-    get_response_synthesizer,
-)
-from llama_index.retrievers import VectorIndexRetriever
-from llama_index.query_engine import RetrieverQueryEngine
-from llama_index.postprocessor import SimilarityPostprocessor
+from llama_index.core import VectorStoreIndex, get_response_synthesizer
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.postprocessor import SimilarityPostprocessor
 
 # build index
 index = VectorStoreIndex.from_documents(documents)
