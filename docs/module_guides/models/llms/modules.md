@@ -353,6 +353,15 @@ maxdepth: 1
 /examples/llm/sagemaker_endpoint_llm.ipynb
 ```
 
+## Solar
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/solar.ipynb
+```
+
 ## Together.ai
 
 ```{toctree}
