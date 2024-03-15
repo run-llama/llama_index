@@ -7,19 +7,18 @@ llm = OCIGenAI(
         model="cohere.command", # "meta.llama-2-70b-chat" or "cohere.command"
         service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
         compartment_id="ocid1.tenancy.oc1..aaaaaaaasz6cicsgfbqh6tj3xahi4ozoescfz36bjm3kucc7lotk2oqep47q",
-        #provider='cohere',
-        #additional_kwargs={"temperature": 0, "max_tokens": 512, "top_p": 0.7, "frequency_penalty": 1.0}
+        additional_kwargs={"temperature": 0, "max_tokens": 512, "top_p": 0.7, "frequency_penalty": 1.0}
         )
 
 #complete
-resp= llm.complete("Paul Graham is ")
+resp= llm.complete("Paul Graham is ", temperature=0.7)
 print(resp)
-exit()
+
 
 # stream complete
-# resp= llm.stream_complete("Paul Graham is ")
-# for r in resp:
-#     print(r.delta, end="")
+resp= llm.stream_complete("Paul Graham is ")
+for r in resp:
+    print(r.delta, end="")
 
 # chat
 messages = [
@@ -27,8 +26,8 @@ messages = [
     ChatMessage(role="user", content="Tell me a story"),
 ]
 
-#resp = llm.chat(messages)
-#print(resp)
+resp = llm.chat(messages)
+print(resp)
 
 # stream chat
 resp = llm.stream_chat(messages)

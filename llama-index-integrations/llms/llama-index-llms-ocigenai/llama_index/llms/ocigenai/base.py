@@ -14,14 +14,14 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 
-from llama_index.core.constants import ( # *
+from llama_index.core.constants import ( 
     DEFAULT_TEMPERATURE,
 )
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import ( # *
+from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
@@ -54,11 +54,6 @@ class OCIGenAI(LLM):
         description="OCID of compartment.",
     )
 
-    client: Any = Field(
-        default=None,
-        description="OCI client."
-    )
-
     auth_type: Optional[str] = Field(
         description="Authentication type, can be: API_KEY, SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE. If not specified, API_KEY will be used",
         default="API_KEY"
@@ -69,19 +64,12 @@ class OCIGenAI(LLM):
         default="DEFAULT"
     )
 
-    provider: Optional[str] = Field(
-        description="Provider name of the model. Default to None, will try to be derived from the model_id otherwise, requires user input",
-        default=None
-    )
-    
-    
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the OCI Generative AI request.",
     )
 
     _client: Any = PrivateAttr()
-    # _aclient: Any = PrivateAttr()
     _provider: str = PrivateAttr()
     _serving_mode: str = PrivateAttr()
     _request_generator: str = PrivateAttr()
@@ -107,7 +95,7 @@ class OCIGenAI(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        **kwargs: Any, # *
+        
     ) -> None:
         
         self._client = client or create_client(auth_type, auth_profile, service_endpoint)

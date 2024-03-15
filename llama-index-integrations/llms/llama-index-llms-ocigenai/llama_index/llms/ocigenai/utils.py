@@ -1,11 +1,7 @@
-import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Dict
-
 from llama_index.core.base.llms.types import ChatMessage
-#from llama_index.core.base.llms.generic_utils import prompt_to_messages
-
 from llama_index.llms.ocigenai.llama_utils import (
     messages_to_prompt as messages_to_llama_prompt,
     completion_to_prompt as completion_to_llama_prompt,
@@ -30,12 +26,10 @@ CHAT_ONLY_MODELS = {}
   
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
-
 STREAMING_MODELS = {
     "cohere.command",
     "meta.llama-2-70b-chat"
 }
-
 
 def create_client(auth_type, auth_profile, service_endpoint):
 
