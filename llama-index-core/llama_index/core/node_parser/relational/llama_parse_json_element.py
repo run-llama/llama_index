@@ -20,23 +20,6 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
     def class_name(cls) -> str:
         return "LlamaParseJsonNodeParser"
 
-    # def generate_nodes_from_json_list(self, json_list: List[dict]) -> List[TextNode]:
-    #     """Generate text nodes from json list output from llama_parse."""
-    #     text_nodes = []
-    #     for _, page in enumerate(json_list):
-    #         text_nodes.append(
-    #             TextNode(
-    #                 text=page.get("text"),
-    #                 metadata={
-    #                     "page": page.get("page"),
-    #                     "md": page.get("md"),
-    #                     "images": page.get("images"),
-    #                     "items": page.get("items"),
-    #                 },
-    #             )
-    #         )
-    #     return text_nodes
-
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
         elements = self.extract_elements(
@@ -73,9 +56,9 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         """
         elements: List[Element] = []
         currentElement = None
+        page_number = node_metadata.get("page")
 
         if mode == "json" and node_metadata is not None:
-            page_number = node_metadata.get("page")
             json_items = node_metadata.get("items") or []
             for element_idx, json_item in enumerate(json_items):
                 ele_type = json_item.get("type")
@@ -222,10 +205,14 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 # if the element is a table, convert it to a dataframe
                 if should_keep:
                     if perfect_table:
-                        table = md_to_df(element.element)
+                        table = md_to_df(element.markdown)
 
                         elements[idx] = Element(
-                            id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
+                            id=(
+                                f"id_page_{page_number}_{node_id}_{idx}"
+                                if node_id
+                                else f"id_{idx}"
+                            ),
                             type="table",
                             element=element,
                             table=table,
@@ -234,21 +221,33 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                         # for non-perfect tables, we will store the raw text
                         # and give it a different type to differentiate it from perfect tables
                         elements[idx] = Element(
-                            id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
+                            id=(
+                                f"id_page_{page_number}_{node_id}_{idx}"
+                                if node_id
+                                else f"id_{idx}"
+                            ),
                             type="table_text",
                             element=element.element,
                             # table=table
                         )
                 else:
                     elements[idx] = Element(
-                        id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
+                        id=(
+                            f"id_page_{page_number}_{node_id}_{idx}"
+                            if node_id
+                            else f"id_page_{page_number}_{idx}"
+                        ),
                         type="text",
                         element=element.element,
                     )
             else:
                 # if the element is not a table, keep it as to text
                 elements[idx] = Element(
-                    id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
+                    id=(
+                        f"id_page_{page_number}_{node_id}_{idx}"
+                        if node_id
+                        else f"id_page_{page_number}_{idx}"
+                    ),
                     type="text",
                     element=element.element,
                 )
@@ -269,7 +268,8 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
 
     def filter_table(self, table_element: Any) -> bool:
         """Filter tables."""
-        table_df = md_to_df(table_element.element)
+        # convert markdown of the table to df
+        table_df = md_to_df(table_element.markdown)
 
         # check if table_df is not None, has more than one row, and more than one column
         return table_df is not None and not table_df.empty and len(table_df.columns) > 1
