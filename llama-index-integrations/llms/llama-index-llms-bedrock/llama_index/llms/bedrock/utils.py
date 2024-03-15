@@ -6,7 +6,7 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt
+from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt, messages_to_anthropic_messages
 from llama_index.llms.bedrock.llama_utils import (
     completion_to_prompt as completion_to_llama_prompt,
 )
@@ -44,6 +44,8 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-v1": 100000,
     "anthropic.claude-v2": 100000,
     "anthropic.claude-v2:1": 200000,
+    "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
 }
@@ -59,6 +61,8 @@ STREAMING_MODELS = {
     "anthropic.claude-v1",
     "anthropic.claude-v2",
     "anthropic.claude-v2:1",
+    "anthropic.claude-3-sonnet-20240229-v1:0",
+    "anthropic.claude-3-haiku-20240307-v1:0",
     "meta.llama2-13b-chat-v1",
 }
 
@@ -119,6 +123,25 @@ class AnthropicProvider(Provider):
 
     def get_text_from_response(self, response: dict) -> str:
         return response["completion"]
+    
+class AnthropicClaude3Provider(Provider):
+    max_tokens_key = "max_tokens_to_sample"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_anthropic_messages
+        self.completion_to_prompt = completion_to_anthopic_prompt
+
+    def get_request_body(self, prompt: str, inference_parameters: dict) -> dict:
+        return {
+            "anthropic_version": inference_parameters['anthropic_version'] if 'anthropic_version' in inference_parameters else "bedrock-2023-05-31",
+            "max_tokens": inference_parameters["max_tokens_to_sample"],
+            "temperature": inference_parameters["temperature"],
+            "system": prompt[1],
+            "messages": [{"role": p["role"], "content": [{"type": "text", "text": p["content"]}]} for p in prompt[0]],
+        }
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response['content'][0]['text']
 
 
 class CohereProvider(Provider):
@@ -143,6 +166,7 @@ PROVIDERS = {
     "amazon": AmazonProvider(),
     "ai21": Ai21Provider(),
     "anthropic": AnthropicProvider(),
+    "anthropic.claude-3": AnthropicClaude3Provider(),
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
 }
@@ -152,6 +176,8 @@ def get_provider(model: str) -> Provider:
     provider_name = model.split(".")[0]
     if provider_name not in PROVIDERS:
         raise ValueError(f"Provider {provider_name} for model {model} is not supported")
+    if provider_name == "anthropic" and model.startswith("anthropic.claude-3"):
+       provider_name = "anthropic.claude-3"
     return PROVIDERS[provider_name]
 
 
