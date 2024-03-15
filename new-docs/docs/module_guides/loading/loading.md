@@ -2,7 +2,7 @@
 
 The key to data ingestion in LlamaIndex is loading and transformations. Once you have loaded Documents, you can process them via transformations and output Nodes.
 
-Once you have [learned about the basics of loading data](/understanding/loading/loading.html) in our Understanding section, you can read on to learn more about:
+Once you have [learned about the basics of loading data](../../understanding/loading/loading.md) in our Understanding section, you can read on to learn more about:
 
 ### Loading
 

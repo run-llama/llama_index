@@ -6,10 +6,10 @@ There are a variety of more advanced retrieval strategies you may wish to try, e
 
 - {ref}`Reranking <cohere_rerank>`
 - [Recursive retrieval](/examples/query_engine/pdf_tables/recursive_retriever.ipynb)
-- [Embedded tables](/examples/query_engine/sec_tables/tesla_10q_table.ipynb)
-- [Small-to-big retrieval](/examples/node_postprocessor/MetadataReplacementDemo.ipynb)
+- [Embedded tables](../../examples/query_engine/sec_tables/tesla_10q_table.ipynb)
+- [Small-to-big retrieval](../../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
 
-See our full [retrievers module guide](/module_guides/querying/retriever/retrievers.md) for a comprehensive list of all retrieval strategies, broken down into different categories.
+See our full [retrievers module guide](../../module_guides/querying/retriever/retrievers.md) for a comprehensive list of all retrieval strategies, broken down into different categories.
 
 - Basic retrieval from each index
 - Advanced retrieval and search

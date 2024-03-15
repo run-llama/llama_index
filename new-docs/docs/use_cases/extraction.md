@@ -20,7 +20,7 @@ maxdepth: 2
 /module_guides/querying/structured_outputs/output_parser.md
 ```
 
-We also have multi-modal structured data extraction. [Check it out](multi-modal-pydantic-program).
+We also have multi-modal structured data extraction. [Check it out](../use_cases/multimodal.md#simple-evaluation-of-multi-modal-rag).
 
 ## Misc Examples
 

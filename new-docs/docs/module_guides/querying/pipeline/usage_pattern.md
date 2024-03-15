@@ -178,7 +178,7 @@ class MyComponent(CustomQueryComponent):
         return {"output_key": result}
 ```
 
-For more details check out our [in-depth query transformations guide](/examples/pipeline/query_pipeline.ipynb).
+For more details check out our [in-depth query transformations guide](../../../examples/pipeline/query_pipeline.ipynb).
 
 ## Ensuring outputs are compatible
 

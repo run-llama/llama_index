@@ -5,8 +5,8 @@ A transformation is something that takes a list of nodes as an input, and return
 Currently, the following components are `Transformation` objects:
 
 - [`TextSplitter`](text_splitters)
-- [`NodeParser`](/module_guides/loading/node_parsers/modules.md)
-- [`MetadataExtractor`](/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md)
+- [`NodeParser`](../node_parsers/modules.md)
+- [`MetadataExtractor`](../documents_and_nodes/usage_metadata_extractor.md)
 - `Embeddings`model (check our [list of supported embeddings](list_of_embeddings))
 
 ## Usage Pattern

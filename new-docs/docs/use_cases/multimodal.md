@@ -93,8 +93,6 @@ maxdepth: 1
 GPT4-V: </examples/multi_modal/openai_multi_modal.ipynb>
 ```
 
-(multi-modal-pydantic-program)=
-
 ### Simple Evaluation of Multi-Modal RAG
 
 In this notebook guide, we'll demonstrate how to evaluate a Multi-Modal RAG system. As in the text-only case, we will consider the evaluation of Retrievers and Generators separately. As we alluded in our blog on the topic of Evaluating Multi-Modal RAGs, our approach here involves the application of adapted versions of the usual techniques for evaluating both Retriever and Generator (used for the text-only case). These adapted versions are part of the llama-index library (i.e., evaluation module), and this notebook will walk you through how you can apply them to your evaluation use-cases.

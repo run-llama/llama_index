@@ -40,7 +40,7 @@ query_engine_tools = [
 agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
-You can learn more in our [Agent Module Guide](/module_guides/deploying/agents/root.md).
+You can learn more in our [Agent Module Guide](../../module_guides/deploying/agents/root.md).
 
 ## Native OpenAIAgent
 
@@ -66,28 +66,28 @@ LlamaIndex provides core modules capable of automated reasoning for different us
 
 **SubQuestionQueryEngine for Multi-Document Analysis**
 
-- [Sub Question Query Engine (Intro)](/examples/query_engine/sub_question_query_engine.ipynb)
-- [10Q Analysis (Uber)](/examples/usecases/10q_sub_question.ipynb)
-- [10K Analysis (Uber and Lyft)](/examples/usecases/10k_sub_question.ipynb)
+- [Sub Question Query Engine (Intro)](../../examples/query_engine/sub_question_query_engine.ipynb)
+- [10Q Analysis (Uber)](../../examples/usecases/10q_sub_question.ipynb)
+- [10K Analysis (Uber and Lyft)](../../examples/usecases/10k_sub_question.ipynb)
 
 **Query Transformations**
 
-- [How-To](/optimizing/advanced_retrieval/query_transformations.md)
+- [How-To](../../optimizing/advanced_retrieval/query_transformations.md)
 - [Multi-Step Query Decomposition](/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 **Routing**
 
-- [Usage](/module_guides/querying/router/root.md)
-- [Router Query Engine Guide](/examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_engine/RouterQueryEngine.ipynb))
+- [Usage](../../module_guides/querying/router/root.md)
+- [Router Query Engine Guide](../../examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/RouterQueryEngine.ipynb))
 
 **LLM Reranking**
 
-- [Second Stage Processing How-To](/module_guides/querying/node_postprocessors/root.md)
-- [LLM Reranking Guide (Great Gatsby)](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
+- [Second Stage Processing How-To](../../module_guides/querying/node_postprocessors/root.md)
+- [LLM Reranking Guide (Great Gatsby)](../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
 
 **Chat Engines**
 
-- [Chat Engines How-To](/module_guides/deploying/chat_engines/root.md)
+- [Chat Engines How-To](../../module_guides/deploying/chat_engines/root.md)
 
 ## Using LlamaIndex as as Tool within an Agent Framework
 
@@ -100,9 +100,9 @@ LlamaIndex query engines can be easily packaged as Tools to be used within a Lan
 
 **Resources**
 
-- [LangChain integration guide](/community/integrations/using_with_langchain.md)
-- [Building a Chatbot Tutorial (LangChain + LlamaIndex)](/understanding/putting_it_all_together/chatbots/building_a_chatbot.md)
-- [OnDemandLoaderTool Tutorial](/examples/tools/OnDemandLoaderTool.ipynb)
+- [LangChain integration guide](../../community/integrations/using_with_langchain.md)
+- [Building a Chatbot Tutorial (LangChain + LlamaIndex)](chatbots/building_a_chatbot.md)
+- [OnDemandLoaderTool Tutorial](../../examples/tools/OnDemandLoaderTool.ipynb)
 
 ### ChatGPT
 

@@ -53,7 +53,7 @@ Since LlamaIndex is a multi-step pipeline, it's important to identify the operat
 
 For instance, prompts are used in response synthesizer, retrievers, index construction, etc; some of these modules are nested in other modules (synthesizer is nested in query engine).
 
-See [this guide](/examples/prompts/prompt_mixin.ipynb) for full details on accessing/customizing prompts.
+See [this guide](../../../examples/prompts/prompt_mixin.ipynb) for full details on accessing/customizing prompts.
 
 #### Commonly Used Prompts
 
@@ -170,8 +170,8 @@ In this section we show some advanced prompt capabilities in LlamaIndex.
 
 Related Guides:
 
-- [Advanced Prompts](/examples/prompts/advanced_prompts.ipynb)
-- [Prompt Engineering for RAG](/examples/prompts/prompts_rag.ipynb)
+- [Advanced Prompts](../../../examples/prompts/advanced_prompts.ipynb)
+- [Prompt Engineering for RAG](../../../examples/prompts/prompts_rag.ipynb)
 
 #### Partial Formatting
 

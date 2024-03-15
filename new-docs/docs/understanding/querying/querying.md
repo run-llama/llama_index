@@ -22,12 +22,12 @@ print(response)
 
 However, there is more to querying than initially meets the eye. Querying consists of three distinct stages:
 
-- **Retrieval** is when you find and return the most relevant documents for your query from your `Index`. As previously discussed in [indexing](/understanding/indexing/indexing.md), the most common type of retrieval is "top-k" semantic retrieval, but there are many other retrieval strategies.
+- **Retrieval** is when you find and return the most relevant documents for your query from your `Index`. As previously discussed in [indexing](../indexing/indexing.md), the most common type of retrieval is "top-k" semantic retrieval, but there are many other retrieval strategies.
 - **Postprocessing** is when the `Node`s retrieved are optionally reranked, transformed, or filtered, for instance by requiring that they have specific metadata such as keywords attached.
 - **Response synthesis** is when your query, your most-relevant data and your prompt are combined and sent to your LLM to return a response.
 
 ```{tip}
-You can find out about [how to attach metadata to documents](/module_guides/loading/documents_and_nodes/usage_documents.md) and [nodes](/module_guides/loading/documents_and_nodes/usage_nodes.md).
+You can find out about [how to attach metadata to documents](../../module_guides/loading/documents_and_nodes/usage_documents.md) and [nodes](../../module_guides/loading/documents_and_nodes/usage_nodes.md).
 ```
 
 ## Customizing the stages of querying
@@ -81,7 +81,7 @@ retriever = VectorIndexRetriever(
 )
 ```
 
-There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](/module_guides/querying/retriever/root.md).
+There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](../../module_guides/querying/retriever/root.md).
 
 ### Configuring node postprocessors
 
@@ -142,12 +142,12 @@ Right now, we support the following options:
 
 ## Structured Outputs
 
-You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](/module_guides/querying/structured_outputs/query_engine.md) to see how to extract a Pydantic object from a query engine class.
+You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](../../module_guides/querying/structured_outputs/query_engine.md) to see how to extract a Pydantic object from a query engine class.
 
-Also make sure to check out our entire [Structured Outputs](/module_guides/querying/structured_outputs/structured_outputs.md) guide.
+Also make sure to check out our entire [Structured Outputs](../../module_guides/querying/structured_outputs/structured_outputs.md) guide.
 
 ## Creating your own Query Pipeline
 
 If you want to design complex query flows, you can compose your own query pipeline across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
 
-Take a look at our [Query Pipelines Module Guide](/module_guides/querying/pipeline/root.md) for more details.
+Take a look at our [Query Pipelines Module Guide](../../module_guides/querying/pipeline/root.md) for more details.

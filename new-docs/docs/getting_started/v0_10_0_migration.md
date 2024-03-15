@@ -75,4 +75,4 @@ Settings.embed_model = embed_model
 Setting.chunk_size = 512
 ```
 
-You can see the `ServiceContext` -> `Settings` migration guide for [more details](/module_guides/supporting_modules/service_context_migration.md).
+You can see the `ServiceContext` -> `Settings` migration guide for [more details](../module_guides/supporting_modules/service_context_migration.md).

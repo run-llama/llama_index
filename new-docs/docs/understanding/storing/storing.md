@@ -1,6 +1,6 @@
 # Storing
 
-Once you have data [loaded](/understanding/loading/loading.md) and [indexed](/understanding/indexing/indexing.md), you will probably want to store it to avoid the time and cost of re-indexing it. By default, your indexed data is stored only in memory.
+Once you have data [loaded](../loading/loading.md) and [indexed](../indexing/indexing.md), you will probably want to store it to avoid the time and cost of re-indexing it. By default, your indexed data is stored only in memory.
 
 ## Persisting to disk
 
@@ -31,14 +31,14 @@ index = load_index_from_storage(storage_context)
 ```{tip}
 Important: if you had initialized your index with a custom
 `transformations`, `embed_model`, etc., you will need to pass in the same
-options during `load_index_from_storage`, or have it set as the [global settings](/module_guides/supporting_modules/settings.md).
+options during `load_index_from_storage`, or have it set as the [global settings](../../module_guides/supporting_modules/settings.md).
 ```
 
 ## Using Vector Stores
 
-As discussed in [indexing](/understanding/indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the {ref}`embeddings <what-is-an-embedding>` in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
+As discussed in [indexing](../indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the {ref}`embeddings <what-is-an-embedding>` in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
 
-LlamaIndex supports a [huge number of vector stores](/module_guides/storing/vector_stores.md) which vary in architecture, complexity and cost. In this example we'll be using Chroma, an open-source vector store.
+LlamaIndex supports a [huge number of vector stores](../../module_guides/storing/vector_stores.md) which vary in architecture, complexity and cost. In this example we'll be using Chroma, an open-source vector store.
 
 First you will need to install chroma:
 
@@ -120,7 +120,7 @@ We have a [more thorough example of using Chroma](/examples/vector_stores/Chroma
 
 ### You're ready to query!
 
-Now you have loaded data, indexed it, and stored that index, you're ready to [query your data](/understanding/querying/querying.md).
+Now you have loaded data, indexed it, and stored that index, you're ready to [query your data](../querying/querying.md).
 
 ## Inserting Documents or Nodes
 
@@ -134,4 +134,4 @@ for doc in documents:
     index.insert(doc)
 ```
 
-See the [document management how-to](/module_guides/indexing/document_management.md) for more details on managing documents and an example notebook.
+See the [document management how-to](../../module_guides/indexing/document_management.md) for more details on managing documents and an example notebook.

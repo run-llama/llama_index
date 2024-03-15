@@ -14,7 +14,7 @@ In RAG, your data is loaded and prepared for queries or "indexed". User queries 
 
 Even if what you're building is a chatbot or an agent, you'll want to know RAG techniques for getting data into your application.
 
-![](/_static/getting_started/basic_rag.png)
+![](../_static/getting_started/basic_rag.png)
 
 ## Stages within RAG
 
@@ -30,7 +30,7 @@ There are five key stages within RAG, which in turn will be a part of any larger
 
 - **Evaluation**: a critical step in any pipeline is checking how effective it is relative to other strategies, or when you make changes. Evaluation provides objective measures of how accurate, faithful and fast your responses to queries are.
 
-![](/_static/getting_started/stages.png)
+![](../_static/getting_started/stages.png)
 
 ## Important concepts within each step
 
@@ -38,44 +38,44 @@ There are also some terms you'll encounter that refer to steps within each of th
 
 ### Loading stage
 
-[**Nodes and Documents**](/module_guides/loading/documents_and_nodes/root.md): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
+[**Nodes and Documents**](../module_guides/loading/documents_and_nodes/root.md): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
 
-[**Connectors**](/module_guides/loading/connector/root.md):
+[**Connectors**](../module_guides/loading/connector/root.md):
 A data connector (often called a `Reader`) ingests data from different data sources and data formats into `Documents` and `Nodes`.
 
 ### Indexing Stage
 
-[**Indexes**](/module_guides/indexing/indexing.md):
+[**Indexes**](../module_guides/indexing/indexing.md):
 Once you've ingested your data, LlamaIndex will help you index the data into a structure that's easy to retrieve. This usually involves generating `vector embeddings` which are stored in a specialized database called a `vector store`. Indexes can also store a variety of metadata about your data.
 
-[**Embeddings**](/module_guides/models/embeddings.md) LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data that is numerically similar to the embedding of your query.
+[**Embeddings**](../module_guides/models/embeddings.md) LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data that is numerically similar to the embedding of your query.
 
 ### Querying Stage
 
-[**Retrievers**](/module_guides/querying/retriever/root.md):
+[**Retrievers**](../module_guides/querying/retriever/root.md):
 A retriever defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
 
-[**Routers**](/module_guides/querying/router/root.md):
+[**Routers**](../module_guides/querying/router/root.md):
 A router determines which retriever will be used to retrieve relevant context from the knowledge base. More specifically, the `RouterRetriever` class, is responsible for selecting one or multiple candidate retrievers to execute a query. They use a selector to choose the best option based on each candidate's metadata and the query.
 
-[**Node Postprocessors**](/module_guides/querying/node_postprocessors/root.md):
+[**Node Postprocessors**](../module_guides/querying/node_postprocessors/root.md):
 A node postprocessor takes in a set of retrieved nodes and applies transformations, filtering, or re-ranking logic to them.
 
-[**Response Synthesizers**](/module_guides/querying/response_synthesizers/root.md):
+[**Response Synthesizers**](../module_guides/querying/response_synthesizers/root.md):
 A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.
 
 ### Putting it all together
 
 There are endless use cases for data-backed LLM applications but they can be roughly grouped into three categories:
 
-[**Query Engines**](/module_guides/deploying/query_engine/root.md):
+[**Query Engines**](../module_guides/deploying/query_engine/root.md):
 A query engine is an end-to-end pipeline that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
-[**Chat Engines**](/module_guides/deploying/chat_engines/root.md):
+[**Chat Engines**](../module_guides/deploying/chat_engines/root.md):
 A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
 
-[**Agents**](/module_guides/deploying/agents/root.md):
-An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](/module_guides/deploying/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
+[**Agents**](../module_guides/deploying/agents/root.md):
+An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
 
 ```{admonition} Next Steps
 * Tell me how to [customize things](/getting_started/customization.rst)

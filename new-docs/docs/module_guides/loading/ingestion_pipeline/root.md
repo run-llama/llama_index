@@ -2,7 +2,7 @@
 
 An `IngestionPipeline` uses a concept of `Transformations` that are applied to input data. These `Transformations` are applied to your input data, and the resulting nodes are either returned or inserted into a vector database (if given). Each node+transformation pair is cached, so that subsequent runs (if the cache is persisted) with the same node+transformation combination can use the cached result and save you time.
 
-To see an interactive example of `IngestionPipeline` being put in use, check out the [RAG CLI](/use_cases/q_and_a/rag_cli.md).
+To see an interactive example of `IngestionPipeline` being put in use, check out the [RAG CLI](../../../use_cases/q_and_a/rag_cli.md).
 
 ## Usage Pattern
 
@@ -181,9 +181,9 @@ pipeline = IngestionPipeline(
 )
 ```
 
-A full walkthrough is found in our [demo notebook](/examples/ingestion/document_management_pipeline.ipynb).
+A full walkthrough is found in our [demo notebook](../../../examples/ingestion/document_management_pipeline.ipynb).
 
-Also check out another guide using [Redis as our entire ingestion stack](/examples/ingestion/redis_ingestion_pipeline.ipynb).
+Also check out another guide using [Redis as our entire ingestion stack](../../../examples/ingestion/redis_ingestion_pipeline.ipynb).
 
 ## Parallel Processing
 
@@ -212,8 +212,8 @@ maxdepth: 2
 transformations.md
 /examples/ingestion/advanced_ingestion_pipeline.ipynb
 /examples/ingestion/async_ingestion_pipeline.ipynb
-/examples/ingestion/document_management_pipeline.ipynb
-/examples/ingestion/redis_ingestion_pipeline.ipynb
+../../../examples/ingestion/document_management_pipeline.ipynb
+../../../examples/ingestion/redis_ingestion_pipeline.ipynb
 /examples/ingestion/ingestion_gdrive.ipynb
 /examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
 ```

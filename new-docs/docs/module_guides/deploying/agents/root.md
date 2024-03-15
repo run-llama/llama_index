@@ -7,7 +7,7 @@ Data Agents are LLM-powered knowledge workers in LlamaIndex that can intelligent
 - Perform automated search and retrieval over different types of data - unstructured, semi-structured, and structured.
 - Calling any external service API in a structured fashion, and processing the response + storing it for later.
 
-In that sense, agents are a step beyond our [query engines](/module_guides/deploying/query_engine/root.md) in that they can not only "read" from a static source of data, but can dynamically ingest and modify data from a variety of different tools.
+In that sense, agents are a step beyond our [query engines](../query_engine/root.md) in that they can not only "read" from a static source of data, but can dynamically ingest and modify data from a variety of different tools.
 
 Building a data agent requires the following core components:
 
@@ -26,7 +26,7 @@ The reasoning loop depends on the type of agent. We have support for the followi
 
 ### Tool Abstractions
 
-You can learn more about our Tool abstractions in our [Tools section](/module_guides/deploying/agents/tools/root.md).
+You can learn more about our Tool abstractions in our [Tools section](tools/root.md).
 
 ### Blog Post
 
@@ -38,7 +38,7 @@ By default, our agents expose `query` and `chat` functions that will execute a u
 
 We also offer a **lower-level API** allowing you to perform step-wise execution of an agent. This gives you much more control in being able to create tasks, and analyze + act upon the input/output of each step within a task.
 
-Check out [our guide](/module_guides/deploying/agents/agent_runner.md).
+Check out [our guide](agent_runner.md).
 
 ## Usage Pattern
 
@@ -71,7 +71,7 @@ usage_pattern.md
 
 Learn more about our different agent types and use cases in our module guides below.
 
-Also take a look at our [tools section](/module_guides/deploying/agents/tools/root.md)!
+Also take a look at our [tools section](tools/root.md)!
 
 ```{toctree}
 ---
@@ -85,6 +85,6 @@ modules.md
 maxdepth: 2
 hidden: true
 ---
-/module_guides/deploying/agents/tools/root.md
-/module_guides/deploying/agents/agent_runner.md
+tools/root.md
+agent_runner.md
 ```

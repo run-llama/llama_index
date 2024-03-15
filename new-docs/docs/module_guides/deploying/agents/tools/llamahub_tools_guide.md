@@ -1,7 +1,7 @@
 # LlamaHub Tools Guide
 
 We offer a rich set of Tool Specs that are offered through [LlamaHub](https://llamahub.ai/) 🦙.
-![](/_static/data_connectors/llamahub.png)
+![](../../../../_static/data_connectors/llamahub.png)
 
 These tool specs represent an initial curated list of services that an agent can interact with and enrich its capability to perform different actions.
 

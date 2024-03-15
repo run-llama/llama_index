@@ -109,7 +109,7 @@ postprocessor = SentenceTransformerRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/SentenceTransformerRerank.ipynb).
+Full notebook guide is available [here](../../../examples/node_postprocessor/SentenceTransformerRerank.ipynb).
 
 Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy). The default model is `cross-encoder/ms-marco-TinyBERT-L-2-v2`, which provides the most speed.
 
@@ -125,7 +125,7 @@ postprocessor = LLMRerank(top_n=2, service_context=service_context)
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
+Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
 
 ## FixedRecencyPostprocessor
 
@@ -141,9 +141,9 @@ postprocessor = FixedRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](/_static/node_postprocessors/recency.png)
+![](../../../_static/node_postprocessors/recency.png)
 
-A full notebook guide is available [here](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
+A full notebook guide is available [here](../../..../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
 
 ## EmbeddingRecencyPostprocessor
 
@@ -159,7 +159,7 @@ postprocessor = EmbeddingRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
+A full notebook guide is available [here](../../..../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
 
 ## TimeWeightedPostprocessor
 
@@ -203,7 +203,7 @@ postprocessor = NERPIINodePostprocessor()
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide for both can be found [here](/examples/node_postprocessor/PII.ipynb).
+A full notebook guide for both can be found [here](../../../examples/node_postprocessor/PII.ipynb).
 
 ## (Beta) PrevNextNodePostprocessor
 
@@ -223,7 +223,7 @@ postprocessor = PrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](/_static/node_postprocessors/prev_next.png)
+![](../../../_static/node_postprocessors/prev_next.png)
 
 ## (Beta) AutoPrevNextNodePostprocessor
 
@@ -240,7 +240,7 @@ postprocessor = AutoPrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full example notebook is available [here](/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
+A full example notebook is available [here](../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
 
 ## (Beta) RankGPT
 
@@ -254,7 +254,7 @@ postprocessor = RankGPTRerank(top_n=3, llm=OpenAI(model="gpt-3.5-turbo-16k"))
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Van Gogh](/examples/node_postprocessor/rankGPT.ipynb).
+Full notebook guide is available [her for Van Gogh](../../../examples/node_postprocessor/rankGPT.ipynb).
 
 ## All Notebooks
 
@@ -264,13 +264,13 @@ maxdepth: 1
 ---
 /examples/node_postprocessor/OptimizerDemo.ipynb
 /examples/node_postprocessor/CohereRerank.ipynb
-/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
+../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
 /examples/node_postprocessor/LLMReranker-Gatsby.ipynb
-/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
+../../..../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
 /examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
-/examples/node_postprocessor/PII.ipynb
-/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
+../../../examples/node_postprocessor/PII.ipynb
+../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
 /examples/node_postprocessor/MetadataReplacementDemo.ipynb
 /examples/node_postprocessor/LongContextReorder.ipynb
-/examples/node_postprocessor/rankGPT.ipynb
+../../../examples/node_postprocessor/rankGPT.ipynb
 ```

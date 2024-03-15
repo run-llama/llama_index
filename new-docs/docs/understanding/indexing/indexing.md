@@ -22,7 +22,7 @@ A `vector embedding`, often just called an embedding, is a **numerical represent
 
 This mathematical relationship enables **semantic search**, where a user provides query terms and LlamaIndex can locate text that is related to the **meaning of the query terms** rather than simple keyword matching. This is a big part of how Retrieval-Augmented Generation works, and how LLMs function in general.
 
-There are [many types of embeddings](/module_guides/models/embeddings.md), and they vary in efficiency, effectiveness and computational cost. By default LlamaIndex uses `text-embedding-ada-002`, which is the default embedding used by OpenAI. If you are using different LLMs you will often want to use different embeddings.
+There are [many types of embeddings](../../module_guides/models/embeddings.md), and they vary in efficiency, effectiveness and computational cost. By default LlamaIndex uses `text-embedding-ada-002`, which is the default embedding used by OpenAI. If you are using different LLMs you will often want to use different embeddings.
 
 ### Vector Store Index embeds your documents
 
@@ -34,7 +34,7 @@ When you want to search your embeddings, your query is itself turned into a vect
 
 Once the ranking is complete, VectorStoreIndex returns the most-similar embeddings as their corresponding chunks of text. The number of embeddings it returns is known as `k`, so the parameter controlling how many embeddings to return is known as `top_k`. This whole type of search is often referred to as "top-k semantic retrieval" for this reason.
 
-Top-k retrieval is the simplest form of querying a vector index; you will learn about more complex and subtler strategies when you read the [querying](/understanding/querying/querying.md) section.
+Top-k retrieval is the simplest form of querying a vector index; you will learn about more complex and subtler strategies when you read the [querying](../querying/querying.md) section.
 
 ### Using Vector Store Index
 
@@ -58,7 +58,7 @@ from llama_index.core import VectorStoreIndex
 index = VectorStoreIndex(nodes)
 ```
 
-With your text indexed, it is now technically ready for [querying](/understanding/querying/querying.md)! However, embedding all your text can be time-consuming and, if you are using a hosted LLM, it can also be expensive. To save time and money you will want to [store your embeddings](/understanding/storing/storing.md) first.
+With your text indexed, it is now technically ready for [querying](../querying/querying.md)! However, embedding all your text can be time-consuming and, if you are using a hosted LLM, it can also be expensive. To save time and money you will want to [store your embeddings](../storing/storing.md) first.
 
 ## Summary Index
 

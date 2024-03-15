@@ -43,7 +43,7 @@ A great resource to check on the current best overall embeddings models is the [
 
 **NOTE:** Unlike an LLM (which you can change at any time), if you change your embedding model, you must re-index your data. Furthermore, you should ensure the same embedding model is used for both indexing and querying.
 
-We have a list of [all supported embedding model integrations](/module_guides/models/embeddings.md).
+We have a list of [all supported embedding model integrations](../../module_guides/models/embeddings.md).
 
 ## Chunk Sizes
 
@@ -85,7 +85,7 @@ Embeddings are not perfect, and may fail to return text chunks with matching key
 
 The solution to this issue is often hybrid search. In LlamaIndex, there are two main ways to achieve this:
 
-1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](/module_guides/storing/vector_stores.md)).
+1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](../../../module_guides/storing/vector_stores.md)).
 2. Set up a local hybrid search mechanism with BM25.
 
 Relevant guides with both approaches can be found below:
@@ -123,7 +123,7 @@ index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine(filters=filters)
 ```
 
-If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](/module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
+If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](../../../module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
 
 ```{toctree}
 ---

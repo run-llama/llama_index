@@ -21,7 +21,7 @@ We have confirmed support for the following storage backends:
 - AWS S3
 - Cloudflare R2
 
-![](/_static/storage/storage.png)
+![](../../_static/storage/storage.png)
 
 ## Usage Pattern
 

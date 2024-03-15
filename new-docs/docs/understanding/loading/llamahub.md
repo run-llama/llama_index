@@ -3,7 +3,7 @@
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
 LlamaHub contains a registry of open-source data connectors that you can easily plug into any LlamaIndex application (+ Agent Tools, and Llama Packs).
 
-![](/_static/data_connectors/llamahub.png)
+![](../../_static/data_connectors/llamahub.png)
 
 ## Usage Pattern
 

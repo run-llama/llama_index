@@ -13,9 +13,9 @@ Congratulations! You've loaded your data, indexed it, stored your index, and que
 
 LlamaIndex also provides some tools / project templates to help you build a full-stack template. For instance, [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama) spins up a full-stack scaffold for you.
 
-Check out our [Full-Stack Projects](/community/full_stack_projects.md) page for more details.
+Check out our [Full-Stack Projects](../../community/full_stack_projects.md) page for more details.
 
-We also have the [`llamaindex-cli rag` CLI tool](/use_cases/q_and_a/rag_cli.md) that combines some of the above concepts into an easy to use tool for chatting with files from your terminal!
+We also have the [`llamaindex-cli rag` CLI tool](../../use_cases/q_and_a/rag_cli.md) that combines some of the above concepts into an easy to use tool for chatting with files from your terminal!
 
 ```{toctree}
 ---
@@ -26,5 +26,5 @@ hidden: true
 /understanding/putting_it_all_together/apps.md
 /understanding/putting_it_all_together/chatbots/building_a_chatbot.md
 /understanding/putting_it_all_together/agents.md
-/community/full_stack_projects.md
+../../community/full_stack_projects.md
 ```

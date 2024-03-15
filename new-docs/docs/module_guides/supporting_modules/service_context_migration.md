@@ -21,7 +21,7 @@ Settings.embed_model = HuggingFaceEmbedding(
 
 Now with this settings, you can ensure OpenAI will never be used in the framework.
 
-The `Settings` object supports nearly all the same attributes as the old `ServiceConext`. A complete list can be found in the [docs page](/module_guides/supporting_modules/settings.md).
+The `Settings` object supports nearly all the same attributes as the old `ServiceConext`. A complete list can be found in the [docs page](settings.md).
 
 ### Complete Migration
 

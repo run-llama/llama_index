@@ -56,7 +56,7 @@ Given the response (along with prior responses) and the query, follow-up questio
 
 An example image is shown below.
 
-![](/_static/query_transformations/multi_step_diagram.png)
+![](../../_static/query_transformations/multi_step_diagram.png)
 
 Here's a corresponding example code snippet.
 

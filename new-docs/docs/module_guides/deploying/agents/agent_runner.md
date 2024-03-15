@@ -21,7 +21,7 @@ Some auxiliary classes:
 - `TaskStep`: represents a single step. Feed this in as input to `AgentWorker`, get back a `TaskStepOutput`. Completing a `Task` can involve multiple `TaskStep`.
 - `TaskStepOutput`: Output from a given step execution. Outputs whether or not a task is done.
 
-![](/_static/agents/agent_step_execute.png)
+![](../../../_static/agents/agent_step_execute.png)
 
 ## Benefits
 

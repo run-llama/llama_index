@@ -126,14 +126,14 @@ These notebooks serve as examples how to leverage and integrate Multi-Modal LLM 
 
 | Multi-Modal<br>Vision Models                                                       | Single<br>Image<br>Reasoning | Multiple<br>Images<br>Reasoning | Image<br>Embeddings | Simple<br>Query<br>Engine | Pydantic<br>Structured<br>Output |
 | ---------------------------------------------------------------------------------- | ---------------------------- | ------------------------------- | ------------------- | ------------------------- | -------------------------------- |
-| [GPT4V](/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)<br>(OpenAI API)   | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
-| [GPT4V-Azure](/examples/multi_modal/azure_openai_multi_modal.ipynb)<br>(Azure API) | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
-| [Gemini](/examples/multi_modal/gemini.ipynb)<br>(Google)                           | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
-| [CLIP](/examples/multi_modal/image_to_image_retrieval.ipynb)<br>(Local host)       | 🛑                           | 🛑                              | ✅                  | 🛑                        | 🛑                               |
-| [LLaVa](/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)<br>(replicate)    | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
-| [Fuyu-8B](/examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)        | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
+| [GPT4V](../../../examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)<br>(OpenAI API)   | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
+| [GPT4V-Azure](../../examples/multi_modal/azure_openai_multi_modal.ipynb)<br>(Azure API) | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
+| [Gemini](../../examples/multi_modal/gemini.ipynb)<br>(Google)                           | ✅                           | ✅                              | 🛑                  | ✅                        | ✅                               |
+| [CLIP](../../examples/multi_modal/image_to_image_retrieval.ipynb)<br>(Local host)       | 🛑                           | 🛑                              | ✅                  | 🛑                        | 🛑                               |
+| [LLaVa](../../examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)<br>(replicate)    | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
+| [Fuyu-8B](../../../examples/multi_modal/replicate_multi_modal.ipynb)<br>(replicate)        | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
 | [ImageBind<br>](https://imagebind.metademolab.com/)[To integrate]                  | 🛑                           | 🛑                              | ✅                  | 🛑                        | 🛑                               |
-| [MiniGPT-4<br>](/examples/multi_modal/replicate_multi_modal.ipynb)                 | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
+| [MiniGPT-4<br>](../../../examples/multi_modal/replicate_multi_modal.ipynb)                 | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
 | [CogVLM<br>](https://github.com/THUDM/CogVLM)                                      | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
 | [Qwen-VL<br>](https://arxiv.org/abs/2308.12966)[To integrate]                      | ✅                           | 🛑                              | 🛑                  | ✅                        | ⚠️                               |
 
@@ -142,8 +142,8 @@ These notebooks serve as examples how to leverage and integrate Multi-Modal LLM 
 Below table lists some vector stores supporting Multi-Modal use cases. Our LlamaIndex built-in `MultiModalVectorStoreIndex` supports building separate vector stores for image and text embedding vector stores. `MultiModalRetriever`, and `SimpleMultiModalQueryEngine` support text to text/image and image to image retrieval and simple ranking fusion functions for combining text and image retrieval results.
 | Multi-Modal<br>Vector Stores | Single<br>Vector<br>Store | Multiple<br>Vector<br>Stores | Text<br>Embedding | Image<br>Embedding |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --------------------------- | --------------------------------------------------------- | ------------------------------------------------------- |
-| [LLamaIndex self-built<br>MultiModal Index](/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb) | 🛑 | ✅ | Can be arbitrary<br>text embedding<br>(Default is GPT3.5) | Can be arbitrary<br>Image embedding<br>(Default is CLIP) |
-| [Chroma](/examples/multi_modal/ChromaMultiModalDemo.ipynb) | ✅ | 🛑 | CLIP ✅ | CLIP ✅ |
+| [LLamaIndex self-built<br>MultiModal Index](../../../examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb) | 🛑 | ✅ | Can be arbitrary<br>text embedding<br>(Default is GPT3.5) | Can be arbitrary<br>Image embedding<br>(Default is CLIP) |
+| [Chroma](../../examples/multi_modal/ChromaMultiModalDemo.ipynb) | ✅ | 🛑 | CLIP ✅ | CLIP ✅ |
 | [Weaviate](https://weaviate.io/developers/weaviate/modules/retriever-vectorizer-modules/multi2vec-bind)<br>[To integrate] | ✅ | 🛑 | CLIP ✅<br>ImageBind ✅ | CLIP ✅<br>ImageBind ✅ |
 
 ## Multi-Modal LLM Modules
@@ -155,11 +155,11 @@ We support integrations with GPT4-V, CLIP (OpenAI), BLIP (Salesforce), and Repli
 maxdepth: 1
 ---
 /examples/multi_modal/openai_multi_modal.ipynb
-/examples/multi_modal/gemini.ipynb
-/examples/multi_modal/replicate_multi_modal.ipynb
+../../examples/multi_modal/gemini.ipynb
+../../../examples/multi_modal/replicate_multi_modal.ipynb
 /examples/multi_modal/multi_modal_pydantic.ipynb
 /examples/multi_modal/gpt4v_experiments_cot.ipynb
-/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
+../../examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
 ```
 
 ## Multi-Modal Retrieval Augmented Generation
@@ -170,11 +170,11 @@ We support Multi-Modal Retrieval Augmented Generation with different Multi-Modal
 ---
 maxdepth: 1
 ---
-/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
+../../../examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
 /examples/multi_modal/multi_modal_pdf_tables.ipynb
 /examples/multi_modal/multi_modal_retrieval.ipynb
-/examples/multi_modal/image_to_image_retrieval.ipynb
-/examples/multi_modal/ChromaMultiModalDemo.ipynb
+../../examples/multi_modal/image_to_image_retrieval.ipynb
+../../examples/multi_modal/ChromaMultiModalDemo.ipynb
 ```
 
 ## Evaluation

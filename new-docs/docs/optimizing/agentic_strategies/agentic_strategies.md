@@ -20,9 +20,9 @@ Sub Question Query Engine (Intro) </examples/query_engine/sub_question_query_eng
 
 This guides below show you how to deploy a full agent loop, capable of chain-of-thought and query planning, on top of existing RAG query engines as tools for more advanced decision making.
 
-Make sure to check out our [full module guide on Data Agents](/module_guides/deploying/agents/root.md), which highlight these use cases and much more.
+Make sure to check out our [full module guide on Data Agents](../../module_guides/deploying/agents/root.md), which highlight these use cases and much more.
 
-Our [lower-level agent API](/module_guides/deploying/agents/agent_runner.md) shows you the internals of how an agent works (with step-wise execution).
+Our [lower-level agent API](../../module_guides/deploying/agents/agent_runner.md) shows you the internals of how an agent works (with step-wise execution).
 
 Example guides below (using OpenAI function calling):
 

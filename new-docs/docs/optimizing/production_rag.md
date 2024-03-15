@@ -26,7 +26,7 @@ Check out [this Tweet thread](https://twitter.com/jerryjliu0/status/169293102896
 
 A key technique for better retrieval is to decouple chunks used for retrieval with those that are used for synthesis.
 
-![](/_static/production_rag/decouple_chunks.png)
+![](../_static/production_rag/decouple_chunks.png)
 
 #### Motivation
 
@@ -69,7 +69,7 @@ maxdepth: 1
 
 ## Structured Retrieval for Larger Document Sets
 
-![](/_static/production_rag/structured_retrieval.png)
+![](../_static/production_rag/structured_retrieval.png)
 
 #### Motivation
 
@@ -108,7 +108,7 @@ maxdepth: 1
 
 ## Dynamically Retrieve Chunks Depending on your Task
 
-![](/_static/production_rag/joint_qa_summary.png)
+![](../_static/production_rag/joint_qa_summary.png)
 
 #### Motivation
 
@@ -116,7 +116,7 @@ RAG isn't just about question-answering about specific facts, which top-k simila
 
 #### Key Techniques
 
-LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](/module_guides/querying/router/root.md) module as well as our [data agent](/module_guides/deploying/agents/root.md) module.
+LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](../module_guides/querying/router/root.md) module as well as our [data agent](../module_guides/deploying/agents/root.md) module.
 This also includes some advanced query engine modules.
 This also include other modules that join structured and unstructured data.
 
@@ -124,9 +124,9 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Core Module Resources**
 
-- [Query engine](/module_guides/deploying/query_engine/root.md)
-- [Agents](/module_guides/deploying/agents/root.md)
-- [Router](/module_guides/querying/router/root.md)
+- [Query engine](../module_guides/deploying/query_engine/root.md)
+- [Agents](../module_guides/deploying/agents/root.md)
+- [Router](../module_guides/querying/router/root.md)
 
 **Detailed Guide Resources**
 

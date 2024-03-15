@@ -34,7 +34,7 @@ By default, we use the OpenAI `gpt-3.5-turbo` model for text generation and `tex
 You can obtain an API key by logging into your OpenAI account and [and creating a new API key](https://platform.openai.com/account/api-keys).
 
 ```{tip}
-You can also [use one of many other available LLMs](/module_guides/models/llms/usage_custom.md). You may
+You can also [use one of many other available LLMs](../module_guides/models/llms/usage_custom.md). You may
 need additional environment keys + tokens setup depending on the LLM provider.
 ```
 
@@ -52,9 +52,9 @@ pip install llama-index-core llama-index-readers-file llama-index-llms-ollama ll
 
 [Check out our Starter Example with Local Models](starter_example_local.md)
 
-A full guide to using and configuring LLMs is available [here](/module_guides/models/llms.md).
+A full guide to using and configuring LLMs is available [here](../module_guides/models/llms.md).
 
-A full guide to using and configuring embedding models is available [here](/module_guides/models/embeddings.md).
+A full guide to using and configuring embedding models is available [here](../module_guides/models/embeddings.md).
 
 ## Installation from Source
 

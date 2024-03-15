@@ -111,10 +111,10 @@ Settings.num_output = 256
 
 ```{tip}
 Learn how to configure specific modules:
-- [LLM](/module_guides/models/llms/usage_custom.md)
-- [Embedding Model](/module_guides/models/embeddings.md)
-- [Node Parser/Text Splitters](/module_guides/loading/node_parsers/root.md)
-- [Callbacks](/module_guides/observability/callbacks/root.md)
+- [LLM](../models/llms/usage_custom.md)
+- [Embedding Model](../models/embeddings.md)
+- [Node Parser/Text Splitters](../loading/node_parsers/root.md)
+- [Callbacks](../observability/callbacks/root.md)
 ```
 
 ## Setting local configurations

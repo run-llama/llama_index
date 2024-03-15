@@ -99,7 +99,7 @@ storage_context = llama_index.core.global_handler.load_storage_context(
 )
 ```
 
-![](/_static/integrations/wandb.png)
+![](../../_static/integrations/wandb.png)
 
 #### Guides
 
@@ -132,7 +132,7 @@ maxdepth: 1
 /examples/callbacks/OpenLLMetry.ipynb
 ```
 
-![](/_static/integrations/openllmetry.png)
+![](../../_static/integrations/openllmetry.png)
 
 ### Arize Phoenix
 
@@ -162,7 +162,7 @@ llama_index.core.set_global_handler("arize_phoenix")
 ...
 ```
 
-![](/_static/integrations/arize_phoenix.png)
+![](../../_static/integrations/arize_phoenix.png)
 
 #### Guides
 
@@ -231,7 +231,7 @@ tru_query_engine = TruLlama(query_engine)
 tru_query_engine.query("What did the author do growing up?")
 ```
 
-![](/_static/integrations/trulens.png)
+![](../../_static/integrations/trulens.png)
 
 #### Guides
 
@@ -274,8 +274,8 @@ from llama_index.core import Settings
 # Settings.callback_manager = CallbackManager([hh_tracer])
 ```
 
-![](/_static/integrations/honeyhive.png)
-![](/_static/integrations/perfetto.png)
+![](../../_static/integrations/honeyhive.png)
+![](../../_static/integrations/perfetto.png)
 _Use Perfetto to debug and analyze your HoneyHive traces_
 
 #### Guides

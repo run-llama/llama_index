@@ -123,7 +123,7 @@ agent = AgentRunner(openai_step_engine)
 
 This is also the preferred format for custom agents.
 
-Check out the [lower-level agent guide](/module_guides/deploying/agents/agent_runner.md) for more details.
+Check out the [lower-level agent guide](agent_runner.md) for more details.
 
 ## Customizing your Agent
 
@@ -140,7 +140,7 @@ class MyAgentWorker(CustomSimpleAgentWorker):
     pass
 ```
 
-Check out our [Custom Agent Notebook Guide](/examples/agent/custom_agent.ipynb) for more details.
+Check out our [Custom Agent Notebook Guide](../../../examples/agent/custom_agent.ipynb) for more details.
 
 ## Advanced Concepts (for `OpenAIAgent`, in beta)
 

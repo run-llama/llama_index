@@ -1,7 +1,7 @@
 # Using LLMs
 
 ```{tip}
-For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/module_guides/models/llms.md).
+For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](../../module_guides/models/llms.md).
 ```
 
 One of the first steps when building an LLM-based application is which LLM to use; you can also use more than one if you wish.
@@ -40,12 +40,12 @@ index = VectorStoreIndex.from_documents(
 In this case, you've instantiated OpenAI and customized it to use the `gpt-4` model instead of the default `gpt-3.5-turbo`, and also modified the `temperature`. The `VectorStoreIndex` will now use gpt-4 to answer questions when querying.
 
 ```{tip}
-The `Settings` is a bundle of configuration data that you pass into different parts of LlamaIndex. You can [learn more about Settings](/module_guides/supporting_modules/settings.md) and how to customize it.
+The `Settings` is a bundle of configuration data that you pass into different parts of LlamaIndex. You can [learn more about Settings](../../module_guides/supporting_modules/settings.md) and how to customize it.
 ```
 
 ## Available LLMs
 
-We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](/module_guides/models/llms.md) for a full list, including how to run a local model.
+We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](../../module_guides/models/llms.md) for a full list, including how to run a local model.
 
 ### Using a local LLM
 
@@ -60,11 +60,11 @@ from llama_index.core import Settings
 Settings.llm = Ollama(model="llama2", request_timeout=60.0)
 ```
 
-See the [custom LLM's How-To](/module_guides/models/llms/usage_custom.md) for more details.
+See the [custom LLM's How-To](../../module_guides/models/llms/usage_custom.md) for more details.
 
 ## Prompts
 
-By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/models/prompts.md)
+By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](../../module_guides/models/prompts.md)
 
 ```{toctree}
 ---

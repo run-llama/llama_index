@@ -18,7 +18,7 @@ See the sections below for an overview of output parsers and Pydantic programs.
 
 Here we describe the different components of an LLM-powered structured output function. The pipeline depends on whether you're using a **generic LLM text completion API** or an **LLM function calling API**.
 
-![](/_static/structured_output/diagram1.png)
+![](../../../_static/structured_output/diagram1.png)
 
 With generic completion APIs, the inputs and outputs are handled by text prompts. The output parser plays a role before and after the LLM call in ensuring structured outputs. Before the LLM call, the output parser can
 append format instructions to the prompt. After the LLM call, the output parser can parse the output to the specified instructions.

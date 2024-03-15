@@ -5,7 +5,7 @@ Currently the following LlamaIndex modules are supported within a QueryPipeline.
 ### LLMs (both completion and chat)
 
 - Base class: `LLM`
-- [Module Guide](/module_guides/models/llms.md)
+- [Module Guide](../../models/llms.md)
 - If chat model:
   - Input: `messages`. Takes in any `List[ChatMessage]` or any stringable input.
   - Output: `output`. Outputs `ChatResponse` (stringable)
@@ -16,42 +16,42 @@ Currently the following LlamaIndex modules are supported within a QueryPipeline.
 ### Prompts
 
 - Base class: `PromptTemplate`
-- [Module Guide](/module_guides/models/prompts.md)
+- [Module Guide](../../models/prompts.md)
 - Input: Prompt template variables. Each variable can be a stringable input.
 - Output: `output`. Outputs formatted prompt string (stringable)
 
 ### Query Engines
 
 - Base class: `BaseQueryEngine`
-- [Module Guide](/module_guides/deploying/query_engine/root.md)
+- [Module Guide](../../deploying/query_engine/root.md)
 - Input: `input`. Takes in any stringable input.
 - Output: `output`. Outputs `Response` (stringable)
 
 ### Query Transforms
 
 - Base class: `BaseQueryTransform`
-- [Module Guide](/optimizing/advanced_retrieval/query_transformations.md)
+- [Module Guide](../../../optimizing/advanced_retrieval/query_transformations.md)
 - Input: `query_str`, `metadata` (optional). `query_str` is any stringable input.
 - Output: `query_str`. Outputs string.
 
 ### Retrievers
 
 - Base class: `BaseRetriever`
-- [Module Guide](/module_guides/querying/retriever/root.md)
+- [Module Guide](../retriever/root.md)
 - Input: `input`. Takes in any stringable input.
 - Output: `output`. Outputs list of nodes `List[BaseNode]`.
 
 ### Output Parsers
 
 - Base class: `BaseOutputParser`
-- [Module Guide](/module_guides/querying/structured_outputs/output_parser.md)
+- [Module Guide](../structured_outputs/output_parser.md)
 - Input: `input`. Takes in any stringable input.
 - Output: `output`. Outputs whatever type output parser is supposed to parse out.
 
 ### Postprocessors/Rerankers
 
 - Base class: `BaseNodePostprocessor`
-- [Module Guide](/module_guides/querying/node_postprocessors/root.md)
+- [Module Guide](../node_postprocessors/root.md)
 - Input: `nodes`, `query_str` (optional). `nodes` is `List[BaseNode]`, `query_str` is any stringable input.
 - Output: `nodes`. Outputs list of nodes `List[BaseNode]`.
 

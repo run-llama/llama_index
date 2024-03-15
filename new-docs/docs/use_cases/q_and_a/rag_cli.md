@@ -14,7 +14,7 @@ To set-up the CLI tool, make sure you've installed the library:
 
 `$ pip install -U llama-index`
 
-You will also need to install [Chroma](/examples/vector_stores/ChromaIndexDemo.ipynb):
+You will also need to install [Chroma](../../examples/vector_stores/ChromaIndexDemo.ipynb):
 
 `$ pip install -U chromadb`
 
@@ -90,7 +90,7 @@ If you choose the option `Generate code, install dependencies, and run the app (
 
 ### Supported File Types
 
-Internally, the `rag` CLI tool uses the [SimpleDirectoryReader](/api/llama_index.readers.SimpleDirectoryReader.rst) to parse the raw files in your local filesystem into strings.
+Internally, the `rag` CLI tool uses the [SimpleDirectoryReader](../../module_guides/loading/simpledirectoryreader.md) to parse the raw files in your local filesystem into strings.
 
 This module has custom readers for a wide variety of file types. Some of those may require that you `pip install` another module that is needed for parsing that particular file type.
 
@@ -100,7 +100,7 @@ See the next section for information on how to add your own custom file readers 
 
 ## Customization
 
-The `rag` CLI tool is highly customizable! The tool is powered by combining the [`IngestionPipeline`](/module_guides/loading/ingestion_pipeline/root.md) & [`QueryPipeline`](/module_guides/querying/pipeline/root.md) modules within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama_index/command_line/rag.py) module.
+The `rag` CLI tool is highly customizable! The tool is powered by combining the [`IngestionPipeline`](../../module_guides/loading/ingestion_pipeline/root.md) & [`QueryPipeline`](../../module_guides/querying/pipeline/root.md) modules within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama_index/command_line/rag.py) module.
 
 To create your own custom rag CLI tool, you can simply create a script that instantiates the `RagCLI` class with a `IngestionPipeline` & `QueryPipeline` that you've configured yourself. From there, you can simply run `rag_cli_instance.cli()` in your script to run the same ingestion and Q&A commands against your own choice of embedding models, LLMs, vector DBs, etc.
 

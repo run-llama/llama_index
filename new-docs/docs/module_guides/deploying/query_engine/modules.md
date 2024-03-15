@@ -2,7 +2,7 @@
 
 ## Basic
 
-First, check out our [module guide on Indexes](/module_guides/indexing/modules.md) for in-depth guides for each index (vector index, summary index, knowledge graph index). Each index corresponds to a default query engine for that index.
+First, check out our [module guide on Indexes](../../indexing/modules.md) for in-depth guides for each index (vector index, summary index, knowledge graph index). Each index corresponds to a default query engine for that index.
 
 Then check out the rest of the sections below.
 

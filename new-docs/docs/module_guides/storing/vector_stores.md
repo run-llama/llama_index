@@ -52,7 +52,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Upstash                  | cloud               |                    |               |        | ✓               |       |
 | Weaviate                 | self-hosted / cloud | ✓                  | ✓             | ✓      | ✓               |       |
 
-For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
+For more details, see [Vector Store Integrations](../../community/integrations/vector_stores.md).
 
 ```{toctree}
 ---

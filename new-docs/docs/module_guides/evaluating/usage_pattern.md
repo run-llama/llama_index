@@ -69,7 +69,7 @@ eval_result = evaluator.evaluate_response(response=response)
 print(str(eval_result.passing))
 ```
 
-![](/_static/evaluation/eval_response_context.png)
+![](../../_static/evaluation/eval_response_context.png)
 
 You can also choose to evaluate each source context individually:
 
@@ -130,7 +130,7 @@ eval_result = evaluator.evaluate_response(query=query, response=response)
 print(str(eval_result))
 ```
 
-![](/_static/evaluation/eval_query_response_context.png)
+![](../../_static/evaluation/eval_query_response_context.png)
 
 Similarly, you can also evaluate on a specific source node.
 
@@ -162,7 +162,7 @@ for source_node in response.source_nodes:
     print(str(eval_result.passing))
 ```
 
-![](/_static/evaluation/eval_query_sources.png)
+![](../../_static/evaluation/eval_query_sources.png)
 
 ## Question Generation
 

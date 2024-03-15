@@ -31,7 +31,7 @@ This video covers managing documents from a source that is constantly updating (
 
 [Notebook and Supplementary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
 
-[Reference Docs](/module_guides/indexing/document_management.md)
+[Reference Docs](../module_guides/indexing/document_management.md)
 
 ## Joint Text to SQL and Semantic Search
 

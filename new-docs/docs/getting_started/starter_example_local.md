@@ -68,7 +68,7 @@ print(response)
 
 This creates an engine for Q&A over your index and asks a simple question. You should get back a response similar to the following: `The author wrote short stories and tried to program on an IBM 1401.`
 
-You can view logs, persist/load the index similar to our [starter example](/getting_started/starter_example.md).
+You can view logs, persist/load the index similar to our [starter example](starter_example.md).
 
 ```{admonition} Next Steps
 * learn more about the [high-level concepts](/getting_started/concepts.md).

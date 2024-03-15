@@ -94,7 +94,7 @@ print(refreshed_docs)
 
 This is most useful when you are reading from a directory that is constantly updating with new information.
 
-To automatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. You can learn more about [customzing Documents](/module_guides/loading/documents_and_nodes/usage_documents.md).
+To automatically set the doc `id_` when using the `SimpleDirectoryReader`, you can set the `filename_as_id` flag. You can learn more about [customzing Documents](../loading/documents_and_nodes/usage_documents.md).
 
 ## Document Tracking
 
@@ -112,4 +112,4 @@ print(index.ref_doc_info)
 
 Each entry in the output shows the ingested doc `id_`s as keys, and their associated `node_ids` of the nodes they were split into.
 
-Lastly, the original `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](/module_guides/loading/documents_and_nodes/usage_documents.md).
+Lastly, the original `metadata` dictionary of each input document is also tracked. You can read more about the `metadata` attribute in [Customizing Documents](../loading/documents_and_nodes/usage_documents.md).

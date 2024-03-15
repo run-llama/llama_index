@@ -13,7 +13,7 @@ response = query_engine.query("Summarize the documents.")
 
 Under the hood, LlamaIndex also supports a swappable **storage layer** that allows you to customize where ingested documents (i.e., `Node` objects), embedding vectors, and index metadata are stored.
 
-![](/_static/storage/storage.png)
+![](../../_static/storage/storage.png)
 
 ### Low-Level API
 

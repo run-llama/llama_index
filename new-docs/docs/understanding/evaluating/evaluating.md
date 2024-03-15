@@ -2,7 +2,7 @@
 
 Evaluation and benchmarking are crucial concepts in LLM development. To improve the performance of an LLM app (RAG, agents), you must have a way to measure it.
 
-LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality. You can learn more about how evaluation works in LlamaIndex in our [module guides](/module_guides/evaluating/root.md).
+LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality. You can learn more about how evaluation works in LlamaIndex in our [module guides](../../module_guides/evaluating/root.md).
 
 ## Response Evaluation
 
@@ -34,7 +34,7 @@ print(str(eval_result.passing))
 
 The response contains both the response and the source from which the response was generated; the evaluator compares them and determines if the response is faithful to the source.
 
-You can learn more in our module guides about [response evaluation](/module_guides/evaluating/usage_pattern.md).
+You can learn more in our module guides about [response evaluation](../../module_guides/evaluating/usage_pattern.md).
 
 ## Retrieval Evaluation
 
@@ -58,16 +58,16 @@ retriever_evaluator.evaluate(
 
 This compares what was retrieved for the query to a set of nodes that were expected to be retrieved.
 
-In reality you would want to evaluate a whole batch of retrievals; you can learn how do this in our module guide on [retrieval evaluation](/module_guides/evaluating/usage_pattern_retrieval.md).
+In reality you would want to evaluate a whole batch of retrievals; you can learn how do this in our module guide on [retrieval evaluation](../../module_guides/evaluating/usage_pattern_retrieval.md).
 
 ## Related concepts
 
-You may be interested in [analyzing the cost of your application](/understanding/evaluating/cost_analysis/root.md) if you are making calls to a hosted, remote LLM.
+You may be interested in [analyzing the cost of your application](cost_analysis/root.md) if you are making calls to a hosted, remote LLM.
 
 ```{toctree}
 ---
 maxdepth: 1
 hidden: true
 ---
-/understanding/evaluating/cost_analysis/root.md
+cost_analysis/root.md
 ```

@@ -9,7 +9,7 @@ query_engine = index.as_query_engine()
 ```
 
 ```{tip}
-To learn how to build an index, see [Indexing](/module_guides/indexing/indexing.md)
+To learn how to build an index, see [Indexing](../../indexing/indexing.md)
 ```
 
 Ask a question over your data
@@ -95,7 +95,7 @@ streaming_response = query_engine.query(
 streaming_response.print_response_stream()
 ```
 
-- Read the full [streaming guide](/module_guides/deploying/query_engine/streaming.md)
+- Read the full [streaming guide](streaming.md)
 - See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
 
 ## Defining a Custom Query Engine
@@ -121,4 +121,4 @@ class RAGQueryEngine(CustomQueryEngine):
         return response_obj
 ```
 
-See the [Custom Query Engine guide](/examples/query_engine/custom_query_engine.ipynb) for more details.
+See the [Custom Query Engine guide](../../../examples/query_engine/custom_query_engine.ipynb) for more details.

@@ -2,7 +2,7 @@
 
 Vector Stores are a key component of retrieval-augmented generation (RAG) and so you will end up using them in nearly every application you make using LlamaIndex, either directly or indirectly.
 
-Vector stores accept a list of [`Node` objects](/module_guides/loading/documents_and_nodes/root.md) and build an index from them
+Vector stores accept a list of [`Node` objects](../loading/documents_and_nodes/root.md) and build an index from them
 
 ## Loading data into the index
 
@@ -24,9 +24,9 @@ index = VectorStoreIndex.from_documents(documents)
 If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
 ```
 
-When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](/module_guides/loading/documents_and_nodes/root.md), lightweight abstractions over text strings that keep track of metadata and relationships.
+When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/root.md), lightweight abstractions over text strings that keep track of metadata and relationships.
 
-For more on how to load documents, see [Understanding Loading](/module_guides/loading/loading.md).
+For more on how to load documents, see [Understanding Loading](../loading/loading.md).
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
@@ -61,12 +61,12 @@ nodes = pipeline.run(documents=[Document.example()])
 ```
 
 ```{tip}
-You can learn more about [how to use the ingestion pipeline](/module_guides/loading/ingestion_pipeline/root.md).
+You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/root.md).
 ```
 
 ### Creating and managing nodes directly
 
-If you want total control over your index you can [create and define nodes manually](/module_guides/loading/documents_and_nodes/usage_nodes.md) and pass them directly to the index constructor:
+If you want total control over your index you can [create and define nodes manually](../loading/documents_and_nodes/usage_nodes.md) and pass them directly to the index constructor:
 
 ```python
 from llama_index.core.schema import TextNode
@@ -91,7 +91,7 @@ document_management.md
 
 ## Storing the vector index
 
-LlamaIndex supports [dozens of vector stores](/module_guides/storing/vector_stores.md). You can specify which one to use by passing in a `StorageContext`, on which in turn you specify the `vector_store` argument, as in this example using Pinecone:
+LlamaIndex supports [dozens of vector stores](../storing/vector_stores.md). You can specify which one to use by passing in a `StorageContext`, on which in turn you specify the `vector_store` argument, as in this example using Pinecone:
 
 ```python
 import pinecone
@@ -124,7 +124,7 @@ index = VectorStoreIndex.from_documents(
 
 For more examples of how to use VectorStoreIndex, see our [vector store index usage examples notebook](./vector_store_guide.ipynb).
 
-For examples of how to use VectorStoreIndex with specific vector stores, check out our [vector stores](/module_guides/storing/vector_stores.md) section under Loading.
+For examples of how to use VectorStoreIndex with specific vector stores, check out our [vector stores](../storing/vector_stores.md) section under Loading.
 
 ```{toctree}
 ---

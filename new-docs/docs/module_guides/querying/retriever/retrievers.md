@@ -5,7 +5,7 @@ In the meanwhile, please take a look at the [API References](/api_reference/quer
 
 ## Index Retrievers
 
-Please see [the retriever modes](/module_guides/querying/retriever/retriever_modes.md) for more details on how to get a retriever from any given index.
+Please see [the retriever modes](retriever_modes.md) for more details on how to get a retriever from any given index.
 
 If you want to import the corresponding retrievers directly, please check out our [API reference](/api_reference/query/retrievers.rst).
 
