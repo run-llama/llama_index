@@ -3,7 +3,7 @@
 **NOTE:**
 
 The tooling and integrations mentioned in this page is considered legacy. Observability
-is now being handled via the `instrumentation` module (available in v0.10.20 and later.)
+is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
 
 LlamaIndex provides **one-click observability** 🔭 to allow you to build principled LLM applications in a production setting.
 

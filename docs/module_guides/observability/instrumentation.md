@@ -231,7 +231,15 @@ Notebook Guides:
 ---
 maxdepth: 1
 ---
----
 /examples/instrumentation/basic_usage.ipynb
 /examples/instrumentation/observe_api_calls.ipynb
+```
+
+## API Reference
+
+```{toctree}
+---
+maxdepth: 1
+---
+/api_reference/instrumentation.rst
 ```
