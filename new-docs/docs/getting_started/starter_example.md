@@ -1,4 +1,4 @@
-# Starter Tutorial
+# Starter Tutorial (OpenAI)
 
 ```{tip}
 Make sure you've followed the [installation](installation.md) steps first.

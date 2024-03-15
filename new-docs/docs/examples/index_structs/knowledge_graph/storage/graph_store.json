@@ -1,0 +1,141 @@
+{
+  "graph_dict": {
+    "I": [
+      ["wrote", "short stories"],
+      ["wrote", "programs"],
+      ["applied to", "grad schools"],
+      ["realized that", "AI was a hoax"],
+      ["took art classes at", "Harvard"],
+      ["was in a PhD program in", "computer science"],
+      ["applied to", "RISD"],
+      ["applied to", "Accademia di Belli Arti"],
+      ["remember that I answered", "essay question by writing about Cezanne"],
+      ["was quitting to", "paint"],
+      ["had burned", "4 years"],
+      ["resumed", "life"],
+      ["was", "rich"],
+      ["would tell", "them"],
+      ["went straight from", "batch processing"],
+      ["went straight from", "microcomputers"]
+    ],
+    "microcomputers": [["changed", "everything"]],
+    "TRS-80": [["was", "gold standard"]],
+    "SHRDLU": [["is", "intelligent computer"]],
+    "Terry Winograd": [["using", "SHRDLU"]],
+    "Its brokenness": [["generated", "opportunities"]],
+    "Computer Science": [["is", "uneasy alliance"]],
+    "building things": [["is", "more exciting"]],
+    "programs": [["are", "obsolete"]],
+    "paintings": [["last", "hundreds of years"]],
+    "The students and faculty": [
+      ["would adhere outwardly", "to the conventions of a 19th century atelier"]
+    ],
+    "you": [["want to", "paint"]],
+    "still life": [["you can copy", "pixel by pixel"]],
+    "Interleaf": [
+      ["is", "company"],
+      ["makes software for", "creating documents"]
+    ],
+    "technology companies": [["is better run by", "product people"]],
+    "code": [["is edited by too many people", "leads to bugs"]],
+    "cheap office space": [["is no bargain if", "depressing"]],
+    "planned meetings": [["are inferior to", "corridor conversations"]],
+    "Asterix comics": [
+      ["begin with", "zooming in on a tiny corner"],
+      ["turn out not to be controlled by", "the Romans"]
+    ],
+    "Yorkville": [
+      ["is", "tiny corner"],
+      ["wasn't", "rich"]
+    ],
+    "web": [
+      ["would be", "big deal"],
+      ["would", "do the same for the internet"]
+    ],
+    "software": [
+      ["ran on", "server"],
+      ["had three main parts", "editor"],
+      ["was written by", "I"],
+      ["was written by", "Robert"],
+      ["was written by", "Trevor"],
+      ["can launch", "as soon as it's done"]
+    ],
+    "web app": [["common", "now"]],
+    "graduate student stipend": [["is", "seed funding"]],
+    "WYSIWYG site builder": [["is", "site builder"]],
+    "growth rate": [
+      ["is ultimate test of", "startup"],
+      ["takes care of", "absolute number"]
+    ],
+    "Yahoo": [["bought", "Viaweb"]],
+    "Viaweb": [
+      ["was", "profitable"],
+      ["was", "growing rapidly"]
+    ],
+    "real estate agents": [["is", "Cambridge of New York"]],
+    "Lisp": [
+      ["would be", "dialect"],
+      ["would hide", "parentheses"],
+      ["has dialects", ""],
+      ["has dialects", ""],
+      ["has dialects", ""],
+      ["is", "language"],
+      ["defined by", "writing an interpreter"],
+      ["missing a lot of things", "added"]
+    ],
+    "O'Reilly": [
+      ["publishes", "essays"],
+      ["started publishing", "essays"],
+      ["essays", "online"]
+    ],
+    "Hackers & Painters": [["is", "book"]],
+    "Maria Daniels": [["is", "friend"]],
+    "Jessica Livingston": [["is", "author"]],
+    "waste their time": [["is great spur to", "imagination"]],
+    "the Harvard Computer Society": [["asked", "me"]],
+    "YC": [
+      ["is", "fund"],
+      ["is", "organization"],
+      ["helps", "startups"],
+      ["grew", "quickly"],
+      ["started to notice", "other advantages"],
+      ["became", "full-time job"],
+      ["is", "cool thing"],
+      ["Sam Altman took over", "2013"],
+      ["was controlled by LLC", "2013"],
+      ["became fund for", "couple years"],
+      ["became fund for", "2009"],
+      ["became fund for", "because getting so big"],
+      ["went back to being", "self-funded"],
+      ["went back to being", "after Heroku got bought"]
+    ],
+    "SFP": [
+      ["is", "Summer Founders Program"],
+      ["posted an announcement on my site", "inviting undergrads to apply"]
+    ],
+    "Hacker News": [
+      ["was founded by", "Paul Graham"],
+      ["is", "a website"]
+    ],
+    "Robert Morris": [["offered", "unsolicited advice"]],
+    "McCarthy": [
+      ["tested", "interpreter"],
+      ["wrote", "Bel"]
+    ],
+    "Paul Graham": [
+      ["wrote", "essay"],
+      ["moved to", "England"],
+      ["worked on", "Bel"]
+    ],
+    "online store builder": [["has to launch", "privately"]],
+    "Lisp expressions": [["editing", "code editor"]],
+    "Y Combinator": [
+      ["renamed to", "Y Combinator"],
+      ["renamed to", "lambda calculus"]
+    ],
+    "HN": [
+      ["edge case", "bizarre"],
+      ["edge case", "when you both write essays and run a forum"]
+    ]
+  }
+}

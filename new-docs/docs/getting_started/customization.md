@@ -1,9 +1,9 @@
-# Customization Tutorial
+# Frequently Asked Questions (FAQ)
 
 !!! tip
     If you haven't already, [install LlamaIndex](installation.html) and complete the [starter tutorial](starter_example.html). If you run into terms you don't recognize, check out the [high-level concepts](concepts.html>).
 
-In this tutorial, we start with the code you wrote for the [starter example](starter_example.html>) and show you the most common ways you might want to customize it for your use case:
+In this section, we start with the code you wrote for the [starter example](starter_example.html>) and show you the most common ways you might want to customize it for your use case:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
