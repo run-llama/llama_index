@@ -5,7 +5,7 @@ from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base.response.schema import RESPONSE_TYPE
-from llama_index.core.schema import TextNode, NodeWithScore
+from llama_index.core.schema import TextNode, NodeWithScore, QueryBundle
 from llama_index.core.response_synthesizers import (
     BaseSynthesizer,
     ResponseMode,
@@ -78,14 +78,14 @@ class NetworkQueryEngine(BaseQueryEngine):
         """Get prompt sub-modules."""
         return {"response_synthesizer": self._response_synthesizer}
 
-    def _query(self, query: str) -> RESPONSE_TYPE:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
             results = []
             async_tasks = [
-                contributor.aquery(query) for contributor in self._contributors
+                contributor.aquery(query_bundle) for contributor in self._contributors
             ]
             results = run_async_tasks(async_tasks)
 
@@ -96,7 +96,7 @@ class NetworkQueryEngine(BaseQueryEngine):
                 for el in results
             ]
             response = self._response_synthesizer.synthesize(
-                query=query,
+                query=query_bundle,
                 nodes=nodes,
             )
 
@@ -104,15 +104,15 @@ class NetworkQueryEngine(BaseQueryEngine):
 
         return response
 
-    async def _aquery(self, query: str) -> RESPONSE_TYPE:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query}
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
         ) as query_event:
             # go through all clients
             query_tasks = []
             for contributor in self._contributors:
-                query_tasks += [contributor.aquery(query)]
+                query_tasks += [contributor.aquery(query_bundle)]
 
             results = await asyncio.gather(*query_tasks)
             nodes = [
@@ -122,7 +122,7 @@ class NetworkQueryEngine(BaseQueryEngine):
                 for el in results
             ]
             response = await self._response_synthesizer.asynthesize(
-                query=query,
+                query=query_bundle,
                 nodes=nodes,
             )
 
