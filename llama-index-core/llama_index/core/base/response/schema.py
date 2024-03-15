@@ -1,11 +1,11 @@
 """Response schema."""
-
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import NodeWithScore
-from llama_index.core.types import TokenGen
+from llama_index.core.types import TokenGen, TokenAsyncGen
 from llama_index.core.utils import truncate_text
 
 
@@ -139,4 +139,66 @@ class StreamingResponse:
         return "\n\n".join(texts)
 
 
-RESPONSE_TYPE = Union[Response, StreamingResponse, PydanticResponse]
+@dataclass
+class AsyncStreamingResponse:
+    """AsyncStreamingResponse object.
+
+    Returned if streaming=True while using async.
+
+    Attributes:
+        async_response_gen: The response async generator.
+
+    """
+
+    async_response_gen: TokenAsyncGen
+    source_nodes: List[NodeWithScore] = field(default_factory=list)
+    metadata: Optional[Dict[str, Any]] = None
+    response_txt: Optional[str] = None
+    _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
+    async def _yield_response(self) -> TokenAsyncGen:
+        """Yield the string response."""
+        async with self._lock:
+            if self.response_txt is None and self.async_response_gen is not None:
+                self.response_txt = ""
+                async for text in self.async_response_gen:
+                    self.response_txt += text
+                    yield text
+            else:
+                yield self.response_txt
+
+    async def async_response_gen(self) -> TokenAsyncGen:
+        """Yield the string response."""
+        async for text in self._yield_response():
+            yield text
+
+    async def get_response(self) -> Response:
+        """Get a standard response object."""
+        async for _ in self._yield_response():
+            ...
+        return Response(self.response_txt, self.source_nodes, self.metadata)
+
+    async def print_response_stream(self) -> None:
+        """Print the response stream."""
+        streaming = True
+        async for text in self._yield_response():
+            print(text, end="", flush=True)
+        # do an empty print to print on the next line again next time
+        print()
+
+    def get_formatted_sources(self, length: int = 100, trim_text: int = True) -> str:
+        """Get formatted sources text."""
+        texts = []
+        for source_node in self.source_nodes:
+            fmt_text_chunk = source_node.node.get_content()
+            if trim_text:
+                fmt_text_chunk = truncate_text(fmt_text_chunk, length)
+            node_id = source_node.node.node_id or "None"
+            source_text = f"> Source (Node id: {node_id}): {fmt_text_chunk}"
+            texts.append(source_text)
+        return "\n\n".join(texts)
+
+
+RESPONSE_TYPE = Union[
+    Response, StreamingResponse, AsyncStreamingResponse, PydanticResponse
+]
