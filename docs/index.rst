@@ -157,6 +157,7 @@ Associated projects
    module_guides/storing/storing.md
    module_guides/querying/querying.md
    module_guides/deploying/agents/root.md
+   module_guides/observability/instrumentation.md
    module_guides/observability/observability.md
    module_guides/evaluating/root.md
    module_guides/supporting_modules/supporting_modules.md
