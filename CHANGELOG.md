@@ -4,6 +4,7 @@
 
 ### `llama-index-core` [0.10.20]
 
+- New `instrumentation` module for observability (#11831)
 - Allow passing in LLM for `CitationQueryEngine` (#11914)
 - Updated keyval docstore to allow changing suffix in addition to namespace (#11873)
 - Add (some) async streaming support to query_engine #11949
