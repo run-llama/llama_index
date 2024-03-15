@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union, AsyncGenerator
+from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator
 
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
