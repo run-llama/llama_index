@@ -205,11 +205,17 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
         if len(nodes) == 0:
             if self._streaming:
-                self.dispatcher.event(SynthesizeEndEvent)
-                return StreamingResponse(response_gen=empty_response_generator())
+                empty_response = StreamingResponse(
+                    response_gen=empty_response_generator()
+                )
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=empty_response)
+                )
             else:
-                self.dispatcher.event(SynthesizeEndEvent)
-                return Response("Empty Response")
+                empty_response = Response("Empty Response")
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=empty_response)
+                )
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
@@ -246,15 +252,17 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         dispatcher.event(SynthesizeStartEvent(query=query))
         if len(nodes) == 0:
             if self._streaming:
-                empty_response = StreamingResponse(
-                    response_gen=empty_response_generator()
+                empty_response = AsyncStreamingResponse(
+                    response_gen=empty_response_agenerator()
                 )
                 dispatcher.event(
                     SynthesizeEndEvent(query=query, response=empty_response)
                 )
             else:
-                dispatcher.event(SynthesizeEndEvent(query=query))
-                return Response("Empty Response")
+                empty_response = Response("Empty Response")
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=empty_response)
+                )
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
