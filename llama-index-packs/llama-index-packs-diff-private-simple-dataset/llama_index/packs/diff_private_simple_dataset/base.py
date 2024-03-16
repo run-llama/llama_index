@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Dict, Sequence
+from typing import Any, List, Dict, Sequence, Union
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import LLM, CompletionResponse
@@ -64,7 +64,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         self.prompt_bundle = prompt_bundle
         self.simple_dataset = simple_dataset
         self._num_examples = len(self.simple_dataset.examples)
-        self._labels = list({el.reference_label for el in self.simple_dataset[:]})
+        self.labels = list({el.reference_label for el in self.simple_dataset[:]})
         self.show_progress = show_progress
 
     @staticmethod
@@ -79,7 +79,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
     @dispatcher.span
     def _filter_dataset_by_label(self, label: str) -> LabelledSimpleDataset:
         """Filter simple_dataset by label."""
-        if label not in self._labels:
+        if label not in self.labels:
             raise ValueError(
                 "There are no examples with `label` in the associated `simple_dataset`."
             )
@@ -333,7 +333,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
     @dispatcher.span
     def run(
         self,
-        sizes: Dict[str, int],
+        sizes: Union[int, Dict[str, int]],
         t_max: int = 1,
         sigma: float = 0.5,
         num_splits: int = 5,
@@ -345,12 +345,21 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 "`num_samples_per_split` must be an integer greater than 1."
             )
 
-        if not all(c in sizes for c in self._labels):
+        if isinstance(sizes, int):
+            sizes_dict = {d: sizes for d in self.labels}
+        elif isinstance(sizes, dict):
+            sizes_dict = sizes
+        else:
+            raise TypeError(
+                "Invalid type of `sizes`. Must be either an `int` or `dict`."
+            )
+
+        if not all(c in sizes_dict for c in self.labels):
             raise ValueError("Not all labels have sizes.")
 
         examples = []
-        for label in self._labels:
-            size = sizes[label]
+        for label in self.labels:
+            size = sizes_dict[label]
             for _ in range(size):
                 example = self.generate_dp_synthetic_example(
                     label=label,
@@ -378,12 +387,21 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 "`num_samples_per_split` must be an integer greater than 1."
             )
 
-        if not all(c in sizes for c in self._labels):
+        if isinstance(sizes, int):
+            sizes_dict = {d: sizes for d in self.labels}
+        elif isinstance(sizes, dict):
+            sizes_dict = sizes
+        else:
+            raise TypeError(
+                "Invalid type of `sizes`. Must be either an `int` or `dict`."
+            )
+
+        if not all(c in sizes_dict for c in self.labels):
             raise ValueError("Not all labels have sizes.")
 
         tasks = []
-        for label in self._labels:
-            size = sizes[label]
+        for label in self.labels:
+            size = sizes_dict[label]
             for _ in range(size):
                 example_task = self.agenerate_dp_synthetic_example(
                     label=label,
