@@ -351,12 +351,6 @@ class VllmServer(Vllm):
     def class_name(cls) -> str:
         return "VllmServer"
 
-    @property
-    def _model_kwargs(self) -> Dict[str, Any]:
-        pre = super()._model_kwargs
-        pre["model"] = self.model
-        return pre
-
     def __del__(self) -> None:
         ...
 
