@@ -17,6 +17,10 @@ from llama_index.packs.diff_private_simple_dataset.templates import (
 from llama_index.packs.diff_private_simple_dataset.privacy_mechanism import (
     PrivacyMechanism,
 )
+from llama_index.packs.diff_private_simple_dataset.events import (
+    EmptyIntersectionEvent,
+    LLMEmptyResponseEvent,
+)
 from functools import reduce
 import numpy as np
 import random
@@ -150,6 +154,12 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         scale = sum(proba for proba in split_probs.values())
         if scale == 0:
             # universe
+            dispatcher.event(
+                EmptyIntersectionEvent(
+                    public_tokens=list(universe_proba),
+                    private_tokens=list(split_probs),
+                )
+            )
             return universe_proba
         return {token: proba / scale for token, proba in split_probs.items()}
 
@@ -256,6 +266,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 try:
                     next_token_proba_distn = response.logprobs[0]
                 except IndexError:
+                    dispatcher.event(LLMEmptyResponseEvent())
                     continue  # move on to next iteration to try again
 
                 for el in next_token_proba_distn:  # for immediate next token only
@@ -283,7 +294,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
 
         # synthetic example remove [RESULT]
         try:
-            synthetic_example = synthetic_example.split("[RESULT] ")[-1]
+            synthetic_example = synthetic_example.split("[RESULT]")[-1].strip()
         except Exception as e:
             synthetic_example = synthetic_example
 
