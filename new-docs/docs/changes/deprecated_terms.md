@@ -38,4 +38,4 @@ The `PromptHelper` in general has been deprecated in favour of specifying parame
 See the following links for more details.
 
 - [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
-- [Parsing Documents into Nodes](../module_guides/loading/node_parsers/root.md)
+- [Parsing Documents into Nodes](../module_guides/loading/node_parsers/index.md)

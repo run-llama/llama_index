@@ -116,7 +116,7 @@ RAG isn't just about question-answering about specific facts, which top-k simila
 
 #### Key Techniques
 
-LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](../module_guides/querying/router/root.md) module as well as our [data agent](../module_guides/deploying/agents/root.md) module.
+LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](../module_guides/querying/router/index.md) module as well as our [data agent](../module_guides/deploying/agents/index.md) module.
 This also includes some advanced query engine modules.
 This also include other modules that join structured and unstructured data.
 
@@ -124,9 +124,9 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Core Module Resources**
 
-- [Query engine](../module_guides/deploying/query_engine/root.md)
-- [Agents](../module_guides/deploying/agents/root.md)
-- [Router](../module_guides/querying/router/root.md)
+- [Query engine](../module_guides/deploying/query_engine/index.md)
+- [Agents](../module_guides/deploying/agents/index.md)
+- [Router](../module_guides/querying/router/index.md)
 
 **Detailed Guide Resources**
 

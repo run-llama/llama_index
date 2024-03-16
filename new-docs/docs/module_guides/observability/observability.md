@@ -319,5 +319,5 @@ maxdepth: 1
 ---
 maxdepth: 1
 ---
-callbacks/root.md
+callbacks/index.md
 ```

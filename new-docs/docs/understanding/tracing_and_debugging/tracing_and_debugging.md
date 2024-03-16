@@ -31,7 +31,7 @@ import llama_index.core
 llama_index.core.set_global_handler("simple")
 ```
 
-You can also learn how to [build you own custom callback handler](../../module_guides/observability/callbacks/root.md).
+You can also learn how to [build you own custom callback handler](../../module_guides/observability/callbacks/index.md).
 
 ## Observability
 

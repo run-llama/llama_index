@@ -12,7 +12,7 @@ The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Che
 ---
 maxdepth: 1
 ---
-llama_packs/root.md
+llama_packs/index.md
 ```
 
 ## Data Loaders

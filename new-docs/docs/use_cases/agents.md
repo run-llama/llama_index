@@ -35,8 +35,8 @@ If you want to check out our standalone documentation hubs on agents and tools, 
 ---
 maxdepth: 1
 ---
-/module_guides/deploying/agents/root.md
-/module_guides/deploying/agents/tools/root.md
+/module_guides/deploying/agents/index.md
+/module_guides/deploying/agents/tools/index.md
 ```
 
 ## LlamaHub

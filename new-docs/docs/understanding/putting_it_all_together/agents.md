@@ -40,7 +40,7 @@ query_engine_tools = [
 agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
-You can learn more in our [Agent Module Guide](../../module_guides/deploying/agents/root.md).
+You can learn more in our [Agent Module Guide](../../module_guides/deploying/agents/index.md).
 
 ## Native OpenAIAgent
 
@@ -77,17 +77,17 @@ LlamaIndex provides core modules capable of automated reasoning for different us
 
 **Routing**
 
-- [Usage](../../module_guides/querying/router/root.md)
+- [Usage](../../module_guides/querying/router/index.md)
 - [Router Query Engine Guide](../../examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/RouterQueryEngine.ipynb))
 
 **LLM Reranking**
 
-- [Second Stage Processing How-To](../../module_guides/querying/node_postprocessors/root.md)
+- [Second Stage Processing How-To](../../module_guides/querying/node_postprocessors/index.md)
 - [LLM Reranking Guide (Great Gatsby)](../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
 
 **Chat Engines**
 
-- [Chat Engines How-To](../../module_guides/deploying/chat_engines/root.md)
+- [Chat Engines How-To](../../module_guides/deploying/chat_engines/index.md)
 
 ## Using LlamaIndex as as Tool within an Agent Framework
 

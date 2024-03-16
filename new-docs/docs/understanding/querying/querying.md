@@ -81,7 +81,7 @@ retriever = VectorIndexRetriever(
 )
 ```
 
-There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](../../module_guides/querying/retriever/root.md).
+There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](../../module_guides/querying/retriever/index.md).
 
 ### Configuring node postprocessors
 
@@ -150,4 +150,4 @@ Also make sure to check out our entire [Structured Outputs](../../module_guides/
 
 If you want to design complex query flows, you can compose your own query pipeline across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
 
-Take a look at our [Query Pipelines Module Guide](../../module_guides/querying/pipeline/root.md) for more details.
+Take a look at our [Query Pipelines Module Guide](../../module_guides/querying/pipeline/index.md) for more details.

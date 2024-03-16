@@ -23,7 +23,7 @@ Currently the following LlamaIndex modules are supported within a QueryPipeline.
 ### Query Engines
 
 - Base class: `BaseQueryEngine`
-- [Module Guide](../../deploying/query_engine/root.md)
+- [Module Guide](../../deploying/query_engine/index.md)
 - Input: `input`. Takes in any stringable input.
 - Output: `output`. Outputs `Response` (stringable)
 
@@ -37,7 +37,7 @@ Currently the following LlamaIndex modules are supported within a QueryPipeline.
 ### Retrievers
 
 - Base class: `BaseRetriever`
-- [Module Guide](../retriever/root.md)
+- [Module Guide](../retriever/index.md)
 - Input: `input`. Takes in any stringable input.
 - Output: `output`. Outputs list of nodes `List[BaseNode]`.
 
@@ -51,7 +51,7 @@ Currently the following LlamaIndex modules are supported within a QueryPipeline.
 ### Postprocessors/Rerankers
 
 - Base class: `BaseNodePostprocessor`
-- [Module Guide](../node_postprocessors/root.md)
+- [Module Guide](../node_postprocessors/index.md)
 - Input: `nodes`, `query_str` (optional). `nodes` is `List[BaseNode]`, `query_str` is any stringable input.
 - Output: `nodes`. Outputs list of nodes `List[BaseNode]`.
 

@@ -87,7 +87,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](../module_guides/querying/retriever/retrievers.md) and [query engines](../module_guides/querying/retriever/root.md).
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](../module_guides/querying/retriever/retrievers.md) and [query engines](../module_guides/querying/retriever/index.md).
 
 -----------------
 

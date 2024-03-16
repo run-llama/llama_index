@@ -9,7 +9,7 @@
 
 ##### 1. How to make bot retain context while answering, Can I do that with LlamaIndex?
 
-Yes you can, Llamaindex provides chat engines that you can use to retain context and answer as per the context. You can find more here [Chat Engines](../../module_guides/deploying/chat_engines/root.md).
+Yes you can, Llamaindex provides chat engines that you can use to retain context and answer as per the context. You can find more here [Chat Engines](../../module_guides/deploying/chat_engines/index.md).
 
 ---
 

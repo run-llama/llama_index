@@ -101,7 +101,7 @@ index = VectorStoreIndex.from_documents(
 
 You can also define these steps explicitly.
 
-You can do this by either using our transformation modules (text splitters, metadata extractors, etc.) as standalone components, or compose them in our declarative [Transformation Pipeline interface](../../module_guides/loading/ingestion_pipeline/root.md).
+You can do this by either using our transformation modules (text splitters, metadata extractors, etc.) as standalone components, or compose them in our declarative [Transformation Pipeline interface](../../module_guides/loading/ingestion_pipeline/index.md).
 
 Let's walk through the steps below.
 
@@ -111,7 +111,7 @@ A key step to process your documents is to split them into "chunks"/Node objects
 
 LlamaIndex has support for a wide range of [text splitters](../../module_guides/loading/node_parsers/modules.md), ranging from paragraph/sentence/token based splitters to file-based splitters like HTML, JSON.
 
-These can be [used on their own or as part of an ingestion pipeline](../../module_guides/loading/node_parsers/root.md).
+These can be [used on their own or as part of an ingestion pipeline](../../module_guides/loading/node_parsers/index.md).
 
 ```python
 from llama_index.core import SimpleDirectoryReader
@@ -140,7 +140,7 @@ document = Document(
 
 ### Adding Embeddings
 
-To insert a node into a vector index, it should have an embedding. See our [ingestion pipeline](../../module_guides/loading/ingestion_pipeline/root.md) or our [embeddings guide](../../module_guides/models/embeddings.md) for more details.
+To insert a node into a vector index, it should have an embedding. See our [ingestion pipeline](../../module_guides/loading/ingestion_pipeline/index.md) or our [embeddings guide](../../module_guides/models/embeddings.md) for more details.
 
 ### Creating and passing Nodes directly
 
@@ -161,7 +161,7 @@ maxdepth: 1
 hidden: true
 ---
 llamahub.md
-/module_guides/loading/documents_and_nodes/root.md
-../../module_guides/loading/node_parsers/root.md
-../../module_guides/loading/ingestion_pipeline/root.md
+/module_guides/loading/documents_and_nodes/index.md
+../../module_guides/loading/node_parsers/index.md
+../../module_guides/loading/ingestion_pipeline/index.md
 ```

@@ -11,7 +11,7 @@ These include routing and query transformations.
 ---
 maxdepth: 1
 ---
-/module_guides/querying/router/root.md
+/module_guides/querying/router/index.md
 /optimizing/advanced_retrieval/query_transformations.md
 Sub Question Query Engine (Intro) </examples/query_engine/sub_question_query_engine.ipynb>
 ```
@@ -20,7 +20,7 @@ Sub Question Query Engine (Intro) </examples/query_engine/sub_question_query_eng
 
 This guides below show you how to deploy a full agent loop, capable of chain-of-thought and query planning, on top of existing RAG query engines as tools for more advanced decision making.
 
-Make sure to check out our [full module guide on Data Agents](../../module_guides/deploying/agents/root.md), which highlight these use cases and much more.
+Make sure to check out our [full module guide on Data Agents](../../module_guides/deploying/agents/index.md), which highlight these use cases and much more.
 
 Our [lower-level agent API](../../module_guides/deploying/agents/agent_runner.md) shows you the internals of how an agent works (with step-wise execution).
 

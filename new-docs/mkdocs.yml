@@ -37,7 +37,7 @@ nav:
     - Evaluating:
       - './understanding/evaluating/evaluating.md'
       - Cost Analysis:
-        - './understanding/evaluating/cost_analysis/root.md'
+        - './understanding/evaluating/cost_analysis/index.md'
         - './understanding/evaluating/cost_analysis/usage_pattern.md'
     - Deployment: './understanding/deployment/deployment.md'
     - Putting it all Together: './understanding/putting_it_all_together/'

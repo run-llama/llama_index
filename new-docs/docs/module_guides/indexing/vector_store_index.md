@@ -2,7 +2,7 @@
 
 Vector Stores are a key component of retrieval-augmented generation (RAG) and so you will end up using them in nearly every application you make using LlamaIndex, either directly or indirectly.
 
-Vector stores accept a list of [`Node` objects](../loading/documents_and_nodes/root.md) and build an index from them
+Vector stores accept a list of [`Node` objects](../loading/documents_and_nodes/index.md) and build an index from them
 
 ## Loading data into the index
 
@@ -24,7 +24,7 @@ index = VectorStoreIndex.from_documents(documents)
 If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
 ```
 
-When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/root.md), lightweight abstractions over text strings that keep track of metadata and relationships.
+When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/index.md), lightweight abstractions over text strings that keep track of metadata and relationships.
 
 For more on how to load documents, see [Understanding Loading](../loading/loading.md).
 
@@ -61,7 +61,7 @@ nodes = pipeline.run(documents=[Document.example()])
 ```
 
 ```{tip}
-You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/root.md).
+You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/index.md).
 ```
 
 ### Creating and managing nodes directly

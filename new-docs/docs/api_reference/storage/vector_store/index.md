@@ -1,1 +1,1 @@
-::: llama_index.core.vector_store.types
+::: llama_index.core.vector_stores.types

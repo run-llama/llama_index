@@ -4,7 +4,7 @@
 
 Documents can either be created automatically via data loaders, or constructed manually.
 
-By default, all of our [data loaders](../connector/root.md) (including those offered on LlamaHub) return `Document` objects through the `load_data` function.
+By default, all of our [data loaders](../connector/index.md) (including those offered on LlamaHub) return `Document` objects through the `load_data` function.
 
 ```python
 from llama_index.core import SimpleDirectoryReader
