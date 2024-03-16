@@ -122,6 +122,20 @@ class MockStreamCompletionWithRetry:
             "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
             'test prompt [/INST]", "temperature": 0.1, "max_gen_len": 512}',
         ),
+        (
+            "mistral.mistral-7b-instruct-v0:2",
+            '{"prompt": "<s> [INST] <<SYS>>\\n You are a helpful, respectful and '
+            "honest assistant. Always answer as helpfully as possible and follow "
+            "ALL given instructions. Do not speculate or make up information. Do "
+            "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
+            'test prompt [/INST]", "temperature": 0.1, "max_tokens": 512}',
+            '{"outputs": [{"text": "\\n\\nThis is indeed a test", "stop_reason": "length"}]}',
+            '{"prompt": "<s> [INST] <<SYS>>\\n You are a helpful, respectful and '
+            "honest assistant. Always answer as helpfully as possible and follow "
+            "ALL given instructions. Do not speculate or make up information. Do "
+            "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
+            'test prompt [/INST]", "temperature": 0.1, "max_tokens": 512}',
+        ),
     ],
 )
 def test_model_basic(

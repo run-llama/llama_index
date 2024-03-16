@@ -48,6 +48,8 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
+    "mistral.mistral-7b-instruct-v0:2": 32000,
+    "mistral.mixtral-8x7b-instruct-v0:1": 32000,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -64,6 +66,8 @@ STREAMING_MODELS = {
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "meta.llama2-13b-chat-v1",
+    "mistral.mistral-7b-instruct-v0:2",
+    "mistral.mixtral-8x7b-instruct-v0:1",
 }
 
 
@@ -178,12 +182,24 @@ class MetaProvider(Provider):
         return response["generation"]
 
 
+class MistralProvider(Provider):
+    max_tokens_key = "max_tokens"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_llama_prompt
+        self.completion_to_prompt = completion_to_llama_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["outputs"][0]["text"]
+
+
 PROVIDERS = {
     "amazon": AmazonProvider(),
     "ai21": Ai21Provider(),
     "anthropic": AnthropicProvider(),
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
+    "mistral": MistralProvider(),
 }
 
 
