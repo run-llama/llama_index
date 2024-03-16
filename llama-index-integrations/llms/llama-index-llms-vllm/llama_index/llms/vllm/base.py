@@ -9,7 +9,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
-    LLMMetadata, MessageRole,
+    LLMMetadata,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -142,14 +142,14 @@ class Vllm(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        if not api_url:
-            try:
-                from vllm import LLM as VLLModel
-            except ImportError:
-                raise ImportError(
-                    "Could not import vllm python package. "
-                    "Please install it with `pip install vllm`."
-                )
+        try:
+            from vllm import LLM as VLLModel
+        except ImportError:
+            raise ImportError(
+                "Could not import vllm python package. "
+                "Please install it with `pip install vllm`."
+            )
+        if model != "":
             self._client = VLLModel(
                 model=model,
                 tensor_parallel_size=tensor_parallel_size,
@@ -179,7 +179,6 @@ class Vllm(LLM):
             download_dir=download_dir,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
-            callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
@@ -323,6 +322,7 @@ class VllmServer(Vllm):
         completion_to_prompt = completion_to_prompt or (lambda x: x)
         callback_manager = callback_manager or CallbackManager([])
 
+        model = ""
         super().__init__(
             model=model,
             temperature=temperature,
@@ -351,49 +351,22 @@ class VllmServer(Vllm):
     def class_name(cls) -> str:
         return "VllmServer"
 
-    @property
-    def _model_kwargs(self) -> Dict[str, Any]:
-        pre = super()._model_kwargs
-        pre["model"] = self.model
-        return pre
-
-    def __del__(self) -> None:
-        ...
-
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
+    ) -> List[CompletionResponse]:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
-        #from vllm import SamplingParams
+        from vllm import SamplingParams
 
         # build sampling parameters
-        sampling_params = dict(**params)#SamplingParams(**params).__dict__
+        sampling_params = SamplingParams(**params).__dict__
         sampling_params["prompt"] = prompt
-        response = post_http_request(self.api_url+"/completions", sampling_params, stream=False)
+        response = post_http_request(self.api_url, sampling_params, stream=False)
         output = get_response(response)
 
         return CompletionResponse(text=output[0])
-
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        kwargs = kwargs if kwargs else {}
-        params = {**self._model_kwargs, **kwargs}
-        sampling_params = dict(**params)
-        sampling_params["messages"] = [dict(role=msg.role,content=msg.content) for msg in messages]
-
-        response = post_http_request(self.api_url + "/chat/completions", sampling_params, stream=False)
-        data = json.loads(response.content)
-        return ChatResponse(
-            message=ChatMessage(
-                role=data["choices"][0]["message"]["role"],
-                content=data["choices"][0]["message"]["content"],
-                #additional_kwargs=completion_response.additional_kwargs,
-            ),
-            raw=data,
-        )
 
     @llm_completion_callback()
     def stream_complete(
@@ -402,12 +375,12 @@ class VllmServer(Vllm):
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
-        #from vllm import SamplingParams
+        from vllm import SamplingParams
 
         # build sampling parameters
-        sampling_params = dict(**params)#.__dict__
+        sampling_params = SamplingParams(**params).__dict__
         sampling_params["prompt"] = prompt
-        response = post_http_request(self.api_url+"/completions", sampling_params, stream=True)
+        response = post_http_request(self.api_url, sampling_params, stream=True)
 
         def gen() -> CompletionResponseGen:
             response_str = ""
