@@ -102,9 +102,11 @@ class MockStreamCompletionWithRetry:
         ),
         (
             "anthropic.claude-instant-v1",
-            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.1, "max_tokens_to_sample": 512}',
-            '{"completion": "\\n\\nThis is indeed a test"}',
-            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.1, "max_tokens_to_sample": 512}',
+            '{"messages": [{"role": "user", "content": "test prompt"}], "anthropic_version": "bedrock-2023-05-31", '
+            '"temperature": 0.1, "max_tokens": 512}',
+            '{"content": [{"text": "\\n\\nThis is indeed a test", "type": "text"}]}',
+            '{"messages": [{"role": "user", "content": "test prompt"}], "anthropic_version": "bedrock-2023-05-31", '
+            '"temperature": 0.1, "max_tokens": 512}',
         ),
         (
             "meta.llama2-13b-chat-v1",

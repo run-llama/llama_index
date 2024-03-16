@@ -216,7 +216,7 @@ def llm_completion_callback() -> Callable:
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=_self.to_dict(),
-                        prompt=args[0],
+                        prompt=str(args[0]),
                         additional_kwargs=kwargs,
                     )
                 )
@@ -238,7 +238,7 @@ def llm_completion_callback() -> Callable:
                         async for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=args[0],
+                                    prompt=str(args[0]),
                                     response=x,
                                 )
                             )
@@ -266,7 +266,7 @@ def llm_completion_callback() -> Callable:
                     )
                     dispatcher.event(
                         LLMCompletionEndEvent(
-                            prompt=args[0],
+                            prompt=str(args[0]),
                             response=f_return_val,
                         )
                     )
@@ -278,7 +278,7 @@ def llm_completion_callback() -> Callable:
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=_self.to_dict(),
-                        prompt=args[0],
+                        prompt=str(args[0]),
                         additional_kwargs=kwargs,
                     )
                 )
@@ -299,7 +299,7 @@ def llm_completion_callback() -> Callable:
                         for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=args[0],
+                                    prompt=str(args[0]),
                                     response=x,
                                 )
                             )
@@ -327,7 +327,7 @@ def llm_completion_callback() -> Callable:
                     )
                     dispatcher.event(
                         LLMCompletionEndEvent(
-                            prompt=args[0],
+                            prompt=str(args[0]),
                             response=f_return_val,
                         )
                     )
