@@ -159,6 +159,16 @@ class AsyncStreamingResponse:
     def __post_init__(self) -> None:
         self._lock = asyncio.Lock()
 
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return asyncio.run(self._async_str)
+
+    async def _async_str(self) -> str:
+        """Convert to string representation."""
+        async for _ in self._yield_response():
+            ...
+        return self.response_txt or "None"
+
     async def _yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""
         async with self._lock:
