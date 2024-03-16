@@ -17,3 +17,17 @@ class EmptyIntersectionEvent(BaseEvent):
     def class_name(cls):
         """Class name."""
         return "EmptyIntersectionEvent"
+
+
+class SyntheticExampleStartEvent(BaseEvent):
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "SyntheticExampleStartEvent"
+
+
+class SyntheticExampleEndEvent(BaseEvent):
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "SyntheticExampleEndEvent"

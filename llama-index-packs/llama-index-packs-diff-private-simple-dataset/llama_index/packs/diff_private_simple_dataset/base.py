@@ -20,6 +20,8 @@ from llama_index.packs.diff_private_simple_dataset.privacy_mechanism import (
 from llama_index.packs.diff_private_simple_dataset.events import (
     EmptyIntersectionEvent,
     LLMEmptyResponseEvent,
+    SyntheticExampleEndEvent,
+    SyntheticExampleStartEvent,
 )
 from functools import reduce
 import numpy as np
@@ -251,6 +253,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         num_samples_per_split: int = 1,
     ) -> LabelledSimpleDataExample:
         """Generates a differentially private synthetic example."""
+        dispatcher.event(SyntheticExampleStartEvent())
         synthetic_example = ""
 
         iterator = range(1, t_max + 1)
@@ -319,11 +322,13 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         except Exception as e:
             synthetic_example = synthetic_example
 
-        return LabelledSimpleDataExample(
+        simple_example = LabelledSimpleDataExample(
             reference_label=label,
             text=synthetic_example,
             text_by=CreatedBy(type=CreatedByType.AI, model_name=self.llm.model),
         )
+        dispatcher.event(SyntheticExampleEndEvent())
+        return simple_example
 
     @dispatcher.span
     def run(
