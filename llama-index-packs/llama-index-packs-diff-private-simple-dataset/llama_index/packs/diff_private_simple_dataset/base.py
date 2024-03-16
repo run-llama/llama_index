@@ -22,6 +22,10 @@ import numpy as np
 import random
 import tqdm
 
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
+
 
 STOP_TOKENS = {"<|endoftext|>", " END", "<|end|>"}
 
@@ -66,6 +70,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         sensitivity_upper_bound = np.sqrt(2)
         return (sensitivity_upper_bound * np.sqrt(np.log(1.25 / delta))) / eps
 
+    @dispatcher.span
     def _filter_dataset_by_label(self, label: str) -> LabelledSimpleDataset:
         """Filter simple_dataset by label."""
         if label not in self._labels:
@@ -75,6 +80,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         examples = [el for el in self.simple_dataset[:] if el.reference_label == label]
         return LabelledSimpleDataset(examples=examples)
 
+    @dispatcher.span
     def _split_dataset(
         self,
         dataset: LabelledSimpleDataset,
@@ -181,6 +187,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         """Returns the mode of a given probability distribution."""
         return max(proba, key=proba.get)
 
+    @dispatcher.span
     def generate_dp_synthetic_example(
         self,
         label: str,
@@ -200,6 +207,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             )
         )
 
+    @dispatcher.span
     async def agenerate_dp_synthetic_example(
         self,
         label: str,
@@ -285,6 +293,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             text_by=CreatedBy(type=CreatedByType.AI, model_name=self.llm.model),
         )
 
+    @dispatcher.span
     def run(
         self,
         sizes: Dict[str, int],
@@ -294,16 +303,30 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         num_samples_per_split: int = 1,
     ) -> LabelledSimpleDataset:
         """Main run method."""
-        return asyncio.run(
-            self.run(
-                sizes=sizes,
-                t_max=t_max,
-                sigma=sigma,
-                num_splits=num_splits,
-                num_samples_per_split=num_samples_per_split,
+        if num_samples_per_split < 1:
+            raise ValueError(
+                "`num_samples_per_split` must be an integer greater than 1."
             )
-        )
 
+        if not all(c in sizes for c in self._labels):
+            raise ValueError("Not all labels have sizes.")
+
+        examples = []
+        for label in self._labels:
+            size = sizes[label]
+            for _ in range(size):
+                example = self.generate_dp_synthetic_example(
+                    label=label,
+                    t_max=t_max,
+                    sigma=sigma,
+                    num_splits=num_splits,
+                    num_samples_per_split=num_samples_per_split,
+                )
+                examples.append(example)
+
+        return LabelledSimpleDataset(examples=examples)
+
+    @dispatcher.span
     async def arun(
         self,
         sizes: Dict[str, int],
