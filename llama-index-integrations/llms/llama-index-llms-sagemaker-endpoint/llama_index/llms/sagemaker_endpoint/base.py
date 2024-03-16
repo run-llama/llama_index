@@ -83,7 +83,7 @@ class SageMakerLLM(LLM):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        region_name: Optional[str] = None,
+        aws_region_name: Optional[str] = None,
         max_retries: Optional[int] = 3,
         timeout: Optional[float] = 60.0,
         temperature: Optional[float] = 0.5,
@@ -112,7 +112,7 @@ class SageMakerLLM(LLM):
         self._client = get_aws_service_client(
             service_name="sagemaker-runtime",
             profile_name=profile_name,
-            region_name=region_name,
+            region_name=aws_region_name,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
