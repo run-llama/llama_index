@@ -213,9 +213,9 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
 
         iterator = range(1, t_max + 1)
         if self.show_progress:
-            iterator = tqdm.tqdm(iterator)
+            iterator = tqdm.tqdm(iterator, position=0, leave=True)
 
-        for _ in range(1, t_max + 1):
+        for _ in iterator:
             token_universe_prompt = self._get_public_prompt(
                 synthetic_example=synthetic_example, label=label
             )
@@ -243,7 +243,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             for split in disjoint_splits:
                 split_probs = {token: 0 for token in token_universe_probas}
                 prompt = self._get_private_prompt(split, synthetic_example, label)
-                response = self.llm.complete(prompt)
+                response = await self.llm.acomplete(prompt)
                 # updating and (rescaling) split probs
                 try:
                     next_token_proba_distn = response.logprobs[0]
