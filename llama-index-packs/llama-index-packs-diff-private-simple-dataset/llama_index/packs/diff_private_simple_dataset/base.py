@@ -2,7 +2,7 @@ import asyncio
 from typing import Any, List, Dict, Sequence
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.llms import LLM
+from llama_index.core.llms import LLM, CompletionResponse
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llama_dataset.base import CreatedBy, CreatedByType
 from llama_index.core.llama_dataset.simple import (
@@ -148,7 +148,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         )
 
     def _normalize(
-        self, split_probs: Dict[str, float], universe_proba: Dict[str, float]
+        self, split_probs: Dict[str, float], token_universe_proba: Dict[str, float]
     ) -> Dict[str, float]:
         """Normalize a probability distribution over tokens to become a valid probability distribution."""
         scale = sum(proba for proba in split_probs.values())
@@ -156,12 +156,36 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             # universe
             dispatcher.event(
                 EmptyIntersectionEvent(
-                    public_tokens=list(universe_proba),
+                    public_tokens=list(token_universe_proba),
                     private_tokens=list(split_probs),
                 )
             )
-            return universe_proba
+            split_probs = token_universe_proba  # use public probas instead
+            scale = sum(proba for proba in split_probs.values())
+
         return {token: proba / scale for token, proba in split_probs.items()}
+
+    def _extract_and_normalize_next_token_probas(
+        self, response: CompletionResponse, token_universe_probas: Dict[str, float]
+    ) -> Dict[str, float]:
+        """Extract and normalize LogProba from a CompletionResponse."""
+        try:
+            next_token_proba_distn = response.logprobs[0]
+        except IndexError:
+            dispatcher.event(LLMEmptyResponseEvent())
+            return token_universe_probas
+        except Exception as e:
+            raise ValueError(
+                "Something went wrong when trying to get LogProb from CompletionResponse."
+            )
+
+        split_probs = {t: 0 for t in token_universe_probas}
+        for el in next_token_proba_distn:  # for immediate next token only
+            if el.token in split_probs:
+                split_probs[el.token] = np.exp(el.logprob)
+        return self._normalize(
+            split_probs, token_universe_probas
+        )  # to make into a valid prob distribution
 
     def _generate_noise(
         self, sigma: float, size: int, mechanism: PrivacyMechanism
@@ -257,25 +281,22 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             )
 
             # generate next token probability distributions per split
-            splits = []
+            split_tasks = []
             for split in disjoint_splits:
-                split_probs = {token: 0 for token in token_universe_probas}
                 prompt = self._get_private_prompt(split, synthetic_example, label)
-                response = await self.llm.acomplete(prompt)
-                # updating and (rescaling) split probs
-                try:
-                    next_token_proba_distn = response.logprobs[0]
-                except IndexError:
-                    dispatcher.event(LLMEmptyResponseEvent())
-                    continue  # move on to next iteration to try again
+                split_tasks.append(self.llm.acomplete(prompt))
 
-                for el in next_token_proba_distn:  # for immediate next token only
-                    if el.token in split_probs:
-                        split_probs[el.token] = np.exp(el.logprob)
-                split_probs = self._normalize(
-                    split_probs, token_universe_probas
-                )  # to make into a valid prob distribution
-                splits.append(split_probs)
+            split_responses: List[CompletionResponse] = await asyncio.gather(
+                *split_tasks
+            )
+
+            # get and normalized next-token probas per split
+            splits = [
+                self._extract_and_normalize_next_token_probas(
+                    response, token_universe_probas
+                )
+                for response in split_responses
+            ]
 
             # noisy aggrergation
             sigma_calib = np.sqrt(2) / num_splits * sigma
