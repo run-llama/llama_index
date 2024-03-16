@@ -6,7 +6,7 @@ import requests
 
 def get_response(response: requests.Response) -> List[str]:
     data = json.loads(response.content)
-    return data["text"]
+    return [choice["text"] for choice in data["choices"]]
 
 
 def post_http_request(
