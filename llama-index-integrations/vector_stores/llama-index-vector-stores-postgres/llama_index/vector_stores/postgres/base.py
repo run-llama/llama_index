@@ -12,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterOperator,
     MetadataFilters,
+    MetadataFilter,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -345,10 +346,34 @@ class PGVectorStore(BasePydanticVectorStore):
         elif operator == FilterOperator.LTE:
             return "<="
         elif operator == FilterOperator.IN:
+            return "IN"
+        elif operator == FilterOperator.NIN:
+            return "NOT IN"
+        elif operator == FilterOperator.CONTAINS:
             return "@>"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
+
+    def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+        from sqlalchemy import text
+
+        if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            return text(
+                f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
+            ).bindparams(values=tuple(filter_.value))
+        elif filter_.operator == FilterOperator.CONTAINS:
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'[\"{filter_.value}\"]'"
+            )
+        else:
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'{filter_.value}'"
+            )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
@@ -370,19 +395,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return sqlalchemy_conditions[filters.condition](
             *(
                 (
-                    (
-                        sqlalchemy.text(
-                            f"metadata_::jsonb->'{filter_.key}' "
-                            f"{self._to_postgres_operator(filter_.operator)} "
-                            f"'[\"{filter_.value}\"]'"
-                        )
-                        if filter_.operator == FilterOperator.IN
-                        else sqlalchemy.text(
-                            f"metadata_->>'{filter_.key}' "
-                            f"{self._to_postgres_operator(filter_.operator)} "
-                            f"'{filter_.value}'"
-                        )
-                    )
+                    self._build_filter_clause(filter_)
                     if not isinstance(filter_, MetadataFilters)
                     else self._recursively_apply_filters(filter_)
                 )
@@ -501,8 +514,17 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(
-            type_coerce(self.text_search_config, REGCONFIG), query_str
+        # Replace '&' with '|' to perform an OR search for higher recall
+        ts_query = func.to_tsquery(
+            func.replace(
+                func.text(
+                    func.plainto_tsquery(
+                        type_coerce(self.text_search_config, REGCONFIG), query_str
+                    )
+                ),
+                "&",
+                "|",
+            )
         )
         stmt = (
             select(  # type: ignore

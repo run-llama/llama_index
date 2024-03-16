@@ -365,7 +365,10 @@ class OpensearchVectorClient:
         Args:
             doc_id (str): document id
         """
-        await self._os_client.delete(index=self._index, id=doc_id)
+        search_query = {
+            "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
+        }
+        await self._os_client.delete_by_query(index=self._index, body=search_query)
 
     async def aquery(
         self,
