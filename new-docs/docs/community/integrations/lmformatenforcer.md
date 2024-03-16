@@ -62,7 +62,7 @@ Album(
 )
 ```
 
-You can play with [this notebook](/examples/output_parsing/lmformatenforcer_pydantic_program.ipynb) for more details.
+You can play with [this notebook](../../examples/output_parsing/lmformatenforcer_pydantic_program.ipynb) for more details.
 
 ## Regular Expression Output
 
@@ -88,4 +88,4 @@ print(re.match(regex, output.text).groupdict())
 # {'name': 'John', 'hometown': 'Boston'}
 ```
 
-See [this notebook](/examples/output_parsing/lmformatenforcer_regular_expressions.ipynb) for more details.
+See [this notebook](../../examples/output_parsing/lmformatenforcer_regular_expressions.ipynb) for more details.

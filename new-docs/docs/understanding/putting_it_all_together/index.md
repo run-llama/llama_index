@@ -4,7 +4,7 @@ Congratulations! You've loaded your data, indexed it, stored your index, and que
 
 - In [Q&A Patterns](q_and_a.md) we'll go into some of the more advanced and subtle ways you can build a query engine beyond the basics.
   - The [terms definition tutorial](q_and_a/terms_definitions_tutorial.md) is a detailed, step-by-step tutorial on creating a subtle query application including defining your prompts and supporting images as input.
-  - We have a guide to [creating a unified query framework over your indexes](q_and_a/unified_query.md) which shows you how to run queries across multiple indexes.
+  - We have a guide to [creating a unified query framework over your indexes](../../examples/retrievers/reciprocal_rerank_fusion.ipynb) which shows you how to run queries across multiple indexes.
   - We talk about how to build queries over [knowledge graphs](graphs.md)
   - And also over [structured data like SQL](structured_data.md)
 - We have a guide on [how to build a chatbot](chatbots/building_a_chatbot.md)

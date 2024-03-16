@@ -74,7 +74,7 @@ postprocessor = SentenceEmbeddingOptimizer(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide can be found [here](/examples/node_postprocessor/OptimizerDemo.ipynb)
+A full notebook guide can be found [here](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
 
 (cohere_rerank)=
 
@@ -92,7 +92,7 @@ postprocessor = CohereRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/CohereRerank.ipynb).
+Full notebook guide is available [here](../../../examples/node_postprocessor/CohereRerank.ipynb).
 
 ## SentenceTransformerRerank
 
@@ -125,7 +125,7 @@ postprocessor = LLMRerank(top_n=2, service_context=service_context)
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Gatsby](/examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
+Full notebook guide is available [her for Gatsby](../../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
 
 ## FixedRecencyPostprocessor
 
@@ -173,7 +173,7 @@ postprocessor = TimeWeightedPostprocessor(time_decay=0.99, top_k=1)
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb).
+A full notebook guide is available [here](../../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb).
 
 ## (Beta) PIINodePostprocessor
 

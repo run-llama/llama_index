@@ -1,6 +1,6 @@
 # Discover LlamaIndex Video Series
 
-If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](/understanding/understanding.md) tutorial.
+If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](../understanding/index.md) tutorial.
 
 ## Bottoms-Up Development (Llama Docs Bot)
 
@@ -21,7 +21,7 @@ This video covers the `SubQuestionQueryEngine` and how it can be applied to fina
 
 [Youtube](https://www.youtube.com/watch?v=GT_Lsj3xj1o)
 
-[Notebook](../../examples/usecases/10k_sub_question.ipynb)
+[Notebook](../examples/usecases/10k_sub_question.ipynb)
 
 ## Discord Document Management
 
@@ -39,4 +39,4 @@ This video covers the tools built into LlamaIndex for combining SQL and semantic
 
 [Youtube](https://www.youtube.com/watch?v=ZIvcVJGtCrY)
 
-[Notebook](../../examples/query_engine/SQLAutoVectorQueryEngine.ipynb)
+[Notebook](../examples/query_engine/SQLAutoVectorQueryEngine.ipynb)

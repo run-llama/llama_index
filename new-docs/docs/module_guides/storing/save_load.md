@@ -57,8 +57,6 @@ graph = load_graph_from_storage(
 )  # loads graph with the specified root_id
 ```
 
-Here's the full [API Reference on saving and loading](/api_reference/storage/indices_save_load.rst).
-
 ## Using a remote backend
 
 By default, LlamaIndex uses a local filesystem to load and save files. However, you can override this by passing a `fsspec.AbstractFileSystem` object.

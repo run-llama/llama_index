@@ -113,8 +113,6 @@ p = QueryPipeline(chain=[prompt_tmpl, llm, summarizer_c])
 p.run(topic="YC")
 ```
 
-(query-pipeline-custom-component)=
-
 ## Defining a Custom Query Component
 
 You can easily define a custom component: Either passing a function to a `FnComponent` or subclassing a `CustomQueryComponent`.

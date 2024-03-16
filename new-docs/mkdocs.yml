@@ -480,11 +480,11 @@ nav:
       - ./examples/vector_stores/LanternAutoRetriever.ipynb
   - Component Guides: './module_guides'
   - Advanced:
-    - Custom Modules: './advanced/custom_modules.md'
+    - Custom Modules: './optimizing/custom_modules.md'
     - Contributing:
       - Code: './CONTRIBUTING.md'
       - Docs: './DOCS_README.md'
-    - RAG From Scratch: './advanced/building_rag_from_scratch.md'
+    - RAG From Scratch: './optimizing/building_rag_from_scratch.md'
   - API Reference: './api_reference'
   - Changes:
     - Changelog : './CHANGELOG.md'

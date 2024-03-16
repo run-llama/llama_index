@@ -121,6 +121,6 @@ Now you can efficiently query to your heart's content! But this is just the begi
 
 ```{admonition} Next Steps
 * learn more about the [high-level concepts](/getting_started/concepts.md).
-* tell me how to [customize things](/getting_started/customization.rst).
+* tell me how to [customize things](./customization.md).
 * curious about a specific module? check out the guides on the left 👈
 ```

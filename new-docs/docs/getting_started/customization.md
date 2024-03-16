@@ -1,9 +1,9 @@
 # Frequently Asked Questions (FAQ)
 
 !!! tip
-    If you haven't already, [install LlamaIndex](installation.html) and complete the [starter tutorial](starter_example.html). If you run into terms you don't recognize, check out the [high-level concepts](concepts.html>).
+    If you haven't already, [install LlamaIndex](installation.md) and complete the [starter tutorial](starter_example.md). If you run into terms you don't recognize, check out the [high-level concepts](concepts.md).
 
-In this section, we start with the code you wrote for the [starter example](starter_example.html>) and show you the most common ways you might want to customize it for your use case:
+In this section, we start with the code you wrote for the [starter example](starter_example.md) and show you the most common ways you might want to customize it for your use case:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -59,7 +59,7 @@ vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 ```
 
-`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](../module_guides/storing/storing.html) and [how to customize it](../module_guides/storing/customization.html).
+`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](../module_guides/storing/storing.md) and [how to customize it](../module_guides/storing/customization.md).
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -87,7 +87,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](../module_guides/querying/retriever/retrievers.html) and [query engines](../module_guides/querying/retriever/root.html).
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](../module_guides/querying/retriever/retrievers.md) and [query engines](../module_guides/querying/retriever/root.md).
 
 -----------------
 
@@ -104,7 +104,7 @@ Settings.llm = Ollama(model="mistral", request_timeout=60.0)
 index.as_query_engine(llm=Ollama(model="mistral", request_timeout=60.0))
 ```
 
-You can learn more about [customizing LLMs](../module_guides/models/llms.html).
+You can learn more about [customizing LLMs](../module_guides/models/llms.md).
 
 -----------------
 
@@ -120,7 +120,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-You can learn more about [query engines](../module_guides/querying/querying.html) and [response modes](../module_guides/deploying/query_engine/response_modes.html).
+You can learn more about [query engines](../module_guides/querying/querying.md) and [response modes](../module_guides/deploying/query_engine/response_modes.md).
 
 -----------------
 
@@ -137,7 +137,7 @@ response = query_engine.query("What did the author do growing up?")
 response.print_response_stream()
 ```
 
-You can learn more about [streaming responses](../module_guides/deploying/query_engine/streaming.html).
+You can learn more about [streaming responses](../module_guides/deploying/query_engine/streaming.md).
 
 -----------------
 
@@ -156,11 +156,11 @@ response = query_engine.chat("Oh interesting, tell me more.")
 print(response)
 ```
 
-Learn more about the [chat engine](../module_guides/deploying/chat_engines/usage_pattern.html).
+Learn more about the [chat engine](../module_guides/deploying/chat_engines/usage_pattern.md).
 
 -----------------
 
 ## Next Steps
 
-* Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](../understanding/understanding.html).
+* Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](../understanding/index.md).
 * Want more in-depth understanding of specific modules? Check out the module guides in the left nav 👈

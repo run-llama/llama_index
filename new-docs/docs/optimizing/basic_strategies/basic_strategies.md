@@ -85,7 +85,7 @@ Embeddings are not perfect, and may fail to return text chunks with matching key
 
 The solution to this issue is often hybrid search. In LlamaIndex, there are two main ways to achieve this:
 
-1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](../../../module_guides/storing/vector_stores.md)).
+1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](../../module_guides/storing/vector_stores.md)).
 2. Set up a local hybrid search mechanism with BM25.
 
 Relevant guides with both approaches can be found below:
@@ -123,7 +123,7 @@ index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine(filters=filters)
 ```
 
-If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](../../../module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
+If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](../../module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
 
 ```{toctree}
 ---

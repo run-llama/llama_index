@@ -135,9 +135,9 @@ query_engine = RetrieverQueryEngine(retriever, response_synthesizer)
 The two approaches above are equivalent, where 1 is essentially syntactic sugar for 2 and hides away the underlying complexity. You might want to use 1 to quickly modify some common parameters, and use 2 to have more granular control.
 
 For more details on which classes use which prompts, please visit
-[Query class references](/api_reference/query.rst).
+[Query class references](../../../api_reference/response_synthesizers/index.md).
 
-Check out the [reference documentation](/api_reference/prompts.rst) for a full set of all prompts.
+Check out the [reference documentation](../../../api_reference/prompts/index.md) for a full set of all prompts.
 
 #### Modify prompts used in index construction
 
@@ -162,7 +162,7 @@ index = TreeIndex.from_documents(docs, summary_template=custom_prompt)
 ```
 
 For more details on which index uses which prompts, please visit
-[Index class references](/api_reference/indices.rst).
+[Index class references](../../../api_reference/indices/index.md).
 
 ### [Advanced] Advanced Prompt Capabilities
 

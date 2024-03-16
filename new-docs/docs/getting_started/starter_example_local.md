@@ -71,7 +71,7 @@ This creates an engine for Q&A over your index and asks a simple question. You s
 You can view logs, persist/load the index similar to our [starter example](starter_example.md).
 
 ```{admonition} Next Steps
-* learn more about the [high-level concepts](/getting_started/concepts.md).
-* tell me how to [customize things](/getting_started/customization.rst).
+* learn more about the [high-level concepts](./concepts.md).
+* tell me how to [customize things](./customization.md).
 * curious about a specific module? check out the guides on the left 👈
 ```

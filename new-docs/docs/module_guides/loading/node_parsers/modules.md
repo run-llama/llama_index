@@ -58,8 +58,6 @@ parser = MarkdownNodeParser()
 nodes = parser.get_nodes_from_documents(markdown_docs)
 ```
 
-(text_splitters)=
-
 ## Text-Splitters
 
 ### CodeSplitter

@@ -20,7 +20,7 @@ There are a series of key steps involved in building any LLM-powered application
 
 - **[Querying](./querying/querying.md)**: every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
 
-- **[Putting it all together](./putting_it_all_together/putting_it_all_together.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
+- **[Putting it all together](./putting_it_all_together/index.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
 
 - **[Tracing and debugging](./tracing_and_debugging/tracing_and_debugging.md)**: also called **observability**, it's especially important with LLM applications to be able to look into the inner workings of what's going on to help you debug problems and spot places to improve.
 

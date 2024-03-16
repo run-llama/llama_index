@@ -123,7 +123,7 @@ This module will help break down a complex query into a simpler one over your ex
 
 **Guides**
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
+- [Query Transformations](../../optimizing/advanced_retrieval/query_transformations.md)
 
 You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi-Document Queries below).
 
@@ -193,8 +193,8 @@ query the index, and then ask followup questions.
 
 **Guides**
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
-- [Multi-Step Query Decomposition](/examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
+- [Query Transformations](../../optimizing/advanced_retrieval/query_transformations.md)
+- [Multi-Step Query Decomposition](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 ## Temporal Queries
 
@@ -211,7 +211,6 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 ## Additional Resources
 
-- [A Guide to Creating a Unified Query Framework over your indexes](/understanding/putting_it_all_together/q_and_a/unified_query.md)
 - [A Guide to Extracting Terms and Definitions](q_and_a/terms_definitions_tutorial.md)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)
 

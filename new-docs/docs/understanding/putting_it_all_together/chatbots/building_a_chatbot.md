@@ -367,4 +367,4 @@ User:
 
 ### Notebook
 
-Take a look at our [corresponding notebook](/examples/agent/Chatbot_SEC.ipynb).
+Take a look at our [corresponding notebook](../../../examples/agent/Chatbot_SEC.ipynb).

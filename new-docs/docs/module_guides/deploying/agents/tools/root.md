@@ -52,20 +52,3 @@ maxdepth: 1
 ---
 llamahub_tools_guide.md
 ```
-
-<!-- We offer a rich set of Tool Specs that are offered through [LlamaHub](https://llamahub.ai/) 🦙.
-These tool specs represent an initial curated list of services that an agent can interact with and enrich its capability to perform different actions.
-
-![](/_static/data_connectors/llamahub.png) -->
-
-<!-- ## Module Guides
-```{toctree}
----
-maxdepth: 1
----
-modules.md
-```
-
-## Tool Example Notebooks
-
-Coming soon!  -->

@@ -68,7 +68,7 @@ print(response)
 
 You can also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
 
-For a full list of implemented components and the supported configurations, check out our [reference docs](/api_reference/query.rst).
+For a full list of implemented components and the supported configurations, check out our [reference docs](../../api_reference/index.md).
 
 Let's go into more detail about customizing each step:
 
@@ -94,7 +94,7 @@ For example:
 - `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
 - `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
 
-The full list of node postprocessors is documented in the [Node Postprocessor Reference](/api_reference/node_postprocessor.rst).
+The full list of node postprocessors is documented in the [Node Postprocessor Reference](../../api_reference/postprocessor/index.md).
 
 To configure the desired node postprocessors:
 

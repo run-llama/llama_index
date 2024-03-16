@@ -49,7 +49,7 @@ retriever = summary_index.as_retriever(
 )
 ```
 
-This creates a [SummaryIndexLLMRetriever](/api_reference/query/retrievers/list.rst) on top of the summary index.
+This creates a [SummaryIndexLLMRetriever](../../../api_reference/retrievers/summary.md) on top of the summary index.
 
 See [**Retriever Modes**](retriever_modes.md) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.

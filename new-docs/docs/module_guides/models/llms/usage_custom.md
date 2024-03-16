@@ -149,14 +149,12 @@ HuggingFaceLLM(
 )
 ```
 
-A full API reference can be found [here](../../../api_reference/llms/huggingface.rst).
+A full API reference can be found [here](../../../api_reference/LLMs/huggingface.md).
 
 Several example notebooks are also listed below:
 
-- [StableLM](/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
+- [StableLM](../../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [Camel](../../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
-
-(using-custom-llm-advanced)=
 
 ## Example: Using a Custom LLM Model - Advanced
 

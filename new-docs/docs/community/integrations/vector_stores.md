@@ -5,8 +5,6 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 1. LlamaIndex can use a vector store itself as an index. Like any other index, this index can store documents and be used to answer queries.
 2. LlamaIndex can load data from vector stores, similar to any other data connector. This data can then be used within LlamaIndex data structures.
 
-(vector-store-index)=
-
 ## Using a Vector Store as an Index
 
 LlamaIndex also supports different vector stores
@@ -41,7 +39,7 @@ as the storage backend for `VectorStoreIndex`.
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
-A detailed API reference is [found here](/api_reference/indices/vector_store.rst).
+A detailed API reference is [found here](../../api_reference/storage/vector_store/index.md).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.

@@ -28,7 +28,7 @@ will fetch the top-k neighbors, or with the addition of a keyword filter, as see
 
 ## Vector Store Index
 
-The vector store index stores each Node and a corresponding embedding in a [Vector Store](vector-store-index).
+The vector store index stores each Node and a corresponding embedding in a [Vector Store](../../community/integrations/vector_stores.md#using-a-vector-store-as-an-index).
 
 ![](../../_static/indices/vector_store.png)
 

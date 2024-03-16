@@ -10,11 +10,11 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom LLMs
 
-- [Custom LLMs](using-custom-llm-advanced)
+- [Custom LLMs](../module_guides/models/llms/usage_custom.md#example-using-a-custom-llm-model---advanced)
 
 ## Custom Embeddings
 
-- [Custom Embedding Model](custom_embeddings)
+- [Custom Embedding Model](../module_guides/models/embeddings.md#custom-embedding-model)
 
 ## Custom Output Parsers
 
@@ -22,16 +22,15 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom Transformations
 
-- [Custom Transformations](custom-transformations)
+- [Custom Transformations](../module_guides/loading/ingestion_pipeline/transformations.md#custom-transformations)
 
 ## Custom Retrievers
 
 - [Custom Retrievers](../examples/query_engine/CustomRetrievers.ipynb)
-- [Custom Knowledge Graph + Vector Retriever](/examples/index_structs/knowledge_graph/KnowledgeGraphIndex_vs_VectorStoreIndex_vs_CustomIndex_combined.ipynb)
 
 ## Custom Postprocessors/Rerankers
 
-- [Custom Node Postprocessor](custom-node-postprocessor)
+- [Custom Node Postprocessor](./custom_modules.md#custom-postprocessorsrerankers)
 
 ## Custom Query Engines
 
@@ -43,12 +42,12 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom Query Components (for use in Query Pipeline)
 
-- [Custom Query Component](query-pipeline-custom-component)
+- [Custom Query Component](../module_guides/querying/pipeline/usage_pattern.md#defining-a-custom-query-component)
 
 ## Other Ways of Customization
 
 Some modules can be customized heavily within your workflows but not through subclassing (and instead through parameters or functions we expose). We list these in guides below:
 
-- [Customizing Documents](../module_guides/loading/documents_and_nodes/usage_documents.ipynb)
-- [Customizing Nodes](../module_guides/loading/documents_and_nodes/usage_nodes.ipynb)
+- [Customizing Documents](../module_guides/loading/documents_and_nodes/usage_documents.md)
+- [Customizing Nodes](../module_guides/loading/documents_and_nodes/usage_nodes.md)
 - [Customizing Prompts within Higher-Level Modules](../examples/prompts/prompt_mixin.ipynb)

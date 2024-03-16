@@ -74,4 +74,4 @@ from llama_index.core.agent import OldOpenAIAgent, OldReActAgent
 
 ## Additional Module Guides
 
-Check out our lower-level [agent module guides](lower-level-agent-api) for more details!
+Check out our lower-level [agent module guides](./modules.md#custom-agents) for more details!

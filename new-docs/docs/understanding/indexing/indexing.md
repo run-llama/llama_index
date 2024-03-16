@@ -66,4 +66,4 @@ A Summary Index is a simpler form of Index best suited to queries where, as the 
 
 ## Further Reading
 
-If your data is a set of interconnected concepts (in computer science terms, a "graph") then you may be interested in our [knowledge graph index](/examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb).
+If your data is a set of interconnected concepts (in computer science terms, a "graph") then you may be interested in our [knowledge graph index](../../examples/index_structs/knowledge_graph/KnowledgeGraphDemo.ipynb).

@@ -141,7 +141,7 @@ print(scores.score_dict)
 
 ### Evaluating multiple questions at once
 
-You can also evaluate more than one query and response at once using TonicValidateEvaluator, and return a tonic_validate Run object that can be logged to the [Tonic Validate UI](validate.tonic.ai).
+You can also evaluate more than one query and response at once using TonicValidateEvaluator, and return a tonic_validate Run object that can be logged to the [Tonic Validate UI](https://validate.tonic.ai).
 
 To do this, you put the questions, LLM answers, retrieved context lists, and reference answers into lists and call evaluate_run.
 
@@ -189,7 +189,7 @@ validate_api.upload_run(project_id, scores)
 
 Now you can see your results in the Tonic Validate UI!
 
-![Tonic Validate Graph](/_static/integrations/TonicValidate-Graph.png)
+![Tonic Validate Graph](../../_static/integrations/TonicValidate-Graph.png)
 
 ### End to End Example
 

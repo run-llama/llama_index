@@ -123,4 +123,4 @@ for token in streaming_response.response_gen:
     print(token, end="")
 ```
 
-See an [end-to-end tutorial](/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
+See an [end-to-end tutorial](../../../examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)

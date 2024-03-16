@@ -65,7 +65,7 @@ Album(
 )
 ```
 
-You can play with [this notebook](/examples/output_parsing/guidance_pydantic_program.ipynb) for more details.
+You can play with [this notebook](../../examples/output_parsing/guidance_pydantic_program.ipynb) for more details.
 
 ### Using guidance to improve the robustness of our sub-question query engine.
 
@@ -95,4 +95,4 @@ s_engine = SubQuestionQueryEngine.from_defaults(
 )
 ```
 
-See [this notebook](/examples/output_parsing/guidance_sub_question.ipynb) for more details.
+See [this notebook](../../examples/output_parsing/guidance_sub_question.ipynb) for more details.

@@ -115,7 +115,7 @@ print(response)
 ```
 
 ```{tip}
-We have a [more thorough example of using Chroma](/examples/vector_stores/ChromaIndexDemo.ipynb) if you want to go deeper on this store.
+We have a [more thorough example of using Chroma](../../examples/vector_stores/ChromaIndexDemo.ipynb) if you want to go deeper on this store.
 ```
 
 ### You're ready to query!

@@ -147,8 +147,6 @@ from llama_index.core import Settings
 Settings.embed_model = HuggingFaceBgeEmbeddings(model_name="BAAI/bge-base-en")
 ```
 
-(custom_embeddings)=
-
 ### Custom Embedding Model
 
 If you wanted to use embeddings not offered by LlamaIndex or Langchain, you can also extend our base embeddings class and implement your own!
@@ -202,8 +200,6 @@ embeddings = embed_model.get_text_embedding(
     "It is raining cats and dogs here!"
 )
 ```
-
-(list_of_embeddings)=
 
 ## List of supported embeddings
 

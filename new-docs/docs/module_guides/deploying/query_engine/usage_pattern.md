@@ -96,7 +96,7 @@ streaming_response.print_response_stream()
 ```
 
 - Read the full [streaming guide](streaming.md)
-- See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
+- See an [end-to-end example](../../../examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
 
 ## Defining a Custom Query Engine
 

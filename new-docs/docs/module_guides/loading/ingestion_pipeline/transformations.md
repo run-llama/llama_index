@@ -4,10 +4,10 @@ A transformation is something that takes a list of nodes as an input, and return
 
 Currently, the following components are `Transformation` objects:
 
-- [`TextSplitter`](text_splitters)
+- [`TextSplitter`](../../../module_guides/loading/node_parsers/modules.md#text-splitters)
 - [`NodeParser`](../node_parsers/modules.md)
 - [`MetadataExtractor`](../documents_and_nodes/usage_metadata_extractor.md)
-- `Embeddings`model (check our [list of supported embeddings](list_of_embeddings))
+- `Embeddings`model (check our [list of supported embeddings](../../models/embeddings.md#list-of-supported-embeddings))
 
 ## Usage Pattern
 
@@ -56,8 +56,6 @@ index = VectorStoreIndex.from_documents(
     documents, transformations=transformations
 )
 ```
-
-(custom-transformations)=
 
 ## Custom Transformations
 

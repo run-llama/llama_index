@@ -56,4 +56,4 @@ Alternatively, if you just want to print the text as they arrive:
 streaming_response.print_response_stream()
 ```
 
-See an [end-to-end example](/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
+See an [end-to-end example](../../../examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)

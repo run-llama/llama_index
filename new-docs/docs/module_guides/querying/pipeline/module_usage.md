@@ -68,4 +68,4 @@ You can define a `QueryPipeline` as a module within another query pipeline. This
 
 ### Custom Components
 
-See our [custom components guide](query-pipeline-custom-component) for more details.
+See our [custom components guide](./usage_pattern.md#defining-a-custom-query-component) for more details.

@@ -2,7 +2,7 @@
 
 Index stores contains lightweight index metadata (i.e. additional state information created when building an index).
 
-See the [API Reference](/api_reference/storage/index_store.rst) for more details.
+See the [API Reference](../../api_reference/storage/index_store/index.md) for more details.
 
 ### Simple Index Store
 

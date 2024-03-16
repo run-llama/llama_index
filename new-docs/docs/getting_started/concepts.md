@@ -78,7 +78,7 @@ A chat engine is an end-to-end pipeline for having a conversation with your data
 An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
 
 ```{admonition} Next Steps
-* Tell me how to [customize things](/getting_started/customization.rst)
-* Continue learning with our [understanding LlamaIndex](/understanding/understanding.md) guide
+* Tell me how to [customize things](./customization.md)
+* Continue learning with our [understanding LlamaIndex](../understanding/index.md) guide
 * Ready to dig deep? Check out the module guides on the left
 ```

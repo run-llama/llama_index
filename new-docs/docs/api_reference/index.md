@@ -1,6 +1,5 @@
 # API Reference
 
-The following classes are documented in our API reference documentation:
+LlamaIndex provides thorough documentation of modules and integrations used in the framework.
 
-- [LLMS](LLMS/index.md)
-- [TODO]()
+Use the navigation or search to find the classes you are interested in!
