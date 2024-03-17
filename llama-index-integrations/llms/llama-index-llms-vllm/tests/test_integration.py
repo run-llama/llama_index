@@ -2,13 +2,32 @@ import asyncio
 import os
 
 from llama_index.core.base.llms.types import MessageRole, ChatMessage, ChatResponse
-from llama_index.llms.vllm import VllmServer
+
 from llama_index.core.base.llms.types import CompletionResponse
 
 
+def remote_vllm():
+    from llama_index.llms.vllm import VllmServer
+
+    return VllmServer(
+        api_url=os.environ.get("VLLM", "http://localhost:8000/generate"),
+    )
+
+
+def local_vllm():
+    from llama_index.llms.vllm import Vllm
+
+    return Vllm(
+        model="facebook/opt-350m",
+    )
+
+
+# replace to local_vllm(), it requires vllm installed and fail ..stream.. tests due to Not Implemented
+vllm = remote_vllm()
+
+
 def test_completion():
-    remote = create_vllm()
-    completion = remote.complete("When AI hype is over?")
+    completion = vllm.complete("When AI hype is over?")
     assert (
         isinstance(completion, CompletionResponse)
         and isinstance(completion.text, str)
@@ -17,8 +36,7 @@ def test_completion():
 
 
 def test_acompletion():
-    remote = create_vllm()
-    completion = asyncio.run(remote.acomplete("When AI hype is over?"))
+    completion = asyncio.run(vllm.acomplete("When AI hype is over?"))
     assert (
         isinstance(completion, CompletionResponse)
         and isinstance(completion.text, str)
@@ -26,18 +44,10 @@ def test_acompletion():
     )
 
 
-def create_vllm():
-    return VllmServer(
-        api_url=os.environ.get("VLLM", "http://localhost:8000/generate"),
-        max_new_tokens=123,
-    )
-
-
 def test_chat():
-    remote = create_vllm()
     from llama_index.core.base.llms.types import ChatMessage
 
-    chat = remote.chat(
+    chat = vllm.chat(
         [ChatMessage(content="When AI hype is over?", role=MessageRole.USER)]
     )
     assert (
@@ -49,11 +59,10 @@ def test_chat():
 
 
 def test_achat():
-    remote = create_vllm()
     from llama_index.core.base.llms.types import ChatMessage
 
     chat = asyncio.run(
-        remote.achat(
+        vllm.achat(
             [ChatMessage(content="When AI hype is over?", role=MessageRole.USER)]
         )
     )
@@ -66,20 +75,18 @@ def test_achat():
 
 
 def test_stream_completion():
-    remote = create_vllm()
     prompt = "When AI hype is over?"
-    completion = list(remote.stream_complete(prompt))[-1]
+    completion = list(vllm.stream_complete(prompt))[-1]
     assert isinstance(completion, CompletionResponse)
     assert completion.text.count(prompt) == 1
     print(completion)
 
 
 def test_astream_completion():
-    remote = create_vllm()
     prompt = "When AI hype is over?"
 
     async def concat2():
-        return [c async for c in await remote.astream_complete(prompt)]
+        return [c async for c in await vllm.astream_complete(prompt)]
 
     completion = asyncio.run(concat2())[-1]
     assert isinstance(completion, CompletionResponse)
@@ -88,11 +95,10 @@ def test_astream_completion():
 
 
 def test_stream_chat():
-    remote = create_vllm()
     prompt = "When AI hype is over?"
-    chat = list(
-        remote.stream_chat([ChatMessage(content=prompt, role=MessageRole.USER)])
-    )[-1]
+    chat = list(vllm.stream_chat([ChatMessage(content=prompt, role=MessageRole.USER)]))[
+        -1
+    ]
     assert isinstance(chat, ChatResponse)
     assert isinstance(chat.message, ChatMessage)
     assert chat.message.role == MessageRole.ASSISTANT
@@ -101,13 +107,12 @@ def test_stream_chat():
 
 
 def test_astream_chat():
-    remote = create_vllm()
     prompt = "When AI hype is over?"
 
     async def concat2():
         return [
             c
-            async for c in await remote.astream_chat(
+            async for c in await vllm.astream_chat(
                 [ChatMessage(content=prompt, role=MessageRole.USER)]
             )
         ]
