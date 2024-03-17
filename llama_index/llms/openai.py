@@ -67,8 +67,7 @@ DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 class Tokenizer(Protocol):
     """Tokenizers support an encode function that returns a list of ints."""
 
-    def encode(self, text: str) -> List[int]:
-        ...
+    def encode(self, text: str) -> List[int]: ...
 
 
 class OpenAI(LLM):
@@ -270,7 +269,8 @@ class OpenAI(LLM):
         tool_calls: List[ChoiceDeltaToolCall],
         tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
     ) -> List[ChoiceDeltaToolCall]:
-        """Use the tool_calls_delta objects received from openai stream chunks
+        """
+        Use the tool_calls_delta objects received from openai stream chunks
         to update the running tool_calls object.
 
         Args:
@@ -345,7 +345,6 @@ class OpenAI(LLM):
                 if is_function:
                     tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
-
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,

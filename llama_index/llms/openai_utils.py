@@ -159,7 +159,8 @@ def create_retry_decorator(
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -263,7 +264,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = message_dict.get("content")
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
@@ -279,7 +280,8 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
 
 @deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Deprecated in favor of `to_openai_tool`.
+    """
+    Deprecated in favor of `to_openai_tool`.
 
     Convert pydantic class to OpenAI function.
     """
@@ -302,7 +304,8 @@ def resolve_openai_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve OpenAI credentials.
+    """
+    "Resolve OpenAI credentials.
 
     The order of precedence is:
     1. param
