@@ -38,6 +38,8 @@ class DiffPrivacyEventHandler(BaseEventHandler):
 
         if isinstance(event, SyntheticExampleStartEvent):
             self.synthetic_example_starts += 1
+        elif isinstance(event, SyntheticExampleEndEvent):
+            self.synthetic_example_ends += 1
         elif isinstance(event, LLMEmptyResponseEvent):
             self.llm_empty_responses += 1
 
