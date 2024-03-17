@@ -14,16 +14,24 @@ class TooManyProblemsEncounteredError(Exception):
 
 
 class DiffPrivacyEventHandler(BaseEventHandler):
+    num_splits: int
+    t_max: int
     synthetic_example_starts: int = 0
     synthetic_example_ends: int = 0
     llm_empty_responses: int = 0
     empty_intersections: int = 0
-    critical_threshold: int = 2_500  # ~2.5% error rate with OpenAI API calls
+    critical_threshold: int = 0.025  # ~2.5% error rate with OpenAI API calls
 
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
         return "MyEventHandler"
+
+    def compute_approximate_error_rate(self):
+        """Returns an approximate error rate."""
+        return (self.llm_empty_responses + self.empty_intersections) / (
+            self.synthetic_example_starts * self.t_max * (self.num_splits + 1)
+        )
 
     def handle(self, event) -> None:
         """Logic for handling event."""
@@ -36,9 +44,7 @@ class DiffPrivacyEventHandler(BaseEventHandler):
             with open("error_report.json", "w") as f:
                 json.dump(self.dict(), f)
 
-            if (
-                self.llm_empty_responses + self.empty_intersections
-            ) > self.critical_threshold:
+            if self.compute_approximate_error_rate() > self.critical_threshold:
                 raise TooManyProblemsEncounteredError(
                     "There were too many errors encountered."
                 )
@@ -48,9 +54,7 @@ class DiffPrivacyEventHandler(BaseEventHandler):
             with open("error_report.json", "w") as f:
                 json.dump(self.dict(), f)
 
-            if (
-                self.llm_empty_responses + self.empty_intersections
-            ) > self.critical_threshold:
+            if self.compute_approximate_error_rate() > self.critical_threshold:
                 raise TooManyProblemsEncounteredError(
                     "There were too many errors encountered."
                 )
