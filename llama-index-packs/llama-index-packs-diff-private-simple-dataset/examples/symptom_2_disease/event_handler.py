@@ -35,8 +35,12 @@ class DiffPrivacyEventHandler(BaseEventHandler):
             self.error_counts[event.class_name()] = (
                 self.error_counts[event.class_name()] + 1
             )
+            error_report = {
+                "synthetic_example_starts": self.synthetic_example_starts,
+                "error_counts": self.error_counts,
+            }
             with open("error_report.json", "w") as f:
-                json.dump(self.error_counts, f)
+                json.dump(error_report, f)
             if self.errors > self.critical_threshold:
                 raise TooManyProblemsEncounteredError(
                     "There were too many errors encountered."
