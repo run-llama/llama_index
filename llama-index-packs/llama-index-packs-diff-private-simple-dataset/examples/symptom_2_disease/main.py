@@ -8,8 +8,11 @@ from .event_handler import DiffPrivacyEventHandler
 import asyncio
 import os
 
+NUM_SPLITS = 4
+T_MAX = 150
+
 # attach event handler to root dispatcher
-event_handler = DiffPrivacyEventHandler()
+event_handler = DiffPrivacyEventHandler(num_splits=NUM_SPLITS, t_max=T_MAX)
 dispatcher = instrument.get_dispatcher()
 dispatcher.add_event_handler(event_handler)
 
@@ -50,9 +53,9 @@ async def main():
 
     synthetic_dataset = await dp_simple_dataset_pack.arun(
         sizes=4,
-        t_max=150,
+        t_max=T_MAX,
         sigma=0.5,
-        num_splits=3,
+        num_splits=NUM_SPLITS,
         num_samples_per_split=8,
     )
     synthetic_dataset.save_json("synthetic_dataset.json")
