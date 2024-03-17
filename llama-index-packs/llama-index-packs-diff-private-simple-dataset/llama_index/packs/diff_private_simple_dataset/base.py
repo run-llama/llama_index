@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Dict, Sequence, Union
+from typing import Any, List, Dict, Sequence, Union, Coroutine, Iterable
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import LLM, CompletionResponse
@@ -48,6 +48,13 @@ class PromptBundle(BaseModel):
     label_heading: str = Field(description="Label heading used for label.")
 
 
+def _batch(iterable, n=1) -> Iterable[Any]:
+    """Return iterable batches of an iterable."""
+    length = len(iterable)
+    for ndx in range(0, length, n):
+        yield iterable[ndx : min(ndx + n, length)]
+
+
 class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
     """A pack for creating differentially private simple llama-dataset."""
 
@@ -57,6 +64,10 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         tokenizer: Any,
         prompt_bundle: PromptBundle,
         simple_dataset: LabelledSimpleDataset,
+        batch_size: int = 5,
+        sleep_time_in_seconds: float = 0,
+        sephamore_counter_size: int = 1,
+        cache_checkpoints: bool = True,
         show_progress: bool = True,
     ):
         self.llm = llm
@@ -65,7 +76,11 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         self.simple_dataset = simple_dataset
         self._num_examples = len(self.simple_dataset.examples)
         self.labels = list({el.reference_label for el in self.simple_dataset[:]})
+        self.sleep_time_in_seconds = sleep_time_in_seconds
+        self._semaphore = asyncio.Semaphore(sephamore_counter_size)
         self.show_progress = show_progress
+        self.batch_size = batch_size
+        self.cache_checkpoints = cache_checkpoints
 
     @staticmethod
     def eps_to_sigma(eps: float, delta: float, mode: str = "gaussian") -> float:
@@ -75,6 +90,11 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         """
         sensitivity_upper_bound = np.sqrt(2)
         return (sensitivity_upper_bound * np.sqrt(np.log(1.25 / delta))) / eps
+
+    async def _async_worker(self, job: Coroutine) -> Any:
+        async with self._semaphore:
+            await asyncio.sleep(self.sleep_time_in_seconds)
+            return await job
 
     @dispatcher.span
     def _filter_dataset_by_label(self, label: str) -> LabelledSimpleDataset:
@@ -265,7 +285,9 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 synthetic_example=synthetic_example, label=label
             )
             try:
-                response = await self.llm.acomplete(token_universe_prompt)
+                response = await self._async_worker(
+                    self.llm.acomplete(token_universe_prompt)
+                )
                 token_universe_probas = {
                     el.token: np.exp(el.logprob)
                     for el in response.logprobs[0]  # only for next immediate token
@@ -287,7 +309,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             split_tasks = []
             for split in disjoint_splits:
                 prompt = self._get_private_prompt(split, synthetic_example, label)
-                split_tasks.append(self.llm.acomplete(prompt))
+                split_tasks.append(self._async_worker(self.llm.acomplete(prompt)))
 
             split_responses: List[CompletionResponse] = await asyncio.gather(
                 *split_tasks
@@ -414,6 +436,13 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
 
         asyncio_runner = asyncio_module(self.show_progress)
 
-        examples = await asyncio_runner.gather(*tasks)
+        # run in batch
+        examples = []
+        for batch in _batch(tasks, self.batch_size):
+            batch_examples = await asyncio_runner.gather(*batch)
+            examples += batch_examples
+            if self.cache_checkpoints:
+                checkpoint = LabelledSimpleDataset(examples=examples)
+                checkpoint.save_json("checkpoint.json")
 
         return LabelledSimpleDataset(examples=examples)
