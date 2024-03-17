@@ -16,6 +16,7 @@ class SQLTableSchema(BaseModel):
     """Lightweight representation of a SQL table."""
 
     table_name: str
+    table_schema: str
     context_str: Optional[str] = None
 
 
@@ -45,15 +46,19 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""
         # taken from existing schema logic
+        if obj.table_schema:
+            full_tbl_nm = f"{obj.table_schema}.{obj.table_name}"
+        else:
+            full_tbl_nm = obj.table_name
         table_text = (
-            f"Schema of table {obj.table_name}:\n"
-            f"{self._sql_database.get_single_table_info(obj.table_name)}\n"
+            f"Schema of table {full_tbl_nm}:\n"
+            f"{self._sql_database.get_single_table_info(table_name=obj.table_name, table_schema=obj.table_schema)}\n"
         )
 
-        metadata = {"name": obj.table_name}
+        metadata = {"name": full_tbl_nm}
 
         if obj.context_str is not None:
-            table_text += f"Context of table {obj.table_name}:\n"
+            table_text += f"Context of table {full_tbl_nm}:\n"
             table_text += obj.context_str
             metadata["context"] = obj.context_str
 
