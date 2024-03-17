@@ -8,7 +8,7 @@ from .event_handler import DiffPrivacyEventHandler
 import asyncio
 import os
 
-NUM_SPLITS = 4
+NUM_SPLITS = 3
 T_MAX = 150
 
 # attach event handler to root dispatcher
@@ -35,6 +35,7 @@ async def main():
 
     prompt_bundle = PromptBundle(
         instruction=(
+            "You are a patient experiencing symptoms of a specific disease. "
             "Given a label of disease type, generate the chosen type of symptoms accordingly.\n"
             "Start your answer directly after 'Symptoms: '. Begin your answer with [RESULT].\n"
         ),
@@ -52,7 +53,7 @@ async def main():
     )
 
     synthetic_dataset = await dp_simple_dataset_pack.arun(
-        sizes=4,
+        sizes=3,
         t_max=T_MAX,
         sigma=0.5,
         num_splits=NUM_SPLITS,
