@@ -94,11 +94,22 @@ def get_default_tokenizer() -> Callable:
 
 
 def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
-    """Convert from standard dataclass to pinecone filter dict."""
-    filters = {}
-    for filter in standard_filters.filters:
-        filters[filter.key] = filter.value
-    return filters
+    """
+    Convert from standard dataclass to pinecone filter dict.
+    Metadata filtering in pinecone is here for reference: https://docs.pinecone.io/docs/metadata-filtering
+    """
+    # Get the keys
+    keys = {filter.key for filter in standard_filters.filters}
+
+    # For each key, append a list
+    pinecone_filters = {}
+    for key in keys:
+        pinecone_filters[key] = {"$in": []}
+        for filter in standard_filters.filters:
+            if filter.key == key:
+                pinecone_filters[key]["$in"].append(filter.value)
+    # If one filters matches the metadata payload in pinecone, then include that node
+    return pinecone_filters
 
 
 import_err_msg = (
