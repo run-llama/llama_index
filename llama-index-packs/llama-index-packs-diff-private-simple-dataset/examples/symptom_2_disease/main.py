@@ -1,5 +1,4 @@
 import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.span_handlers import SimpleSpanHandler
 from llama_index.core.llama_dataset.simple import LabelledSimpleDataset
 from llama_index.packs.diff_private_simple_dataset.base import PromptBundle
 from llama_index.packs.diff_private_simple_dataset import DiffPrivateSimpleDatasetPack
@@ -9,11 +8,9 @@ from .event_handler import DiffPrivacyEventHandler
 import asyncio
 import os
 
-
+# attach event handler to root dispatcher
 event_handler = DiffPrivacyEventHandler()
-span_handler = SimpleSpanHandler()
 dispatcher = instrument.get_dispatcher()
-dispatcher.add_span_handler(span_handler)
 dispatcher.add_event_handler(event_handler)
 
 
