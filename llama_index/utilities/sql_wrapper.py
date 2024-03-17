@@ -6,8 +6,6 @@ from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-from llama_index.objects.table_node_mapping import SQLTableSchema
-
 
 class SQLDatabase:
     """
@@ -151,12 +149,12 @@ class SQLDatabase:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
-    def get_single_table_info(self, table: SQLTableSchema) -> str:
+    def get_single_table_info(self, table) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
-        full_tbl_nm = table.full_table_name
+        full_table_name = table.full_table_name
         template = (
-            "Table '{full_tbl_nm}' has columns: {columns}, "
+            "Table '{full_table_name}' has columns: {columns}, "
             "and foreign keys: {foreign_keys}."
         )
         columns = []
@@ -182,7 +180,9 @@ class SQLDatabase:
             )
         foreign_key_str = ", ".join(foreign_keys)
         return template.format(
-            full_tbl_nm=full_tbl_nm, columns=column_str, foreign_keys=foreign_key_str
+            full_table_name=full_table_name,
+            columns=column_str,
+            foreign_keys=foreign_key_str,
         )
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
