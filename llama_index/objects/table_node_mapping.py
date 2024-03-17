@@ -16,7 +16,8 @@ class SQLTableSchema(BaseModel):
     """Lightweight representation of a SQL table."""
 
     table_name: str
-    table_schema: str
+    full_table_name: str
+    table_schema: Optional[str] = None
     context_str: Optional[str] = None
 
 
@@ -46,19 +47,15 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""
         # taken from existing schema logic
-        if obj.table_schema:
-            full_tbl_nm = f"{obj.table_schema}.{obj.table_name}"
-        else:
-            full_tbl_nm = obj.table_name
         table_text = (
-            f"Schema of table {full_tbl_nm}:\n"
-            f"{self._sql_database.get_single_table_info(table_name=obj.table_name, table_schema=obj.table_schema)}\n"
+            f"Schema of table {obj.full_tbl_nm}:\n"
+            f"{self._sql_database.get_single_table_info(table=obj)}\n"
         )
 
-        metadata = {"name": full_tbl_nm}
+        metadata = {"name": obj.full_tbl_nm}
 
         if obj.context_str is not None:
-            table_text += f"Context of table {full_tbl_nm}:\n"
+            table_text += f"Context of table {obj.full_tbl_nm}:\n"
             table_text += obj.context_str
             metadata["context"] = obj.context_str
 
@@ -73,8 +70,15 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         """From node."""
         if node.metadata is None:
             raise ValueError("Metadata must be set")
+        full_table_name = node.metadata["name"]
+        table_split = full_table_name.split(".")
+        table_name = table_split[-1]
+        table_schema = table_split[0] if len(table_split) == 2 else None
         return SQLTableSchema(
-            table_name=node.metadata["name"], context_str=node.metadata.get("context")
+            table_name=table_name,
+            table_schema=table_schema,
+            full_table_name=full_table_name,
+            context_str=node.metadata.get("context"),
         )
 
     @property

@@ -6,6 +6,8 @@ from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
+from llama_index.objects.table_node_mapping import SQLTableSchema
+
 
 class SQLDatabase:
     """
@@ -149,17 +151,17 @@ class SQLDatabase:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
-    def get_single_table_info(self, table_name: str, table_schema: str) -> str:
+    def get_single_table_info(self, table: SQLTableSchema) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
-        full_tbl_nm = f"{table_schema}.{table_name}" if table_schema else table_name
+        full_tbl_nm = table.full_table_name
         template = (
             "Table '{full_tbl_nm}' has columns: {columns}, "
             "and foreign keys: {foreign_keys}."
         )
         columns = []
         for column in self._inspector.get_columns(
-            table_name=table_name, schema=table_schema
+            table_name=table.table_name, schema=table.table_schema
         ):
             if column.get("comment"):
                 columns.append(
@@ -172,7 +174,7 @@ class SQLDatabase:
         column_str = ", ".join(columns)
         foreign_keys = []
         for foreign_key in self._inspector.get_foreign_keys(
-            table_name=table_name, schema=table_schema
+            table_name=table.table_name, schema=table.table_schema
         ):
             foreign_keys.append(
                 f"{foreign_key['constrained_columns']} -> "
