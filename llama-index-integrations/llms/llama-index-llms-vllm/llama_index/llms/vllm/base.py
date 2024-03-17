@@ -351,8 +351,7 @@ class VllmServer(Vllm):
     def class_name(cls) -> str:
         return "VllmServer"
 
-    def __del__(self) -> None:
-        ...
+    def __del__(self) -> None: ...
 
     @llm_completion_callback()
     def complete(
@@ -382,14 +381,19 @@ class VllmServer(Vllm):
 
         def gen() -> CompletionResponseGen:
             response_str = ""
+            prev_prefix_len = len(prompt)
             for chunk in response.iter_lines(
                 chunk_size=8192, decode_unicode=False, delimiter=b"\0"
             ):
                 if chunk:
                     data = json.loads(chunk.decode("utf-8"))
 
-                    response_str += data["text"][0]
-                    yield CompletionResponse(text=response_str, delta=data["text"][0])
+                    increasing_concat = data["text"][0]
+                    pref = prev_prefix_len
+                    prev_prefix_len = len(increasing_concat)
+                    yield CompletionResponse(
+                        text=increasing_concat, delta=increasing_concat[pref:]
+                    )
 
         return gen()
 
@@ -429,4 +433,8 @@ class VllmServer(Vllm):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        return self.stream_chat(messages, **kwargs)
+        async def gen() -> ChatResponseAsyncGen:
+            for message in self.stream_chat(messages, **kwargs):
+                yield message
+
+        return gen()
