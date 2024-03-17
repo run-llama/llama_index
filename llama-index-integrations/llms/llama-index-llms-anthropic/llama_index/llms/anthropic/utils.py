@@ -29,9 +29,11 @@ def anthropic_modelname_to_contextsize(modelname: str) -> int:
     return CLAUDE_MODELS[modelname]
 
 
-def __merge_common_role_msgs(messages: Sequence[MessageParam]) -> Sequence[MessageParam]:
+def __merge_common_role_msgs(
+    messages: Sequence[MessageParam],
+) -> Sequence[MessageParam]:
     """Merge consecutive messages with the same role."""
-    postprocessed_messages : Sequence[MessageParam] = []
+    postprocessed_messages: Sequence[MessageParam] = []
     for message in messages:
         if (
             postprocessed_messages
@@ -64,7 +66,9 @@ def messages_to_anthropic_messages(
         else:
             message = MessageParam(
                 role=message.role.value,
-                content=[TextBlockParam(text=message.content, type="text")], # TODO: type detect for multimodal
+                content=[
+                    TextBlockParam(text=message.content, type="text")
+                ],  # TODO: type detect for multimodal
             )
             anthropic_messages.append(message)
     return __merge_common_role_msgs(anthropic_messages), system_prompt
