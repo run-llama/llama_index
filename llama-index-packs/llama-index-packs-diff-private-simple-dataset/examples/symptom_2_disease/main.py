@@ -58,6 +58,7 @@ async def main():
         num_splits=3,
         num_samples_per_split=8,
     )
+    synthetic_dataset.save_json("synthetic_dataset.json")
 
 
 if __name__ == "__main__":
