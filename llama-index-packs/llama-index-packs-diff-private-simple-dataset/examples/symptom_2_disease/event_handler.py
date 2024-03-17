@@ -18,7 +18,7 @@ class DiffPrivacyEventHandler(BaseEventHandler):
     synthetic_example_ends: int = 0
     llm_empty_responses: int = 0
     empty_intersections: int = 0
-    critical_threshold: int = 250
+    critical_threshold: int = 2_500  # ~2.5% error rate with OpenAI API calls
 
     @classmethod
     def class_name(cls) -> str:
