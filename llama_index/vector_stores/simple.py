@@ -52,24 +52,34 @@ def _build_metadata_filter_fn(
 
     def filter_fn(node_id: str) -> bool:
         metadata = metadata_lookup_fn(node_id)
+
+        # Checking if any filters match the metadata
         for filter_ in filter_list:
             metadata_value = metadata.get(filter_.key, None)
+
+            # If the filter key is not in the metadata, then return False
             if metadata_value is None:
+
                 return False
             elif isinstance(metadata_value, list):
-                if filter_.value not in metadata_value:
-                    return False
+                if filter_.value in metadata_value:
+
+                    return True
             elif isinstance(metadata_value, (int, float, str, bool)):
-                if metadata_value != filter_.value:
-                    return False
-        return True
+                if metadata_value == filter_.value:
+
+                    return True
+
+        # If no matches in the entire filter list, then return False
+        return False
 
     return filter_fn
 
 
 @dataclass
 class SimpleVectorStoreData(DataClassJsonMixin):
-    """Simple Vector Store Data container.
+    """
+    Simple Vector Store Data container.
 
     Args:
         embedding_dict (Optional[dict]): dict mapping node_ids to embeddings.
@@ -84,7 +94,8 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
 
 class SimpleVectorStore(VectorStore):
-    """Simple Vector Store.
+    """
+    Simple Vector Store.
 
     In this vector store, embeddings are stored within a simple, in-memory dictionary.
 
@@ -248,7 +259,9 @@ class SimpleVectorStore(VectorStore):
         embeddings = []
         # TODO: consolidate with get_query_text_embedding_similarities
         for node_id, embedding in self._data.embedding_dict.items():
+
             if node_filter_fn(node_id) and query_filter_fn(node_id):
+
                 node_ids.append(node_id)
                 embeddings.append(embedding)
 
