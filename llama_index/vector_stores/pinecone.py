@@ -393,7 +393,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             top_k_ids.append(match.id)
             top_k_nodes.append(node)
             top_k_scores.append(match.score)
-        breakpoint()
+
         return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
