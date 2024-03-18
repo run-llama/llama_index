@@ -141,11 +141,7 @@ This page hopefully has served as a good starting point for you to create, downl
 and use `LlamaDataset`'s for building robust and performant LLM Applications. To
 learn more, we recommend reading the notebook guides provided below.
 
-```{toctree}
----
-maxdepth: 1
----
+## Resources
 
-/examples/llama_dataset/labelled-rag-datasets.ipynb
-/examples/llama_dataset/downloading_llama_datasets.ipynb
-```
+- [Labelled RAG datasets](../../examples/llama_dataset/labelled-rag-datasets.ipynb)
+- [Downloading Llama datasets](/examples/llama_dataset/downloading_llama_datasets.ipynb)

@@ -65,26 +65,16 @@ storage_context = StorageContext.from_defaults(
 
 More details on customization/persistence can be found in the guides below.
 
-```{toctree}
----
-maxdepth: 1
----
-customization.md
-save_load.md
-```
+- [Customization](./customization.md)
+- [Save/Load](./save_load.md)
 
 ## Modules
 
 We offer in-depth guides on the different storage components.
 
-```{toctree}
----
-maxdepth: 1
----
-vector_stores.md
-docstores.md
-index_stores.md
-kv_stores.md
-/community/integrations/graph_stores.md
-chat_stores.md
-```
+- [Vector Stores](./vector_stores.md)
+- [Docstores](./docstores.md)
+- [Index Stores](./index_stores.md)
+- [Key-Val Stores](./kv_stores.md)
+- [Graph Stores](../../community/integrations/graph_stores.md)
+- [ChatStores](./chat_stores.md)

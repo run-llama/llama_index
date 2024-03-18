@@ -40,21 +40,9 @@ p.run(prompt_key1="<input1>", ...)
 
 More information can be found in our usage pattern guides below.
 
-```{toctree}
----
-maxdepth: 2
----
-usage_pattern.md
-module_usage.md
-```
+- [Usage Pattern Guide](./usage_pattern.md)
+- [Module Usage](./module_usage.md)
 
 ## Module Guides
 
-Check out our `QueryPipeline` end-to-end guides to learn standard to advanced ways to setup orchestration over your data.
-
-```{toctree}
----
-maxdepth: 2
----
-modules.md
-```
+Check out our `QueryPipeline` [end-to-end guides](./modules.md) to learn standard to advanced ways to setup orchestration over your data.

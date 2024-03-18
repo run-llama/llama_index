@@ -7,14 +7,9 @@ A lot of modules (routing, query transformations, and more) are already agentic 
 
 These include routing and query transformations.
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/querying/router/index.md
-/optimizing/advanced_retrieval/query_transformations.md
-Sub Question Query Engine (Intro) </examples/query_engine/sub_question_query_engine.ipynb>
-```
+- [Routing](../../module_guides/querying/router/index.md)
+- [Query Transformations](../../optimizing/advanced_retrieval/query_transformations.md)
+- [Sub Question Query Engine (Intro)](../../examples/query_engine/sub_question_query_engine.ipynb)
 
 ## Data Agents
 
@@ -26,14 +21,9 @@ Our [lower-level agent API](../../module_guides/deploying/agents/agent_runner.md
 
 Example guides below (using OpenAI function calling):
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/agent/openai_agent.ipynb
-/examples/agent/openai_agent_with_query_engine.ipynb
-/examples/agent/openai_agent_retrieval.ipynb
-/examples/agent/openai_agent_query_cookbook.ipynb
-/examples/agent/openai_agent_query_plan.ipynb
-/examples/agent/openai_agent_context_retrieval.ipynb
-```
+- [OpenAIAgent](../../examples/agent/openai_agent.ipynb)
+- [OpenAIAgent with Query Engine Tools](../../examples/agent/openai_agent_with_query_engine.ipynb)
+- [OpenAIAgent Retrieval](../../examples/agent/openai_agent_retrieval.ipynb)
+- [OpenAIAgent Query Cookbook](../../examples/agent/openai_agent_query_cookbook.ipynb)
+- [OpenAIAgent Query Planning](../../examples/agent/openai_agent_query_plan.ipynb)
+- [OpenAIAgent Context Retrieval](../../examples/agent/openai_agent_context_retrieval.ipynb)

@@ -173,13 +173,4 @@ print(
 
 ### Advanced - Automatic Metadata Extraction
 
-We have initial examples of using LLMs themselves to perform metadata extraction.
-
-Take a look here!
-
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
-```
+We have [initial examples](./usage_metadata_extractor.md) of using LLMs themselves to perform metadata extraction.

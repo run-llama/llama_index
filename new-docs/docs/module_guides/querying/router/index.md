@@ -181,12 +181,9 @@ selector_result = selector.select(
 print(selector_result.selections)
 ```
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/query_engine/RouterQueryEngine.ipynb
-/examples/query_engine/RetrieverRouterQueryEngine.ipynb
-/examples/query_engine/SQLRouterQueryEngine.ipynb
-/examples/retrievers/router_retriever.ipynb
-```
+More examples:
+
+- [Router Query Engine](../../../examples/query_engine/RouterQueryEngine.ipynb)
+- [Retriever Router Query Engine](../../../examples/query_engine/RetrieverRouterQueryEngine.ipynb)
+- [SQL Router Query Engine](../../../examples/query_engine/SQLRouterQueryEngine.ipynb)
+- [Router Retriever](../../../examples/retrievers/router_retriever.ipynb)

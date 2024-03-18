@@ -8,9 +8,8 @@ Build a query engine from index:
 query_engine = index.as_query_engine()
 ```
 
-```{tip}
-To learn how to build an index, see [Indexing](../../indexing/indexing.md)
-```
+!!! tip
+    To learn how to build an index, see [Indexing](../../indexing/indexing.md)
 
 Ask a question over your data
 
@@ -34,15 +33,6 @@ query_engine = index.as_query_engine(
 > Note: While the high-level API optimizes for ease-of-use, it does _NOT_ expose full range of configurability.
 
 See [**Response Modes**](./response_modes.md) for a full list of response modes and what they do.
-
-```{toctree}
----
-maxdepth: 1
-hidden:
----
-response_modes.md
-streaming.md
-```
 
 ### Low-Level Composition API
 

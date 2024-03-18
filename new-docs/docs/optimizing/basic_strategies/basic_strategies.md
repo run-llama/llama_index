@@ -11,23 +11,14 @@ Some tasks are listed below, from simple to advanced.
 
 1. Try inspecting the prompts used in your RAG pipeline (e.g. the question–answering prompt) and customizing it.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/prompts/prompt_mixin.ipynb
-/examples/prompts/advanced_prompts.ipynb
-```
+- [Customizing Prompts](../../examples/prompts/prompt_mixin.ipynb)
+- [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
 
 2. Try adding **prompt functions**, allowing you to dynamically inject few-shot examples or process the injected inputs.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/prompts/advanced_prompts.ipynb
-/examples/prompts/prompts_rag.ipynb
-```
+
+- [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
+- [RAG Prompts](../../examples/prompts/prompts_rag.ipynb)
 
 ## Embeddings
 
@@ -90,15 +81,10 @@ The solution to this issue is often hybrid search. In LlamaIndex, there are two 
 
 Relevant guides with both approaches can be found below:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/retrievers/bm25_retriever.ipynb
-/examples/retrievers/reciprocal_rerank_fusion.ipynb
-/examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
-/examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
-```
+- [BM25 Retriever](../../examples/retrievers/bm25_retriever.ipynb)
+- [Reciprocal Rerank Query Fusion](../../examples/retrievers/reciprocal_rerank_fusion.ipynb)
+- [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
 
 ## Metadata Filters
 
@@ -125,25 +111,15 @@ query_engine = index.as_query_engine(filters=filters)
 
 If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](../../module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/indexing/vector_store_guide.ipynb
-```
+- [Vector Store Guide](../../module_guides/indexing/vector_store_guide.ipynb)
 
 ## Document/Node Usage
 
 Take a look at our in-depth guides for more details on how to use Documents/Nodes.
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/loading/documents_and_nodes/usage_documents.md
-/module_guides/loading/documents_and_nodes/usage_nodes.md
-/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
-```
+- [Documents Usage](../../module_guides/loading/documents_and_nodes/usage_documents.md)
+- [Nodes Usage](../../module_guides/loading/documents_and_nodes/usage_nodes.md)
+- [Metadata Extraction](../../module_guides/loading/documents_and_nodes/usage_metadata_extractor.md)
 
 ## Multi-Tenancy RAG
 
@@ -151,11 +127,6 @@ Multi-Tenancy in RAG systems is crucial for ensuring data security. It enables u
 
 Refer the guides below for more details.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_tenancy/multi_tenancy_rag.ipynb
-```
+- [Multi Tenancy RAG](../../examples/multi_tenancy/multi_tenancy_rag.ipynb)
 
 For detailed guidance on implementing Multi-Tenancy RAG with LlamaIndex and Qdrant, refer to the [blog post](https://qdrant.tech/documentation/tutorials/llama-index-multitenancy/) released by Qdrant.

@@ -205,15 +205,10 @@ pipeline.run(documents=[...], num_workers=4)
 
 ## Modules
 
-```{toctree}
----
-maxdepth: 2
----
-transformations.md
-/examples/ingestion/advanced_ingestion_pipeline.ipynb
-/examples/ingestion/async_ingestion_pipeline.ipynb
-../../../examples/ingestion/document_management_pipeline.ipynb
-../../../examples/ingestion/redis_ingestion_pipeline.ipynb
-/examples/ingestion/ingestion_gdrive.ipynb
-/examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
-```
+- [Transformations Guide](transformations.md)
+- [Advanced Ingestion Pipeline](../../../examples/ingestion/advanced_ingestion_pipeline.ipynb)
+- [Async Ingestion Pipeline](../../../examples/ingestion/async_ingestion_pipeline.ipynb)
+- [Document Management Pipeline](../../../examples/ingestion/document_management_pipeline.ipynb)
+- [Redis Ingestion Pipeline](../../../examples/ingestion/redis_ingestion_pipeline.ipynb)
+- [Google Drive Ingestion Pipeline](../../../examples/ingestion/ingestion_gdrive.ipynb)
+- [Parallel Execution Pipeline](../../../examples/ingestion/parallel_execution_ingestion_pipeline.ipynb)s

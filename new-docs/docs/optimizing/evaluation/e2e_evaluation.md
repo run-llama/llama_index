@@ -10,12 +10,7 @@ It is helpful to start off with a small but diverse set of queries, and build up
 
 We've created some tools that automatically generate a dataset for you given a set of documents to query. (See example below).
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/evaluation/QuestionGeneration.ipynb
-```
+- [Question Generation](../../examples/evaluation/QuestionGeneration.ipynb)
 
 In the future, we will also be able to create datasets automatically against tools.
 
@@ -29,18 +24,13 @@ There is a spectrum of evaluation options ranging from metrics, cheaper models, 
 
 Below is some example usage of the [evaluation modules](evaluation.md):
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/evaluation/batch_eval.ipynb
-/examples/evaluation/correctness_eval.ipynb
-/examples/evaluation/faithfulness_eval.ipynb
-/examples/evaluation/guideline_eval.ipynb
-/examples/evaluation/pairwise_eval.ipynb
-/examples/evaluation/relevancy_eval.ipynb
-/examples/evaluation/semantic_similarity_eval.ipynb
-```
+- [Batch Eval Runner](../../examples/evaluation/batch_eval.ipynb)
+- [Correctness Eval](../../examples/evaluation/correctness_eval.ipynb)
+- [Faithfulness Eval](../../examples/evaluation/faithfulness_eval.ipynb)
+- [Guideline Eval](../../examples/evaluation/guideline_eval.ipynb)
+- [Pairwise Eval](../../examples/evaluation/pairwise_eval.ipynb)
+- [Relevancy Eval](../../examples/evaluation/relevancy_eval.ipynb)
+- [Semantic Similarity Eval](../../examples/evaluation/semantic_similarity_eval.ipynb)
 
 ## Discovery - Sensitivity Testing
 

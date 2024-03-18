@@ -46,19 +46,14 @@ You can learn more in our [Agent Module Guide](../../module_guides/deploying/age
 
 We have an `OpenAIAgent` implementation built on the [OpenAI API for function calling](https://openai.com/blog/function-calling-and-other-api-updates) that allows you to rapidly build agents:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/agent/openai_agent.ipynb
-/examples/agent/openai_agent_with_query_engine.ipynb
-/examples/agent/openai_agent_query_plan.ipynb
-/examples/agent/openai_assistant_agent.ipynb
-/examples/agent/openai_assistant_query_cookbook.ipynb
-/examples/agent/openai_forced_function_call.ipynb
-/examples/agent/openai_agent_parallel_function_calling.ipynb
-/examples/agent/openai_agent_context_retrieval.ipynb
-```
+- [OpenAIAgent](../../examples/agent/openai_agent.ipynb)
+- [OpenAIAgent with Query Engine Tools](../../examples/agent/openai_agent_with_query_engine.ipynb)
+- [OpenAIAgent Query Planning](../../examples/agent/openai_agent_query_plan.ipynb)
+- [OpenAI Assistant](../../examples/agent/openai_assistant_agent.ipynb)
+- [OpenAI Assistant Cookbook](../../examples/agent/openai_assistant_query_cookbook.ipynb)
+- [Forced Function Calling](../../examples/agent/openai_forced_function_call.ipynb)
+- [Parallel Function Calling](../../examples/agent/openai_agent_parallel_function_calling.ipynb)
+- [Context Retrieval](../../examples/agent/openai_agent_context_retrieval.ipynb)
 
 ## Agentic Components within LlamaIndex
 

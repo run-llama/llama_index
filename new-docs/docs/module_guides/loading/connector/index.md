@@ -4,9 +4,8 @@
 
 A data connector (aka `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
-```{tip}
-Once you've ingested your data, you can build an [Index](../../indexing/indexing.md) on top, ask questions using a [Query Engine](../../deploying/query_engine/index.md), and have a conversation using a [Chat Engine](../../deploying/chat_engines/index.md).
-```
+!!! tip
+    Once you've ingested your data, you can build an [Index](../../indexing/indexing.md) on top, ask questions using a [Query Engine](../../deploying/query_engine/index.md), and have a conversation using a [Chat Engine](../../deploying/chat_engines/index.md).
 
 ## LlamaHub
 
@@ -28,12 +27,7 @@ loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```
 
-```{toctree}
----
-maxdepth: 2
----
-usage_pattern.md
-```
+See the full [usage pattern guide](./usage_pattern.md) for more details.
 
 ## Modules
 
@@ -46,11 +40,4 @@ Some sample data connectors:
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
 - [Apify Actors](https://llamahub.ai/l/apify-actor) (`ApifyActor`). Can crawl the web, scrape webpages, extract text content, download files including `.pdf`, `.jpg`, `.png`, `.docx`, etc.
 
-See below for detailed guides.
-
-```{toctree}
----
-maxdepth: 2
----
-modules.rst
-```
+See the [modules guide](./modules.md) for more details.

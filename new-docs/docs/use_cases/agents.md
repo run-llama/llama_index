@@ -21,23 +21,13 @@ LlamaIndex provides some amazing tools to manage and interact with your data wit
 
 If you've built a RAG pipeline already and want to extend it with agentic behavior, check out the below resources
 
-```{toctree}
----
-maxdepth: 1
----
-Agents (Putting your RAG Pipeline Together) </understanding/putting_it_all_together/agents.md>
-Agentic Strategies (Optimizing your RAG Pipeline) </optimizing/agentic_strategies/agentic_strategies.md>
-```
+- [Agents (Putting your RAG Pipeline Together)](../understanding/putting_it_all_together/agents.md)
+- [Agentic Strategies (Optimizing your RAG Pipeline)](../optimizing/agentic_strategies/agentic_strategies.md)
 
 If you want to check out our standalone documentation hubs on agents and tools, check out the following module guides:
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/deploying/agents/index.md
-/module_guides/deploying/agents/tools/index.md
-```
+- [Agents](../module_guides/deploying/agents/index.md)
+- [Tools](../module_guides/deploying/agents/tools/index.md)
 
 ## LlamaHub
 

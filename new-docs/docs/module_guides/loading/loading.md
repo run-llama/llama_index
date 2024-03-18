@@ -24,14 +24,3 @@ This includes common operations like splitting text.
 ### Abstractions
 
 - [Document and Node objects](documents_and_nodes/index.md) and how to customize them for more advanced use cases
-
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-connector/index.md
-documents_and_nodes/index.md
-node_parsers/index.md
-ingestion_pipeline/index.md
-```

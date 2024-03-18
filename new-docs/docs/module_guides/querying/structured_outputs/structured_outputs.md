@@ -25,11 +25,8 @@ append format instructions to the prompt. After the LLM call, the output parser 
 
 With function calling APIs, the output is inherently in a structured format, and the input can take in the signature of the desired object. The structured output just needs to be cast in the right object format (e.g. Pydantic).
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/querying/structured_outputs/pydantic_program.md
-/module_guides/querying/structured_outputs/query_engine.md
-/module_guides/querying/structured_outputs/output_parser.md
-```
+## Resources
+
+- [Pydanitc Programs](./pydantic_program.md)
+- [Structured Outputs + Query Engines](./query_engine.md)
+- [Output Parsers](./output_parser.md)

@@ -45,13 +45,8 @@ This can help retrieve relevant documents at a high-level before retrieving chun
 
 Resources:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/query_engine/pdf_tables/recursive_retriever.ipynb
-/examples/index_structs/doc_summary/DocSummary.ipynb
-```
+- [Table Recursive Retrieval](../examples/query_engine/pdf_tables/recursive_retriever.ipynb)
+- [Document Summary Index](../examples/index_structs/doc_summary/DocSummary.ipynb)
 
 **2. Embed a sentence, which then links to a window around the sentence.**
 
@@ -59,13 +54,7 @@ This allows for finer-grained retrieval of relevant context (embedding giant chu
 
 Resources:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/node_postprocessor/MetadataReplacementDemo.ipynb
-
-```
+- [Metadata Replacement Postprocessor](../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
 
 ## Structured Retrieval for Larger Document Sets
 
@@ -96,15 +85,10 @@ Embed document summaries and map to chunks per document. Fetch at the document-l
 
 **Resources**
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/vector_stores/chroma_auto_retriever.ipynb
-/examples/index_structs/doc_summary/DocSummary.ipynb
-/examples/query_engine/recursive_retriever_agents.ipynb
-/examples/retrievers/auto_vs_recursive_retriever.ipynb
-```
+- [Chroma Auto-Retrieval](../examples/vector_stores/chroma_auto_retriever.ipynb)
+- [Document Summary Index](../examples/index_structs/doc_summary/DocSummary.ipynb)
+- [Recursive Retriever](../examples/query_engine/recursive_retriever_agents.ipynb)
+- [Auto-Retriever vs. Recursive Retriever](../examples/retrievers/auto_vs_recursive_retriever.ipynb)
 
 ## Dynamically Retrieve Chunks Depending on your Task
 
@@ -130,17 +114,12 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Detailed Guide Resources**
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/query_engine/sub_question_query_engine.ipynb
-/examples/query_engine/JointQASummary.ipynb
-/examples/query_engine/recursive_retriever_agents.ipynb
-/examples/query_engine/RouterQueryEngine.ipynb
-/examples/agent/openai_agent_query_cookbook.ipynb
-/examples/agent/openai_agent_query_plan.ipynb
-```
+- [Sub-Question Query Engine](../examples/query_engine/sub_question_query_engine.ipynb)
+- [Joint QA-Summary](../examples/query_engine/JointQASummary.ipynb)
+- [Recursive Retriever Agents](../examples/query_engine/recursive_retriever_agents.ipynb)
+- [Router Query Engine](../examples/query_engine/RouterQueryEngine.ipynb)
+- [OpenAI Agent Cookbook](../examples/agent/openai_agent_query_cookbook.ipynb)
+- [OpenAIAgent Query Planning](../examples/agent/openai_agent_query_plan.ipynb)
 
 ## Optimize Context Embeddings
 
@@ -157,9 +136,4 @@ We can actually do this over an unstructured text corpus, in a label-free way.
 
 Check out our guides here:
 
-```{toctree}
----
-maxdepth: 1
----
-Embedding Fine-tuning Guide </examples/finetuning/embeddings/finetune_embedding.ipynb>
-```
+- [Embedding Fine-tuning Guide](../examples/finetuning/embeddings/finetune_embedding.ipynb)

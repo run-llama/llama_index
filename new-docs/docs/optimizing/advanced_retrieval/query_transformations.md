@@ -81,11 +81,5 @@ print(str(response))
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.
 
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-/examples/query_transformations/HyDEQueryTransformDemo.ipynb
-/examples/query_transformations/SimpleIndexDemo-multistep.ipynb
-```
+- [HyDE Query Transform](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb)
+- [Multistep Query](../../examples/query_transformations/SimpleIndexDemo-multistep.ipynb)

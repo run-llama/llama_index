@@ -20,9 +20,8 @@ documents = SimpleDirectoryReader(
 index = VectorStoreIndex.from_documents(documents)
 ```
 
-```{tip}
-If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
-```
+!!! tip
+    If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
 
 When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/index.md), lightweight abstractions over text strings that keep track of metadata and relationships.
 
@@ -30,11 +29,10 @@ For more on how to load documents, see [Understanding Loading](../loading/loadin
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
-```{tip}
-By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
+!!! tip
+    By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
 
-This is especially helpful when you are inserting into a remotely hosted vector database.
-```
+    This is especially helpful when you are inserting into a remotely hosted vector database.
 
 ### Using the ingestion pipeline to create nodes
 
@@ -60,9 +58,8 @@ pipeline = IngestionPipeline(
 nodes = pipeline.run(documents=[Document.example()])
 ```
 
-```{tip}
-You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/index.md).
-```
+!!! tip
+    You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/index.md).
 
 ### Creating and managing nodes directly
 
@@ -81,13 +78,8 @@ index = VectorStoreIndex(nodes)
 
 When managing your index directly, you will want to deal with data sources that change over time. `Index` classes have **insertion**, **deletion**, **update**, and **refresh** operations and you can learn more about them below:
 
-```{toctree}
----
-maxdepth: 1
----
-metadata_extraction.md
-document_management.md
-```
+- [Metadata Extraction](metadata_extraction.md)
+- [Document Management](document_management.md)
 
 ## Storing the vector index
 
@@ -126,14 +118,6 @@ For more examples of how to use VectorStoreIndex, see our [vector store index us
 
 For examples of how to use VectorStoreIndex with specific vector stores, check out our [vector stores](../storing/vector_stores.md) section under Loading.
 
-```{toctree}
----
-maxdepth: 1
-hidden: True
----
-vector_store_guide.ipynb
-```
-
 ## Composable Retrieval
 
 The `VectorStoreIndex` (and any other index/retriever) is capable of retrieving generic objects, including
@@ -163,12 +147,4 @@ retriever = index.as_retreiver(verbose=True)
 
 If the index node containing the query engine is retrieved, the query engine will be ran and the resulting response returned as a node.
 
-For more details, checkout the guide below.
-
-```{toctree}
----
-maxdepth: 1
-hidden: True
----
-/examples/retrievers/composable_retrievers.ipynb
-```
+For more details, checkout [the guide](../../examples/retrievers/composable_retrievers.ipynb)

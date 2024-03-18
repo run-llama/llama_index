@@ -34,15 +34,7 @@ retriever = index.as_retriever()
 source_nodes = retriever.retrieve("What did the author do growing up?")
 ```
 
-See the notebook guide for full details.
-
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-/examples/managed/GoogleDemo.ipynb
-```
+See the [notebook guide](../../examples/managed/GoogleDemo.ipynb) for full details.
 
 ## Vectara
 
@@ -95,14 +87,8 @@ index = VectaraIndex()
 
 And the index will connect to the existing corpus without loading any new documents.
 
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-/examples/managed/vectaraDemo.ipynb
-/examples/retrievers/vectara_auto_retriever.ipynb
-```
+- [Vectara Demo](../../examples/managed/vectaraDemo.ipynb)
+- [Vectara AutoRetriever](../../examples/retrievers/vectara_auto_retriever.ipynb)
 
 ## Zilliz
 
@@ -152,10 +138,4 @@ retrieval_result = query_engine_with_filters.retrieve(question)
 answer = query_engine_with_filters.query(question)
 ```
 
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-/examples/managed/zcpDemo.ipynb
-```
+- [Zilliz Example Notebook](../../examples/managed/zcpDemo.ipynb)

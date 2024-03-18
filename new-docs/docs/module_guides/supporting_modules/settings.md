@@ -109,13 +109,12 @@ Settings.context_window = 4096
 Settings.num_output = 256
 ```
 
-```{tip}
-Learn how to configure specific modules:
-- [LLM](../models/llms/usage_custom.md)
-- [Embedding Model](../models/embeddings.md)
-- [Node Parser/Text Splitters](../loading/node_parsers/index.md)
-- [Callbacks](../observability/callbacks/index.md)
-```
+!!! tip
+    Learn how to configure specific modules:
+    - [LLM](../models/llms/usage_custom.md)
+    - [Embedding Model](../models/embeddings.md)
+    - [Node Parser/Text Splitters](../loading/node_parsers/index.md)
+    - [Callbacks](../observability/callbacks/index.md)
 
 ## Setting local configurations
 

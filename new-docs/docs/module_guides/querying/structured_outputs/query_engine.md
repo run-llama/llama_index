@@ -54,10 +54,5 @@ print(response.extra_info)
 
 Detailed usage is available in the notebooks below:
 
-```{toctree}
----
-maxdepth: 2
----
-/examples/query_engine/pydantic_query_engine.ipynb
-/examples/response_synthesizers/pydantic_tree_summarize.ipynb
-```
+- [Structured Outputs with a Query Engine](../../../examples/query_engine/pydantic_query_engine.ipynb)
+- [Structured Outputs with a Tree Summarize](../../../examples/response_synthesizers/pydantic_tree_summarize.ipynb)

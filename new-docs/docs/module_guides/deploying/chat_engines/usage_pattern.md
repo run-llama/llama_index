@@ -8,9 +8,8 @@ Build a chat engine from index:
 chat_engine = index.as_chat_engine()
 ```
 
-```{tip}
-To learn how to build an index, see [Indexing](../../indexing/index_guide.md)
-```
+!!! tip
+    To learn how to build an index, see [Indexing](../../indexing/index_guide.md)
 
 Have a conversation with your data:
 
@@ -112,9 +111,8 @@ chat_engine = CondenseQuestionChatEngine.from_defaults(
 
 To enable streaming, you simply need to call the `stream_chat` endpoint instead of the `chat` endpoint.
 
-```{warning}
-This somewhat inconsistent with query engine (where you pass in a `streaming=True` flag). We are working on making the behavior more consistent!
-```
+!!! warning
+    This somewhat inconsistent with query engine (where you pass in a `streaming=True` flag). We are working on making the behavior more consistent!
 
 ```python
 chat_engine = index.as_chat_engine()

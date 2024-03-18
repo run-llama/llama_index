@@ -17,19 +17,14 @@ All the core RAG concepts: indexing, retrieval, and synthesis, can be extended i
 
 Check out our guides below:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
-Multi-modal retrieval with CLIP </examples/multi_modal/multi_modal_retrieval.ipynb>
-Image to Image Retrieval </examples/multi_modal/image_to_image_retrieval.ipynb>
-/examples/multi_modal/structured_image_retrieval.ipynb
-/examples/multi_modal/ChromaMultiModalDemo.ipynb
-/examples/multi_modal/multi_modal_pdf_tables.ipynb
-/examples/multi_modal/gemini.ipynb
-/examples/multi_modal/ollama_cookbook.ipynb
-```
+- [GPT-4V Multi Modal](../examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)
+- [Multi-modal retrieval with CLIP](../examples/multi_modal/multi_modal_retrieval.ipynb)
+- [Image to Image Retrieval](../examples/multi_modal/image_to_image_retrieval.ipynb)
+- [Structured Image Retrieval](../examples/multi_modal/structured_image_retrieval.ipynb)
+- [Chroma Multi-Modal](../examples/multi_modal/ChromaMultiModalDemo.ipynb)
+- [PDF Tables](../examples/multi_modal/multi_modal_pdf_tables.ipynb)
+- [Gemini Multi-Modal](../examples/multi_modal/gemini.ipynb)
+- [Ollama Multi-Modal](../examples/multi_modal/ollama_cookbook.ipynb)
 
 ### Structured Outputs
 
@@ -37,12 +32,7 @@ You can generate a `structured` output with the new OpenAI GPT4V via LlamaIndex.
 
 Check out the guide below:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/multi_modal_pydantic.ipynb
-```
+- [Multi-Modal Pydantic Program](../examples/multi_modal/multi_modal_pydantic.ipynb)
 
 ### Retrieval-Augmented Image Captioning
 
@@ -50,24 +40,14 @@ Oftentimes understanding an image requires looking up information from a knowled
 
 Check out our guides below:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
-```
+- [Llava + Testla 10Q](../examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)
 
 ### Agents
 
 Here are some initial works demonstrating agentic capabilities with GPT-4V.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/mm_agent.ipynb
-/examples/multi_modal/gpt4v_experiments_cot.ipynb
-```
+- [Multi-Modal Agents](../examples/multi_modal/mm_agent.ipynb)
+- [GPT-4V Experiments](../examples/multi_modal/gpt4v_experiments_cot.ipynb)
 
 ## Evaluations and Comparisons
 
@@ -85,34 +65,19 @@ These notebooks show how to use different Multi-Modal LLM models for image under
 
 Check out our guides below:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/replicate_multi_modal.ipynb
-GPT4-V: </examples/multi_modal/openai_multi_modal.ipynb>
-```
+- [Replicate Multi-Modal](../examples/multi_modal/replicate_multi_modal.ipynb)
+- [GPT4-V](../examples/multi_modal/openai_multi_modal.ipynb)
 
 ### Simple Evaluation of Multi-Modal RAG
 
 In this notebook guide, we'll demonstrate how to evaluate a Multi-Modal RAG system. As in the text-only case, we will consider the evaluation of Retrievers and Generators separately. As we alluded in our blog on the topic of Evaluating Multi-Modal RAGs, our approach here involves the application of adapted versions of the usual techniques for evaluating both Retriever and Generator (used for the text-only case). These adapted versions are part of the llama-index library (i.e., evaluation module), and this notebook will walk you through how you can apply them to your evaluation use-cases.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
-```
+- [Multi-Modal RAG Evaluation](../examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb)
 
 ## Model Guides
 
 Here are notebook guides showing you how to interact with different multimodal model providers.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/multi_modal/openai_multi_modal.ipynb
-/examples/multi_modal/replicate_multi_modal.ipynb
-/examples/multi_modal/ollama_multi_modal.ipynb
-```
+- [OpenAI Multi-Modal](../examples/multi_modal/openai_multi_modal.ipynb)
+- [Replicate Multi-Modal](../examples/multi_modal/replicate_multi_modal.ipynb)
+- [Ollama Multi-Modal](../examples/multi_modal/ollama_multi_modal.ipynb)

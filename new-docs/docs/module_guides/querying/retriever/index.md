@@ -7,9 +7,8 @@ Retrievers are responsible for fetching the most relevant context given a user q
 It can be built on top of [indexes](../../indexing/indexing.md), but can also be defined independently.
 It is used as a key building block in [query engines](../../deploying/query_engine/index.md) (and [Chat Engines](../../deploying/chat_engines/index.md)) for retrieving relevant context.
 
-```{tip}
-Confused about where retriever fits in the pipeline? Read about [high-level concepts](/getting_started/concepts.md)
-```
+!!! tip
+    Confused about where retriever fits in the pipeline? Read about [high-level concepts](/getting_started/concepts.md)
 
 ## Usage Pattern
 
@@ -54,14 +53,6 @@ This creates a [SummaryIndexLLMRetriever](../../../api_reference/retrievers/summ
 See [**Retriever Modes**](retriever_modes.md) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.
 
-```{toctree}
----
-maxdepth: 1
-hidden:
----
-retriever_modes.md
-```
-
 ### Configuring a Retriever
 
 In the same way, you can pass kwargs to configure the selected retriever.
@@ -94,9 +85,4 @@ retriever = SummaryIndexLLMRetriever(
 
 ## Examples
 
-```{toctree}
----
-maxdepth: 2
----
-retrievers.md
-```
+See more examples in the [retrievers guide](./retrievers.md).

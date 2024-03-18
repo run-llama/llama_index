@@ -54,48 +54,45 @@ We are actively adding more integrations and improving feature coverage for each
 
 For more details, see [Vector Store Integrations](../../community/integrations/vector_stores.md).
 
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-/examples/vector_stores/AstraDBIndexDemo.ipynb
-/examples/vector_stores/AsyncIndexCreationDemo.ipynb
-/examples/vector_stores/AzureAISearchIndexDemo.ipynb
-/examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
-/examples/vector_stores/CassandraIndexDemo.ipynb
-/examples/vector_stores/ChromaIndexDemo.ipynb
-/examples/vector_stores/DashvectorIndexDemo.ipynb
-/examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
-/examples/vector_stores/DeepLakeIndexDemo.ipynb
-/examples/vector_stores/DocArrayHnswIndexDemo.ipynb
-/examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
-/examples/vector_stores/EpsillaIndexDemo.ipynb
-/examples/vector_stores/JaguarIndexDemo.ipynb
-/examples/vector_stores/LanceDBIndexDemo.ipynb
-/examples/vector_stores/LanternIndexDemo.ipynb
-/examples/vector_stores/MetalIndexDemo.ipynb
-/examples/vector_stores/MilvusIndexDemo.ipynb
-/examples/vector_stores/MyScaleIndexDemo.ipynb
-/examples/vector_stores/ElasticsearchIndexDemo.ipynb
-/examples/vector_stores/FaissIndexDemo.ipynb
-/examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
-/examples/vector_stores/Neo4jVectorDemo.ipynb
-/examples/vector_stores/OpensearchDemo.ipynb
-/examples/vector_stores/PineconeIndexDemo.ipynb
-/examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
-/examples/vector_stores/PGVectoRsDemo.ipynb
-/examples/vector_stores/postgres.ipynb
-/examples/vector_stores/RedisIndexDemo.ipynb
-/examples/vector_stores/QdrantIndexDemo.ipynb
-/examples/vector_stores/qdrant_hybrid.ipynb
-/examples/vector_stores/RocksetIndexDemo.ipynb
-/examples/vector_stores/SimpleIndexDemo.ipynb
-/examples/vector_stores/SupabaseVectorIndexDemo.ipynb
-/examples/vector_stores/TairIndexDemo.ipynb
-/examples/vector_stores/TencentVectorDBIndexDemo.ipynb
-/examples/vector_stores/Timescalevector.ipynb
-/examples/vector_stores/WeaviateIndexDemo.ipynb
-/examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
-/examples/vector_stores/ZepIndexDemo.ipynb
-```
+## Example Notebooks
+
+- [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
+- [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
+- [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)
+- [Azure Cosmos DB](../../examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb)
+- [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
+- [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
+- [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
+- [Dash Hybrid Search](../../examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb)
+- [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
+- [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
+- [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
+- [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Jaguar](../../examples/vector_stores/JaguarIndexDemo.ipynb)
+- [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
+- [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
+- [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
+- [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
+- [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
+- [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
+- [MongoDB Atlas](../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb)
+- [Neo4j](../../examples/vector_stores/Neo4jVectorDemo.ipynb)
+- [OpenSearch](../../examples/vector_stores/OpensearchDemo.ipynb)
+- [Pinecone](../../examples/vector_stores/PineconeIndexDemo.ipynb)
+- [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
+- [PGvectoRS](../../examples/vector_stores/PGVectoRsDemo.ipynb)
+- [Postgres](../../examples/vector_stores/postgres.ipynb)
+- [Redis](../../examples/vector_stores/RedisIndexDemo.ipynb)
+- [Qdrant](../../examples/vector_stores/QdrantIndexDemo.ipynb)
+- [Qdrant Hybrid Search](../../examples/vector_stores/qdrant_hybrid.ipynb)
+- [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
+- [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
+- [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
+- [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
+- [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
+- [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
+- [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
+- [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
+- [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

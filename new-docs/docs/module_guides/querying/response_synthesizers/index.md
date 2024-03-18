@@ -8,9 +8,8 @@ The method for doing this can take many forms, from as simple as iterating over 
 
 When used in a query engine, the response synthesizer is used after nodes are retrieved from a retriever, and after any node-postprocessors are ran.
 
-```{tip}
-Confused about where response synthesizer fits in the pipeline? Read the [high-level concepts](/getting_started/concepts.md)
-```
+!!! tip
+  Confused about where response synthesizer fits in the pipeline? Read the [high-level concepts](/getting_started/concepts.md)
 
 ## Usage Pattern
 
@@ -64,9 +63,8 @@ query_engine = index.as_query_engine(response_synthesizer=response_synthesizer)
 response = query_engine.query("query_text")
 ```
 
-```{tip}
-To learn how to build an index, see [Indexing](../../indexing/indexing.md)
-```
+!!! tip
+  To learn how to build an index, see [Indexing](../../indexing/indexing.md)
 
 ## Configuring the Response Mode
 
@@ -221,10 +219,4 @@ response = summarizer.get_response(
 
 ## Modules
 
-```{toctree}
----
-maxdepth: 2
----
-/module_guides/querying/response_synthesizers/response_synthesizers.md
-
-```
+See the full [module guide](./response_synthesizers.md) for more details.

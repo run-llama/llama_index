@@ -121,15 +121,10 @@ Output:
 
 ### Guides
 
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
+More examples:
 
-/examples/output_parsing/GuardrailsDemo.ipynb
-/examples/output_parsing/LangchainOutputParserDemo.ipynb
-/examples/output_parsing/guidance_pydantic_program.ipynb
-/examples/output_parsing/guidance_sub_question.ipynb
-/examples/output_parsing/openai_pydantic_program.ipynb
-```
+- [Guardrails](../../../examples/output_parsing/GuardrailsDemo.ipynb)
+- [Langchain](../../../examples/output_parsing/LangchainOutputParserDemo.ipynb)
+- [Guidance Pydantic Program](../../../examples/output_parsing/guidance_pydantic_program.ipynb)
+- [Guidance Sub-Question](../../../examples/output_parsing/guidance_sub_question.ipynb)
+- [Openai Pydantic Program](../../../examples/output_parsing/openai_pydantic_program.ipynb)

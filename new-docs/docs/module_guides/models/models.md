@@ -2,19 +2,9 @@
 
 There are a few primary ways you interact with models in LlamaIndex:
 
-```{toctree}
----
-maxdepth: 1
----
-llms.md
-embeddings.md
-```
+- [LLMs](./llms.md)
+- [Embeddings](./embeddings.md)
 
 Experimental
 
-```{toctree}
----
-maxdepth: 1
----
-multi_modal.md
-```
+- [MultiModal](./multi_modal.md)

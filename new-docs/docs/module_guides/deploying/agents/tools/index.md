@@ -33,22 +33,8 @@ tool_spec = GmailToolSpec()
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list(), verbose=True)
 ```
 
-See our Usage Pattern Guide for more details.
-
-```{toctree}
----
-maxdepth: 1
----
-usage_pattern.md
-```
+See our [Usage Pattern Guide](./usage_pattern.md) for more details.
 
 ## LlamaHub Tools Guide 🛠️
 
-Check out our guide for a full overview of the Tools/Tool Specs in LlamaHub!
-
-```{toctree}
----
-maxdepth: 1
----
-llamahub_tools_guide.md
-```
+Check out [our guide](./llamahub_tools_guide.md) for a full overview of the Tools/Tool Specs in LlamaHub!

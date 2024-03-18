@@ -205,30 +205,25 @@ embeddings = embed_model.get_text_embedding(
 
 We support integrations with OpenAI, Azure, and anything LangChain offers.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/customization/llms/AzureOpenAI.ipynb
-/examples/embeddings/clarifai.ipynb
-/examples/embeddings/cohereai.ipynb
-/examples/embeddings/custom_embeddings.ipynb
-/examples/embeddings/dashscope_embeddings.ipynb
-/examples/embeddings/elasticsearch.ipynb
-/examples/embeddings/fastembed.ipynb
-/examples/embeddings/google_palm.ipynb
-/examples/embeddings/gradient.ipynb
-/examples/embeddings/Anyscale.ipynb
-/examples/embeddings/huggingface.ipynb
-/examples/embeddings/jinaai_embeddings.ipynb
-/examples/embeddings/Langchain.ipynb
-/examples/embeddings/llm_rails.ipynb
-/examples/embeddings/mistralai.ipynb
-/examples/embeddings/OpenAI.ipynb
-/examples/embeddings/sagemaker_embedding_endpoint.ipynb
-/examples/embeddings/text_embedding_inference.ipynb
-/examples/embeddings/together.ipynb
-/examples/embeddings/voyageai.ipynb
-/examples/embeddings/nomic.ipynb
-/examples/embeddings/fireworks.ipynb
-```
+- [Azure OpenAI](../../examples/customization/llms/AzureOpenAI.ipynb)
+- [CalrifAI](../../examples/embeddings/clarifai.ipynb)
+- [Cohere](../../examples/embeddings/cohereai.ipynb)
+- [Custom](../../examples/embeddings/custom_embeddings.ipynb)
+- [Dashscope](../../examples/embeddings/dashscope_embeddings.ipynb)
+- [ElasticSearch](../../examples/embeddings/elasticsearch.ipynb)
+- [FastEmbed](../../examples/embeddings/fastembed.ipynb)
+- [Google Palm](../../examples/embeddings/google_palm.ipynb)
+- [Gradient](../../examples/embeddings/gradient.ipynb)
+- [Anyscale](../../examples/embeddings/Anyscale.ipynb)
+- [Huggingface](../../examples/embeddings/huggingface.ipynb)
+- [JinaAI](../../examples/embeddings/jinaai_embeddings.ipynb)
+- [Langchain](../../examples/embeddings/Langchain.ipynb)
+- [LLM Rails](../../examples/embeddings/llm_rails.ipynb)
+- [MistralAI](../../examples/embeddings/mistralai.ipynb)
+- [OpenAI](../../examples/embeddings/OpenAI.ipynb)
+- [Sagemaker](../../examples/embeddings/sagemaker_embedding_endpoint.ipynb)
+- [Text Embedding Inference](../../examples/embeddings/text_embedding_inference.ipynb)
+- [TogetherAI](../../examples/embeddings/together.ipynb)
+- [VoyageAI](../../examples/embeddings/voyageai.ipynb)
+- [Nomic](../../examples/embeddings/nomic.ipynb)
+- [Fireworks AI](../../examples/embeddings/fireworks.ipynb)

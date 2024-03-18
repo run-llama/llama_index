@@ -21,10 +21,6 @@ The general process for contributing any of our other llama-datasets such as the
 `LabelledEvaluatorDataset` is the same as for the `LabelledRagDataset` previously
 described. Submission templates for these other datasets are coming soon!
 
-```{toctree}
----
-maxdepth: 1
----
+## Submission Example
 
-/examples/llama_dataset/ragdataset_submission_template.ipynb
-```
+Read the full [submission example Notebook](../../examples/llama_dataset/ragdataset_submission_template.ipynb).

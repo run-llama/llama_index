@@ -59,11 +59,5 @@ equipped to perform the pairwise evaluation task — i.e., should be a `Pairwise
 To see these datasets in action, be sure to checkout the notebooks listed below
 that benchmark LLM evaluators on slightly adapted versions of the MT-Bench dataset.
 
-```{toctree}
----
-maxdepth: 1
----
-
-/examples/evaluation/mt_bench_single_grading.ipynb
-/examples/evaluation/mt_bench_human_judgement.ipynb
-```
+- [MTBench Single Grading](../../examples/evaluation/mt_bench_single_grading.ipynb)
+- [MTBench Human Judge](../../examples/evaluation/mt_bench_human_judgement.ipynb)

@@ -12,30 +12,15 @@ There's a few general types of Pydantic Programs:
 
 ## LLM Text Completion Pydantic Programs
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/output_parsing/llm_program.ipynb
-```
+See the example notebook on [LLM Text Completion programs](../../../examples/output_parsing/llm_program.ipynb)
 
 ## LLM Function Calling Pydantic Programs
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/output_parsing/openai_pydantic_program.ipynb
-/examples/output_parsing/guidance_pydantic_program.ipynb
-/examples/output_parsing/guidance_sub_question.ipynb
-```
+- [OpenAI Pydantic Program](../../../examples/output_parsing/openai_pydantic_program.ipynb)
+- [Guidance Pydantic Program](../../../examples/output_parsing/guidance_pydantic_program.ipynb)
+- [Guidance Sub-Question Generator](../../../examples/output_parsing/guidance_sub_question.ipynb)
 
 ## Prepackaged Pydantic Programs
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/output_parsing/df_program.ipynb
-/examples/output_parsing/evaporate_program.ipynb
-```
+- [DF Program](../../../examples/output_parsing/df_program.ipynb)
+- [Evaporate Program](../../../examples/output_parsing/evaporate_program.ipynb)

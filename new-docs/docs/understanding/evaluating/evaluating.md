@@ -63,11 +63,3 @@ In reality you would want to evaluate a whole batch of retrievals; you can learn
 ## Related concepts
 
 You may be interested in [analyzing the cost of your application](cost_analysis/index.md) if you are making calls to a hosted, remote LLM.
-
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-cost_analysis/index.md
-```

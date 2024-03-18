@@ -9,9 +9,8 @@ Think ChatGPT, but augmented with your knowledge base.
 Conceptually, it is a **stateful** analogy of a [Query Engine](../query_engine/index.md).
 By keeping track of the conversation history, it can answer questions with past context in mind.
 
-```{tip}
-If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](../query_engine/index.md) instead.
-```
+!!! tip
+    If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](../query_engine/index.md) instead.
 
 ## Usage Pattern
 
@@ -31,20 +30,8 @@ for token in streaming_response.response_gen:
     print(token, end="")
 ```
 
-```{toctree}
----
-maxdepth: 2
----
-usage_pattern.md
-```
+More details in the complete [usage pattern guide](./usage_pattern.md).
 
 ## Modules
 
-Below you can find corresponding tutorials to see the available chat engines in action.
-
-```{toctree}
----
-maxdepth: 2
----
-modules.md
-```
+In our [modules section](./modules.md), you can find corresponding tutorials to see the available chat engines in action.

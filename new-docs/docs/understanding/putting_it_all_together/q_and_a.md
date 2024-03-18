@@ -213,14 +213,3 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 - [A Guide to Extracting Terms and Definitions](q_and_a/terms_definitions_tutorial.md)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)
-
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-q_and_a/terms_definitions_tutorial.md
-/understanding/putting_it_all_together/graphs.md
-structured_data.md
-/understanding/putting_it_all_together/structured_data/Airbyte_demo.ipynb
-```

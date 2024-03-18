@@ -33,13 +33,7 @@ resp = OpenAI().complete("Paul Graham is ")
 print(resp)
 ```
 
-```{toctree}
----
-maxdepth: 1
----
-llms/usage_standalone.md
-llms/usage_custom.md
-```
+Find more details on [standalone usage](./llms/usage_standalone.md) or [custom usage](./llms/usage_custom.md).
 
 ## A Note on Tokenization
 
@@ -116,21 +110,11 @@ Since open source LLMs require large amounts of resources, the quantization is r
 
 We support integrations with OpenAI, Hugging Face, PaLM, and more.
 
-```{toctree}
----
-maxdepth: 2
----
-llms/modules.md
-```
+See the full [list of modules](./llms/modules.md).
 
 ## Further reading
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/models/embeddings.md
-/module_guides/models/prompts.md
-/module_guides/models/llms/local.md
-Run Llama2 locally <https://replicate.com/blog/run-llama-locally>
-```
+- [Embeddings](./embeddings.md)
+- [Prompts](./prompts.md)
+- [Local LLMs](./llms/local.md)
+- [Running Llama2 Locally](https://replicate.com/blog/run-llama-locally)

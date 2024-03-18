@@ -8,28 +8,15 @@ If you wish to combine advanced reasoning with tool use, check out our [agents](
 
 You can create query pipelines/chains with ease with our declarative `QueryPipeline` interface. Check out our [query pipeline guide](pipeline/index.md) for more details.
 
-```{toctree}
----
-maxdepth: 1
-hidden: True
----
-pipeline/index.md
-```
-
 Otherwise check out how to use our query modules as standalone components 👇.
 
 ## Query Modules
 
-```{toctree}
----
-maxdepth: 1
----
-../deploying/query_engine/index.md
-../deploying/chat_engines/index.md
-../deploying/agents/index.md
-/module_guides/querying/retriever/index.md
-/module_guides/querying/response_synthesizers/index.md
-/module_guides/querying/router/index.md
-/module_guides/querying/node_postprocessors/index.md
-/module_guides/querying/structured_outputs/structured_outputs.md
-```
+- [Query Engines](../deploying/query_engine/index.md)
+- [Chat Engines](../deploying/chat_engines/index.md)
+- [Agents](../deploying/agents/index.md)
+- [Retrievers](../querying/retriever/index.md)
+- [Response Synthesizers](../querying/response_synthesizers/index.md)
+- [Routers](../querying/router/index.md)
+- [Node Postprocessors](../querying/node_postprocessors/index.md)
+- [Structured Outputs](../querying/structured_outputs/structured_outputs.md)

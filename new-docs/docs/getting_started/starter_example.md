@@ -1,14 +1,13 @@
 # Starter Tutorial (OpenAI)
 
-```{tip}
-Make sure you've followed the [installation](installation.md) steps first.
-```
-
 This is our famous "5 lines of code" starter example using OpenAI.
 
-```{admonition} Want to use local models?
-If you want to do our starter tutorial using only local models, [check out this tutorial instead](starter_example_local.md).
-```
+!!! tip
+    Make sure you've followed the [installation](installation.md) steps first.
+
+!!! tip
+    Want to use local models?
+    If you want to do our starter tutorial using only local models, [check out this tutorial instead](starter_example_local.md).
 
 ## Download data
 
@@ -119,8 +118,7 @@ print(response)
 
 Now you can efficiently query to your heart's content! But this is just the beginning of what you can do with LlamaIndex.
 
-```{admonition} Next Steps
-* learn more about the [high-level concepts](/getting_started/concepts.md).
-* tell me how to [customize things](./customization.md).
-* curious about a specific module? check out the guides on the left 👈
-```
+!!! tip
+    - learn more about the [high-level concepts](/getting_started/concepts.md).
+    - tell me how to [customize things](./customization.md).
+    - curious about a specific module? check out the guides on the left 👈

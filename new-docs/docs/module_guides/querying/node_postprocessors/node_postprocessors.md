@@ -258,19 +258,14 @@ Full notebook guide is available [her for Van Gogh](../../../examples/node_postp
 
 ## All Notebooks
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/node_postprocessor/OptimizerDemo.ipynb
-/examples/node_postprocessor/CohereRerank.ipynb
-../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
-/examples/node_postprocessor/LLMReranker-Gatsby.ipynb
-../../..../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
-/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
-../../../examples/node_postprocessor/PII.ipynb
-../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
-/examples/node_postprocessor/MetadataReplacementDemo.ipynb
-/examples/node_postprocessor/LongContextReorder.ipynb
-../../../examples/node_postprocessor/rankGPT.ipynb
-```
+- [Sentence Optimizer](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
+- [Cohere Rerank](../../../examples/node_postprocessor/CohereRerank.ipynb)
+- [LLM Reranker Lyft 10k](../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb)
+- [LLM Reranker Gatsby](../../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
+- [Recency](../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
+- [Time Weighted](../../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb)
+- [PII](../../../examples/node_postprocessor/PII.ipynb)
+- [PrevNext](../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
+- [Metadata Replacement](../../../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
+- [Long Context Reorder](../../../examples/node_postprocessor/LongContextReorder.ipynb)
+- [RankGPT](../../../examples/node_postprocessor/rankGPT.ipynb)

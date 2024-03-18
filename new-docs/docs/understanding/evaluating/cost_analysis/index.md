@@ -83,12 +83,4 @@ Settings.embed_model = MockEmbedding(embed_dim=1536)
 
 ## Usage Pattern
 
-Read about the full usage pattern below!
-
-```{toctree}
----
-caption: Examples
-maxdepth: 1
----
-usage_pattern.md
-```
+Read about the [full usage pattern](./usage_pattern.md) for more details!

@@ -8,9 +8,8 @@ A query engine takes in a natural language query, and returns a rich response.
 It is most often (but not always) built on one or many [indexes](../../indexing/indexing.md) via [retrievers](../../querying/retriever/index.md).
 You can compose multiple query engines to achieve more advanced capability.
 
-```{tip}
-If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](../chat_engines/index.md)
-```
+!!! tip
+    If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](../chat_engines/index.md)
 
 ## Usage Pattern
 
@@ -29,27 +28,12 @@ streaming_response = query_engine.query("Who is Paul Graham.")
 streaming_response.print_response_stream()
 ```
 
-```{toctree}
----
-maxdepth: 2
----
-usage_pattern.md
-```
+See the full [usage pattern](./usage_pattern.md) for more details.
 
 ## Modules
 
-```{toctree}
----
-maxdepth: 3
----
-modules.md
-```
+Find all the modules in the [modules guide](./modules.md).
 
 ## Supporting Modules
 
-```{toctree}
----
-maxdepth: 2
----
-supporting_modules.md
-```
+There are also [supporting modules](./supporting_modules.md).

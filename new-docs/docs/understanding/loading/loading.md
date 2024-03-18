@@ -154,14 +154,3 @@ node2 = TextNode(text="<text_chunk>", id_="<node_id>")
 
 index = VectorStoreIndex([node1, node2])
 ```
-
-```{toctree}
----
-maxdepth: 1
-hidden: true
----
-llamahub.md
-/module_guides/loading/documents_and_nodes/index.md
-../../module_guides/loading/node_parsers/index.md
-../../module_guides/loading/ingestion_pipeline/index.md
-```

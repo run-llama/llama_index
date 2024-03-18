@@ -58,35 +58,17 @@ We also integrate with community evaluation tools.
 
 For full usage details, see the usage pattern below.
 
-```{toctree}
----
-maxdepth: 1
----
-usage_pattern.md
-usage_pattern_retrieval.md
-```
+- [Query Eval Usage Pattern](usage_pattern.md)
+- [Retrieval Eval Usage Pattern](usage_pattern_retrieval.md)
 
 ## Modules
 
-Notebooks with usage of these components can be found below.
-
-```{toctree}
----
-maxdepth: 1
----
-modules.md
-```
+Notebooks with usage of these components can be found in the [module guides](./modules.md).
 
 ## Evaluating with `LabelledRagDataset`'s
 
 For details on how to perform evaluation of a RAG system with various evaluation
 datasets, called `LabelledRagDataset`'s see below:
 
-```{toctree}
----
-maxdepth: 1
----
-
-evaluating_with_llamadatasets.md
-contributing_llamadatasets.md
-```
+- [Evaluating](evaluating_with_llamadatasets.md)
+- [Contributing](contributing_llamadatasets.md)

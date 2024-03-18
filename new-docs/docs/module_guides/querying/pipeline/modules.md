@@ -1,12 +1,7 @@
 # Module Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/pipeline/query_pipeline.ipynb
-/examples/pipeline/query_pipeline_async.ipynb
-/examples/pipeline/query_pipeline_pandas.ipynb
-/examples/pipeline/query_pipeline_sql.ipynb
-/examples/agent/agent_runner/query_pipeline_agent.ipynb
-```
+- [Query Pipeline](../../../examples/pipeline/query_pipeline.ipynb)
+- [Async Query Pipeline](../../../examples/pipeline/query_pipeline_async.ipynb)
+- [Pandas Query Pipeline](../../../examples/pipeline/query_pipeline_pandas.ipynb)
+- [SQL Query Pipeline](../../../examples/pipeline/query_pipeline_sql.ipynb)
+- [Query Pipeline Agent](../../../examples/agent/agent_runner/query_pipeline_agent.ipynb)

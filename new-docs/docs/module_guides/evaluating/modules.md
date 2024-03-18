@@ -4,30 +4,18 @@ Notebooks with usage of these components can be found below.
 
 ## Response Evaluation
 
-```{toctree}
----
-maxdepth: 1
----
-
-/examples/evaluation/faithfulness_eval.ipynb
-/examples/evaluation/relevancy_eval.ipynb
-/examples/evaluation/answer_and_context_relevancy.ipynb
-/examples/evaluation/Deepeval.ipynb
-/examples/evaluation/guideline_eval.ipynb
-/examples/evaluation/correctness_eval.ipynb
-/examples/evaluation/semantic_similarity_eval.ipynb
-/examples/evaluation/QuestionGeneration.ipynb
-/examples/evaluation/batch_eval.ipynb
-/examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
-/examples/evaluation/uptrain.ipynb
-```
+- [Faithfulness](../../examples/evaluation/faithfulness_eval.ipynb)
+- [Relevancy](../../examples/evaluation/relevancy_eval.ipynb)
+- [Answer and Context Relevancy](../../examples/evaluation/answer_and_context_relevancy.ipynb)
+- [Deepeval Integration](../../examples/evaluation/Deepeval.ipynb)
+- [Guideline Eval](../../examples/evaluation/guideline_eval.ipynb)
+- [Correctness Eval](../../examples/evaluation/correctness_eval.ipynb)
+- [Semantic Eval](../../examples/evaluation/semantic_similarity_eval.ipynb)
+- [Question Generation](../../examples/evaluation/QuestionGeneration.ipynb)
+- [Batch Eval](../../examples/evaluation/batch_eval.ipynb)
+- [Multi-Modal RAG eval](../../examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb)
+- [Uptrain Integration](../../examples/evaluation/uptrain.ipynb)
 
 ## Retrieval Evaluation
 
-```{toctree}
----
-maxdepth: 1
----
-
-/examples/evaluation/retrieval/retriever_eval.ipynb
-```
+- [Retriever Eval](../../examples/evaluation/retrieval/retriever_eval.ipynb)

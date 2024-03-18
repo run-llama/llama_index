@@ -103,12 +103,7 @@ storage_context = llama_index.core.global_handler.load_storage_context(
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/callbacks/WandbCallbackHandler.ipynb
-```
+- [Wandb Callback Handler](../../examples/callbacks/WandbCallbackHandler.ipynb)
 
 ### OpenLLMetry
 
@@ -125,12 +120,7 @@ Traceloop.init()
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/callbacks/OpenLLMetry.ipynb
-```
+- [OpenLLMetry](../../examples/callbacks/OpenLLMetry.ipynb)
 
 ![](../../_static/integrations/openllmetry.png)
 
@@ -166,12 +156,7 @@ llama_index.core.set_global_handler("arize_phoenix")
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-Arize Phoenix Tracing Tutorial <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb>
-```
+- [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
 
 ### OpenInference
 
@@ -207,13 +192,8 @@ query_dataframe = as_dataframe(query_data_buffer)
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/callbacks/OpenInferenceCallback.ipynb
-Evaluating Search and Retrieval with Arize Phoenix <https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb>
-```
+- [OpenInference Callback Handler](/examples/callbacks/OpenInferenceCallback.ipynb)
+- [Evaluating Search and Retrieval with Arize Phoenix](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb)
 
 ### TruEra TruLens
 
@@ -235,14 +215,9 @@ tru_query_engine.query("What did the author do growing up?")
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/community/integrations/trulens.md
-Quickstart Guide with LlamaIndex + TruLens <https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb>
-Colab <https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb>
-```
+- [Trulens Guide](../../community/integrations/trulens.md)
+- [Quickstart Guide with LlamaIndex + TruLens](https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
+- [Google Colab](https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
 
 ### HoneyHive
 
@@ -280,12 +255,7 @@ _Use Perfetto to debug and analyze your HoneyHive traces_
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
-```
+- [HoneyHive Callback Handler](../../examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb)
 
 ### PromptLayer
 
@@ -306,18 +276,8 @@ set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/callbacks/PromptLayerHandler.ipynb
-```
+- [PromptLayer](../../examples/callbacks/PromptLayerHandler.ipynb)
 
 ## More observability
 
-```{toctree}
----
-maxdepth: 1
----
-callbacks/index.md
-```
+- [Callbacks Guide](./callbacks/index.md)

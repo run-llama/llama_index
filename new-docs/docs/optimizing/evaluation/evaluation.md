@@ -16,22 +16,12 @@ When developing your LLM application, it could help to first define an end-to-en
 
 The analogy with software testing is integration tests and unit tests. You should probably start writing unit tests once you start fiddling with individual components. Equally, your gold standard on whether things are working well together are integration tests. Both are equally important.
 
-```{toctree}
----
-maxdepth: 1
----
-/optimizing/evaluation/e2e_evaluation.md
-/optimizing/evaluation/component_wise_evaluation.md
-```
+- [End-to-end Evaluation](./e2e_evaluation.md)
+- [Component-Wise Evaluation](./component_wise_evaluation.md)
 
 Here is an overview of the existing modules for evaluation. We will be adding more modules and support over time.
 
-```{toctree}
----
-maxdepth: 1
----
-/module_guides/evaluating/index.md
-```
+- [Evaluation Overview](../../module_guides/evaluating/index.md)
 
 ### E2E or Component-Wise - Which Do I Start With?
 
@@ -64,7 +54,7 @@ This [towardsdatascience article](https://towardsdatascience.com/ranking-evaluat
 2. [Scale's Approach to LLM Testing and Evaluation](https://scale.com/llm-test-evaluation)
 3. [LLM Patterns by Eugene Yan](https://eugeneyan.com/writing/llm-patterns/)
 
-```{toctree}
-component_wise_evaluation.md
-e2e_evaluation.md
-```
+## Resources
+
+- [Component-Wise Evaluation](./component_wise_evaluation.md)
+- [End-to-end Evaluation](./e2e_evaluation.md)

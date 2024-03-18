@@ -59,9 +59,4 @@ index = VectorStoreIndex.from_documents(
 
 ## Modules
 
-```{toctree}
----
-maxdepth: 2
----
-modules.md
-```
+See the full [modules guide](./modules.md).

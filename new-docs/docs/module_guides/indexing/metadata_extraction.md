@@ -85,13 +85,8 @@ In a more advanced example, it can also make use of an `llm` to extract features
 
 Below you will find guides and tutorials for various metadata extractors.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/metadata_extraction/MetadataExtractionSEC.ipynb
-/examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
-/examples/metadata_extraction/EntityExtractionClimate.ipynb
-/examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
-/examples/metadata_extraction/PydanticExtractor.ipynb
-```
+- [SEC Documents Metadata Extraction](../../examples/metadata_extraction/MetadataExtractionSEC.ipynb)
+- [LLM Survey Extraction](../../examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb)
+- [Entity Extraction](../../examples/metadata_extraction/EntityExtractionClimate.ipynb)
+- [Marvin Metadata Extraction](../../examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb)
+- [Pydantic Metadata Extraction](../../examples/metadata_extraction/PydanticExtractor.ipynb)

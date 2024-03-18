@@ -58,33 +58,12 @@ llm = OpenAI(model="gpt-3.5-turbo-0613")
 agent = OpenAIAgent.from_tools(tools, llm=llm, verbose=True)
 ```
 
-See our usage pattern guide for more details.
-
-```{toctree}
----
-maxdepth: 1
----
-usage_pattern.md
-```
+See our [usage pattern guide](usage_pattern.md) for more details.
 
 ## Modules
 
-Learn more about our different agent types and use cases in our module guides below.
+Learn more about our different agent types and use cases in our [module guides](./modules.md).
+
+We also have a [lower-level api guide](./agent_runner.md) for agent runenrs and workers.
 
 Also take a look at our [tools section](tools/index.md)!
-
-```{toctree}
----
-maxdepth: 2
----
-modules.md
-```
-
-```{toctree}
----
-maxdepth: 2
-hidden: true
----
-tools/index.md
-agent_runner.md
-```

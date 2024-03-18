@@ -24,13 +24,8 @@ More resources are below.
 
 A user query can be transformed before it enters a pipeline (query engine, agent, and more). See resources below on query transformations:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/query_transformations/query_transform_cookbook.ipynb
-/optimizing/advanced_retrieval/query_transformations.md
-```
+- [Query Transform Cookbook](../../examples/query_transformations/query_transform_cookbook.ipynb)
+- [Query Transformations Docs](../../optimizing/advanced_retrieval/query_transformations.md)
 
 ## Composable Retrievers
 
@@ -43,22 +38,12 @@ Every retriever is capable of retrieving and running other objects, including
 
 For more details, check out the guide below.
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/retrievers/composable_retrievers.ipynb
-```
+- [Composable Retrievers](../../examples/retrievers/composable_retrievers.ipynb)
 
 ## Third-Party Resources
 
 Here are some third-party resources on advanced retrieval strategies.
 
-```{toctree}
----
-maxdepth: 1
----
-DeepMemory (Activeloop) </examples/retrievers/deep_memory.ipynb>
-/examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
-/examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
-```
+- [DeepMemory (Activeloop)](../../examples/retrievers/deep_memory.ipynb)
+- [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
