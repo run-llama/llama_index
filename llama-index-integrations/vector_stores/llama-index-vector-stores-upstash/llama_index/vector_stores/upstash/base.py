@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 128
 
+
 def _transform_upstash_filter_operator(operator: str) -> str:
     """Translate standard metadata filter operator to Upstash specific spec."""
     if operator == FilterOperator.EQ:
@@ -53,7 +54,7 @@ def _transform_upstash_filter_operator(operator: str) -> str:
         raise ValueError(f"Filter operator {operator} not supported")
 
 
-def _to_upstash_filter_string(filter:MetadataFilter)->str:
+def _to_upstash_filter_string(filter: MetadataFilter) -> str:
     key = filter.key
     value = filter.value
     operator = filter.operator
@@ -64,16 +65,14 @@ def _to_upstash_filter_string(filter:MetadataFilter)->str:
         FilterOperator.NIN,
     ]:
         value_str = ", ".join(
-            str(v) if type(v)!=str else f"'{v}'" for v in value
+            str(v) if not isinstance(v, str) else f"'{v}'" for v in value
         )
         return f"{key} {operator_str} ({value_str})"
-    value_str = f"'{value}'" if type(value)==str else str(value)
+    value_str = f"'{value}'" if isinstance(value, str) else str(value)
     return f"{key} {operator_str} {value_str}"
 
-def _to_upstash_filters(
-    filters: MetadataFilters
-)->str:
 
+def _to_upstash_filters(filters: MetadataFilters) -> str:
     if not filters:
         return ""
     sql_filters = []
@@ -83,10 +82,9 @@ def _to_upstash_filters(
 
     # Combine filters using AND or OR condition
     condition_str = filters.condition.value.upper()
-    combined_filters = f" {condition_str} ".join(sql_filters)
-
+    return f" {condition_str} ".join(sql_filters)
     # print(combined_filters)
-    return combined_filters
+
 
 class UpstashVectorStore(VectorStore):
     """

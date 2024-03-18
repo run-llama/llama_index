@@ -43,7 +43,7 @@ def text_nodes() -> List[TextNode]:
                 "theme": "Friendship",
                 "rating": 4.1,
             },
-            embedding=[1.0, 0.0, 0.0]*512,
+            embedding=[1.0, 0.0, 0.0] * 512,
         ),
         TextNode(
             text="lorem ipsum",
@@ -54,7 +54,7 @@ def text_nodes() -> List[TextNode]:
                 "theme": "Mafia",
                 "rating": 3.3,
             },
-            embedding=[0.0, 1.0, 0.0]*512,
+            embedding=[0.0, 1.0, 0.0] * 512,
         ),
         TextNode(
             text="lorem ipsum",
@@ -65,7 +65,7 @@ def text_nodes() -> List[TextNode]:
                 "rating": 4.3,
                 "theme": "Action",
             },
-            embedding=[0.0, 0.0, 1.0]*512,
+            embedding=[0.0, 0.0, 1.0] * 512,
         ),
         TextNode(
             text="I was taught that the way of progress was neither swift nor easy.",
@@ -75,7 +75,7 @@ def text_nodes() -> List[TextNode]:
                 "author": "Marie Curie",
                 "rating": 2.3,
             },
-            embedding=[0.0, 0.0, 0.9]*512,
+            embedding=[0.0, 0.0, 0.9] * 512,
         ),
         TextNode(
             text=(
@@ -88,7 +88,7 @@ def text_nodes() -> List[TextNode]:
                 "author": "Albert Einstein",
                 "rating": 4.8,
             },
-            embedding=[0.0, 0.0, 0.5]*512,
+            embedding=[0.0, 0.0, 0.5] * 512,
         ),
         TextNode(
             text=(
@@ -101,7 +101,7 @@ def text_nodes() -> List[TextNode]:
                 "author": "Charlotte Bronte",
                 "rating": 1.5,
             },
-            embedding=[0.0, 0.0, 0.3]*512,
+            embedding=[0.0, 0.0, 0.3] * 512,
         ),
     ]
 
@@ -128,7 +128,7 @@ def test_upstash_vector_query(
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
-            query_embedding=[1.0, 0.0, 0.0]*512,
+            query_embedding=[1.0, 0.0, 0.0] * 512,
             similarity_top_k=1,
         )
     )
@@ -141,7 +141,6 @@ def test_upstash_vector_query(
 def test_upstash_vector_filtering_eq(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
-
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
@@ -152,7 +151,7 @@ def test_upstash_vector_filtering_eq(
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
-            query_embedding=[0.1]*1536,
+            query_embedding=[0.1] * 1536,
             filters=filters,
             similarity_top_k=1,
         )
@@ -168,84 +167,66 @@ def test_upstash_vector_filtering_eq(
 def test_upstash_vector_filtering_gte(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
-
     filters = MetadataFilters(
-        filters=[
-            MetadataFilter(
-                key="rating", value=4.3, operator=FilterOperator.GTE
-            )
-        ],
+        filters=[MetadataFilter(key="rating", value=4.3, operator=FilterOperator.GTE)],
     )
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
-            query_embedding=[0.1]*1536,
+            query_embedding=[0.1] * 1536,
             filters=filters,
         )
     )
     assert res.nodes
     for node in res.nodes:
-        assert node.metadata['rating'] >= 4.3
+        assert node.metadata["rating"] >= 4.3
 
 
 @pytest.mark.skipif(not upstash_installed, reason="upstash-vector not installed")
 def test_upstash_vector_filtering_in(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
-
     values_contained = ["Friendship", "Mafia"]
 
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
-                key="theme",
-                value=values_contained,
-                operator=FilterOperator.IN
+                key="theme", value=values_contained, operator=FilterOperator.IN
             )
         ],
     )
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
-            query_embedding=[0.1]*1536,
+            query_embedding=[0.1] * 1536,
             filters=filters,
         )
     )
     assert res.nodes
 
     for node in res.nodes:
-        assert node.metadata['theme'] in values_contained
+        assert node.metadata["theme"] in values_contained
 
 
 @pytest.mark.skipif(not upstash_installed, reason="upstash-vector not installed")
 def test_upstash_vector_filtering_composite(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
-
     filters = MetadataFilters(
         filters=[
+            MetadataFilter(key="rating", value=3, operator=FilterOperator.LT),
             MetadataFilter(
-                key="rating",
-                value=3,
-                operator=FilterOperator.LT
+                key="author", value="Charlotte Bronte", operator=FilterOperator.EQ
             ),
-            MetadataFilter(
-                key="author",
-                value='Charlotte Bronte',
-                operator=FilterOperator.EQ
-            )
         ],
-        condition=FilterCondition.AND
+        condition=FilterCondition.AND,
     )
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
-            query_embedding=[0.1]*1536,
+            query_embedding=[0.1] * 1536,
             filters=filters,
         )
     )
     assert len(res.nodes) == 1
-    assert (
-        res.nodes[0].node_id
-        == "f658de3b-8cef-4d1c-8bed-9a263c907251"
-    )
+    assert res.nodes[0].node_id == "f658de3b-8cef-4d1c-8bed-9a263c907251"
