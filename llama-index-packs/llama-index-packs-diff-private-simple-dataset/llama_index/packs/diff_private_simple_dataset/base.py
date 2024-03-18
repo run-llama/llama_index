@@ -95,18 +95,20 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         mechanism: PrivacyMechanism,
         size: int,
         max_token_cnt: int,
+        max_self_compositions: int = 1000,
         eps_error: float = 0.01,
         delta_error: float = 1e-10,
     ) -> float:
         """Return the epsilon value given a sigma.
 
         Args:
-            sigma (float): _description_
-            mechanism (PrivacyMechanism): _description_
-            size (int): _description_
-            max_token_cnt (int): _description_
-            eps_error (float, optional): _description_. Defaults to 0.01.
-            delta_error (float, optional): _description_. Defaults to 1e-10.
+            sigma (float): The parameter associated with noise mechanism.
+            mechanism (PrivacyMechanism): Noise mechanism.
+            size (int): Number of samples to be generated.
+            max_token_cnt (int): Number of tokens generated per sample.
+            max_self_compositions (int, optional): PRV algorithm parameter. Defaults to 1000.
+            eps_error (float, optional): PRV algorithm parameter. Defaults to 0.01.
+            delta_error (float, optional): PRV algorithm parameter. Defaults to 1e-10.
 
         Returns:
             float: The epsilon value.
@@ -128,7 +130,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             prvs=[
                 prv_0,
             ],
-            max_self_compositions=[max_token_cnt + 1],
+            max_self_compositions=[max_self_compositions],
             eps_error=eps_error,
             delta_error=delta_error,
         )
