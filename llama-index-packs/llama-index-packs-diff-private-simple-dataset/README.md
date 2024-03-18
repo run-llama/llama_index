@@ -3,9 +3,9 @@
 The `DiffPrivateSimpleDatasetPack` llama pack creates differentially private synthetic
 examples from an original, sensitive dataset.
 
-Differential privacy is a privacy preserving technique that seeks to provide
-probabilistic guarantees on the membership inference of a data observation (and
-its attached data subject) in the processing of the dataset to which it belongs.
+Differential Privacy is a privacy preserving technique that obscures source data
+while preserving original attributes, while minimizing the performance impact on
+processes that consume the data.
 
 The main motivation for this pack is thus to provide the means to create privacy
 safe versions of datasets that can be used in subsequent downstream processing
