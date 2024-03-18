@@ -1,4 +1,9 @@
 import asyncio
+import numpy as np
+import random
+import tqdm
+
+from functools import reduce
 from typing import Any, List, Dict, Sequence, Union, Coroutine, Iterable
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -23,10 +28,8 @@ from llama_index.packs.diff_private_simple_dataset.events import (
     SyntheticExampleEndEvent,
     SyntheticExampleStartEvent,
 )
-from functools import reduce
-import numpy as np
-import random
-import tqdm
+from prv_accountant.privacy_random_variables import PoissonSubsampledGaussianMechanism
+from prv_accountant import PRVAccountant
 
 import llama_index.core.instrumentation as instrument
 
@@ -82,14 +85,43 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         self.batch_size = batch_size
         self.cache_checkpoints = cache_checkpoints
 
-    @staticmethod
-    def eps_to_sigma(eps: float, delta: float, mode: str = "gaussian") -> float:
-        """Return the scale parameter with a given epsilon value.
+    def sigma_to_eps(
+        self,
+        sigma: float,
+        mechanism: PrivacyMechanism,
+        max_token_cnt: int,
+        eps_error: float = 0.01,
+        delta_error: float = 1e-10,
+    ) -> float:
+        """Return the epsilon value given a sigma.
 
         Source: https://programming-dp.com/ch6.html#the-gaussian-mechanism
         """
-        sensitivity_upper_bound = np.sqrt(2)
-        return (sensitivity_upper_bound * np.sqrt(np.log(1.25 / delta))) / eps
+        if mechanism == PrivacyMechanism.GAUSSIAN:
+            prv_0 = PoissonSubsampledGaussianMechanism(
+                noise_multiplier=sigma, sampling_probability=sample_rate
+            )
+            accountant = PRVAccountant(
+                prvs=[
+                    prv_0,
+                ],
+                max_self_compositions=[max_token_cnt + 1],
+                eps_error=eps_error,
+                delta_error=delta_error,
+            )
+            _eps_low, eps_est, _eps_up = accountant.compute_epsilon(
+                delta=1 / self._num_examples, num_self_compositions=[max_token_cnt]
+            )
+        elif mechanism == PrivacyMechanism.LAPLACE:
+            raise NotImplementedError(
+                "This method is not implemented for '{PrivacyMechanism.LAPLACE}'"
+            )
+        else:
+            raise ValueError(
+                "Invalid value for `mechanism` entered."
+                " Please use either 'gaussian' or 'laplace'."
+            )
+        return eps_est
 
     async def _async_worker(self, job: Coroutine) -> Any:
         async with self._semaphore:
