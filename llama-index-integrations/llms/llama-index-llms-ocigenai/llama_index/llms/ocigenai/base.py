@@ -122,9 +122,7 @@ class OCIGenAI(LLM):
             compartment_id = compartment_id,
             auth_type = auth_type,
             auth_profile = auth_profile,
-            provider = provider,
-            client = client,
-            
+                        
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,

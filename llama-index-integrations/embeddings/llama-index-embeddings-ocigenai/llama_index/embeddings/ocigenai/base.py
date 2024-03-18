@@ -27,6 +27,33 @@ class OCIAuthType(Enum):
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 class OCIGenAIEmbeddings(BaseEmbedding):
+    """OCI embedding models.
+
+    To authenticate, the OCI client uses the methods described in
+    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
+
+    The authentifcation method is passed through auth_type and should be one of:
+    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE
+
+    Make sure you have the required policies (profile/roles) to
+    access the OCI Generative AI service. If a specific config profile is used,
+    you must pass the name of the profile (~/.oci/config) through auth_profile.
+
+    To use, you must provide the compartment id
+    along with the endpoint url, and model id
+    as named parameters to the constructor.
+
+    Example:
+        .. code-block:: python
+
+            from llama_index.embeddings.ocigenai import OCIGenAIEmbeddings
+
+            embeddings = OCIGenAIEmbeddings(
+                model="MY_EMBEDDING_MODEL",
+                service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+                compartment_id="MY_OCID"
+            )
+    """
     model: str = Field(description="Id of the OCI Generative AI embedding model to use.")
     
     truncate: str = Field(
@@ -74,7 +101,30 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
    ):
+        """
+        Initializes the OCIGenAIEmbeddings class.
+
+        model_name (str): The Id of the model to be used for generating embeddings,e.g. "cohere.embed-english-light-v3.0".
+
+        truncate (str): A string indicating the truncation strategy for long input text. Possible values
+                        are 'START', 'END', or 'NONE'.
+
+        input_type (Optional[str]): An optional string that specifies the type of input provided to the model.
+                                    This is model-dependent and could be one of the following: "search_query",
+                                    "search_document", "classification", or "clustering".
         
+        service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+
+        compartment_id (str): OCID of the compartment.
+
+        auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
+                                   If not specified, API_KEY will be used
+
+        auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+        client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the 
+                                provided service endpoint and authentifcation method.            
+        """
         if client is not None:
             self._client = client
         else:
