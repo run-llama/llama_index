@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader, BaseReader
 from llama_index.core.schema import Document
 
 
@@ -25,6 +25,7 @@ class S3Reader(BaseReader):
         bucket: str,
         key: Optional[str] = None,
         prefix: Optional[str] = "",
+        recursive: bool = True,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         required_exts: Optional[List[str]] = None,
         filename_as_id: bool = True,
@@ -48,6 +49,8 @@ class S3Reader(BaseReader):
             this loader will iterate through the entire bucket.
         prefix (Optional[str]): the prefix to filter by in the case that the loader
             iterates through the entire bucket. Defaults to empty string.
+        recursive (bool): Whether to recursively search in subdirectories.
+            True by default.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that file
             to text. See `SimpleDirectoryReader` for more details.
@@ -67,6 +70,7 @@ class S3Reader(BaseReader):
         self.bucket = bucket
         self.key = key
         self.prefix = prefix
+        self.recursive = recursive
 
         self.file_extractor = file_extractor
         self.required_exts = required_exts
@@ -101,6 +105,8 @@ class S3Reader(BaseReader):
                 client_kwargs={"endpoint_url": self.s3_endpoint_url},
             )
 
+            ls = s3.ls(input_dir)
+
             loader = SimpleDirectoryReader(
                 input_dir=input_dir,
                 file_extractor=self.file_extractor,
@@ -108,6 +114,7 @@ class S3Reader(BaseReader):
                 filename_as_id=self.filename_as_id,
                 num_files_limit=self.num_files_limit,
                 file_metadata=self.file_metadata,
+                recursive=self.recursive,
                 fs=s3
             )
 
@@ -117,11 +124,11 @@ class S3Reader(BaseReader):
         """Decide which directory to load files in - randomly generated directories under /tmp or a custom subdirectory under /tmp."""
         if custom_temp_subdir is None:
             with tempfile.TemporaryDirectory() as temp_dir:
-                documents = self.load_s3_files_as_docs(temp_dir)
+                documents = self.load_s3_files_as_docs()
         else:
             temp_dir = os.path.join("/tmp", custom_temp_subdir)
             os.makedirs(temp_dir, exist_ok=True)
-            documents = self.load_s3_files_as_docs(temp_dir)
+            documents = self.load_s3_files_as_docs()
             shutil.rmtree(temp_dir)
 
         for doc in documents:
