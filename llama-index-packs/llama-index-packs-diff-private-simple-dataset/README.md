@@ -119,7 +119,7 @@ print(response)
 
 ## Examples
 
-- See `examples/basic_demo` folder for a notebook the consists of a basic demo
+- See [examples/basic_demo](https://github.com/run-llama/llama_index/tree/main/llama-index-packs/llama-index-packs-diff-private-simple-dataset/examples/basic_demo) folder for a notebook the consists of a basic demo
   on how to use the `DiffPrivateSimpleDatasetPack`.
-- Also see `examples/symptom_2_disease` for a more Python program that generates
+- Also see [examples/symptom_2_disease](https://github.com/run-llama/llama_index/tree/main/llama-index-packs/llama-index-packs-diff-private-simple-dataset/examples/symptom_2_disease) for a more Python program that generates
   a synthetic version of the [Symptom2Disease](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease) dataset.
