@@ -24,7 +24,7 @@ In order to run the script, however, there are a couple of requirements.
 ```sh
 pyenv virtualenv demo
 pyenv activate demo
-pip install llama-index llama-index-packs-diff-private-simple-dataset
+pip install llama-index llama-index-packs-diff-private-simple-dataset scikit-learn
 ```
 
 2. Set the ENV variable OPENAI_API_KEY.

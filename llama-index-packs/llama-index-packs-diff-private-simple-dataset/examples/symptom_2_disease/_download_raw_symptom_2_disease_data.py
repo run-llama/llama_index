@@ -2,7 +2,6 @@
 
 import os
 from llama_index.core.download.utils import get_file_content
-from sklearn.model_selection import train_test_split
 from pathlib import Path
 
 
