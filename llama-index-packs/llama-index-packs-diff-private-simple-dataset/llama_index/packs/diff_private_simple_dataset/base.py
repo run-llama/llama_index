@@ -113,6 +113,11 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         Returns:
             float: The epsilon value.
         """
+        if max_token_cnt > max_self_compositions:
+            raise ValueError(
+                "`max_token_cnt` cannot be greater than `max_self_composition`."
+            )
+
         sample_rate = size / self._num_examples
         if mechanism == PrivacyMechanism.GAUSSIAN:
             prv_0 = PoissonSubsampledGaussianMechanism(
