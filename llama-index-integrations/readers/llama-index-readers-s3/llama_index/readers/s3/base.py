@@ -1,4 +1,5 @@
-"""S3 file and directory reader.
+"""
+S3 file and directory reader.
 
 A loader that fetches a file or iterates through a directory on AWS S3.
 
@@ -36,7 +37,8 @@ class S3Reader(BaseReader):
         custom_reader_path: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize S3 bucket and key, along with credentials if needed.
+        """
+        Initialize S3 bucket and key, along with credentials if needed.
 
         If key is not set, the entire bucket (filtered by prefix) is parsed.
 
@@ -78,20 +80,9 @@ class S3Reader(BaseReader):
         self.aws_session_token = aws_session_token
         self.s3_endpoint_url = s3_endpoint_url
 
-    def load_s3_files_as_docs(self, temp_dir) -> List[Document]:
+    def load_s3_files_as_docs(self) -> List[Document]:
         """Load file(s) from S3."""
-        import boto3
-
-        s3 = boto3.resource("s3")
-        s3_client = boto3.client("s3")
-        if self.aws_access_id:
-            session = boto3.Session(
-                aws_access_key_id=self.aws_access_id,
-                aws_secret_access_key=self.aws_access_secret,
-                aws_session_token=self.aws_session_token,
-            )
-            s3 = session.resource("s3", endpoint_url=self.s3_endpoint_url)
-            s3_client = session.client("s3", endpoint_url=self.s3_endpoint_url)
+        import s3fs
 
         if self.key:
             filename = Path(self.key).name
@@ -99,33 +90,26 @@ class S3Reader(BaseReader):
             filepath = f"{temp_dir}/{filename}"
             s3_client.download_file(self.bucket, self.key, filepath)
         else:
-            bucket = s3.Bucket(self.bucket)
-            for i, obj in enumerate(bucket.objects.filter(Prefix=self.prefix)):
-                if self.num_files_limit is not None and i > self.num_files_limit:
-                    break
-                filename = Path(obj.key).name
-                suffix = Path(obj.key).suffix
+            input_dir = f"{self.bucket}"
+            if self.prefix:
+                input_dir = f"{input_dir}/{self.prefix}"
 
-                is_dir = obj.key.endswith("/")  # skip folders
-                is_bad_ext = (
-                    self.required_exts is not None
-                    and suffix not in self.required_exts  # skip other extensions
-                )
+            s3 = s3fs.S3FileSystem(
+                key=self.aws_access_id,
+                secret=self.aws_access_secret,
+                token=self.aws_session_token,
+                client_kwargs={"endpoint_url": self.s3_endpoint_url},
+            )
 
-                if is_dir or is_bad_ext:
-                    continue
-
-                filepath = f"{temp_dir}/{filename}"
-                s3_client.download_file(self.bucket, obj.key, filepath)
-
-        loader = SimpleDirectoryReader(
-            temp_dir,
-            file_extractor=self.file_extractor,
-            required_exts=self.required_exts,
-            filename_as_id=self.filename_as_id,
-            num_files_limit=self.num_files_limit,
-            file_metadata=self.file_metadata,
-        )
+            loader = SimpleDirectoryReader(
+                input_dir=input_dir,
+                file_extractor=self.file_extractor,
+                required_exts=self.required_exts,
+                filename_as_id=self.filename_as_id,
+                num_files_limit=self.num_files_limit,
+                file_metadata=self.file_metadata,
+                fs=s3
+            )
 
         return loader.load_data()
 
