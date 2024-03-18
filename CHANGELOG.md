@@ -1,5 +1,83 @@
 # ChangeLog
 
+## [2024-03-14]
+
+### `llama-index-core` [0.10.20]
+
+- New `instrumentation` module for observability (#11831)
+- Allow passing in LLM for `CitationQueryEngine` (#11914)
+- Updated keyval docstore to allow changing suffix in addition to namespace (#11873)
+- Add (some) async streaming support to query_engine #11949
+
+### `llama-index-embeddings-dashscope` [0.1.3]
+
+- Fixed embedding type for query texts (#11901)
+
+### `llama-index-embeddings-premai` [0.1.3]
+
+- Support for premai embeddings (#11954)
+
+### `llama-index-networks` [0.2.0]
+
+- Added support for network retrievers (#11800)
+
+### `llama-index-llms-anthropic` [0.1.6]
+
+- Added support for haiku (#11916)
+
+### `llama-index-llms-mistralai` [0.1.6]
+
+- Fixed import error for ChatMessage (#11902)
+
+### `llama-index-llms-openai` [0.1.11]
+
+- added gpt-35-turbo-0125 for AZURE_TURBO_MODELS (#11956)
+- fixed error with nontype in logprobs (#11967)
+
+### `llama-index-llms-premai` [0.1.4]
+
+- Support for premai llm (#11954)
+
+### `llama-index-llms-solar` [0.1.3]
+
+- Support for solar as an LLM class (#11710)
+
+### `llama-index-llms-vertex` [0.1.5]
+
+- Add support for medlm in vertex (#11911)
+
+### `llama-index-readers-goolge` [0.1.6]
+
+- added README files and query string for google drive reader (#11724)
+
+### `llama-index-readers-file` [0.1.11]
+
+- Updated ImageReader to add `plain_text` option to trigger pytesseract (#11913)
+
+### `llama-index-readers-pathway` [0.1.3]
+
+- use pure requests to reduce deps, simplify code (#11924)
+
+### `llama-index-retrievers-pathway` [0.1.3]
+
+- use pure requests to reduce deps, simplify code (#11924)
+
+### `llama-index-storage-docstore-mongodb` [0.1.3]
+
+- Allow changing suffix for mongodb docstore (#11873)
+
+### `llama-index-vector-stores-databricks` [0.1.1]
+
+- Support for databricks vector search as a vector store (#10754)
+
+### `llama-index-vector-stores-opensearch` [0.1.8]
+
+- (re)implement proper delete (#11959)
+
+### `llama-index-vector-stores-postgres` [0.1.4]
+
+- Fixes for IN filters and OR text search (#11872, #11927)
+
 ## [2024-03-12]
 
 ### `llama-index-cli` [0.1.9]

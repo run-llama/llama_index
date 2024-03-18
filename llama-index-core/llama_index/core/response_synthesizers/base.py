@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union, AsyncGenerator
+from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator
 
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
@@ -36,6 +36,7 @@ from llama_index.core.schema import (
     MetadataMode,
     NodeWithScore,
     QueryBundle,
+    QueryType,
 )
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
@@ -45,10 +46,17 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE
+from llama_index.core.instrumentation.events.synthesis import (
+    SynthesizeStartEvent,
+    SynthesizeEndEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 
-QueryTextType = Union[str, QueryBundle]
+QueryTextType = QueryType
 
 
 def empty_response_generator() -> Generator[str, None, None]:
@@ -82,6 +90,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context)
         )
+
         self._prompt_helper = (
             prompt_helper
             or Settings._prompt_helper
@@ -184,6 +193,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             f"Response must be a string or a generator. Found {type(response_str)}"
         )
 
+    @dispatcher.span
     def synthesize(
         self,
         query: QueryTextType,
@@ -191,11 +201,23 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
+        dispatcher.event(SynthesizeStartEvent(query=query))
+
         if len(nodes) == 0:
             if self._streaming:
-                return StreamingResponse(response_gen=empty_response_generator())
+                empty_response = StreamingResponse(
+                    response_gen=empty_response_generator()
+                )
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                )
+                return empty_response
             else:
-                return Response("Empty Response")
+                empty_response = Response("Empty Response")
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                )
+                return empty_response
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
@@ -218,8 +240,10 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
+        dispatcher.event(SynthesizeEndEvent(query=query, response=str(response)))
         return response
 
+    @dispatcher.span
     async def asynthesize(
         self,
         query: QueryTextType,
@@ -227,11 +251,22 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
+        dispatcher.event(SynthesizeStartEvent(query=query))
         if len(nodes) == 0:
             if self._streaming:
-                return AsyncStreamingResponse(response_gen=empty_response_agenerator())
+                empty_response = AsyncStreamingResponse(
+                    response_gen=empty_response_agenerator()
+                )
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                )
+                return empty_response
             else:
-                return Response("Empty Response")
+                empty_response = Response("Empty Response")
+                dispatcher.event(
+                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                )
+                return empty_response
 
         if isinstance(query, str):
             query = QueryBundle(query_str=query)
@@ -254,6 +289,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
+        dispatcher.event(SynthesizeEndEvent(query=query, response=str(response)))
         return response
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:

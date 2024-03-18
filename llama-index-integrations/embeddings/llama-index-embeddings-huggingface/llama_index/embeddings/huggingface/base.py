@@ -68,6 +68,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        safe_serialization: Optional[bool] = None,
     ):
         self._device = device or infer_torch_device()
 
@@ -80,7 +81,10 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
             model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
+                model_name,
+                cache_dir=cache_folder,
+                trust_remote_code=trust_remote_code,
+                safe_serialization=safe_serialization,
             )
         elif model_name is None:  # Extract model_name from model
             model_name = model.name_or_path

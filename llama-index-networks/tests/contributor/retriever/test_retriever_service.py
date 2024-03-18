@@ -5,19 +5,27 @@ from llama_index.networks.contributor.retriever import (
     ContributorRetrieverServiceSettings,
 )
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.schema import NodeWithScore, TextNode
+from llama_index.core.schema import NodeWithScore, TextNode, QueryBundle
 
 
 class MockRetriever(BaseRetriever):
     """Custom retriever for testing."""
 
-    def _retrieve(self, query_str: str) -> List[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Mock retrieval."""
-        return [NodeWithScore(node=TextNode(text=f"mock_{query_str}"), score=0.9)]
+        return [
+            NodeWithScore(
+                node=TextNode(text=f"mock_{query_bundle.query_str}"), score=0.9
+            )
+        ]
 
-    async def _aretrieve(self, query_str: str) -> List[NodeWithScore]:
+    async def _aretrieve(self, query_bundle: str) -> List[NodeWithScore]:
         """Mock retrieval."""
-        return [NodeWithScore(node=TextNode(text=f"mock_{query_str}"), score=0.9)]
+        return [
+            NodeWithScore(
+                node=TextNode(text=f"mock_{query_bundle.query_str}"), score=0.9
+            )
+        ]
 
 
 def test_contributor_service_index():

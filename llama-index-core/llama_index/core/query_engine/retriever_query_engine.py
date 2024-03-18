@@ -22,6 +22,9 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -56,7 +59,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
         )
         for node_postprocessor in self._node_postprocessors:
             node_postprocessor.callback_manager = callback_manager
-
         super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
@@ -178,6 +180,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             additional_source_nodes=additional_source_nodes,
         )
 
+    @dispatcher.span
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         with self.callback_manager.event(
@@ -188,11 +191,11 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 query=query_bundle,
                 nodes=nodes,
             )
-
             query_event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response
 
+    @dispatcher.span
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         with self.callback_manager.event(

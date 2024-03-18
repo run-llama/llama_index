@@ -27,6 +27,13 @@ from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
+from llama_index.core.instrumentation.events.synthesis import (
+    GetResponseEndEvent,
+    GetResponseStartEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +163,7 @@ class Refine(BaseSynthesizer):
         if "refine_template" in prompts:
             self._refine_template = prompts["refine_template"]
 
+    @dispatcher.span
     def get_response(
         self,
         query_str: str,
@@ -164,6 +172,7 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
+        dispatcher.event(GetResponseStartEvent())
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:
@@ -185,6 +194,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(Generator, response)
+        dispatcher.event(GetResponseEndEvent())
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
@@ -332,6 +342,7 @@ class Refine(BaseSynthesizer):
 
         return response
 
+    @dispatcher.span
     async def aget_response(
         self,
         query_str: str,
@@ -339,6 +350,7 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
+        dispatcher.event(GetResponseStartEvent())
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:

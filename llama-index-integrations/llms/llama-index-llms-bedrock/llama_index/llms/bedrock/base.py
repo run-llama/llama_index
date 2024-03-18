@@ -27,6 +27,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock.utils import (
+    AnthropicProvider,
     BEDROCK_FOUNDATION_LLMS,
     CHAT_ONLY_MODELS,
     STREAMING_MODELS,
@@ -198,6 +199,8 @@ class Bedrock(LLM):
             "temperature": self.temperature,
             self._provider.max_tokens_key: self.max_tokens,
         }
+        if type(self._provider) is AnthropicProvider and self.system_prompt:
+            base_kwargs["system"] = self.system_prompt
         return {
             **base_kwargs,
             **self.additional_kwargs,

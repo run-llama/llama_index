@@ -28,6 +28,15 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.tools.types import BaseTool
+from llama_index.core.instrumentation.events.agent import (
+    AgentRunStepEndEvent,
+    AgentRunStepStartEvent,
+    AgentChatWithStepStartEvent,
+    AgentChatWithStepEndEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class BaseAgentRunner(BaseAgent):
@@ -231,7 +240,6 @@ class AgentRunner(BaseAgentRunner):
                 )
             else:
                 self.callback_manager = CallbackManager()
-
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice
@@ -347,6 +355,7 @@ class AgentRunner(BaseAgentRunner):
         """Get completed steps."""
         return self.state.get_completed_steps(task_id)
 
+    @dispatcher.span
     def _run_step(
         self,
         task_id: str,
@@ -356,6 +365,7 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
+        dispatcher.event(AgentRunStepStartEvent())
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -382,6 +392,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
+        dispatcher.event(AgentRunStepEndEvent())
         return cur_step_output
 
     async def _arun_step(
@@ -502,6 +513,7 @@ class AgentRunner(BaseAgentRunner):
 
         return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
 
+    @dispatcher.span
     def _chat(
         self,
         message: str,
@@ -515,6 +527,7 @@ class AgentRunner(BaseAgentRunner):
         task = self.create_task(message)
 
         result_output = None
+        dispatcher.event(AgentChatWithStepStartEvent())
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = self._run_step(
@@ -528,10 +541,12 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(
+        result = self.finalize_response(
             task.task_id,
             result_output,
         )
+        dispatcher.event(AgentChatWithStepEndEvent())
+        return result
 
     async def _achat(
         self,
@@ -579,7 +594,10 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = self._chat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.WAIT
+                message=message,
+                chat_history=chat_history,
+                tool_choice=tool_choice,
+                mode=ChatResponseMode.WAIT,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -600,13 +618,16 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = await self._achat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.WAIT
+                message=message,
+                chat_history=chat_history,
+                tool_choice=tool_choice,
+                mode=ChatResponseMode.WAIT,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
-    @trace_method("chat")
+    @dispatcher.span
     def stream_chat(
         self,
         message: str,
@@ -616,15 +637,13 @@ class AgentRunner(BaseAgentRunner):
         # override tool choice is provided as input.
         if tool_choice is None:
             tool_choice = self.default_tool_choice
-        with self.callback_manager.event(
-            CBEventType.AGENT_STEP,
-            payload={EventPayload.MESSAGES: [message]},
-        ) as e:
-            chat_response = self._chat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
-            )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
-            e.on_end(payload={EventPayload.RESPONSE: chat_response})
+        chat_response = self._chat(
+            message=message,
+            chat_history=chat_history,
+            tool_choice=tool_choice,
+            mode=ChatResponseMode.STREAM,
+        )
+        assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     @trace_method("chat")

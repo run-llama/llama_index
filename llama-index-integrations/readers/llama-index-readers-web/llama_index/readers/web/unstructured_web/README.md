@@ -20,7 +20,7 @@ urls = [
 loader = UnstructuredURLLoader(
     urls=urls, continue_on_failure=False, headers={"User-Agent": "value"}
 )
-loader.load()
+loader.load_data()
 ```
 
 > Note:

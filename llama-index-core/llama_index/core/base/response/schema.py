@@ -1,4 +1,5 @@
 """Response schema."""
+
 import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -154,7 +155,19 @@ class AsyncStreamingResponse:
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
-    _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
+    def __post_init__(self) -> None:
+        self._lock = asyncio.Lock()
+
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return asyncio.run(self._async_str)
+
+    async def _async_str(self) -> str:
+        """Convert to string representation."""
+        async for _ in self._yield_response():
+            ...
+        return self.response_txt or "None"
 
     async def _yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""
