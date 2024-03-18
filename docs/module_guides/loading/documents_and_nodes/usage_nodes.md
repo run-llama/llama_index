@@ -8,7 +8,7 @@ Nodes are a first-class citizen in LlamaIndex. You can choose to define Nodes an
 For instance, you can do
 
 ```python
-from llama_index.node_parser import SentenceSplitter
+from llama_index.core.node_parser import SentenceSplitter
 
 parser = SentenceSplitter()
 
@@ -18,7 +18,7 @@ nodes = parser.get_nodes_from_documents(documents)
 You can also choose to construct Node objects manually and skip the first section. For instance,
 
 ```python
-from llama_index.schema import TextNode, NodeRelationship, RelatedNodeInfo
+from llama_index.core.schema import TextNode, NodeRelationship, RelatedNodeInfo
 
 node1 = TextNode(text="<text_chunk>", id_="<node_id>")
 node2 = TextNode(text="<text_chunk>", id_="<node_id>")

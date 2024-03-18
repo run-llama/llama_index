@@ -8,8 +8,8 @@ This directly tackles a big pain point in building LLM apps; every use case requ
 
 They can be used in two ways:
 
-- On one hand, they are **prepackaged modules** that can be initialized with parameters and run out of the box to achieve a given use case (whether that’s a full RAG pipeline, application template, and more). You can also import submodules (e.g. LLMs, query engines) to use directly.
-- On another hand, LlamaPacks are **templates** that you can inspect, modify, and use.
+- On one hand, they are **prepackaged modules** that can be initialized with parameters and run out of the box to achieve a given use case (whether that’s a full RAG pipeline, application template, or more). You can also import submodules (e.g. LLMs, query engines) to use directly.
+- On the other hand, LlamaPacks are **templates** that you can inspect, modify, and use.
 
 **All packs are found on [LlamaHub](https://llamahub.ai/).** Go to the dropdown menu and select "LlamaPacks" to filter by packs.
 
@@ -30,7 +30,7 @@ llamaindex-cli download-llamapack <pack_name> --download-dir <pack_directory>
 Python:
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 pack_cls = download_llama_pack("<pack_name>", "<pack_directory>")
@@ -62,4 +62,5 @@ maxdepth: 1
 ---
 /examples/llama_hub/llama_packs_example.ipynb
 /examples/llama_hub/llama_pack_resume.ipynb
+/examples/llama_hub/llama_pack_ollama.ipynb
 ```

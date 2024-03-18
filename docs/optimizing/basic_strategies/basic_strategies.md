@@ -34,7 +34,7 @@ maxdepth: 1
 Choosing the right embedding model plays a large role in overall performance.
 
 - Maybe you need something better than the default `text-embedding-ada-002` model from OpenAI?
-- Maybe you want to scale to a local sever?
+- Maybe you want to scale to a local server?
 - Maybe you need an embedding model that works well for a specific language?
 
 Beyond OpenAI, many options existing for embedding APIs, running your own embedding model locally, or even hosting your own server.
@@ -49,7 +49,7 @@ We have a list of [all supported embedding model integrations](/module_guides/mo
 
 Depending on the type of data you are indexing, or the results from your retrieval, you may want to customize the chunk size or chunk overlap.
 
-When documents are ingested into an index, the are split into chunks with a certain amount of overlap. The default chunk size is 1024, while the default chunk overlap is 20.
+When documents are ingested into an index, they are split into chunks with a certain amount of overlap. The default chunk size is 1024, while the default chunk overlap is 20.
 
 Changing either of these parameters will change the embeddings that are calculated. A smaller chunk size means the embeddings are more precise, while a larger chunk size means that the embeddings may be more general, but can miss fine-grained details.
 
@@ -60,20 +60,16 @@ Furthermore, when changing the chunk size for a vector index, you may also want 
 Here is a full example:
 
 ```
-from llama_index import (
-    ServiceContext,
-    SimpleDirectoryReader,
-    VectorStoreIndex,
-)
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core import Settings
 
 documents = SimpleDirectoryReader("./data").load_data()
 
-service_context = ServiceContext.from_defaults(
-    chunk_size=512, chunk_overlap=50
-)
+Settings.chunk_size = 512
+Settings.chunk_overlap = 50
 
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents,
 )
 
 query_engine = index.as_query_engine(similarity_top_k=4)
@@ -111,8 +107,8 @@ Before throwing your documents into a vector index, it can be useful to attach m
 Metadata filters can be set manually, so that only nodes with the matching metadata are returned:
 
 ```python
-from llama_index import VectorStoreIndex, Document
-from llama_index.vector_stores import MetadataFilters, ExactMatchFilter
+from llama_index.core import VectorStoreIndex, Document
+from llama_index.core.vector_stores import MetadataFilters, ExactMatchFilter
 
 documents = [
     Document(text="text", metadata={"author": "LlamaIndex"}),
@@ -148,3 +144,18 @@ maxdepth: 1
 /module_guides/loading/documents_and_nodes/usage_nodes.md
 /module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
 ```
+
+## Multi-Tenancy RAG
+
+Multi-Tenancy in RAG systems is crucial for ensuring data security. It enables users to access exclusively their indexed documents, thereby preventing unauthorized sharing and safeguarding data privacy. Search operations are confined to the user's own data, protecting sensitive information. Implementation can be achieved with `VectorStoreIndex` and `VectorDB` providers through Metadata Filters.
+
+Refer the guides below for more details.
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/multi_tenancy/multi_tenancy_rag.ipynb
+```
+
+For detailed guidance on implementing Multi-Tenancy RAG with LlamaIndex and Qdrant, refer to the [blog post](https://qdrant.tech/documentation/tutorials/llama-index-multitenancy/) released by Qdrant.

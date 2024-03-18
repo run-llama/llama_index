@@ -7,7 +7,7 @@ This runs evaluation over a single query + ground-truth document set given a ret
 The standard practice is to specify a set of valid metrics with `from_metrics`.
 
 ```python
-from llama_index.evaluation import RetrieverEvaluator
+from llama_index.core.evaluation import RetrieverEvaluator
 
 # define retriever somewhere (e.g. from index)
 # retriever = index.as_retriever(similarity_top_k=2)
@@ -27,7 +27,7 @@ retriever_evaluator.evaluate(
 You can manually curate a retrieval evaluation dataset of questions + node id's. We also offer synthetic dataset generation over an existing text corpus with our `generate_question_context_pairs` function:
 
 ```python
-from llama_index.evaluation import generate_question_context_pairs
+from llama_index.core.evaluation import generate_question_context_pairs
 
 qa_dataset = generate_question_context_pairs(
     nodes, llm=llm, num_questions_per_chunk=2

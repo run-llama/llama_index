@@ -49,7 +49,11 @@ Now, let's write some code to initialize our index:
 
 ```python
 import os
-from llama_index import SimpleDirectoryReader, VectorStoreIndex, StorageContext
+from llama_index.core import (
+    SimpleDirectoryReader,
+    VectorStoreIndex,
+    StorageContext,
+)
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ["OPENAI_API_KEY"] = "your key here"
@@ -119,7 +123,7 @@ Here's a basic example of what our `index_server.py` will look like after we've 
 import os
 from multiprocessing import Lock
 from multiprocessing.managers import BaseManager
-from llama_index import SimpleDirectoryReader, VectorStoreIndex, Document
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Document
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
 os.environ["OPENAI_API_KEY"] = "your key here"

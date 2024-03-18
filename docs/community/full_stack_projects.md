@@ -51,3 +51,13 @@ maxdepth: 1
 RAGs Repo <https://github.com/run-llama/rags>
 
 ```
+
+### RAG CLI
+
+```{toctree}
+---
+maxdepth: 1
+---
+RAG CLI </use_cases/q_and_a/rag_cli.md>
+
+```

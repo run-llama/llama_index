@@ -29,9 +29,9 @@ jobs:
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
-      - name: Install deps
+      - name: Install pre-commit
         shell: bash
-        run: poetry install --with dev
+        run: poetry run pip install pre-commit
       - name: Run linter
         shell: bash
         run: poetry run make lint

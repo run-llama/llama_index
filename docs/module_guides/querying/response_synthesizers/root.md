@@ -17,11 +17,9 @@ Confused about where response synthesizer fits in the pipeline? Read the [high-l
 Use a response synthesizer on it's own:
 
 ```python
-from llama_index.schema import Node
-from llama_index.response_synthesizers import (
-    ResponseMode,
-    get_response_synthesizer,
-)
+from llama_index.core.data_structs import Node
+from llama_index.core.response_synthesizers import ResponseMode
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(
     response_mode=ResponseMode.COMPACT
@@ -48,8 +46,9 @@ You can find more details on all available response synthesizers, modes, and how
 Configuring the response synthesizer for a query engine using `response_mode`:
 
 ```python
-from llama_index.schema import Node, NodeWithScore
-from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.core.data_structs import Node
+from llama_index.core.schema import NodeWithScore
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(response_mode="compact")
 
@@ -134,19 +133,20 @@ Maybe you want to customize which template is used at each step in `tree_summari
 Below we show the `__init__()` function, as well as the two abstract methods that every response synthesizer must implement. The basic requirements are to process a query and text chunks, and return a string (or string generator) response.
 
 ```python
+from llama_index.core import Settings
+
+
 class BaseSynthesizer(ABC):
     """Response builder class."""
 
     def __init__(
         self,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         streaming: bool = False,
     ) -> None:
         """Init params."""
-        self._service_context = (
-            service_context or ServiceContext.from_defaults()
-        )
-        self._callback_manager = self._service_context.callback_manager
+        self._llm = llm or Settings.llm
+        self._callback_manager = Settings.callback_manager
         self._streaming = streaming
 
     @abstractmethod
@@ -175,7 +175,7 @@ class BaseSynthesizer(ABC):
 When using either the `"refine"` or `"compact"` response synthesis modules, you may find it beneficial to experiment with the `structured_answer_filtering` option.
 
 ```
-from llama_index.response_synthesizers import get_response_synthesizer
+from llama_index.core import get_response_synthesizer
 
 response_synthesizer = get_response_synthesizer(structured_answer_filtering=True)
 ```
@@ -193,8 +193,8 @@ You can specify these additional variables in the `**kwargs` for `get_response`.
 For example,
 
 ```python
-from llama_index import PromptTemplate
-from llama_index.response_synthesizers import TreeSummarize
+from llama_index.core import PromptTemplate
+from llama_index.core.response_synthesizers import TreeSummarize
 
 # NOTE: we add an extra tone_name variable here
 qa_prompt_tmpl = (

@@ -7,7 +7,7 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
 .. code-block:: python
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -21,34 +21,38 @@ In this tutorial, we start with the code you wrote for the `starter example <sta
 
 .. code-block:: python
 
-    from llama_index import ServiceContext
+    # Global settings
+    from llama_index.core import Settings
 
-    service_context = ServiceContext.from_defaults(chunk_size=1000)
+    Settings.chunk_size = 512
 
-The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_ is a bundle of services and configurations used across a LlamaIndex pipeline.
+    # Local settings
+    from llama_index.core.node_parser import SentenceSplitter
 
-.. code-block:: python
-    :emphasize-lines: 4
-
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
-
-    documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(
-        documents, service_context=service_context
+        documents, transformations=[SentenceSplitter(chunk_size=512)]
     )
-    query_engine = index.as_query_engine()
-    response = query_engine.query("What did the author do growing up?")
-    print(response)
 
 -----------------
 
 **"I want to use a different vector store"**
 
+First, you can install the vector store you want to use. For example, to use Chroma as the vector store, you can install it using pip:
+
+.. code-block:: shell
+
+    pip install llama-index-vector-stores-chroma
+
+
+To learn more about all integrations available, check out `LlamaHub <https://llamahub.ai>`_.
+
+Then, you can use it in your code:
+
 .. code-block:: python
 
     import chromadb
-    from llama_index.vector_stores import ChromaVectorStore
-    from llama_index import StorageContext
+    from llama_index.vector_stores.chroma import ChromaVectorStore
+    from llama_index.core import StorageContext
 
     chroma_client = chromadb.PersistentClient()
     chroma_collection = chroma_client.create_collection("quickstart")
@@ -60,7 +64,7 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 .. code-block:: python
     :emphasize-lines: 4
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(
@@ -77,7 +81,7 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 .. code-block:: python
     :emphasize-lines: 5
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -93,23 +97,16 @@ The `ServiceContext <../module_guides/supporting_modules/service_context.html>`_
 
 .. code-block:: python
 
-    from llama_index import ServiceContext
-    from llama_index.llms import PaLM
+    # Global settings
+    from llama_index.core import Settings
+    from llama_index.llms.ollama import Ollama
 
-    service_context = ServiceContext.from_defaults(llm=PaLM())
+    Settings.llm = Ollama(model="mistral", request_timeout=60.0)
+
+    # Local settings
+    index.as_query_engine(llm=Ollama(model="mistral", request_timeout=60.0))
 
 You can learn more about `customizing LLMs <../module_guides/models/llms.html>`_.
-
-.. code-block:: python
-    :emphasize-lines: 5
-
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
-
-    documents = SimpleDirectoryReader("data").load_data()
-    index = VectorStoreIndex.from_documents(documents)
-    query_engine = index.as_query_engine(service_context=service_context)
-    response = query_engine.query("What did the author do growing up?")
-    print(response)
 
 -----------------
 
@@ -119,7 +116,7 @@ You can learn more about `customizing LLMs <../module_guides/models/llms.html>`_
 .. code-block:: python
     :emphasize-lines: 5
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -137,7 +134,7 @@ You can learn more about `query engines <../module_guides/querying/querying.html
 .. code-block:: python
     :emphasize-lines: 5, 7
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)
@@ -154,7 +151,7 @@ You can learn more about `streaming responses <../module_guides/deploying/query_
 .. code-block:: python
     :emphasize-lines: 5, 6, 9
 
-    from llama_index import VectorStoreIndex, SimpleDirectoryReader
+    from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
     documents = SimpleDirectoryReader("data").load_data()
     index = VectorStoreIndex.from_documents(documents)

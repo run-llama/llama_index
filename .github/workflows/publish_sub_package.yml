@@ -1,0 +1,43 @@
+name: Publish Sub-Package to PyPI if Needed
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  POETRY_VERSION: "1.6.1"
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  publish_subpackage_if_needed:
+    if: github.repository == 'run-llama/llama_index'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+      - name: Get changed pyproject files
+        id: changed-files
+        run: |
+          echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -v llama-index-core | grep llama-index | grep pyproject | xargs)" >> $GITHUB_OUTPUT
+      - name: Publish changed packages
+        env:
+          PYPI_TOKEN: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
+        run: |
+          for file in ${{ steps.changed-files.outputs.changed_files }}; do
+              cd `echo $file | sed 's/\/pyproject.toml//g'`
+              poetry lock
+              pip install -e .
+              poetry config pypi-token.pypi $PYPI_TOKEN
+              poetry publish --build
+              cd -
+          done

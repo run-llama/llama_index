@@ -14,8 +14,8 @@ Currently, the following components are `Transformation` objects:
 While transformations are best used with with an [`IngestionPipeline`](./root.md), they can also be used directly.
 
 ```python
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.extractors import TitleExtractor
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import TitleExtractor
 
 node_parser = SentenceSplitter(chunk_size=512)
 extractor = TitleExtractor()
@@ -27,18 +27,18 @@ nodes = node_parser(documents)
 nodes = await extractor.acall(nodes)
 ```
 
-## Combining with ServiceContext
+## Combining with An Index
 
-Transformations can be passed into a service context, and will be used when calling `from_documents()` or `insert()` on an index.
+Transformations can be passed into an index or overall global settings, and will be used when calling `from_documents()` or `insert()` on an index.
 
 ```python
-from llama_index import ServiceContext, VectorStoreIndex
-from llama_index.extractors import (
+from llama_index.core import VectorStoreIndex
+from llama_index.core.extractors import (
     TitleExtractor,
     QuestionsAnsweredExtractor,
 )
-from llama_index.ingestion import IngestionPipeline
-from llama_index.text_splitter import TokenTextSplitter
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import TokenTextSplitter
 
 transformations = [
     TokenTextSplitter(chunk_size=512, chunk_overlap=128),
@@ -46,14 +46,18 @@ transformations = [
     QuestionsAnsweredExtractor(questions=3),
 ]
 
-service_context = ServiceContext.from_defaults(
-    transformations=[text_splitter, title_extractor, qa_extractor]
-)
+# global
+from llama_index.core import Settings
 
+Settings.transformations = [text_splitter, title_extractor, qa_extractor]
+
+# per-index
 index = VectorStoreIndex.from_documents(
-    documents, service_context=service_context
+    documents, transformations=transformations
 )
 ```
+
+(custom-transformations)=
 
 ## Custom Transformations
 
@@ -63,11 +67,11 @@ The following custom transformation will remove any special characters or punctu
 
 ```python
 import re
-from llama_index import Document
-from llama_index.embeddings import OpenAIEmbedding
-from llama_index.text_splitter import SentenceSplitter
-from llama_index.ingestion import IngestionPipeline
-from llama_index.schema import TransformComponent
+from llama_index.core import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.schema import TransformComponent
 
 
 class TextCleaner(TransformComponent):

@@ -25,7 +25,7 @@ maxdepth: 1
 
 ## Building Vector Retrieval from Scratch
 
-This tutorial shows you how to build a retriever to query an vector store.
+This tutorial shows you how to build a retriever to query a vector store.
 
 ```{toctree}
 ---
@@ -85,6 +85,17 @@ maxdepth: 1
 
 These tutorials will show you how to build advanced functionality beyond the basic RAG pipeline. Especially helpful for advanced users with custom workflows / production needs.
 
+### Building Hybrid Search from Scratch
+
+Hybrid search is an advanced retrieval feature supported by many vector databases. It allows you to combine **dense** retrieval with **sparse** retrieval with matching keywords.
+
+```{toctree}
+---
+maxdepth: 1
+---
+Building Hybrid Search from Scratch </examples/vector_stores/qdrant_hybrid.ipynb>
+```
+
 ### Building a Router from Scratch
 
 Beyond the standard RAG pipeline, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
@@ -105,4 +116,18 @@ Here we show you how to build an advanced retriever capable of query-rewriting, 
 maxdepth: 1
 ---
 /examples/low_level/fusion_retriever.ipynb
+```
+
+## Building QA over Structured Data from Scratch
+
+RAG as a framework is primarily focused on unstructured data. LlamaIndex also has out of the box support for structured data and semi-structured data as well.
+
+Take a look at our guides below to see how to build text-to-SQL and text-to-Pandas from scratch (using our Query Pipeline syntax).
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/pipeline/query_pipeline_sql.ipynb
+/examples/pipeline/query_pipeline_pandas.ipynb
 ```

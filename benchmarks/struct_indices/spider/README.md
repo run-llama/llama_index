@@ -31,7 +31,7 @@ python generate_sql.py --input spider-0_001 --output spider-0_001-pred --model g
 ./evaluate.sh spider-0_001 spider-0_001-pred
 ```
 
-5. **New**! Use `evaluate.py` to evalaute the generated SQLs against
+5. **New**! Use `evaluate.py` to evaluate the generated SQLs against
    golden SQLs by matching the natural language answers generated from their
    respective execution outputs. This is called [Answer Accuracy](https://ekzhu.medium.com/human-aligned-text-to-sql-evaluation-399123fa0a64).
 

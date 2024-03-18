@@ -1,25 +1,47 @@
 Welcome to LlamaIndex 🦙 !
 ##########################
 
-LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications to ingest, structure, and access private or domain-specific data. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
+LlamaIndex is a data framework for `LLM <https://en.wikipedia.org/wiki/Large_language_model>`_-based applications which benefit from context augmentation. Such LLM systems have been termed as RAG systems, standing for "Retrieval-Augmented Generation". LlamaIndex provides the essential abstractions to more easily ingest, structure, and access private or domain-specific data in order to inject these safely and reliably into LLMs for more accurate text generation. It's available in Python (these docs) and `Typescript <https://ts.llamaindex.ai/>`_.
 
-🚀 Why LlamaIndex?
+.. tip::
+   Updating to LlamaIndex v0.10.0? Check out the `migration guide <./getting_started/v0_10_0_migration.html>`_.
+
+🚀 Why Context Augmentation?
 ******************
 
 LLMs offer a natural language interface between humans and data. Widely available models come pre-trained on huge amounts of publicly available data like Wikipedia, mailing lists, textbooks, source code and more.
 
 However, while LLMs are trained on a great deal of data, they are not trained on **your** data, which may be private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
 
-LlamaIndex solves this problem by connecting to these data sources and adding your data to the data LLMs already have. This is often called Retrieval-Augmented Generation (RAG). RAG enables you to use LLMs to query your data, transform it, and generate new insights. You can ask questions about your data, create chatbots, build semi-autonomous agents, and more. To learn more, check out our Use Cases on the left.
+You may choose to **fine-tune** a LLM with your data, but:
 
-🦙 How can LlamaIndex help?
+- Training a LLM is **expensive**.
+- Due to the cost to train, it's **hard to update** a LLM with latest information.
+- **Observability** is lacking. When you ask a LLM a question, it's not obvious how the LLM arrived at its answer.
+
+Instead of fine-tuning, one can use a context augmentation pattern called `Retrieval-Augmented Generation (RAG) <./getting_started/concepts.html>`_ to obtain more accurate text generation relevant to your specific data. RAG involves the following high level steps:
+
+1. Retrieve information from your data sources first,
+2. Add it to your question as context, and
+3. Ask the LLM to answer based on the enriched prompt.
+
+In doing so, RAG overcomes all three weaknesses of the fine-tuning approach:
+
+- There's no training involved, so it's **cheap**.
+- Data is fetched only when you ask for them, so it's **always up to date**.
+- LlamaIndex can show you the retrieved documents, so it's **more trustworthy**.
+
+🦙 Why LlamaIndex for Context Augmentation?
 ***************************
 
-LlamaIndex provides the following tools:
+Firstly, LlamaIndex imposes no restriction on how you use LLMs. You can still use LLMs as auto-complete, chatbots, semi-autonomous agents, and more (see Use Cases on the left). It only makes LLMs more relevant to you.
+
+LlamaIndex provides the following tools to help you quickly stand up production-ready RAG systems:
 
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
 - **Engines** provide natural language access to your data. For example:
+
   - Query engines are powerful retrieval interfaces for knowledge-augmented output.
   - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
 - **Data agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
@@ -48,7 +70,7 @@ We recommend starting at `how to read these docs <./getting_started/reading.html
 
 To download or contribute, find LlamaIndex on:
 
-- Github: https://github.com/jerryjliu/llama_index
+- Github: https://github.com/run-llama/llama_index
 - PyPi:
 
   - LlamaIndex: https://pypi.org/project/llama-index/.
@@ -89,7 +111,7 @@ Associated projects
    :caption: Use Cases
    :hidden:
 
-   use_cases/q_and_a.md
+   use_cases/q_and_a/root.md
    use_cases/chatbots.md
    use_cases/agents.md
    use_cases/extraction.md
@@ -121,6 +143,7 @@ Associated projects
    optimizing/evaluation/evaluation.md
    optimizing/fine-tuning/fine-tuning.md
    optimizing/production_rag.md
+   optimizing/custom_modules.md
    optimizing/building_rag_from_scratch.md
 .. toctree::
    :maxdepth: 2
@@ -133,6 +156,8 @@ Associated projects
    module_guides/indexing/indexing.md
    module_guides/storing/storing.md
    module_guides/querying/querying.md
+   module_guides/deploying/agents/root.md
+   module_guides/observability/instrumentation.md
    module_guides/observability/observability.md
    module_guides/evaluating/root.md
    module_guides/supporting_modules/supporting_modules.md

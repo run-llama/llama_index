@@ -57,7 +57,6 @@
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/BagelIndexDemo.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/Elasticsearch_demo.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/Lantern.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/PineconeIndexDemo-0.6.0.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/SimpleIndexDemoMMR.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/SimpleIndexOnS3.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/TypesenseDemo.html</loc></url>

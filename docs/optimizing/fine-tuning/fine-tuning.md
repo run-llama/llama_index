@@ -31,7 +31,7 @@ This is an evolving guide, and there are currently three key integrations with L
 
 We've created comprehensive guides showing you how to finetune embeddings in different ways, whether that's the model itself (in this case, `bge`) over an unstructured text corpus, or an adapter over any black-box embedding. It consists of the following steps:
 
-1. Generating a synthetic question/answer dataset using LlamaIndex over any unstructed context.
+1. Generating a synthetic question/answer dataset using LlamaIndex over any unstructured context.
 2. Finetuning the model
 3. Evaluating the model.
 

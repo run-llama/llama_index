@@ -7,7 +7,7 @@ Documents can either be created automatically via data loaders, or constructed m
 By default, all of our [data loaders](/module_guides/loading/connector/root.md) (including those offered on LlamaHub) return `Document` objects through the `load_data` function.
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("./data").load_data()
 ```
@@ -15,7 +15,7 @@ documents = SimpleDirectoryReader("./data").load_data()
 You can also choose to construct documents manually. LlamaIndex exposes the `Document` struct.
 
 ```python
-from llama_index import Document
+from llama_index.core import Document
 
 text_list = [text1, text2, ...]
 documents = [Document(text=t) for t in text_list]
@@ -57,7 +57,7 @@ document.metadata = {"filename": "<doc_file_name>"}
 3. Set the filename automatically using the `SimpleDirectoryReader` and `file_metadata` hook. This will automatically run the hook on each document to set the `metadata` field:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 filename_fn = lambda filename: {"file_name": filename}
 
@@ -72,7 +72,7 @@ documents = SimpleDirectoryReader(
 As detailed in the section [Document Management](/module_guides/indexing/document_management.md), the `doc_id` is used to enable efficient refreshing of documents in the index. When using the `SimpleDirectoryReader`, you can automatically set the doc `doc_id` to be the full path to each document:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 documents = SimpleDirectoryReader("./data", filename_as_id=True).load_data()
 print([x.doc_id for x in documents])
@@ -103,7 +103,7 @@ document.excluded_llm_metadata_keys = ["file_name"]
 Then, we can test what the LLM will actually end up reading using the `get_content()` function and specifying `MetadataMode.LLM`:
 
 ```python
-from llama_index.schema import MetadataMode
+from llama_index.core.schema import MetadataMode
 
 print(document.get_content(metadata_mode=MetadataMode.LLM))
 ```
@@ -119,7 +119,7 @@ document.excluded_embed_metadata_keys = ["file_name"]
 Then, we can test what the embedding model will actually end up reading using the `get_content()` function and specifying `MetadataMode.EMBED`:
 
 ```python
-from llama_index.schema import MetadataMode
+from llama_index.core.schema import MetadataMode
 
 print(document.get_content(metadata_mode=MetadataMode.EMBED))
 ```
@@ -145,8 +145,8 @@ Once your metadata is converted into a string using `metadata_seperator` and `me
 Knowing all this, let's create a short example using all this power:
 
 ```python
-from llama_index import Document
-from llama_index.schema import MetadataMode
+from llama_index.core import Document
+from llama_index.core.schema import MetadataMode
 
 document = Document(
     text="This is a super-customized document",
@@ -181,5 +181,5 @@ Take a look here!
 ---
 maxdepth: 1
 ---
-/core_modules/data_modules/transformations/metadata_extractor_usage_pattern.md
+/module_guides/loading/documents_and_nodes/usage_metadata_extractor.md
 ```

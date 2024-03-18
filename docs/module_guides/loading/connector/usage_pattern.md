@@ -8,9 +8,9 @@ downloads the loader file into a module that you can use within your application
 Example usage:
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-GoogleDocsReader = download_loader("GoogleDocsReader")
+from llama_index.readers.google import GoogleDocsReader
 
 gdoc_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleDocsReader()

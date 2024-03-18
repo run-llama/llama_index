@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: LlamaIndex Documentation
-    url: https://gpt-index.readthedocs.io/en/latest/index.html
+    url: https://docs.llamaindex.ai/en/latest/index.html
     about: Please review/search the latest documentation before posting an issue.
   - name: LlamaIndex Community Support
     url: https://discord.gg/dGcwcsnxhU

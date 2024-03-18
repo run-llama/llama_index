@@ -2,17 +2,6 @@
 
 We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 
-## OpenAI
-
-```{toctree}
----
-maxdepth: 1
----
-/examples/llm/openai.ipynb
-/examples/llm/azure_openai.ipynb
-
-```
-
 ## AI21
 
 ```{toctree}
@@ -29,30 +18,53 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/anthropic.ipynb
-
+/cookbooks/anthropic_haiku.ipynb
 ```
 
-## Gradient
+## AnyScale
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/gradient_base_model.ipynb
-/examples/llm/gradient_model_adapter.ipynb
-
+/examples/llm/anyscale.ipynb
 ```
 
-## Hugging Face
+## Bedrock
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
-/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
-/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
+/examples/llm/bedrock.ipynb
+```
 
+## Clarifai
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/clarifai.ipynb
+```
+
+## Cohere
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/cohere.ipynb
+```
+
+## Dashscope
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/dashscope.ipynb
+/examples/multi_modal/dashscope_multi_modal.ipynb
 ```
 
 ## EverlyAI
@@ -64,44 +76,61 @@ maxdepth: 1
 /examples/llm/everlyai.ipynb
 ```
 
-## LiteLLM
+## Fireworks
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/litellm.ipynb
+/examples/llm/fireworks.ipynb
 ```
 
-## PaLM
+## Friendli
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/palm.ipynb
-
+/examples/llm/friendli.ipynb
 ```
 
-## Predibase
+## Gradient
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/predibase.ipynb
-
+/examples/llm/gradient_base_model.ipynb
+/examples/llm/gradient_model_adapter.ipynb
 ```
 
-## Replicate
+## Groq
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/llama_2.ipynb
-/examples/llm/vicuna.ipynb
-/examples/vector_stores/SimpleIndexDemoLlama2.ipynb
+/examples/llm/groq.ipynb
+```
+
+## Hugging Face
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
+/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
+```
+
+## Konko
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/konko.ipynb
 ```
 
 ## LangChain
@@ -111,6 +140,15 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/langchain.ipynb
+```
+
+## LiteLLM
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/litellm.ipynb
 ```
 
 ## Llama API
@@ -131,13 +169,41 @@ maxdepth: 1
 /examples/llm/llama_2_llama_cpp.ipynb
 ```
 
-## Xorbits Inference
+## LocalAI
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/xinference_local_deployment.ipynb
+/examples/llm/localai.ipynb
+```
+
+## MariTalk
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/maritalk.ipynb
+```
+
+## MistralAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/mistralai.ipynb
+/cookbooks/mistralai.ipynb
+```
+
+## PremAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/premai.ipynb
 ```
 
 ## MonsterAPI
@@ -149,31 +215,40 @@ maxdepth: 1
 /examples/llm/monsterapi.ipynb
 ```
 
-## RunGPT
+## MyMagic
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/rungpt.ipynb
+/examples/llm/mymagic.ipynb
 ```
 
-## Portkey
+## NeutrinoAI
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/portkey.ipynb
+/examples/llm/neutrino.ipynb
 ```
 
-## AnyScale
+## Nvidia TensorRT-LLM
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/anyscale.ipynb
+/examples/llm/nvidia_tensorrt.ipynb
+```
+
+## Nvidia Triton
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/nvidia_triton.ipynb
 ```
 
 ## Ollama
@@ -185,40 +260,41 @@ maxdepth: 1
 /examples/llm/ollama.ipynb
 ```
 
-## Konko
+## OpenAI
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/konko.ipynb
+/examples/llm/openai.ipynb
+/examples/llm/azure_openai.ipynb
 ```
 
-## Clarifai
+## OpenLLM
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/clarifai.ipynb
+/examples/llm/openllm.ipynb
 ```
 
-## Bedrock
+## OpenRouter
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/bedrock.ipynb
+/examples/llm/openrouter.ipynb
 ```
 
-## Vertex
+## PaLM
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/vertex.ipynb
+/examples/llm/palm.ipynb
 ```
 
 ## Perplexity
@@ -230,11 +306,103 @@ maxdepth: 1
 /examples/llm/perplexity.ipynb
 ```
 
-## OpenLLM
+## Portkey
 
 ```{toctree}
 ---
 maxdepth: 1
 ---
-/examples/llm/openllm.ipynb
+/examples/llm/portkey.ipynb
+```
+
+## Predibase
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/predibase.ipynb
+```
+
+## Replicate
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/llama_2.ipynb
+/examples/llm/vicuna.ipynb
+/examples/vector_stores/SimpleIndexDemoLlama2.ipynb
+```
+
+## RunGPT
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/rungpt.ipynb
+```
+
+## SageMaker
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/sagemaker_endpoint_llm.ipynb
+```
+
+## Solar
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/solar.ipynb
+```
+
+## Together.ai
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/together.ipynb
+```
+
+## Vertex
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/vertex.ipynb
+```
+
+## vLLM
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/vllm.ipynb
+```
+
+## Xorbits Inference
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/xinference_local_deployment.ipynb
+```
+
+## ModelScope
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/modelscope.ipynb
 ```

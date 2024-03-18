@@ -17,6 +17,7 @@ maxdepth: 1
 ../../../examples/data_connectors/SlackDemo.ipynb
 ../../../examples/data_connectors/WebPageDemo.ipynb
 ../../../examples/data_connectors/PineconeDemo.ipynb
+../../../examples/data_connectors/PathwayReaderDemo.ipynb
 ../../../examples/data_connectors/MboxReaderDemo.ipynb
 ../../../examples/data_connectors/MilvusReaderDemo.ipynb
 ../../../examples/data_connectors/NotionDemo.ipynb

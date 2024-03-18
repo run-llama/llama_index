@@ -21,7 +21,7 @@ LlamaIndex provides Tool abstractions so that you can use a LlamaIndex query eng
 For instance, you can choose to create a "Tool" from an `QueryEngine` directly as follows:
 
 ```python
-from llama_index.langchain_helpers.agents import (
+from llama_index.core.langchain_helpers.agents import (
     IndexToolConfig,
     LlamaIndexTool,
 )

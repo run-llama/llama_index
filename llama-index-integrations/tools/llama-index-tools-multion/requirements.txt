@@ -1,0 +1,3 @@
+multion
+pytesseract
+Pillow

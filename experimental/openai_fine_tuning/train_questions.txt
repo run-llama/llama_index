@@ -8,7 +8,7 @@ Question: According to the provided context, what is the potential impact of oce
 What are some of the global initiatives and frameworks that aim to integrate the ocean into climate policy and achieve marine sustainability?
 What are the three types of interactions between SDG14 Life Below Water and social, economic, and governance SDGs, as identified in the report?
 What is the title of the paper mentioned in the context that discusses the interaction between hydrocarbon seepage, chemosynthetic communities, and bottom water redox at cold seeps?
-What is the title and DOI of the study that examines the negative effects of ocean acidification during warming conditions in a developing Antarctic fish?
+What is the title and DOI of the study that examines the negative effects of ocean acidification during warming conditions in developing Antarctic fish?
 What is the title and publication year of the report on climate change and the oceans mentioned in the context?
 What are the key risks to ecosystems in Eastern Boundary Upwelling Systems (EBUS) due to projected changes in upwelling-favourable winds?
 What are some observed impacts of climate change on polar marine ecosystems, including changes in species distributions and abundances, and the influence of warmer oceans and reduced sea ice?
@@ -29,7 +29,7 @@ What is the relationship between ocean warming and the habitat of marine life ac
 Question: According to the provided context on climate change and the oceans, which study focuses on the distribution of deep-sea sponge aggregations in an area of changing oceanic conditions?
 What is the potential impact of coastal eutrophication on a major oceanic upwelling system?
 What is the impact of global climate change on genetic diversity within populations and species?
-What is the title of the article in the context information that discusses the effectiveness of marine protected areas?
+What is the title of the article in the context of information that discusses the effectiveness of marine protected areas?
 What is the title of the academic literature that presents a global evidence map of indigenous knowledge on climate change adaptation?
 What is the impact of climate change on the wintering ground of Japanese anchovy (Engraulis japonicus) according to marine geospatial statistics?
 What is the title and publication year of the report on climate change and the oceans that includes a chapter on the impacts, vulnerabilities, and adaptations of Northeast Tropical Pacific marine fisheries?

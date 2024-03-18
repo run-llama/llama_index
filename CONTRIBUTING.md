@@ -8,22 +8,65 @@ The best part of LlamaIndex is our community of users and contributors.
 
 ### What should I work on?
 
-1. 🆕 Extend core modules
-2. 🐛 Fix bugs
-3. 🎉 Add usage examples
-4. 🧪 Add experimental features
-5. 📄 Improve code quality & documentation
+1. 🆕 Extend core modules by contributing an integration
+2. 📦 Contribute a Tool, Reader, Pack, or Dataset (formerly from llama-hub)
+3. 🧠 Add new capabilities to core
+4. 🐛 Fix bugs
+5. 🎉 Add usage examples
+6. 🧪 Add experimental features
+7. 📄 Improve code quality & documentation
 
 Also, join our Discord for ideas and discussions: <https://discord.gg/dGcwcsnxhU>.
 
 ### 1. 🆕 Extend Core Modules
 
-The most impactful way to contribute to LlamaIndex is extending our core modules:
+The most impactful way to contribute to LlamaIndex is by extending our core modules:
 ![LlamaIndex modules](https://github.com/jerryjliu/llama_index/raw/main/docs/_static/contribution/contrib.png)
 
 We welcome contributions in _all_ modules shown above.
-So far, we have implemented a core set of functionalities for each.
-As a contributor, you can help each module unlock its full potential.
+So far, we have implemented a core set of functionalities for each, all of
+which are encapsulated in the LlamaIndex core package. As a contributor,
+you can help each module unlock its full potential. Provided below are
+brief description of these modules. You can also refer to their respective
+folders within this Github repository for some example integrations.
+
+Contributing an integration involves submitting the source code for a new Python
+package. For now, these integrations will live in the LlamaIndex Github repository
+and the team will be responsible for publishing the package to PyPi. (Having
+these packages live outside of this repository and maintained by our community
+members is in consideration.)
+
+#### Creating A New Integration Package
+
+Both `llama-index` and `llama-index-core` come equipped
+with a command-line tool that can be used to initialize a new integration package.
+
+```shell
+cd ./llama-index-integrations/llms
+llamaindex-cli new-package --kind "llms" --name "gemini"
+```
+
+Executing the above commands will create a new folder called `llama-index-llms-gemini`
+within the `llama-index-integrations/llms` directory.
+
+In addition to preparing your source code, we also ask that you fill in some
+metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
+correct information. You do so by adding the required metadata under the `[tool.llamahub]`
+section with your new package's `pyproject.toml`.
+
+Below is the example of the metadata required for all of our integration packages. Please
+replace the default author "llama-index" with your own Github user name.
+
+```toml
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.llms.anthropic"
+
+[tool.llamahub.class_authors]
+Anthropic = "llama-index"
+```
+
+([source](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/llms/llama-index-llms-anthropic/pyproject.toml))
 
 **NOTE**: We are making rapid improvements to the project, and as a result,
 some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
@@ -52,7 +95,7 @@ A data loader ingests data of any format from anywhere into `Document` objects, 
 - [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/github_repo)
 
 Contributing a data loader is easy and super impactful for the community.
-The preferred way to contribute is making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
+The preferred way to contribute is by making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
 
 **Ideas**
 
@@ -62,8 +105,8 @@ The preferred way to contribute is making a PR at [LlamaHub Github](https://gith
 
 #### Node Parser
 
-A node parser parses `Document` objects into `Node` objects (atomic unit of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
-It is responsible for splitting text (via text splitters) and explicitly modelling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
+A node parser parses `Document` objects into `Node` objects (atomic units of data that LlamaIndex operates over, e.g., chunk of text, image, or table).
+It is responsible for splitting text (via text splitters) and explicitly modeling the relationship between units of data (e.g. A is the source of B, C is a chunk after D).
 
 **Interface**: `get_nodes_from_documents` takes a sequence of `Document` objects as input, and outputs a sequence of `Node` objects.
 
@@ -71,11 +114,11 @@ It is responsible for splitting text (via text splitters) and explicitly modelli
 
 - [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
 
-See [the API reference](https://gpt-index.readthedocs.io/en/latest/api_reference/index.html) for full details.
+See [the API reference](https://docs.llamaindex.ai/en/latest/api_reference/index.html) for full details.
 
 **Ideas**:
 
-- Add new `Node` relationships to model to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
+- Add new `Node` relationships to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
 
 ---
 
@@ -100,7 +143,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 We have an underlying key-value abstraction backing the document/index stores.
 Currently we support in-memory and MongoDB storage for these stores. Open to contributions!
 
-See [Storage guide](https://gpt-index.readthedocs.io/en/latest/how_to/storage.html) for details.
+See [Storage guide](https://docs.llamaindex.ai/en/stable/module_guides/storing/kv_stores.html) for details.
 
 ---
 
@@ -111,7 +154,7 @@ A managed index is used to represent an index that's managed via an API, exposin
 Currently we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara).
 Open to contributions!
 
-See [Managed Index docs](https://gpt-index.readthedocs.io/en/stable/community/integrations/managed_indices.html) for details.
+See [Managed Index docs](https://docs.llamaindex.ai/en/stable/community/integrations/managed_indices.html) for details.
 
 ---
 
@@ -122,7 +165,7 @@ These serve as the main data store and retrieval engine for our vector index.
 
 **Interface**:
 
-- `add` takes in a sequence of `NodeWithEmbeddings` and insert the embeddings (and possibly the node contents & metadata) into the vector store.
+- `add` takes in a sequence of `NodeWithEmbeddings` and inserts the embeddings (and possibly the node contents & metadata) into the vector store.
 - `delete` removes entries given document IDs.
 - `query` retrieves top-k most similar entries given a query embedding.
 
@@ -137,7 +180,7 @@ These serve as the main data store and retrieval engine for our vector index.
 
 - See a vector database out there that we don't support yet? Make a PR!
 
-See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vector_stores/stores.html) for full details.
+See [reference](https://docs.llamaindex.ai/en/stable/api_reference/indices/vector_store.html) for full details.
 
 ---
 
@@ -145,7 +188,7 @@ See [reference](https://gpt-index.readthedocs.io/en/latest/reference/indices/vec
 
 Our retriever classes are lightweight classes that implement a `retrieve` method.
 They may take in an index class as input - by default, each of our indices
-(list, vector, keyword) have an associated retriever. The output is a set of
+(list, vector, keyword) has an associated retriever. The output is a set of
 `NodeWithScore` objects (a `Node` object with an extra `score` field).
 
 You may also choose to implement your own retriever classes on top of your own
@@ -174,7 +217,7 @@ Our query engine classes are lightweight classes that implement a `query` method
 For instance, they may take in a retriever class as input; our `RetrieverQueryEngine`
 takes in a `retriever` as input as well as a `BaseSynthesizer` class for response synthesis, and
 the `query` method performs retrieval and synthesis before returning the final result.
-They may take in other query engine classes in as input too.
+They may take in other query engine classes as input too.
 
 **Interface**:
 
@@ -199,7 +242,7 @@ This can interpreted as a pre-processing stage, before the core index query logi
 - [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L77)
 - [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L124)
 
-See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/query/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
 
 ---
 
@@ -217,37 +260,90 @@ A token usage optimizer refines the retrieved `Nodes` to reduce token usage duri
 
 #### Node Postprocessors
 
-A node postprocessor refines a list of retrieve nodes given configuration and context.
+A node postprocessor refines a list of retrieved nodes given configuration and context.
 
 **Interface**: `postprocess_nodes` takes a list of `Nodes` and extra metadata (e.g. similarity and query), and outputs a refined list of `Nodes`.
 
 **Examples**:
 
-- [Keyword Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L32): filters nodes based on keyword match
-- [Similarity Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L62): filers nodes based on similarity threshold
-- [Prev Next Postprocessor](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/postprocessor/node.py#L135): fetches additional nodes to augment context based on node relationships.
+- [Keyword Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L32): filters nodes based on keyword match
+- [Similarity Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L74): filers nodes based on similarity threshold
+- [Prev Next Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L175): fetches additional nodes to augment context based on node relationships.
 
 ---
 
 #### Output Parsers
 
-A output parser enables us to extract structured output from the plain text output generated by the LLM.
+An output parser enables us to extract structured output from the plain text output generated by the LLM.
 
 **Interface**:
 
 - `format`: formats a query `str` with structured output formatting instructions, and outputs the formatted `str`
-- `parse`: takes a `str` (from LLM response) as input, and gives a parsed tructured output (optionally also validated, error-corrected).
+- `parse`: takes a `str` (from LLM response) as input, and gives a parsed structured output (optionally also validated, error-corrected).
 
 **Examples**:
 
 - [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/guardrails.py)
 - [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/langchain.py)
 
-See [guide](https://gpt-index.readthedocs.io/en/latest/how_to/output_parsing.html) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structured_outputs/output_parser.html) for more information.
 
 ---
 
-### 2. 🐛 Fix Bugs
+### 2. 📦 Contribute a Pack, Reader, Tool, or Dataset (formerly from llama-hub)
+
+Tools, Readers, and Packs have all been migrated from [llama-hub](https://github.com/run-llama/llama-hub) to the main
+llama-index repo (i.e., this one). Datasets still reside in llama-hub, but will be
+migrated here in the near future.
+
+Contributing a new Reader or Tool involves submitting a new package within
+the [llama-index-integrations/readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) and [llama-index-integrations/tools](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools),
+folders respectively.
+
+The LlamaIndex command-line tool can be used to initialize new Packs and Integrations. (NOTE: `llama-index-cli` comes installed with `llama-index`.)
+
+```shell
+cd ./llama-index-packs
+llamaindex-cli new-package --kind "packs" --name "my new pack"
+
+cd ./llama-index-integrations/readers
+llamaindex-cli new-package --kind "readers" --name "new reader"
+```
+
+Executing the first set of shell commands will create a new folder called `llama-index-packs-my-new-pack`
+within the `llama-index-packs` directory. While the second set will create a new
+package directory called `llama-index-readers-new-reader` within the `llama-index-integrations/readers` directory.
+
+In addition to preparing your source code, we also ask that you fill in some
+metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
+correct information. You do so by adding the required metadata under the `[tool.llamahub]`
+section with your new package's `pyproject.toml`.
+
+Below is the example of the metadata required for packs, readers and tools:
+
+```toml
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.packs.agent_search_retriever"
+
+[tool.llamahub.class_authors]
+AgentSearchRetrieverPack = "logan-markewich"
+```
+
+([source](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-agent-search-retriever/pyproject.toml))
+
+### 3. 🧠 Add new capabilities to core
+
+We would greatly appreciate any and all contributions to our core abstractions
+that represent enhancements from the current set of capabilities.
+General improvements that make these core abstractions more robust and thus
+easier to build on are also welcome!
+
+A [Requests For Contribution Project Board](https://github.com/orgs/run-llama/projects/2)
+has been curated and can provide some ideas for what contributions can be made
+into core.
+
+### 4. 🐛 Fix Bugs
 
 Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/llama_index/issues).
 We try our best in triaging and tagging these issues:
@@ -257,19 +353,19 @@ We try our best in triaging and tagging these issues:
 
 Please feel free to open an issue and/or assign an issue to yourself.
 
-### 3. 🎉 Add Usage Examples
+### 5. 🎉 Add Usage Examples
 
 If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 
-1. a guide: e.g. [guide to LlamIndex + Structured Data](https://gpt-index.readthedocs.io/en/latest/guides/tutorials/sql_guide.html)
-2. an example notebook: e.g. [Composable Indices Demo](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/composable_indices/ComposableIndices-Prior.ipynb)
+1. a guide: e.g. [Guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data.html)
+2. an example notebook: e.g. [Email Info Extraction](/examples/usecases/email_data_extraction.ipynb)
 
-### 4. 🧪 Add Experimental Features
+### 6. 🧪 Add Experimental Features
 
 If you have a crazy idea, make a PR for it!
 Whether if it's the latest research, or what you thought of in the shower, we'd love to see creative ways to improve LlamaIndex.
 
-### 5. 📄 Improve Code Quality & Documentation
+### 7. 📄 Improve Code Quality & Documentation
 
 We would love your help in making the project cleaner, more robust, and more understandable. If you find something confusing, it most likely is for other people as well. Help us be better!
 
@@ -333,7 +429,7 @@ make test
 For changes that involve entirely new features, it may be worth adding an example Jupyter notebook to showcase
 this feature.
 
-Example notebooks can be found in this folder: <https://github.com/jerryjliu/llama_index/tree/main/examples>.
+Example notebooks can be found in this folder: <https://github.com/run-llama/llama_index/tree/main/docs/examples>.
 
 ### Creating a pull request
 

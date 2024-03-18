@@ -1,5 +1,6 @@
-from llama_index.schema import TextNode
-from llama_index import ServiceContext, VectorStoreIndex
+from llama_index.core.schema import TextNode
+from llama_index.core import Settings
+from llama_index.core import VectorStoreIndex
 import pandas as pd
 from tqdm import tqdm
 
@@ -14,10 +15,10 @@ def evaluate(
     queries = dataset.queries
     relevant_docs = dataset.relevant_docs
 
-    service_context = ServiceContext.from_defaults(embed_model=embed_model)
+    embed_model = embed_model or Settings.embed_model
     nodes = [TextNode(id_=id_, text=text) for id_, text in corpus.items()]
     index = VectorStoreIndex(
-        nodes, service_context=service_context, show_progress=True
+        nodes, embed_model=embed_model, show_progress=True
     )
     retriever = index.as_retriever(similarity_top_k=top_k)
 

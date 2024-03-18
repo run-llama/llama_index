@@ -7,8 +7,8 @@ In order to measure LLM and Embedding token counts, you'll need to
 1. Setup `MockLLM` and `MockEmbedding` objects
 
 ```python
-from llama_index.llms import MockLLM
-from llama_index import MockEmbedding
+from llama_index.core.llms import MockLLM
+from llama_index.core import MockEmbedding
 
 llm = MockLLM(max_tokens=256)
 embed_model = MockEmbedding(embed_dim=1536)
@@ -18,7 +18,7 @@ embed_model = MockEmbedding(embed_dim=1536)
 
 ```python
 import tiktoken
-from llama_index.callbacks import CallbackManager, TokenCountingHandler
+from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 
 token_counter = TokenCountingHandler(
     tokenizer=tiktoken.encoding_for_model("gpt-3.5-turbo").encode
@@ -27,22 +27,20 @@ token_counter = TokenCountingHandler(
 callback_manager = CallbackManager([token_counter])
 ```
 
-3. Add them to the global `ServiceContext`
+3. Add them to the global `Settings`
 
 ```python
-from llama_index import ServiceContext, set_global_service_context
+from llama_index.core import Settings
 
-set_global_service_context(
-    ServiceContext.from_defaults(
-        llm=llm, embed_model=embed_model, callback_manager=callback_manager
-    )
-)
+Settings.llm = llm
+Settings.embed_model = embed_model
+Settings.callback_manager = callback_manager
 ```
 
 4. Construct an Index
 
 ```python
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 documents = SimpleDirectoryReader(
     "./docs/examples/data/paul_graham"
@@ -73,7 +71,7 @@ print(
 token_counter.reset_counts()
 ```
 
-6. Run a query, mesaure again
+6. Run a query, measure again
 
 ```python
 query_engine = index.as_query_engine()

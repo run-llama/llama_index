@@ -1,6 +1,6 @@
 Citation Query Engine
 =======================
 
-.. automodule:: llama_index.query_engine.citation_query_engine
+.. automodule:: llama_index.core.query_engine.citation_query_engine
    :members:
    :inherited-members:

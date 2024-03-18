@@ -1,6 +1,6 @@
 # SimpleDirectoryReader
 
-`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamalab.com/hub), but `SimpleDirectoryReader` is a great way to get started.
+`SimpleDirectoryReader` is the simplest way to load data from local files into LlamaIndex. For production use cases it's more likely that you'll want to use one of the many Readers available on [LlamaHub](https://llamahub.ai/), but `SimpleDirectoryReader` is a great way to get started.
 
 ## Supported file types
 
@@ -26,10 +26,22 @@ One file type you may be expecting to find here is JSON; for that we recommend y
 The most basic usage is to pass an `input_dir` and it will load all supported files in that directory:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 
 reader = SimpleDirectoryReader(input_dir="path/to/directory")
 documents = reader.load_data()
+```
+
+Documents can also be loaded with parallel processing if loading many files from
+a directory. Note that there are differences when using `multiprocessing` with
+Windows and Linux/MacOS machines, which is explained throughout the `multiprocessing` docs
+(e.g. see [here](https://docs.python.org/3/library/multiprocessing.html?highlight=process#the-spawn-and-forkserver-start-methods)).
+Ultimately, Windows users may see less or no performance gains whereas Linux/MacOS
+users would see these gains when loading the exact same set of files.
+
+```python
+...
+documents = reader.load_data(num_workers=4)
 ```
 
 ### Reading from subdirectories
@@ -38,6 +50,18 @@ By default, `SimpleDirectoryReader` will only read files in the top level of the
 
 ```python
 SimpleDirectoryReader(input_dir="path/to/directory", recursive=True)
+```
+
+### Iterating over files as they load
+
+You can also use the `iter_data()` method to iterate over and process files as they load
+
+```python
+reader = SimpleDirectoryReader(input_dir="path/to/directory", recursive=True)
+all_docs = []
+for docs in reader.iter_data():
+    # <do something with the documents per file>
+    all_docs.extend(docs)
 ```
 
 ### Restricting the files loaded
@@ -97,9 +121,9 @@ The function should take a single argument, the file path, and return a dictiona
 You can extend `SimpleDirectoryReader` to read other file types by passing a dictionary of file extensions to instances of `BaseReader` as `file_extractor`. A BaseReader should read the file and return a list of Documents. For example, to add custom support for `.myfile` files :
 
 ```python
-from llama_index import SimpleDirectoryReader
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.readers.base import BaseReader
+from llama_index.core import Document
 
 
 class MyFileReader(BaseReader):
@@ -119,3 +143,30 @@ print(documents)
 ```
 
 Note that this mapping will override the default file extractors for the file types you specify, so you'll need to add them back in if you want to support them.
+
+### Support for External FileSystems
+
+As with other modules, the `SimpleDirectoryReader` takes an optional `fs` parameter that can be used to traverse remote filesystems.
+
+This can be any filesystem object that is implemented by the [`fsspec`](https://filesystem-spec.readthedocs.io/en/latest/) protocol.
+The `fsspec` protocol has open-source implementations for a variety of remote filesystems including [AWS S3](https://github.com/fsspec/s3fs), [Azure Blob & DataLake](https://github.com/fsspec/adlfs), [Google Drive](https://github.com/fsspec/gdrivefs), [SFTP](https://github.com/fsspec/sshfs), and [many others](https://github.com/fsspec/).
+
+Here's an example that connects to S3:
+
+```python
+from s3fs import S3FileSystem
+
+s3_fs = S3FileSystem(key="...", secret="...")
+bucket_name = "my-document-bucket"
+
+reader = SimpleDirectoryReader(
+    input_dir=bucket_name,
+    fs=s3_fs,
+    recursive=True,  # recursively searches all subdirectories
+)
+
+documents = reader.load_data()
+print(documents)
+```
+
+A full example notebook can be found [here](https://github.com/run-llama/llama_index/blob/main/docs/examples/data_connectors/simple_directory_reader_remote_fs.ipynb).

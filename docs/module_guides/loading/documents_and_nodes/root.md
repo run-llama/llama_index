@@ -22,7 +22,7 @@ Here are some simple snippets to get started with Documents and Nodes.
 #### Documents
 
 ```python
-from llama_index import Document, VectorStoreIndex
+from llama_index.core import Document, VectorStoreIndex
 
 text_list = [text1, text2, ...]
 documents = [Document(text=t) for t in text_list]
@@ -34,7 +34,7 @@ index = VectorStoreIndex.from_documents(documents)
 #### Nodes
 
 ```python
-from llama_index.node_parser import SentenceSplitter
+from llama_index.core.node_parser import SentenceSplitter
 
 # load documents
 ...
@@ -57,5 +57,5 @@ maxdepth: 1
 ---
 usage_documents.md
 usage_nodes.md
-/core_modules/data_modules/transformations/root.md
+../ingestion_pipeline/transformations.md
 ```

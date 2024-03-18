@@ -5,7 +5,7 @@
 Defining a custom prompt is as simple as creating a format string
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
 template = (
     "We have provided context information below. \n"
@@ -28,7 +28,8 @@ messages = qa_template.format_messages(context_str=..., query_str=...)
 You can also define a template from chat messages
 
 ```python
-from llama_index.prompts import ChatPromptTemplate, ChatMessage, MessageRole
+from llama_index.core import ChatPromptTemplate
+from llama_index.core.llms import ChatMessage, MessageRole
 
 message_templates = [
     ChatMessage(content="You are an expert system.", role=MessageRole.SYSTEM),
@@ -177,7 +178,7 @@ Related Guides:
 Partially format a prompt, filling in some variables while leaving others to be filled in later.
 
 ```python
-from llama_index.prompts import PromptTemplate
+from llama_index.core import PromptTemplate
 
 prompt_tmpl_str = "{foo} {bar}"
 prompt_tmpl = PromptTemplate(prompt_tmpl_str)
