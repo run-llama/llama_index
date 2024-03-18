@@ -7,8 +7,9 @@ Differential privacy is a privacy preserving technique that seeks to provide
 probabilistic guarantees on the membership inference of a data observation (and
 its attached data subject) in the processing of the dataset to which it belongs.
 
-As noted in the original paper (linked below), the synthetic observations can
-be used as many times as one desires without any additional privacy costs!
+The main motivation for this pack is thus to provide the means to create privacy
+safe versions of datasets that can be used in subsequent downstream processing
+(i.e., in a prompt to be passed to an LLM) steps. As noted in the original paper (linked below), the synthetic observations can be used as many times as one desires without any additional privacy costs!
 
 The paper appeared at ICLR 2024 and is entitled:
 [PRIVACY-PRESERVING IN-CONTEXT LEARNING WITH DIFFERENTIALLY PRIVATE FEW-SHOT GENERATION](https://openreview.net/pdf?id=oZtt0pRnOl).

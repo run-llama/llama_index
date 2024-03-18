@@ -93,12 +93,25 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         self,
         sigma: float,
         mechanism: PrivacyMechanism,
-        sample_rate: float,
+        size: int,
         max_token_cnt: int,
         eps_error: float = 0.01,
         delta_error: float = 1e-10,
     ) -> float:
-        """Return the epsilon value given a sigma."""
+        """Return the epsilon value given a sigma.
+
+        Args:
+            sigma (float): _description_
+            mechanism (PrivacyMechanism): _description_
+            size (int): _description_
+            max_token_cnt (int): _description_
+            eps_error (float, optional): _description_. Defaults to 0.01.
+            delta_error (float, optional): _description_. Defaults to 1e-10.
+
+        Returns:
+            float: The epsilon value.
+        """
+        sample_rate = size / self._num_examples
         if mechanism == PrivacyMechanism.GAUSSIAN:
             prv_0 = PoissonSubsampledGaussianMechanism(
                 noise_multiplier=sigma, sampling_probability=sample_rate

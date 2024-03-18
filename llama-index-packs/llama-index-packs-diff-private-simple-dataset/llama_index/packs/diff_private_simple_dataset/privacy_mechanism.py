@@ -5,4 +5,4 @@ class PrivacyMechanism(str, Enum):
     """Enum for available privacy mechanism."""
 
     EXPONENTIAL = "exponential"
-    LAPLACE = "laplace"
+    GAUSSIAN = "gaussian"
