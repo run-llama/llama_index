@@ -27,7 +27,13 @@ def main():
     data_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "data", "Symptom2Disease.csv"
     )
-    df = pd.read_csv(data_path)
+    try:
+        df = pd.read_csv(data_path)
+    except FileNotFoundError:
+        raise ValueError(
+            "The `Symptom2Disease.csv` file cannot be found. Please "
+            "run the `_download_raw_symptom_2_disease_data.py` script."
+        )
     train, test = train_test_split(df, test_size=0.2)
 
     train_simple_dataset = create_labelled_simple_dataset_from_df(train)

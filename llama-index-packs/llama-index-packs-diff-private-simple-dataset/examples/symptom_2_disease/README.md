@@ -37,6 +37,26 @@ export OPENAI_API_KEY=...
 
 ### Running the script
 
+First, we need to download the raw data file.
+
+```sh
+cd examples
+python symptom_2_disease/_download_raw_symptom_2_disease_data.py
+```
+
+Running the script will result in `Symptom2Disease.csv` file being written to
+`examples/symptom_2_disease/data` directory. With the raw data file downloaded,
+you need to create the `LabelledSimpleDataset` version of it.
+
+```sh
+cd examples
+python symptom_2_disease/_create_symptom_2_disease_simple_dataset.py
+```
+
+The output of the scripts will be two files: `symptom_2_disease.json` and
+`symptom_2_disease_test.json` (both are found in the
+`examples/symptom_2_disease/data` directory).
+
 ```sh
 cd examples
 python -m symptom_2_disease.main
