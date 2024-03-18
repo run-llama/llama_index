@@ -39,6 +39,34 @@ from llama_index.llms.ocigenai.utils import (
 )
 
 class OCIGenAI(LLM):
+    """OCI large language models.
+
+    To authenticate, the OCI client uses the methods described in
+    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
+
+    The authentifcation method is passed through auth_type and should be one of:
+    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE
+
+    Make sure you have the required policies (profile/roles) to
+    access the OCI Generative AI service.
+    If a specific config profile is used, you must pass
+    the name of the profile (from ~/.oci/config) through auth_profile.
+
+    To use, you must provide the compartment id
+    along with the endpoint url, and model id
+    as named parameters to the constructor.
+
+    Example:
+        .. code-block:: python
+
+            from llama_index.llms.ocigenai import OCIGenAI
+
+            llm = OCIGenAI(
+                    model="MY_MODEL_ID",
+                    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+                    compartment_id="MY_OCID"
+                )
+    """
     model: str = Field(description="Id of the OCI Generative AI model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -97,7 +125,34 @@ class OCIGenAI(LLM):
         output_parser: Optional[BaseOutputParser] = None,
         
     ) -> None:
-        
+        """
+        Initializes the OCIGenAI class.
+
+        Args:
+            model (str): The Id of the model to be used for generating embeddings, e.g., "meta.llama-2-70b-chat".
+
+            temperature (Optional[float]): The temperature to use for sampling. Default specified in lama_index.core.constants.DEFAULT_TEMPERATURE.
+
+            max_tokens (Optional[int]): The maximum number of tokens to generate. Default is 512.
+
+            context_size (Optional[int]): The maximum number of tokens available for input. If not specified, the default context size for the model will be used.
+
+            service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+
+            compartment_id (str): OCID of the compartment.
+
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
+                                    If not specified, API_KEY will be used
+
+            auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the 
+                                    provided service endpoint and authentifcation method.            
+
+            provider (Optional[str]): Provider name of the model. If not specified, the provider will be derived from the model name.
+
+            additional_kwargs (Optional[Dict[str, Any]]): Additional kwargs for the the LLM.
+        """
         self._client = client or create_client(auth_type, auth_profile, service_endpoint)
 
         self._provider = get_provider(model, provider)

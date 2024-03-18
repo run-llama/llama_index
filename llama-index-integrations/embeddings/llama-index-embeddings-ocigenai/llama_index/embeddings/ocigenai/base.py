@@ -104,26 +104,27 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         """
         Initializes the OCIGenAIEmbeddings class.
 
-        model_name (str): The Id of the model to be used for generating embeddings,e.g. "cohere.embed-english-light-v3.0".
+        Args:
+            model (str): The Id of the model to be used for generating embeddings, e.g., "cohere.embed-english-light-v3.0".
 
-        truncate (str): A string indicating the truncation strategy for long input text. Possible values
-                        are 'START', 'END', or 'NONE'.
+            truncate (str): A string indicating the truncation strategy for long input text. Possible values
+                            are 'START', 'END', or 'NONE'.
 
-        input_type (Optional[str]): An optional string that specifies the type of input provided to the model.
-                                    This is model-dependent and could be one of the following: "search_query",
-                                    "search_document", "classification", or "clustering".
-        
-        service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+            input_type (Optional[str]): An optional string that specifies the type of input provided to the model.
+                                        This is model-dependent and could be one of the following: "search_query",
+                                        "search_document", "classification", or "clustering".
+            
+            service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
 
-        compartment_id (str): OCID of the compartment.
+            compartment_id (str): OCID of the compartment.
 
-        auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
-                                   If not specified, API_KEY will be used
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
+                                    If not specified, API_KEY will be used
 
-        auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+            auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
 
-        client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the 
-                                provided service endpoint and authentifcation method.            
+            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the 
+                                    provided service endpoint and authentifcation method.            
         """
         if client is not None:
             self._client = client

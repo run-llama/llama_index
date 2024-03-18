@@ -32,7 +32,16 @@ STREAMING_MODELS = {
 }
 
 def create_client(auth_type, auth_profile, service_endpoint):
+    """OCI Gen AI client
+    
+    Args:
+        auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
+                                    If not specified, API_KEY will be used
 
+        auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+        service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+    """
     try:
         import oci
 
