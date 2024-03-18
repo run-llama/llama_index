@@ -1,10 +1,11 @@
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.evaluation import AnswerRelevancyEvaluator
-from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core.tools.types import ToolMetadata, ToolOutput
+
+if TYPE_CHECKING:
+    from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 
 
 DEFAULT_NAME = "query_engine_tool"
@@ -28,12 +29,12 @@ class EvalQueryEngineTool(QueryEngineTool):
         metadata (ToolMetadata): The associated metadata of the query engine.
     """
 
-    _evaluator: BaseEvaluator
+    _evaluator: "BaseEvaluator"
     _failed_tool_output_template: str
 
     def __init__(
         self,
-        evaluator: BaseEvaluator,
+        evaluator: "BaseEvaluator",
         *args,
         failed_tool_output_template: str = FAILED_TOOL_OUTPUT_TEMPLATE,
         **kwargs
@@ -45,7 +46,7 @@ class EvalQueryEngineTool(QueryEngineTool):
     def _process_tool_output(
         self,
         tool_output: ToolOutput,
-        evaluation_result: EvaluationResult,
+        evaluation_result: "EvaluationResult",
     ) -> ToolOutput:
         if evaluation_result.passing:
             return tool_output
@@ -60,11 +61,13 @@ class EvalQueryEngineTool(QueryEngineTool):
     def from_defaults(
         cls,
         query_engine: BaseQueryEngine,
-        evaluator: Optional[BaseEvaluator] = None,
+        evaluator: Optional["BaseEvaluator"] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         resolve_input_errors: bool = True,
     ) -> "EvalQueryEngineTool":
+        from llama_index.core.evaluation import AnswerRelevancyEvaluator
+
         return cls(
             evaluator=evaluator or AnswerRelevancyEvaluator(),
             query_engine=query_engine,
