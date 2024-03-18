@@ -25,8 +25,8 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = [
-    "Alex Cheung <chiho00hk@hotmail.com>",
     "Andrei Fajardo <andrei@llamaindex.ai>",
+    "Chi Ho (Alex) Cheung <chiho00hk@hotmail.com>",
     "Logan Markewich <logan@llamaindex.ai>",
 ]
 description = "llama-index packs diff private simple dataset"
