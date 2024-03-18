@@ -24,7 +24,11 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Andrei Fajardo <andrei@llamaindex.ai>"]
+authors = [
+    "Alex Cheung <chiho00hk@hotmail.com>",
+    "Andrei Fajardo <andrei@llamaindex.ai>",
+    "Logan Markewich <logan@llamaindex.ai>",
+]
 description = "llama-index packs diff private simple dataset"
 exclude = ["**/BUILD"]
 license = "MIT"
