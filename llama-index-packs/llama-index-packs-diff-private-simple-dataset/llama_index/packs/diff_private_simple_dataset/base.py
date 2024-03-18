@@ -1,4 +1,5 @@
 import asyncio
+import math
 import numpy as np
 import random
 import tqdm
@@ -28,7 +29,10 @@ from llama_index.packs.diff_private_simple_dataset.events import (
     SyntheticExampleEndEvent,
     SyntheticExampleStartEvent,
 )
-from prv_accountant.privacy_random_variables import PoissonSubsampledGaussianMechanism
+from prv_accountant.privacy_random_variables import (
+    PoissonSubsampledGaussianMechanism,
+    PureDPMechanism,
+)
 from prv_accountant import PRVAccountant
 
 import llama_index.core.instrumentation as instrument
@@ -89,38 +93,35 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         self,
         sigma: float,
         mechanism: PrivacyMechanism,
+        sample_rate: float,
         max_token_cnt: int,
         eps_error: float = 0.01,
         delta_error: float = 1e-10,
     ) -> float:
-        """Return the epsilon value given a sigma.
-
-        Source: https://programming-dp.com/ch6.html#the-gaussian-mechanism
-        """
+        """Return the epsilon value given a sigma."""
         if mechanism == PrivacyMechanism.GAUSSIAN:
             prv_0 = PoissonSubsampledGaussianMechanism(
                 noise_multiplier=sigma, sampling_probability=sample_rate
             )
-            accountant = PRVAccountant(
-                prvs=[
-                    prv_0,
-                ],
-                max_self_compositions=[max_token_cnt + 1],
-                eps_error=eps_error,
-                delta_error=delta_error,
-            )
-            _eps_low, eps_est, _eps_up = accountant.compute_epsilon(
-                delta=1 / self._num_examples, num_self_compositions=[max_token_cnt]
-            )
-        elif mechanism == PrivacyMechanism.LAPLACE:
-            raise NotImplementedError(
-                "This method is not implemented for '{PrivacyMechanism.LAPLACE}'"
-            )
+        elif mechanism == PrivacyMechanism.EXPONENTIAL:
+            sigma_bar = math.log(1 + sample_rate * (math.exp(sigma) - 1))
+            prv_0 = PureDPMechanism(eps=sigma_bar)
         else:
             raise ValueError(
-                "Invalid value for `mechanism` entered."
-                " Please use either 'gaussian' or 'laplace'."
+                "Invalid value for mechanism entered."
+                " Please use either 'gaussian' or 'exponential'."
             )
+        accountant = PRVAccountant(
+            prvs=[
+                prv_0,
+            ],
+            max_self_compositions=[max_token_cnt + 1],
+            eps_error=eps_error,
+            delta_error=delta_error,
+        )
+        _eps_low, eps_est, _eps_up = accountant.compute_epsilon(
+            delta=1 / self._num_examples, num_self_compositions=[max_token_cnt]
+        )
         return eps_est
 
     async def _async_worker(self, job: Coroutine) -> Any:
