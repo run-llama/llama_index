@@ -20,7 +20,7 @@ dispatcher.add_event_handler(event_handler)
 async def main():
     # load simple dataset
     json_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "symptom_2_disease.json"
+        os.path.dirname(os.path.abspath(__file__)), "data", "symptom_2_disease.json"
     )
     simple_dataset = LabelledSimpleDataset.from_json(json_path)
 
