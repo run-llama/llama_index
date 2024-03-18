@@ -380,6 +380,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
 
         """
         table_schema_objs = self._get_tables(query_bundle.query_str)
+        breakpoint()
 
         context_strs = []
         if self._context_str_prefix is not None:
