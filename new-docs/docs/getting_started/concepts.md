@@ -3,7 +3,7 @@
 This is a quick guide to the high-level concepts you'll encounter frequently when building LLM applications.
 
 !!! tip
-    If you haven't, [install LlamaIndex](/getting_started/installation.md) and complete the [starter tutorial](/getting_started/starter_example.md) before you read this. It will help ground these steps in your experience.
+    If you haven't, [install LlamaIndex](./installation.md) and complete the [starter tutorial](./starter_example.md) before you read this. It will help ground these steps in your experience.
 
 
 ## Retrieval Augmented Generation (RAG)

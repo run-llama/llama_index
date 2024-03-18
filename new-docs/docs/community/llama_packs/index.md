@@ -56,6 +56,6 @@ Importantly, you can/should also go into `pack_directory` to inspect the source 
 
 Some example module guides are given below. Remember, go on [LlamaHub](https://llamahub.ai) to access the full range of packs.
 
-- [LlamaPacks Example](/examples/llama_hub/llama_packs_example.ipynb)
-- [Resume LlamaPack](/examples/llama_hub/llama_pack_resume.ipynb)
-- [Ollama LlamaPack](/examples/llama_hub/llama_pack_ollama.ipynb)
+- [LlamaPacks Example](../../examples/llama_hub/llama_packs_example.ipynb)
+- [Resume LlamaPack](../../examples/llama_hub/llama_pack_resume.ipynb)
+- [Ollama LlamaPack](../../examples/llama_hub/llama_pack_ollama.ipynb)

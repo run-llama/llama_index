@@ -37,9 +37,9 @@ We've created comprehensive guides showing you how to finetune embeddings in dif
 
 Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can then plug this fine-tuned model into your RAG application with LlamaIndex.
 
-- [Fine-tuning an Adapter](/examples/finetuning/embeddings/finetune_embedding_adapter.ipynb)
-- [Embedding Fine-tuning Guide](/examples/finetuning/embeddings/finetune_embedding.ipynb)
-- [Router Fine-tuning](/examples/finetuning/router/router_finetune.ipynb)
+- [Fine-tuning an Adapter](../examples/finetuning/embeddings/finetune_embedding_adapter.ipynb)
+- [Embedding Fine-tuning Guide](../examples/finetuning/embeddings/finetune_embedding.ipynb)
+- [Router Fine-tuning](../examples/finetuning/router/router_finetune.ipynb)
 
 **Old**
 
@@ -66,14 +66,6 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 - [GPT-3.5 Fine-tuning Notebook (Colab)](https://colab.research.google.com/drive/1vWeJBXdFEObuihO7Z8ui2CAYkdHQORqo?usp=sharing)
 - [GPT-3.5 Fine-tuning Notebook (in Repo)](https://github.com/jerryjliu/llama_index/blob/main/experimental/openai_fine_tuning/openai_fine_tuning.ipynb)
 
-### Fine-tuning with Retrieval Augmentation
-
-Here we try fine-tuning an LLM with retrieval-augmented inputs, as referenced from the RA-DIT paper: https://arxiv.org/abs/2310.01352.
-
-The core idea is to allow the LLM to better use the context from a given retriever or ignore it entirely.
-
-- [Fine-tuning with RAG](../examples/finetuning/knowledge/finetune_retrieval_aug.ipynb)
-
 ### Fine-tuning for Better Structured Outputs
 
 Another use case for fine-tuning is to make the model better at outputting structured data.
@@ -81,13 +73,6 @@ We can do this for both OpenAI and Llama2.
 
 - [OpenAI Function Calling Fine-tuning](../examples/finetuning/openai_fine_tuning_functions.ipynb)
 - [Llama2 Structured Output Fine-tuning](../examples/finetuning/gradient/gradient_structured.ipynb)
-
-### [WIP] Fine-tuning GPT-3.5 to Memorize Knowledge
-
-We have a guide experimenting with showing how to use OpenAI fine-tuning to memorize a body of text.
-Still WIP! Not quite as good as RAG yet.
-
-- [Fine-tuning for Knowledge](../examples/finetuning/knowledge/finetune_knowledge.ipynb)
 
 ### Fine-tuning Llama 2 for Better Text-to-SQL
 

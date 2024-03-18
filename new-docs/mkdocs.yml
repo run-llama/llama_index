@@ -725,6 +725,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-firebase-realtimedb
             - ../llama-index-integrations/readers/llama-index-readers-firestore
             - ../llama-index-integrations/readers/llama-index-readers-genius
+            - ../llama-index-integrations/readers/llama-index-readers-github
             - ../llama-index-integrations/readers/llama-index-readers-gpt-repo
             - ../llama-index-integrations/readers/llama-index-readers-graphdb-cypher
             - ../llama-index-integrations/readers/llama-index-readers-graphql

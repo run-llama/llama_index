@@ -8,7 +8,7 @@ If you've never used Neo4j before, you can download the desktop client [here](ht
 
 Once you open the client, create a new project and install the `apoc` integration. Full instructions [here](https://neo4j.com/labs/apoc/4.1/installation/). Just click on your project, select `Plugins` on the left side menu, install APOC and restart your server.
 
-See the example of using the [Neo4j Graph Store](/examples/index_structs/knowledge_graph/Neo4jKGIndexDemo.ipynb).
+See the example of using the [Neo4j Graph Store](../../examples/index_structs/knowledge_graph/Neo4jKGIndexDemo.ipynb).
 
 ## `NebulaGraphStore`
 
@@ -16,8 +16,8 @@ We support a `NebulaGraphStore` integration, for persisting graphs directly in N
 
 See the associated guides below:
 
-- [Nebula Graph Store](/examples/index_structs/knowledge_graph/NebulaGraphKGIndexDemo.ipynb)
-- [Knowledge Graph Query Engine](/examples/query_engine/knowledge_graph_query_engine.ipynb)
+- [Nebula Graph Store](../../examples/index_structs/knowledge_graph/NebulaGraphKGIndexDemo.ipynb)
+- [Knowledge Graph Query Engine](../../examples/query_engine/knowledge_graph_query_engine.ipynb)
 
 ## `KuzuGraphStore`
 
@@ -25,7 +25,7 @@ We support a `KuzuGraphStore` integration, for persisting graphs directly in [Ku
 
 See the associated guides below:
 
-- [Kuzu Graph Store](/examples/index_structs/knowledge_graph/KuzuGraphDemo.ipynb)
+- [Kuzu Graph Store](../../examples/index_structs/knowledge_graph/KuzuGraphDemo.ipynb)
 
 ## `FalkorDBGraphStore`
 
@@ -33,4 +33,4 @@ We support a `FalkorDBGraphStore` integration, for persisting graphs directly in
 
 See the associated guides below:
 
-- [FalkorDB Graph Store](/examples/index_structs/knowledge_graph/FalkorDBGraphDemo.ipynb)
+- [FalkorDB Graph Store](../../examples/index_structs/knowledge_graph/FalkorDBGraphDemo.ipynb)

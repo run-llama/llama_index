@@ -778,7 +778,6 @@ documents = reader.load_data(
 - [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
 - [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
 - [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
-- [Dash Hybrid Search](../../examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb)
 - [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
 - [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)

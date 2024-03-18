@@ -50,8 +50,8 @@ index = VectorStoreIndex.from_documents(
 
 ## Resources
 
-- [SEC Documents Metadata Extraction](../../examples/metadata_extraction/MetadataExtractionSEC.ipynb)
-- [LLM Survey Extraction](../../examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb)
-- [Entity Extraction](../../examples/metadata_extraction/EntityExtractionClimate.ipynb)
-- [Marvin Metadata Extraction](../../examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb)
-- [Pydantic Metadata Extraction](../../examples/metadata_extraction/PydanticExtractor.ipynb)
+- [SEC Documents Metadata Extraction](../../../examples/metadata_extraction/MetadataExtractionSEC.ipynb)
+- [LLM Survey Extraction](../../../examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb)
+- [Entity Extraction](../../../examples/metadata_extraction/EntityExtractionClimate.ipynb)
+- [Marvin Metadata Extraction](../../../examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb)
+- [Pydantic Metadata Extraction](../../../examples/metadata_extraction/PydanticExtractor.ipynb)

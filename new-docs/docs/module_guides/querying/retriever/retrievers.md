@@ -32,9 +32,9 @@ These retrieval techniques perform **semi-structured** queries, combining semant
 
 
 - [Auto-Retrieval (with Pinecone)](../../../examples/vector_stores/pinecone_auto_retriever.ipynb)
-- [Auto-Retrieval (with Lantern)](/examples/vector_stores/LanternAutoRetriever.ipynb)
-- [Auto-Retrieval (with Chroma)](/examples/vector_stores/chroma_auto_retriever.ipynb)
-- [Auto-Retrieval (with BagelDB)](/examples/vector_stores/BagelAutoRetriever.ipynb)
+- [Auto-Retrieval (with Lantern)](../../../examples/vector_stores/LanternAutoRetriever.ipynb)
+- [Auto-Retrieval (with Chroma)](../../../examples/vector_stores/chroma_auto_retriever.ipynb)
+- [Auto-Retrieval (with BagelDB)](../../../examples/vector_stores/BagelAutoRetriever.ipynb)
 - [Auto-Retrieval (with Vectara)](../../../examples/retrievers/vectara_auto_retriever.ipynb)
 - [Multi-Doc Auto-Retrieval](../../../examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb)
 

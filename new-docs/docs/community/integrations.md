@@ -29,8 +29,8 @@ for full tracing integrations.
 
 - [Guidance](integrations/guidance.md)
 - [LLM Format Enforcer](integrations/lmformatenforcer.md)
-- [Guardrails](/examples/output_parsing/GuardrailsDemo.ipynb)
-- [OpenAI Function Calling](/examples/output_parsing/openai_pydantic_program.ipynb)
+- [Guardrails](../examples/output_parsing/GuardrailsDemo.ipynb)
+- [OpenAI Function Calling](../examples/output_parsing/openai_pydantic_program.ipynb)
 
 ## Storage and Managed Indexes
 

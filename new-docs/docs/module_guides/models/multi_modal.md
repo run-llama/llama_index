@@ -154,7 +154,7 @@ We support integrations with GPT4-V, CLIP (OpenAI), BLIP (Salesforce), and Repli
 - [OpenAI](../../examples/multi_modal/openai_multi_modal.ipynb)
 - [Gemini](../../examples/multi_modal/gemini.ipynb)
 - [Replicate](../../examples/multi_modal/replicate_multi_modal.ipynb)
-- [Pydantic Multi-Modal](../../multi_modal/multi_modal_pydantic.ipynb)
+- [Pydantic Multi-Modal](../../examples/multi_modal/multi_modal_pydantic.ipynb)
 - [GPT-4v COT Experiments](../../examples/multi_modal/gpt4v_experiments_cot.ipynb)
 - [Llava Tesla 10q](../../examples/multi_modal/llava_multi_modal_tesla_10q.ipynb)
 
@@ -163,7 +163,6 @@ We support integrations with GPT4-V, CLIP (OpenAI), BLIP (Salesforce), and Repli
 We support Multi-Modal Retrieval Augmented Generation with different Multi-Modal LLMs with Multi-Modal vector stores.
 
 - [GPT-4v Retrieval](../../examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb)
-- [PDF Table Retrieval](../../examples/multi_modal/multi_modal_pdf_tables.ipynb)
 - [Multi-Modal Retrieval](../../examples/multi_modal/multi_modal_retrieval.ipynb)
 - [Image-to-Image Retrieval](../../examples/multi_modal/image_to_image_retrieval.ipynb)
 - [Chroma Multi-Modal](../../examples/multi_modal/ChromaMultiModalDemo.ipynb)

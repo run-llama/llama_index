@@ -22,7 +22,6 @@ Check out our guides below:
 - [Image to Image Retrieval](../examples/multi_modal/image_to_image_retrieval.ipynb)
 - [Structured Image Retrieval](../examples/multi_modal/structured_image_retrieval.ipynb)
 - [Chroma Multi-Modal](../examples/multi_modal/ChromaMultiModalDemo.ipynb)
-- [PDF Tables](../examples/multi_modal/multi_modal_pdf_tables.ipynb)
 - [Gemini Multi-Modal](../examples/multi_modal/gemini.ipynb)
 - [Ollama Multi-Modal](../examples/multi_modal/ollama_cookbook.ipynb)
 
@@ -80,4 +79,4 @@ Here are notebook guides showing you how to interact with different multimodal m
 
 - [OpenAI Multi-Modal](../examples/multi_modal/openai_multi_modal.ipynb)
 - [Replicate Multi-Modal](../examples/multi_modal/replicate_multi_modal.ipynb)
-- [Ollama Multi-Modal](../examples/multi_modal/ollama_multi_modal.ipynb)
+- [Ollama Multi-Modal](../examples/multi_modal/ollama_cookbook.ipynb)

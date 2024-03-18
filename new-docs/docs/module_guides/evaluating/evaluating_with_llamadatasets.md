@@ -144,4 +144,4 @@ learn more, we recommend reading the notebook guides provided below.
 ## Resources
 
 - [Labelled RAG datasets](../../examples/llama_dataset/labelled-rag-datasets.ipynb)
-- [Downloading Llama datasets](/examples/llama_dataset/downloading_llama_datasets.ipynb)
+- [Downloading Llama datasets](../../examples/llama_dataset/downloading_llama_datasets.ipynb)

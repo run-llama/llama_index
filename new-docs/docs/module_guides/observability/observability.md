@@ -192,7 +192,7 @@ query_dataframe = as_dataframe(query_data_buffer)
 
 #### Guides
 
-- [OpenInference Callback Handler](/examples/callbacks/OpenInferenceCallback.ipynb)
+- [OpenInference Callback Handler](../../examples/callbacks/OpenInferenceCallback.ipynb)
 - [Evaluating Search and Retrieval with Arize Phoenix](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb)
 
 ### TruEra TruLens

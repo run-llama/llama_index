@@ -34,4 +34,4 @@ Check them out below.
 
 ### RAG CLI
 
-[RAG CLI](/use_cases/q_and_a/rag_cli.md)
+[RAG CLI](../use_cases/q_and_a/rag_cli.md)
