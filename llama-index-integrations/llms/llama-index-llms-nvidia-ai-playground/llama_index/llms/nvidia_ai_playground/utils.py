@@ -18,12 +18,10 @@ AI_PLAYGROUND_MODELS: Dict[str, int] = {
     "playground_yi_34b": 200_000,
     "playground_nemotron_steerlm_8b": 3072,
     "playground_llama2_code_70b": 100_000,
-    "playground_gemma_2b": 8192,
     "playground_mixtral_8x7b": 32_000,
     "playground_llama2_code_34b": 100_000,
-    "playground_steerlm_llama_70b": 4096,
+    "playground_steerlm_llama_70b": 3072,
 }
-
 
 def playground_modelname_to_contextsize(modelname: str) -> int:
     if modelname not in AI_PLAYGROUND_MODELS:

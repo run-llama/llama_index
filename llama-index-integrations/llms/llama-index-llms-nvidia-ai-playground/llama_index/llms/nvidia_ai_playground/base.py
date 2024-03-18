@@ -217,30 +217,21 @@ class NvidiaAIPlayground(LLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
 
+        response = self._client.chat.completions.create(messages=message_dicts, stream=True, **all_kwargs)
+
         def gen() -> ChatResponseGen:
             content = ""
-            for response in self._client.chat.completions.create(
-                messages=message_dicts, stream=True, **all_kwargs
-            ):
-                response = cast(ChatCompletionChunk, response)
-                if len(response.choices) > 0:
-                    delta = response.choices[0].delta
-                else:
-                    delta = ChoiceDelta()
-
-            role = delta.role or MessageRole.ASSISTANT
-            content_delta = delta.content or ""
-            content += content_delta
-
-            yield ChatResponse(
-                message=ChatMessage(
-                    role=role,
-                    content=content,
-                ),
-                delta=content_delta,
-                raw=response,
-                additional_kwargs=self._get_response_token_counts(response),
-            )
+            role = MessageRole.ASSISTANT
+            for chunk in response:
+                content_delta = chunk.choices[0].delta.content
+                if content_delta is None:
+                    continue
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=chunk,
+                )
 
         return gen()
 
@@ -263,13 +254,28 @@ class NvidiaAIPlayground(LLM):
 
     @llm_chat_callback()
     async def astream_chat(
-        self,
-        messages: Sequence[ChatMessage],
-        **kwargs: Any,
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        astream_chat_fn: Callable[..., Awaitable[ChatResponseAsyncGen]]
-        astream_chat_fn = self._astream_chat
-        return await astream_chat_fn(messages, **kwargs)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        message_dicts = to_openai_message_dicts(messages)
+
+        response = await self._aclient.chat.completions.create(messages=message_dicts, stream=True, **all_kwargs)
+
+        async def gen() -> ChatResponseAsyncGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+            async for chunk in response:
+                content_delta = chunk.choices[0].delta.content
+                if content_delta is None:
+                    continue
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=chunk,
+                )
+
+        return gen()
 
     @llm_completion_callback()
     async def acomplete(
@@ -303,46 +309,3 @@ class NvidiaAIPlayground(LLM):
             raw=response,
             additional_kwargs=self._get_response_token_counts(response),
         )
-
-    async def _astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        message_dicts = to_openai_message_dicts(messages)
-
-        async def gen() -> ChatResponseAsyncGen:
-            content = ""
-
-            first_chat_chunk = True
-            async for response in await self._aclient.chat.completions.create(
-                messages=message_dicts,
-                stream=True,
-                **all_kwargs,
-            ):
-                response = cast(ChatCompletionChunk, response)
-                if len(response.choices) > 0:
-                    # check if the first chunk has no content
-                    if first_chat_chunk and response.choices[0].delta.content is None:
-                        first_chat_chunk = False
-                        continue
-                    delta = response.choices[0].delta
-                else:
-                    delta = ChoiceDelta()
-                first_chat_chunk = False
-
-                # update using deltas
-                role = delta.role or MessageRole.ASSISTANT
-                content_delta = delta.content or ""
-                content += content_delta
-
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                    ),
-                    delta=content_delta,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
