@@ -6,7 +6,7 @@ import logging
 import uuid
 from functools import partial
 from threading import Thread
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
+from typing import Any, Dict, List, Callable, Optional, Tuple, Union, cast, get_args
 
 from llama_index.agent.openai.utils import resolve_tool_choice
 from llama_index.core.agent.types import (
@@ -77,10 +77,20 @@ def call_tool_with_error_handling(
         )
 
 
+def default_tool_call_parser(tool_call: OpenAIToolCall):
+    try:
+        json.loads(tool_call.function.arguments)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"
+        )
+
+
 def call_function(
     tools: List[BaseTool],
     tool_call: OpenAIToolCall,
     verbose: bool = False,
+    tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy
@@ -88,6 +98,7 @@ def call_function(
     assert tool_call.function is not None
     assert tool_call.function.name is not None
     assert tool_call.function.arguments is not None
+    tool_call_parser = tool_call_parser or default_tool_call_parser
 
     id_ = tool_call.id
     _function_call = tool_call.function
@@ -97,11 +108,33 @@ def call_function(
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = get_function_by_name(tools, name)
-    argument_dict = json.loads(arguments_str)
+    error_message: Optional[str] = None
+    try:
+        argument_dict = tool_call_parser(tool_call)
+    except ValueError as e:
+        error_message = str(e)
+        return (
+            ChatMessage(
+                content=error_message,
+                role=MessageRole.TOOL,
+                additional_kwargs={
+                    "name": name,
+                    "tool_call_id": id_,
+                },
+            ),
+            ToolOutput(
+                content=error_message,
+                tool_name=name,
+                raw_input={"args": arguments_str},
+                raw_output=error_message,
+            ),
+        )
 
     # Call tool
-    # Use default error message
-    output = call_tool_with_error_handling(tool, argument_dict, error_message=None)
+    # Use default error message except if json parsing fails
+    output = call_tool_with_error_handling(
+        tool, argument_dict, error_message=error_message
+    )
     if verbose:
         print(f"Got output: {output!s}")
         print("========================\n")
@@ -119,7 +152,10 @@ def call_function(
 
 
 async def acall_function(
-    tools: List[BaseTool], tool_call: OpenAIToolCall, verbose: bool = False
+    tools: List[BaseTool],
+    tool_call: OpenAIToolCall,
+    verbose: bool = False,
+    tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     # validations to get passed mypy
@@ -127,6 +163,7 @@ async def acall_function(
     assert tool_call.function is not None
     assert tool_call.function.name is not None
     assert tool_call.function.arguments is not None
+    tool_call_parser = tool_call_parser or default_tool_call_parser
 
     id_ = tool_call.id
     _function_call = tool_call.function
@@ -137,7 +174,28 @@ async def acall_function(
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = get_function_by_name(tools, name)
     async_tool = adapt_to_async_tool(tool)
-    argument_dict = json.loads(arguments_str)
+    error_message: Optional[str] = None
+    try:
+        argument_dict = tool_call_parser(tool_call)
+    except ValueError as e:
+        error_message = str(e)
+        return (
+            ChatMessage(
+                content=error_message,
+                role=MessageRole.TOOL,
+                additional_kwargs={
+                    "name": name,
+                    "tool_call_id": id_,
+                },
+            ),
+            ToolOutput(
+                content=error_message,
+                tool_name=name,
+                raw_input={"args": arguments_str},
+                raw_output=error_message,
+            ),
+        )
+
     output = await async_tool.acall(**argument_dict)
     if verbose:
         print(f"Got output: {output!s}")
@@ -167,12 +225,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
     ):
         self._llm = llm
         self._verbose = verbose
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
+        self.tool_call_parser = tool_call_parser or default_tool_call_parser
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -196,6 +256,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgentWorker":
         """Create an OpenAIAgent from a list of tools.
@@ -236,6 +297,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
+            tool_call_parser=tool_call_parser,
         )
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
@@ -362,7 +424,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
             },
         ) as event:
             function_message, tool_output = call_function(
-                tools, tool_call, verbose=self._verbose
+                tools,
+                tool_call,
+                verbose=self._verbose,
+                tool_call_parser=self.tool_call_parser,
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
@@ -391,7 +456,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
             },
         ) as event:
             function_message, tool_output = await acall_function(
-                tools, tool_call, verbose=self._verbose
+                tools,
+                tool_call,
+                verbose=self._verbose,
+                tool_call_parser=self.tool_call_parser,
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
@@ -446,6 +514,12 @@ class OpenAIAgentWorker(BaseAgentWorker):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
+        for tool in tools:  # self.agent_worker._get_tools("test"):
+            print("Tool metadata for ", tool.metadata.name)
+            print(tool.metadata)
+            print(tool.metadata.fn_schema.schema())
+        for message in llm_chat_kwargs["messages"]:
+            print(message)
 
         agent_chat_response = self._get_agent_response(
             task, mode=mode, **llm_chat_kwargs
