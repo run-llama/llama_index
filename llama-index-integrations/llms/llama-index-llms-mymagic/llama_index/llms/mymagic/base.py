@@ -48,6 +48,9 @@ class MyMagicAI(LLM):
     region: Optional[str] = Field(
         "eu-west-2", description="The region the bucket is in. Only used for AWS S3."
     )
+    return_output: Optional[bool] = Field(
+        False, description="Whether MyMagic API should return the output json"
+    )
 
     def __init__(
         self,
@@ -58,6 +61,7 @@ class MyMagicAI(LLM):
         system_prompt: Optional[str],
         role_arn: Optional[str] = None,
         region: Optional[str] = None,
+        return_output: Optional[bool] = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -71,6 +75,7 @@ class MyMagicAI(LLM):
             "role_arn": role_arn,
             "system_prompt": system_prompt,
             "region": region,
+            "return_output": return_output,
         }
 
     @classmethod

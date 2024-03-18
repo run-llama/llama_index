@@ -69,11 +69,19 @@ def handle_download_llama_dataset(
 
 
 def default_rag_cli() -> RagCLI:
-    import chromadb  # pants: no-infer-dep
     from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
-    from llama_index.vector_stores.chroma import (
-        ChromaVectorStore,
-    )  # pants: no-infer-dep
+
+    try:
+        import chromadb  # pants: no-infer-dep
+        from llama_index.vector_stores.chroma import (
+            ChromaVectorStore,
+        )  # pants: no-infer-dep
+    except ImportError:
+        raise ImportError(
+            "Default RAG pipeline uses chromadb. "
+            "Install with `pip install llama-index-vector-stores-chroma "
+            "or customize to use a different vector store."
+        )
 
     persist_dir = default_ragcli_persist_dir()
     chroma_client = chromadb.PersistentClient(path=persist_dir)

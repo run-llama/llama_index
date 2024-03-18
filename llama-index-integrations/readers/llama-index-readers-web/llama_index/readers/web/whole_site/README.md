@@ -12,13 +12,45 @@ The WholeSiteReader is a sophisticated web scraping tool that employs a breadth-
 - **Depth Control:** Limits scraping to a specified depth within a site's structure.
 - **URL Prefix Focus:** Targets scraping efforts to specific subsections of a site based on URL prefixes.
 - **Selenium-Based:** Leverages Selenium for dynamic interaction with web pages, supporting JavaScript-rendered content.
+- **Add your own chromedriver with options:** Configurable
 
 ```python
 from llama_index.readers.web import WholeSiteReader
 
+
 # Initialize the scraper with a prefix URL and maximum depth
 scraper = WholeSiteReader(
     prefix="https://www.paulgraham.com/", max_depth=10  # Example prefix
+)
+
+# Start scraping from a base URL
+documents = scraper.load_data(
+    base_url="https://www.paulgraham.com/articles.html"
+)  # Example base URL
+```
+
+Configure with chromedriver options:
+
+```python
+try:
+    import chromedriver_autoinstaller
+except ImportError:
+    raise ImportError("Please install chromedriver_autoinstaller")
+from llama_index.readers.web import WholeSiteReader
+from selenium import webdriver
+
+options = webdriver.ChromeOptions()
+options.binary_location = "/usr/bin/google-chrome"
+options.add_argument("--start-maximized")
+options.add_argument("--headless")
+chromedriver_autoinstaller.install()
+driver = webdriver.Chrome(options=options)
+
+# Initialize the scraper with a prefix URL and maximum depth
+scraper = WholeSiteReader(
+    prefix="https://www.paulgraham.com/",
+    max_depth=10,  # Example prefix
+    driver=driver,  # Your custom driver with correct options
 )
 
 # Start scraping from a base URL

@@ -51,7 +51,8 @@ class Neo4jGraphStore(GraphStore):
         self.structured_schema: Dict[str, Any] = {}
         # Verify connection
         try:
-            self._driver.verify_connectivity()
+            with self._driver as driver:
+                driver.verify_connectivity()
         except neo4j.exceptions.ServiceUnavailable:
             raise ValueError(
                 "Could not connect to Neo4j database. "

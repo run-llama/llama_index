@@ -11,7 +11,7 @@ combine information to answer.
 ### Installation
 
 ```bash
-pip install llama-index llama-index-tools-finchat
+pip install llama-index llama-index-packs-finchat
 ```
 
 ## CLI Usage

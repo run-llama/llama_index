@@ -22,7 +22,7 @@ response = OpenAI().complete("Paul Graham is ")
 print(response)
 ```
 
-Usually you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the pipeline, as in this example:
+Usually, you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the pipeline, as in this example:
 
 ```python
 from llama_index.llms.openai import OpenAI
@@ -49,7 +49,7 @@ We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our
 
 ### Using a local LLM
 
-LlamaIndex doesn't just supported hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).
+LlamaIndex doesn't just support hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).
 
 For example, if you have [Ollama](https://github.com/ollama/ollama) installed and running:
 
@@ -64,7 +64,7 @@ See the [custom LLM's How-To](/module_guides/models/llms/usage_custom.md) for mo
 
 ## Prompts
 
-By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/models/prompts.md)
+By default, LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](/module_guides/models/prompts.md)
 
 ```{toctree}
 ---

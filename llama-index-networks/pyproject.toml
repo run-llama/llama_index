@@ -19,6 +19,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Andrei Fajardo <andrei@llamaindex.ai>", "Jerry Liu <jerry@llamaindex.ai>"]
 description = "llama-index networks  integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = [
     "Andrei Fajardo <andrei@runllama.ai>",
@@ -31,7 +32,7 @@ maintainers = [
 name = "llama-index-networks"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

@@ -279,6 +279,9 @@
   "LLMQuestionGenerator": "llama_index.core.question_gen",
   "SubQuestionOutputParser": "llama_index.core.question_gen",
   "ReaderConfig": "llama_index.core.readers",
+  "CodeHierarchyAgentPack": "llama_index.packs.code_hierarchy",
+  "CodeHierarchyNodeParser": "llama_index.packs.code_hierarchy",
+  "CodeHierarchyKeywordQueryEngine": "llama_index.packs.code_hierarchy",
   "StringIterableReader": "llama_index.core.readers",
   "ResponseMode": "llama_index.core.response_synthesizers",
   "BaseSynthesizer": "llama_index.core.response_synthesizers",
@@ -367,6 +370,7 @@
   "CrossEncoderFinetuneEngine": "llama_index.finetuning.cross_encoders",
   "CohereRerankerFinetuneDataset": "llama_index.finetuning.rerankers",
   "SingleStoreVectorStore": "llama_index.vector_stores.singlestoredb",
+  "TiDBVectorStore": "llama_index.vector_stores.tidbvector",
   "QdrantVectorStore": "llama_index.vector_stores.qdrant",
   "PineconeVectorStore": "llama_index.vector_stores.pinecone",
   "DuckDBVectorStore": "llama_index.vector_stores.duckdb",
@@ -506,6 +510,7 @@
   "IntelEmbedding": "llama_index.embeddings.huggingface_optimum_intel",
   "JinaEmbedding": "llama_index.embeddings.jinaai",
   "NomicEmbedding": "llama_index.embeddings.nomic",
+  "PremAIEmbeddings": "llama_index.embeddings.premai",
   "GeminiEmbedding": "llama_index.embeddings.gemini",
   "FastEmbedEmbedding": "llama_index.embeddings.fastembed",
   "FireworksEmbedding": "llama_index.embeddings.fireworks",
@@ -804,6 +809,7 @@
   "OpenLLMAPI": "llama_index.llms.openllm",
   "LiteLLM": "llama_index.llms.litellm",
   "SageMakerLLM": "llama_index.llms.sagemaker_endpoint",
+  "PremAI": "llama_index.llms.premai",
   "Portkey": "llama_index.llms.portkey",
   "Vllm": "llama_index.llms.vllm",
   "VllmServer": "llama_index.llms.vllm",
@@ -902,5 +908,6 @@
   "run_jobs": "llama_index.core.async_utils",
   "DecomposeQueryTransform": "llama_index.core.query.query_transform.base",
   "get_eval_results": "llama_index.core.evaluation.eval_utils",
-  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base"
+  "REPLICATE_MULTI_MODAL_LLM_MODELS": "llama_index.multi_modal_llms.replicate.base",
+  "QueryUnderstandingPack": "llama_index.packs.query_understanding_agent"
 }
