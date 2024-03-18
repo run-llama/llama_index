@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 class SQLRetriever(BaseRetriever):
-    """SQL Retriever.
+    """
+    SQL Retriever.
 
     Retrieves via raw SQL statements.
 
@@ -159,7 +160,8 @@ class PGVectorSQLParser(BaseSQLParser):
 
 
 class NLSQLRetriever(BaseRetriever, PromptMixin):
-    """Text-to-SQL Retriever.
+    """
+    Text-to-SQL Retriever.
 
     Retrieves via text.
 
@@ -261,8 +263,9 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             else:
                 table_names = list(sql_database.get_usable_table_names())
             context_strs = [context_query_kwargs.get(t, None) for t in table_names]
+            # TODO: Add schema info as well
             table_schemas = [
-                SQLTableSchema(table_name=t, context_str=c)
+                SQLTableSchema(table_name=t, full_table_name=t, context_str=c)
                 for t, c in zip(table_names, context_strs)
             ]
             return lambda _: table_schemas
@@ -370,19 +373,21 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         return retrieved_nodes
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
+        """
+        Get table context.
 
         Get tables schema + optional context as a single string.
 
         """
         table_schema_objs = self._get_tables(query_bundle.query_str)
+
         context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]
 
         for table_schema_obj in table_schema_objs:
             table_info = self._sql_database.get_single_table_info(
-                table_schema_obj.table_name
+                table=table_schema_obj
             )
 
             if table_schema_obj.context_str:

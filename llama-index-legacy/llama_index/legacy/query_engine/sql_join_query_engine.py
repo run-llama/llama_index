@@ -104,7 +104,8 @@ def _format_sql_query(sql_query: str) -> str:
 
 
 class SQLAugmentQueryTransform(BaseQueryTransform):
-    """SQL Augment Query Transform.
+    """
+    SQL Augment Query Transform.
 
     This query transform will transform the query into a more specific query
     after augmenting with SQL results.
@@ -161,7 +162,8 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
 
 class SQLJoinQueryEngine(BaseQueryEngine):
-    """SQL Join Query Engine.
+    """
+    SQL Join Query Engine.
 
     This query engine can "Join" a SQL database results
     with another query engine.
@@ -196,6 +198,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         use_sql_join_synthesis: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
+        response_hook=None,
     ) -> None:
         """Initialize params."""
         super().__init__(callback_manager=callback_manager)
@@ -228,6 +231,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         self._use_sql_join_synthesis = use_sql_join_synthesis
         self._verbose = verbose
+        self.response_hook = response_hook
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -256,8 +260,16 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             sql_response.metadata["sql_query"] if sql_response.metadata else None
         )
         if self._verbose:
-            print_text(f"SQL query: {sql_query}\n", color="yellow")
-            print_text(f"SQL response: {sql_response}\n", color="yellow")
+            print_text(
+                f"SQL query: {sql_query}\n",
+                color="yellow",
+                response_hook=self.response_hook,
+            )
+            print_text(
+                f"SQL response: {sql_response}\n",
+                color="yellow",
+                response_hook=self.response_hook,
+            )
 
         # given SQL db, transform query into new query
         new_query = self._sql_augment_query_transform(
@@ -272,6 +284,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(
                 f"Transformed query given SQL response: {new_query.query_str}\n",
                 color="blue",
+                response_hook=self.response_hook,
             )
         logger.info(f"> Transformed query given SQL response: {new_query.query_str}")
         if self._sql_augment_query_transform.check_stop(new_query):
@@ -279,7 +292,11 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         other_response = self._other_query_tool.query_engine.query(new_query)
         if self._verbose:
-            print_text(f"query engine response: {other_response}\n", color="pink")
+            print_text(
+                f"query engine response: {other_response}\n",
+                color="pink",
+                response_hook=self.response_hook,
+            )
         logger.info(f"> query engine response: {other_response}")
 
         response_str = self._service_context.llm.predict(
@@ -291,7 +308,11 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             query_engine_response_str=str(other_response),
         )
         if self._verbose:
-            print_text(f"Final response: {response_str}\n", color="green")
+            print_text(
+                f"Final response: {response_str}\n",
+                color="green",
+                response_hook=self.response_hook,
+            )
         response_metadata = {
             **(sql_response.metadata or {}),
             **(other_response.metadata or {}),
@@ -311,18 +332,28 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         # pick sql query
         if result.ind == 0:
             if self._verbose:
-                print_text(f"Querying SQL database: {result.reason}\n", color="blue")
+                print_text(
+                    f"Querying SQL database: {result.reason}\n",
+                    color="blue",
+                    response_hook=self.response_hook,
+                )
             logger.info(f"> Querying SQL database: {result.reason}")
             return self._query_sql_other(query_bundle)
         elif result.ind == 1:
             if self._verbose:
                 print_text(
-                    f"Querying other query engine: {result.reason}\n", color="blue"
+                    f"Querying other query engine: {result.reason}\n",
+                    color="blue",
+                    response_hook=self.response_hook,
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
             response = self._other_query_tool.query_engine.query(query_bundle)
             if self._verbose:
-                print_text(f"Query Engine response: {response}\n", color="pink")
+                print_text(
+                    f"Query Engine response: {response}\n",
+                    color="pink",
+                    response_hook=self.response_hook,
+                )
             return response
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")

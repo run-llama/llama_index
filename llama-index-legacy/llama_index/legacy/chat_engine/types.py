@@ -144,12 +144,13 @@ class StreamingAgentChatResponse:
         # try/except to prevent hanging on error
         try:
             final_text = ""
-            async for chat in self.achat_stream:
-                self._is_function = is_function(chat.message)
-                self.aput_in_queue(chat.delta)
-                final_text += chat.delta or ""
-                if self._is_function is False:
-                    self._is_function_false_event.set()
+            with self.achat_stream as streamer:
+                async for chat in streamer:
+                    self._is_function = is_function(chat.message)
+                    self.aput_in_queue(chat.delta)
+                    final_text += chat.delta or ""
+                    if self._is_function is False:
+                        self._is_function_false_event.set()
             if self._is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
