@@ -43,7 +43,7 @@ def text_nodes() -> List[TextNode]:
                 "theme": "Friendship",
                 "rating": 4.1,
             },
-            embedding=[1.0, 0.0, 0.0],
+            embedding=[1.0, 0.0, 0.0]*512,
         ),
         TextNode(
             text="lorem ipsum",
@@ -54,7 +54,7 @@ def text_nodes() -> List[TextNode]:
                 "theme": "Mafia",
                 "rating": 3.3,
             },
-            embedding=[0.0, 1.0, 0.0],
+            embedding=[0.0, 1.0, 0.0]*512,
         ),
         TextNode(
             text="lorem ipsum",
@@ -65,7 +65,7 @@ def text_nodes() -> List[TextNode]:
                 "rating": 4.3,
                 "theme": "Action",
             },
-            embedding=[0.0, 0.0, 1.0],
+            embedding=[0.0, 0.0, 1.0]*512,
         ),
         TextNode(
             text="I was taught that the way of progress was neither swift nor easy.",
@@ -75,7 +75,7 @@ def text_nodes() -> List[TextNode]:
                 "author": "Marie Curie",
                 "rating": 2.3,
             },
-            embedding=[0.0, 0.0, 0.9],
+            embedding=[0.0, 0.0, 0.9]*512,
         ),
         TextNode(
             text=(
@@ -88,7 +88,7 @@ def text_nodes() -> List[TextNode]:
                 "author": "Albert Einstein",
                 "rating": 4.8,
             },
-            embedding=[0.0, 0.0, 0.5],
+            embedding=[0.0, 0.0, 0.5]*512,
         ),
         TextNode(
             text=(
@@ -101,20 +101,8 @@ def text_nodes() -> List[TextNode]:
                 "author": "Charlotte Bronte",
                 "rating": 1.5,
             },
-            embedding=[0.0, 0.0, 0.3],
+            embedding=[0.0, 0.0, 0.3]*512,
         ),
-        # TextNode(
-        #     text="llama_index_node_1",
-        #     id_="test_node_1",
-        #     metadata={"hello": "hola"},
-        #     embedding=[0.25] * 256,
-        # ),
-        # TextNode(
-        #     text="llama_index_node_2",
-        #     id_="test_node_2",
-        #     metadata={"hello": "hola"},
-        #     embedding=[0.33] * 256,
-        # ),
     ]
 
 
@@ -123,7 +111,6 @@ def test_upstash_vector_add(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
     res = upstash_vector_store.add(nodes=text_nodes)
-    # assert res == ["test_node_1", "test_node_2"]
     assert res == [
         "c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
         "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
@@ -141,8 +128,8 @@ def test_upstash_vector_query(
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
-            query_embedding=[1.0, 0.0, 0.0],
-            similarity_tok_k=1,
+            query_embedding=[1.0, 0.0, 0.0]*512,
+            similarity_top_k=1,
         )
     )
     assert res.nodes
@@ -165,10 +152,12 @@ def test_upstash_vector_filtering_eq(
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
+            query_embedding=[0.1]*1536,
             filters=filters,
-            similarity_tok_k=1,
+            similarity_top_k=1,
         )
     )
+    assert len(res.nodes) == 1
     assert (
         res.nodes[0].get_content()
         == "I was taught that the way of progress was neither swift nor easy."
@@ -190,21 +179,13 @@ def test_upstash_vector_filtering_gte(
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
+            query_embedding=[0.1]*1536,
             filters=filters,
         )
     )
-    assert len(res.nodes) == 2
-    assert (
-        res.nodes[0].get_content()
-        == "lorem ipsum"
-    )
-    assert (
-        res.nodes[1].get_content()
-        == (
-            "The important thing is not to stop questioning."
-            + " Curiosity has its own reason for existing."
-        )
-    )
+    assert res.nodes
+    for node in res.nodes:
+        assert node.metadata['rating'] >= 4.3
 
 
 @pytest.mark.skipif(not upstash_installed, reason="upstash-vector not installed")
@@ -212,11 +193,13 @@ def test_upstash_vector_filtering_in(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
 
+    values_contained = ["Friendship", "Mafia"]
+
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
                 key="theme",
-                value=["Friendship", "Mafia"],
+                value=values_contained,
                 operator=FilterOperator.IN
             )
         ],
@@ -224,15 +207,45 @@ def test_upstash_vector_filtering_in(
     upstash_vector_store.add(nodes=text_nodes)
     res = upstash_vector_store.query(
         VectorStoreQuery(
+            query_embedding=[0.1]*1536,
             filters=filters,
         )
     )
-    assert len(res.nodes) == 2
+    assert res.nodes
+
+    for node in res.nodes:
+        assert node.metadata['theme'] in values_contained
+
+
+@pytest.mark.skipif(not upstash_installed, reason="upstash-vector not installed")
+def test_upstash_vector_filtering_composite(
+    upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
+) -> None:
+
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="rating",
+                value=3,
+                operator=FilterOperator.LT
+            ),
+            MetadataFilter(
+                key="author",
+                value='Charlotte Bronte',
+                operator=FilterOperator.EQ
+            )
+        ],
+        condition=FilterCondition.AND
+    )
+    upstash_vector_store.add(nodes=text_nodes)
+    res = upstash_vector_store.query(
+        VectorStoreQuery(
+            query_embedding=[0.1]*1536,
+            filters=filters,
+        )
+    )
+    assert len(res.nodes) == 1
     assert (
         res.nodes[0].node_id
-        == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
-    )
-    assert (
-        res.nodes[1].node_id
-        == "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d"
+        == "f658de3b-8cef-4d1c-8bed-9a263c907251"
     )

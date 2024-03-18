@@ -63,13 +63,19 @@ def _to_upstash_filter_string(filter:MetadataFilter)->str:
         FilterOperator.IN,
         FilterOperator.NIN,
     ]:
-        value_str = ", ".join(str(v) for v in value)
+        value_str = ", ".join(
+            str(v) if type(v)!=str else f"'{v}'" for v in value
+        )
         return f"{key} {operator_str} ({value_str})"
-    return f"{key} {operator_str} '{value}'"
+    value_str = f"'{value}'" if type(value)==str else str(value)
+    return f"{key} {operator_str} {value_str}"
 
 def _to_upstash_filters(
     filters: MetadataFilters
 )->str:
+
+    if not filters:
+        return ""
     sql_filters = []
 
     for metadata_filter in filters.filters:
@@ -79,6 +85,7 @@ def _to_upstash_filters(
     condition_str = filters.condition.value.upper()
     combined_filters = f" {condition_str} ".join(sql_filters)
 
+    # print(combined_filters)
     return combined_filters
 
 class UpstashVectorStore(VectorStore):
