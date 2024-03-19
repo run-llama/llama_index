@@ -12,7 +12,7 @@ utility of the dataset.
 ## The Data
 
 The original data is the [Symptom2Disease](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease) dataset.
-The synthetic dataset was created by the DiffPrivateSimpleDatasetPack llama-pack.
+The synthetic dataset was created by the `DiffPrivateSimpleDatasetPack` llama-pack.
 For details on the dataset curation, see the demo in the Github repository for
 that llama-pack (found [here](https://github.com/run-llama/llama_index/tree/main/llama-index-packs/llama-index-packs-diff-private-simple-dataset/examples/symptom_2_disease)).
 
