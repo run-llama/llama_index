@@ -549,13 +549,6 @@ class OpenAIAgentWorker(BaseAgentWorker):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
-        for tool in tools:  # self.agent_worker._get_tools("test"):
-            print("Tool metadata for ", tool.metadata.name)
-            print(tool.metadata)
-            print(tool.metadata.fn_schema.schema())
-        for message in llm_chat_kwargs["messages"]:
-            print(message)
-
         agent_chat_response = self._get_agent_response(
             task, mode=mode, **llm_chat_kwargs
         )
