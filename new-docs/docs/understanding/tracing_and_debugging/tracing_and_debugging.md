@@ -43,4 +43,4 @@ This feature allows you to seamlessly integrate the LlamaIndex library with powe
 - Ensure that the outputs of any component (LLMs, embeddings) are performing as expected
 - View call traces for both indexing and querying
 
-To learn more, check out our [observability docs](../../module_guides/observability/observability.md)
+To learn more, check out our [observability docs](../../module_guides/observability/index.md)

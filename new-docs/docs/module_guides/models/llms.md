@@ -115,6 +115,6 @@ See the full [list of modules](./llms/modules.md).
 ## Further reading
 
 - [Embeddings](./embeddings.md)
-- [Prompts](./prompts.md)
+- [Prompts](./prompts/index.md)
 - [Local LLMs](./llms/local.md)
 - [Running Llama2 Locally](https://replicate.com/blog/run-llama-locally)

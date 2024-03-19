@@ -19,4 +19,4 @@ Otherwise check out how to use our query modules as standalone components 👇.
 - [Response Synthesizers](../querying/response_synthesizers/index.md)
 - [Routers](../querying/router/index.md)
 - [Node Postprocessors](../querying/node_postprocessors/index.md)
-- [Structured Outputs](../querying/structured_outputs/structured_outputs.md)
+- [Structured Outputs](../querying/structured_outputs/index.md)

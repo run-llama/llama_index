@@ -25,7 +25,7 @@ To use a different OpenAI model you can access [Configure Model](../../examples/
 
 ##### 3. How can I customize my prompt?
 
-You can access [Prompts](../../module_guides/models/prompts.md) to learn how to customize your prompts.
+You can access [Prompts](../../module_guides/models/prompts/index.md) to learn how to customize your prompts.
 
 ---
 

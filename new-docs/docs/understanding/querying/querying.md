@@ -143,7 +143,7 @@ Right now, we support the following options:
 
 You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](../../module_guides/querying/structured_outputs/query_engine.md) to see how to extract a Pydantic object from a query engine class.
 
-Also make sure to check out our entire [Structured Outputs](../../module_guides/querying/structured_outputs/structured_outputs.md) guide.
+Also make sure to check out our entire [Structured Outputs](../../module_guides/querying/structured_outputs/index.md) guide.
 
 ## Creating your own Query Pipeline
 

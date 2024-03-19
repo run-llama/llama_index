@@ -25,7 +25,7 @@ index = VectorStoreIndex.from_documents(documents)
 
 When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/index.md), lightweight abstractions over text strings that keep track of metadata and relationships.
 
-For more on how to load documents, see [Understanding Loading](../loading/loading.md).
+For more on how to load documents, see [Understanding Loading](../loading/index.md).
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 

@@ -16,7 +16,7 @@ Currently the following LlamaIndex modules are supported within a QueryPipeline.
 ### Prompts
 
 - Base class: `PromptTemplate`
-- [Module Guide](../../models/prompts.md)
+- [Module Guide](../../models/prompts/index.md)
 - Input: Prompt template variables. Each variable can be a stringable input.
 - Output: `output`. Outputs formatted prompt string (stringable)
 

@@ -4,7 +4,7 @@
 
 Retrievers are responsible for fetching the most relevant context given a user query (or chat message).
 
-It can be built on top of [indexes](../../indexing/indexing.md), but can also be defined independently.
+It can be built on top of [indexes](../../indexing/index.md), but can also be defined independently.
 It is used as a key building block in [query engines](../../deploying/query_engine/index.md) (and [Chat Engines](../../deploying/chat_engines/index.md)) for retrieving relevant context.
 
 !!! tip
@@ -33,7 +33,7 @@ Retrieve relevant context for a question:
 nodes = retriever.retrieve("Who is Paul Graham?")
 ```
 
-> Note: To learn how to build an index, see [Indexing](../../indexing/indexing.md)
+> Note: To learn how to build an index, see [Indexing](../../indexing/index.md)
 
 ## High-Level API
 

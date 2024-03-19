@@ -509,7 +509,111 @@ nav:
       - ./examples/vector_stores/LanternIndexDemo.ipynb
       - ./examples/vector_stores/AstraDBIndexDemo.ipynb
       - ./examples/vector_stores/LanternAutoRetriever.ipynb
-  - Component Guides: './module_guides'
+  - Component Guides:
+    - './module_guides/index.md'
+    - Models:
+      - './module_guides/models/index.md'
+      - LLMs:
+        - './module_guides/models/llms.md'
+        - Standalone Usage: './module_guides/models/llms/usage_standalone.md'
+        - Customizing LLMs: './module_guides/models/llms/usage_custom.md'
+        - Available LLM Integrations: './module_guides/models/llms/modules.md'
+      - Embeddings: './module_guides/models/embeddings.md'
+      - Multi Modal: './module_guides/models/multi_modal.md'
+    - Prompts:
+      - './module_guides/models/prompts/index.md'
+      - './module_guides/models/prompts/usage_pattern.md'
+    - Loading:
+      - './module_guides/loading/index.md'
+      - Documents and Nodes:
+        - './module_guides/loading/documents_and_nodes/index.md'
+        - Using Documents: './module_guides/loading/documents_and_nodes/usage_documents.md'
+        - Using Nodes: './module_guides/loading/documents_and_nodes/usage_nodes.md'
+        - Metadata Extraction: './module_guides/loading/documents_and_nodes/usage_metadata_extractor.md'
+      - SimpleDirectoryReader: './module_guides/loading/simpledirectoryreader.md'
+      - Data Connectors:
+        - './module_guides/loading/connector/index.md'
+        - ./module_guides/loading/connector/usage_pattern.md
+        - LlamaParse: './module_guides/loading/connector/llama_parse.md'
+        - './module_guides/loading/connector/modules.md'
+      - Node Parsers / Text Splitters:
+        - './module_guides/loading/node_parsers/index.md'
+        - './module_guides/loading/node_parsers/modules.md'
+      - Ingestion Pipeline:
+        - './module_guides/loading/ingestion_pipeline/index.md'
+        - './module_guides/loading/ingestion_pipeline/transformations.md'
+    - Indexing:
+      - './module_guides/indexing/index.md'
+      - Index Guide: './module_guides/indexing/index_guide.md'
+      - Vector Store Index: './module_guides/indexing/vector_store_index.md'
+      - Document Management: './module_guides/indexing/document_management.md'
+      - LlamaCloud: './module_guides/indexing/llama_cloud_index.md'
+      - Metadata Extraction: './module_guides/indexing/metadata_extraction.md'
+      - Modules: './module_guides/indexing/modules.md'
+    - Storing:
+      - './module_guides/storing/index.md'
+      - './module_guides/storing/vector_stores.md'
+      - './module_guides/storing/docstores.md'
+      - './module_guides/storing/index_stores.md'
+      - './module_guides/storing/chat_stores.md'
+      - './module_guides/storing/kv_stores.md'
+      - './module_guides/storing/save_load.md'
+      - './module_guides/storing/customization.md'
+    - Querying:
+      - './module_guides/querying/index.md'
+      - Retrieval:
+        - './module_guides/querying/retriever/index.md'
+        - './module_guides/querying/retriever/retrievers.md'
+        - './module_guides/querying/retriever/retriever_modes.md'
+      - Node Postprocessors:
+        - './module_guides/querying/node_postprocessors/index.md'
+        - './module_guides/querying/node_postprocessors/node_postprocessors.md'
+      - Response Synthesis:
+        - './module_guides/querying/response_synthesizers/index.md'
+        - './module_guides/querying/response_synthesizers/response_synthesizers.md'
+      - Routing: './module_guides/querying/router/index.md'
+      - Query Pipelines:
+        - './module_guides/querying/pipeline/index.md'
+        - './module_guides/querying/pipeline/usage_pattern.md'
+        - './module_guides/querying/pipeline/modules.md'
+        - './module_guides/querying/pipeline/module_usage.md'
+      - Structured Outputs:
+        - './module_guides/querying/structured_outputs/index.md'
+        - './module_guides/querying/structured_outputs/output_parser.md'
+        - './module_guides/querying/structured_outputs/query_engine.md'
+        - './module_guides/querying/structured_outputs/pydantic_program.md'
+    - Evaluation:
+      - './module_guides/evaluating/index.md'
+      - './module_guides/evaluating/usage_pattern.md'
+      - './module_guides/evaluating/usage_pattern_retrieval.md'
+      - './module_guides/evaluating/modules.md'
+      - LlamaDatasets:
+        - './module_guides/evaluating/contributing_llamadatasets.md'
+        - './module_guides/evaluating/evaluating_with_llamadatasets.md'
+        - './module_guides/evaluating/evaluating_evaluators_with_llamadatasets.md'
+    - Observability: './module_guides/observability/index.md'
+    - Deploying:
+      - Agents:
+        - './module_guides/deploying/agents/index.md'
+        - './module_guides/deploying/agents/usage_pattern.md'
+        - './module_guides/deploying/agents/agent_runner.md'
+        - './module_guides/deploying/agents/modules.md'
+        - Tools:
+          - './module_guides/deploying/agents/tools/index.md'
+          - './module_guides/deploying/agents/tools/usage_pattern.md'
+          - './module_guides/deploying/agents/tools/llamahub_tools_guide.md'
+      - Chat Engines:
+        - './module_guides/deploying/chat_engines/index.md'
+        - './module_guides/deploying/chat_engines/usage_pattern.md'
+        - './module_guides/deploying/chat_engines/modules.md'
+      - Query Engines:
+        - './module_guides/deploying/query_engine/index.md'
+        - './module_guides/deploying/query_engine/usage_pattern.md'
+        - './module_guides/deploying/query_engine/response_modes.md'
+        - './module_guides/deploying/query_engine/streaming.md'
+        - './module_guides/deploying/query_engine/modules.md'
+        - './module_guides/deploying/query_engine/supporting_modules.md'
+    - Settings: ./module_guides/supporting_modules/settings.md
   - Advanced Topics:
     - './optimizing/production_rag.md'
     - './optimizing/basic_strategies/basic_strategies.md'
@@ -525,7 +629,7 @@ nav:
   - Open-Source Community:
     - Integrations: './community/integrations.md'
     - Full Stack Projects: './community/full_stack_projects.md'
-    - Community FAQ: './community/faq.md'
+    - Community FAQ: './community/faq'
     - LlamaPacks: './community/llama_packs/index.md'
     - Contributing:
         - Code: './CONTRIBUTING.md'

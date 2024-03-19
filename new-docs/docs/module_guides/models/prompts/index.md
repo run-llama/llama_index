@@ -34,22 +34,22 @@ prompt = qa_template.format(context_str=..., query_str=...)
 messages = qa_template.format_messages(context_str=..., query_str=...)
 ```
 
-See our [Usage Pattern Guide](./prompts/usage_pattern.md) for more details.
+See our [Usage Pattern Guide](./usage_pattern.md) for more details.
 
 ## Example Guides
 
 Simple Customization Examples
 
-- [Completion prompts](../../examples/customization/prompts/completion_prompts.ipynb)
-- [Chat prompts](../../examples/customization/prompts/chat_prompts.ipynb)
-- [Prompt Mixin](../../examples/prompts/prompt_mixin.ipynb)
+- [Completion prompts](../../../examples/customization/prompts/completion_prompts.ipynb)
+- [Chat prompts](../../../examples/customization/prompts/chat_prompts.ipynb)
+- [Prompt Mixin](../../../examples/prompts/prompt_mixin.ipynb)
 
 Prompt Engineering Guides
 
-- [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
-- [RAG Prompts](../../examples/prompts/prompts_rag.ipynb)
+- [Advanced Prompts](../../../examples/prompts/advanced_prompts.ipynb)
+- [RAG Prompts](../../../examples/prompts/prompts_rag.ipynb)
 
 Experimental
 
-- [Prompt Optimization](../../examples/prompts/prompt_optimization.ipynb)
-- [Emotion Prompting](../../examples/prompts/emotion_prompt.ipynb)
+- [Prompt Optimization](../../../examples/prompts/prompt_optimization.ipynb)
+- [Emotion Prompting](../../../examples/prompts/emotion_prompt.ipynb)

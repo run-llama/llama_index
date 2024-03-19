@@ -13,7 +13,7 @@ This is centered around our `QueryPipeline` abstraction. Load in a variety of mo
 - Greater parity / better integration points with common low-code / no-code solutions (e.g. LangFlow)
 - [In the future] A declarative interface allows easy serializability of pipeline components, providing portability of pipelines/easier deployment to different systems.
 
-Our query pipelines also propagate callbacks throughout all sub-modules, and these integrate with our [observability partners](../../observability/observability.md).
+Our query pipelines also propagate callbacks throughout all sub-modules, and these integrate with our [observability partners](../../observability/index.md).
 
 ![](../../../_static/query/pipeline_rag_example.png)
 

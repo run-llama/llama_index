@@ -5,7 +5,7 @@
 Query engine is a generic interface that allows you to ask question over your data.
 
 A query engine takes in a natural language query, and returns a rich response.
-It is most often (but not always) built on one or many [indexes](../../indexing/indexing.md) via [retrievers](../../querying/retriever/index.md).
+It is most often (but not always) built on one or many [indexes](../../indexing/index.md) via [retrievers](../../querying/retriever/index.md).
 You can compose multiple query engines to achieve more advanced capability.
 
 !!! tip

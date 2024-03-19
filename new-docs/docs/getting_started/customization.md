@@ -59,7 +59,7 @@ vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 ```
 
-`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](../module_guides/storing/storing.md) and [how to customize it](../module_guides/storing/customization.md).
+`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](../module_guides/storing/index.md) and [how to customize it](../module_guides/storing/customization.md).
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -120,7 +120,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-You can learn more about [query engines](../module_guides/querying/querying.md) and [response modes](../module_guides/deploying/query_engine/response_modes.md).
+You can learn more about [query engines](../module_guides/querying/index.md) and [response modes](../module_guides/deploying/query_engine/response_modes.md).
 
 -----------------
 
