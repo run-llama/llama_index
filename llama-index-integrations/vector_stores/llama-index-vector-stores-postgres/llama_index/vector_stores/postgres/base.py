@@ -359,10 +359,12 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy import text
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            # Expects a single value in the metadata, and a list to compare
             return text(
                 f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
             ).bindparams(values=tuple(filter_.value))
         elif filter_.operator == FilterOperator.CONTAINS:
+            # Expects a list stored in the metadata, and a single value to compare
             return text(
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "

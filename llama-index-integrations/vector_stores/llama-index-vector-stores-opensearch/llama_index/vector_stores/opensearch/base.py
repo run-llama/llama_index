@@ -358,12 +358,12 @@ class OpensearchVectorClient:
             is_aoss=self.is_aoss,
         )
 
-    async def delete_doc_id(self, doc_id: str) -> None:
+    async def delete_by_doc_id(self, doc_id: str) -> None:
         """
-        Delete a document.
+        Deletes all OpenSearch documents corresponding to the given LlamaIndex `Document` ID.
 
         Args:
-            doc_id (str): document id
+            doc_id (str): a LlamaIndex `Document` id
         """
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
@@ -494,10 +494,10 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes using a ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
 
         """
         asyncio.get_event_loop().run_until_complete(
@@ -506,13 +506,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Async delete nodes using with ref_doc_id.
+        Async delete nodes using a ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
 
         """
-        await self._client.delete_doc_id(ref_doc_id)
+        await self._client.delete_by_doc_id(ref_doc_id)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """

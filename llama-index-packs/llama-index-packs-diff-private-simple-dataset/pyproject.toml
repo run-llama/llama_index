@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.packs.diff_private_simple_dataset"
+
+[tool.llamahub.class_authors]
+DiffPrivateSimpleDatasetPack = "nerdai"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -17,28 +24,24 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["llamaindex"]
-description = "llama-index cli"
+authors = [
+    "Andrei Fajardo <andrei@llamaindex.ai>",
+    "Chi Ho (Alex) Cheung <chiho00hk@hotmail.com>",
+    "Logan Markewich <logan@llamaindex.ai>",
+]
+description = "llama-index packs diff private simple dataset"
 exclude = ["**/BUILD"]
 license = "MIT"
-maintainers = [
-    "Andrei Fajardo <andrei@runllama.ai>",
-    "Haotian Zhang <ht@runllama.ai>",
-    "Jerry Liu <jerry@llamaindex.ai>",
-    "Logan Markewich <logan@llamaindex.ai>",
-    "Simon Suo <simon@llamaindex.ai>",
-    "Sourabh Desai <sourabh@llamaindex.ai>",
-]
-name = "llama-index-cli"
+name = "llama-index-packs-diff-private-simple-dataset"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.10"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.11.post1"
-llama-index-embeddings-openai = "^0.1.1"
-llama-index-llms-openai = "^0.1.1"
+python = ">=3.8.1,<3.12"
+llama-index-core = "^0.10.20.post1"
+llama-index-llms-openai = "^0.1.12"
+prv-accountant = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
@@ -58,6 +61,3 @@ types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
 types-setuptools = "67.1.0.0"
-
-[tool.poetry.scripts]
-llamaindex-cli = 'llama_index.cli.command_line:main'
