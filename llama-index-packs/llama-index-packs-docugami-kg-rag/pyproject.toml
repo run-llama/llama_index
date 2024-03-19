@@ -7,6 +7,10 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.packs.docugami_kg_rag"
+
 [tool.llamahub.class_authors]
 DocugamiKgRagPack = "docugami"
 
