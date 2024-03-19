@@ -18,6 +18,7 @@ from llama_index.legacy.vector_stores.pinecone_utils import (
 )
 from llama_index.legacy.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -135,22 +136,45 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     filters_list = []
     condition = standard_filters.condition or "and"
     condition = _transform_pinecone_filter_condition(condition)
+
+    # For each key, append a list
+    pinecone_filters = {}
+    for key in keys:
+        pinecone_filters[key] = {"$in": []}
+        for filter in standard_filters.filters:
+            if filter.key == key:
+                pinecone_filters[key]["$in"].append(filter.value)
+    # If one filters matches the metadata payload in pinecone, then include that node
+    return pinecone_filters
+
+    # Get the keys
+    in_keys = {
+        filter.key
+        for filter in standard_filters.filters
+        if filter.operator == FilterOperator.IN.value
+    }
+
+    in_operator = _transform_pinecone_filter_operator(FilterOperator.IN.value)
+    in_list = [{key: {in_operator: []}} for key in in_keys]
+
     if standard_filters.filters:
-        breakpoint()
         for filter in standard_filters.filters:
             if filter.operator:
-                filters_list.append(
-                    {
-                        filter.key: {
-                            _transform_pinecone_filter_operator(
-                                filter.operator
-                            ): filter.value
+                if filter.operator == FilterOperator.IN.value:
+                    in_list[filter.key][FilterOperator.IN.value].append(filter.value)
+                else:
+                    filters_list.append(
+                        {
+                            filter.key: {
+                                _transform_pinecone_filter_operator(
+                                    filter.operator
+                                ): filter.value
+                            }
                         }
-                    }
-                )
+                    )
             else:
                 filters_list.append({filter.key: filter.value})
-
+    filters_list += in_list
     if len(filters_list) == 1:
         # If there is only one filter, return it directly
         return filters_list[0]

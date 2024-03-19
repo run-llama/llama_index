@@ -172,16 +172,20 @@ class MetadataFilters(BaseModel):
             condition=condition,
         )
 
-    def legacy_filters(self) -> List[ExactMatchFilter]:
+    def legacy_filters(self) -> List[MetadataFilter]:
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
         for filter in self.filters:
-            if filter.operator in (FilterOperator.EQ, FilterOperator.IN):
+            if filter.operator not in (FilterOperator.EQ, FilterOperator.IN):
                 raise ValueError(
                     "Vector Store only supports exact match or in filters. "
                     "Please use ExactMatchFilter or FilterOperator.EQ instead."
                 )
-            filters.append(ExactMatchFilter(key=filter.key, value=filter.value))
+            filters.append(
+                MetadataFilter(
+                    key=filter.key, value=filter.value, operator=filter.operator
+                )
+            )
         return filters
 
 
