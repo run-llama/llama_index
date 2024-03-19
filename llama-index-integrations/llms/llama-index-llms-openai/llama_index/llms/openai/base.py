@@ -9,6 +9,7 @@ from typing import (
     Sequence,
     cast,
     runtime_checkable,
+    TYPE_CHECKING,
 )
 
 import httpx
@@ -61,6 +62,10 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.types import BaseTool
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
@@ -478,6 +483,15 @@ class OpenAI(LLM):
             "completion_tokens": usage.get("completion_tokens", 0),
             "total_tokens": usage.get("total_tokens", 0),
         }
+
+    def predict_and_call(
+        self,
+        user_msg: str,
+        tools: List["BaseTool"],
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        return super().predict_and_call(user_msg, tools, verbose, **kwargs)
 
     # ===== Async Endpoints =====
     @llm_chat_callback()

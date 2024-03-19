@@ -51,6 +51,7 @@ from llama_index.core.types import (
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.types import BaseTool
 
 
 class ToolSelection(BaseModel):
@@ -389,7 +390,11 @@ class LLM(BaseLLM):
         return tool(*tool_selection.tool_args, **tool_selection.tool_kwargs)
 
     def predict_and_call(
-        self, user_msg: str, tools: List[Any], verbose: bool = False, **kwargs: Any
+        self,
+        user_msg: str,
+        tools: List["BaseTool"],
+        verbose: bool = False,
+        **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
         from llama_index.core.agent.react import ReActAgentWorker
@@ -426,7 +431,11 @@ class LLM(BaseLLM):
         return output
 
     async def apredict_and_call(
-        self, user_msg: str, tools: List[Any], verbose: bool = False, **kwargs: Any
+        self,
+        user_msg: str,
+        tools: List["BaseTool"],
+        verbose: bool = False,
+        **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
         from llama_index.core.agent.react import ReActAgentWorker
