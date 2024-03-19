@@ -58,9 +58,18 @@ class NeMoEmbedding(BaseEmbedding):
         response = requests.request(
             "POST", self._api_endpoint_url, headers=headers, data=payload
         )
-        response = json.loads(response.text)
 
-        return response["data"][0]["embedding"]
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            raise Exception(
+                f"Endpoint returned a non-successful status code: "
+                f"{response.status_code} "
+                f"Response text: {response.text}"
+            )
+        else:
+            response = json.loads(response.text)
+            return response["data"][0]["embedding"]
 
     async def _aget_embedding(
         self, session: Any, text: str, input_type: str
@@ -78,18 +87,23 @@ class NeMoEmbedding(BaseEmbedding):
             return answer["data"][0]["embedding"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding."""
         return self._get_embedding(query, input_type="query")
 
     def _get_text_embedding(self, text: str) -> List[float]:
+        """Get text embedding."""
         return self._get_embedding(text, input_type="passage")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get text embeddings."""
         return [self._get_embedding(text, input_type="passage") for text in texts]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
+        """Asynchronously get query embedding."""
         async with aiohttp.ClientSession() as session:
-            return await self._aget_embedding(session, query, "query")
+            return await self._aget_embedding(session, query, input_type="query")
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
+        """Asynchronously get text embedding."""
         async with aiohttp.ClientSession() as session:
-            return await self._aget_embedding(session, text, "passage")
+            return await self._aget_embedding(session, text, input_type="passage")
