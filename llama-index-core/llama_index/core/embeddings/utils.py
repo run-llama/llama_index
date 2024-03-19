@@ -76,16 +76,19 @@ def resolve_embed_model(
                 "\n******"
             )
 
-    # for image embeddings
-    if embed_model == "clip":
+    # for image multi-modal embeddings
+    if embed_model.startswith("clip"):
         try:
             from llama_index.embeddings.clip import ClipEmbedding  # pants: no-infer-dep
 
-            embed_model = ClipEmbedding()
+            clip_model_name = (
+                embed_model.split(":")[1] if ":" in embed_model else "ViT-B/32"
+            )
+            embed_model = ClipEmbedding(model_name=clip_model_name)
         except ImportError as e:
             raise ImportError(
                 "`llama-index-embeddings-clip` package not found, "
-                "please run `pip install llama-index-embeddings-clip`"
+                "please run `pip install llama-index-embeddings-clip` and `pip install git+https://github.com/openai/CLIP.git`"
             )
 
     if isinstance(embed_model, str):
