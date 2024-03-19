@@ -84,8 +84,8 @@ class MyMagicAI(LLM):
             "system_prompt": system_prompt,
             "region": region,
             "return_output": return_output,
-            "input_json_file":input_json_file,
-            "structured_output":structured_output,
+            "input_json_file": input_json_file,
+            "structured_output": structured_output,
         }
 
     @classmethod
@@ -143,7 +143,7 @@ class MyMagicAI(LLM):
         task_response = await self._submit_question(self.question_data)
 
         if self.return_output:
-            return task_response     
+            return task_response
 
         task_id = task_response.get("task_id")
         while True:
