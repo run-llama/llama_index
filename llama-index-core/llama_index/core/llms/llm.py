@@ -9,6 +9,7 @@ from typing import (
     Sequence,
     get_args,
     runtime_checkable,
+    TYPE_CHECKING,
 )
 
 from llama_index.core.base.llms.types import (
@@ -47,6 +48,9 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.chat_engine.types import AgentChatResponse
 
 
 class ToolSelection(BaseModel):
@@ -385,23 +389,78 @@ class LLM(BaseLLM):
         return tool(*tool_selection.tool_args, **tool_selection.tool_kwargs)
 
     def predict_and_call(
-        self, prompt: PromptTemplate, tools: List[Any], **prompt_args: Any
-    ) -> Any:
+        self, user_msg: str, tools: List[Any], verbose: bool = False, **kwargs: Any
+    ) -> "AgentChatResponse":
         """Predict and call the tool."""
-        tools_by_name = {tool.metadata.name: tool for tool in tools}
+        from llama_index.core.agent.react import ReActAgentWorker
+        from llama_index.core.agent.types import Task
+        from llama_index.core.memory import ChatMemoryBuffer
 
-        formatted_prompt = self._get_prompt(prompt, **prompt_args)
-        tools_str = self._get_tools_str(tools)
-
-        selection_prompt = PromptTemplate(
-            "Given a user prompt and a list of tools, select a tool to call.\n",
-            "{tools}\n" "User prompt: {prompt}\n",
+        worker = ReActAgentWorker(
+            tools,
+            llm=self,
+            callback_manager=self.callback_manager,
+            verbose=verbose,
+            **kwargs,
         )
-
-        tool_selection = self.structured_predict(
-            ToolSelection, selection_prompt, tools=tools_str, prompt=formatted_prompt
+        task = Task(
+            input=user_msg,
+            memory=ChatMemoryBuffer.from_defaults(),
+            extra_state={},
+            callback_manager=self.callback_manager,
         )
-        return self._call_tool(tool_selection, tools_by_name[tool_selection.tool_name])
+        step = worker.initialize_step(task)
+
+        try:
+            output = worker.run_step(step, task).output
+
+            # react agent worker inserts a "Observation: " prefix to the response
+            if output.response and output.response.startswith("Observation: "):
+                output.response = output.response.replace("Observation: ", "")
+        except Exception as e:
+            output = AgentChatResponse(
+                response="An error occurred while running the tool: " + str(e),
+                sources=[],
+            )
+
+        return output
+
+    async def apredict_and_call(
+        self, user_msg: str, tools: List[Any], verbose: bool = False, **kwargs: Any
+    ) -> "AgentChatResponse":
+        """Predict and call the tool."""
+        from llama_index.core.agent.react import ReActAgentWorker
+        from llama_index.core.agent.types import Task
+        from llama_index.core.memory import ChatMemoryBuffer
+
+        worker = ReActAgentWorker(
+            tools,
+            llm=self,
+            callback_manager=self.callback_manager,
+            verbose=verbose,
+            **kwargs,
+        )
+        task = Task(
+            input=user_msg,
+            memory=ChatMemoryBuffer.from_defaults(),
+            extra_state={},
+            callback_manager=self.callback_manager,
+        )
+        step = worker.initialize_step(task)
+
+        try:
+            output = await worker.arun_step(step, task).output
+
+            # react agent worker inserts a "Observation: " prefix to the response
+            if output.response and output.response.startswith("Observation: "):
+                output.response = output.response.replace("Observation: ", "")
+        except Exception as e:
+            output = AgentChatResponse(
+                response="An error occurred while running the tool: " + str(e),
+                sources=[],
+            )
+
+        return output
 
 
 class BaseLLMComponent(QueryComponent):
