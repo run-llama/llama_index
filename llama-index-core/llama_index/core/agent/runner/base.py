@@ -51,7 +51,8 @@ class BaseAgentRunner(BaseAgent):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
@@ -189,7 +190,8 @@ class AgentState(BaseModel):
 
 
 class AgentRunner(BaseAgentRunner):
-    """Agent runner.
+    """
+    Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.
@@ -307,6 +309,7 @@ class AgentRunner(BaseAgentRunner):
                 extra_state = self.init_task_state_kwargs
 
         callback_manager = kwargs.pop("callback_manager", self.callback_manager)
+        breakpoint()
         task = Task(
             input=input,
             memory=self.memory,
@@ -332,7 +335,8 @@ class AgentRunner(BaseAgentRunner):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
@@ -378,6 +382,7 @@ class AgentRunner(BaseAgentRunner):
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
 
+        breakpoint()
         if mode == ChatResponseMode.WAIT:
             cur_step_output = self.agent_worker.run_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
@@ -466,6 +471,7 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Run step (stream)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
+        breakpoint()
         return self._run_step(
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )

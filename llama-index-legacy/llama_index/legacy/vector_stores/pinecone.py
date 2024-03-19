@@ -10,13 +10,13 @@ from collections import Counter
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.legacy.bridge.pydantic import PrivateAttr
-from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
-from llama_index.legacy.vector_stores.pinecone_utils import (
+from llama_index.bridge.pydantic import PrivateAttr
+from llama_index.schema import BaseNode, MetadataMode, TextNode
+from llama_index.vector_stores.pinecone_utils import (
     _import_pinecone,
     _is_pinecone_v3,
 )
-from llama_index.legacy.vector_stores.types import (
+from llama_index.vector_stores.types import (
     BasePydanticVectorStore,
     FilterOperator,
     MetadataFilters,
@@ -24,7 +24,7 @@ from llama_index.legacy.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.legacy.vector_stores.utils import (
+from llama_index.vector_stores.utils import (
     DEFAULT_TEXT_KEY,
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,

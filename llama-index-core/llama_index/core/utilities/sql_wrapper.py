@@ -1,4 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
+
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
@@ -7,7 +8,8 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 
 class SQLDatabase:
-    """SQL Database.
+    """
+    SQL Database.
 
     This class provides a wrapper around the SQLAlchemy engine to interact with a SQL
     database.
@@ -147,14 +149,15 @@ class SQLDatabase:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
-    def get_single_table_info(self, table_name: str) -> str:
+    def get_single_table_info(self, table) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
-        template = "Table '{table_name}' has columns: {columns}, "
+        full_table_name = table.full_table_name
+        template = "Table '{full_table_name}' has columns: {columns}, "
         try:
             # try to retrieve table comment
             table_comment = self._inspector.get_table_comment(
-                table_name, schema=self._schema
+                table_name=table.table_name, schema=table.table_schema
             )["text"]
             if table_comment:
                 template += f"with comment: ({table_comment}) "
@@ -164,7 +167,9 @@ class SQLDatabase:
 
         template += "and foreign keys: {foreign_keys}."
         columns = []
-        for column in self._inspector.get_columns(table_name, schema=self._schema):
+        for column in self._inspector.get_columns(
+            table_name=table.table_name, schema=table.table_schema
+        ):
             if column.get("comment"):
                 columns.append(
                     f"{column['name']} ({column['type']!s}): "
@@ -176,7 +181,7 @@ class SQLDatabase:
         column_str = ", ".join(columns)
         foreign_keys = []
         for foreign_key in self._inspector.get_foreign_keys(
-            table_name, schema=self._schema
+            table_name=table.table_name, schema=table.table_schema
         ):
             foreign_keys.append(
                 f"{foreign_key['constrained_columns']} -> "
@@ -184,7 +189,9 @@ class SQLDatabase:
             )
         foreign_key_str = ", ".join(foreign_keys)
         return template.format(
-            table_name=table_name, columns=column_str, foreign_keys=foreign_key_str
+            full_table_name=full_table_name,
+            columns=column_str,
+            foreign_keys=foreign_key_str,
         )
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
@@ -208,7 +215,8 @@ class SQLDatabase:
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
-        """Execute a SQL statement and return a string representing the results.
+        """
+        Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.

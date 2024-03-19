@@ -118,7 +118,8 @@ class ReActAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """
+        Convenience constructor method from set of of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -330,7 +331,8 @@ class ReActAgentWorker(BaseAgentWorker):
         )
 
     def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -354,7 +356,8 @@ class ReActAgentWorker(BaseAgentWorker):
     def _add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -379,7 +382,8 @@ class ReActAgentWorker(BaseAgentWorker):
     async def _async_add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -533,6 +537,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
             )
             thread.start()
+        breakpoint()
 
         return self._get_task_step_response(agent_response, step, is_done)
 
@@ -619,6 +624,7 @@ class ReActAgentWorker(BaseAgentWorker):
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
+        breakpoint()
         return self._run_step_stream(step, task)
 
     @trace_method("run_step")

@@ -291,6 +291,7 @@ class SimpleVectorStore(VectorStore):
             )
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
+
         return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
 
     def persist(
