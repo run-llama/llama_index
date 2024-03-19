@@ -259,7 +259,8 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 sources=[tool_output],
             )
             thread = Thread(
-                target=response.write_response_to_history, args=(self._memory, True)
+                target=response.write_response_to_history,
+                args=(self._memory,),
             )
             thread.start()
         else:

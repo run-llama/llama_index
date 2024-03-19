@@ -83,6 +83,7 @@ class CompletionResponse(BaseModel):
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
     raw: Optional[dict] = None
+    logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 
     def __str__(self) -> str:

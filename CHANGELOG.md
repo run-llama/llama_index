@@ -1,5 +1,139 @@
 # ChangeLog
 
+## [2024-03-14]
+
+### `llama-index-core` [0.10.20]
+
+- New `instrumentation` module for observability (#11831)
+- Allow passing in LLM for `CitationQueryEngine` (#11914)
+- Updated keyval docstore to allow changing suffix in addition to namespace (#11873)
+- Add (some) async streaming support to query_engine #11949
+
+### `llama-index-embeddings-dashscope` [0.1.3]
+
+- Fixed embedding type for query texts (#11901)
+
+### `llama-index-embeddings-premai` [0.1.3]
+
+- Support for premai embeddings (#11954)
+
+### `llama-index-networks` [0.2.0]
+
+- Added support for network retrievers (#11800)
+
+### `llama-index-llms-anthropic` [0.1.6]
+
+- Added support for haiku (#11916)
+
+### `llama-index-llms-mistralai` [0.1.6]
+
+- Fixed import error for ChatMessage (#11902)
+
+### `llama-index-llms-openai` [0.1.11]
+
+- added gpt-35-turbo-0125 for AZURE_TURBO_MODELS (#11956)
+- fixed error with nontype in logprobs (#11967)
+
+### `llama-index-llms-premai` [0.1.4]
+
+- Support for premai llm (#11954)
+
+### `llama-index-llms-solar` [0.1.3]
+
+- Support for solar as an LLM class (#11710)
+
+### `llama-index-llms-vertex` [0.1.5]
+
+- Add support for medlm in vertex (#11911)
+
+### `llama-index-readers-goolge` [0.1.6]
+
+- added README files and query string for google drive reader (#11724)
+
+### `llama-index-readers-file` [0.1.11]
+
+- Updated ImageReader to add `plain_text` option to trigger pytesseract (#11913)
+
+### `llama-index-readers-pathway` [0.1.3]
+
+- use pure requests to reduce deps, simplify code (#11924)
+
+### `llama-index-retrievers-pathway` [0.1.3]
+
+- use pure requests to reduce deps, simplify code (#11924)
+
+### `llama-index-storage-docstore-mongodb` [0.1.3]
+
+- Allow changing suffix for mongodb docstore (#11873)
+
+### `llama-index-vector-stores-databricks` [0.1.1]
+
+- Support for databricks vector search as a vector store (#10754)
+
+### `llama-index-vector-stores-opensearch` [0.1.8]
+
+- (re)implement proper delete (#11959)
+
+### `llama-index-vector-stores-postgres` [0.1.4]
+
+- Fixes for IN filters and OR text search (#11872, #11927)
+
+## [2024-03-12]
+
+### `llama-index-cli` [0.1.9]
+
+- Removed chroma as a bundled dep to reduce `llama-index` deps
+
+### `llama-index-core` [0.10.19]
+
+- Introduce retries for rate limits in `OpenAI` llm class (#11867)
+- Added table comments to SQL table schemas in `SQLDatabase` (#11774)
+- Added `LogProb` type to `ChatResponse` object (#11795)
+- Introduced `LabelledSimpleDataset` (#11805)
+- Fixed insert `IndexNode` objects with unserializable objects (#11836)
+- Fixed stream chat type error when writing response to history in `CondenseQuestionChatEngine` (#11856)
+- Improve post-processing for json query engine (#11862)
+
+### `llama-index-embeddings-cohere` [0.1.4]
+
+- Fixed async kwarg error (#11822)
+
+### `llama-index-embeddings-dashscope` [0.1.2]
+
+- Fixed pydantic import (#11765)
+
+### `llama-index-graph-stores-neo4j` [0.1.3]
+
+- Properly close connection after verifying connectivity (#11821)
+
+### `llama-index-llms-cohere` [0.1.3]
+
+- Add support for new `command-r` model (#11852)
+
+### `llama-index-llms-huggingface` [0.1.4]
+
+- Fixed streaming decoding with special tokens (#11807)
+
+### `llama-index-llms-mistralai` [0.1.5]
+
+- Added support for latest and open models (#11792)
+
+### `llama-index-tools-finance` [0.1.1]
+
+- Fixed small bug when passing in the API get for stock news (#11772)
+
+### `llama-index-vector-stores-chroma` [0.1.6]
+
+- Slimmed down chroma deps (#11775)
+
+### `llama-index-vector-stores-lancedb` [0.1.3]
+
+- Fixes for deleting (#11825)
+
+### `llama-index-vector-stores-postgres` [0.1.3]
+
+- Support for nested metadata filters (#11778)
+
 ## [2024-03-07]
 
 ### `llama-index-callbacks-deepeval` [0.1.3]

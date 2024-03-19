@@ -19,7 +19,13 @@ from vertexai.language_models import InputOutputTextPair
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
-TEXT_MODELS = ["text-bison", "text-bison-32k", "text-bison@001"]
+TEXT_MODELS = [
+    "text-bison",
+    "text-bison-32k",
+    "text-bison@001",
+    "medlm-medium",
+    "medlm-large",
+]
 CODE_MODELS = ["code-bison", "code-bison-32k", "code-bison@001"]
 CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"]
 
