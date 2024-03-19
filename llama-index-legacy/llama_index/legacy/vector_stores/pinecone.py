@@ -130,23 +130,7 @@ def get_default_tokenizer() -> Callable:
     )
 
 
-def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
-    """Convert from standard dataclass to pinecone filter dict."""
-    filters = {}
-    filters_list = []
-    condition = standard_filters.condition or "and"
-    condition = _transform_pinecone_filter_condition(condition)
-
-    # For each key, append a list
-    pinecone_filters = {}
-    for key in keys:
-        pinecone_filters[key] = {"$in": []}
-        for filter in standard_filters.filters:
-            if filter.key == key:
-                pinecone_filters[key]["$in"].append(filter.value)
-    # If one filters matches the metadata payload in pinecone, then include that node
-    return pinecone_filters
-
+def get_in_operator_keys(standard_filters: MetadataFilters):
     # Get the keys
     in_keys = {
         filter.key
@@ -157,21 +141,35 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     in_operator = _transform_pinecone_filter_operator(FilterOperator.IN.value)
     in_list = [{key: {in_operator: []}} for key in in_keys]
 
-    if standard_filters.filters:
+    for filter_group in in_list:
         for filter in standard_filters.filters:
+            if filter.operator == FilterOperator.IN:
+                filter_group[filter.key][in_operator].append(filter.value)
+
+    return in_list
+
+
+def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
+    """Convert from standard dataclass to pinecone filter dict."""
+    filters = {}
+    filters_list = []
+    condition = standard_filters.condition or "and"
+    condition = _transform_pinecone_filter_condition(condition)
+
+    in_list = get_in_operator_keys(standard_filters)
+
+    for filter in standard_filters.filters:
+        if filter.operator != FilterOperator.IN:
             if filter.operator:
-                if filter.operator == FilterOperator.IN.value:
-                    in_list[filter.key][FilterOperator.IN.value].append(filter.value)
-                else:
-                    filters_list.append(
-                        {
-                            filter.key: {
-                                _transform_pinecone_filter_operator(
-                                    filter.operator
-                                ): filter.value
-                            }
+                filters_list.append(
+                    {
+                        filter.key: {
+                            _transform_pinecone_filter_operator(
+                                filter.operator
+                            ): filter.value
                         }
-                    )
+                    }
+                )
             else:
                 filters_list.append({filter.key: filter.value})
     filters_list += in_list
@@ -180,7 +178,6 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
         return filters_list[0]
     elif len(filters_list) > 1:
         filters[condition] = filters_list
-    breakpoint()
     return filters
 
 
