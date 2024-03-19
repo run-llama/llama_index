@@ -1,7 +1,9 @@
 """Telegram reader that reads posts/chats and comments to post from Telegram channel or chat."""
+
 import asyncio
 import re
 from typing import List, Union
+import datetime
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -56,6 +58,8 @@ class TelegramReader(BaseReader):
         entity_name: str,
         post_id: Union[int, None] = None,
         limit: Union[int, None] = None,
+        start_date: Union[datetime.date, None] = None,
+        end_date: Union[datetime.date, None] = None,
     ) -> List[Document]:
         """Load posts/chat messages/comments from Telegram channels or chats.
 
@@ -69,10 +73,18 @@ class TelegramReader(BaseReader):
                 the comments that reply to this ID will be returned.\
                 Else will get posts/chat messages.
             limit (int): Number of messages to be retrieved.
+            start_date (datetime.date): Start date of the time period.
+            end_date (datetime.date): End date of the time period.
 
         """
         return self.loop.run_until_complete(
-            self._load_data(entity_name=entity_name, post_id=post_id, limit=limit)
+            self._load_data(
+                entity_name=entity_name,
+                post_id=post_id,
+                limit=limit,
+                start_date=start_date,
+                end_date=end_date,
+            )
         )
 
     async def _load_data(
@@ -80,6 +92,8 @@ class TelegramReader(BaseReader):
         entity_name: str,
         post_id: Union[int, None] = None,
         limit: Union[int, None] = None,
+        start_date: Union[datetime.date, None] = None,
+        end_date: Union[datetime.date, None] = None,
     ) -> List[Document]:
         """Load posts/chat messages/comments from Telegram channels or chats.
 
@@ -89,6 +103,8 @@ class TelegramReader(BaseReader):
                 the comments that reply to this ID will be returned.\
                 Else will get posts/chat messages.
             limit (int): Number of messages to be retrieved.
+            start_date (datetime.date): Start date of the time period.
+            end_date (datetime.date): End date of the time period.
 
         """
         import telethon
@@ -98,12 +114,28 @@ class TelegramReader(BaseReader):
 
         results = []
         async with client:
-            # Asynchronously iterate over messages
-            async for message in client.iter_messages(
-                entity_name, reply_to=post_id, limit=limit
-            ):
-                if isinstance(message.text, str) and message.text != "":
-                    results.append(Document(text=self._remove_links(message.text)))
+            if end_date and start_date:
+                # Asynchronously iterate over messages in between start_date and end_date
+                async for message in client.iter_messages(
+                    entity_name,
+                    reply_to=post_id,
+                    limit=limit,
+                    offset_date=end_date,
+                    reverse=True,
+                ):
+                    if message.date < start_date:
+                        break
+                    if isinstance(message.text, str) and message.text != "":
+                        results.append(Document(text=self._remove_links(message.text)))
+            else:
+                # Asynchronously iterate over messages
+                async for message in client.iter_messages(
+                    entity_name,
+                    reply_to=post_id,
+                    limit=limit,
+                ):
+                    if isinstance(message.text, str) and message.text != "":
+                        results.append(Document(text=self._remove_links(message.text)))
         return results
 
     def _remove_links(self, string) -> str:
