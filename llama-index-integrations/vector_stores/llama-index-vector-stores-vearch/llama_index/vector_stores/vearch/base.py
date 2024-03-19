@@ -5,13 +5,13 @@ from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
-from llama_index.schema import BaseNode, MetadataMode, TextNode
-from llama_index.vector_stores.types import (
+from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.utils import (
+from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
@@ -44,9 +44,7 @@ class VearchVectorStore(VectorStore):
         db_name: str = _DEFAULT_CLUSTER_DB_NAME,
         **kwargs: Any,
     ) -> None:
-        """
-        Initialize vearch vector store
-        """
+        """Initialize vearch vector store."""
         try:
             import vearch_cluster
         except ImportError:
@@ -314,18 +312,21 @@ class VearchVectorStore(VectorStore):
             False otherwise, None if not implemented.
         """
         if ids is None or len(ids) == 0:
-            return 
+            return
         for _id in ids:
-            querys = {
-                    "query": {
-                        "filter": [{ "term": {"ref_doc_id": [_id], "operator": "and"}}]
-                    },
-                    "size": 10000,
-                }
-            self.vearch.delete_by_query(self,self.using_db_name, self.using_table_name, querys)
+            queries = {
+                "query": {
+                    "filter": [{"term": {"ref_doc_id": [_id], "operator": "and"}}]
+                },
+                "size": 10000,
+            }
+            self.vearch.delete_by_query(
+                self, self.using_db_name, self.using_table_name, queries
+            )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes using with ref_doc_id.
+
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
 
