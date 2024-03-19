@@ -537,7 +537,6 @@ class ReActAgentWorker(BaseAgentWorker):
                 kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
             )
             thread.start()
-        breakpoint()
 
         return self._get_task_step_response(agent_response, step, is_done)
 
@@ -624,7 +623,6 @@ class ReActAgentWorker(BaseAgentWorker):
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # TODO: figure out if we need a different type for TaskStepOutput
-        breakpoint()
         return self._run_step_stream(step, task)
 
     @trace_method("run_step")

@@ -309,7 +309,6 @@ class AgentRunner(BaseAgentRunner):
                 extra_state = self.init_task_state_kwargs
 
         callback_manager = kwargs.pop("callback_manager", self.callback_manager)
-        breakpoint()
         task = Task(
             input=input,
             memory=self.memory,
@@ -319,9 +318,9 @@ class AgentRunner(BaseAgentRunner):
         )
         # # put input into memory
         # self.memory.put(ChatMessage(content=input, role=MessageRole.USER))
+        initial_step = self.agent_worker.initialize_step(task)
 
         # get initial step from task, and put it in the step queue
-        initial_step = self.agent_worker.initialize_step(task)
         task_state = TaskState(
             task=task,
             step_queue=deque([initial_step]),
@@ -382,7 +381,6 @@ class AgentRunner(BaseAgentRunner):
         # TODO: figure out if you can dynamically swap in different step executors
         # not clear when you would do that by theoretically possible
 
-        breakpoint()
         if mode == ChatResponseMode.WAIT:
             cur_step_output = self.agent_worker.run_step(step, task, **kwargs)
         elif mode == ChatResponseMode.STREAM:
@@ -471,7 +469,6 @@ class AgentRunner(BaseAgentRunner):
     ) -> TaskStepOutput:
         """Run step (stream)."""
         step = validate_step_from_args(task_id, input, step, **kwargs)
-        breakpoint()
         return self._run_step(
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )

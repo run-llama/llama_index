@@ -60,6 +60,7 @@ class ReActAgent(AgentRunner):
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         context: Optional[str] = None,
+        init_task_state_kwargs: Optional[dict] = None,
     ) -> None:
         """Init params."""
         callback_manager = callback_manager or llm.callback_manager
@@ -83,6 +84,7 @@ class ReActAgent(AgentRunner):
             memory=memory,
             llm=llm,
             callback_manager=callback_manager,
+            init_task_state_kwargs=init_task_state_kwargs,
         )
 
     @classmethod
@@ -100,6 +102,7 @@ class ReActAgent(AgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         context: Optional[str] = None,
+        init_task_state_kwargs: Optional[dict] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
         """
