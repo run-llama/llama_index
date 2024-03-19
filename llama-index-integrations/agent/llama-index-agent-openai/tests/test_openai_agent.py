@@ -3,7 +3,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.agent.openai.base import OpenAIAgent
-from llama_index.agent.openai.step import call_tool_with_error_handling
+from llama_index.agent.openai.step import (
+    call_tool_with_error_handling,
+    advanced_tool_call_parser,
+)
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -326,6 +329,35 @@ def test_call_tool_with_malformed_function_call(
         str(step_output.output.sources[0])
         == 'Error in calling tool echo: The input json block is malformed:\n```json\nquery = "This is a test"\n```'
     )
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_call_tool_with_malformed_function_call_and_parser(
+    MockSyncOpenAI: MagicMock,
+    echo_tool: FunctionTool,
+) -> None:
+    """Test add step."""
+    mock_instance = MockSyncOpenAI.return_value
+    test_result: str = "This is a test"
+    function = Function(name="echo", arguments=f'query = "{test_result}"')
+    mock_instance.chat.completions.create.return_value = mock_chat_completion_tool_call(
+        function=function
+    )
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+    # sync
+    agent = OpenAIAgent.from_tools(
+        tools=[echo_tool],
+        llm=llm,
+        tool_call_parser=advanced_tool_call_parser,
+    )
+    ## NOTE: can only take a single step before finishing,
+    # since mocked chat output does not call any tools
+    task = agent.create_task(
+        f"This happens if tool call is malformed like:\n{function.arguments}"
+    )
+    step_output = agent.run_step(task.task_id)
+    assert str(step_output.output.sources[0]) == test_result
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")

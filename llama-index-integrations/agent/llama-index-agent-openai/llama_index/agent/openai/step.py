@@ -7,6 +7,7 @@ import uuid
 from functools import partial
 from threading import Thread
 from typing import Any, Dict, List, Callable, Optional, Tuple, Union, cast, get_args
+import re
 
 from llama_index.agent.openai.utils import resolve_tool_choice
 from llama_index.core.agent.types import (
@@ -81,6 +82,40 @@ def default_tool_call_parser(tool_call: OpenAIToolCall):
     try:
         json.loads(tool_call.function.arguments)
     except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"
+        )
+
+
+def advanced_tool_call_parser(tool_call: OpenAIToolCall) -> Dict:
+    r"""Parse tool calls that are not standard json.
+
+    Also parses tool calls of the following forms:
+    variable = \"\"\"Some long text\"\"\"
+    variable = "Some long text"'
+    variable = '''Some long text'''
+    variable = 'Some long text'
+    """
+    arguments_str = tool_call.function.arguments
+    if len(arguments_str.strip()) == 0:
+        # OpenAI returns an empty string for functions containing no args
+        return {}
+    try:
+        tool_call = json.loads(arguments_str)
+        if not isinstance(tool_call, dict):
+            raise ValueError(
+                f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"
+            )
+        return tool_call
+    except json.JSONDecodeError as e:
+        # pattern to match variable names and content within quotes
+        pattern = r'([a-zA-Z_][a-zA-Z_0-9]*)\s*=\s*["\']+(.*?)["\']+'
+        match = re.search(pattern, arguments_str)
+
+        if match:
+            variable_name = match.group(1)  # This is the variable name
+            content = match.group(2)  # This is the content within the quotes
+            return {variable_name: content}
         raise ValueError(
             f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"
         )
