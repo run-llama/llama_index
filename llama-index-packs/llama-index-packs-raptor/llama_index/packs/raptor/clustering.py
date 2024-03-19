@@ -123,6 +123,7 @@ def get_clusters(
     tokenizer: tiktoken.Encoding = tiktoken.get_encoding("cl100k_base"),
     reduction_dimension: int = 10,
     threshold: float = 0.1,
+    prev_total_length=None,  # to keep track of the total length of the previous clusters
 ) -> List[List[BaseNode]]:
     # get embeddings
     embeddings = np.array([np.array(embedding_map[node.id_]) for node in nodes])
@@ -152,7 +153,10 @@ def get_clusters(
         total_length = sum([len(tokenizer.encode(node.text)) for node in cluster_nodes])
 
         # If the total length exceeds the maximum allowed length, recluster this cluster
-        if total_length > max_length_in_cluster:
+        # If the total length did not change from the previous call then don't try again to avoid infinite recursion!
+        if total_length > max_length_in_cluster and (
+            prev_total_length is None or total_length < prev_total_length
+        ):
             node_clusters.extend(
                 get_clusters(
                     cluster_nodes,
@@ -161,6 +165,7 @@ def get_clusters(
                     tokenizer=tokenizer,
                     reduction_dimension=reduction_dimension,
                     threshold=threshold,
+                    prev_total_length=total_length,
                 )
             )
         else:
