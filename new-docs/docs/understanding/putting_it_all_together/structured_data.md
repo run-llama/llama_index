@@ -178,4 +178,4 @@ If you have any questions let us know in [our Discord](https://discord.gg/dGcwcs
 
 Relevant Resources:
 
-- [Airbyte SQL Index Guide](structured_data/Airbyte_demo.ipynb)
+- [Airbyte SQL Index Guide](./structured_data/Airbyte_demo.ipynb)

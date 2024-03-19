@@ -1,3 +1,3 @@
 # Use Cases
 
-TODO
+See the navigation on the left to explore the use-cases with LlamaIndex!

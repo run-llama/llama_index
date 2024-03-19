@@ -45,6 +45,9 @@ In this case, you've instantiated OpenAI and customized it to use the `gpt-4` mo
 
 We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](../../module_guides/models/llms.md) for a full list, including how to run a local model.
 
+!!! tip
+  A general note on privacy and LLMs can be found on the [privacy page](./privacy.md).
+
 ### Using a local LLM
 
 LlamaIndex doesn't just supported hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).

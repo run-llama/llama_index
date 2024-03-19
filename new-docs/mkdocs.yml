@@ -1,11 +1,38 @@
 site_name: LlamaIndex
 theme:
   name: material
+  logo: _static/assets/LlamaSquareBlack.svg
+  favicon: _static/assets/LlamaLogoBrowserTab.png
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
   features:
     - navigation.instant
     - navigation.tabs
     - navigation.indexes
     - navigation.top
+    - navigation.footer
     - toc.follow
 extra:
   analytics:
@@ -21,35 +48,39 @@ nav:
       - 'getting_started/starter_example.md'
       - 'getting_started/starter_example_local.md'
     - 'getting_started/discover_llamaindex.md'
-    - 'getting_started/create_llama.md'
+    # TODO - 'getting_started/create_llama.md'
     - 'getting_started/customization.md'
-    - 'getting_started/starter_projects.md'
+    # TODO - 'getting_started/starter_projects.md'
   - Learn:
     - Building an LLM Application: './understanding/index.md'
+    - Using LLMs: './understanding/using_llms/using_llms.md'
     - Loading & Ingestion:
       - './understanding/loading/loading.md'
       - './understanding/loading/llamahub.md'
     - Indexing & Embedding: './understanding/indexing/indexing.md'
     - Storing: './understanding/storing/storing.md'
-    - Retrieval & Postprocessing: './understanding/retrieval/retrieval.md'
-    - Prompting & Synthesis: './understanding/synthesis/synthesis.md'
+    # TODO - Retrieval & Postprocessing: './understanding/retrieval/retrieval.md'
+    # TODO - Prompting & Synthesis: './understanding/synthesis/synthesis.md'
+    - Querying: './understanding/querying/querying.md'
     - Tracing and Debugging: './understanding/tracing_and_debugging/tracing_and_debugging.md'
     - Evaluating:
       - './understanding/evaluating/evaluating.md'
       - Cost Analysis:
         - './understanding/evaluating/cost_analysis/index.md'
         - './understanding/evaluating/cost_analysis/usage_pattern.md'
-    - Deployment: './understanding/deployment/deployment.md'
+    # TODO - Deployment: './understanding/deployment/deployment.md'
     - Putting it all Together: './understanding/putting_it_all_together/'
   - Use Cases:
+    - './use_cases/index.md'
     - Agents: './use_cases/agents.md'
     - Chatbots: './use_cases/chatbots.md'
     - Multi-Modal Applications: './use_cases/multimodal.md'
     - Structured Data Extraction: './use_cases/extraction.md'
-    - Text to SQL: './use_cases/text_to_sql.md'
-    - Querying CSVs: './use_cases/querying_csvs.md'
-    - Querying Graphs: './use_cases/graph_querying.md'
-    - Parsing Tables & Charts: './use_cases/tables_charts.md'
+    # TODO - Text to SQL: './use_cases/text_to_sql.md'
+    - General Q&A: './use_cases/q_and_a/index.md'
+    # TODO - Querying CSVs: './use_cases/querying_csvs.md'
+    # TODO - Querying Graphs: './use_cases/graph_querying.md'
+    # TODO - Parsing Tables & Charts: './use_cases/tables_charts.md'
     - Fine-Tuning: './use_cases/fine_tuning.md'
   - Examples:
     - './examples/index.md'
@@ -479,14 +510,26 @@ nav:
       - ./examples/vector_stores/AstraDBIndexDemo.ipynb
       - ./examples/vector_stores/LanternAutoRetriever.ipynb
   - Component Guides: './module_guides'
-  - Advanced:
-    - Custom Modules: './optimizing/custom_modules.md'
-    - Contributing:
-      - Code: './CONTRIBUTING.md'
-      - Docs: './DOCS_README.md'
-    - RAG From Scratch: './optimizing/building_rag_from_scratch.md'
+  - Advanced Topics:
+    - './optimizing/production_rag.md'
+    - './optimizing/basic_strategies/basic_strategies.md'
+    - './optimizing/agentic_strategies/agentic_strategies.md'
+    - Retrieval:
+      - './optimizing/advanced_retrieval/advanced_retrieval.md'
+      - './optimizing/advanced_retrieval/query_transformations.md'
+    - Evaluation: './optimizing/evaluation'
+    - Fine-Tuning: './optimizing/fine-tuning/fine-tuning.md'
+    - './optimizing/custom_modules.md'
+    - './optimizing/building_rag_from_scratch.md'
   - API Reference: './api_reference'
-  - Changes:
+  - Open-Source Community:
+    - Integrations: './community/integrations.md'
+    - Full Stack Projects: './community/full_stack_projects.md'
+    - Community FAQ: './community/faq.md'
+    - LlamaPacks: './community/llama_packs/index.md'
+    - Contributing:
+        - Code: './CONTRIBUTING.md'
+        - Docs: './DOCS_README.md'
     - Changelog : './CHANGELOG.md'
     - Upgrading to v0.10.x: './getting_started/v0_10_0_migration.md'
     - Deprecated Terms: './changes/deprecated_terms.md'
