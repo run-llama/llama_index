@@ -72,7 +72,7 @@ class StreamingAgentChatResponse:
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     _unformatted_response: str = ""
     _queue: queue.Queue = field(default_factory=queue.Queue)
-    _aqueue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    _aqueue: Optional[asyncio.Queue] = None
     # flag when chat message is a function call
     _is_function: Optional[bool] = None
     # flag when processing done
@@ -100,11 +100,16 @@ class StreamingAgentChatResponse:
             self.response = self._unformatted_response.strip()
         return self.response
 
+    def _ensure_aqueue(self) -> None:
+        if self._aqueue is None:
+            self._aqueue = asyncio.Queue()
+
     def put_in_queue(self, delta: Optional[str]) -> None:
         self._queue.put_nowait(delta)
         self._is_function_not_none_thread_event.set()
 
     def aput_in_queue(self, delta: Optional[str]) -> None:
+        self._ensure_aqueue()
         self._aqueue.put_nowait(delta)
         self._new_item_event.set()
 
@@ -207,6 +212,7 @@ class StreamingAgentChatResponse:
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        self._ensure_aqueue()
         while True:
             if not self._aqueue.empty() or not self._is_done:
                 try:
