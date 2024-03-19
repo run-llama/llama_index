@@ -1,7 +1,7 @@
 import logging
 import typing
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
@@ -107,7 +107,6 @@ class VearchVectorStore(VectorStore):
         if embeddings is None:
             raise ValueError("embeddings is None")
         self._get_matadata_field(metadatas)
-    
         dbs_list = self.vearch.list_dbs()
         if self.using_db_name not in dbs_list:
             create_db_code = self.vearch.create_db(self.using_db_name)
@@ -121,9 +120,7 @@ class VearchVectorStore(VectorStore):
         docid = []
         if embeddings is not None and metadatas is not None:
             meta_field_list = [i["field"] for i in self.field_list]
-            for text, metadata, embed, id_d in zip(
-                texts, metadatas, embeddings, ids
-            ):
+            for text, metadata, embed, id_d in zip(texts, metadatas, embeddings, ids):
                 profiles: typing.Dict[str, Any] = {}
                 profiles["ref_doc_id"] = id_d
                 profiles["text"] = text
@@ -226,8 +223,10 @@ class VearchVectorStore(VectorStore):
     ) -> VectorStoreQueryResult:
         """
         Query index for top k most similar nodes.
+
         Args:
             query : vector store query.
+
         Returns:
             VectorStoreQueryResult: Query results.
         """
@@ -244,7 +243,6 @@ class VearchVectorStore(VectorStore):
         if embed is None:
             raise ValueError("query.query_embedding is None")
         k = query.similarity_top_k
-        
         query_data = {
             "query": {
                 "sum": [
@@ -262,7 +260,6 @@ class VearchVectorStore(VectorStore):
             self.using_db_name, self.using_table_name, query_data
         )
         res = query_result["hits"]["hits"]
-    
         nodes = []
         similarities = []
         ids = []
@@ -307,9 +304,11 @@ class VearchVectorStore(VectorStore):
     ) -> None:
         """
         Delete the documents which have the specified ids.
+
         Args:
             ids: The ids of the embedding vectors.
             **kwargs: Other keyword arguments that subclasses might use.
+
         Returns:
             Optional[bool]: True if deletion is successful.
             False otherwise, None if not implemented.
@@ -317,23 +316,19 @@ class VearchVectorStore(VectorStore):
         if ids is None or len(ids) == 0:
             return 
         for _id in ids:
-            query = {
+            querys = {
                     "query": {
-                        "filter": [{
-                            "term": {
-                                "ref_doc_id": [_id],
-                                "operator": "and"   
-                                }   
-                            }]
+                        "filter": [{ "term": {"ref_doc_id": [_id], "operator": "and"}}]
                     },
                     "size": 10000,
                 }
-            self.vearch.delete_by_query(self,self.using_db_name, self.using_table_name, query)
+            self.vearch.delete_by_query(self,self.using_db_name, self.using_table_name, querys)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes using with ref_doc_id.
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         Returns:
             None
         """
@@ -342,4 +337,3 @@ class VearchVectorStore(VectorStore):
         ids: List[str] = []
         ids.append(ref_doc_id)
         self._delete(ids)
-
