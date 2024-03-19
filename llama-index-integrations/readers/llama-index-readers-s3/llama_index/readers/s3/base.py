@@ -6,82 +6,64 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 """
 
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
 
 
-class S3Reader(BaseReader):
-    """General reader for any S3 file or directory."""
+class S3Reader(BasePydanticReader):
+    """
+    General reader for any S3 file or directory.
 
-    def __init__(
-        self,
-        *args: Any,
-        bucket: str,
-        key: Optional[str] = None,
-        prefix: Optional[str] = "",
-        recursive: bool = True,
-        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
-        required_exts: Optional[List[str]] = None,
-        filename_as_id: bool = True,
-        num_files_limit: Optional[int] = None,
-        file_metadata: Optional[Callable[[str], Dict]] = None,
-        aws_access_id: Optional[str] = None,
-        aws_access_secret: Optional[str] = None,
-        aws_session_token: Optional[str] = None,
-        s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com",
-        custom_reader_path: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Initialize S3 bucket and key, along with credentials if needed.
+    If key is not set, the entire bucket (filtered by prefix) is parsed.
 
-        If key is not set, the entire bucket (filtered by prefix) is parsed.
+    Args:
+    bucket (str): the name of your S3 bucket
+    key (Optional[str]): the name of the specific file. If none is provided,
+        this loader will iterate through the entire bucket.
+    prefix (Optional[str]): the prefix to filter by in the case that the loader
+        iterates through the entire bucket. Defaults to empty string.
+    recursive (bool): Whether to recursively search in subdirectories.
+        True by default.
+    file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
+        extension to a BaseReader class that specifies how to convert that file
+        to text. See `SimpleDirectoryReader` for more details.
+    required_exts (Optional[List[str]]): List of required extensions.
+        Default is None.
+    num_files_limit (Optional[int]): Maximum number of files to read.
+        Default is None.
+    file_metadata (Optional[Callable[str, Dict]]): A function that takes
+        in a filename and returns a Dict of metadata for the Document.
+        Default is None.
+    aws_access_id (Optional[str]): provide AWS access key directly.
+    aws_access_secret (Optional[str]): provide AWS access key directly.
+    s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
+    """
 
-        Args:
-        bucket (str): the name of your S3 bucket
-        key (Optional[str]): the name of the specific file. If none is provided,
-            this loader will iterate through the entire bucket.
-        prefix (Optional[str]): the prefix to filter by in the case that the loader
-            iterates through the entire bucket. Defaults to empty string.
-        recursive (bool): Whether to recursively search in subdirectories.
-            True by default.
-        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
-            extension to a BaseReader class that specifies how to convert that file
-            to text. See `SimpleDirectoryReader` for more details.
-        required_exts (Optional[List[str]]): List of required extensions.
-            Default is None.
-        num_files_limit (Optional[int]): Maximum number of files to read.
-            Default is None.
-        file_metadata (Optional[Callable[str, Dict]]): A function that takes
-            in a filename and returns a Dict of metadata for the Document.
-            Default is None.
-        aws_access_id (Optional[str]): provide AWS access key directly.
-        aws_access_secret (Optional[str]): provide AWS access key directly.
-        s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
-        """
-        super().__init__(*args, **kwargs)
+    is_remote: bool = True
 
-        self.bucket = bucket
-        self.key = key
-        self.prefix = prefix
-        self.recursive = recursive
+    bucket: str
+    key: Optional[str] = None
+    prefix: Optional[str] = ""
+    recursive: bool = True
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None
+    required_exts: Optional[List[str]] = None
+    filename_as_id: bool = True
+    num_files_limit: Optional[int] = None
+    file_metadata: Optional[Callable[[str], Dict]] = None
+    aws_access_id: Optional[str] = None
+    aws_access_secret: Optional[str] = None
+    aws_session_token: Optional[str] = None
+    s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com"
+    custom_reader_path: Optional[str] = None
 
-        self.file_extractor = file_extractor
-        self.required_exts = required_exts
-        self.filename_as_id = filename_as_id
-        self.num_files_limit = num_files_limit
-        self.file_metadata = file_metadata
-        self.custom_reader_path = custom_reader_path
+    @classmethod
+    def class_name(cls) -> str:
+        return "S3Reader"
 
-        self.aws_access_id = aws_access_id
-        self.aws_access_secret = aws_access_secret
-        self.aws_session_token = aws_session_token
-        self.s3_endpoint_url = s3_endpoint_url
-
-    def load_s3_files_as_docs(self) -> List[Document]:
+    def load_s3_files_as_docs(self, temp_dir=None) -> List[Document]:
         """Load file(s) from S3."""
         from s3fs import S3FileSystem
 

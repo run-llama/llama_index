@@ -45,7 +45,8 @@ pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
-ruff = "0.0.292"
+ruff = "^0.2.1"
+s3fs = "^2024.3.0"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
@@ -61,6 +62,10 @@ version = "<=23.9.1,>=23.7.0"
 [tool.poetry.group.dev.dependencies.codespell]
 extras = ["toml"]
 version = ">=v2.2.6"
+
+[tool.poetry.group.dev.dependencies.moto]
+extras = ["server"]
+version = "^5.0.3"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
