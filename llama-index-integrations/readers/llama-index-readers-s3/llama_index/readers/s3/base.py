@@ -5,15 +5,11 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 
 """
 
-import os
-import shutil
-import tempfile
 import warnings
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BasePydanticReader, BaseReader
+from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
@@ -90,11 +86,11 @@ class S3Reader(BaseReader):
         from s3fs import S3FileSystem
 
         s3fs = S3FileSystem(
-                key=self.aws_access_id,
-                endpoint_url=self.s3_endpoint_url,
-                secret=self.aws_access_secret,
-                token=self.aws_session_token,
-            )
+            key=self.aws_access_id,
+            endpoint_url=self.s3_endpoint_url,
+            secret=self.aws_access_secret,
+            token=self.aws_session_token,
+        )
 
         input_dir = self.bucket
         input_files = None
@@ -113,7 +109,7 @@ class S3Reader(BaseReader):
             num_files_limit=self.num_files_limit,
             file_metadata=self.file_metadata,
             recursive=self.recursive,
-            fs=s3fs
+            fs=s3fs,
         )
 
         return loader.load_data()
