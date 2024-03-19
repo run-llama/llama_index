@@ -94,7 +94,7 @@ Associated projects
 - 🏡 LlamaHub: https://llamahub.ai | The central hub of all integrations and templates within the LlamaIndex ecosystem (LLMs, embeddings, data loaders, vector stores, LlamaPacks).
 - 🧪 LlamaLab: https://github.com/run-llama/llama-lab | Ambitious projects built on top of LlamaIndex
 - 🌤️ LlamaCloud: https://cloud.llamaindex.ai/ | Platform for advanced document RAG
-   - 📑 LlamaParse Python Client: https://github.com/run-llama/llama_parse | Client for advanced document parsing (part of LlamaCloud) 
+   - 📑 LlamaParse Python Client: https://github.com/run-llama/llama_parse | Client for advanced document parsing (part of LlamaCloud)
 
 .. toctree::
    :maxdepth: 1
