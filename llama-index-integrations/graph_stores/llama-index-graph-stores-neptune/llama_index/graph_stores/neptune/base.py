@@ -25,7 +25,9 @@ class NeptuneQueryException(Exception):
 
 
 class NeptuneBaseGraphStore(GraphStore):
-    """This is an abstract base class that represents the shared features across the NeptuneGraph and NeptuneAnalyticsGraph classes."""
+    """This is an abstract base class that represents the shared features across the NeptuneDatabaseGraphStore
+    and NeptuneAnalyticsGraphStore classes.
+    """
 
     def __init__() -> None:
         pass
@@ -52,20 +54,8 @@ class NeptuneBaseGraphStore(GraphStore):
         self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
     ) -> Dict[str, List[List[str]]]:
         """Get flat rel map."""
-        # The flat means for multi-hop relation path, we could get
-        # knowledge like: subj -> rel -> obj -> rel -> obj -> rel -> obj.
-        # This type of knowledge is useful for some tasks.
-        # +-------------+------------------------------------+
-        # | subj        | flattened_rels                     |
-        # +-------------+------------------------------------+
-        # | "player101" | [95, "player125", 2002, "team204"] |
-        # | "player100" | [1997, "team204"]                  |
-        # ...
-        # +-------------+------------------------------------+
-
         rel_map: Dict[Any, List[Any]] = {}
         if subjs is None or len(subjs) == 0:
-            # unlike simple graph_store, we don't do get_all here
             return rel_map
 
         query = f"""MATCH p=(n1:{self.node_label})-[*1..{depth}]->() WHERE n1.id IN $subjs
@@ -84,7 +74,7 @@ class NeptuneBaseGraphStore(GraphStore):
         return rel_map
 
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
-        """Add triplet."""
+        """Add triplet to the graph."""
         query = """
             MERGE (n1:`%s` {id:$subj})
             MERGE (n2:`%s` {id:$obj})
@@ -100,7 +90,7 @@ class NeptuneBaseGraphStore(GraphStore):
         self.query(prepared_statement, {"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
-        """Delete triplet."""
+        """Delete triplet from the graph."""
 
         def delete_rel(subj: str, obj: str, rel: str) -> None:
             with self._driver.session(database=self._database) as session:
@@ -115,27 +105,16 @@ class NeptuneBaseGraphStore(GraphStore):
         def delete_entity(entity: str) -> None:
             with self._driver.session(database=self._database) as session:
                 session.run(
-                    "MATCH (n:%s) WHERE n.id = $entity DELETE n" % self.node_label,
+                    "MATCH (n:%s) WHERE n.id = $entity DETACH DELETE n"
+                    % self.node_label,
                     {"entity": entity},
                 )
-
-        def check_edges(entity: str) -> bool:
-            with self._driver.session(database=self._database) as session:
-                is_exists_result = session.run(
-                    "MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)"
-                    % (self.node_label),
-                    {"entity": entity},
-                )
-                return bool(list(is_exists_result))
 
         delete_rel(subj, obj, rel)
-        if not check_edges(subj):
-            delete_entity(subj)
-        if not check_edges(obj):
-            delete_entity(obj)
+        delete_entity(subj)
 
     def get_schema(self, refresh: bool = False) -> str:
-        """Get the schema of the Neo4jGraph store."""
+        """Get the schema of the Neptune KG store."""
         if self.schema and not refresh:
             return self.schema
         self.refresh_schema()
@@ -149,14 +128,6 @@ class NeptuneBaseGraphStore(GraphStore):
     @abstractmethod
     def _get_summary(self) -> Dict:
         raise NotImplementedError
-
-    def get_schema(self, refresh: bool = False) -> str:
-        """Get the schema of the Neo4jGraph store."""
-        if self.schema and not refresh:
-            return self.schema
-        self._refresh_schema()
-        logger.debug(f"get_schema() schema:\n{self.schema}")
-        return self.schema
 
     def _get_labels(self) -> Tuple[List[str], List[str]]:
         """Get node and edge labels from the Neptune statistics summary."""

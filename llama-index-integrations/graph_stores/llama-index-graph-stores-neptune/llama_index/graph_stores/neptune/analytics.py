@@ -72,6 +72,7 @@ class NeptuneAnalyticsGraphStore(NeptuneBaseGraphStore):
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune Analytics graph."""
         try:
+            logger.debug(f"query() query: {query} parameters: {json.dumps(params)}")
             resp = self.client.execute_query(
                 graphIdentifier=self.graph_identifier,
                 queryString=query,

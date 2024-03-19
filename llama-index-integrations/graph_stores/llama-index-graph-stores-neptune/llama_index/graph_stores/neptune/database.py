@@ -1,4 +1,5 @@
-"""Amazon Neptune Analytics graph store index."""
+"""Amazon Neptune Database graph store index."""
+
 import logging
 from typing import Any, Dict, Optional
 
@@ -22,7 +23,7 @@ class NeptuneDatabaseGraphStore(NeptuneBaseGraphStore):
         node_label: str = "Entity",
         **kwargs: Any,
     ) -> None:
-        """Create a new Neptune Analytics graph wrapper instance."""
+        """Create a new Neptune Database graph wrapper instance."""
         self.node_label = node_label
         try:
             if credentials_profile_name is not None:
@@ -59,7 +60,7 @@ class NeptuneDatabaseGraphStore(NeptuneBaseGraphStore):
         except Exception as e:
             if type(e).__name__ == "UnknownServiceError":
                 raise ModuleNotFoundError(
-                    "NeptuneGraph requires a boto3 version 1.34.40 or greater."
+                    "Neptune Database requires a boto3 version 1.34.40 or greater."
                     "Please install it with `pip install -U boto3`."
                 ) from e
             else:
@@ -82,7 +83,7 @@ class NeptuneDatabaseGraphStore(NeptuneBaseGraphStore):
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""
         try:
-            print(query)
+            logger.debug(f"query() query: {query} parameters: {json.dumps(params)}")
             return self.client.execute_open_cypher_query(
                 openCypherQuery=query, parameters=json.dumps(params)
             )["results"]
