@@ -20,7 +20,7 @@ class NetworkRetriever(BaseRetriever):
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._contributors = contributors
-        self._node_postprocessor = node_postprocessors or []
+        self._node_postprocessors = node_postprocessors or []
         super().__init__(callback_manager=callback_manager)
 
     def _postprocess_nodes(
