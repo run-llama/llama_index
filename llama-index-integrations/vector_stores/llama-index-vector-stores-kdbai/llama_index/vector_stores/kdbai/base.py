@@ -16,7 +16,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from .utils import default_sparse_encoder
+from llama_index.vector_stores.kbdai.utils import default_sparse_encoder
 
 DEFAULT_COLUMN_NAMES = ["document_id", "text", "embedding"]
 
@@ -167,7 +167,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                         f"Failed to insert batch {i} of documents into the datastore: {e}"
                     )
 
-            return list(df["document_id"])
+            return List(df["document_id"])
 
         except Exception as e:
             logger.error(f"Error preparing data for KDB.AI: {e}.")
