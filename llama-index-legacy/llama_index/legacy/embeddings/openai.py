@@ -244,8 +244,8 @@ class OpenAIEmbedding(BaseEmbedding):
     )
 
     api_key: str = Field(description="The OpenAI API key.")
-    api_base: Optional[str] = Field(description="The base URL for OpenAI API.")
-    api_version: Optional[str] = Field(description="The version for OpenAI API.")
+    api_base: str = Field(description="The base URL for OpenAI API.")
+    api_version: str = Field(description="The version for OpenAI API.")
 
     max_retries: int = Field(
         default=10, description="Maximum number of retries.", gte=0
