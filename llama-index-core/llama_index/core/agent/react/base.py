@@ -21,7 +21,7 @@ from typing import (
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
 from llama_index.core.agent.react.step import ReActAgentWorker
-from llama_index.core.agent.runner.base import AgentRunner
+from llama_index.core.agent.runner.base import AgentRunner, AgentState
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -61,6 +61,7 @@ class ReActAgent(AgentRunner):
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         context: Optional[str] = None,
         init_task_state_kwargs: Optional[dict] = None,
+        state: Optional[AgentState] = None,
     ) -> None:
         """Init params."""
         callback_manager = callback_manager or llm.callback_manager
@@ -84,7 +85,7 @@ class ReActAgent(AgentRunner):
             memory=memory,
             llm=llm,
             callback_manager=callback_manager,
-            init_task_state_kwargs=init_task_state_kwargs,
+            state=state,
         )
 
     @classmethod
@@ -102,7 +103,7 @@ class ReActAgent(AgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         context: Optional[str] = None,
-        init_task_state_kwargs: Optional[dict] = None,
+        state: Optional[AgentState] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
         """
@@ -133,6 +134,7 @@ class ReActAgent(AgentRunner):
             callback_manager=callback_manager,
             verbose=verbose,
             context=context,
+            state=state,
         )
 
     def _get_prompt_modules(self) -> PromptMixinType:
