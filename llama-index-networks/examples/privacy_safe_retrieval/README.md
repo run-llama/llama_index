@@ -42,17 +42,6 @@ The demo for doing that is found in the notebook: `network_retriever.ipynb`.
 
 ## Building and Running the 2 Network Contributor Services
 
-### Setup Environment Variables
-
-Each of the three Contributor Services wrap `Retriever`'s that utilize
-OpenAI embeddings. As such, you'll need to supply an `OPENAI_API_KEY`.
-
-To do so, we make use of .env files. Each contributor folder requires a filled
-in `.env.contributor.service` file. You can use the `template.env.contributor.service`,
-fill in your openai-api-key and then save it as `.env.contributor.service`
-(you can also save it simply as `.env` as the `ContributorRetrieverServiceSettings`
-class will look for `.env` file if it can't find `.env.contributor.service`).
-
 ### Virtual Environment
 
 We begin by creating a fresh environment:
@@ -79,6 +68,22 @@ The output of this script will be the following four datasets:
 - `./symptom_2_disease_test.json`
 - `contributor-1/data/contributor1_synthetic_dataset.json`
 - `contributor-2/data/contributor2_synthetic_dataset.json`
+
+### Setup Environment Variables
+
+Each of the two Contributor Services wrap `Retriever`'s that utilize
+OpenAI embeddings. As such, you'll need to supply an `OPENAI_API_KEY`.
+
+To do so, we make use of .env files. Each contributor folder requires a filled
+in `.env.contributor.service` file. You can use the `template.env.contributor.service`,
+fill in your openai-api-key and then save it as `.env.contributor.service`
+(you can also save it simply as `.env` as the `ContributorRetrieverServiceSettings`
+class will look for `.env` file if it can't find `.env.contributor.service`).
+
+Additionally, we need to define the `SIMILIARITY_TOP_K` environment variable
+for each of the retrievers. To do this, you can use `template.env.retriever` file
+and fill in your desired top-k value and then save it as `.env.retriever`. You
+must do this for both contributors.
 
 ### Install The Contributor Project Dependencies
 
