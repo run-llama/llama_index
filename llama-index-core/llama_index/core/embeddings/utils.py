@@ -76,7 +76,7 @@ def resolve_embed_model(
                 "\n******"
             )
     # for image multi-modal embeddings
-    elif embed_model.startswith("clip"):
+    elif isinstance(embed_model, str) and embed_model.startswith("clip"):
         try:
             from llama_index.embeddings.clip import ClipEmbedding  # pants: no-infer-dep
 
