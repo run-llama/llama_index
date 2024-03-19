@@ -51,7 +51,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Timescale                |                         | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Upstash                  | cloud                   |                    |               |        | ✓               |       |
-| Vearch                   | self-hosted         | ✓                  |               | ✓      | ✓               |       |
+| Vearch                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](/community/integrations/vector_stores.md).
