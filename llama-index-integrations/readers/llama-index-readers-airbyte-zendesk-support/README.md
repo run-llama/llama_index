@@ -1,18 +1,19 @@
 # Airbyte ZendeskSupport Loader
 
+```bash
+pip install llama-index-readers-airbyte-zendesk-support
+```
+
 The Airbyte ZendeskSupport Loader allows you to access different ZendeskSupport objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the zendesk_support source: `pip install airbyte-source-zendesk-support`
 
 ## Usage
 
 Here's an example usage of the AirbyteZendeskSupportReader.
 
 ```python
-from llama_hub.airbyte_zendesk_support import AirbyteZendeskSupportReader
+from llama_index.readers.airbyte_zendesk_support import (
+    AirbyteZendeskSupportReader,
+)
 
 zendesk_support_config = {
     # ...

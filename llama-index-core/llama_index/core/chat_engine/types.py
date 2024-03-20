@@ -17,6 +17,15 @@ from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.tools import ToolOutput
+from llama_index.core.instrumentation.events.chat_engine import (
+    StreamChatErrorEvent,
+    StreamChatEndEvent,
+    StreamChatStartEvent,
+    StreamChatDeltaReceivedEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -99,8 +108,12 @@ class StreamingAgentChatResponse:
         self._aqueue.put_nowait(delta)
         self._new_item_event.set()
 
+    @dispatcher.span
     def write_response_to_history(
-        self, memory: BaseMemory, raise_error: bool = False
+        self,
+        memory: BaseMemory,
+        on_stream_end_fn: Optional[callable] = None,
+        raise_error: bool = False,
     ) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -108,11 +121,14 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
+        dispatcher.event(StreamChatStartEvent())
         try:
             final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
-                self.put_in_queue(chat.delta)
+                if chat.delta:
+                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
@@ -120,21 +136,27 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
+            dispatcher.event(StreamChatErrorEvent())
             if not raise_error:
                 logger.warning(
                     f"Encountered exception writing response to history: {e}"
                 )
             else:
                 raise
+        dispatcher.event(StreamChatEndEvent())
 
         self._is_done = True
 
         # This act as is_done events for any consumers waiting
         self._is_function_not_none_thread_event.set()
+        if on_stream_end_fn is not None and not self._is_function:
+            on_stream_end_fn()
 
+    @dispatcher.span
     async def awrite_response_to_history(
         self,
         memory: BaseMemory,
+        on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         if self.achat_stream is None:
             raise ValueError(
@@ -143,11 +165,14 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
+        dispatcher.event(StreamChatStartEvent())
         try:
             final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
-                self.aput_in_queue(chat.delta)
+                if chat.delta:
+                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 self._new_item_event.set()
                 if self._is_function is False:
@@ -158,12 +183,16 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
+            dispatcher.event(StreamChatErrorEvent())
             logger.warning(f"Encountered exception writing response to history: {e}")
+        dispatcher.event(StreamChatEndEvent())
         self._is_done = True
 
         # These act as is_done events for any consumers waiting
         self._is_function_false_event.set()
         self._new_item_event.set()
+        if on_stream_end_fn is not None and not self._is_function:
+            on_stream_end_fn()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
@@ -186,8 +215,9 @@ class StreamingAgentChatResponse:
                     if self._is_done:
                         break
                     continue
-                self._unformatted_response += delta
-                yield delta
+                if delta is not None:
+                    self._unformatted_response += delta
+                    yield delta
             else:
                 break
         self.response = self._unformatted_response.strip()

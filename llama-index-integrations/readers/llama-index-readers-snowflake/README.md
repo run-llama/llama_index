@@ -1,5 +1,9 @@
 # Snowflake Loader
 
+```bash
+pip install llama-index-readers-snowflake
+```
+
 This loader connects to Snowflake (using SQLAlchemy under the hood). The user specifies a query and extracts Document objects corresponding to the results. You can use this loader to easily connect to a database on Snowflake and pass the documents into a `GPTSQLStructStoreIndex` from LlamaIndex.
 
 ## Usage
@@ -9,9 +13,7 @@ This loader connects to Snowflake (using SQLAlchemy under the hood). The user sp
 Here's an example usage of the SnowflakeReader.
 
 ```python
-from llama_index import download_loader
-
-SnowflakeReader = download_loader("SnowflakeReader")
+from llama_index.readers.snowflake import SnowflakeReader
 
 reader = SnowflakeReader(
     engine=your_sqlalchemy_engine,
@@ -27,9 +29,7 @@ documents = reader.load_data(query=query)
 Here's an example usage of the SnowflakeReader.
 
 ```python
-from llama_index import download_loader
-
-SnowflakeReader = download_loader("SnowflakeReader")
+from llama_index.readers.snowflake import SnowflakeReader
 
 reader = SnowflakeReader(
     account="your_account",

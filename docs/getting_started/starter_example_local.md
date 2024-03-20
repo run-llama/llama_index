@@ -4,7 +4,7 @@
 Make sure you've followed the [custom installation](installation.md) steps first.
 ```
 
-This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-m3` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
+This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-small-en-v1.5` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
 
 ## Download data
 
@@ -33,7 +33,7 @@ from llama_index.llms.ollama import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
 
-# bge-m3 embedding model
+# bge embedding model
 Settings.embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
 
 # ollama

@@ -17,7 +17,7 @@ f = requests.get(
 manifest = yaml.safe_load(f)
 
 from llama_index.tools.chatgpt_plugin import ChatGPTPluginToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 from llama_index.tools.requests import RequestsToolSpec
 
 requests_spec = RequestsToolSpec()

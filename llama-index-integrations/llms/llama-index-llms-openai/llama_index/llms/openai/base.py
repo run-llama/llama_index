@@ -46,7 +46,10 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
+    create_retry_decorator,
     from_openai_message,
+    from_openai_token_logprobs,
+    from_openai_completion_logprobs,
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -63,6 +66,14 @@ from openai.types.chat.chat_completion_chunk import (
 )
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+
+llm_retry_decorator = create_retry_decorator(
+    max_retries=6,
+    random_exponential=True,
+    stop_after_delay_seconds=60,
+    min_seconds=1,
+    max_seconds=20,
+)
 
 
 @runtime_checkable
@@ -86,6 +97,15 @@ class OpenAI(LLM):
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
         gt=0,
+    )
+    logprobs: Optional[bool] = Field(
+        description="Whether to return logprobs per token."
+    )
+    top_logprobs: int = Field(
+        description="The number of top token log probs to return.",
+        default=0,
+        gte=0,
+        lte=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -288,8 +308,15 @@ class OpenAI(LLM):
             # https://platform.openai.com/docs/api-reference/chat
             # https://platform.openai.com/docs/api-reference/completions
             base_kwargs["max_tokens"] = self.max_tokens
+        if self.logprobs is not None and self.logprobs is True:
+            if self.metadata.is_chat_model:
+                base_kwargs["logprobs"] = self.logprobs
+                base_kwargs["top_logprobs"] = self.top_logprobs
+            else:
+                base_kwargs["logprobs"] = self.top_logprobs  # int in this case
         return {**base_kwargs, **self.additional_kwargs}
 
+    @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
@@ -300,10 +327,15 @@ class OpenAI(LLM):
         )
         openai_message = response.choices[0].message
         message = from_openai_message(openai_message)
+        openai_token_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_token_logprobs and openai_token_logprobs.content:
+            logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
 
         return ChatResponse(
             message=message,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
@@ -353,6 +385,7 @@ class OpenAI(LLM):
                 t.id += tc_delta.id or ""
         return tool_calls
 
+    @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -405,6 +438,7 @@ class OpenAI(LLM):
 
         return gen()
 
+    @llm_retry_decorator
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         client = self._get_client()
         all_kwargs = self._get_model_kwargs(**kwargs)
@@ -416,12 +450,20 @@ class OpenAI(LLM):
             **all_kwargs,
         )
         text = response.choices[0].text
+
+        openai_completion_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_completion_logprobs:
+            logprobs = from_openai_completion_logprobs(openai_completion_logprobs)
+
         return CompletionResponse(
             text=text,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         client = self._get_client()
         all_kwargs = self._get_model_kwargs(**kwargs)
@@ -530,6 +572,7 @@ class OpenAI(LLM):
             astream_complete_fn = self._astream_complete
         return await astream_complete_fn(prompt, **kwargs)
 
+    @llm_retry_decorator
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -540,6 +583,7 @@ class OpenAI(LLM):
         )
         message_dict = response.choices[0].message
         message = from_openai_message(message_dict)
+        logprobs_dict = response.choices[0].logprobs
 
         return ChatResponse(
             message=message,
@@ -547,6 +591,7 @@ class OpenAI(LLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -610,6 +655,7 @@ class OpenAI(LLM):
 
         return gen()
 
+    @llm_retry_decorator
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         aclient = self._get_aclient()
         all_kwargs = self._get_model_kwargs(**kwargs)
@@ -620,13 +666,21 @@ class OpenAI(LLM):
             stream=False,
             **all_kwargs,
         )
+
         text = response.choices[0].text
+        openai_completion_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_completion_logprobs:
+            logprobs = from_openai_completion_logprobs(openai_completion_logprobs)
+
         return CompletionResponse(
             text=text,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:

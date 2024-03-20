@@ -2,7 +2,7 @@
 
 from llama_index.packs.arize_phoenix_query_engine import ArizePhoenixQueryEnginePack
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.readers.web import SimpleWebPageReader
+from llama_index.readers.web import SimpleWebPageReader
 from tqdm.auto import tqdm
 
 # load documents and create the pack

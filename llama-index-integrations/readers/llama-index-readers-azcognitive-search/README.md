@@ -1,5 +1,9 @@
 # Azure Cognitive Search Loader
 
+```bash
+pip install llama-index-readers-azcognitive-search
+```
+
 The AzCognitiveSearchReader Loader returns a set of texts corresponding to documents retrieved from specific index of Azure Cognitive Search.
 The user initializes the loader with credentials (service name and key) and the index name.
 
@@ -8,9 +12,7 @@ The user initializes the loader with credentials (service name and key) and the 
 Here's an example usage of the AzCognitiveSearchReader.
 
 ```python
-from llama_index import download_loader
-
-AzCognitiveSearchReader = download_loader("AzCognitiveSearchReader")
+from llama_index.readers.azcognitive_search import AzCognitiveSearchReader
 
 reader = AzCognitiveSearchReader(
     "<Azure_Cognitive_Search_NAME>",
@@ -30,11 +32,11 @@ documents = reader.load_data(
 ## Usage in combination with langchain
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.agents import Tool, AgentExecutor, load_tools, initialize_agent
 
-AzCognitiveSearchReader = download_loader("AzCognitiveSearchReader")
+from llama_index.readers.azcognitive_search import AzCognitiveSearchReader
 
 az_loader = AzCognitiveSearchReader(
     COGNITIVE_SEARCH_SERVICE_NAME, COGNITIVE_SEARCH_KEY, INDEX_NAME

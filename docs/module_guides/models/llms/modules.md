@@ -18,6 +18,7 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/anthropic.ipynb
+/cookbooks/anthropic_haiku.ipynb
 ```
 
 ## AnyScale
@@ -196,6 +197,15 @@ maxdepth: 1
 /cookbooks/mistralai.ipynb
 ```
 
+## PremAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/premai.ipynb
+```
+
 ## MonsterAPI
 
 ```{toctree}
@@ -343,6 +353,15 @@ maxdepth: 1
 /examples/llm/sagemaker_endpoint_llm.ipynb
 ```
 
+## Solar
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/solar.ipynb
+```
+
 ## Together.ai
 
 ```{toctree}
@@ -377,4 +396,13 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/xinference_local_deployment.ipynb
+```
+
+## ModelScope
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/modelscope.ipynb
 ```

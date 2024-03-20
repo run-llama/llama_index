@@ -1,5 +1,9 @@
 # Opensearch Loader
 
+```bash
+pip install llama-index-readers-opensearch
+```
+
 The Opensearch Loader returns a set of texts corresponding to documents retrieved from an Opensearch index.
 The user initializes the loader with an Opensearch index. They then pass in a field, and optionally a JSON query DSL object to fetch the fields they want.
 
@@ -8,9 +12,7 @@ The user initializes the loader with an Opensearch index. They then pass in a fi
 Here's an example usage of the OpensearchReader to load 100 documents.
 
 ```python
-from llama_index import download_loader
-
-OpensearchReader = download_loader("OpensearchReader")
+from llama_index.readers.opensearch import OpensearchReader
 
 reader = OpensearchReader(
     host="localhost",

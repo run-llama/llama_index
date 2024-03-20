@@ -2,6 +2,7 @@
 
 import asyncio
 import uuid
+from functools import partial
 from itertools import chain
 from threading import Thread
 from typing import (
@@ -529,6 +530,7 @@ class ReActAgentWorker(BaseAgentWorker):
             thread = Thread(
                 target=agent_response.write_response_to_history,
                 args=(task.extra_state["new_memory"],),
+                kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
             )
             thread.start()
 
@@ -592,7 +594,8 @@ class ReActAgentWorker(BaseAgentWorker):
             # create task to write chat response to history
             asyncio.create_task(
                 agent_response.awrite_response_to_history(
-                    task.extra_state["new_memory"]
+                    task.extra_state["new_memory"],
+                    on_stream_end_fn=partial(self.finalize_task, task),
                 )
             )
             # wait until response writing is done
@@ -628,7 +631,9 @@ class ReActAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        task.memory.set(
+            task.memory.get_all() + task.extra_state["new_memory"].get_all()
+        )
         # reset new memory
         task.extra_state["new_memory"].reset()
 

@@ -461,12 +461,13 @@ pip install uptrain llama_index
 ## Import required libraries
 
 ```python
+import httpx
 import os
 import openai
 import pandas as pd
 
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from uptrain import Evals, EvalLlamaIndex, Settings
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from uptrain import Evals, EvalLlamaIndex, Settings as UpTrainSettings
 ```
 
 ## Create the dataset folder for the query engine
@@ -480,8 +481,6 @@ if not os.path.exists("nyc_wikipedia"):
 dataset_path = os.path.join("./nyc_wikipedia", "nyc_text.txt")
 
 if not os.path.exists(dataset_path):
-    import httpx
-
     r = httpx.get(url)
     with open(dataset_path, "wb") as f:
         f.write(r.content)
@@ -517,8 +516,6 @@ openai.api_key = "sk-************************"  # your OpenAI API key
 Let's create a vector store index using LLamaIndex and then use that as a query engine to retrieve relevant sections from the documentation.
 
 ```python
-from llama_index.core import Settings
-
 Settings.chunk_size = 512
 
 documents = SimpleDirectoryReader("./nyc_wikipedia/").load_data()
@@ -533,7 +530,7 @@ query_engine = vector_index.as_query_engine()
 # Alternative 1: Evaluate using UpTrain's Open-Source Software (OSS)
 
 ```python
-settings = Settings(
+settings = UpTrainSettings(
     openai_api_key=openai.api_key,
 )
 ```
@@ -583,7 +580,7 @@ You can create a free UpTrain account [here](https://uptrain.ai/) and get free t
 UPTRAIN_API_KEY = "up-**********************"  # your UpTrain API key
 
 # We use `uptrain_access_token` parameter instead of 'openai_api_key' in settings in this case
-settings = Settings(
+settings = UpTrainSettings(
     uptrain_access_token=UPTRAIN_API_KEY,
 )
 ```

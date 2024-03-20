@@ -183,9 +183,9 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_name, **tokenizer_kwargs
         )
 
-        if tokenizer_name != model_name:
+        if self._tokenizer.name_or_path != model_name:
             logger.warning(
-                f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
+                f"The model `{model_name}` and tokenizer `{self._tokenizer.name_or_path}` "
                 f"are different, please ensure that they are compatible."
             )
 
@@ -312,9 +312,7 @@ class HuggingFaceLLM(CustomLLM):
                 inputs.pop(key, None)
 
         streamer = TextIteratorStreamer(
-            self._tokenizer,
-            skip_prompt=True,
-            decode_kwargs={"skip_special_tokens": True},
+            self._tokenizer, skip_prompt=True, skip_special_tokens=True
         )
         generation_kwargs = dict(
             inputs,

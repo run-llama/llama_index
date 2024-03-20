@@ -1,5 +1,9 @@
 # Hatena Blog Loader
 
+```bash
+pip install llama-index-readers-hatena-blog
+```
+
 This loader fetches article from your own [Hatena Blog](https://hatenablog.com/) blog posts using the AtomPub API.
 
 You can get AtomPub info from the admin page after logging into Hatena Blog.
@@ -9,10 +13,9 @@ You can get AtomPub info from the admin page after logging into Hatena Blog.
 Here's an example usage of the HatenaBlogReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-HatenaBlogReader = download_loader("HatenaBlogReader")
+from llama_index.readers.hatena_blog import HatenaBlogReader
 
 root_endpoint = os.getenv("ATOM_PUB_ROOT_ENDPOINT")
 api_key = os.getenv("ATOM_PUB_API_KEY")

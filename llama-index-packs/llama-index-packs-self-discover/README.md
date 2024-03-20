@@ -36,7 +36,7 @@ There are two ways using LlamaPack:
 ### Using `download_llama_pack`
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 SelfDiscoverPack = download_llama_pack(

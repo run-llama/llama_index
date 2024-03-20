@@ -1,5 +1,9 @@
 # Kaltura eSearch Loader
 
+```bash
+pip install llama-index-readers-kaltura-esearch
+```
+
 This loader reads Kaltura Entries from [Kaltura](https://corp.kaltura.com) based on a Kaltura eSearch API call.
 Search queries can be passed as a pre-defined object of KalturaESearchEntryParams, or through a simple free text query.
 The result is a list of documents containing the Kaltura Entries and Captions json.
@@ -64,9 +68,7 @@ Each dictionary in the response represents a Kaltura media entry, where the keys
 First, instantiate the KalturaReader (aka Kaltura Loader) with your Kaltura configuration credentials:
 
 ```python
-from llama_index import download_loader
-
-KalturaESearchReader = download_loader("KalturaESearchReader")
+from llama_index.readers.kaltura_esearch import KalturaESearchReader
 
 loader = KalturaESearchReader(
     partnerId="INSERT_YOUR_PARTNER_ID",

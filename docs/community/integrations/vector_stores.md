@@ -35,6 +35,7 @@ as the storage backend for `VectorStoreIndex`.
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
+- TiDB (`TiDBVectorStore`). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
@@ -577,6 +578,21 @@ vector_store = SingleStoreVectorStore(
     metadata_field="metadata",
     vector_field="vector",
     timeout=30,
+)
+```
+
+**TiDB**
+
+```python
+from llama_index.vector_stores.tidbvector import TiDBVectorStore
+
+tidbvec = TiDBVectorStore(
+    # connection url format
+    # - mysql+pymysql://root@34.212.137.91:4000/test
+    connection_string="PLACEHOLDER URL",
+    table_name="llama_index_vectorstore",
+    distance_strategy="cosine",
+    vector_dimension=1536,
 )
 ```
 

@@ -30,6 +30,7 @@ PagedCSVReader = "thejessezhang"
 PandasCSVReader = "ephe-meral"
 PptxReader = "thejessezhang"
 PyMuPDFReader = "iamarunbrahma"
+RTFReader = "FunkyOz"
 UnstructuredReader = "thejessezhang"
 VideoAudioReader = "llama-index"
 XMLReader = "mmaatouk"
@@ -49,15 +50,17 @@ license = "MIT"
 maintainers = ["FarisHijazi", "Haowjy", "ephe-meral", "hursh-desai", "iamarunbrahma", "jon-chuang", "mmaatouk", "ravi03071991", "sangwongenip", "thejessezhang"]
 name = "llama-index-readers-file"
 readme = "README.md"
-version = "0.1.6"
+version = "0.1.11"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-pymupdf = "^1.23.21"
+# pymupdf is AGPLv3-licensed, so it's optional
+pymupdf = {optional = true, version = "^1.23.21"}
 bs4 = "^0.0.2"
 beautifulsoup4 = "^4.12.3"
 pypdf = "^4.0.1"
+striprtf = "^0.0.26"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
