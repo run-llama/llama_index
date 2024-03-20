@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from typing import Any, List, Optional
 import httpx
 import requests
@@ -53,7 +54,6 @@ class TogetherEmbedding(BaseEmbedding):
                 headers=headers,
                 json={"input": text, "model": model_api_string},
             )
-            
             if response.status_code != 200:
                 if response.status_code == 429:
                     """ Rate limit exceeded, wait for reset """
