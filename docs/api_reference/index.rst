@@ -14,6 +14,7 @@ API Reference for the ``llama-index`` package.
    evaluation.rst
    example_notebooks.rst
    indices.rst
+   instrumentation.rst
    llms.rst
    embeddings.rst
    memory.rst

@@ -46,7 +46,10 @@ class ContributorRetrieverResponse(BaseModel):
         nodes = []
         for d in self.nodes_dict:
             node_dict = d["node"]
-            node_cls = NODE_REGISTRY[node_dict["class_name"]]
+            try:
+                node_cls = NODE_REGISTRY[node_dict["class_name"]]
+            except KeyError:
+                node_cls = NODE_REGISTRY["TextNode"]
             node = node_cls.parse_obj(node_dict)
             nodes.append(NodeWithScore(node=node, score=d["score"]))
         return nodes
