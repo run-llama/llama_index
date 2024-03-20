@@ -1,12 +1,12 @@
 import asyncio
 import os
-from typing import Any, List, Optional
+import time
+from typing import Any, List, Optional, Tuple
 
 import httpx
 import requests
 from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.bridge.pydantic import Field
-
 
 class TogetherEmbedding(BaseEmbedding):
     api_base: str = Field(
@@ -33,45 +33,8 @@ class TogetherEmbedding(BaseEmbedding):
             **kwargs,
         )
 
-    def _generate_embedding(self, text: str, model_api_string: str) -> Embedding:
-        """Generate embeddings from Together API.
-
-        Args:
-            text: str. An input text sentence or document.
-            model_api_string: str. An API string for a specific embedding model of your choice.
-
-        Returns:
-            embeddings: a list of float numbers. Embeddings correspond to your given text.
-        """
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        session = requests.Session()
-        response = session.post(
-            self.api_base.strip("/") + "/embeddings",
-            headers=headers,
-            json={"input": text, "model": model_api_string},
-        )
-        if response.status_code != 200:
-            raise ValueError(
-                f"Request failed with status code {response.status_code}: {response.text}"
-            )
-
-        return response.json()["data"][0]["embedding"]
-
-    async def _agenerate_embedding(self, text: str, model_api_string: str) -> Embedding:
-        """Async generate embeddings from Together API.
-
-        Args:
-            text: str. An input text sentence or document.
-            model_api_string: str. An API string for a specific embedding model of your choice.
-
-        Returns:
-            embeddings: a list of float numbers. Embeddings correspond to your given text.
-        """
+    async def _agenerate_embedding(self, text: str, model_api_string: str) -> Tuple[Embedding]:
+        """Async generate embeddings from Together API."""
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
@@ -79,17 +42,65 @@ class TogetherEmbedding(BaseEmbedding):
         }
 
         async with httpx.AsyncClient() as client:
-            response = await client.post(
+            while True:
+                response = await client.post(
+                    self.api_base.strip("/") + "/embeddings",
+                    headers=headers,
+                    json={"input": text, "model": model_api_string},
+                )
+                if response.status_code != 200:
+                    if response.status_code == 429:
+                        """Rate limit exceeded, wait for reset """
+                        reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                        if reset_time > 0: 
+                            await asyncio.sleep(reset_time)
+                            continue
+                        else:
+                            """ Rate limit reset time has passed, retry immediately """
+                            continue
+                            
+                    """ Handle other non-200 status codes"""
+                    raise ValueError(
+                        f"Request failed with status code {response.status_code}: {response.text}"
+                    )
+
+                return response.json()["data"][0]["embedding"]
+
+            
+    def _generate_embedding(self, text: str, model_api_string: str) -> Tuple[Embedding]:
+        """Generate embeddings from Together API synchronously."""
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        session = requests.session()
+        while True:
+            response = session.post(
                 self.api_base.strip("/") + "/embeddings",
                 headers=headers,
                 json={"input": text, "model": model_api_string},
             )
+            
             if response.status_code != 200:
+                if response.status_code == 429:
+                    """ Rate limit exceeded, wait for reset """
+                    reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                    if reset_time > 0:
+                        time.sleep(reset_time)
+                        continue
+                    else:
+                        """ Rate limit reset time has passed, retry immediately """
+                        continue
+                        
+                """ Handle other non-200 status codes """
                 raise ValueError(
                     f"Request failed with status code {response.status_code}: {response.text}"
                 )
 
             return response.json()["data"][0]["embedding"]
+    
 
     def _get_text_embedding(self, text: str) -> Embedding:
         """Get text embedding."""
