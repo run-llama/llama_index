@@ -36,7 +36,16 @@ class BaseReader(ABC):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any], field: Optional[Any]):
-        field_schema.update({"type": "object", "title": cls.__name__})
+        field_schema.update({"title": cls.__name__})
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema, handler
+    ):  # Needed for pydantic v2 to work
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema["title"] = cls.__name__
+        return json_schema
 
 
 class BasePydanticReader(BaseReader, BaseComponent):
