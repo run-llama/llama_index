@@ -1,4 +1,5 @@
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import QueryType
 
 
@@ -13,7 +14,7 @@ class SynthesizeStartEvent(BaseEvent):
 
 class SynthesizeEndEvent(BaseEvent):
     query: QueryType
-    response: str
+    response: RESPONSE_TYPE
 
     @classmethod
     def class_name(cls):
