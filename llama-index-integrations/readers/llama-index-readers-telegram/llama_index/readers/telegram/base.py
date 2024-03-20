@@ -2,7 +2,7 @@
 
 import asyncio
 import re
-from typing import List, Union
+from typing import List, Optional
 import datetime
 
 from llama_index.core.readers.base import BaseReader
@@ -56,10 +56,10 @@ class TelegramReader(BaseReader):
     def load_data(
         self,
         entity_name: str,
-        post_id: Union[int, None] = None,
-        limit: Union[int, None] = None,
-        start_date: Union[datetime.date, None] = None,
-        end_date: Union[datetime.date, None] = None,
+        post_id: Optional[int] = None,
+        limit: Optional[int] = None,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
     ) -> List[Document]:
         """Load posts/chat messages/comments from Telegram channels or chats.
 
@@ -90,10 +90,10 @@ class TelegramReader(BaseReader):
     async def _load_data(
         self,
         entity_name: str,
-        post_id: Union[int, None] = None,
-        limit: Union[int, None] = None,
-        start_date: Union[datetime.date, None] = None,
-        end_date: Union[datetime.date, None] = None,
+        post_id: Optional[int] = None,
+        limit: Optional[int] = None,
+        start_date: Optional[datetime.date] = None,
+        end_date: Optional[datetime.date] = None,
     ) -> List[Document]:
         """Load posts/chat messages/comments from Telegram channels or chats.
 
