@@ -35,7 +35,7 @@ as the storage backend for `VectorStoreIndex`.
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
-- TiDB (`TiDBVectorStore`). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
+- TiDB (`TiDBVectorStore`). [Quickstart](https://colab.research.google.com/drive/1r9T1e1gDgaPY70MUg2XTwpf78ydRpk7J?usp=sharing). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
