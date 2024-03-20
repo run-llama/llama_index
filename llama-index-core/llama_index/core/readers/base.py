@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Document as LCDocument
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.schema import BaseComponent, Document
-from llama_index.core.bridge.pydantic import ModelField
 
 
 class BaseReader(ABC):
@@ -46,9 +45,7 @@ class BaseReader(ABC):
         return cls(value)
 
     @classmethod
-    def __modify_schema__(
-        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ):
+    def __modify_schema__(cls, field_schema: Dict[str, Any], field: Optional[Any]):
         field_schema.update({"type": "object", "title": cls.__name__})
 
 
