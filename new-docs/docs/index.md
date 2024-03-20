@@ -68,27 +68,22 @@ We recommend starting at [how to read these docs](./getting_started/reading.md) 
 
 To download or contribute, find LlamaIndex on:
 
-- Github: https://github.com/jerryjliu/llama_index
-- PyPi:
-
-  - LlamaIndex: https://pypi.org/project/llama-index/.
-  - GPT Index (duplicate): https://pypi.org/project/gpt-index/.
-
-- NPM (Typescript/Javascript):
-  - Github: https://github.com/run-llama/LlamaIndexTS
-  - Docs: https://ts.llamaindex.ai/
-  - LlamaIndex.TS: https://www.npmjs.com/package/llamaindex
+* [Github](https://github.com/run-llama/llama_index)
+* [PyPi](https://pypi.org/project/llama-index/)
+* npm (Typescript/Javascript):
+    * [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS)
+    * [TypeScript Docs](https://ts.llamaindex.ai/)
+    * [LlamaIndex.TS](https://www.npmjs.com/package/llamaindex)
 
 ## Community
 
 Need help? Have a feature suggestion? Join the LlamaIndex community:
 
-- Twitter: https://twitter.com/llama_index
-- Discord https://discord.gg/dGcwcsnxhU
+- [Twitter](https://twitter.com/llama_index)
+- [Discord](https://discord.gg/dGcwcsnxhU)
 
 ## Associated projects
 
-- 🏡 LlamaHub: https://llamahub.ai | A large (and growing!) collection of custom data connectors
-- 🧪 LlamaLab: https://github.com/run-llama/llama-lab | Ambitious projects built on top of LlamaIndex
-
-Find out more!
+- [🏡 LlamaHub](https://llamahub.ai) | A large (and growing!) collection of custom data connectors
+- [SEC Insights](https://sec-insights.com) | A LlamaIndex-powered application for financial research
+- [create-llama](https://www.npmjs.com/package/create-llama) | A CLI tool to quickly scaffold LlamaIndex projects
