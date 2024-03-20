@@ -23,6 +23,7 @@ We are actively adding more integrations and improving feature coverage for each
 | ChatGPT Retrieval Plugin | aggregator              |                    |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
 | DashVector               | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
+| Databricks               | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | DocArray                 | aggregator              | ✓                  |               | ✓      | ✓               |       |
 | DuckDB                   | in-memory / self-hosted | ✓                  |               | ✓      | ✓               |       |
@@ -70,6 +71,7 @@ maxdepth: 1
 /examples/vector_stores/ChromaIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo.ipynb
 /examples/vector_stores/DashvectorIndexDemo-Hybrid.ipynb
+/examples/vector_stores/DatabricksVectorSearchDemo.ipynb
 /examples/vector_stores/DeepLakeIndexDemo.ipynb
 /examples/vector_stores/DocArrayHnswIndexDemo.ipynb
 /examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb

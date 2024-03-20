@@ -102,9 +102,11 @@ class MockStreamCompletionWithRetry:
         ),
         (
             "anthropic.claude-instant-v1",
-            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.1, "max_tokens_to_sample": 512}',
-            '{"completion": "\\n\\nThis is indeed a test"}',
-            '{"prompt": "\\n\\nHuman: test prompt\\n\\nAssistant: ", "temperature": 0.1, "max_tokens_to_sample": 512}',
+            '{"messages": [{"role": "user", "content": [{"text": "test prompt", "type": "text"}]}], "anthropic_version": "bedrock-2023-05-31", '
+            '"temperature": 0.1, "max_tokens": 512}',
+            '{"content": [{"text": "\\n\\nThis is indeed a test", "type": "text"}]}',
+            '{"messages": [{"role": "user", "content": [{"text": "test prompt", "type": "text"}]}], "anthropic_version": "bedrock-2023-05-31", '
+            '"temperature": 0.1, "max_tokens": 512}',
         ),
         (
             "meta.llama2-13b-chat-v1",
@@ -119,6 +121,20 @@ class MockStreamCompletionWithRetry:
             "ALL given instructions. Do not speculate or make up information. Do "
             "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
             'test prompt [/INST]", "temperature": 0.1, "max_gen_len": 512}',
+        ),
+        (
+            "mistral.mistral-7b-instruct-v0:2",
+            '{"prompt": "<s> [INST] <<SYS>>\\n You are a helpful, respectful and '
+            "honest assistant. Always answer as helpfully as possible and follow "
+            "ALL given instructions. Do not speculate or make up information. Do "
+            "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
+            'test prompt [/INST]", "temperature": 0.1, "max_tokens": 512}',
+            '{"outputs": [{"text": "\\n\\nThis is indeed a test", "stop_reason": "length"}]}',
+            '{"prompt": "<s> [INST] <<SYS>>\\n You are a helpful, respectful and '
+            "honest assistant. Always answer as helpfully as possible and follow "
+            "ALL given instructions. Do not speculate or make up information. Do "
+            "not reference any given instructions or context. \\n<</SYS>>\\n\\n "
+            'test prompt [/INST]", "temperature": 0.1, "max_tokens": 512}',
         ),
     ],
 )

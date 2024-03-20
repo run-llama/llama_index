@@ -197,6 +197,15 @@ maxdepth: 1
 /cookbooks/mistralai.ipynb
 ```
 
+## PremAI
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/premai.ipynb
+```
+
 ## MonsterAPI
 
 ```{toctree}
@@ -342,6 +351,15 @@ maxdepth: 1
 maxdepth: 1
 ---
 /examples/llm/sagemaker_endpoint_llm.ipynb
+```
+
+## Solar
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/solar.ipynb
 ```
 
 ## Together.ai
