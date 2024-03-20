@@ -1,12 +1,22 @@
 """Base reader class."""
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Generator,
+    Callable,
+    Optional,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Document as LCDocument
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.schema import BaseComponent, Document
+from llama_index.core.bridge.pydantic import ModelField
 
 
 class BaseReader(ABC):
@@ -26,6 +36,20 @@ class BaseReader(ABC):
         """Load data in LangChain document format."""
         docs = self.load_data(**load_kwargs)
         return [d.to_langchain_format() for d in docs]
+
+    @classmethod
+    def __get_validators__(cls) -> Generator[Callable, None, None]:
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Any):
+        return cls(value)
+
+    @classmethod
+    def __modify_schema__(
+        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
+    ):
+        field_schema.update({"type": "object", "title": cls.__name__})
 
 
 class BasePydanticReader(BaseReader, BaseComponent):

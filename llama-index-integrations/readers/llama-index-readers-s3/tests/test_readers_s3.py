@@ -105,8 +105,6 @@ def test_serialize():
     assert schema is not None
     assert len(schema) > 0
     assert "bucket" in schema["properties"]
-    assert "file_extractor" not in schema["properties"]
-    assert "file_metadata" not in schema["properties"]
 
     json = reader.json(exclude_unset=True)
 

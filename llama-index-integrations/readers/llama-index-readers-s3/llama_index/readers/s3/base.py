@@ -6,12 +6,12 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 """
 
 import warnings
-from typing import Callable, Dict, List, Optional, Union, Any
+from typing import Callable, Dict, List, Optional, Union
 
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import create_model, Field
+from llama_index.core.bridge.pydantic import Field
 
 
 class S3Reader(BasePydanticReader):
@@ -65,23 +65,6 @@ class S3Reader(BasePydanticReader):
     @classmethod
     def class_name(cls) -> str:
         return "S3Reader"
-
-    @classmethod
-    def schema(
-        cls,
-    ) -> Dict[
-        str, Any
-    ]:  # We override the schema generation to exclude file_extractor and file_metadata, which are not serializable
-        temp_model = create_model(
-            cls.__name__,
-            **{
-                field.name: (field.outer_type_, ...)
-                for field in cls.__fields__.values()
-                if field.name != "file_extractor" and field.name != "file_metadata"
-            },
-            __base__=BasePydanticReader,
-        )
-        return temp_model.schema()
 
     def load_s3_files_as_docs(self, temp_dir=None) -> List[Document]:
         """Load file(s) from S3."""

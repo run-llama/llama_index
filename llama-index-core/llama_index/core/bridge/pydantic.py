@@ -13,7 +13,7 @@ try:
         validator,
     )
     from pydantic.v1.error_wrappers import ValidationError
-    from pydantic.v1.fields import FieldInfo
+    from pydantic.v1.fields import FieldInfo, ModelField
     from pydantic.v1.generics import GenericModel
 except ImportError:
     import pydantic  # type: ignore
@@ -48,4 +48,5 @@ __all__ = [
     "ValidationError",
     "GenericModel",
     "BaseConfig",
+    "ModelField",
 ]
