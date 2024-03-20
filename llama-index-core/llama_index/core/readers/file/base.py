@@ -10,6 +10,7 @@ from functools import reduce
 from itertools import repeat
 from pathlib import Path
 import fsspec
+from gcsfs import GCSFileSystem
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
@@ -75,14 +76,22 @@ def _format_file_timestamp(timestamp: float) -> Optional[str]:
 def default_file_metadata_func(
     file_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
 ) -> Dict:
-    """Get some handy metadate from filesystem.
+    """Get some handy metadata from filesystem.
 
     Args:
         file_path: str: file path in str
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
-    file_name = os.path.basename(str(stat_result["name"]))
+    
+    # Adjust how file_name is determined based on the type of fs
+    if isinstance(fs, GCSFileSystem):
+        # For GCSFileSystem, the file path itself can be used or adapted as needed
+        file_name = os.path.basename(file_path)
+    else:
+        # For other filesystems, including local, use the original method
+        file_name = os.path.basename(str(stat_result["name"]))
+    
     creation_date = _format_file_timestamp(stat_result.get("created"))
     last_modified_date = _format_file_timestamp(stat_result.get("mtime"))
     last_accessed_date = _format_file_timestamp(stat_result.get("atime"))
