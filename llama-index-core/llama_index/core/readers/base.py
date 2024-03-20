@@ -1,7 +1,14 @@
 """Base reader class."""
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Document as LCDocument
@@ -26,6 +33,19 @@ class BaseReader(ABC):
         """Load data in LangChain document format."""
         docs = self.load_data(**load_kwargs)
         return [d.to_langchain_format() for d in docs]
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any], field: Optional[Any]):
+        field_schema.update({"title": cls.__name__})
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema, handler
+    ):  # Needed for pydantic v2 to work
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema["title"] = cls.__name__
+        return json_schema
 
 
 class BasePydanticReader(BaseReader, BaseComponent):
