@@ -7,8 +7,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Generator,
-    Callable,
     Optional,
 )
 
@@ -35,14 +33,6 @@ class BaseReader(ABC):
         """Load data in LangChain document format."""
         docs = self.load_data(**load_kwargs)
         return [d.to_langchain_format() for d in docs]
-
-    @classmethod
-    def __get_validators__(cls) -> Generator[Callable, None, None]:
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Any):
-        return cls(value)
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any], field: Optional[Any]):
