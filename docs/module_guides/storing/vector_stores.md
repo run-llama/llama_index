@@ -49,6 +49,7 @@ We are actively adding more integrations and improving feature coverage for each
 | SingleStore              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Supabase                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Tair                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
+| TiDB                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Timescale                |                         | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
@@ -99,6 +100,7 @@ maxdepth: 1
 /examples/vector_stores/SimpleIndexDemo.ipynb
 /examples/vector_stores/SupabaseVectorIndexDemo.ipynb
 /examples/vector_stores/TairIndexDemo.ipynb
+../../../llama-index-integrations/vector_stores/llama-index-vector-stores-tidbvector/examples/tidb_vector.ipynb
 /examples/vector_stores/TencentVectorDBIndexDemo.ipynb
 /examples/vector_stores/Timescalevector.ipynb
 /examples/vector_stores/WeaviateIndexDemo.ipynb
