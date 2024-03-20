@@ -11,6 +11,7 @@ from typing import Callable, Dict, List, Optional, Union
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
+from llama_index.core.bridge.pydantic import Field
 
 
 class S3Reader(BasePydanticReader):
@@ -48,11 +49,13 @@ class S3Reader(BasePydanticReader):
     key: Optional[str] = None
     prefix: Optional[str] = ""
     recursive: bool = True
-    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
     required_exts: Optional[List[str]] = None
     filename_as_id: bool = True
     num_files_limit: Optional[int] = None
-    file_metadata: Optional[Callable[[str], Dict]] = None
+    file_metadata: Optional[Callable[[str], Dict]] = Field(default=None, exclude=True)
     aws_access_id: Optional[str] = None
     aws_access_secret: Optional[str] = None
     aws_session_token: Optional[str] = None

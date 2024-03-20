@@ -101,6 +101,11 @@ def test_serialize():
         s3_endpoint_url=endpoint_url,
     )
 
+    schema = reader.schema()
+    assert schema is not None
+    assert len(schema) > 0
+    assert "bucket" in schema["properties"]
+
     json = reader.json(exclude_unset=True)
 
     new_reader = S3Reader.parse_raw(json)
