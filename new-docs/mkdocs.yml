@@ -544,6 +544,7 @@ extra_css:
   - css/style.css
 extra_javascript:
   - javascript/llms_example.js
+  - javascript/mendablesearch.js
 plugins:
   - search
   - include_dir_to_nav

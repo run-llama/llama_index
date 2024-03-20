@@ -39,3 +39,8 @@
 .hidden {
   display: none;
 }
+
+/* mendable search styling */
+#my-component-root>div {
+  bottom: 100px;
+}
