@@ -1,13 +1,7 @@
 ::: llama_index.readers.opendal
     options:
       members:
-        -
-        - OpendalReader
-        -
         - OpendalAzblobReader
-        -
         - OpendalGcsReader
-        -
+        - OpendalReader
         - OpendalS3Reader
-        -
-        -

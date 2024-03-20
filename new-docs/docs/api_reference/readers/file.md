@@ -7,16 +7,16 @@
         - FlatReader
         - HTMLTagReader
         - HWPReader
+        - IPYNBReader
         - ImageCaptionReader
         - ImageReader
         - ImageTabularChartReader
         - ImageVisionLLMReader
-        - IPYNBReader
         - MarkdownReader
         - MboxReader
+        - PDFReader
         - PagedCSVReader
         - PandasCSVReader
-        - PDFReader
         - PptxReader
         - PyMuPDFReader
         - UnstructuredReader

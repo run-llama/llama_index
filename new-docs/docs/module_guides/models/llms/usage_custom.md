@@ -149,7 +149,7 @@ HuggingFaceLLM(
 )
 ```
 
-A full API reference can be found [here](../../../api_reference/LLMs/huggingface.md).
+A full API reference can be found [here](../../../api_reference/llms/huggingface.md).
 
 Several example notebooks are also listed below:
 

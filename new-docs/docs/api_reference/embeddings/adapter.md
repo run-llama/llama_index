@@ -2,6 +2,6 @@
     options:
       members:
         - AdapterEmbeddingModel
-        - LinearAdapterEmbeddingModel
         - BaseAdapter
+        - LinearAdapterEmbeddingModel
         - LinearLayer

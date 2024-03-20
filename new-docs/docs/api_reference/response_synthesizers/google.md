@@ -2,5 +2,5 @@
     options:
       members:
         - GoogleTextSynthesizer
-        - set_google_config
         - SynthesizedResponse
+        - set_google_config
