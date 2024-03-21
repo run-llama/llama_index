@@ -81,6 +81,15 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     Returns:
         LanceDBVectorStore: VectorStore that supports creating LanceDB datasets and
             querying it.
+
+    Examples:
+        `pip install llama-index-vector-stores-lancedb`
+
+        ```python
+        from llama_index.vector_stores.lancedb import LanceDBVectorStore
+
+        vector_store = LanceDBVectorStore(uri="/tmp/lancedb")
+        ```
     """
 
     stores_text = True

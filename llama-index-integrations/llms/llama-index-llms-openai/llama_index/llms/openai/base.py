@@ -85,6 +85,29 @@ class Tokenizer(Protocol):
 
 
 class OpenAI(LLM):
+    """OpenAI LLM.
+
+    Examples:
+        `pip install llama-index-llms-openai`
+
+        ```python
+        import os
+        import openai
+
+        os.environ["OPENAI_API_KEY"] = "sk-..."
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+
+        from llama_index.llms.openai import OpenAI
+
+        llm = OpenAI(model="gpt-3.5-turbo")
+
+        stream = llm.stream("Hi, write a short story")
+
+        for r in stream:
+            print(r.delta, end="")
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
     )

@@ -108,6 +108,25 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
 
+    Examples:
+        `pip install llama-index-vector-stores-weaviate`
+
+        ```python
+        import weaviate
+
+        resource_owner_config = weaviate.AuthClientPassword(
+            username="<username>",
+            password="<password>",
+        )
+        client = weaviate.Client(
+            "https://llama-test-ezjahb4m.weaviate.network",
+            auth_client_secret=resource_owner_config,
+        )
+
+        vector_store = WeaviateVectorStore(
+            weaviate_client=client, index_name="LlamaIndex"
+        )
+        ```
     """
 
     stores_text: bool = True
