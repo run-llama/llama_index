@@ -196,18 +196,19 @@ class SimpleDirectoryReader(BaseReader):
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
+        _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
         if input_files:
             self.input_files = []
             for path in input_files:
                 if not self.fs.isfile(path):
                     raise ValueError(f"File {path} does not exist.")
-                input_file = Path(path)
+                input_file = _Path(path)
                 self.input_files.append(input_file)
         elif input_dir:
             if not self.fs.isdir(input_dir):
                 raise ValueError(f"Directory {input_dir} does not exist.")
-            self.input_dir = Path(input_dir)
+            self.input_dir = _Path(input_dir)
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
