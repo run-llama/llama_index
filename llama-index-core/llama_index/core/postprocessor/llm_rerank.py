@@ -1,30 +1,46 @@
+# LLM-based reranker implementation
+
 from typing import Callable, List, Optional
 
-class LLMRerank:
-    """LLM-based reranker.
+# Importing necessary modules and classes from llama_index package
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.indices.utils import (
+    default_format_node_batch_fn,
+    default_parse_choice_select_answer_fn,
+)
+from llama_index.core.llms.llm import LLM
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.prompts import BasePromptTemplate
+from llama_index.core.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.core.prompts.mixin import PromptDictType
+from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.service_context import ServiceContext
+from llama_index.core.settings import Settings, llm_from_settings_or_context
 
-    This class represents an LLM-based reranker, which reorders a list of nodes based on their relevance to a given query using a Language Model (LLM).
 
-    Attributes:
-        top_n (int): The number of top-ranked nodes to return.
-        choice_select_prompt (BasePromptTemplate): The prompt template used for choice selection.
-        choice_batch_size (int): The batch size for choice selection.
-        llm (LLM): The Language Model used for reranking.
-    """
+class LLMRerank(BaseNodePostprocessor):
+    """LLM-based reranker."""
 
-    top_n: int
-    choice_select_prompt: "BasePromptTemplate"
-    choice_batch_size: int
-    llm: "LLM"
+    # Class attributes with field descriptions
+    top_n: int = Field(description="Top N nodes to return.")
+    choice_select_prompt: BasePromptTemplate = Field(
+        description="Choice select prompt."
+    )
+    choice_batch_size: int = Field(description="Batch size for choice select.")
+    llm: LLM = Field(description="The LLM to rerank with.")
+
+    # Private attributes
+    _format_node_batch_fn: Callable = PrivateAttr()
+    _parse_choice_select_answer_fn: Callable = PrivateAttr()
 
     def __init__(
         self,
-        llm: Optional["LLM"] = None,
-        choice_select_prompt: Optional["BasePromptTemplate"] = None,
+        llm: Optional[LLM] = None,
+        choice_select_prompt: Optional[BasePromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
-        service_context: Optional["ServiceContext"] = None,
+        service_context: Optional[ServiceContext] = None,
         top_n: int = 10,
     ) -> None:
         """Initialize LLMRerank.
@@ -37,32 +53,48 @@ class LLMRerank:
             parse_choice_select_answer_fn (Optional[Callable]): Function to parse choice select answer. Defaults to None.
             service_context (Optional[ServiceContext]): Service context. Defaults to None.
             top_n (int): The number of top-ranked nodes to return. Defaults to 10.
-        """
-        choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
 
+        """
+        # Assigning default values if not provided
+        choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
         llm = llm or llm_from_settings_or_context(Settings, service_context)
 
-        self.choice_select_prompt = choice_select_prompt
-        self.choice_batch_size = choice_batch_size
-        self.llm = llm
-        self.top_n = top_n
-        self.format_node_batch_fn = format_node_batch_fn or default_format_node_batch_fn
-        self.parse_choice_select_answer_fn = parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
+        # Assigning private attributes
+        self._format_node_batch_fn = (
+            format_node_batch_fn or default_format_node_batch_fn
+        )
+        self._parse_choice_select_answer_fn = (
+            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
+        )
 
-    def _get_prompts(self) -> "PromptDictType":
+        # Calling superclass constructor
+        super().__init__(
+            llm=llm,
+            choice_select_prompt=choice_select_prompt,
+            choice_batch_size=choice_batch_size,
+            service_context=service_context,
+            top_n=top_n,
+        )
+
+    def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
         return {"choice_select_prompt": self.choice_select_prompt}
 
-    def _update_prompts(self, prompts: "PromptDictType") -> None:
+    def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "choice_select_prompt" in prompts:
             self.choice_select_prompt = prompts["choice_select_prompt"]
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Return the class name."""
+        return "LLMRerank"
+
     def _postprocess_nodes(
         self,
-        nodes: List["NodeWithScore"],
-        query_bundle: Optional["QueryBundle"] = None,
-    ) -> List["NodeWithScore"]:
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
         """Rerank nodes based on LLM predictions.
 
         Args:
@@ -81,22 +113,22 @@ class LLMRerank:
         if len(nodes) == 0:
             return []
 
-        initial_results: List["NodeWithScore"] = []
+        initial_results: List[NodeWithScore] = []
         for idx in range(0, len(nodes), self.choice_batch_size):
             nodes_batch = [
                 node.node for node in nodes[idx : idx + self.choice_batch_size]
             ]
 
             query_str = query_bundle.query_str
-            fmt_batch_str = self.format_node_batch_fn(nodes_batch)
-            # call each batch independently
+            fmt_batch_str = self._format_node_batch_fn(nodes_batch)
+            # Call each batch independently
             raw_response = self.llm.predict(
                 self.choice_select_prompt,
                 context_str=fmt_batch_str,
                 query_str=query_str,
             )
 
-            raw_choices, relevances = self.parse_choice_select_answer_fn(
+            raw_choices, relevances = self._parse_choice_select_answer_fn(
                 raw_response, len(nodes_batch)
             )
             choice_idxs = [int(choice) - 1 for choice in raw_choices]
@@ -110,30 +142,3 @@ class LLMRerank:
             )
 
         return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[: self.top_n]
-
-    def compare_with_cohere_rerank(self) -> str:
-        """Compare with Cohere Rerank.
-
-        This method provides a comparison between LLMRerank and Cohere Rerank in terms of performance and pricing.
-
-        Returns:
-            str: Comparison between LLMRerank and Cohere Rerank.
-
-        """
-        comparison_details = """
-        LLMRerank vs. Cohere Rerank:
-
-        Performance:
-        - LLMRerank leverages Language Models (LLMs) for reranking, offering flexibility in model selection and customization.
-        - Cohere Rerank utilizes the capabilities of the Cohere API for reranking.
-
-        Pricing:
-        - Pricing for LLMRerank may vary based on the selected Language Model provider and usage.
-        - Cohere Rerank's pricing is determined by the pricing plans of the Cohere API.
-
-        Conclusion:
-        - LLMRerank offers flexibility and potentially lower costs depending on the selected Language Model provider.
-        - Cohere Rerank provides a convenient solution integrated with the Cohere API but may have specific pricing considerations.
-        """
-
-        return comparison_details.strip()
