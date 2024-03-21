@@ -15,7 +15,7 @@ from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
@@ -585,6 +585,9 @@ class SimpleDirectoryReader(BaseReader):
             document_lists = await run_jobs(
                 coroutines, show_progress=show_progress, workers=num_workers
             )
+        elif show_progress:
+            _asyncio = get_asyncio_module(show_progress=show_progress)
+            document_lists = await _asyncio.gather(*coroutines)
         else:
             document_lists = await asyncio.gather(*coroutines)
         documents = [doc for doc_list in document_lists for doc in doc_list]
