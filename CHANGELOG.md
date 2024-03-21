@@ -1,5 +1,91 @@
 # ChangeLog
 
+## [2024-03-20]
+
+### `llama-index-core` [0.10.21]
+
+- Lazy init for async elements StreamingAgentChatResponse (#12116)
+- Fix streaming generators get bug by SynthesisEndEvent (#12092)
+- CLIP embedding more models (#12063)
+
+### `llama-index-packs-raptor` [0.1.3]
+
+- Add `num_workers` to summary module (#)
+
+### `llama-index-readers-telegram` [0.1.5]
+
+- Fix datetime fields (#12112)
+- Add ability to select time period of posts/messages (#12078)
+
+### `llama-index-embeddings-openai` [0.1.7]
+
+- Add api version/base api as optional for open ai embedding (#12091)
+
+### `llama-index-networks` [0.2.1]
+
+- Add node postprocessing to network retriever (#12027)
+- Add privacy-safe networks demo (#12027)
+
+### `llama-index-callbacks-langfuse` [0.1.3]
+
+- Chore: bumps min version of langfuse dep (#12077)
+
+### `llama-index-embeddings-google` [0.1.4]
+
+- Chore: bumps google-generativeai dep (#12085)
+
+### `llama-index-embeddings-gemini` [0.1.5]
+
+- Chore: bumps google-generativeai dep (#12085)
+
+### `llama-index-llms-gemini` [0.1.6]
+
+- Chore: bumps google-generativeai dep (#12085)
+
+### `llama-index-llms-palm` [0.1.4]
+
+- Chore: bumps google-generativeai dep (#12085)
+
+### `llama-index-multi-modal-llms-google` [0.1.4]
+
+- Chore: bumps google-generativeai dep (#12085)
+
+### `llama-index-vector-stores-google` [0.1.5]
+
+- Chore: bumps google-generativeai dep (#12085)
+
+### `llama-index-storage-kvstore-elasticsearch` [0.1.0]
+
+- New integration (#12068)
+
+### `llama-index-readers-google` [0.1.7]
+
+- Fix - Google Drive Issue of not loading same name files (#12022)
+
+### `llama-index-vector-stores-upstash` [0.1.3]
+
+- Adding Metadata Filtering support for UpstashVectorStore (#12054)
+
+### `llama-index-packs-raptor` [0.1.2]
+
+- Fix: prevent RaptorPack infinite recursion (#12008)
+
+### `llama-index-embeddings-huggingface-optimum` [0.1.4]
+
+- Fix(OptimumEmbedding): removing token_type_ids causing ONNX validation issues
+
+### `llama-index-llms-anthropic` [0.1.7]
+
+- Fix: Anthropic LLM merge consecutive messages with same role (#12013)
+
+### `llama-index-packs-diff-private-simple-dataset` [0.1.0]
+
+- DiffPrivacy ICL Pack - OpenAI Completion LLMs (#11881)
+
+### `llama-index-cli` [0.1.11]
+
+- Remove llama_hub_url keyword from download_llama_dataset of command (#12038)
+
 ## [2024-03-14]
 
 ### `llama-index-core` [0.10.20]
