@@ -34,3 +34,9 @@ mkdocs serve
 And open your browser at http://localhost:8000/ to view the generated docs.
 
 This hosted version will re-build and update as changes are made to the docs.
+
+## Config
+
+All config for mkdocs is in the `mkdocs.yml` file.
+
+Running the command `python docs/prepare_for_build.py` from the root of the llama-index repo will update the mkdocs.yml API Reference and examples nav with the latest changes, as well as writing new api reference files.
