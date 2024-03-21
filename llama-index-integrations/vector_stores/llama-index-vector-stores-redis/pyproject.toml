@@ -33,6 +33,7 @@ version = "0.1.2"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 redis = "^5.0.1"
+redisvl = "^0.1.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
