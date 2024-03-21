@@ -12,7 +12,7 @@ Here's an example usage of the RequestsToolSpec.
 
 ```python
 from llama_index.tools.requests import RequestsToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 domain_headers = {
     "api.openai.com": {

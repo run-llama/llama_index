@@ -41,7 +41,6 @@ class CogniswitchQueryEngine(BaseQueryEngine):
         response = requests.post(
             self.knowledge_request_endpoint,
             headers=self.headers,
-            verify=False,
             data=data,
         )
         if response.status_code == 200:

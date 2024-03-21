@@ -15,7 +15,6 @@ import_path = "llama_index.llms.openai"
 AsyncOpenAI = "llama-index"
 OpenAI = "llama-index"
 SyncOpenAI = "llama-index"
-Tokenizer = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,17 +23,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["llama-index"]
 description = "llama-index llms openai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openai"
 readme = "README.md"
-version = "0.1.6"
+version = "0.1.12"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = "^0.10.20.post1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

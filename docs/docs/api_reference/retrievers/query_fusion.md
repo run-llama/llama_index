@@ -1,3 +1,4 @@
 ::: llama_index.core.retrievers
-options:
-members: - QueryFusionRetriever
+    options:
+      members:
+        - QueryFusionRetriever

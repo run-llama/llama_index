@@ -1,3 +1,4 @@
 ::: llama_index.program.openai
-options:
-members: - OpenAIPydanticProgram
+    options:
+      members:
+        - OpenAIPydanticProgram

@@ -1,3 +1,4 @@
 ::: llama_index.readers.pinecone
-options:
-members: - PineconeReader
+    options:
+      members:
+        - PineconeReader

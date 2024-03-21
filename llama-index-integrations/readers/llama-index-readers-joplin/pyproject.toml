@@ -13,7 +13,6 @@ import_path = "llama_index.readers.joplin"
 
 [tool.llamahub.class_authors]
 JoplinReader = "alondmnt"
-LINK_NOTE_TEMPLATE = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

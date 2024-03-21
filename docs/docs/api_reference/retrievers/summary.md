@@ -1,3 +1,4 @@
 ::: llama_index.core.retrievers
-options:
-members: - SummaryIndexRetriever
+    options:
+      members:
+        - SummaryIndexRetriever

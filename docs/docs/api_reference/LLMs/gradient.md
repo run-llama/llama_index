@@ -1,3 +1,5 @@
 ::: llama_index.llms.gradient
-options:
-members: - GradientBaseModelLLM - GradientModelAdapterLLM
+    options:
+      members:
+        - GradientBaseModelLLM
+        - GradientModelAdapterLLM

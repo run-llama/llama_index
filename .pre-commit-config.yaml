@@ -33,7 +33,7 @@ repos:
       - id: black-jupyter
         name: black-src
         alias: black
-        exclude: "^docs|.*poetry.lock|.*_static|^new-docs"
+        exclude: "^docs|.*poetry.lock|.*_static"
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.0.1
     hooks:
@@ -47,7 +47,7 @@ repos:
             "types-PyYAML",
             "types-protobuf==4.24.0.4",
           ]
-        exclude: ^(docs/|llama-index-core/llama_index/core/_static|new-docs)
+        exclude: ^(docs/|llama-index-core/llama_index/core/_static)
         args:
           [
             --namespace-packages,
@@ -63,7 +63,7 @@ repos:
       - id: black-jupyter
         name: black-docs-py
         alias: black
-        files: ^(docs/|examples/|new-docs)
+        files: ^(docs/|examples/)
         # Using PEP 8's line length in docs prevents excess left/right scrolling
         args: [--line-length=79]
   - repo: https://github.com/adamchainz/blacken-docs
@@ -80,7 +80,7 @@ repos:
     rev: v3.0.3
     hooks:
       - id: prettier
-        exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static|new-docs
+        exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static|docs/docs/api_reference
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:

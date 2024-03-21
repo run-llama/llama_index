@@ -10,9 +10,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, cast
 
-from pydantic import PrivateAttr
-
 from llama_index.core import ServiceContext
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,

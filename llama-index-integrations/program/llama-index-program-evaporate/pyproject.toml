@@ -12,7 +12,6 @@ contains_example = false
 import_path = "llama_index.program.evaporate"
 
 [tool.llamahub.class_authors]
-BaseEvaporateProgram = "llama-index"
 DFEvaporateProgram = "llama-index"
 
 [tool.mypy]

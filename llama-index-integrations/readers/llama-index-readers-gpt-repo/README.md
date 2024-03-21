@@ -1,5 +1,9 @@
 # GPT Repository Loader
 
+```bash
+pip install llama-index-readers-gpt-repo
+```
+
 This loader is an adaptation of https://github.com/mpoon/gpt-repository-loader
 to LlamaHub. Full credit goes to mpoon for coming up with this!
 
@@ -8,9 +12,7 @@ to LlamaHub. Full credit goes to mpoon for coming up with this!
 To use this loader, you need to pass in a path to a local Git repository
 
 ```python
-from llama_index import download_loader
-
-GPTRepoReader = download_loader("GPTRepoReader")
+from llama_index.readers.gpt_repo import GPTRepoReader
 
 loader = GPTRepoReader()
 documents = loader.load_data(

@@ -1,4 +1,9 @@
-# Observability
+# Observability (Legacy)
+
+**NOTE:**
+
+The tooling and integrations mentioned in this page is considered legacy. Observability
+is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
 
 LlamaIndex provides **one-click observability** 🔭 to allow you to build principled LLM applications in a production setting.
 
@@ -49,6 +54,34 @@ llama_index.core.set_global_handler("simple")
 ## Partner `One-Click` Integrations
 
 We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
+
+### Langfuse
+
+[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed traces of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+
+#### Usage Pattern
+
+```python
+from llama_index.core import set_global_handler
+
+# Make sure you've installed the 'llama-index-callbacks-langfuse' integration package.
+
+# NOTE: Set your environment variables 'LANGFUSE_SECRET_KEY', 'LANGFUSE_PUBLIC_KEY' and 'LANGFUSE_HOST'
+# as shown in your langfuse.com project settings.
+
+set_global_handler("langfuse")
+```
+
+#### Guides
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/callbacks/LangfuseCallbackHandler.ipynb
+```
+
+![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
 ### DeepEval
 

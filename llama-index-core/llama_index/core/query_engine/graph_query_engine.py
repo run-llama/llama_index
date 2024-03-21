@@ -9,6 +9,9 @@ from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
 )
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):
@@ -53,6 +56,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
 
+    @dispatcher.span
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
 

@@ -1,5 +1,9 @@
 # SingleStore Loader
 
+```bash
+pip install llama-index-readers-singlestore
+```
+
 The SingleStore Loader retrieves a set of documents from a specified table in a SingleStore database. The user initializes the loader with database information and then provides a search embedding for retrieving similar documents.
 
 ## Usage
@@ -7,7 +11,7 @@ The SingleStore Loader retrieves a set of documents from a specified table in a 
 Here's an example usage of the SingleStoreReader:
 
 ```python
-from llama_hub.singlestore import SingleStoreReader
+from llama_index.readers.singlestore import SingleStoreReader
 
 # Initialize the reader with your SingleStore database credentials and other relevant details
 reader = SingleStoreReader(

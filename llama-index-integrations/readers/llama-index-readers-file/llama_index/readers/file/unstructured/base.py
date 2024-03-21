@@ -36,8 +36,10 @@ class UnstructuredReader(BaseReader):
         # Prerequisite for Unstructured.io to work
         import nltk
 
-        nltk.download("punkt")
-        nltk.download("averaged_perceptron_tagger")
+        if not nltk.data.find("tokenizers/punkt"):
+            nltk.download("punkt")
+        if not nltk.data.find("taggers/averaged_perceptron_tagger"):
+            nltk.download("averaged_perceptron_tagger")
 
     """ Loads data using Unstructured.io py
 

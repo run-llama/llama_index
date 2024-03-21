@@ -58,6 +58,7 @@ hierarchical retrieval and query decomposition.
 
 - [Google](../../../examples/managed/GoogleDemo.ipynb)
 - [Vectara](../../../examples/managed/vectaraDemo.ipynb)
+- [VideoDB](../../../examples/retrievers/videodb_retriever.ipynb)
 - [Zilliz](../../../examples/managed/zcpDemo.ipynb)
 
 ### Other Retrievers

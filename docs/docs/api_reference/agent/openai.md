@@ -1,3 +1,5 @@
 ::: llama_index.agent.openai
-options:
-members: - OpenAIAgent - OpenAIAgentWorker - OpenAIAssistantAgent
+    options:
+      members:
+        - OpenAIAgent
+        - OpenAIAssistantAgent

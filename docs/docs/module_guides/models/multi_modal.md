@@ -148,10 +148,11 @@ Below table lists some vector stores supporting Multi-Modal use cases. Our Llama
 
 ## Multi-Modal LLM Modules
 
-We support integrations with GPT4-V, CLIP (OpenAI), BLIP (Salesforce), and Replicate (LLaVA, Fuyu-8B, MiniGPT-4, CogVLM), and more.
+We support integrations with GPT4-V, Anthropic (Opus, Sonnet), Gemini (Google), CLIP (OpenAI), BLIP (Salesforce), and Replicate (LLaVA, Fuyu-8B, MiniGPT-4, CogVLM), and more.
 
 - [OpenAI](../../examples/multi_modal/openai_multi_modal.ipynb)
 - [Gemini](../../examples/multi_modal/gemini.ipynb)
+- [Anthropic](../../examples/multi_modal/anthropic_multi_modal.ipynb)
 - [Replicate](../../examples/multi_modal/replicate_multi_modal.ipynb)
 - [Pydantic Multi-Modal](../../examples/multi_modal/multi_modal_pydantic.ipynb)
 - [GPT-4v COT Experiments](../../examples/multi_modal/gpt4v_experiments_cot.ipynb)

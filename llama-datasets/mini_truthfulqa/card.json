@@ -1,0 +1,27 @@
+{
+  "name": "Mini TruthfulQA Dataset",
+  "className": "LabelledRagDataset",
+  "description": "This is a subset of the TruthfulQA benchmark. Only examples that are based off of Wikipedia pages are considered; and furthermore, Wikipedia pages that contain only one question are also dropped. The result is 152 examples for evaluating a RAG system.",
+  "numberObservations": 152,
+  "containsExamplesByHumans": true,
+  "containsExamplesByAi": false,
+  "sourceUrls": ["https://huggingface.co/datasets/truthful_qa"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": null,
+        "correctness": 3.845,
+        "faithfulness": 0.605,
+        "relevancy": 0.599
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mini_truthfulqa/llamaindex_baseline.py"
+    }
+  ]
+}

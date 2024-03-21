@@ -1,5 +1,9 @@
 # Bilibili Transcript Loader
 
+```bash
+pip install llama-index-readers-bilibili
+```
+
 This loader utilizes the `bilibili_api` to fetch the text transcript from Bilibili, one of the most beloved long-form video sites in China.
 
 With this BilibiliTranscriptReader, users can easily obtain the transcript of their desired video content on the platform.
@@ -9,9 +13,8 @@ With this BilibiliTranscriptReader, users can easily obtain the transcript of th
 To use this loader, you need to pass in an array of Bilibili video links.
 
 ```python
-from llama_index import download_loader
+from llama_index.readers.bilibili import BilibiliTranscriptReader
 
-BilibiliTranscriptReader = download_loader("BilibiliTranscriptReader")
 loader = BilibiliTranscriptReader()
 documents = loader.load_data(
     video_urls=["https://www.bilibili.com/video/BV1yx411L73B/"]

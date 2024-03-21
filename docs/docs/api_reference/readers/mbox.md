@@ -1,3 +1,4 @@
 ::: llama_index.readers.mbox
-options:
-members: - MboxReader
+    options:
+      members:
+        - MboxReader

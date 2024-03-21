@@ -21,7 +21,7 @@ response = OpenAI().complete("Paul Graham is ")
 print(response)
 ```
 
-Usually you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the pipeline, as in this example:
+Usually, you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the pipeline, as in this example:
 
 ```python
 from llama_index.llms.openai import OpenAI
@@ -50,7 +50,7 @@ A general note on privacy and LLMs can be found on the [privacy page](./privacy.
 
 ### Using a local LLM
 
-LlamaIndex doesn't just supported hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).
+LlamaIndex doesn't just support hosted LLM APIs; you can also [run a local model such as Llama2 locally](https://replicate.com/blog/run-llama-locally).
 
 For example, if you have [Ollama](https://github.com/ollama/ollama) installed and running:
 

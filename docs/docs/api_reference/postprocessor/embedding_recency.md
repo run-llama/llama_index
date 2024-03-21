@@ -1,3 +1,4 @@
 ::: llama_index.core.postprocessor
-options:
-members: - EmbeddingRecencyPostprocessor
+    options:
+      members:
+        - EmbeddingRecencyPostprocessor

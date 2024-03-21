@@ -1,3 +1,5 @@
 ::: llama_index.embeddings.adapter
-options:
-members: - AdapterEmbeddingModel - BaseAdapter - LinearAdapterEmbeddingModel - LinearLayer
+    options:
+      members:
+        - AdapterEmbeddingModel
+        - LinearAdapterEmbeddingModel

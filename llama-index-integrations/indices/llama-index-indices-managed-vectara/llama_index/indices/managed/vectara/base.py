@@ -30,6 +30,9 @@ from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 
+from llama_index.core.response_synthesizers import ResponseMode
+from llama_index.core import get_response_synthesizer
+
 _logger = logging.getLogger(__name__)
 
 
@@ -193,13 +196,12 @@ class VectaraIndex(BaseManagedIndex):
         )
 
         status_code = response.status_code
-
         result = response.json()
 
         status_str = result["status"]["code"] if "status" in result else None
-        if status_code == 409 or status_str and (status_str == "ALREADY_EXISTS"):
+        if status_code == 409 and status_str and (status_str == "ALREADY_EXISTS"):
             return "E_ALREADY_EXISTS"
-        elif status_code == 200 or status_str and (status_str == "INVALID_ARGUMENT"):
+        elif status_code == 200 and status_str and (status_str == "INVALID_ARGUMENT"):
             return "E_INVALID_ARGUMENT"
         elif status_str and (status_str == "FORBIDDEN"):
             return "E_NO_PERMISSIONS"
@@ -215,7 +217,7 @@ class VectaraIndex(BaseManagedIndex):
         """Insert a set of documents (each a node)."""
 
         def gen_hash(s: str) -> str:
-            hash_object = blake2b()
+            hash_object = blake2b(digest_size=32)
             hash_object.update(s.encode("utf-8"))
             return hash_object.hexdigest()
 
@@ -360,8 +362,14 @@ class VectaraIndex(BaseManagedIndex):
             )
 
             retriever = self.as_retriever(**kwargs)
+            response_synthesizer = get_response_synthesizer(
+                response_mode=ResponseMode.COMPACT,
+                llm=llm,
+            )
             return RetrieverQueryEngine.from_args(
-                retriever=retriever, llm=llm, **kwargs
+                retriever=retriever,
+                response_synthesizer=response_synthesizer,
+                **kwargs,
             )
 
     @classmethod

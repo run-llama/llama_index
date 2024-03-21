@@ -73,7 +73,7 @@ def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
             if isinstance(filter.value, float):
                 value_type = "valueNumber"
             elif isinstance(filter.value, int):
-                value_type = "valueNumber"
+                value_type = "valueInt"
             elif isinstance(filter.value, str) and filter.value.isnumeric():
                 filter.value = float(filter.value)
                 value_type = "valueNumber"

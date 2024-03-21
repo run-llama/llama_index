@@ -1,3 +1,4 @@
 ::: llama_index.tools.openapi
-options:
-members: - OpenAPIToolSpec
+    options:
+      members:
+        - OpenAPIToolSpec

@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.bedrock
-options:
-members: - BedrockEmbedding - Models
+    options:
+      members:
+        - BedrockEmbedding

@@ -1,6 +1,5 @@
 """Common classes/functions for tree index operations."""
 
-
 import asyncio
 import logging
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -8,6 +7,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.data_structs.data_structs import IndexGraph
+from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.indices.utils import get_sorted_node_list, truncate_text
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate
@@ -17,7 +17,6 @@ from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
-    prompt_helper_from_settings_or_context,
 )
 from llama_index.core.storage.docstore import BaseDocumentStore
 from llama_index.core.storage.docstore.registry import get_default_docstore
@@ -50,8 +49,8 @@ class GPTTreeIndexBuilder:
         self.num_children = num_children
         self.summary_prompt = summary_prompt
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._prompt_helper = prompt_helper_from_settings_or_context(
-            Settings, service_context
+        self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
+            self._llm.metadata,
         )
         self._callback_manager = callback_manager_from_settings_or_context(
             Settings, service_context

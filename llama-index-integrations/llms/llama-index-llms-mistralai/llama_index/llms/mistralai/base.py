@@ -193,7 +193,7 @@ class MistralAI(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert messages to mistral ChatMessage
-        from mistralai.client import ChatMessage as mistral_chatmessage
+        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = [
             mistral_chatmessage(role=x.role, content=x.content) for x in messages
@@ -219,7 +219,7 @@ class MistralAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         # convert messages to mistral ChatMessage
-        from mistralai.client import ChatMessage as mistral_chatmessage
+        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = [
             mistral_chatmessage(role=message.role, content=message.content)
@@ -257,7 +257,7 @@ class MistralAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         # convert messages to mistral ChatMessage
-        from mistralai.client import ChatMessage as mistral_chatmessage
+        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = [
             mistral_chatmessage(role=message.role, content=message.content)
@@ -284,7 +284,7 @@ class MistralAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         # convert messages to mistral ChatMessage
-        from mistralai.client import ChatMessage as mistral_chatmessage
+        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = [
             mistral_chatmessage(role=x.role, content=x.content) for x in messages

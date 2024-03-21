@@ -13,6 +13,8 @@ import_path = "llama_index.indices.managed.zilliz"
 
 [tool.llamahub.class_authors]
 ZillizCloudPipelineIndex = "llama-index"
+
+[tool.llamahub.secondary_class_authors]
 ZillizCloudPipelineRetriever = "llama-index"
 
 [tool.mypy]

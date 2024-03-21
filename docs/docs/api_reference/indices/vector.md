@@ -1,3 +1,4 @@
 ::: llama_index.core.indices
-options:
-members: - VectorStoreIndex
+    options:
+      members:
+        - VectorStoreIndex

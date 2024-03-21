@@ -390,8 +390,14 @@ DEFAULT_JSON_PATH_TMPL = (
     "{schema}\n"
     "Given a task, respond with a JSON Path query that "
     "can retrieve data from a JSON value that matches the schema.\n"
+    "Provide the JSON Path query in the following format: 'JSONPath: <JSONPath>'\n"
+    "You must include the value 'JSONPath:' before the provided JSON Path query."
+    "Example Format:\n"
+    "Task: What is John's age?\n"
+    "Response: JSONPath: $.John.age\n"
+    "Let's try this now: \n\n"
     "Task: {query_str}\n"
-    "JSONPath: "
+    "Response: "
 )
 
 DEFAULT_JSON_PATH_PROMPT = PromptTemplate(

@@ -13,7 +13,6 @@ import_path = "llama_index.tools.bing_search"
 
 [tool.llamahub.class_authors]
 BingSearchToolSpec = "ajhofmann"
-ENDPOINT_BASE_URL = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

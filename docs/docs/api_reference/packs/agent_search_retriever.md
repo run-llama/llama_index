@@ -1,3 +1,4 @@
 ::: llama_index.packs.agent_search_retriever
-options:
-members: - AgentSearchRetriever - AgentSearchRetrieverPack
+    options:
+      members:
+        - AgentSearchRetrieverPack

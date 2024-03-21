@@ -72,6 +72,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "extractors": "Metadata Extractors",
     "indices": "Indexes",
     "ingestion": "Ingestion",
+    "instrumentation": "Instrumentation",
     "llama_dataset": "Llama Datasets",
     "packs": "Llama Packs",
     "memory": "Memory",
@@ -293,6 +294,104 @@ for folder in INTEGRATION_FOLDERS:
                         ].append(toc_path_name)
 
                 # maintain sorting per label
+                mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                    label
+                ] = sorted(
+                    mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                        label
+                    ],
+                    key=lambda x: next(iter(x.keys()))
+                    if isinstance(x, dict)
+                    else x,
+                )
+
+# add existing api reference pages to nav
+api_ref_idx = -1
+for idx, item in enumerate(mkdocs["nav"]):
+    if "API Reference" in item:
+        api_ref_idx = idx
+        break
+
+for root, dirs, files in os.walk("docs/docs/api_reference"):
+    for file in files:
+        if file.endswith(".md"):
+            toc_path_name = os.path.join(
+                root.replace("docs/docs/api_reference", "./api_reference"),
+                file,
+            )
+
+            if toc_path_name == "./api_reference/index.md":
+                continue
+
+            if "storage" in root:
+                label = "Storage"
+            else:
+                label = INTEGRATION_FOLDER_TO_LABEL[root.split("/")[-1]]
+
+            label_idx = -1
+            for idx, item in enumerate(
+                mkdocs["nav"][api_ref_idx]["API Reference"]
+            ):
+                if label in item:
+                    label_idx = idx
+                    break
+
+            if label_idx == -1:
+                mkdocs["nav"][api_ref_idx]["API Reference"].append({label: []})
+
+            if "storage" in root:
+                sub_path = root.split("/")[-1]
+                sub_label = sub_path.replace("_", " ").title()
+                sub_label_idx = -1
+                for (
+                    existing_sub_label_idx,
+                    existing_sub_label,
+                ) in enumerate(
+                    mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                        label
+                    ]
+                ):
+                    if sub_label in existing_sub_label:
+                        sub_label_idx = existing_sub_label_idx
+                        break
+
+                if sub_label_idx == -1:
+                    mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                        label
+                    ].append({sub_label: []})
+
+                if (
+                    toc_path_name
+                    not in mkdocs["nav"][api_ref_idx]["API Reference"][
+                        label_idx
+                    ][label][sub_label_idx][sub_label]
+                ):
+                    mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                        label
+                    ][sub_label_idx][sub_label].append(toc_path_name)
+
+                # sort per sub-label
+                mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][label][
+                    sub_label_idx
+                ][sub_label] = sorted(
+                    mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                        label
+                    ][sub_label_idx][sub_label],
+                    key=lambda x: next(iter(x.keys()))
+                    if isinstance(x, dict)
+                    else x,
+                )
+            elif (
+                toc_path_name
+                not in mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                    label
+                ]
+            ):
+                mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
+                    label
+                ].append(toc_path_name)
+
+                # sort per label
                 mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
                     label
                 ] = sorted(

@@ -3,8 +3,10 @@
 Contains parsers for tabular data files.
 
 """
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from fsspec import AbstractFileSystem
 
 import pandas as pd
 from llama_index.core.readers.base import BaseReader
@@ -44,10 +46,15 @@ class CSVReader(BaseReader):
             csv_reader = csv.reader(fp)
             for row in csv_reader:
                 text_list.append(", ".join(row))
+
+        metadata = {"filename": file.name, "extension": file.suffix}
+        if extra_info:
+            metadata = {**metadata, **extra_info}
+
         if self._concat_rows:
-            return [Document(text="\n".join(text_list), metadata=extra_info)]
+            return [Document(text="\n".join(text_list), metadata=metadata)]
         else:
-            return [Document(text=text, metadata=extra_info) for text in text_list]
+            return [Document(text=text, metadata=metadata) for text in text_list]
 
 
 class PandasCSVReader(BaseReader):
@@ -93,10 +100,17 @@ class PandasCSVReader(BaseReader):
         self._pandas_config = pandas_config
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
-        df = pd.read_csv(file, **self._pandas_config)
+        if fs:
+            with fs.open(file) as f:
+                df = pd.read_csv(f, **self._pandas_config)
+        else:
+            df = pd.read_csv(file, **self._pandas_config)
 
         text_list = df.apply(
             lambda row: (self._col_joiner).join(row.astype(str).tolist()), axis=1

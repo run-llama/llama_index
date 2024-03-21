@@ -1,3 +1,4 @@
 ::: llama_index.llms.watsonx
-options:
-members: - WatsonX
+    options:
+      members:
+        - WatsonX

@@ -275,7 +275,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             index_name: Name of the AsyncElasticsearch index to create.
             dims_length: Length of the embedding vectors.
         """
-        if self.client.indices.exists(index=index_name):
+        if await self.client.indices.exists(index=index_name):
             logger.debug(f"Index {index_name} already exists. Skipping creation.")
 
         else:
@@ -593,7 +593,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
                     f"Could not parse metadata from hit {hit['_source']['metadata']}"
                 )
                 node_info = source.get("node_info")
-                relationships = source.get("relationships")
+                relationships = source.get("relationships", {})
                 start_char_idx = None
                 end_char_idx = None
                 if isinstance(node_info, dict):

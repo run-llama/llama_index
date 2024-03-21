@@ -1,3 +1,4 @@
 ::: llama_index.readers.spotify
-options:
-members: - SpotifyReader
+    options:
+      members:
+        - SpotifyReader

@@ -13,7 +13,6 @@ import_path = "llama_index.embeddings.bedrock"
 
 [tool.llamahub.class_authors]
 BedrockEmbedding = "llama-index"
-Models = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -28,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-bedrock"
 readme = "README.md"
-version = "0.1.3"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

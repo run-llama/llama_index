@@ -1,3 +1,4 @@
 ::: llama_index.vector_stores.metal
-options:
-members: - MetalVectorStore
+    options:
+      members:
+        - MetalVectorStore

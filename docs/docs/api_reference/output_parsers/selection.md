@@ -1,3 +1,4 @@
 ::: llama_index.core.output_parsers
-options:
-members: - SelectionOutputParser
+    options:
+      members:
+        - SelectionOutputParser

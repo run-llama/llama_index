@@ -1,3 +1,4 @@
 ::: llama_index.core.postprocessor
-options:
-members: - NERPIINodePostprocessor
+    options:
+      members:
+        - NERPIINodePostprocessor

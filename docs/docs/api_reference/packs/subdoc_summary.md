@@ -1,3 +1,4 @@
 ::: llama_index.packs.subdoc_summary
-options:
-members: - SubDocSummaryPack
+    options:
+      members:
+        - SubDocSummaryPack

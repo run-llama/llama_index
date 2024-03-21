@@ -1,3 +1,5 @@
 ::: llama_index.packs.tables
-options:
-members: - ChainOfTablePack - MixSelfConsistencyPack
+    options:
+      members:
+        - ChainOfTablePack
+        - MixSelfConsistencyPack

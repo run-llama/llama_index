@@ -1,3 +1,4 @@
 ::: llama_index.core.extractors
-options:
-members: - PydanticProgramExtractor
+    options:
+      members:
+        - PydanticProgramExtractor

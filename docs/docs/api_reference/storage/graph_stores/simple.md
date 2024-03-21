@@ -1,3 +1,4 @@
 ::: llama_index.core.graph_stores.simple
-options:
-members: - SimpleGraphStore
+    options:
+      members:
+        - SimpleGraphStore

@@ -44,7 +44,7 @@ class DocumentGroup(BasePydanticReader):
         return self.documents
 
 
-def build_conifurable_data_source_enum():
+def build_configurable_data_source_enum():
     """
     Build an enum of configurable data sources.
     But conditional on if the corresponding reader is available.
@@ -337,7 +337,7 @@ def build_conifurable_data_source_enum():
     return ConfigurableComponent("ConfigurableDataSources", enum_members)
 
 
-ConfigurableDataSources = build_conifurable_data_source_enum()
+ConfigurableDataSources = build_configurable_data_source_enum()
 
 T = TypeVar("T", bound=BaseComponent)
 

@@ -52,7 +52,7 @@ class MyMagicAI(LLM):
         description="The session to use. This is a subfolder in the bucket where your data is located.",
     )
     role_arn: Optional[str] = Field(
-        None, description="ARN for role assumption in AWS S3"
+        None, description="ARN for role assumption in AWS S3."
     )
     system_prompt: str = Field(
         default="Answer the question based only on the given content. Do not give explanations or examples. Do not continue generating more text after the answer.",
@@ -60,6 +60,17 @@ class MyMagicAI(LLM):
     )
     question_data: Dict[str, Any] = Field(
         default_factory=dict, description="The data to send to the MyMagicAI API."
+    )
+    region: Optional[str] = Field(
+        "eu-west-2", description="The region the bucket is in. Only used for AWS S3."
+    )
+    return_output: Optional[bool] = Field(
+        False, description="Whether MyMagic API should return the output json"
+    )
+    input_json_file: Optional[str] = None
+
+    structured_output: Optional[Dict[str, Any]] = Field(
+        None, description="User-defined structure for the response output"
     )
 
     def __init__(
@@ -70,9 +81,14 @@ class MyMagicAI(LLM):
         session: str,
         system_prompt: Optional[str],
         role_arn: Optional[str] = None,
+        region: Optional[str] = None,
+        return_output: Optional[bool] = False,
+        input_json_file: Optional[str] = None,
+        structured_output: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
+        self.return_output = return_output
 
         self.question_data = {
             "storage_provider": storage_provider,
@@ -82,6 +98,10 @@ class MyMagicAI(LLM):
             "max_tokens": self.max_tokens,
             "role_arn": role_arn,
             "system_prompt": system_prompt,
+            "region": region,
+            "return_output": return_output,
+            "input_json_file": input_json_file,
+            "structured_output": structured_output,
         }
 
     @classmethod
@@ -93,7 +113,9 @@ class MyMagicAI(LLM):
         return self.base_url_template.format(model=model)
 
     async def _submit_question(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
-        async with httpx.AsyncClient() as client:
+        timeout_config = httpx.Timeout(600.0, connect=60.0)
+
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
             url = f"{self._construct_url(self.model)}/submit_question"
             resp = await client.post(url, json=question_data)
             resp.raise_for_status()
@@ -135,6 +157,10 @@ class MyMagicAI(LLM):
         )
 
         task_response = await self._submit_question(self.question_data)
+
+        if self.return_output:
+            return task_response
+
         task_id = task_response.get("task_id")
         while True:
             result = await self._get_result(task_id)
@@ -156,6 +182,9 @@ class MyMagicAI(LLM):
         )
 
         task_response = self._submit_question_sync(self.question_data)
+        if self.return_output:
+            return task_response
+
         task_id = task_response.get("task_id")
         while True:
             result = self._get_result_sync(task_id)

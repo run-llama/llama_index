@@ -57,7 +57,7 @@ class ImageTabularChartReader(BaseReader):
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Parse file."""
-        from llama_index.img_utils import img_2_b64
+        from llama_index.core.img_utils import img_2_b64
         from PIL import Image
 
         # load document image

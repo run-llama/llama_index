@@ -197,8 +197,6 @@ class _Settings:
         """Set the text splitter."""
         self.node_parser = text_splitter
 
-    # ---- Prompt helper ----
-
     @property
     def prompt_helper(self) -> PromptHelper:
         """Get the prompt helper."""
@@ -294,16 +292,6 @@ def node_parser_from_settings_or_context(
         return context.node_parser
 
     return settings.node_parser
-
-
-def prompt_helper_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> PromptHelper:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.prompt_helper
-
-    return settings.prompt_helper
 
 
 def transformations_from_settings_or_context(

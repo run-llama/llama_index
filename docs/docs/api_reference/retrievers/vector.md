@@ -1,3 +1,5 @@
 ::: llama_index.core.retrievers
-options:
-members: - VectorIndexRetriever - VectorIndexAutoRetriever
+    options:
+      members:
+        - VectorIndexRetriever
+        - VectorIndexAutoRetriever

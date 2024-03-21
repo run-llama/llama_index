@@ -1,3 +1,4 @@
 ::: llama_index.core.node_parser
-options:
-members: - SentenceSplitter
+    options:
+      members:
+        - SentenceSplitter

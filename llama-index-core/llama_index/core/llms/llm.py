@@ -47,6 +47,13 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
+from llama_index.core.instrumentation.events.llm import (
+    LLMPredictEndEvent,
+)
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -312,6 +319,7 @@ class LLM(BaseLLM):
 
         return output
 
+    @dispatcher.span
     def predict(
         self,
         prompt: BasePromptTemplate,
@@ -348,6 +356,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
 
+        dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     def stream(
@@ -392,6 +401,7 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
+    @dispatcher.span
     async def apredict(
         self,
         prompt: BasePromptTemplate,
@@ -428,6 +438,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt, formatted=True)
             output = response.text
 
+        dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     async def astream(

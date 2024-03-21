@@ -13,7 +13,6 @@ import_path = "llama_index.tools.azure_cv"
 
 [tool.llamahub.class_authors]
 AzureCVToolSpec = "ajhofmann"
-CV_URL_TMPL = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

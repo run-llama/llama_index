@@ -1,3 +1,4 @@
 ::: llama_index.readers.hive
-options:
-members: - HiveReader
+    options:
+      members:
+        - HiveReader

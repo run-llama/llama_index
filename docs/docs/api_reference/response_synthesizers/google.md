@@ -1,3 +1,4 @@
 ::: llama_index.response_synthesizers.google
-options:
-members: - GoogleTextSynthesizer - SynthesizedResponse - set_google_config
+    options:
+      members:
+        - GoogleTextSynthesizer

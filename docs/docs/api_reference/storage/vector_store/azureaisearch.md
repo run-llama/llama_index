@@ -1,3 +1,5 @@
 ::: llama_index.vector_stores.azureaisearch
-options:
-members: - AzureAISearchVectorStore - CognitiveSearchVectorStore - IndexManagement - MetadataIndexFieldType
+    options:
+      members:
+        - AzureAISearchVectorStore
+        - CognitiveSearchVectorStore

@@ -68,6 +68,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        safe_serialization: Optional[bool] = None,
     ):
         self._device = device or infer_torch_device()
 
@@ -80,7 +81,10 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
             )
             model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
+                model_name,
+                cache_dir=cache_folder,
+                trust_remote_code=trust_remote_code,
+                safe_serialization=safe_serialization,
             )
         elif model_name is None:  # Extract model_name from model
             model_name = model.name_or_path
@@ -160,12 +164,14 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
         model_output = self._model(**encoded_input)
 
+        context_layer: "torch.Tensor" = model_output[0]
         if self.pooling == Pooling.CLS:
-            context_layer: "torch.Tensor" = model_output[0]
             embeddings = self.pooling.cls_pooling(context_layer)
+        elif self.pooling == Pooling.LAST:
+            embeddings = self.pooling.last_pooling(context_layer)
         else:
             embeddings = self._mean_pooling(
-                token_embeddings=model_output[0],
+                token_embeddings=context_layer,
                 attention_mask=encoded_input["attention_mask"],
             )
 

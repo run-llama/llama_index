@@ -69,7 +69,7 @@ CHAT_REFINE_PROMPT_TMPL_MSGS = [
             "1. **Rewrite** an original answer using the new context.\n"
             "2. **Repeat** the original answer if the new context isn't useful.\n"
             "Never reference the original answer or context directly in your answer.\n"
-            "When in doubt, just repeat the original answer."
+            "When in doubt, just repeat the original answer.\n"
             "New Context: {context_msg}\n"
             "Query: {query_str}\n"
             "Original Answer: {existing_answer}\n"

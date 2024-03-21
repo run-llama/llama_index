@@ -1,5 +1,9 @@
 ## IMDB MOVIE REVIEWS LOADER
 
+```bash
+pip install llama-index-readers-imdb-review
+```
+
 This loader fetches all the reviews of a movie or a TV-series from IMDB official site. This loader is working on Windows machine and it requires further debug on Linux. Fixes are on the way
 
 Install the required dependencies
@@ -18,9 +22,7 @@ The IMDB downloader takes in two attributes
 ## Usage
 
 ```python
-from llama_index import download_loader
-
-IMDBReviewsloader = download_loader("IMDBReviews")
+from llama_index.readers.imdb_review import IMDBReviews
 
 loader = IMDBReviews(
     movie_name_year="The Social Network 2010", webdriver_engine="edge"
@@ -47,10 +49,10 @@ This loader can be used with both Langchain and LlamaIndex.
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex
 
-IMDBReviewsloader = download_loader("IMDBReviews")
+from llama_index.readers.imdb_review import IMDBReviews
 
 loader = IMDBReviewsloader(
     movie_name_year="The Social Network 2010",
@@ -72,7 +74,6 @@ print(response)
 ### Langchain
 
 ```python
-from llama_index import download_loader
 from langchain.llms import OpenAI
 from langchain.agents.agent_toolkits.pandas import (
     create_pandas_dataframe_agent,
@@ -81,7 +82,7 @@ from langchain.agents import Tool
 from langchain.agents import initialize_agent
 from langchain.chat_models import ChatOpenAI
 
-IMDBReviewsloader = download_loader("IMDBReviews")
+from llama_index.readers.imdb_review import IMDBReviews
 
 loader = IMDBReviewsloader(
     movie_name_year="The Social Network 2010",

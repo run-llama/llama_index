@@ -30,6 +30,7 @@ from llama_index.core.memory.types import BaseMemory
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool
+from llama_index.core.prompts.mixin import PromptMixinType
 
 
 class ReActAgent(AgentRunner):
@@ -126,3 +127,7 @@ class ReActAgent(AgentRunner):
             verbose=verbose,
             context=context,
         )
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt modules."""
+        return {"agent_worker": self.agent_worker}

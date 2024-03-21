@@ -1,3 +1,4 @@
 ::: llama_index.core.extractors
-options:
-members: - TitleExtractor
+    options:
+      members:
+        - TitleExtractor

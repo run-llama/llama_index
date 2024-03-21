@@ -1,3 +1,4 @@
 ::: llama_index.packs.self_rag
-options:
-members: - SelfRAGPack - SelfRAGQueryEngine
+    options:
+      members:
+        - SelfRAGPack

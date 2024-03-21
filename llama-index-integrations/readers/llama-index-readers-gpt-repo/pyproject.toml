@@ -13,9 +13,6 @@ import_path = "llama_index.readers.gpt_repo"
 
 [tool.llamahub.class_authors]
 GPTRepoReader = "mpoon"
-get_ignore_list = "llama-index"
-process_repository = "llama-index"
-should_ignore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

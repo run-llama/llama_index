@@ -1,3 +1,4 @@
 ::: llama_index.core.node_parser
-options:
-members: - HTMLNodeParser
+    options:
+    members:
+      - HTMLNodeParser

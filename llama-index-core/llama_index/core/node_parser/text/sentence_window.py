@@ -10,7 +10,7 @@ from llama_index.core.node_parser.node_utils import (
     default_id_func,
 )
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
-from llama_index.core.schema import BaseNode, Document, MetadataMode
+from llama_index.core.schema import BaseNode, Document
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_WINDOW_SIZE = 3
@@ -93,7 +93,6 @@ class SentenceWindowNodeParser(NodeParser):
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
         for node in nodes_with_progress:
-            self.sentence_splitter(node.get_content(metadata_mode=MetadataMode.NONE))
             nodes = self.build_window_nodes_from_documents([node])
             all_nodes.extend(nodes)
 

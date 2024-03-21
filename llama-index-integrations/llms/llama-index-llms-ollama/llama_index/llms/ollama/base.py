@@ -20,7 +20,7 @@ from llama_index.core.llms.custom import CustomLLM
 DEFAULT_REQUEST_TIMEOUT = 30.0
 
 
-def get_addtional_kwargs(
+def get_additional_kwargs(
     response: Dict[str, Any], exclude: Tuple[str, ...]
 ) -> Dict[str, Any]:
     return {k: v for k, v in response.items() if k not in exclude}
@@ -130,12 +130,12 @@ class Ollama(CustomLLM):
                 message=ChatMessage(
                     content=message.get("content"),
                     role=MessageRole(message.get("role")),
-                    additional_kwargs=get_addtional_kwargs(
+                    additional_kwargs=get_additional_kwargs(
                         message, ("content", "role")
                     ),
                 ),
                 raw=raw,
-                additional_kwargs=get_addtional_kwargs(raw, ("message",)),
+                additional_kwargs=get_additional_kwargs(raw, ("message",)),
             )
 
     @llm_chat_callback()
@@ -177,13 +177,15 @@ class Ollama(CustomLLM):
                             message=ChatMessage(
                                 content=text,
                                 role=MessageRole(message.get("role")),
-                                additional_kwargs=get_addtional_kwargs(
+                                additional_kwargs=get_additional_kwargs(
                                     message, ("content", "role")
                                 ),
                             ),
                             delta=delta,
                             raw=chunk,
-                            additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
+                            additional_kwargs=get_additional_kwargs(
+                                chunk, ("message",)
+                            ),
                         )
 
     @llm_completion_callback()
@@ -209,7 +211,7 @@ class Ollama(CustomLLM):
             return CompletionResponse(
                 text=text,
                 raw=raw,
-                additional_kwargs=get_addtional_kwargs(raw, ("response",)),
+                additional_kwargs=get_additional_kwargs(raw, ("response",)),
             )
 
     @llm_completion_callback()
@@ -241,7 +243,7 @@ class Ollama(CustomLLM):
                             delta=delta,
                             text=text,
                             raw=chunk,
-                            additional_kwargs=get_addtional_kwargs(
+                            additional_kwargs=get_additional_kwargs(
                                 chunk, ("response",)
                             ),
                         )

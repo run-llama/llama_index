@@ -1,3 +1,4 @@
 ::: llama_index.core.postprocessor
-options:
-members: - PrevNextNodePostprocessor
+    options:
+      members:
+        - PrevNextNodePostprocessor

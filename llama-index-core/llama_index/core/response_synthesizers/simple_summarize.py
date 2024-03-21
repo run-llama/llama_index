@@ -24,6 +24,9 @@ class SimpleSummarize(BaseSynthesizer):
         # deprecated
         service_context: Optional[ServiceContext] = None,
     ) -> None:
+        if service_context is not None:
+            prompt_helper = service_context.prompt_helper
+
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,

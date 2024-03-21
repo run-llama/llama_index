@@ -5,16 +5,23 @@ Contains parsers for epub files.
 
 from pathlib import Path
 from typing import Dict, List, Optional
+import logging
+from fsspec import AbstractFileSystem
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+
+logger = logging.getLogger(__name__)
 
 
 class EpubReader(BaseReader):
     """Epub Parser."""
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         try:
@@ -26,6 +33,11 @@ class EpubReader(BaseReader):
                 "Please install extra dependencies that are required for "
                 "the EpubReader: "
                 "`pip install EbookLib html2text`"
+            )
+        if fs:
+            logger.warning(
+                "fs was specified but EpubReader doesn't support loading "
+                "from fsspec filesystems. Will load from local filesystem instead."
             )
 
         text_list = []

@@ -12,7 +12,7 @@ Here's an example usage of the AzureCVToolSpec.
 
 ```python
 from llama_index.tools.azure_cv import AzureCVToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = AzureCVToolSpec(api_key="your-key", resource="your-resource")
 

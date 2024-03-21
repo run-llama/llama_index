@@ -1,5 +1,9 @@
 # Docugami Loader
 
+```bash
+pip install llama-index-readers-docugami
+```
+
 This loader takes in IDs of PDF, DOCX or DOC files processed by [Docugami](https://docugami.com) and returns nodes in a Document XML Knowledge Graph for each document. This is a rich representation that includes the semantic and structural characteristics of various chunks in the document as an XML tree. Entire sets of documents are processed, resulting in forests of XML semantic trees.
 
 ## Pre-requisites
@@ -14,9 +18,7 @@ This loader takes in IDs of PDF, DOCX or DOC files processed by [Docugami](https
 To use this loader, you simply need to pass in a Docugami Doc Set ID, and optionally an array of Document IDs (by default, all documents in the Doc Set are loaded).
 
 ```python
-from llama_index.core import download_loader
-
-DocugamiReader = download_loader("DocugamiReader")
+from llama_index.readers.docugami import DocugamiReader
 
 docset_id = "tjwrr2ekqkc3"
 document_ids = ["ui7pkriyckwi", "1be3o7ch10iy"]

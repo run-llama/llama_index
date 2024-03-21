@@ -1,3 +1,4 @@
 ::: llama_index.core.extractors
-options:
-members: - KeywordExtractor
+    options:
+      members:
+        - KeywordExtractor

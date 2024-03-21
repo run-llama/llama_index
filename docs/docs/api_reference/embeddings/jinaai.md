@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.jinaai
-options:
-members: - JinaEmbedding
+    options:
+      members:
+        - JinaEmbedding

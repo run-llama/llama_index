@@ -5,7 +5,3 @@ poetry_requirements(
         "google-auth-oauthlib": ["google_auth_oauthlib"],
     },
 )
-
-python_requirements(
-    name="reqs",
-)

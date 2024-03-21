@@ -54,6 +54,8 @@ class Element(BaseModel):
     title_level: Optional[int] = None
     table_output: Optional[TableOutput] = None
     table: Optional[pd.DataFrame] = None
+    markdown: Optional[str] = None
+    page_number: Optional[int] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -78,14 +80,19 @@ class BaseElementNodeParser(NodeParser):
     )
     num_workers: int = Field(
         default=DEFAULT_NUM_WORKERS,
-        description="Num of works for async jobs.",
+        description="Num of workers for async jobs.",
     )
 
     show_progress: bool = Field(default=True, description="Whether to show progress.")
 
+    nested_node_parser: Optional[NodeParser] = Field(
+        default=None,
+        description="Other types of node parsers to handle some types of nodes.",
+    )
+
     @classmethod
     def class_name(cls) -> str:
-        return "BaseStructuredNodeParser"
+        return "BaseElementNodeParser"
 
     @classmethod
     def from_defaults(
@@ -249,11 +256,15 @@ class BaseElementNodeParser(NodeParser):
         doc = Document(text="\n\n".join(list(buffer)))
         return node_parser.get_nodes_from_documents([doc])
 
-    def get_nodes_from_elements(self, elements: List[Element]) -> List[BaseNode]:
+    def get_nodes_from_elements(
+        self,
+        elements: List[Element],
+        metadata_inherited: Optional[Dict[str, Any]] = None,
+    ) -> List[BaseNode]:
         """Get nodes and mappings."""
         from llama_index.core.node_parser import SentenceSplitter
 
-        node_parser = SentenceSplitter()
+        node_parser = self.nested_node_parser or SentenceSplitter()
 
         nodes = []
         cur_text_el_buffer: List[str] = []
@@ -334,7 +345,8 @@ class BaseElementNodeParser(NodeParser):
                 nodes.extend([index_node, text_node])
             else:
                 cur_text_el_buffer.append(str(element.element))
-        # flush text buffer
+
+        # flush text buffer for the last batch
         if len(cur_text_el_buffer) > 0:
             cur_text_nodes = self._get_nodes_from_buffer(
                 cur_text_el_buffer, node_parser
@@ -342,5 +354,8 @@ class BaseElementNodeParser(NodeParser):
             nodes.extend(cur_text_nodes)
             cur_text_el_buffer = []
 
-        # remove empty nodes
+        # remove empty nodes and keep node original metadata inherited from parent nodes
+        for node in nodes:
+            if metadata_inherited:
+                node.metadata.update(metadata_inherited)
         return [node for node in nodes if len(node.text) > 0]

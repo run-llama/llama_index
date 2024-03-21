@@ -2,6 +2,7 @@
 dist/
 migration_scripts/
 venv/
+.idea
 .venv/
 .ipynb_checkpoints
 .__pycache__
