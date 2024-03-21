@@ -8,7 +8,7 @@ import warnings
 from datetime import datetime
 from functools import reduce
 from itertools import repeat
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
@@ -229,20 +229,22 @@ class SimpleDirectoryReader(BaseReader):
         all_files = set()
         rejected_files = set()
         rejected_dirs = set()
+        # Default to POSIX paths for non-default file systems (e.g. S3)
+        _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
         if self.exclude is not None:
             for excluded_pattern in self.exclude:
                 if self.recursive:
                     # Recursive glob
-                    excluded_glob = Path(input_dir) / Path("**") / excluded_pattern
+                    excluded_glob = _Path(input_dir) / _Path("**") / excluded_pattern
                 else:
                     # Non-recursive glob
-                    excluded_glob = Path(input_dir) / excluded_pattern
+                    excluded_glob = _Path(input_dir) / excluded_pattern
                 for file in self.fs.glob(str(excluded_glob)):
                     if self.fs.isdir(file):
-                        rejected_dirs.add(Path(file))
+                        rejected_dirs.add(_Path(file))
                     else:
-                        rejected_files.add(Path(file))
+                        rejected_files.add(_Path(file))
 
         file_refs: List[str] = []
         if self.recursive:
@@ -253,7 +255,7 @@ class SimpleDirectoryReader(BaseReader):
         for ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
-            ref = Path(ref)
+            ref = _Path(ref)
             is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
