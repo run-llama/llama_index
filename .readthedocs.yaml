@@ -11,8 +11,8 @@ build:
     python: "3.12"
 
 mkdocs:
-  configuration: new-docs/mkdocs.yml
+  configuration: docs/mkdocs.yml
 
 python:
   install:
-    - requirements: new-docs/requirements.txt
+    - requirements: docs/requirements.txt
