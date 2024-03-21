@@ -10,7 +10,6 @@ from functools import reduce
 from itertools import repeat
 from pathlib import Path
 import fsspec
-from gcsfs import GCSFileSystem
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
@@ -83,14 +82,11 @@ def default_file_metadata_func(
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
-    
-    # Adjust how file_name is determined based on the type of fs
-    if isinstance(fs, GCSFileSystem):
-        # For GCSFileSystem, the file path itself can be used or adapted as needed
-        file_name = os.path.basename(file_path)
-    else:
-        # For other filesystems, including local, use the original method
+
+    try:
         file_name = os.path.basename(str(stat_result["name"]))
+    except Exception as e:
+        file_name = os.path.basename(file_path)
     
     creation_date = _format_file_timestamp(stat_result.get("created"))
     last_modified_date = _format_file_timestamp(stat_result.get("mtime"))
