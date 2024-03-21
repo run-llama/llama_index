@@ -1727,32 +1727,33 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-llamafile
             - ../llama-index-integrations/llms/llama-index-llms-premai
   - redirects:
-      use_directory_urls: false
       redirect_maps:
-        "./community/llama_packs/root.html": "community/llama_packs/index.md"
-        "./module_guides/deploying/agents/root.html": "module_guides/deploying/agents/index.md"
-        "./module_guides/deploying/agents/tools/root.html": "module_guides/deploying/agents/tools/index.md"
-        "./module_guides/deploying/chat_engines/root.html": "module_guides/deploying/chat_engines/index.md"
-        "./module_guides/deploying/query_engine/root.html": "module_guides/deploying/query_engine/index.md"
-        "./module_guides/evaluating/root.html": "module_guides/evaluating/index.md"
-        "./module_guides/loading/connector/root.html": "module_guides/loading/connector/index.md"
-        "./module_guides/loading/documents_and_nodes/root.html": "module_guides/loading/documents_and_nodes/index.md"
-        "./module_guides/loading/ingestion_pipeline/root.html": "module_guides/loading/ingestion_pipeline/index.md"
-        "./module_guides/loading/node_parsers/root.html": "module_guides/loading/node_parsers/index.md"
-        "./module_guides/models/prompts.html": "module_guides/models/prompts/index.md"
-        "./module_guides/observability/observability.html": "module_guides/observability/index.md"
-        "./module_guides/querying/node_postprocessors/root.html": "module_guides/querying/node_postprocessors/index.md"
-        "./module_guides/querying/pipeline/root.html": "module_guides/querying/pipeline/index.md"
-        "./module_guides/querying/response_synthesizers/root.html": "module_guides/querying/response_synthesizers/index.md"
-        "./module_guides/querying/retriever/root.html": "module_guides/querying/retriever/index.md"
-        "./module_guides/querying/router/root.html": "module_guides/querying/router/index.md"
-        "./module_guides/querying/structured_outputs/structured_outputs.html": "module_guides/querying/structured_outputs/index.md"
-        "./module_guides/storing/storing.html": "module_guides/storing/index.md"
-        "./understanding/evaluating/cost_analysis/root.html": "understanding/evaluating/cost_analysis/index.md"
-        "./understanding/putting_it_all_together/putting_it_all_together.html": "understanding/putting_it_all_together/index.md"
-        "./use_cases/q_and_a/root.html": "use_cases/q_and_a/index.md"
+        ./community/llama_packs/root.html: community/llama_packs/index.md
+        ./module_guides/deploying/agents/root.html: module_guides/deploying/agents/index.md
+        ./module_guides/deploying/agents/tools/root.html: module_guides/deploying/agents/tools/index.md
+        ./module_guides/deploying/chat_engines/root.html: module_guides/deploying/chat_engines/index.md
+        ./module_guides/deploying/query_engine/root.html: module_guides/deploying/query_engine/index.md
+        ./module_guides/evaluating/root.html: module_guides/evaluating/index.md
+        ./module_guides/loading/connector/root.html: module_guides/loading/connector/index.md
+        ./module_guides/loading/documents_and_nodes/root.html: module_guides/loading/documents_and_nodes/index.md
+        ./module_guides/loading/ingestion_pipeline/root.html: module_guides/loading/ingestion_pipeline/index.md
+        ./module_guides/loading/node_parsers/root.html: module_guides/loading/node_parsers/index.md
+        ./module_guides/models/prompts.html: module_guides/models/prompts/index.md
+        ./module_guides/observability/observability.html: module_guides/observability/index.md
+        ./module_guides/querying/node_postprocessors/root.html: module_guides/querying/node_postprocessors/index.md
+        ./module_guides/querying/pipeline/root.html: module_guides/querying/pipeline/index.md
+        ./module_guides/querying/response_synthesizers/root.html: module_guides/querying/response_synthesizers/index.md
+        ./module_guides/querying/retriever/root.html: module_guides/querying/retriever/index.md
+        ./module_guides/querying/router/root.html: module_guides/querying/router/index.md
+        ./module_guides/querying/structured_outputs/structured_outputs.html: module_guides/querying/structured_outputs/index.md
+        ./module_guides/storing/storing.html: module_guides/storing/index.md
+        ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
+        ./understanding/putting_it_all_together/putting_it_all_together.html: understanding/putting_it_all_together/index.md
+        ./use_cases/q_and_a/root.html: use_cases/q_and_a/index.md
+      use_directory_urls: false
 site_name: LlamaIndex
 theme:
+  custom_dir: overrides
   favicon: _static/assets/LlamaLogoBrowserTab.png
   features:
     - navigation.instant
@@ -1764,7 +1765,6 @@ theme:
     - content.code.copy
   logo: _static/assets/LlamaSquareBlack.svg
   name: material
-  custom_dir: overrides
   palette:
     - media: (prefers-color-scheme)
       toggle:
