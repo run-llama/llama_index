@@ -373,14 +373,14 @@ class ElasticsearchStore(BasePydanticVectorStore):
             return_ids.append(_id)
 
         async with self.client as client:
-            await async_bulk(
-                client, requests, chunk_size=self.batch_size, refresh=True
-            )
+            await async_bulk(client, requests, chunk_size=self.batch_size, refresh=True)
             try:
                 success, failed = await async_bulk(
                     client, requests, stats_only=True, refresh=True
                 )
-                logger.debug(f"Added {success} and failed to add {failed} texts to index")
+                logger.debug(
+                    f"Added {success} and failed to add {failed} texts to index"
+                )
 
                 logger.debug(f"added texts {ids} to index")
                 return return_ids
