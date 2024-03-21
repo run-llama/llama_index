@@ -15,6 +15,7 @@ from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.core.readers.base import BaseReader
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
@@ -563,15 +564,13 @@ class SimpleDirectoryReader(BaseReader):
         self,
         show_progress: bool = False,
         num_workers: Optional[int] = None,
-        num_batches: Optional[int] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
-            show_progress (bool): Ignored for this method.
-            num_workers  (Optional[int]): Ignored for this method.
-            num_batches (Optional[int]): Number of batches to split the processing into.
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+            num_workers  (Optional[int]): Number of workers to parallelize data-loading over.
             fs (Optional[fsspec.AbstractFileSystem]): File system to use. If fs was specified
                 in the constructor, it will override the fs parameter here.
 
@@ -582,16 +581,10 @@ class SimpleDirectoryReader(BaseReader):
         fs = fs or self.fs
 
         coroutines = [self.aload_file(input_file) for input_file in files_to_process]
-        if num_batches is not None:
-            if num_batches < 1:
-                raise ValueError("`num_batches` must be a positive integer.")
-            coroutines = [
-                asyncio.gather(*coroutines[i : i + num_batches])
-                for i in range(0, len(coroutines), num_batches)
-            ]
-            document_lists = []
-            for coroutine in coroutines:
-                document_lists.extend(await coroutine)
+        if num_workers:
+            document_lists = await run_jobs(
+                coroutines, show_progress=show_progress, workers=num_workers
+            )
         else:
             document_lists = await asyncio.gather(*coroutines)
         documents = [doc for doc_list in document_lists for doc in doc_list]
