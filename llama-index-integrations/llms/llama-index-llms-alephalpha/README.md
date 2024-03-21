@@ -43,7 +43,12 @@ from llama_index.llms.alephalpha import AlephAlpha
 ## Response Structure
 
     * `model_version`: The name and version of the model used.
-    * `completions`: A list containing the generated text completion(s).
+    * `completions`: A list containing the generated text completion(s) and optional metadata:
+        * `completion`: The generated text completion.
+        * `log_probs`: Log probabilities of the tokens in the completion.
+        * `raw_completion`: The raw completion without any post-processing.
+        * `completion_tokens`: Completion split into tokens.
+        * `finish_reason`: Reason for completion termination.
     * `num_tokens_prompt_total`: Total number of tokens in the input prompt.
     * `num_tokens_generated`: Number of tokens generated in the completion.
 
