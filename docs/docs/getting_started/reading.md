@@ -12,26 +12,14 @@ Many of our examples are formatted as Notebooks, by which we mean Jupyter-style 
 
 Our docs are structured so you should be able to roughly progress simply by moving down the sidebar on the left, or just hitting the "next" link at the bottom of each page.
 
-1. **Getting started**
+1. **Getting started:** The section you're in right now. We can get you going from knowing nothing about LlamaIndex and LLMs. [Install the library](installation.md), write your first demo in [five lines of code](starter_example.md), learn more about the [high level concepts](concepts.md) of LLM applications, and then see how you can [customize the five-line example](customization.md) to meet your needs.
 
-   The section you're in right now. We can get you going from knowing nothing about LlamaIndex and LLMs. [Install the library](installation.md), write your first demo in [five lines of code](starter_example.md), learn more about the [high level concepts](concepts.md) of LLM applications, and then see how you can [customize the five-line example](customization.md) to meet your needs.
+2. **Learn:** Once you've completed the Getting Started section, this is the next place to go. In a series of bite-sized tutorials, we'll walk you through every stage of building a production LlamaIndex application and help you level up on the concepts of the library and LLMs in general as you go.
 
-2. **Learn**
+3. **Use cases:** If you're a dev trying to figure out whether LlamaIndex will work for your use case, we have an overview of the types of things you can build.
 
-   Once you've completed the Getting Started section, this is the next place to go. In a series of bite-sized tutorials, we'll walk you through every stage of building a production LlamaIndex application and help you level up on the concepts of the library and LLMs in general as you go.
+4. **Examples:** We have rich notebook examples for nearly every feature under the soon. Explore these to find and learn something new about LlamaIndex.
 
-3. **Use cases**
+5. **Advanced:** Already got a working LlamaIndex application and looking to further refine it? Our advanced section will walk you through the [first things you should try optimizing](../optimizing/basic_strategies/basic_strategies.md) like your embedding model and chunk size through progressively more complex and subtle customizations all the way to [fine tuning](../optimizing/fine-tuning/fine-tuning.md) your model.
 
-   If you're a dev trying to figure out whether LlamaIndex will work for your use case, we have an overview of the types of things you can build.
-
-4. **Examples**
-
-   We have rich notebook examples for nearly every feature under the soon. Explore these to find and learn something new about LlamaIndex.
-
-5. **Advanced**
-
-   Already got a working LlamaIndex application and looking to further refine it? Our advanced section will walk you through the [first things you should try optimizing](../optimizing/basic_strategies/basic_strategies.md) like your embedding model and chunk size through progressively more complex and subtle customizations all the way to [fine tuning](../optimizing/fine-tuning/fine-tuning.md) your model.
-
-6. **Component guides**
-
-   Arranged in the same order of building an LLM application as our Understanding section, these are comprehensive, lower-level guides to the individual components of LlamaIndex and how to use them.
+6. **Component guides:** Arranged in the same order of building an LLM application as our Understanding section, these are comprehensive, lower-level guides to the individual components of LlamaIndex and how to use them.

@@ -5,8 +5,8 @@ extra:
 extra_css:
   - css/style.css
 extra_javascript:
-  - javascript/llms_example.js
   - javascript/mendablesearch.js
+  # TODO - javascript/llms_example.js
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -679,6 +679,20 @@ nav:
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
       - Evaluation:
+          - ./api_reference/evaluation/answer_relevancy.md
+          - ./api_reference/evaluation/context_relevancy.md
+          - ./api_reference/evaluation/correctness.md
+          - ./api_reference/evaluation/dataset_generation.md
+          - ./api_reference/evaluation/faithfullness.md
+          - ./api_reference/evaluation/guideline.md
+          - ./api_reference/evaluation/index.md
+          - ./api_reference/evaluation/metrics.md
+          - ./api_reference/evaluation/multi_modal.md
+          - ./api_reference/evaluation/pairwise_comparison.md
+          - ./api_reference/evaluation/query_response.md
+          - ./api_reference/evaluation/response.md
+          - ./api_reference/evaluation/retrieval.md
+          - ./api_reference/evaluation/semantic_similarity.md
           - ./api_reference/evaluation/tonic_validate.md
       - Indexes:
           - ./api_reference/indices/colbert.md
@@ -917,7 +931,24 @@ nav:
           - ./api_reference/query_engine/tool_retriever_router.md
           - ./api_reference/query_engine/transform.md
       - Query Pipeline:
+          - ./api_reference/query_pipeline/agent.md
+          - ./api_reference/query_pipeline/arg_pack.md
+          - ./api_reference/query_pipeline/custom.md
+          - ./api_reference/query_pipeline/function.md
           - ./api_reference/query_pipeline/index.md
+          - ./api_reference/query_pipeline/input.md
+          - ./api_reference/query_pipeline/llm.md
+          - ./api_reference/query_pipeline/multi_modal.md
+          - ./api_reference/query_pipeline/object.md
+          - ./api_reference/query_pipeline/output_parser.md
+          - ./api_reference/query_pipeline/postprocessor.md
+          - ./api_reference/query_pipeline/prompt.md
+          - ./api_reference/query_pipeline/query_engine.md
+          - ./api_reference/query_pipeline/query_transform.md
+          - ./api_reference/query_pipeline/retriever.md
+          - ./api_reference/query_pipeline/router.md
+          - ./api_reference/query_pipeline/synthesizer.md
+          - ./api_reference/query_pipeline/tool_runner.md
       - Question Generators:
           - ./api_reference/question_gen/guidance.md
           - ./api_reference/question_gen/index.md
@@ -1127,6 +1158,8 @@ nav:
               - ./api_reference/storage/kvstore/redis.md
               - ./api_reference/storage/kvstore/s3.md
               - ./api_reference/storage/kvstore/simple.md
+          - Storage:
+              - ./api_reference/storage/storage_context.md
           - Vector Store:
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
@@ -1176,8 +1209,6 @@ nav:
               - ./api_reference/storage/vector_store/upstash.md
               - ./api_reference/storage/vector_store/weaviate.md
               - ./api_reference/storage/vector_store/zep.md
-          - Storage:
-              - ./api_reference/storage/storage_context.md
       - Tools:
           - ./api_reference/tools/arxiv.md
           - ./api_reference/tools/azure_cv.md
@@ -1706,6 +1737,7 @@ theme:
     - navigation.top
     - navigation.footer
     - toc.follow
+    - content.code.copy
   logo: _static/assets/LlamaSquareBlack.svg
   name: material
   palette:
