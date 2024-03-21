@@ -12,7 +12,6 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.chat_engine.utils import response_gen_from_query_engine
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -22,6 +21,7 @@ from llama_index.core.service_context_elements.llm_predictor import LLMPredictor
 from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
 )
 from llama_index.core.tools import ToolOutput
 
@@ -86,15 +86,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
 
-        if llm is None:
-            service_context = service_context or ServiceContext.from_defaults(
-                embed_model=MockEmbedding(embed_dim=2)
-            )
-            llm = service_context.llm
-        else:
-            service_context = service_context or ServiceContext.from_defaults(
-                llm=llm, embed_model=MockEmbedding(embed_dim=2)
-            )
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
