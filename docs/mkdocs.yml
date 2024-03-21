@@ -839,7 +839,6 @@ nav:
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
-          - ./api_reference/multi_modal_llms/replicate_multi_modal.md
       - Node Parsers & Text Splitters:
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1129,7 +1128,6 @@ nav:
               - ./api_reference/storage/kvstore/s3.md
               - ./api_reference/storage/kvstore/simple.md
           - Vector Store:
-              - ./api_reference/storage/vector_store/astra.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
