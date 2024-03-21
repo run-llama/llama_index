@@ -560,6 +560,7 @@ class SimpleDirectoryReader(BaseReader):
         self,
         show_progress: bool = False,
         num_workers: Optional[int] = None,
+        num_batches: Optional[int] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
         """Load data from the input directory.
@@ -567,6 +568,7 @@ class SimpleDirectoryReader(BaseReader):
         Args:
             show_progress (bool): Ignored for this method.
             num_workers  (Optional[int]): Ignored for this method.
+            num_batches (Optional[int]): Number of batches to split the processing into.
             fs (Optional[fsspec.AbstractFileSystem]): File system to use. If fs was specified
                 in the constructor, it will override the fs parameter here.
 
@@ -577,7 +579,18 @@ class SimpleDirectoryReader(BaseReader):
         fs = fs or self.fs
 
         coroutines = [self.aload_file(input_file) for input_file in files_to_process]
-        document_lists = await asyncio.gather(*coroutines)
+        if num_batches is not None:
+            if num_batches < 1:
+                raise ValueError("`num_batches` must be a positive integer.")
+            coroutines = [
+                asyncio.gather(*coroutines[i : i + num_batches])
+                for i in range(0, len(coroutines), num_batches)
+            ]
+            document_lists = []
+            for coroutine in coroutines:
+                document_lists.extend(await coroutine)
+        else:
+            document_lists = await asyncio.gather(*coroutines)
         documents = [doc for doc_list in document_lists for doc in doc_list]
 
         return self._exclude_metadata(documents)
