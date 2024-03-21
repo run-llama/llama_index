@@ -209,13 +209,13 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                     response_gen=empty_response_generator()
                 )
                 dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                    SynthesizeEndEvent(query=query, response=empty_response)
                 )
                 return empty_response
             else:
                 empty_response = Response("Empty Response")
                 dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                    SynthesizeEndEvent(query=query, response=empty_response)
                 )
                 return empty_response
 
@@ -240,7 +240,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatcher.event(SynthesizeEndEvent(query=query, response=str(response)))
+        dispatcher.event(SynthesizeEndEvent(query=query, response=response))
         return response
 
     @dispatcher.span
@@ -258,13 +258,13 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                     response_gen=empty_response_agenerator()
                 )
                 dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                    SynthesizeEndEvent(query=query, response=empty_response)
                 )
                 return empty_response
             else:
                 empty_response = Response("Empty Response")
                 dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=str(empty_response))
+                    SynthesizeEndEvent(query=query, response=empty_response)
                 )
                 return empty_response
 
@@ -289,7 +289,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatcher.event(SynthesizeEndEvent(query=query, response=str(response)))
+        dispatcher.event(SynthesizeEndEvent(query=query, response=response))
         return response
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:

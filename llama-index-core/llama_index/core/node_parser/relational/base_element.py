@@ -143,22 +143,9 @@ class BaseElementNodeParser(NodeParser):
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
         from llama_index.core.indices.list.base import SummaryIndex
-        from llama_index.core.service_context import ServiceContext
+        from llama_index.core.settings import Settings
 
-        if self.llm:
-            llm = self.llm
-        else:
-            try:
-                from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
-            except ImportError as e:
-                raise ImportError(
-                    "`llama-index-llms-openai` package not found."
-                    " Please install with `pip install llama-index-llms-openai`."
-                )
-            llm = OpenAI()
-        llm = cast(LLM, llm)
-
-        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
+        llm = self.llm or Settings.llm
 
         table_context_list = []
         for idx, element in tqdm(enumerate(elements)):
@@ -178,7 +165,7 @@ class BaseElementNodeParser(NodeParser):
 
         async def _get_table_output(table_context: str, summary_query_str: str) -> Any:
             index = SummaryIndex.from_documents(
-                [Document(text=table_context)], service_context=service_context
+                [Document(text=table_context)],
             )
             query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
