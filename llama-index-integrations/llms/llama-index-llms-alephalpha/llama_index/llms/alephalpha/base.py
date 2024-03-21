@@ -22,7 +22,7 @@ from llama_index.core.utils import Tokenizer
 
 from llama_index.llms.alephalpha.utils import (
     alephalpha_modelname_to_contextsize,
-    extract_additional_info_from_response,
+    process_response,
 )
 
 DEFAULT_ALEPHALPHA_MODEL = "luminous-supreme-control"
@@ -244,16 +244,10 @@ class AlephAlpha(LLM):
             **self._completion_kwargs,
             **kwargs,
         }
-
         request = CompletionRequest(**all_kwargs)
         response = client.complete(request=request, model=self.model)
         completion = response.completions[0].completion if response.completions else ""
-
-        additional_info = extract_additional_info_from_response(response)
-
-        return CompletionResponse(
-            text=completion, raw=response.to_json(), additional_kwargs=additional_info
-        )
+        return process_response(response, completion)
 
     @llm_completion_callback()
     async def acomplete(
@@ -265,22 +259,13 @@ class AlephAlpha(LLM):
             **self._completion_kwargs,
             **kwargs,
         }
-
         request = CompletionRequest(**all_kwargs)
-
         async with client as aclient:
             response = await aclient.complete(request=request, model=self.model)
             completion = (
                 response.completions[0].completion if response.completions else ""
             )
-
-            additional_info = extract_additional_info_from_response(response)
-
-            return CompletionResponse(
-                text=completion,
-                raw=response.to_json(),
-                additional_kwargs=additional_info,
-            )
+            return process_response(response, completion)
 
     @llm_completion_callback()
     def stream_complete(
