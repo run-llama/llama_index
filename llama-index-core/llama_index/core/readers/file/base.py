@@ -7,6 +7,7 @@ import multiprocessing
 import warnings
 from datetime import datetime
 from functools import reduce
+import asyncio
 from itertools import repeat
 from pathlib import Path, PurePosixPath
 import fsspec
@@ -14,6 +15,7 @@ from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.core.readers.base import BaseReader
+from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
@@ -434,6 +436,67 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
+    async def aload_file(self, input_file: Path) -> List[Document]:
+        """Load file asynchronously."""
+        # TODO: make this less redundant
+        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
+        default_file_reader_suffix = list(default_file_reader_cls.keys())
+        metadata: Optional[dict] = None
+        documents: List[Document] = []
+
+        if self.file_metadata is not None:
+            metadata = self.file_metadata(str(input_file))
+
+        file_suffix = input_file.suffix.lower()
+        if (
+            file_suffix in default_file_reader_suffix
+            or file_suffix in self.file_extractor
+        ):
+            # use file readers
+            if file_suffix not in self.file_extractor:
+                # instantiate file reader if not already
+                reader_cls = default_file_reader_cls[file_suffix]
+                self.file_extractor[file_suffix] = reader_cls()
+            reader = self.file_extractor[file_suffix]
+
+            # load data -- catch all errors except for ImportError
+            try:
+                kwargs = {"extra_info": metadata}
+                if self.fs and not is_default_fs(self.fs):
+                    kwargs["fs"] = self.fs
+                docs = await reader.aload_data(input_file, **kwargs)
+            except ImportError as e:
+                # ensure that ImportError is raised so user knows
+                # about missing dependencies
+                raise ImportError(str(e))
+            except Exception as e:
+                # otherwise, just skip the file and report the error
+                print(
+                    f"Failed to load file {input_file} with error: {e}. Skipping...",
+                    flush=True,
+                )
+                return []
+
+            # iterate over docs if needed
+            if self.filename_as_id:
+                for i, doc in enumerate(docs):
+                    doc.id_ = f"{input_file!s}_part_{i}"
+
+            documents.extend(docs)
+        else:
+            # do standard read
+            fs = self.fs or get_default_fs()
+            with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
+                data = f.read().decode(self.encoding, errors=self.errors)
+
+            doc = Document(text=data, metadata=metadata or {})
+            if self.filename_as_id:
+                doc.id_ = str(input_file)
+
+            documents.append(doc)
+
+        return documents
+
     def load_data(
         self,
         show_progress: bool = False,
@@ -494,6 +557,40 @@ class SimpleDirectoryReader(BaseReader):
                         fs=fs,
                     )
                 )
+
+        return self._exclude_metadata(documents)
+
+    async def aload_data(
+        self,
+        show_progress: bool = False,
+        num_workers: Optional[int] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> List[Document]:
+        """Load data from the input directory.
+
+        Args:
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+            num_workers  (Optional[int]): Number of workers to parallelize data-loading over.
+            fs (Optional[fsspec.AbstractFileSystem]): File system to use. If fs was specified
+                in the constructor, it will override the fs parameter here.
+
+        Returns:
+            List[Document]: A list of documents.
+        """
+        files_to_process = self.input_files
+        fs = fs or self.fs
+
+        coroutines = [self.aload_file(input_file) for input_file in files_to_process]
+        if num_workers:
+            document_lists = await run_jobs(
+                coroutines, show_progress=show_progress, workers=num_workers
+            )
+        elif show_progress:
+            _asyncio = get_asyncio_module(show_progress=show_progress)
+            document_lists = await _asyncio.gather(*coroutines)
+        else:
+            document_lists = await asyncio.gather(*coroutines)
+        documents = [doc for doc_list in document_lists for doc in doc_list]
 
         return self._exclude_metadata(documents)
 

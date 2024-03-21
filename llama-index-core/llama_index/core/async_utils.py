@@ -1,7 +1,8 @@
 """Async utils."""
+
 import asyncio
 from itertools import zip_longest
-from typing import Any, Coroutine, Iterable, List
+from typing import Any, Coroutine, Iterable, List, TypeVar
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -80,12 +81,14 @@ def get_asyncio_module(show_progress: bool = False) -> Any:
 
 DEFAULT_NUM_WORKERS = 4
 
+T = TypeVar("T")
+
 
 async def run_jobs(
-    jobs: List[Coroutine],
+    jobs: List[Coroutine[Any, Any, T]],
     show_progress: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
-) -> List[Any]:
+) -> List[T]:
     """Run jobs.
 
     Args:
