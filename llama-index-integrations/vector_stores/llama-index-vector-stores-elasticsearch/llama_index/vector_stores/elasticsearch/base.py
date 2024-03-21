@@ -375,22 +375,23 @@ class ElasticsearchStore(BasePydanticVectorStore):
             requests.append(request)
             return_ids.append(_id)
 
-        await async_bulk(
-            self.client, requests, chunk_size=self.batch_size, refresh=True
-        )
-        try:
-            success, failed = await async_bulk(
-                self.client, requests, stats_only=True, refresh=True
-            )
-            logger.debug(f"Added {success} and failed to add {failed} texts to index")
+        async with self.client as client:
+            await async_bulk(client, requests, chunk_size=self.batch_size, refresh=True)
+            try:
+                success, failed = await async_bulk(
+                    client, requests, stats_only=True, refresh=True
+                )
+                logger.debug(
+                    f"Added {success} and failed to add {failed} texts to index"
+                )
 
-            logger.debug(f"added texts {ids} to index")
-            return return_ids
-        except BulkIndexError as e:
-            logger.error(f"Error adding texts: {e}")
-            firstError = e.errors[0].get("index", {}).get("error", {})
-            logger.error(f"First error reason: {firstError.get('reason')}")
-            raise
+                logger.debug(f"added texts {ids} to index")
+                return return_ids
+            except BulkIndexError as e:
+                logger.error(f"Error adding texts: {e}")
+                firstError = e.errors[0].get("index", {}).get("error", {})
+                logger.error(f"First error reason: {firstError.get('reason')}")
+                raise
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete node from Elasticsearch index.
