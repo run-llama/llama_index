@@ -141,7 +141,7 @@ postprocessor = JinaRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/JinaRerank.ipynb).
+Full notebook guide is available [here](../../../examples/node_postprocessor/JinaRerank.ipynb).
 
 ## FixedRecencyPostprocessor
 
@@ -295,25 +295,7 @@ response = query_engine.query(
 )
 ```
 
-Full notebook guide is available [here](/examples/node_postprocessor/ColbertRerank.ipynb).
-
-## Jina Reranker
-
-Uses models from [jina](https://jina.ai/) to rerank documents. Returns the top N ranked nodes.
-
-```python
-from llama_index.postprocessor.jinaai_rerank import JinaRerank
-
-jina_rerank = JinaRerank(api_key=api_key, top_n=2)
-
-query_engine = index.as_query_engine(
-    similarity_top_k=10, node_postprocessors=[jina_rerank]
-)
-```
-
-Full notebook guide is available [here](/examples/node_postprocessor/JinaRerank.ipynb).
-
-## All Notebooks
+Full notebook guide is available [here](../../../examples/node_postprocessor/ColbertRerank.ipynb).
 
 ## All Notebooks
 
