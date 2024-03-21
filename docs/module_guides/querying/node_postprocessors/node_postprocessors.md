@@ -313,6 +313,20 @@ query_engine = index.as_query_engine(
 
 Full notebook guide is available [here](/examples/node_postprocessor/JinaRerank.ipynb).
 
+## rankLLM
+
+Uses models from [rankLLM](https://github.com/castorini/rank_llm) to rerank documents. Returns the top N ranked nodes.
+
+```python
+from llama_index.postprocessor import RankLLMRerank
+
+postprocessor = RankLLMRerank(top_n=5, model="zephyr")
+
+postprocessor.postprocess_nodes(nodes)
+```
+
+Full notebook guide is available [2021 Lyft 10-k](/examples/node_postprocessor/rankLLM.ipynb).
+
 ## All Notebooks
 
 ```{toctree}
@@ -332,5 +346,6 @@ maxdepth: 1
 /examples/node_postprocessor/rankGPT.ipynb
 /examples/node_postprocessor/ColbertRerank.ipynb
 /examples/node_postprocessor/JinaRerank.ipynb
+/examples/node_postprocessor/rankLLM.ipynb
 /cookbooks/mixedbread_reranker.ipynb
 ```
