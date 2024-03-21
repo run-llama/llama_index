@@ -49,7 +49,10 @@ llamaindex-cli new-package --kind "llms" --name "gemini"
 Executing the above commands will create a new folder called `llama-index-llms-gemini`
 within the `llama-index-integrations/llms` directory.
 
-In addition to preparing your source code, we also ask that you fill in some
+Please ensure to add a detailed README for your new package as it will appear in
+both [llamahub.ai](https://llamahub.ai) as well as the PyPi.org website.
+In addition to preparing your source code and supplying a detailed README, we
+also ask that you fill in some
 metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
 correct information. You do so by adding the required metadata under the `[tool.llamahub]`
 section with your new package's `pyproject.toml`.
@@ -314,7 +317,10 @@ Executing the first set of shell commands will create a new folder called `llama
 within the `llama-index-packs` directory. While the second set will create a new
 package directory called `llama-index-readers-new-reader` within the `llama-index-integrations/readers` directory.
 
-In addition to preparing your source code, we also ask that you fill in some
+Please ensure to add a detailed README for your new package as it will appear in
+both [llamahub.ai](https://llamahub.ai) as well as the PyPi.org website.
+In addition to preparing your source code and supplying a detailed README, we
+also ask that you fill in some
 metadata for your package to appear in [llamahub.ai](https://llamahub.ai) with the
 correct information. You do so by adding the required metadata under the `[tool.llamahub]`
 section with your new package's `pyproject.toml`.
