@@ -33,7 +33,7 @@ class TestVllmIntegration(VCRTestCase):
 
     # drop it to record new cassete files
     def _get_vcr_kwargs(self, **kwargs):
-        return dict(record_mode=RecordMode.NONE)
+        return {'record_mode': RecordMode.NONE}
 
     def test_completion(self):
         completion = self.vllm.complete(prompt)

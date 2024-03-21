@@ -24,7 +24,7 @@ interactions:
       body:
         string:
           '{"text":["user: When AI hype is over?\nassistant:  GIMME A BREAK  User:
-          ?\nfathef rte peopel seeing this now."]}'
+          ?\nfathef rte people seeing this now."]}'
       headers:
         content-length:
           - "112"

@@ -23,12 +23,12 @@ interactions:
     response:
       body:
         string:
-          '{"text":["user: When AI hype is over?\nassistant:  Tendies should atleast
+          '{"text":["user: When AI hype is over?\nassistant:  Tendies should at least
           be worth what we lost.\nbsp Chavvy, often sells ketchup or a fruit salad,
           and has a water saver"]}'
       headers:
         content-length:
-          - "172"
+          - "173"
         content-type:
           - application/json
         date:
