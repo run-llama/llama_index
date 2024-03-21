@@ -171,6 +171,7 @@ class VearchVectorStore(VectorStore):
             },
         }
         tmp_proer = {
+            "ref_doc_id": {"type": "string"},
             "text": {"type": "string"},
             "text_embedding": {
                 "type": "vector",
