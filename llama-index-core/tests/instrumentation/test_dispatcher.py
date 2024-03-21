@@ -1,6 +1,7 @@
+import pytest
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation.dispatcher import Dispatcher
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 dispatcher = instrument.get_dispatcher("test")
 
@@ -29,7 +30,51 @@ def test_dispatcher_span_args(mock_uuid, mock_span_enter, mock_span_exit):
     assert kwargs == {"id": span_id, "a": 3, "c": 5}
 
     # span_exit
-    mock_span_exit.assert_called_once()
     args, kwargs = mock_span_exit.call_args
     assert args == (1, 2)
     assert kwargs == {"id": span_id, "a": 3, "c": 5, "result": result}
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_drop")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index.core.instrumentation.dispatcher.uuid")
+@patch(f"{__name__}.func")
+def test_dispatcher_span_drop_args(
+    mock_func: MagicMock,
+    mock_uuid: MagicMock,
+    mock_span_enter: MagicMock,
+    mock_span_drop: MagicMock,
+    mock_span_exit: MagicMock,
+):
+    # arrange
+    class CustomException(Exception):
+        pass
+
+    mock_uuid.uuid4.return_value = "mock"
+    mock_func.side_effect = CustomException
+
+    with pytest.raises(CustomException):
+        # act
+        result = func(7, a=3, b=5, c=2, d=5)
+
+        # assert
+        # span_enter
+        mock_span_enter.assert_called_once()
+
+        # span_drop
+        mock_span_drop.assert_called_once()
+        span_id = f"{func.__qualname__}-mock"
+        args, kwargs = mock_span_exit.call_args
+        assert args == (7,)
+        assert kwargs == {
+            "id": span_id,
+            "a": 3,
+            "b": 5,
+            "c": 2,
+            "d": 2,
+            "err": CustomException,
+        }
+
+        # span_exit
+        mock_span_exit.assert_not_called()
