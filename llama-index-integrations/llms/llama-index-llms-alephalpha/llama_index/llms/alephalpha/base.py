@@ -7,7 +7,9 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     CompletionResponse,
     CompletionResponseGen,
-    LLMMetadata, ChatResponseGen, CompletionResponseAsyncGen,
+    LLMMetadata,
+    ChatResponseGen,
+    CompletionResponseAsyncGen,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_TEMPERATURE
@@ -29,12 +31,11 @@ DEFAULT_ALEPHALPHA_HOST = "https://api.aleph-alpha.com"
 
 class AlephAlpha(LLM):
     """Aleph Alpha LLMs."""
+
     model: str = Field(
         default=DEFAULT_ALEPHALPHA_MODEL, description="The Aleph Alpha model to use."
     )
-    token: str = Field(
-        default=None, description="The Aleph Alpha API token."
-    )
+    token: str = Field(default=None, description="The Aleph Alpha API token.")
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
@@ -55,54 +56,49 @@ class AlephAlpha(LLM):
     max_retries: int = Field(
         default=10, description="The maximum number of API retries.", gte=0
     )
-    hosting: Optional[str] = Field(
-        default=None, description="The hosting to use."
-    )
-    nice: bool = Field(
-        default=False, description="Whether to be nice to the API."
-    )
-    verify_ssl: bool = Field(
-        default=True, description="Whether to verify SSL."
-    )
+    hosting: Optional[str] = Field(default=None, description="The hosting to use.")
+    nice: bool = Field(default=False, description="Whether to be nice to the API.")
+    verify_ssl: bool = Field(default=True, description="Whether to verify SSL.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Aleph Alpha API."
     )
     repetition_penalties_include_prompt = Field(
-        default=True, description="Whether presence penalty or frequency penalty are updated from the prompt"
+        default=True,
+        description="Whether presence penalty or frequency penalty are updated from the prompt",
     )
     repetition_penalties_include_completion = Field(
-        default=True, description="Whether presence penalty or frequency penalty are updated from the completion."
+        default=True,
+        description="Whether presence penalty or frequency penalty are updated from the completion.",
     )
     sequence_penalty = Field(
         default=0.7,
         description="The sequence penalty to use. Increasing the sequence penalty reduces the likelihood of reproducing token sequences that already appear in the prompt",
         gte=0.0,
-        lte=1.0
+        lte=1.0,
     )
     sequence_penalty_min_length = Field(
-        default=3, description="Minimal number of tokens to be considered as sequence. Must be greater or eqaul 2.",
-        gte=2
+        default=3,
+        description="Minimal number of tokens to be considered as sequence. Must be greater or equal 2.",
+        gte=2,
     )
-    stop_sequences = Field(
-        default=["\n\n"], description="The stop sequences to use."
-    )
+    stop_sequences = Field(default=["\n\n"], description="The stop sequences to use.")
 
     _client: Optional[Client] = PrivateAttr()
     _aclient: Optional[AsyncClient] = PrivateAttr()
 
     def __init__(
-            self,
-            model: str = DEFAULT_ALEPHALPHA_MODEL,
-            temperature: float = DEFAULT_TEMPERATURE,
-            max_tokens: int = DEFAULT_ALEPHALPHA_MAX_TOKENS,
-            base_url: Optional[str] = DEFAULT_ALEPHALPHA_HOST,
-            timeout: Optional[float] = None,
-            max_retries: int = 10,
-            token: Optional[str] = None,
-            hosting: Optional[str] = None,
-            nice: bool = False,
-            verify_ssl: bool = True,
-            additional_kwargs: Optional[Dict[str, Any]] = None,
+        self,
+        model: str = DEFAULT_ALEPHALPHA_MODEL,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_ALEPHALPHA_MAX_TOKENS,
+        base_url: Optional[str] = DEFAULT_ALEPHALPHA_HOST,
+        timeout: Optional[float] = None,
+        max_retries: int = 10,
+        token: Optional[str] = None,
+        hosting: Optional[str] = None,
+        nice: bool = False,
+        verify_ssl: bool = True,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
@@ -199,11 +195,11 @@ class AlephAlpha(LLM):
         raise NotImplementedError("Aleph Alpha does not currently support chat.")
 
     @llm_completion_callback()
-    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         client = self._get_client()
-        all_kwargs = {
-            "prompt": Prompt.from_text(prompt),
-            **self._completion_kwargs}
+        all_kwargs = {"prompt": Prompt.from_text(prompt), **self._completion_kwargs}
 
         request = CompletionRequest(**all_kwargs)
 
@@ -212,11 +208,11 @@ class AlephAlpha(LLM):
         return CompletionResponse(text=completion, raw=response.to_json())
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         client = self._get_aclient()
-        all_kwargs = {
-            "prompt": Prompt.from_text(prompt),
-            **self._completion_kwargs}
+        all_kwargs = {"prompt": Prompt.from_text(prompt), **self._completion_kwargs}
 
         request = CompletionRequest(**all_kwargs)
 
@@ -227,18 +223,24 @@ class AlephAlpha(LLM):
 
     @llm_completion_callback()
     def stream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         raise NotImplementedError("Aleph Alpha does not currently support streaming.")
 
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponseGen:
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
         raise NotImplementedError("Aleph Alpha does not currently support chat.")
 
     def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         raise NotImplementedError("Aleph Alpha does not currently support chat.")
 
-    def astream_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         raise NotImplementedError("Aleph Alpha does not currently support chat.")
 
-    def astream_complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponseAsyncGen:
+    def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Aleph Alpha does not currently support streaming.")

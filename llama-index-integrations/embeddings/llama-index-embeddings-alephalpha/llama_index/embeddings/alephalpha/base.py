@@ -5,7 +5,9 @@ from aleph_alpha_client import (
     AsyncClient,
     Prompt,
     SemanticEmbeddingRequest,
-    SemanticRepresentation, BatchSemanticEmbeddingRequest, BatchSemanticEmbeddingResponse,
+    SemanticRepresentation,
+    BatchSemanticEmbeddingRequest,
+    BatchSemanticEmbeddingResponse,
 )
 from llama_index.core.base.embeddings.base import (
     BaseEmbedding,
@@ -26,12 +28,11 @@ VALID_REPRESENTATION_TYPES = [
 
 class AlephAlphaEmbedding(BaseEmbedding):
     """AlephAlphaEmbedding uses the Aleph Alpha API to generate embeddings for text."""
+
     model: str = Field(
         default=DEFAULT_ALEPHALPHA_MODEL, description="The Aleph Alpha model to use."
     )
-    token: str = Field(
-        default=None, description="The Aleph Alpha API token."
-    )
+    token: str = Field(default=None, description="The Aleph Alpha API token.")
     representation: Optional[str] = Field(
         default=SemanticRepresentation.Query,
         description="The representation type to use for generating embeddings.",
@@ -53,15 +54,9 @@ class AlephAlphaEmbedding(BaseEmbedding):
     normalize: Optional[bool] = Field(
         default=False, description="Return normalized embeddings."
     )
-    hosting: Optional[str] = Field(
-        default=None, description="The hosting to use."
-    )
-    nice: bool = Field(
-        default=False, description="Whether to be nice to the API."
-    )
-    verify_ssl: bool = Field(
-        default=True, description="Whether to verify SSL."
-    )
+    hosting: Optional[str] = Field(default=None, description="The hosting to use.")
+    nice: bool = Field(default=False, description="Whether to be nice to the API.")
+    verify_ssl: bool = Field(default=True, description="Whether to verify SSL.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Aleph Alpha API."
     )
@@ -71,17 +66,17 @@ class AlephAlphaEmbedding(BaseEmbedding):
     _aclient: Any = PrivateAttr()
 
     def __init__(
-            self,
-            model: str = DEFAULT_ALEPHALPHA_MODEL,
-            token: Optional[str] = None,
-            representation: Optional[str] = None,
-            base_url: Optional[str] = DEFAULT_ALEPHALPHA_HOST,
-            hosting: Optional[str] = None,
-            timeout: Optional[float] = None,
-            max_retries: int = 10,
-            nice: bool = False,
-            verify_ssl: bool = True,
-            additional_kwargs: Optional[Dict[str, Any]] = None,
+        self,
+        model: str = DEFAULT_ALEPHALPHA_MODEL,
+        token: Optional[str] = None,
+        representation: Optional[str] = None,
+        base_url: Optional[str] = DEFAULT_ALEPHALPHA_HOST,
+        hosting: Optional[str] = None,
+        timeout: Optional[float] = None,
+        max_retries: int = 10,
+        nice: bool = False,
+        verify_ssl: bool = True,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
         A class representation for generating embeddings using the AlephAlpha API.
@@ -109,7 +104,9 @@ class AlephAlphaEmbedding(BaseEmbedding):
 
         if representation is not None and isinstance(representation, str):
             try:
-                representation_enum = SemanticRepresentation[representation.capitalize()]
+                representation_enum = SemanticRepresentation[
+                    representation.capitalize()
+                ]
             except KeyError:
                 raise ValueError(
                     f"{representation} is not a valid representation type. Available types are: {list(SemanticRepresentation.__members__.keys())}"
@@ -153,7 +150,7 @@ class AlephAlphaEmbedding(BaseEmbedding):
             prompt=Prompt.from_text(text),
             representation=representation or self.representation,
             compress_to_size=self.compress_to_size,
-            normalize=self.normalize
+            normalize=self.normalize,
         )
         result = client.semantic_embed(request=request, model=self.model)
         return result.embedding
@@ -165,33 +162,37 @@ class AlephAlphaEmbedding(BaseEmbedding):
             prompt=Prompt.from_text(text),
             representation=representation or self.representation,
             compress_to_size=self.compress_to_size,
-            normalize=self.normalize
+            normalize=self.normalize,
         )
         result = await aclient.semantic_embed(request=request, model=self.model)
         return result.embedding
 
-    def _get_embeddings(self, texts: List[str], representation: str) -> List[List[float]]:
+    def _get_embeddings(
+        self, texts: List[str], representation: str
+    ) -> List[List[float]]:
         """Embed sentences using AlephAlpha."""
         client = self._get_client()
         request = BatchSemanticEmbeddingRequest(
             prompts=[Prompt.from_text(text) for text in texts],
             representation=representation or self.representation,
             compress_to_size=self.compress_to_size,
-            normalize=self.normalize
+            normalize=self.normalize,
         )
         result: BatchSemanticEmbeddingResponse = client.batch_semantic_embed(
             request=request, model=self.model
         )
         return result.embeddings
 
-    async def _aget_embeddings(self, texts: List[str], representation: str) -> List[List[float]]:
+    async def _aget_embeddings(
+        self, texts: List[str], representation: str
+    ) -> List[List[float]]:
         """Get embeddings async."""
         aclient = self._get_aclient()
         request = BatchSemanticEmbeddingRequest(
             prompts=[Prompt.from_text(text) for text in texts],
             representation=representation or self.representation,
             compress_to_size=self.compress_to_size,
-            normalize=self.normalize
+            normalize=self.normalize,
         )
         result: BatchSemanticEmbeddingResponse = await aclient.batch_semantic_embed(
             request=request, model=self.model
