@@ -36,13 +36,14 @@ class TogetherEmbedding(BaseEmbedding):
 
     def _generate_embedding(self, text: str, model_api_string: str) -> Embedding:
         """Generate embeddings from Together API.
+
         Args:
             text: str. An input text sentence or document.
             model_api_string: str. An API string for a specific embedding model of your choice.
+
         Returns:
             embeddings: a list of float numbers. Embeddings correspond to your given text.
         """
-
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
@@ -76,9 +77,11 @@ class TogetherEmbedding(BaseEmbedding):
 
     async def _agenerate_embedding(self, text: str, model_api_string: str) -> Embedding:
         """Async generate embeddings from Together API.
+
         Args:
             text: str. An input text sentence or document.
             model_api_string: str. An API string for a specific embedding model of your choice.
+
         Returns:
             embeddings: a list of float numbers. Embeddings correspond to your given text.
         """
