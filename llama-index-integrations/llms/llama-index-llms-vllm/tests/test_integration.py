@@ -33,7 +33,7 @@ class TestVllmIntegration(VCRTestCase):
 
     # drop it to record new cassete files
     def _get_vcr_kwargs(self, **kwargs):
-        return {'record_mode': RecordMode.NONE}
+        return {"record_mode": RecordMode.NONE}
 
     def test_completion(self):
         completion = self.vllm.complete(prompt)
@@ -68,10 +68,16 @@ class TestVllmIntegration(VCRTestCase):
         assert prompt in chat.message.content
 
     def test_stream_completion(self):
-        completion = list(self.vllm.stream_complete(prompt))[-1]
-        assert isinstance(completion, CompletionResponse)
-        assert completion.text.count(prompt) == 1
-        print(completion)
+        stream = list(self.vllm.stream_complete(prompt))
+        first = stream[0]
+        completion = stream[-1]
+        for i in first, completion:
+            assert isinstance(i, ChatResponse)
+            assert isinstance(i.message, ChatMessage)
+            assert i.message.role == MessageRole.ASSISTANT
+            assert i.message.content.count(prompt) == 1
+        assert completion.text.count(first.text) == 1
+        assert first.text.count(completion.text) == 0
 
     def test_astream_completion(self):
         async def concat():
