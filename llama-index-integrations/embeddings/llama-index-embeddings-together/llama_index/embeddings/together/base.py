@@ -1,8 +1,10 @@
 import asyncio
 import os
-import time
 from typing import Any, List, Optional
+import time
+
 import httpx
+import requests
 from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.bridge.pydantic import Field
 
