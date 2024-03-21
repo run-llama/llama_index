@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+
 def default_sparse_encoder(texts: List[str]) -> List[Dict[int, int]]:
     try:
         from transformers import BertTokenizer
