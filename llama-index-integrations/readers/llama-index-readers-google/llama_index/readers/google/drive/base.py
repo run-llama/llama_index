@@ -122,6 +122,7 @@ class GoogleDriveReader(BaseReader):
 
     def _get_fileids_meta(
         self,
+        drive_id: Optional[str] = None,
         folder_id: Optional[str] = None,
         file_id: Optional[str] = None,
         mime_types: Optional[List[str]] = None,
@@ -129,6 +130,7 @@ class GoogleDriveReader(BaseReader):
     ) -> List[List[str]]:
         """Get file ids present in folder/ file id
         Args:
+            drive_id: Drive id of the shared drive in google drive.
             folder_id: folder id of the folder in google drive.
             file_id: file id of the file in google drive
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
@@ -165,16 +167,30 @@ class GoogleDriveReader(BaseReader):
                 items = []
                 # get files taking into account that the results are paginated
                 while True:
-                    results = (
-                        service.files()
-                        .list(
-                            q=query,
-                            includeItemsFromAllDrives=True,
-                            supportsAllDrives=True,
-                            fields="*",
+                    if drive_id:
+                        results = (
+                            service.files()
+                            .list(
+                                q=query,
+                                driveId=drive_id,
+                                corpora='drive',
+                                includeItemsFromAllDrives=True,
+                                supportsAllDrives=True,
+                                fields="*",
+                            )
+                            .execute()
                         )
-                        .execute()
-                    )
+                    else:
+                        results = (
+                            service.files()
+                            .list(
+                                q=query,
+                                includeItemsFromAllDrives=True,
+                                supportsAllDrives=True,
+                                fields="*",
+                            )
+                            .execute()
+                        )
                     items.extend(results.get("files", []))
                     page_token = results.get("nextPageToken", None)
                     if page_token is None:
@@ -182,13 +198,23 @@ class GoogleDriveReader(BaseReader):
 
                 for item in items:
                     if item["mimeType"] == folder_mime_type:
-                        fileids_meta.extend(
-                            self._get_fileids_meta(
-                                folder_id=item["id"],
-                                mime_types=mime_types,
-                                query_string=query_string,
+                        if drive_id:
+                            fileids_meta.extend(
+                                self._get_fileids_meta(
+                                    drive_id=drive_id,
+                                    folder_id=item["id"],
+                                    mime_types=mime_types,
+                                    query_string=query_string,
+                                )
                             )
-                        )
+                        else:
+                            fileids_meta.extend(
+                                self._get_fileids_meta(
+                                    folder_id=item["id"],
+                                    mime_types=mime_types,
+                                    query_string=query_string,
+                                )
+                            )
                     else:
                         # Check if file doesn't belong to a Shared Drive. "owners" doesn't exist in a Shared Drive
                         is_shared_drive = "driveId" in item
@@ -338,12 +364,14 @@ class GoogleDriveReader(BaseReader):
 
     def _load_from_file_ids(
         self,
+        drive_id: str
         file_ids: List[str],
         mime_types: Optional[List[str]],
         query_string: Optional[str],
     ) -> List[Document]:
         """Load data from file ids
         Args:
+            drive_id: Drive id of the shared drive in google drive.
             file_ids: File ids of the files in google drive.
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
             query_string: List of query strings to filter the documents, e.g. "name contains 'test'".
@@ -369,6 +397,7 @@ class GoogleDriveReader(BaseReader):
 
     def _load_from_folder(
         self,
+        drive_id: str,
         folder_id: str,
         mime_types: Optional[List[str]],
         query_string: Optional[str],
@@ -376,6 +405,7 @@ class GoogleDriveReader(BaseReader):
         """Load data from folder_id.
 
         Args:
+            drive_id: Drive id of the shared drive in google drive.
             folder_id: folder id of the folder in google drive.
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
             query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
@@ -385,6 +415,7 @@ class GoogleDriveReader(BaseReader):
         """
         try:
             fileids_meta = self._get_fileids_meta(
+                drive_id=drive_id,
                 folder_id=folder_id,
                 mime_types=mime_types,
                 query_string=query_string,
@@ -397,6 +428,7 @@ class GoogleDriveReader(BaseReader):
 
     def load_data(
         self,
+        drive_id: Optional[str] = None,
         folder_id: Optional[str] = None,
         file_ids: Optional[List[str]] = None,
         mime_types: Optional[List[str]] = None,  # Deprecated
@@ -405,6 +437,7 @@ class GoogleDriveReader(BaseReader):
         """Load data from the folder id or file ids.
 
         Args:
+            drive_id: Drive id of the shared drive in google drive.
             folder_id: Folder id of the folder in google drive.
             file_ids: File ids of the files in google drive.
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
@@ -417,9 +450,9 @@ class GoogleDriveReader(BaseReader):
         self._creds, self._drive = self._get_credentials()
 
         if folder_id:
-            return self._load_from_folder(folder_id, mime_types, query_string)
+            return self._load_from_folder(drive_id, folder_id, mime_types, query_string)
         elif file_ids:
-            return self._load_from_file_ids(file_ids, mime_types, query_string)
+            return self._load_from_file_ids(drive_id, file_ids, mime_types, query_string)
         else:
             logger.warning("Either 'folder_id' or 'file_ids' must be provided.")
             return []
