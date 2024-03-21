@@ -57,6 +57,26 @@ def _get_client(api_key: str | None, api_server: str | None, client: Any | None)
 
 
 class RocksetVectorStore(VectorStore):
+    """Rockset Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-rocksetdb`
+
+        ```python
+        from llama_index.vector_stores.rocksetdb import RocksetVectorStore
+
+        # Set up RocksetVectorStore with necessary configurations
+        vector_store = RocksetVectorStore(
+            collection="my_collection",
+            api_key="your_rockset_api_key",
+            api_server="https://api.use1a1.rockset.com",
+            embedding_col="my_embedding",
+            metadata_col="node",
+            distance_func=RocksetVectorStore.DistanceFunc.DOT_PRODUCT
+        )
+        ```
+    """
+
     stores_text: bool = True
     is_embedding_query: bool = True
     flat_metadata: bool = False
@@ -221,11 +241,11 @@ class RocksetVectorStore(VectorStore):
                 LIMIT
                     {query.similarity_top_k}
             """,
-            params={
-                filter.key: filter.value for filter in query.filters.legacy_filters()
-            }
-            if query.filters
-            else {},
+            params=(
+                {filter.key: filter.value for filter in query.filters.legacy_filters()}
+                if query.filters
+                else {}
+            ),
         )
 
         similarities: List[float] | None = [] if query.query_embedding else None

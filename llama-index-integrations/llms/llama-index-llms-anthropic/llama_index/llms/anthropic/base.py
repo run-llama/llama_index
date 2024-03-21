@@ -39,6 +39,21 @@ DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
 class Anthropic(LLM):
+    """Anthropic LLM.
+
+    Examples:
+        `pip install llama-index-llms-anthropic`
+
+        ```python
+        from llama_index.llms.anthropic import Anthropic
+
+        llm = Anthropic(model="claude-instant-1")
+        resp = llm.stream_complete("Paul Graham is ")
+        for r in resp:
+            print(r.delta, end="")
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_ANTHROPIC_MODEL, description="The anthropic model to use."
     )

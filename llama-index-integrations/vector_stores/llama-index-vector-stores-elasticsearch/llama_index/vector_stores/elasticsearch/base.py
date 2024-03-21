@@ -156,6 +156,42 @@ class ElasticsearchStore(BasePydanticVectorStore):
         ConnectionError: If AsyncElasticsearch client cannot connect to Elasticsearch.
         ValueError: If neither es_client nor es_url nor es_cloud_id is provided.
 
+    Examples:
+        `pip install llama-index-vector-stores-elasticsearch`
+
+        ```python
+        from llama_index.vector_stores import ElasticsearchStore
+
+        # Additional setup for ElasticsearchStore class
+        index_name = "my_index"
+        es_url = "http://localhost:9200"
+        es_cloud_id = "<cloud-id>"  # Found within the deployment page
+        es_user = "elastic"
+        es_password = "<password>"  # Provided when creating deployment or can be reset
+        es_api_key = "<api-key>"  # Create an API key within Kibana (Security -> API Keys)
+
+        # Connecting to ElasticsearchStore locally
+        es_local = ElasticsearchStore(
+            index_name=index_name,
+            es_url=es_url,
+        )
+
+        # Connecting to Elastic Cloud with username and password
+        es_cloud_user_pass = ElasticsearchStore(
+            index_name=index_name,
+            es_cloud_id=es_cloud_id,
+            es_user=es_user,
+            es_password=es_password,
+        )
+
+        # Connecting to Elastic Cloud with API Key
+        es_cloud_api_key = ElasticsearchStore(
+            index_name=index_name,
+            es_cloud_id=es_cloud_id,
+            es_api_key=es_api_key,
+        )
+        ```
+
     """
 
     stores_text: bool = True
