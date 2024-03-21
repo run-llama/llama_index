@@ -1739,6 +1739,7 @@ theme:
     - content.code.copy
   logo: _static/assets/LlamaSquareBlack.svg
   name: material
+  custom_dir: overrides
   palette:
     - media: (prefers-color-scheme)
       toggle:
