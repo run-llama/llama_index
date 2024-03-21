@@ -6,7 +6,7 @@ Fixes # (issue)
 
 ## New Package?
 
-Did I fill in the `tool.llamahub` section and provide a detailed READEM for my new integration or package?
+Did I fill in the `tool.llamahub` section in the `pyproject.toml` and provide a detailed README.md for my new integration or package?
 
 - [ ] Yes
 - [ ] No
