@@ -15,40 +15,28 @@ documentation.
 If you haven't already, clone the LlamaIndex Github repo to a local directory:
 
 ```bash
-git clone https://github.com/jerryjliu/llama_index.git && cd llama_index
+git clone https://github.com/run-llama/llama_index.git && cd llama_index
 ```
 
-Install all dependencies required for building docs (mainly `sphinx` and its extension):
+Install all dependencies required for building docs (mainly `mkdocs` and its extension):
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install --with docs` - this will install all dependencies needed for building docs
 
-Build the sphinx docs:
+Build with mkdocs:
 
 ```bash
 cd docs
-make html
+mkdocs serve
 ```
 
-The docs HTML files are now generated under `docs/_build/html` directory, you can preview
-it locally with the following command:
+And open your browser at http://localhost:8000/ to view the generated docs.
 
-```bash
-python -m http.server 8000 -d _build/html
-```
+This hosted version will re-build and update as changes are made to the docs.
 
-And open your browser at http://0.0.0.0:8000/ to view the generated docs.
+## Config
 
-##### Watch Docs
+All config for mkdocs is in the `mkdocs.yml` file.
 
-We recommend using sphinx-autobuild during development, which provides a live-reloading
-server, that rebuilds the documentation and refreshes any open pages automatically when
-changes are saved. This enables a much shorter feedback loop which can help boost
-productivity when writing documentation.
-
-Simply run the following command from LlamaIndex project's root directory:
-
-```bash
-make watch-docs
-```
+Running the command `python docs/prepare_for_build.py` from the root of the llama-index repo will update the mkdocs.yml API Reference and examples nav with the latest changes, as well as writing new api reference files.

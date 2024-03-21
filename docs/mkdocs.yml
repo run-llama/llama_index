@@ -6,7 +6,6 @@ extra_css:
   - css/style.css
 extra_javascript:
   - javascript/mendablesearch.js
-  # TODO - javascript/llms_example.js
 markdown_extensions:
   - admonition
   - pymdownx.details
