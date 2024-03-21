@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, List
 
 from aleph_alpha_client import Prompt, CompletionRequest, Client, AsyncClient
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
@@ -22,6 +22,7 @@ from llama_index.core.utils import Tokenizer
 
 from llama_index.llms.alephalpha.utils import (
     alephalpha_modelname_to_contextsize,
+    extract_additional_info_from_response,
 )
 
 DEFAULT_ALEPHALPHA_MODEL = "luminous-supreme-control"
@@ -82,6 +83,28 @@ class AlephAlpha(LLM):
         gte=2,
     )
     stop_sequences = Field(default=["\n\n"], description="The stop sequences to use.")
+    log_probs: Optional[int] = Field(
+        default=None,
+        description="Number of top log probabilities to return for each token generated.",
+        ge=0,
+    )
+    top_p: Optional[float] = Field(
+        default=None,
+        description="Nucleus sampling parameter controlling the cumulative probability threshold.",
+        ge=0.0,
+        le=1.0,
+    )
+    echo: Optional[bool] = Field(
+        default=False, description="Echo the prompt in the completion."
+    )
+    penalty_exceptions: Optional[List[str]] = Field(
+        default=None,
+        description="List of strings that may be generated without penalty, regardless of other penalty settings.",
+    )
+    n: Optional[int] = Field(
+        default=1,
+        description="The number of completions to return. Useful for generating multiple alternatives.",
+    )
 
     _client: Optional[Client] = PrivateAttr()
     _aclient: Optional[AsyncClient] = PrivateAttr()
@@ -98,6 +121,11 @@ class AlephAlpha(LLM):
         hosting: Optional[str] = None,
         nice: bool = False,
         verify_ssl: bool = True,
+        log_probs: Optional[int] = None,
+        top_p: Optional[float] = None,
+        echo: Optional[bool] = False,
+        penalty_exceptions: Optional[List[str]] = None,
+        n: Optional[int] = 1,
         additional_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -117,12 +145,18 @@ class AlephAlpha(LLM):
 
         self.token = get_from_param_or_env("aa_token", token, "AA_TOKEN", "")
 
+        self.log_probs = log_probs
+        self.top_p = top_p
+        self.echo = echo
+        self.penalty_exceptions = penalty_exceptions
+        self.n = n
+
         self._client = None
         self._aclient = None
 
     @classmethod
     def class_name(cls) -> str:
-        return "AlephAlpha_LLM"
+        return "AlephAlpha"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -152,16 +186,22 @@ class AlephAlpha(LLM):
 
     @property
     def _completion_kwargs(self) -> Dict[str, Any]:
-        base_kwargs = {
+        completion_kwargs = {
             "maximum_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "log_probs": self.log_probs,
+            "top_p": self.top_p,
+            "echo": self.echo,
+            "penalty_exceptions": self.penalty_exceptions,
+            "n": self.n,
             "repetition_penalties_include_prompt": self.repetition_penalties_include_prompt,
             "repetition_penalties_include_completion": self.repetition_penalties_include_completion,
             "sequence_penalty": self.sequence_penalty,
             "sequence_penalty_min_length": self.sequence_penalty_min_length,
             "stop_sequences": self.stop_sequences,
         }
-        return {**base_kwargs}
+
+        return {k: v for k, v in completion_kwargs.items() if v is not None}
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
@@ -199,27 +239,48 @@ class AlephAlpha(LLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         client = self._get_client()
-        all_kwargs = {"prompt": Prompt.from_text(prompt), **self._completion_kwargs}
+        all_kwargs = {
+            "prompt": Prompt.from_text(prompt),
+            **self._completion_kwargs,
+            **kwargs,
+        }
 
         request = CompletionRequest(**all_kwargs)
-
         response = client.complete(request=request, model=self.model)
-        completion = response.completions[0].completion
-        return CompletionResponse(text=completion, raw=response.to_json())
+        completion = response.completions[0].completion if response.completions else ""
+
+        additional_info = extract_additional_info_from_response(response)
+
+        return CompletionResponse(
+            text=completion, raw=response.to_json(), additional_kwargs=additional_info
+        )
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         client = self._get_aclient()
-        all_kwargs = {"prompt": Prompt.from_text(prompt), **self._completion_kwargs}
+        all_kwargs = {
+            "prompt": Prompt.from_text(prompt),
+            **self._completion_kwargs,
+            **kwargs,
+        }
 
         request = CompletionRequest(**all_kwargs)
 
         async with client as aclient:
             response = await aclient.complete(request=request, model=self.model)
-            completion = response.completions[0].completion
-            return CompletionResponse(text=completion, raw=response.to_json())
+            completion = (
+                response.completions[0].completion if response.completions else ""
+            )
+
+            additional_info = extract_additional_info_from_response(response)
+
+            return CompletionResponse(
+                text=completion,
+                raw=response.to_json(),
+                additional_kwargs=additional_info,
+            )
 
     @llm_completion_callback()
     def stream_complete(
