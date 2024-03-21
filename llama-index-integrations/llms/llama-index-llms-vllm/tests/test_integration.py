@@ -50,9 +50,7 @@ class TestVllmIntegration(VCRTestCase):
         assert prompt in completion.text
 
     def test_chat(self):
-        chat = self.vllm.chat(
-            [ChatMessage(content=prompt, role=MessageRole.USER)]
-        )
+        chat = self.vllm.chat([ChatMessage(content=prompt, role=MessageRole.USER)])
         assert isinstance(chat.message, ChatMessage)
         assert chat.message.role == MessageRole.ASSISTANT
         assert isinstance(chat.message.content, str)
@@ -61,9 +59,7 @@ class TestVllmIntegration(VCRTestCase):
 
     def test_achat(self):
         chat = asyncio.run(
-            self.vllm.achat(
-                [ChatMessage(content=prompt, role=MessageRole.USER)]
-            )
+            self.vllm.achat([ChatMessage(content=prompt, role=MessageRole.USER)])
         )
         assert isinstance(chat.message, ChatMessage)
         assert chat.message.role == MessageRole.ASSISTANT
@@ -91,7 +87,9 @@ class TestVllmIntegration(VCRTestCase):
         assert completion.text not in first.text
 
     def test_stream_chat(self):
-        stream = list(self.vllm.stream_chat([ChatMessage(content=prompt, role=MessageRole.USER)]))
+        stream = list(
+            self.vllm.stream_chat([ChatMessage(content=prompt, role=MessageRole.USER)])
+        )
         first = stream[0]
         chat = stream[-1]
         for i in first, chat:
