@@ -11,6 +11,7 @@ class RankLLMRerank(BaseNodePostprocessor):
     model: str = Field(default="zephyr", description="Reranker model name.")
     _model: Any = PrivateAttr()
     _result: Any = PrivateAttr()
+    _retriever: Any = PrivateAttr()
     
     def __init__(
         self,
@@ -20,9 +21,10 @@ class RankLLMRerank(BaseNodePostprocessor):
         try: 
             from rank_llm.result import Result 
             self._result = Result
-            
             from rank_llm.rerank.zephyr_reranker import ZephyrReranker
             self._model = ZephyrReranker()
+            from rank_llm.retrieve.retriever import Retriever
+            self._retriever = Retriever
 
         except ImportError:
             raise ImportError(
@@ -47,17 +49,26 @@ class RankLLMRerank(BaseNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
 
-        docs = [{"content": node.get_content()} for node in nodes]
+        docs = [node.get_content() for node in nodes]
 
-        items = self._result(query=query_bundle.query_str, hits=[{"content": doc, 'qid': '1', 'docid': str(index), 'rank': str(index), 'score':str(index)} for index,doc in enumerate(docs,start=1)])
+        # items = self._result(query=query_bundle.query_str, hits=[{"content": doc, "qid": 1, "docid": str(index), "rank": index, "score": index} for index,doc in enumerate(docs,start=1)])
+        # print(items)
 
-        permutation = self._model.rerank([items])[0]
+
+        #hits = [{"content": doc, "qid": 1, "docid": str(index), "rank": index, "score": index} for index,doc in enumerate(docs,start=1)]
+
+        retrieved_results = self._retriever.from_inline_documents(query=query_bundle.query_str,documents=docs)
+        print(retrieved_results)
+
+        permutation = self._model.rerank(retrieved_results)
+
+        print(permutation)
 
         new_nodes: List[NodeWithScore] = []
 
-        for hit in permutation.hits:
+        for hit in permutation[0].hits:
             idx: int = int(hit['docid'])
             new_nodes.append(
                 NodeWithScore(node=nodes[idx-1].node, score=nodes[idx-1].score)
             )
-        return new_nodes[: self.top_n]
+        return nodes[: self.top_n]
