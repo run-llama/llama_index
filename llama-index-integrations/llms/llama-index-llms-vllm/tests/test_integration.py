@@ -72,10 +72,8 @@ class TestVllmIntegration(VCRTestCase):
         first = stream[0]
         completion = stream[-1]
         for i in first, completion:
-            assert isinstance(i, ChatResponse)
-            assert isinstance(i.message, ChatMessage)
-            assert i.message.role == MessageRole.ASSISTANT
-            assert i.message.content.count(prompt) == 1
+            assert isinstance(i, CompletionResponse)
+            assert i.text.count(prompt) == 1
         assert completion.text.count(first.text) == 1
         assert first.text.count(completion.text) == 0
 
