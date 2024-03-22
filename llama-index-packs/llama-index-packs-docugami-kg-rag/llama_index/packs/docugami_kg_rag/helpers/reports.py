@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 import sqlite3
 import tempfile
-from config import REPORT_DIRECTORY, DOCUGAMI_API_KEY
+from llama_index.packs.docugami_kg_rag.config import REPORT_DIRECTORY, DOCUGAMI_API_KEY
 
 from docugami import Docugami
 from llama_index.core import SQLDatabase

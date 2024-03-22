@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from llama_index.llms.openai import OpenAI
 
-from config import (
+from llama_index.packs.docugami_kg_rag.config import (
     LARGE_CONTEXT_INSTRUCT_LLM,
     MAX_CHUNK_TEXT_LENGTH,
     INCLUDE_XML_TAGS,
@@ -15,13 +15,13 @@ from config import (
 )
 from llama_index.core.readers import Document
 
-from helpers.prompts import (
+from llama_index.packs.docugami_kg_rag.helpers.prompts import (
     CREATE_FULL_DOCUMENT_SUMMARY_QUERY_PROMPT,
     CREATE_FULL_DOCUMENT_SUMMARY_SYSTEM_PROMPT,
     CREATE_CHUNK_SUMMARY_QUERY_PROMPT,
     CREATE_CHUNK_SUMMARY_SYSTEM_PROMPT,
 )
-from config import PARENT_DOC_ID_KEY
+from llama_index.packs.docugami_kg_rag.config import PARENT_DOC_ID_KEY
 from llama_index.core.llms import ChatMessage, MessageRole
 
 FORMAT = (

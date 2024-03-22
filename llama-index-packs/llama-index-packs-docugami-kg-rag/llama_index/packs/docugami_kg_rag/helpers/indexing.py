@@ -7,9 +7,12 @@ from typing import Dict, List
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
-from helpers.reports import ReportDetails, build_report_details
+from llama_index.packs.docugami_kg_rag.helpers.reports import (
+    ReportDetails,
+    build_report_details,
+)
 
-from config import (
+from llama_index.packs.docugami_kg_rag.config import (
     CHROMA_DIRECTORY,
     EMBEDDINGS,
     FULL_DOC_SUMMARY_ID_KEY,
@@ -26,12 +29,12 @@ import chromadb
 from llama_index.readers.docugami import DocugamiReader
 from llama_index.core.readers import Document
 
-from helpers.summaries import (
+from llama_index.packs.docugami_kg_rag.helpers.summaries import (
     build_chunk_summary_mappings,
     build_full_doc_summary_mappings,
 )
 
-from helpers.retrieval import (
+from llama_index.packs.docugami_kg_rag.helpers.retrieval import (
     LocalIndexState,
     docset_name_to_direct_retriever_tool_function_name,
     chunks_to_direct_retriever_tool_description,

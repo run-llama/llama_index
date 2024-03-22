@@ -12,17 +12,17 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from llama_index.core.retrievers import BaseRetriever
 
-
-from config import FULL_DOC_SUMMARY_ID_KEY, SOURCE_KEY, PARENT_DOC_ID_KEY, EMBEDDINGS
-
 from llama_index.core.readers import Document
-
 
 from dataclasses import dataclass
 from typing import List
 
-from config import (
+from llama_index.packs.docugami_kg_rag.config import (
     RETRIEVER_K,
+    FULL_DOC_SUMMARY_ID_KEY,
+    SOURCE_KEY,
+    PARENT_DOC_ID_KEY,
+    EMBEDDINGS,
 )
 from llama_index.core import QueryBundle
 
