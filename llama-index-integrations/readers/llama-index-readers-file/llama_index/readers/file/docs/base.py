@@ -55,10 +55,7 @@ class PDFReader(BaseReader):
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
                 text = ""
-                if isinstance(fp, TextIOWrapper):
-                    metadata = {"file_name": fp.name}
-                else:
-                    metadata = {"file_name": self.__get_filename(fp)}
+                metadata = {"file_name": self.__get_filename(fp)}
 
                 for page in range(num_pages):
                     # Extract the text from the page
