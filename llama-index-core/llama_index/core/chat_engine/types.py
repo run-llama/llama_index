@@ -113,7 +113,6 @@ class StreamingAgentChatResponse:
         self._is_function_not_none_thread_event.set()
 
     def aput_in_queue(self, delta: Optional[str]) -> None:
-        self._ensure_async_setup()
         self._aqueue.put_nowait(delta)
         self._new_item_event.set()
 
@@ -167,6 +166,8 @@ class StreamingAgentChatResponse:
         memory: BaseMemory,
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
+        self._ensure_async_setup()
+
         if self.achat_stream is None:
             raise ValueError(
                 "achat_stream is None. Cannot asynchronously write to "
