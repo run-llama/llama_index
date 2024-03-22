@@ -80,7 +80,7 @@ repos:
     rev: v3.0.3
     hooks:
       - id: prettier
-        exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static
+        exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static|docs/docs/api_reference
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:

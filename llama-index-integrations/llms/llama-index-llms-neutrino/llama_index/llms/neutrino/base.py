@@ -15,6 +15,38 @@ MAX_CONTEXT_WINDOW = 200000
 
 
 class Neutrino(OpenAILike):
+    """Neutrino LLM.
+
+    Examples:
+        `pip install llama-index-llms-neutrino`
+
+        You can create an API key at: <a href="https://platform.neutrinoapp.com/">platform.neutrinoapp.com</a>
+
+        ```python
+        import os
+
+        os.environ["NEUTRINO_API_KEY"] = "<your-neutrino-api-key>"
+        ```
+
+        A router is a collection of LLMs that you can route queries to. You can create a router in the Neutrino <a href="https://platform.neutrinoapp.com/">dashboard</a> or use the default router,
+        which includes all supported models.
+
+        You can treat a router as a LLM.
+
+        ```python
+        from llama_index.llms.neutrino import Neutrino
+
+        llm = Neutrino(
+            # api_key="<your-neutrino-api-key>",
+            # router="<your-router-id>"  # (or 'default')
+        )
+
+        response = llm.complete("In short, a Neutrino is")
+        print(f"Optimal model: {response.raw['model']}")
+        print(response)
+        ```
+    """
+
     model: str = Field(
         description="The Neutrino router to use. See https://docs.neutrinoapp.com/router for details."
     )

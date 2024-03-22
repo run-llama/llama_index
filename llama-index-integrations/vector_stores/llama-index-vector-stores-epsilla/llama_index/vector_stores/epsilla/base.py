@@ -1,4 +1,5 @@
 """Epsilla vector store."""
+
 import logging
 from typing import Any, List, Optional
 
@@ -52,6 +53,17 @@ class EpsillaVectorStore(VectorStore):
 
     Returns:
         EpsillaVectorStore: Vectorstore that supports add, delete, and query.
+
+    Examples:
+        `pip install llama-index-vector-stores-epsilla`
+
+        ```python
+        from llama_index.vector_stores.epsilla import EpsillaVectorStore
+        from pyepsilla import vectordb
+
+        client = vectordb.Client()
+        vector_store = EpsillaVectorStore(client=client, db_path="/tmp/llamastore")
+        ```
     """
 
     stores_text = True

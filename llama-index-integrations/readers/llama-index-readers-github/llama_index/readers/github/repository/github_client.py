@@ -7,10 +7,10 @@ It is used by the Github readers to retrieve the data from Github.
 
 import os
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 
 
 @dataclass
@@ -142,7 +142,7 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
     @dataclass
     class Links(DataClassJsonMixin):
-        self: str
+        _self: str = field(metadata=config(field_name="self"))
         html: str
 
     commit: Commit
