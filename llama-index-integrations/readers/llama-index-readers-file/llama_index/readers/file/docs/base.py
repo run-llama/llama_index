@@ -6,11 +6,13 @@ Contains parsers for docx, pdf files.
 
 import struct
 import zlib
+from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fsspec import AbstractFileSystem
 import logging
 
+from fsspec.spec import AbstractBufferedFile
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
@@ -53,7 +55,10 @@ class PDFReader(BaseReader):
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
                 text = ""
-                metadata = {"file_name": fp.name}
+                if isinstance(fp, TextIOWrapper):
+                    metadata = {"file_name": fp.name}
+                else:
+                    metadata = {"file_name": self.__get_filename(fp)}
 
                 for page in range(num_pages):
                     # Extract the text from the page
@@ -71,13 +76,20 @@ class PDFReader(BaseReader):
                     page_text = pdf.pages[page].extract_text()
                     page_label = pdf.page_labels[page]
 
-                    metadata = {"page_label": page_label, "file_name": fp.name}
+                    metadata = {"page_label": page_label, "file_name": self.__get_filename(fp)}
                     if extra_info is not None:
                         metadata.update(extra_info)
 
                     docs.append(Document(text=page_text, metadata=metadata))
 
             return docs
+
+    @staticmethod
+    def __get_filename(fp: TextIOWrapper | AbstractBufferedFile) -> str:
+        if isinstance(fp, TextIOWrapper):
+            return fp.name
+        else:
+            return fp.full_name
 
 
 class DocxReader(BaseReader):
