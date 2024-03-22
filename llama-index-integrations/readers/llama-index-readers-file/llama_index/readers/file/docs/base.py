@@ -1,4 +1,5 @@
-"""Docs parser.
+"""
+Docs parser.
 
 Contains parsers for docx, pdf files.
 
@@ -50,10 +51,16 @@ class PDFReader(BaseReader):
 
             docs = []
 
+            if hasattr(fp, "name"):
+                # Some file systems (e.g. those that use fsspec) don't have a name attribute. Instead, they use full_name
+                file_name = fp.name
+            else:
+                file_name = fp.full_name
+
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
                 text = ""
-                metadata = {"file_name": fp.name}
+                metadata = {"file_name": file_name}
 
                 for page in range(num_pages):
                     # Extract the text from the page
@@ -71,7 +78,7 @@ class PDFReader(BaseReader):
                     page_text = pdf.pages[page].extract_text()
                     page_label = pdf.page_labels[page]
 
-                    metadata = {"page_label": page_label, "file_name": fp.name}
+                    metadata = {"page_label": page_label, "file_name": file_name}
                     if extra_info is not None:
                         metadata.update(extra_info)
 
@@ -128,7 +135,8 @@ class HWPReader(BaseReader):
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data and extract table from Hwp file.
+        """
+        Load data and extract table from Hwp file.
 
         Args:
             file (Path): Path for the Hwp file.
