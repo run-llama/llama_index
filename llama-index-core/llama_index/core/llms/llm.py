@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Union,
     get_args,
     runtime_checkable,
     TYPE_CHECKING,
@@ -552,8 +553,9 @@ class LLM(BaseLLM):
 
     def predict_and_call(
         self,
-        user_msg: str,
         tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
@@ -569,9 +571,13 @@ class LLM(BaseLLM):
             verbose=verbose,
             **kwargs,
         )
+
+        if isinstance(user_msg, ChatMessage):
+            user_msg = user_msg.content
+
         task = Task(
             input=user_msg,
-            memory=ChatMemoryBuffer.from_defaults(),
+            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
             extra_state={},
             callback_manager=self.callback_manager,
         )
@@ -593,8 +599,9 @@ class LLM(BaseLLM):
 
     async def apredict_and_call(
         self,
-        user_msg: str,
         tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
@@ -610,9 +617,13 @@ class LLM(BaseLLM):
             verbose=verbose,
             **kwargs,
         )
+
+        if isinstance(user_msg, ChatMessage):
+            user_msg = user_msg.content
+
         task = Task(
             input=user_msg,
-            memory=ChatMemoryBuffer.from_defaults(),
+            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
             extra_state={},
             callback_manager=self.callback_manager,
         )
