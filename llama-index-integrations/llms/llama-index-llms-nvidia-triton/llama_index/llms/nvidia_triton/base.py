@@ -36,8 +36,8 @@ DEFAULT_MAX_TOKENS = 100
 DEFAULT_BEAM_WIDTH = 1
 DEFAULT_REPTITION_PENALTY = 1.0
 DEFAULT_LENGTH_PENALTY = 1.0
-DEFAULT_REUSE_CLIENT = True
-DEFAULT_TRITON_LOAD_MODEL = True
+DEFAULT_REUSE_CLIENT = False
+DEFAULT_TRITON_LOAD_MODEL = False
 
 
 class NvidiaTriton(LLM):
@@ -231,13 +231,14 @@ class NvidiaTriton(LLM):
 
         if self.triton_load_model_call:
             client.load_model(model_params["model_name"])
-
+	
         result_queue = client.request_streaming(
             model_params["model_name"], request_id, **invocation_params
         )
-
         response = ""
+        counter = -1
         for token in result_queue:
+            counter+=1
             if isinstance(token, InferenceServerException):
                 client.stop_stream(model_params["model_name"], request_id)
                 raise token
