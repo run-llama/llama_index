@@ -59,7 +59,7 @@ We have an `OpenAIAgent` implementation built on the [OpenAI API for function ca
 
 LlamaIndex provides core modules capable of automated reasoning for different use cases over your data which makes them essentially Agents. Some of these core modules are shown below along with example tutorials.
 
-**SubQuestionQueryEngine for Multi-Document Analysis**
+**SubQuestionQueryEngine for Multi Document Analysis**
 
 - [Sub Question Query Engine (Intro)](../../examples/query_engine/sub_question_query_engine.ipynb)
 - [10Q Analysis (Uber)](../../examples/usecases/10q_sub_question.ipynb)

@@ -38,14 +38,14 @@ Then check out the rest of the sections below.
 - [Recursive Agents](../../../examples/query_engine/recursive_retriever_agents.ipynb)
 - [Ensemble Query Engine](../../../examples/query_engine/ensemble_query_engine.ipynb)
 
-### Advanced: Towards Multi-Document Querying/Analysis
+### Advanced: Towards Multi Document Querying/Analysis
 
 This specific subsection showcases modules that help with querying multiple documents.
 
 - [Sub-Question Query Engine](../../../examples/query_engine/sub_question_query_engine.ipynb)
 - [Recursive Agents](../../../examples/query_engine/recursive_retriever_agents.ipynb)
-- [Multi-Document Agents](../../../examples/agent/multi_document_agents.ipynb)
-- [Improved Multi-Document Agents](../../../examples/agent/multi_document_agents-v1.ipynb)
+- [Multi Document Agents](../../../examples/agent/multi_document_agents.ipynb)
+- [Improved Multi Document Agents](../../../examples/agent/multi_document_agents-v1.ipynb)
 
 ## Experimental
 

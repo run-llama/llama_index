@@ -1732,6 +1732,42 @@ plugins:
             - ../llama-index-integrations/graph_stores/llama-index-graph-stores-neptune
   - redirects:
       redirect_maps:
+        ./module_guides/loading/documents_and_nodes/usage_documents.html: module_guides/loading/documents_and_nodes/usage_documents.md
+        ./getting_started/concepts.html: getting_started/concepts.md
+        ./understanding/loading/loading.html: module_guides/loading/index.md
+        ./module_guides/models/llms.html: module_guides/models/llms.md
+        ./use_cases/q_and_a/rag_cli.html: use_cases/q_and_a/rag_cli.md
+        ./module_guides/observability/instrumentation.html: module_guides/observability/instrumentation.md
+        ./end_to_end_tutorials/usage_pattern.html: understanding/index.md
+        ./end_to_end_tutorials/one_click_observability.html: module_guides/observability/index.md
+        ./end_to_end_tutorials/dev_practices/production_rag.html: optimizing/production_rag.md
+        ./end_to_end_tutorials/dev_practices/evaluation.html: optimizing/evaluation/evaluation.md
+        ./end_to_end_tutorials/discover_llamaindex.html: getting_started/discover_llamaindex.md
+        ./end_to_end_tutorials/finetuning.html: optimizing/fine-tuning/fine-tuning.md
+        ./end_to_end_tutorials/low_level/root.html: optimizing/building_rag_from_scratch.md
+        ./end_to_end_tutorials/use_cases.html: use_cases/q_and_a/index.md
+        ./core_modules/data_modules/connector.html: module_guides/loading/connector/index.md
+        ./core_modules/data_modules/documents_and_nodes/root.html: module_guides/loading/documents_and_nodes/index.md
+        ./core_modules/data_modules/node_parsers/root.html: module_guides/loading/node_parsers/index.md
+        ./core_modules/data_modules/storage/root.html: module_guides/storing/index.md
+        ./core_modules/data_modules/index/root.html: module_guides/indexing/index.md
+        ./core_modules/query_modules/query_engine/root.html: module_guides/deploying/query_engine/index.md
+        ./core_modules/query_modules/chat_engines/root.html: module_guides/deploying/chat_engines/index.md
+        ./core_modules/query_modules/retriever/root.html: module_guides/querying/retriever/index.md
+        ./core_modules/query_modules/router/root.html: module_guides/querying/router/index.md
+        ./core_modules/query_modules/node_postprocessors/root.html: module_guides/querying/node_postprocessors/index.md
+        ./core_modules/query_modules/response_synthesizers/root.html: module_guides/querying/response_synthesizers/index.md
+        ./core_modules/query_modules/structured_outputs/root.html: module_guides/querying/structured_outputs/index.md
+        ./core_modules/agent_modules/agents/root.html: module_guides/deploying/agents/index.md
+        ./core_modules/agent_modules/tools/root.html: module_guides/deploying/agents/tools/index.md
+        ./core_modules/model_modules/llms/root.html: module_guides/models/llms.md
+        ./core_modules/model_modules/embeddings/root.html: module_guides/models/embeddings.md
+        ./core_modules/model_modules/prompts.html: module_guides/models/prompts/index.md
+        ./core_modules/supporting_modules/service_context.html: module_guides/supporting_modules/settings.md
+        ./core_modules/supporting_modules/callbacks/root.html: module_guides/observability/callbacks/index.md
+        ./core_modules/supporting_modules/evaluation/root.html: module_guides/evaluating/index.md
+        ./core_modules/supporting_modules/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
+        ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
         ./community/llama_packs/root.html: community/llama_packs/index.md
         ./examples/citation/pdf_page_reference.html: https://docs.llamaindex.ai/en/latest/examples/citation/pdf_page_reference/
         ./examples/vector_stores/TypesenseDemo.html: https://docs.llamaindex.ai/en/latest/examples/vector_stores/TypesenseDemo/
@@ -2196,6 +2232,8 @@ theme:
     - navigation.footer
     - toc.follow
     - content.code.copy
+    - search.suggest
+    - search.highlight
   logo: _static/assets/LlamaSquareBlack.svg
   name: material
   palette:

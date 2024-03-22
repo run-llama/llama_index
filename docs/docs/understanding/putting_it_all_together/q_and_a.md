@@ -125,9 +125,9 @@ This module will help break down a complex query into a simpler one over your ex
 
 - [Query Transformations](../../optimizing/advanced_retrieval/query_transformations.md)
 
-You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi-Document Queries below).
+You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi Document Queries below).
 
-## Multi-Document Queries
+## Multi Document Queries
 
 Besides the explicit synthesis/routing flows described above, LlamaIndex can support more general multi-document queries as well.
 It can do this through our `SubQuestionQueryEngine` class. Given a query, this query engine will generate a "query plan" containing
