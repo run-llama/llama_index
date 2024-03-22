@@ -353,6 +353,15 @@ maxdepth: 1
 /examples/llm/together.ipynb
 ```
 
+## Unify
+
+```{toctree}
+---
+maxdepth: 1
+---
+/examples/llm/unify.ipynb
+```
+
 ## Vertex
 
 ```{toctree}
