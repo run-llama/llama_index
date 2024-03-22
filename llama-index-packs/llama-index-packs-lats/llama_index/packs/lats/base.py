@@ -6,7 +6,8 @@ from llama_index.core.agent import (
 from llama_index.core.bridge.pydantic import Field, BaseModel
 from llama_index.core.tools import BaseTool
 from llama_index.core.llms.llm import LLM
-from llama_index.core.agent import ReActChatFormatter, ReActOutputParser
+from llama_index.core.agent import ReActChatFormatter
+from llama_index.core.agent.react import ReActOutputParser
 from llama_index.core.query_pipeline import ToolRunnerComponent
 from llama_index.llms.openai import OpenAI
 from typing import List, Any, Dict, Tuple, Optional, cast
@@ -27,7 +28,7 @@ from llama_index.core.utils import print_text
 # taken from the paper
 DEFAULT_REFLECTION_PROMPT_STR = """\
 Given a query and a conversation trajectory, evaluate two things regarding whether the conversation answers the question:
-- **correctness**: Whether the thoughts and actions so far are correct, even if the answer is not found yet.
+- **correctness**: Whether the thoughts and actions so far are correctly answering the query, even if the answer is not found yet. Rate from 1-10, where 1 is incorrect and 10 is correct.
 - **completeness**: Whether the answer is found yet.
 Provide your reasoning and analysis in detail.
 Focus on the latest thought, action, and observation.
@@ -105,12 +106,12 @@ class SearchNode(BaseModel):
 
     def backpropagate(self, reward: float) -> None:
         """Backpropagate the reward."""
-        self.visits += 1
         cur_node = self
         while cur_node is not None:
+            cur_node.visits += 1
             cur_node.evaluation.score = (
                 reward + (cur_node.visits - 1) * cur_node.score
-            ) / self.visits
+            ) / cur_node.visits
             cur_node = cur_node.parent
 
     def get_best_leaf(self) -> "SearchNode":
@@ -248,7 +249,7 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
         node: SearchNode,
         current_reasoning: List[BaseReasoningStep],
         evaluation: Evaluation,
-    ) -> None:
+    ) -> SearchNode:
         """Update state."""
         # create child node
         new_node = SearchNode(
@@ -261,6 +262,8 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
 
         # backpropagate the reward
         new_node.backpropagate(evaluation.score)
+
+        return new_node
 
     def _run_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
@@ -313,7 +316,7 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
         state["count"] += 1
         if self.max_rollouts == -1 and solution_queue:
             is_done = True
-        elif state["count"] >= self.max_rollouts:
+        elif self.max_rollouts > 0 and state["count"] >= self.max_rollouts:
             is_done = True
         else:
             is_done = False
