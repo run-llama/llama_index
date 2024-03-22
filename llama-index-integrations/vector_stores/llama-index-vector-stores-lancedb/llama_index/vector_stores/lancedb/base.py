@@ -81,6 +81,15 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     Returns:
         LanceDBVectorStore: VectorStore that supports creating LanceDB datasets and
             querying it.
+
+    Examples:
+        `pip install llama-index-vector-stores-lancedb`
+
+        ```python
+        from llama_index.vector_stores.lancedb import LanceDBVectorStore
+
+        vector_store = LanceDBVectorStore(uri="/tmp/lancedb")
+        ```
     """
 
     stores_text = True
@@ -154,6 +163,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
+        if not nodes:
+            _logger.debug("No nodes to add. Skipping the database operation.")
+            return []
         data = []
         ids = []
         for node in nodes:
@@ -186,7 +198,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         """
         table = self._connection.open_table(self.table_name)
-        table.delete('document_id = "' + ref_doc_id + '"')
+        table.delete('doc_id = "' + ref_doc_id + '"')
 
     def query(
         self,

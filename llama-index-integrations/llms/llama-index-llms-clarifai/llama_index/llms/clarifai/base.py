@@ -26,6 +26,27 @@ EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
 
 class Clarifai(LLM):
+    """Clarifai LLM.
+
+    Examples:
+        `pip install llama-index-llms-clarifai`
+
+        ```python
+        from llama_index.llms.clarifai import Clarifai
+
+        llm = Clarifai(
+            user_id="clarifai",
+            app_id="ml",
+            model_name="llama2-7b-alternative-4k",
+            model_url=(
+                "https://clarifai.com/clarifai/ml/models/llama2-7b-alternative-4k"
+        )
+
+        response = llm.complete("Hello World!")
+        print(response)
+        ```
+    """
+
     model_url: Optional[str] = Field(
         description=f"Full URL of the model. e.g. `{EXAMPLE_URL}`"
     )

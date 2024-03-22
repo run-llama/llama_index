@@ -22,6 +22,9 @@ from llama_index.core.node_parser.relational.markdown_element import (
 from llama_index.core.node_parser.relational.unstructured_element import (
     UnstructuredElementNodeParser,
 )
+from llama_index.core.node_parser.relational.llama_parse_json_element import (
+    LlamaParseJsonNodeParser,
+)
 from llama_index.core.node_parser.text.code import CodeSplitter
 from llama_index.core.node_parser.text.langchain import LangchainNodeParser
 from llama_index.core.node_parser.text.semantic_splitter import (
@@ -57,6 +60,7 @@ __all__ = [
     "get_root_nodes",
     "get_child_nodes",
     "get_deeper_nodes",
+    "LlamaParseJsonNodeParser",
     # deprecated, for backwards compatibility
     "SimpleNodeParser",
 ]

@@ -16,6 +16,9 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    MetadataFilters,
+    MetadataFilter,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -27,9 +30,77 @@ logger = logging.getLogger(__name__)
 DEFAULT_BATCH_SIZE = 128
 
 
+def _transform_upstash_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Upstash specific spec."""
+    if operator == FilterOperator.EQ:
+        return "="
+    elif operator == FilterOperator.GT:
+        return ">"
+    elif operator == FilterOperator.LT:
+        return "<"
+    elif operator == FilterOperator.NE:
+        return "!="
+    elif operator == FilterOperator.GTE:
+        return ">="
+    elif operator == FilterOperator.LTE:
+        return "<="
+    elif operator == FilterOperator.IN:
+        return "IN"
+    elif operator == FilterOperator.NIN:
+        return "NOT IN"
+    elif operator == FilterOperator.CONTAINS:
+        return "CONTAINS"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
+def _to_upstash_filter_string(filter: MetadataFilter) -> str:
+    key = filter.key
+    value = filter.value
+    operator = filter.operator
+    operator_str = _transform_upstash_filter_operator(operator)
+
+    if filter.operator in [
+        FilterOperator.IN,
+        FilterOperator.NIN,
+    ]:
+        value_str = ", ".join(
+            str(v) if not isinstance(v, str) else f"'{v}'" for v in value
+        )
+        return f"{key} {operator_str} ({value_str})"
+    value_str = f"'{value}'" if isinstance(value, str) else str(value)
+    return f"{key} {operator_str} {value_str}"
+
+
+def _to_upstash_filters(filters: MetadataFilters) -> str:
+    if not filters:
+        return ""
+    sql_filters = []
+
+    for metadata_filter in filters.filters:
+        sql_filters.append(_to_upstash_filter_string(metadata_filter))
+
+    # Combine filters using AND or OR condition
+    condition_str = filters.condition.value.upper()
+    return f" {condition_str} ".join(sql_filters)
+    # print(combined_filters)
+
+
 class UpstashVectorStore(VectorStore):
-    """
-    Upstash Vector Store.
+    """Upstash Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-upstash`
+
+        ```python
+        from llama_index.vector_stores.upstash import UpstashVectorStore
+
+        # Create Upstash vector store
+        upstash_vector_store = UpstashVectorStore(
+            url="your_upstash_vector_url",
+            token="your_upstash_vector_token",
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -118,14 +189,15 @@ class UpstashVectorStore(VectorStore):
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise ValueError(f"Query mode {query.mode} not supported")
 
-        if query.filters:
-            raise ValueError("Metadata filtering not supported")
+        # if query.filters:
+        #     raise ValueError("Metadata filtering not supported")
 
         res = self.client.query(
             vector=query.query_embedding,
             top_k=query.similarity_top_k,
             include_vectors=True,
             include_metadata=True,
+            filter=_to_upstash_filters(query.filters),
         )
 
         top_k_nodes = []

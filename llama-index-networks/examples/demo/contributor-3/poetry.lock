@@ -1625,13 +1625,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-networks"
-version = "0.1.0"
+version = "0.2.0a0"
 description = "llama-index networks  integration"
 optional = false
 python-versions = ">=3.8.1,<4.0"
 files = [
-    {file = "llama_index_networks-0.1.0-py3-none-any.whl", hash = "sha256:f9090e4aa1ee62281d95d8dc9f11f1f2f66dde7c3f32e96a007c5ef6e41c387a"},
-    {file = "llama_index_networks-0.1.0.tar.gz", hash = "sha256:774fea418a77842bd0b6cee872d1696902c117ff05bcd2e738be704f49844ed6"},
+    {file = "llama_index_networks-0.2.0a0-py3-none-any.whl", hash = "sha256:fafdff6f5b0f4701bf9506ba753b7adadb350695bc458fd9e33f8db0891af112"},
+    {file = "llama_index_networks-0.2.0a0.tar.gz", hash = "sha256:c845b0bc0b5c29d5054a28f0c4314d68e9c642a432a0fd9032a5e247713298ab"},
 ]
 
 [package.dependencies]
@@ -4362,4 +4362,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "9765b97755e58cab020f5a98759d7e3b3bdd039bf3cc9868f76a77f51dd2ba53"
+content-hash = "d375ca9363578f9f75c9a147e53d625fbc5e5cb1cd7d34fefbaca68323d3addc"

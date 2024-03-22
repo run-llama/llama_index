@@ -246,10 +246,10 @@ class OpenAIEmbedding(BaseEmbedding):
     )
 
     api_key: str = Field(description="The OpenAI API key.")
-    api_base: str = Field(
+    api_base: Optional[str] = Field(
         default=DEFAULT_OPENAI_API_BASE, description="The base URL for OpenAI API."
     )
-    api_version: str = Field(
+    api_version: Optional[str] = Field(
         default=DEFAULT_OPENAI_API_VERSION, description="The version for OpenAI API."
     )
 

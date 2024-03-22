@@ -48,6 +48,13 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
+from llama_index.core.instrumentation.events.llm import (
+    LLMPredictEndEvent,
+)
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -128,6 +135,22 @@ def default_completion_to_prompt(prompt: str) -> str:
 
 
 class LLM(BaseLLM):
+    """
+    The LLM class is the main class for interacting with language models.
+
+    Attributes:
+        system_prompt (Optional[str]):
+            System prompt for LLM calls.
+        messages_to_prompt (Callable):
+            Function to convert a list of messages to an LLM prompt.
+        completion_to_prompt (Callable):
+            Function to convert a completion to an LLM prompt.
+        output_parser (Optional[BaseOutputParser]):
+            Output parser to parse, validate, and correct errors programmatically.
+        pydantic_program_mode (PydanticProgramMode):
+            Pydantic program mode to use for structured prediction.
+    """
+
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
@@ -264,6 +287,34 @@ class LLM(BaseLLM):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> BaseModel:
+        r"""Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            BaseModel: The structured prediction output.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            output = llm.structured_predict(Test, prompt, topic="cats")
+            print(output.name)
+            ```
+        """
         from llama_index.core.program.utils import get_program_for_llm
 
         program = get_program_for_llm(
@@ -281,6 +332,34 @@ class LLM(BaseLLM):
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> BaseModel:
+        r"""Async Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            BaseModel: The structured prediction output.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            output = await llm.astructured_predict(Test, prompt, topic="cats")
+            print(output.name)
+            ```
+        """
         from llama_index.core.program.utils import get_program_for_llm
 
         program = get_program_for_llm(
@@ -294,12 +373,32 @@ class LLM(BaseLLM):
 
     # -- Prompt Chaining --
 
+    @dispatcher.span
     def predict(
         self,
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        """Predict."""
+        """Predict for a given prompt.
+
+        Args:
+            prompt (BasePromptTemplate):
+                The prompt to use for prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            str: The prediction output.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            output = llm.predict(prompt, topic="cats")
+            print(output)
+            ```
+        """
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -311,6 +410,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
 
+        dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     def stream(
@@ -318,7 +418,27 @@ class LLM(BaseLLM):
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> TokenGen:
-        """Stream."""
+        """Stream predict for a given prompt.
+
+        Args:
+            prompt (BasePromptTemplate):
+                The prompt to use for prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Yields:
+            str: Each streamed token.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            gen = llm.stream_predict(prompt, topic="cats")
+            for token in gen:
+                print(token, end="", flush=True)
+            ```
+        """
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -335,12 +455,32 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
+    @dispatcher.span
     async def apredict(
         self,
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        """Async predict."""
+        """Async Predict for a given prompt.
+
+        Args:
+            prompt (BasePromptTemplate):
+                The prompt to use for prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            str: The prediction output.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            output = await llm.apredict(prompt, topic="cats")
+            print(output)
+            ```
+        """
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -352,6 +492,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt, formatted=True)
             output = response.text
 
+        dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     async def astream(
@@ -359,7 +500,27 @@ class LLM(BaseLLM):
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> TokenAsyncGen:
-        """Async stream."""
+        """Async stream predict for a given prompt.
+
+        Args:
+        prompt (BasePromptTemplate):
+            The prompt to use for prediction.
+        prompt_args (Any):
+            Additional arguments to format the prompt with.
+
+        Yields:
+            str: An async generator that yields strings of tokens.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            gen = await llm.astream_predict(prompt, topic="cats")
+            async for token in gen:
+                print(token, end="", flush=True)
+            ```
+        """
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:

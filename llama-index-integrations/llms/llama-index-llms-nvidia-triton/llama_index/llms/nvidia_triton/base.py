@@ -41,6 +41,31 @@ DEFAULT_TRITON_LOAD_MODEL = True
 
 
 class NvidiaTriton(LLM):
+    """Nvidia Triton LLM.
+
+    Nvidia's Triton is an inference server that provides API access to hosted LLM models. This connector allows for llama_index to remotely interact with a Triton inference server over GRPC to
+    accelerate inference operations.
+
+    [Triton Inference Server Github](https://github.com/triton-inference-server/server)
+
+    Examples:
+        `pip install llama-index-llms-nvidia-triton`
+
+        ```python
+        from llama_index.llms.nvidia_triton import NvidiaTriton
+
+        # Ensure a Triton server instance is running and provide the correct URL for your Triton server instance
+        triton_url = "localhost:8001"
+
+        # Instantiate the NvidiaTriton class
+        triton_client = NvidiaTriton()
+
+        # Call the complete method with a prompt
+        resp = triton_client.complete("The tallest mountain in North America is ")
+        print(resp)
+        ```
+    """
+
     server_url: str = Field(
         default=DEFAULT_SERVER_URL,
         description="The URL of the Triton inference server to use.",

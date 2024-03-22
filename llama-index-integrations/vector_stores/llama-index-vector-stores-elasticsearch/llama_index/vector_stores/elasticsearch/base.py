@@ -156,6 +156,42 @@ class ElasticsearchStore(BasePydanticVectorStore):
         ConnectionError: If AsyncElasticsearch client cannot connect to Elasticsearch.
         ValueError: If neither es_client nor es_url nor es_cloud_id is provided.
 
+    Examples:
+        `pip install llama-index-vector-stores-elasticsearch`
+
+        ```python
+        from llama_index.vector_stores import ElasticsearchStore
+
+        # Additional setup for ElasticsearchStore class
+        index_name = "my_index"
+        es_url = "http://localhost:9200"
+        es_cloud_id = "<cloud-id>"  # Found within the deployment page
+        es_user = "elastic"
+        es_password = "<password>"  # Provided when creating deployment or can be reset
+        es_api_key = "<api-key>"  # Create an API key within Kibana (Security -> API Keys)
+
+        # Connecting to ElasticsearchStore locally
+        es_local = ElasticsearchStore(
+            index_name=index_name,
+            es_url=es_url,
+        )
+
+        # Connecting to Elastic Cloud with username and password
+        es_cloud_user_pass = ElasticsearchStore(
+            index_name=index_name,
+            es_cloud_id=es_cloud_id,
+            es_user=es_user,
+            es_password=es_password,
+        )
+
+        # Connecting to Elastic Cloud with API Key
+        es_cloud_api_key = ElasticsearchStore(
+            index_name=index_name,
+            es_cloud_id=es_cloud_id,
+            es_api_key=es_api_key,
+        )
+        ```
+
     """
 
     stores_text: bool = True
@@ -228,7 +264,10 @@ class ElasticsearchStore(BasePydanticVectorStore):
     @staticmethod
     def get_user_agent() -> str:
         """Get user agent for elasticsearch client."""
-        return "llama_index-py-vs"
+        import llama_index.core
+
+        version = getattr(llama_index.core, "__version__", "")
+        return f"llama_index-py-vs/{version}"
 
     async def _create_index_if_not_exists(
         self, index_name: str, dims_length: Optional[int] = None
@@ -372,22 +411,23 @@ class ElasticsearchStore(BasePydanticVectorStore):
             requests.append(request)
             return_ids.append(_id)
 
-        await async_bulk(
-            self.client, requests, chunk_size=self.batch_size, refresh=True
-        )
-        try:
-            success, failed = await async_bulk(
-                self.client, requests, stats_only=True, refresh=True
-            )
-            logger.debug(f"Added {success} and failed to add {failed} texts to index")
+        async with self.client as client:
+            await async_bulk(client, requests, chunk_size=self.batch_size, refresh=True)
+            try:
+                success, failed = await async_bulk(
+                    client, requests, stats_only=True, refresh=True
+                )
+                logger.debug(
+                    f"Added {success} and failed to add {failed} texts to index"
+                )
 
-            logger.debug(f"added texts {ids} to index")
-            return return_ids
-        except BulkIndexError as e:
-            logger.error(f"Error adding texts: {e}")
-            firstError = e.errors[0].get("index", {}).get("error", {})
-            logger.error(f"First error reason: {firstError.get('reason')}")
-            raise
+                logger.debug(f"added texts {ids} to index")
+                return return_ids
+            except BulkIndexError as e:
+                logger.error(f"Error adding texts: {e}")
+                firstError = e.errors[0].get("index", {}).get("error", {})
+                logger.error(f"First error reason: {firstError.get('reason')}")
+                raise
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete node from Elasticsearch index.

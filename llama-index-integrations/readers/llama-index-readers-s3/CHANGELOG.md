@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [0.1.4] - 2024-03-18
+
+- Refactor: Take advantage of `SimpleDirectoryReader` now supporting `fs` by using `s3fs` instead of downloading files to local disk.
+- Make the reader serializable by inheriting from `BasePydanticReader` instead of `BaseReader`.
+
 ## [0.1.2] - 2024-02-13
 
 - Add maintainers and keywords from library.json (llamahub)
