@@ -87,7 +87,7 @@ def default_file_metadata_func(
         file_name = os.path.basename(str(stat_result["name"]))
     except Exception as e:
         file_name = os.path.basename(file_path)
-    
+
     creation_date = _format_file_timestamp(stat_result.get("created"))
     last_modified_date = _format_file_timestamp(stat_result.get("mtime"))
     last_accessed_date = _format_file_timestamp(stat_result.get("atime"))
