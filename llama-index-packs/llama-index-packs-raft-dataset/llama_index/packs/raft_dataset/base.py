@@ -2,7 +2,7 @@
 
 # Inspired from https://github.com/ShishirPatil/gorilla/tree/main/raft
 
-from typing import Any
+from typing import Any, List
 import random
 from datasets import Dataset
 
@@ -58,7 +58,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         end_index += 2
         return s[start_index : min(end_index, len(s))]
 
-    def encode_question_gen(self, question, chunk) -> list[str]:
+    def encode_question_gen(self, question, chunk) -> List[str]:
         """
         Encode multiple prompt instructions into a single string for the general case.
         """
@@ -85,7 +85,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         response = self.llm.chat(question_messages)
         return str(response)
 
-    def generate_instructions_gen(self, chunk, x=5) -> list[str]:
+    def generate_instructions_gen(self, chunk, x=5) -> List[str]:
         """
         Generates `x` questions / use cases for `chunk`. Used when the input document is of general types
         `pdf`, `json`, or `txt`.
@@ -107,7 +107,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         queries = [self.strip_str(q) for q in queries]
         return [q for q in queries if any(c.isalpha() for c in q)]
 
-    def get_chunks(self, file_path: str, chunk_size: int) -> list[str]:
+    def get_chunks(self, file_path: str, chunk_size: int) -> List[str]:
         """
         Takes in a `file_path`, retrieves the document, breaks it down into chunks of size
         `chunk_size`, and returns the chunks.
@@ -126,7 +126,7 @@ class RAFTDatasetPack(BaseLlamaPack):
 
     def add_chunk_to_dataset(
         self,
-        chunks: list,
+        chunks: List,
         chunk: str,
         x: int = 5,
         num_distract: int = 3,
@@ -153,7 +153,7 @@ class RAFTDatasetPack(BaseLlamaPack):
 
             # add 4 distractor docs
             docs = [chunk]
-            indices = list(range(len(chunks)))
+            indices = List(range(len(chunks)))
             indices.remove(i)
             for j in random.sample(indices, num_distract):
                 docs.append(chunks[j])
