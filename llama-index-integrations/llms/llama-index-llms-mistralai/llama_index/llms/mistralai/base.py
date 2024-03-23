@@ -1,6 +1,6 @@
-from typing import Any, Callable, Dict, Optional, Sequence
+import json
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 
-# from mistralai.models.chat_completion import ChatMessage
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -29,11 +29,17 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.mistralai.utils import (
+    is_mistralai_function_calling_model,
     mistralai_modelname_to_contextsize,
 )
 
 from mistralai.async_client import MistralAsyncClient
 from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ToolCall
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
+    from llama_index.core.chat_engine.types import AgentChatResponse
 
 DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
@@ -168,6 +174,7 @@ class MistralAI(LLM):
             model_name=self.model,
             safe_mode=self.safe_mode,
             random_seed=self.random_seed,
+            is_function_calling_model=is_mistralai_function_calling_model(self.model),
         )
 
     @property
@@ -200,9 +207,16 @@ class MistralAI(LLM):
         ]
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat(messages=messages, **all_kwargs)
+
+        tool_calls = response.choices[0].message.tool_calls
+
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response.choices[0].message.content
+                role=MessageRole.ASSISTANT,
+                content=response.choices[0].message.content,
+                additional_kwargs={"tool_calls": tool_calls}
+                if tool_calls is not None
+                else {},
             ),
             raw=dict(response),
         )
@@ -251,6 +265,80 @@ class MistralAI(LLM):
     ) -> CompletionResponseGen:
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
+
+    def _get_tool_call(
+        self,
+        response: ChatResponse,
+    ) -> ToolCall:
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            raise ValueError(
+                f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+            )
+
+        # TODO: support more than one tool call?
+        tool_call = tool_calls[0]
+        if not isinstance(tool_call, ToolCall):
+            raise ValueError("Invalid tool_call object")
+
+        if tool_call.type != "function":
+            raise ValueError("Invalid tool type. Unsupported by Mistralai.")
+
+        return tool_call
+
+    def _call_tool(
+        self,
+        tool_call: ToolCall,
+        tools_by_name: Dict[str, "BaseTool"],
+        verbose: bool = False,
+    ) -> "AgentChatResponse":
+        from llama_index.core.chat_engine.types import AgentChatResponse
+        from llama_index.core.tools.calling import call_tool
+
+        arguments_str = tool_call.function.arguments
+        name = tool_call.function.name
+        if verbose:
+            print("=== Calling Function ===")
+            print(f"Calling function: {name} with args: {arguments_str}")
+        tool = tools_by_name[name]
+        argument_dict = json.loads(arguments_str)
+
+        tool_output = call_tool(tool, argument_dict)
+
+        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
+
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        if not self.metadata.is_function_calling_model:
+            return super().predict_and_call(user_msg, tools, verbose, **kwargs)
+
+        # misralai uses the same openai tool format
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tools_by_name = {tool.metadata.name: tool for tool in tools}
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = self.chat(
+            messages,
+            tools=tool_specs,
+            **kwargs,
+        )
+
+        tool_call = self._get_tool_call(response)
+
+        return self._call_tool(tool_call, tools_by_name, verbose=verbose)
 
     @llm_chat_callback()
     async def achat(
@@ -315,3 +403,56 @@ class MistralAI(LLM):
     ) -> CompletionResponseAsyncGen:
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
+
+    async def _acall_tool(
+        self,
+        tool_call: ToolCall,
+        tools_by_name: Dict[str, "BaseTool"],
+        verbose: bool = False,
+    ) -> "AgentChatResponse":
+        from llama_index.core.chat_engine.types import AgentChatResponse
+        from llama_index.core.tools.calling import acall_tool
+
+        arguments_str = tool_call.function.arguments
+        name = tool_call.function.name
+        if verbose:
+            print("=== Calling Function ===")
+            print(f"Calling function: {name} with args: {arguments_str}")
+        tool = tools_by_name[name]
+        argument_dict = json.loads(arguments_str)
+
+        tool_output = await acall_tool(tool, argument_dict)
+
+        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
+
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        if not self.metadata.is_function_calling_model:
+            return await super().apredict_and_call(user_msg, tools, verbose, **kwargs)
+
+        # misralai uses the same openai tool format
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tools_by_name = {tool.metadata.name: tool for tool in tools}
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = await self.achat(
+            messages,
+            tools=tool_specs,
+            **kwargs,
+        )
+
+        tool_call = self._get_tool_call(response)
+
+        return await self._acall_tool(tool_call, tools_by_name, verbose=verbose)

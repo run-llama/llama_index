@@ -864,4 +864,4 @@ class OpenAI(LLM):
 
         tool_call = self._get_tool_call(response)
 
-        return self._call_tool(tool_call, tools_by_name, verbose=verbose)
+        return await self._acall_tool(tool_call, tools_by_name, verbose=verbose)
