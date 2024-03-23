@@ -62,14 +62,6 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
-class ToolSelection(BaseModel):
-    """Tool selection."""
-
-    tool_name: str = Field(description="Tool name to select.")
-    tool_args: List[str] = Field(description="Arguments for the tool")
-    tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
-
-
 # NOTE: These two protocols are needed to appease mypy
 @runtime_checkable
 class MessagesToPromptType(Protocol):
@@ -541,15 +533,6 @@ class LLM(BaseLLM):
         return stream_tokens
 
     # -- Tool Calling --
-
-    def _get_tools_str(self, tools: List[Any]) -> str:
-        tools_str += "\n----\n".join(
-            [tool.metadata.simple_fn_schema_str for tool in tools]
-        )
-
-    def _call_tool(self, tool_selection: ToolSelection, tool: Any) -> Any:
-        """Call tool."""
-        return tool(*tool_selection.tool_args, **tool_selection.tool_kwargs)
 
     def predict_and_call(
         self,
