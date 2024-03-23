@@ -46,6 +46,15 @@ DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
+from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
+
+
+def to_mistral_chatmessage(messages: Sequence[ChatMessage]) -> List[mistral_chatmessage]:
+    messages = [
+        mistral_chatmessage(role=x.role.value, content=x.content) for x in messages
+    ]
+    return messages
+
 
 class MistralAI(LLM):
     """MistralAI LLM.
@@ -203,9 +212,12 @@ class MistralAI(LLM):
         # convert messages to mistral ChatMessage
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
-        messages = [
-            mistral_chatmessage(role=x.role, content=x.content) for x in messages
-        ]
+        messages = to_mistral_chatmessage(messages)
+        # print(f"MESSAGES: {messages}")
+
+        # messages = [
+        #     mistral_chatmessage(role=x.role, content=x.content) for x in messages
+        # ]
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat(messages=messages, **all_kwargs)
 
