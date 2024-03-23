@@ -429,12 +429,11 @@ class MistralAI(LLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
+        return self.chat(
             messages,
             tools=tool_specs,
             **kwargs,
         )
-        return response
 
     async def achat_with_tool(
         self,
@@ -455,12 +454,11 @@ class MistralAI(LLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = await self.achat(
+        return await self.achat(
             messages,
             tools=tool_specs,
             **kwargs,
         )
-        return response
 
     def _get_tool_call_from_response(
         self,

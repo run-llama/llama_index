@@ -62,9 +62,7 @@ def call_tool_with_selection(
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = tools_by_name[name]
-    tool_output = call_tool(tool, tool_call.tool_kwargs)
-
-    return tool_output
+    return call_tool(tool, tool_call.tool_kwargs)
 
 
 async def acall_tool_with_selection(
@@ -81,6 +79,4 @@ async def acall_tool_with_selection(
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
     tool = tools_by_name[name]
-    tool_output = await acall_tool(tool, tool_call.tool_kwargs)
-
-    return tool_output
+    return await acall_tool(tool, tool_call.tool_kwargs)
