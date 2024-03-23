@@ -24,6 +24,9 @@ nav:
           - getting_started/starter_example_local.md
       - getting_started/discover_llamaindex.md
       - getting_started/customization.md
+      - Starter Tools:
+          - getting_started/starter_tools/index.md
+          - getting_started/starter_tools/rag_cli.md
   - Learn:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
@@ -2363,12 +2366,8 @@ plugins:
         ./use_cases/fine_tuning.html: https://docs.llamaindex.ai/en/stable/use_cases/fine_tuning/
         ./use_cases/graph_querying.html: https://docs.llamaindex.ai/en/stable/use_cases/graph_querying/
         ./use_cases/multimodal.html: https://docs.llamaindex.ai/en/stable/use_cases/multimodal/
-        ./use_cases/q_and_a/rag_cli.html: https://docs.llamaindex.ai/en/stable/use_cases/q_and_a/rag_cli/
+        ./use_cases/q_and_a/rag_cli.html: getting_started/starter_tools/rag_cli.md
         ./use_cases/q_and_a/root.html: use_cases/q_and_a/index.md
-        ./use_cases/querying_csvs.html: https://docs.llamaindex.ai/en/stable/use_cases/querying_csvs/
-        ./use_cases/root.html: https://docs.llamaindex.ai/en/stable/use_cases/
-        ./use_cases/tables_charts.html: https://docs.llamaindex.ai/en/stable/use_cases/tables_charts/
-        ./use_cases/text_to_sql.html: https://docs.llamaindex.ai/en/stable/use_cases/text_to_sql/
       use_directory_urls: false
 site_name: LlamaIndex
 theme:
