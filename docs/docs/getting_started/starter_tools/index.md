@@ -35,3 +35,4 @@ LlamaBot is another open-source application, this time for building a Slack bot 
 ## RAG CLI: quick command-line chat with any document
 
 We provide a command-line tool that quickly lets you chat with documents. Learn more in the [RAG CLI documentation](rag_cli.md).
+
