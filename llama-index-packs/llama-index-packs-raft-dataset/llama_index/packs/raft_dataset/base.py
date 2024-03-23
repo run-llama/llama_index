@@ -63,7 +63,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         Encode multiple prompt instructions into a single string for the general case.
         """
         prompt = f"""
-            Question: {question}\nContext: {chunk!s}\n
+            Question: {question}\nContext: {chunk}\n
             Answer this question using the information given in the context above. Here is things to pay attention to:
             - First provide step-by-step reasoning on how to answer the question.
             - In the reasoning, if you need to copy paste some sentences from the context, include them in ##begin_quote## and ##end_quote##. This would mean that things outside of ##begin_quote## and ##end_quote## are not directly copy paste from the context.
