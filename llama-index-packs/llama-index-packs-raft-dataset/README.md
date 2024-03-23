@@ -1,15 +1,13 @@
-# Corrective Retrieval Augmented Generation Llama Pack
+# RAFT: Adapting Language Model to Domain Specific RAG Llama Pack
 
-This LlamaPack implements the Corrective Retrieval Augmented Generation (CRAG) [paper](https://arxiv.org/pdf/2401.15884.pdf)
+This LlamaPack implements RAFT: Adapting Language Model to Domain Specific RAG [paper](https://arxiv.org/abs/2403.10131)
 
-Corrective Retrieval Augmented Generation (CRAG) is a method designed to enhance the robustness of language model generation by evaluating and augmenting the relevance of retrieved documents through a an evaluator and large-scale web searches, ensuring more accurate and reliable information is used in generation.
-
-This LlamaPack uses [Tavily AI](https://app.tavily.com/home) API for web-searches. So, we recommend you to get the api-key before proceeding further.
+Retrieval Augmented FineTuning (RAFT) is a training recipe introduced in this paper that aims to improve the performance of large language models (LLMs) in open-book, in-domain question-answering tasks. Given a question and a set of retrieved documents, RAFT trains the LLM to identify and cite verbatim the most relevant sequences from the documents that help answer the question, while ignoring irrelevant or distracting information. By explicitly training the model to distinguish between relevant and irrelevant information and to provide evidence from the relevant documents, RAFT encourages the LLM to develop better reasoning and explanation abilities, ultimately improving its ability to answer questions accurately and rationally in scenarios where additional context or knowledge is available.
 
 ### Installation
 
 ```bash
-pip install llama-index llama-index-tools-tavily-research
+pip install llama-index
 ```
 
 ## CLI Usage
@@ -17,31 +15,31 @@ pip install llama-index llama-index-tools-tavily-research
 You can download llamapacks directly using `llamaindex-cli`, which comes installed with the `llama-index` python package:
 
 ```bash
-llamaindex-cli download-llamapack CorrectiveRAGPack --download-dir ./corrective_rag_pack
+llamaindex-cli download-llamapack RAFTDatasetPack --download-dir ./raft_dataset_pack
 ```
 
-You can then inspect the files at `./corrective_rag_pack` and use them as a template for your own project.
+You can then inspect the files at `./raft_dataset_pack` and use them as a template for your own project.
 
 ## Code Usage
 
-You can download the pack to a the `./corrective_rag_pack` directory:
+You can download the pack to a the `./raft_dataset_pack` directory:
 
 ```python
 from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
-CorrectiveRAGPack = download_llama_pack(
-    "CorrectiveRAGPack", "./corrective_rag_pack"
-)
+RAFTDatasetPack = download_llama_pack("RAFTDatasetPack", "./raft_dataset_pack")
 
 # You can use any llama-hub loader to get documents!
-corrective_rag = CorrectiveRAGPack(documents, tavily_ai_api_key)
+raft_dataset = RAFTDatasetPack(file_path)
 ```
 
-From here, you can use the pack, or inspect and modify the pack in `./corrective_rag_pack`.
+From here, you can use the pack, or inspect and modify the pack in `./raft_dataset_pack`.
 
-The `run()` function contains around logic behind Corrective Retrieval Augmented Generation - [CRAG](https://arxiv.org/pdf/2401.15884.pdf) paper.
+The `run()` function contains around logic behind RAFT: Adapting Language Model to Domain Specific RAG [paper](https://arxiv.org/abs/2403.10131)
 
 ```python
-response = corrective_rag.run("<query>", similarity_top_k=2)
+dataset = raft_dataset.run()
 ```
+
+This will return the dataset which can be further used for finetuned purpose. Please refer to [original blog](https://techcommunity.microsoft.com/t5/ai-ai-platform-blog/raft-a-new-way-to-teach-llms-to-be-better-at-rag/ba-p/4084674) on using the dataset for fine-tuning.

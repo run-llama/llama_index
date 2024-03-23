@@ -24,6 +24,7 @@ class RAFTDatasetPack(BaseLlamaPack):
     def __init__(
         self,
         file_path: str,
+        llm: Any = None,
         num_questions_per_chunk: int = 5,
         num_distract_docs: int = 3,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
@@ -36,6 +37,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         self.chunk_size = chunk_size
         # self.default_breakpoint_percentile_threshold = default_breakpoint_percentile_threshold # Use when SemanticSplitterNodeParser
         self.ds = None
+        self.llm = OpenAI(temperature=0, n=1, model="gpt-4") if llm is None else llm
 
     def strip_str(self, s) -> str:
         """
@@ -80,7 +82,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         Generates the label / answer to `question` using `context` and GPT-4.
         """
         question_messages = self.encode_question_gen(question, context)
-        response = OpenAI(temperature=0, n=1, model="gpt-4").chat(question_messages)
+        response = self.llm.chat(question_messages)
         return str(response)
 
     def generate_instructions_gen(self, chunk, x=5) -> list[str]:
@@ -101,9 +103,7 @@ class RAFTDatasetPack(BaseLlamaPack):
             ChatMessage(role="user", content=str(chunk)),
         ]
 
-        queries = str(OpenAI(temperature=0, n=1, model="gpt-4").chat(messages)).split(
-            "\n"
-        )
+        queries = str(self.llm.chat(messages)).split("\n")
         queries = [self.strip_str(q) for q in queries]
         return [q for q in queries if any(c.isalpha() for c in q)]
 
