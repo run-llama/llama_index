@@ -569,14 +569,15 @@ class LLM(BaseLLM):
         """Predict and call the tool."""
         raise NotImplementedError("predict_tool is not supported by default.")
 
-    
     def _get_tool_call_from_response(
         self,
         response: "AgentChatResponse",
         **kwargs: Any,
     ) -> ToolSelection:
         """Predict and call the tool."""
-        raise NotImplementedError("_get_tool_call_from_response is not supported by default.")
+        raise NotImplementedError(
+            "_get_tool_call_from_response is not supported by default."
+        )
 
     def predict_and_call(
         self,

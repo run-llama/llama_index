@@ -1,11 +1,11 @@
 from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
 from typing import TYPE_CHECKING, List
-from llama_index.core.llms.llm import LLM, ToolSelection
+from llama_index.core.llms.llm import ToolSelection
 import json
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.chat_engine.types import AgentChatResponse
+
 
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments."""
@@ -53,7 +53,6 @@ def call_tool_with_selection(
     tools: List["BaseTool"],
     verbose: bool = False,
 ) -> ToolOutput:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.calling import call_tool
 
     tools_by_name = {tool.metadata.name: tool for tool in tools}
@@ -73,7 +72,6 @@ async def acall_tool_with_selection(
     tools: List["BaseTool"],
     verbose: bool = False,
 ) -> ToolOutput:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.calling import acall_tool
 
     tools_by_name = {tool.metadata.name: tool for tool in tools}

@@ -39,7 +39,10 @@ from mistralai.models.chat_completion import ToolCall
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.tools.calling import call_tool_with_selection, acall_tool_with_selection
+    from llama_index.core.tools.calling import (
+        call_tool_with_selection,
+        acall_tool_with_selection,
+    )
     from llama_index.core.chat_engine.types import AgentChatResponse
 
 DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
@@ -49,12 +52,16 @@ DEFAULT_MISTRALAI_MAX_TOKENS = 512
 from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
 
-def to_mistral_chatmessage(messages: Sequence[ChatMessage]) -> List[mistral_chatmessage]:
+def to_mistral_chatmessage(
+    messages: Sequence[ChatMessage],
+) -> List[mistral_chatmessage]:
     new_messages = []
     for m in messages:
         tool_calls = m.additional_kwargs.get("tool_calls")
-        new_messages.append(mistral_chatmessage(
-            role=m.role.value, content=m.content, tool_calls=tool_calls)
+        new_messages.append(
+            mistral_chatmessage(
+                role=m.role.value, content=m.content, tool_calls=tool_calls
+            )
         )
 
     return new_messages
@@ -214,7 +221,6 @@ class MistralAI(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert messages to mistral ChatMessage
-        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -245,7 +251,6 @@ class MistralAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         # convert messages to mistral ChatMessage
-        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -296,11 +301,7 @@ class MistralAI(LLM):
             tools, user_msg, chat_history=chat_history, verbose=verbose, **kwargs
         )
         tool_call = self._get_tool_call_from_response(response)
-        tool_output = call_tool_with_selection(
-            tool_call,
-            tools,
-            verbose=verbose
-        )
+        tool_output = call_tool_with_selection(tool_call, tools, verbose=verbose)
         return AgentChatResponse(response=tool_output.content, sources=[tool_output])
 
     @llm_chat_callback()
@@ -308,7 +309,6 @@ class MistralAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         # convert messages to mistral ChatMessage
-        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -337,7 +337,6 @@ class MistralAI(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         # convert messages to mistral ChatMessage
-        from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -408,11 +407,7 @@ class MistralAI(LLM):
             tools, user_msg, chat_history=chat_history, verbose=verbose, **kwargs
         )
         tool_call = self._get_tool_call_from_response(response)
-        tool_output = acall_tool_with_selection(
-            tool_call,
-            tools,
-            verbose=verbose
-        )
+        tool_output = acall_tool_with_selection(tool_call, tools, verbose=verbose)
         return AgentChatResponse(response=tool_output.content, sources=[tool_output])
 
     def chat_with_tool(
@@ -466,7 +461,7 @@ class MistralAI(LLM):
             **kwargs,
         )
         return response
-    
+
     def _get_tool_call_from_response(
         self,
         response: "AgentChatResponse",
@@ -498,4 +493,3 @@ class MistralAI(LLM):
             tool_name=tool_call.function.name,
             tool_kwargs=argument_dict,
         )
-

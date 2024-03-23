@@ -1,14 +1,10 @@
 """Function calling agent worker."""
 
-import asyncio
 import json
 import logging
 import uuid
-from functools import partial
-from threading import Thread
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
+from typing import Any, List, Optional, cast
 
-from llama_index.agent.openai.utils import resolve_tool_choice
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -24,20 +20,19 @@ from llama_index.core.callbacks import (
     trace_method,
 )
 from llama_index.core.chat_engine.types import (
-    AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
-    ChatResponseMode,
-    StreamingAgentChatResponse,
 )
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.core.tools.calling import call_tool_with_selection, acall_tool_with_selection
+from llama_index.core.tools.calling import (
+    call_tool_with_selection,
+    acall_tool_with_selection,
+)
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai.utils import OpenAIToolCall
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 
@@ -45,6 +40,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
+
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
     """Get function by name."""
@@ -56,7 +52,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 class FunctionCallingAgentWorker(BaseAgentWorker):
     """Function calling agent worker."""
-    
+
     def __init__(
         self,
         tools: List[BaseTool],
@@ -181,11 +177,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 ).metadata,
             },
         ) as event:
-            tool_output = call_tool_with_selection(
-                tool_call,
-                tools,
-                verbose=verbose
-            )
+            tool_output = call_tool_with_selection(tool_call, tools, verbose=verbose)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         function_message = ChatMessage(
@@ -217,9 +209,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             },
         ) as event:
             tool_output = await acall_tool_with_selection(
-                tool_call,
-                tools,
-                verbose=verbose
+                tool_call, tools, verbose=verbose
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
@@ -276,7 +266,9 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     input=None,
                 )
             ]
-        agent_response = AgentChatResponse(response=str(response), sources=task.extra_state["sources"])
+        agent_response = AgentChatResponse(
+            response=str(response), sources=task.extra_state["sources"]
+        )
 
         return TaskStepOutput(
             output=agent_response,
@@ -329,7 +321,9 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 )
             ]
 
-        agent_response = AgentChatResponse(response=str(response), sources=task.extra_state["sources"])
+        agent_response = AgentChatResponse(
+            response=str(response), sources=task.extra_state["sources"]
+        )
 
         return TaskStepOutput(
             output=agent_response,
