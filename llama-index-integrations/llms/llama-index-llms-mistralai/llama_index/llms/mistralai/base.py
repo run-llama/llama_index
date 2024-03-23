@@ -39,10 +39,6 @@ from mistralai.models.chat_completion import ToolCall
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.tools.calling import (
-        call_tool_with_selection,
-        acall_tool_with_selection,
-    )
     from llama_index.core.chat_engine.types import AgentChatResponse
 
 DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
@@ -288,6 +284,10 @@ class MistralAI(LLM):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
+        from llama_index.core.tools.calling import (
+            call_tool_with_selection,
+        )
+
         if not self.metadata.is_function_calling_model:
             return super().predict_and_call(
                 tools,
@@ -366,26 +366,6 @@ class MistralAI(LLM):
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
 
-    # async def _acall_tool(
-    #     self,
-    #     tool_call: ToolSelection,
-    #     tools: List["BaseTool"],
-    #     verbose: bool = False,
-    # ) -> "AgentChatResponse":
-    #     from llama_index.core.chat_engine.types import AgentChatResponse
-    #     from llama_index.core.tools.calling import acall_tool
-
-    #     tools_by_name = {tool.metadata.name: tool for tool in tools}
-    #     name = tool_call.function.name
-    #     if verbose:
-    #         arguments_str = json.dumps(tool_call.tool_kwargs)
-    #         print("=== Calling Function ===")
-    #         print(f"Calling function: {name} with args: {arguments_str}")
-    #     tool = tools_by_name[name]
-    #     tool_output = await acall_tool(tool, tool_call.tool_kwargs)
-
-    #     return AgentChatResponse(response=tool_output.content, sources=[tool_output])
-
     async def apredict_and_call(
         self,
         tools: List["BaseTool"],
@@ -394,6 +374,10 @@ class MistralAI(LLM):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
+        from llama_index.core.tools.calling import (
+            acall_tool_with_selection,
+        )
+
         if not self.metadata.is_function_calling_model:
             return await super().predict_and_call(
                 tools,
