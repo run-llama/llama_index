@@ -15,4 +15,4 @@ LlamaIndex also provides some tools / project templates to help you build a full
 
 Check out our [Full-Stack Projects](../../community/full_stack_projects.md) page for more details.
 
-We also have the [`llamaindex-cli rag` CLI tool](../../use_cases/q_and_a/rag_cli.md) that combines some of the above concepts into an easy to use tool for chatting with files from your terminal!
+We also have the [`llamaindex-cli rag` CLI tool](../../getting_started/starter_tools/rag_cli.md) that combines some of the above concepts into an easy to use tool for chatting with files from your terminal!
