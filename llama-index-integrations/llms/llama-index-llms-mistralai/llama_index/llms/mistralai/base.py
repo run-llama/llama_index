@@ -217,11 +217,7 @@ class MistralAI(LLM):
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
-        print(f"MESSAGES: {messages}")
-
-        # messages = [
-        #     mistral_chatmessage(role=x.role, content=x.content) for x in messages
-        # ]
+        print(f"messages: {messages}")
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat(messages=messages, **all_kwargs)
 
@@ -252,10 +248,7 @@ class MistralAI(LLM):
         # convert messages to mistral ChatMessage
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
-        messages = [
-            mistral_chatmessage(role=message.role, content=message.content)
-            for message in messages
-        ]
+        messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = self._client.chat_stream(messages=messages, **all_kwargs)
@@ -338,10 +331,7 @@ class MistralAI(LLM):
         # convert messages to mistral ChatMessage
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
-        messages = [
-            mistral_chatmessage(role=message.role, content=message.content)
-            for message in messages
-        ]
+        messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = await self._aclient.chat(messages=messages, **all_kwargs)
         return ChatResponse(
@@ -365,9 +355,7 @@ class MistralAI(LLM):
         # convert messages to mistral ChatMessage
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
-        messages = [
-            mistral_chatmessage(role=x.role, content=x.content) for x in messages
-        ]
+        messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = await self._aclient.chat_stream(messages=messages, **all_kwargs)

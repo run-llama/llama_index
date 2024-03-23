@@ -202,7 +202,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     async def _acall_function(
         self,
         tools: List[BaseTool],
-        tool_call: OpenAIToolCall,
+        tool_call: ToolSelection,
         memory: BaseMemory,
         sources: List[ToolOutput],
         verbose: bool = False,
@@ -296,13 +296,14 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
+
         response = await self._llm.achat_with_tool(
             tools=tools,
             user_msg=None,
             chat_history=self.get_all_messages(task),
             verbose=self._verbose,
         )
-        tool_call = self._get_tool_call_from_response(
+        tool_call = self._llm._get_tool_call_from_response(
             response, error_on_no_tool_call=False
         )
         task.extra_state["new_memory"].put(response.message)
@@ -328,10 +329,13 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 )
             ]
 
+        agent_response = AgentChatResponse(response=str(response), sources=task.extra_state["sources"])
+
         return TaskStepOutput(
-            is_done=is_done,
-            new_steps=new_steps,
-            output=task.extra_state["sources"],
+            output=agent_response,
+            task_step=step,
+            is_last=is_done,
+            next_steps=new_steps,
         )
 
     @trace_method("run_step")
