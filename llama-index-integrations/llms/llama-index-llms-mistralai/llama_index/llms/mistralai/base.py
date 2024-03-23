@@ -217,7 +217,6 @@ class MistralAI(LLM):
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
-        print(f"messages: {messages}")
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat(messages=messages, **all_kwargs)
 
@@ -275,26 +274,6 @@ class MistralAI(LLM):
     ) -> CompletionResponseGen:
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
-    
-    # def _call_tool(
-    #     self,
-    #     tool_call: ToolSelection,
-    #     tools: List["BaseTool"],
-    #     verbose: bool = False,
-    # ) -> "AgentChatResponse":
-    #     from llama_index.core.chat_engine.types import AgentChatResponse
-    #     from llama_index.core.tools.calling import call_tool
-
-    #     tools_by_name = {tool.metadata.name: tool for tool in tools}
-    #     name = tool_call.function.name
-    #     if verbose:
-    #         arguments_str = json.dumps(tool_call.tool_kwargs)
-    #         print("=== Calling Function ===")
-    #         print(f"Calling function: {name} with args: {arguments_str}")
-    #     tool = tools_by_name[name]
-    #     tool_output = call_tool(tool, tool_call.tool_kwargs)
-
-    #     return AgentChatResponse(response=tool_output.content, sources=[tool_output])
 
     def predict_and_call(
         self,
@@ -334,9 +313,14 @@ class MistralAI(LLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = await self._aclient.chat(messages=messages, **all_kwargs)
+        tool_calls = response.choices[0].message.tool_calls
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response.choices[0].message.content
+                role=MessageRole.ASSISTANT,
+                content=response.choices[0].message.content,
+                additional_kwargs={"tool_calls": tool_calls}
+                if tool_calls is not None
+                else {},
             ),
             raw=dict(response),
         )
