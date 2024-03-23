@@ -413,11 +413,16 @@ class MistralAI(LLM):
         if user_msg:
             messages.append(user_msg)
 
-        return self.chat(
+        response = self.chat(
             messages,
             tools=tool_specs,
             **kwargs,
         )
+        # TODO: this is a hack, in the future we should support multiple tool calls
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if len(tool_calls) > 1:
+            response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        return response
 
     async def achat_with_tool(
         self,
@@ -438,11 +443,16 @@ class MistralAI(LLM):
         if user_msg:
             messages.append(user_msg)
 
-        return await self.achat(
+        response = await self.achat(
             messages,
             tools=tool_specs,
             **kwargs,
         )
+        # TODO: this is a hack, in the future we should support multiple tool calls
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if len(tool_calls) > 1:
+            response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        return response
 
     def _get_tool_call_from_response(
         self,
