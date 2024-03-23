@@ -1,5 +1,10 @@
 from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
+from typing import TYPE_CHECKING
+from llama_index.core.llms.llm import LLM, ToolSelection
 
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
+    from llama_index.core.chat_engine.types import AgentChatResponse
 
 def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     """Call a tool with arguments."""
@@ -40,3 +45,43 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             raw_input=arguments,
             raw_output=str(e),
         )
+
+
+def call_tool_with_selection(
+    tool_call: ToolSelection,
+    tools: List["BaseTool"],
+    verbose: bool = False,
+) -> ToolOutput:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.calling import call_tool
+
+    tools_by_name = {tool.metadata.name: tool for tool in tools}
+    name = tool_call.function.name
+    if verbose:
+        arguments_str = json.dumps(tool_call.tool_kwargs)
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = tools_by_name[name]
+    tool_output = call_tool(tool, tool_call.tool_kwargs)
+
+    return tool_output
+
+
+async def acall_tool_with_selection(
+    tool_call: ToolSelection,
+    tools: List["BaseTool"],
+    verbose: bool = False,
+) -> ToolOutput:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.calling import acall_tool
+
+    tools_by_name = {tool.metadata.name: tool for tool in tools}
+    name = tool_call.function.name
+    if verbose:
+        arguments_str = json.dumps(tool_call.tool_kwargs)
+        print("=== Calling Function ===")
+        print(f"Calling function: {name} with args: {arguments_str}")
+    tool = tools_by_name[name]
+    tool_output = await acall_tool(tool, tool_call.tool_kwargs)
+
+    return tool_output

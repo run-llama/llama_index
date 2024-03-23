@@ -54,12 +54,25 @@ from llama_index.core.instrumentation.events.llm import (
 )
 
 import llama_index.core.instrumentation as instrument
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+)
 
 dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
+
+
+class ToolSelection(BaseModel):
+    """Tool selection."""
+
+    tool_id: str = Field(description="Tool ID to select.")
+    tool_name: str = Field(description="Tool name to select.")
+    tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
+    # NOTE: no args for now
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -533,6 +546,37 @@ class LLM(BaseLLM):
         return stream_tokens
 
     # -- Tool Calling --
+
+    def chat_with_tool(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        raise NotImplementedError("predict_tool is not supported by default.")
+
+    async def achat_with_tool(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        raise NotImplementedError("predict_tool is not supported by default.")
+
+    
+    def _get_tool_call_from_response(
+        self,
+        response: "AgentChatResponse",
+        **kwargs: Any,
+    ) -> ToolSelection:
+        """Predict and call the tool."""
+        raise NotImplementedError("_get_tool_call_from_response is not supported by default.")
 
     def predict_and_call(
         self,

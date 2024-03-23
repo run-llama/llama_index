@@ -1,0 +1,335 @@
+"""Function calling agent worker."""
+
+import asyncio
+import json
+import logging
+import uuid
+from functools import partial
+from threading import Thread
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
+
+from llama_index.agent.openai.utils import resolve_tool_choice
+from llama_index.core.agent.types import (
+    BaseAgentWorker,
+    Task,
+    TaskStep,
+    TaskStepOutput,
+)
+from llama_index.core.agent.utils import add_user_step_to_memory
+from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.callbacks import (
+    CallbackManager,
+    CBEventType,
+    EventPayload,
+    trace_method,
+)
+from llama_index.core.chat_engine.types import (
+    AGENT_CHAT_RESPONSE_TYPE,
+    AgentChatResponse,
+    ChatResponseMode,
+    StreamingAgentChatResponse,
+)
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.llms.llm import LLM, ToolSelection
+from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
+from llama_index.core.objects.base import ObjectRetriever
+from llama_index.core.settings import Settings
+from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools.calling import call_tool_with_selection, acall_tool_with_selection
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import OpenAIToolCall
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+
+DEFAULT_MAX_FUNCTION_CALLS = 5
+
+def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
+    """Get function by name."""
+    name_to_tool = {tool.metadata.name: tool for tool in tools}
+    if name not in name_to_tool:
+        raise ValueError(f"Tool with name {name} not found")
+    return name_to_tool[name]
+
+
+class FunctionCallingAgentWorker(BaseAgentWorker):
+    """Function calling agent worker."""
+    
+    def __init__(
+        self,
+        tools: List[BaseTool],
+        llm: OpenAI,
+        memory: BaseMemory,
+        prefix_messages: List[ChatMessage],
+        verbose: bool = False,
+        max_function_calls: int = 5,
+        callback_manager: Optional[CallbackManager] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+    ) -> None:
+        """Init params."""
+        super().__init__(tools, llm, memory, verbose, tool_retriever)
+        if not llm.metadata.is_function_calling_model:
+            raise ValueError(
+                f"Model name {llm.model} does not support function calling API. "
+            )
+        self._llm = llm
+        self._verbose = verbose
+        self._max_function_calls = max_function_calls
+        self.prefix_messages = prefix_messages
+        self.callback_manager = callback_manager or self._llm.callback_manager
+
+        if len(tools) > 0 and tool_retriever is not None:
+            raise ValueError("Cannot specify both tools and tool_retriever")
+        elif len(tools) > 0:
+            self._get_tools = lambda _: tools
+        elif tool_retriever is not None:
+            tool_retriever_c = cast(ObjectRetriever[BaseTool], tool_retriever)
+            self._get_tools = lambda message: tool_retriever_c.retrieve(message)
+        else:
+            # no tools
+            self._get_tools = lambda _: []
+
+    @classmethod
+    def from_tools(
+        cls,
+        tools: Optional[List[BaseTool]] = None,
+        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        llm: Optional[LLM] = None,
+        verbose: bool = False,
+        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        prefix_messages: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
+    ) -> "FunctionCallingAgentWorker":
+        """Create an FunctionCallingAgentWorker from a list of tools.
+
+        Similar to `from_defaults` in other classes, this method will
+        infer defaults for a variety of parameters, including the LLM,
+        if they are not specified.
+
+        """
+        tools = tools or []
+
+        llm = llm or Settings.llm
+        if callback_manager is not None:
+            llm.callback_manager = callback_manager
+
+        if system_prompt is not None:
+            if prefix_messages is not None:
+                raise ValueError(
+                    "Cannot specify both system_prompt and prefix_messages"
+                )
+            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
+
+        prefix_messages = prefix_messages or []
+
+        return cls(
+            tools=tools,
+            tool_retriever=tool_retriever,
+            llm=llm,
+            prefix_messages=prefix_messages,
+            verbose=verbose,
+            max_function_calls=max_function_calls,
+            callback_manager=callback_manager,
+        )
+
+    def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
+        """Initialize step from task."""
+        sources: List[ToolOutput] = []
+        # temporary memory for new messages
+        new_memory = ChatMemoryBuffer.from_defaults()
+        # initialize task state
+        task_state = {
+            "sources": sources,
+            "n_function_calls": 0,
+            "new_memory": new_memory,
+        }
+        task.extra_state.update(task_state)
+
+        return TaskStep(
+            task_id=task.task_id,
+            step_id=str(uuid.uuid4()),
+            input=task.input,
+        )
+
+    def get_all_messages(self, task: Task) -> List[ChatMessage]:
+        return (
+            self.prefix_messages
+            + task.memory.get()
+            + task.extra_state["new_memory"].get_all()
+        )
+
+    def _call_function(
+        self,
+        tools: List[BaseTool],
+        tool_call: ToolSelection,
+        memory: BaseMemory,
+        sources: List[ToolOutput],
+        verbose: bool = False,
+    ) -> None:
+        function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
+
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call.arguments,
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call.name
+                ).metadata,
+            },
+        ) as event:
+            tool_output = call_tool_with_selection(
+                tool_call,
+                tools,
+                verbose=verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+
+        function_message = ChatMessage(
+            content=str(tool_output),
+            role=MessageRole.TOOL,
+            additional_kwargs={
+                "name": tool_call.tool_name,
+                "tool_call_id": tool_call.tool_id,
+            },
+        )
+        sources.append(tool_output)
+        memory.put(function_message)
+
+    async def _acall_function(
+        self,
+        tools: List[BaseTool],
+        tool_call: OpenAIToolCall,
+        memory: BaseMemory,
+        sources: List[ToolOutput],
+        verbose: bool = False,
+    ) -> None:
+        function_call = tool_call.function
+        # validations to get passed mypy
+        assert function_call is not None
+        assert function_call.name is not None
+        assert function_call.arguments is not None
+
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_call.arguments,
+                EventPayload.TOOL: get_function_by_name(
+                    tools, function_call.name
+                ).metadata,
+            },
+        ) as event:
+            tool_output = await acall_tool_with_selection(
+                tool_call,
+                tools,
+                verbose=verbose
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+
+        function_message = ChatMessage(
+            content=str(tool_output),
+            role=MessageRole.TOOL,
+            additional_kwargs={
+                "name": tool_call.tool_name,
+                "tool_call_id": tool_call.tool_id,
+            },
+        )
+        sources.append(tool_output)
+        memory.put(function_message)
+
+    @trace_method("run_step")
+    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        """Run step."""
+        if step.input is not None:
+            add_user_step_to_memory(
+                step, task.extra_state["new_memory"], verbose=self._verbose
+            )
+        # TODO: see if we want to do step-based inputs
+        tools = self.get_tools(task.input)
+        response = self._llm.chat_with_tool(
+            tools=tools,
+            user_msg=None,
+            chat_history=self.get_all_messages(task),
+            verbose=self._verbose,
+        )
+        tool_call = self._get_tool_call_from_response(
+            response, error_on_no_tool_call=False
+        )
+        if tool_call is None:
+            # we are done
+            is_done = True
+            new_steps = []
+        else:
+            is_done = False
+            self._call_function(
+                tools,
+                tool_call,
+                task.extra_state["new_memory"],
+                task.extra_state["sources"],
+            )
+            # put tool output in sources and memory
+            new_steps = [
+                step.get_next_step(
+                    step_id=str(uuid.uuid4()),
+                    # NOTE: input is unused
+                    input=None,
+                )
+            ]
+
+        return TaskStepOutput(
+            is_done=is_done,
+            new_steps=new_steps,
+            output=task.extra_state["sources"],
+        )
+
+    @trace_method("run_step")
+    async def arun_step(
+        self, step: TaskStep, task: Task, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async)."""
+        if step.input is not None:
+            add_user_step_to_memory(
+                step, task.extra_state["new_memory"], verbose=self._verbose
+            )
+        # TODO: see if we want to do step-based inputs
+        tools = self.get_tools(task.input)
+        response = await self._llm.achat_with_tool(
+            tools=tools,
+            user_msg=None,
+            chat_history=self.get_all_messages(task),
+            verbose=self._verbose,
+        )
+        tool_call = self._get_tool_call_from_response(
+            response, error_on_no_tool_call=False
+        )
+        if tool_call is None:
+            # we are done
+            is_done = True
+            new_steps = []
+        else:
+            is_done = False
+            await self._acall_function(
+                tools,
+                tool_call,
+                task.extra_state["new_memory"],
+                task.extra_state["sources"],
+            )
+            # put tool output in sources and memory
+            new_steps = [
+                step.get_next_step(
+                    step_id=str(uuid.uuid4()),
+                    # NOTE: input is unused
+                    input=None,
+                )
+            ]
+
+        return TaskStepOutput(
+            is_done=is_done,
+            new_steps=new_steps,
+            output=task.extra_state["sources"],
+        )
