@@ -1,6 +1,7 @@
 from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from llama_index.core.llms.llm import LLM, ToolSelection
+import json
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -56,7 +57,7 @@ def call_tool_with_selection(
     from llama_index.core.tools.calling import call_tool
 
     tools_by_name = {tool.metadata.name: tool for tool in tools}
-    name = tool_call.function.name
+    name = tool_call.tool_name
     if verbose:
         arguments_str = json.dumps(tool_call.tool_kwargs)
         print("=== Calling Function ===")

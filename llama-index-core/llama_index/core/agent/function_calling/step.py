@@ -38,6 +38,8 @@ from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.calling import call_tool_with_selection, acall_tool_with_selection
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
+from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools.types import AsyncBaseTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -59,7 +61,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         self,
         tools: List[BaseTool],
         llm: OpenAI,
-        memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = 5,
@@ -67,7 +68,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
     ) -> None:
         """Init params."""
-        super().__init__(tools, llm, memory, verbose, tool_retriever)
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.model} does not support function calling API. "
@@ -153,6 +153,10 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             input=task.input,
         )
 
+    def get_tools(self, input: str) -> List[AsyncBaseTool]:
+        """Get tools."""
+        return [adapt_to_async_tool(t) for t in self._get_tools(input)]
+
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
             self.prefix_messages
@@ -168,18 +172,12 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources: List[ToolOutput],
         verbose: bool = False,
     ) -> None:
-        function_call = tool_call.function
-        # validations to get passed mypy
-        assert function_call is not None
-        assert function_call.name is not None
-        assert function_call.arguments is not None
-
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
+                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
                 EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
+                    tools, tool_call.tool_name
                 ).metadata,
             },
         ) as event:
@@ -209,18 +207,12 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources: List[ToolOutput],
         verbose: bool = False,
     ) -> None:
-        function_call = tool_call.function
-        # validations to get passed mypy
-        assert function_call is not None
-        assert function_call.name is not None
-        assert function_call.arguments is not None
-
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
+                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
                 EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
+                    tools, tool_call.tool_name
                 ).metadata,
             },
         ) as event:
@@ -257,7 +249,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             chat_history=self.get_all_messages(task),
             verbose=self._verbose,
         )
-        tool_call = self._get_tool_call_from_response(
+        tool_call = self._llm._get_tool_call_from_response(
             response, error_on_no_tool_call=False
         )
         if tool_call is None:
@@ -280,11 +272,13 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     input=None,
                 )
             ]
+        agent_response = AgentChatResponse(response=str(response), sources=task.extra_state["sources"])
 
         return TaskStepOutput(
-            is_done=is_done,
-            new_steps=new_steps,
-            output=task.extra_state["sources"],
+            output=agent_response,
+            task_step=step,
+            is_last=is_done,
+            next_steps=new_steps,
         )
 
     @trace_method("run_step")
@@ -333,3 +327,24 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             new_steps=new_steps,
             output=task.extra_state["sources"],
         )
+
+    @trace_method("run_step")
+    def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        """Run step (stream)."""
+        raise NotImplementedError("Stream not supported for function calling agent")
+
+    @trace_method("run_step")
+    async def astream_step(
+        self, step: TaskStep, task: Task, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async stream)."""
+        raise NotImplementedError("Stream not supported for function calling agent")
+
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        # add new messages to memory
+        task.memory.set(
+            task.memory.get_all() + task.extra_state["new_memory"].get_all()
+        )
+        # reset new memory
+        task.extra_state["new_memory"].reset()
