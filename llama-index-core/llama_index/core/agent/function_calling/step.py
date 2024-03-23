@@ -243,6 +243,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
+
+        # get response and tool call (if exists)
         response = self._llm.chat_with_tool(
             tools=tools,
             user_msg=None,
@@ -252,6 +254,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_call = self._llm._get_tool_call_from_response(
             response, error_on_no_tool_call=False
         )
+        task.extra_state["new_memory"].put(response.message)
         if tool_call is None:
             # we are done
             is_done = True
@@ -263,6 +266,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 tool_call,
                 task.extra_state["new_memory"],
                 task.extra_state["sources"],
+                verbose=self._verbose,
             )
             # put tool output in sources and memory
             new_steps = [
@@ -301,6 +305,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_call = self._get_tool_call_from_response(
             response, error_on_no_tool_call=False
         )
+        task.extra_state["new_memory"].put(response.message)
         if tool_call is None:
             # we are done
             is_done = True
@@ -312,6 +317,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 tool_call,
                 task.extra_state["new_memory"],
                 task.extra_state["sources"],
+                verbose=self._verbose,
             )
             # put tool output in sources and memory
             new_steps = [

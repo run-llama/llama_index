@@ -50,10 +50,14 @@ from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
 
 def to_mistral_chatmessage(messages: Sequence[ChatMessage]) -> List[mistral_chatmessage]:
-    messages = [
-        mistral_chatmessage(role=x.role.value, content=x.content) for x in messages
-    ]
-    return messages
+    new_messages = []
+    for m in messages:
+        tool_calls = m.additional_kwargs.get("tool_calls")
+        new_messages.append(mistral_chatmessage(
+            role=m.role.value, content=m.content, tool_calls=tool_calls)
+        )
+
+    return new_messages
 
 
 class MistralAI(LLM):
@@ -213,7 +217,7 @@ class MistralAI(LLM):
         from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
 
         messages = to_mistral_chatmessage(messages)
-        # print(f"MESSAGES: {messages}")
+        print(f"MESSAGES: {messages}")
 
         # messages = [
         #     mistral_chatmessage(role=x.role, content=x.content) for x in messages
