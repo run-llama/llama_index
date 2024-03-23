@@ -232,24 +232,43 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        tool = tools_dict[reasoning_step.action]
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: reasoning_step.action_input,
-                EventPayload.TOOL: tool.metadata,
-            },
-        ) as event:
-            try:
-                tool_output = tool.call(**reasoning_step.action_input)
-            except Exception as e:
+        if reasoning_step.action not in tools_dict:
+            # We still emit a `tool_output` object to the task, so that the LLM can know
+            # it has hallucinated in the next reasoning step.
+            with self.callback_manager.event(
+                CBEventType.FUNCTION_CALL,
+                payload={
+                    EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                },
+            ) as event:
+                # TODO(L10N): This should be localized.
+                content = f"Error: No such tool named `{reasoning_step.action}`."
                 tool_output = ToolOutput(
-                    content=f"Error: {e!s}",
-                    tool_name=tool.metadata.name,
+                    content=content,
+                    tool_name=reasoning_step.action,
                     raw_input={"kwargs": reasoning_step.action_input},
-                    raw_output=e,
+                    raw_output=content,
                 )
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+                event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        else:
+            tool = tools_dict[reasoning_step.action]
+            with self.callback_manager.event(
+                CBEventType.FUNCTION_CALL,
+                payload={
+                    EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                    EventPayload.TOOL: tool.metadata,
+                },
+            ) as event:
+                try:
+                    tool_output = tool.call(**reasoning_step.action_input)
+                except Exception as e:
+                    tool_output = ToolOutput(
+                        content=f"Error: {e!s}",
+                        tool_name=tool.metadata.name,
+                        raw_input={"kwargs": reasoning_step.action_input},
+                        raw_output=e,
+                    )
+                event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         task.extra_state["sources"].append(tool_output)
 
