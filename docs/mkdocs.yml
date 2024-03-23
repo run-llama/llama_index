@@ -2368,10 +2368,6 @@ plugins:
         ./use_cases/multimodal.html: https://docs.llamaindex.ai/en/stable/use_cases/multimodal/
         ./use_cases/q_and_a/rag_cli.html: getting_started/starter_tools/rag_cli.md
         ./use_cases/q_and_a/root.html: use_cases/q_and_a/index.md
-        ./use_cases/querying_csvs.html: https://docs.llamaindex.ai/en/stable/use_cases/querying_csvs/
-        ./use_cases/root.html: https://docs.llamaindex.ai/en/stable/use_cases/
-        ./use_cases/tables_charts.html: https://docs.llamaindex.ai/en/stable/use_cases/tables_charts/
-        ./use_cases/text_to_sql.html: https://docs.llamaindex.ai/en/stable/use_cases/text_to_sql/
       use_directory_urls: false
 site_name: LlamaIndex
 theme:
