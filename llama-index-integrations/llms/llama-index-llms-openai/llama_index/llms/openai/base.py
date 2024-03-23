@@ -604,7 +604,13 @@ class OpenAI(LLM):
         **kwargs: Any,
     ) -> "AgentChatResponse":
         if not self.metadata.is_function_calling_model:
-            return super().predict_and_call(user_msg, tools, verbose, **kwargs)
+            return super().predict_and_call(
+                tools,
+                user_msg=user_msg,
+                chat_history=chat_history,
+                verbose=verbose,
+                **kwargs,
+            )
 
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
         tools_by_name = {tool.metadata.name: tool for tool in tools}
