@@ -56,6 +56,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._app_url = app_url
         self._timeout = timeout
         self._show_progress = show_progress
+        self._service_context = None
 
     @classmethod
     def from_documents(  # type: ignore
