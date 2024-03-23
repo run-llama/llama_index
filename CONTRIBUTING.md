@@ -382,14 +382,14 @@ We would love your help in making the project cleaner, more robust, and more und
 LlamaIndex is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
 and dirty guide to setting up your environment for local development.
 
-1. Fork [LlamaIndex Github repo][ghr]* and clone it locally. (New to GitHub / git? Here's [how][frk].)
+1. Fork [LlamaIndex Github repo][ghr]\* and clone it locally. (New to GitHub / git? Here's [how][frk].)
 2. In a terminal, `cd` into the directory of your local clone of your forked repo.
-3. Install [pre-commit hooks][pch]* by running `pre-commit install`. These hooks are small house-keeping scripts executed every time you make a git commit, which automates away a lot of chores.
+3. Install [pre-commit hooks][pch]\* by running `pre-commit install`. These hooks are small house-keeping scripts executed every time you make a git commit, which automates away a lot of chores.
 4. `cd` into the specific package you want to work on. For example, if I want to work on the core package, I execute `cd llama-index-core/`. (New to terminal / command line? Here's a [getting started guide][gsg].)
 5. Prepare a [virtual environment][vev].
-   1. [Install Poetry][pet]*. This will help you manage package dependencies.
+   1. [Install Poetry][pet]\*. This will help you manage package dependencies.
    2. Execute `poetry shell`. This command will create a [virtual environment][vev] specific for this package, which keeps installed packages contained to this project. (New to Poetry, the dependency & packaging manager for Python? Read about its basic usage [here][bus].)
-   3. Execute `poetry install --with dev,docs`*. This will install all dependencies needed for local development. To see what will be installed, read the `pyproject.toml` under that directory.
+   3. Execute `poetry install --with dev,docs`\*. This will install all dependencies needed for local development. To see what will be installed, read the `pyproject.toml` under that directory.
 
 [frk]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
 [ghr]: https://github.com/run-llama/llama_index/
@@ -425,8 +425,9 @@ Under the hood, we still install pre-commit hooks for you, so that you don't hav
 #### Testing
 
 If you modified or added code logic, **create test(s)**, because they help preventing other maintainers from accidentally breaking the nice things you added / re-introducing the bugs you fixed.
-* In almost all cases, add **unit tests**.
-* If your change involves adding a new integration, also add **integration tests**. When doing so, please [mock away][mck] the remote system that you're intergrating LlamaIndex with, so that when the remote system changes, LlamaIndex developers won't see test failures.
+
+- In almost all cases, add **unit tests**.
+- If your change involves adding a new integration, also add **integration tests**. When doing so, please [mock away][mck] the remote system that you're integrating LlamaIndex with, so that when the remote system changes, LlamaIndex developers won't see test failures.
 
 Reciprocally, you should **run existing tests** (from every package that you touched) before making a git commit, so that you can be sure you didn't break someone else's good work.
 
