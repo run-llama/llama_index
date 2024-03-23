@@ -43,6 +43,8 @@ class LlamaCloudRetriever(BaseRetriever):
         self._alpha = alpha or OMIT
         self._search_filters = search_filters or OMIT
 
+        kwargs.pop("llm", None)
+
         super().__init__(
             callback_manager=kwargs.get("callback_manager", None),
             verbose=kwargs.get("verbose", False),
