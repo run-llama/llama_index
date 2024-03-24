@@ -32,6 +32,7 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
     mistralai_modelname_to_contextsize,
 )
+import asyncio
 
 from mistralai.async_client import MistralAsyncClient
 from mistralai.client import MistralClient
@@ -424,10 +425,11 @@ class MistralAI(LLM):
             **kwargs,
         )
         tool_calls = self._get_tool_calls_from_response(response)
-        tool_outputs = [
+        tool_tasks = [
             acall_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
         ]
+        tool_outputs = await asyncio.gather(*tool_tasks)
         if allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]

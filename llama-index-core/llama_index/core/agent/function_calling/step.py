@@ -4,6 +4,7 @@ import json
 import logging
 import uuid
 from typing import Any, List, Optional, cast
+import asyncio
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
@@ -332,16 +333,18 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             new_steps = []
         else:
             is_done = False
-            for tool_call in tool_calls:
-                # TODO: maybe execute this with multi-threading
-                await self._acall_function(
+            tasks = [
+                self._acall_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
                     task.extra_state["sources"],
                     verbose=self._verbose,
                 )
-                task.extra_state["n_function_calls"] += 1
+                for tool_call in tool_calls
+            ]
+            await asyncio.gather(*tasks)
+            task.extra_state["n_function_calls"] += len(tool_calls)
             # put tool output in sources and memory
             new_steps = [
                 step.get_next_step(
