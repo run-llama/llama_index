@@ -4,7 +4,6 @@ An index that that is built on top of an existing vector store.
 
 """
 import logging
-import os
 from enum import Enum
 from typing import Any, Dict, List, Optional, cast
 import numpy as np
@@ -21,13 +20,14 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-    
+
 logger = logging.getLogger(__name__)
+
 
 def similarity(embedding1: List, embedding2: List, mode) -> float:
     embedding1 = np.array(embedding1)
     embedding2 = np.array(embedding2)
-    if mode == AWSDocDbVectorStoreSimilarityType.Euclidian:
+    if mode == AWSDocDbVectorStoreSimilarityType.Euclidean:
         return -float(np.linalg.norm(np.array(embedding1) - np.array(embedding2)))
     elif mode == AWSDocDbVectorStoreSimilarityType.DotProduct:
         return np.dot(embedding1, embedding2)
@@ -36,8 +36,9 @@ def similarity(embedding1: List, embedding2: List, mode) -> float:
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
         return product / norm
 
+
 class AWSDocDbVectorStoreSimilarityType(Enum):
-    Euclidian = "euclidean"
+    Euclidean = "euclidean"
     DotProduct = "dotProduct"
     Cosine = "cosine"
 
@@ -50,13 +51,17 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
     return filters
 
 
-class DocDbIndex():
-    def __init__(self, _index_name, _embedding_key, _collection):
+class DocDbIndex:
+    def __init__(self, _index_name, _embedding_key, _collection) -> None:
         self._index_name = _index_name
         self._embedding_key = _embedding_key
         self._collection = _collection
 
-    def create_index(self, dimensions: int, similarity: AWSDocDbVectorStoreSimilarityType = AWSDocDbVectorStoreSimilarityType.Cosine):
+    def create_index(
+        self,
+        dimensions: int,
+        similarity: AWSDocDbVectorStoreSimilarityType = AWSDocDbVectorStoreSimilarityType.Cosine,
+    ):
         create_index_commands = {
             "createIndexes": self._collection.name,
             "indexes": [
@@ -81,7 +86,7 @@ class DocDbIndex():
         )
 
         return create_index_responses
-    
+
     def index_exists(self) -> bool:
         cursor = self._collection.list_indexes()
         index_name = self._index_name
@@ -98,6 +103,7 @@ class DocDbIndex():
             self._collection.drop_index(self._index_name)
             # Raises OperationFailure on an error (e.g. trying to drop
             # an index that does not exist)
+
 
 class AWSDocDbVectorStore(VectorStore):
     """AWS DocumentDB Vector Store.
@@ -118,14 +124,14 @@ class AWSDocDbVectorStore(VectorStore):
         self,
         docdb_client: Optional[Any] = None,
         db_name: str = "default_db",
-        index_name: str= "default_index",
+        index_name: str = "default_index",
         collection_name: str = "default_collection",
         id_key: str = "id",
         embedding_key: str = "embedding",
         text_key: str = "text",
         metadata_key: str = "metadata",
         insert_kwargs: Optional[Dict] = None,
-        similarity_score = "cosine",
+        similarity_score="cosine",
         **kwargs: Any,
     ) -> None:
         """Initialize the vector store.
@@ -144,19 +150,14 @@ class AWSDocDbVectorStore(VectorStore):
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
-            from importlib.metadata import version
-
             from pymongo import MongoClient
-            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(import_err_msg)
 
         if docdb_client is not None:
             self._docdb_client = cast(MongoClient, docdb_client)
         else:
-            raise ValueError(
-                    "Must specify connection string to DocumentDB instance "
-                )
+            raise ValueError("Must specify connection string to DocumentDB instance ")
         self._similarity_score = similarity_score
         self._collection = self._docdb_client[db_name][collection_name]
         self._embedding_key = embedding_key
@@ -210,24 +211,18 @@ class AWSDocDbVectorStore(VectorStore):
             doc_id (str): The doc_id of the document to delete.
 
         """
-        try:
-            from bson.objectid import ObjectId
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import bson, please install with `pip install bson`."
-            ) from e
-
         if doc_id is None:
             raise ValueError("No document id provided to delete.")
         self._collection.delete_one({"id": doc_id})
 
     @property
     def client(self) -> Any:
-        """Return DocDB client."""    
+        """Return DocDB client."""
         return self._docdb_client
-    
 
-    def _query(self, query: VectorStoreQuery, projection: Optional[Dict[str, int]]=None) -> VectorStoreQueryResult:
+    def _query(
+        self, query: VectorStoreQuery, projection: Optional[Dict[str, int]] = None
+    ) -> VectorStoreQueryResult:
         params: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
@@ -238,24 +233,9 @@ class AWSDocDbVectorStore(VectorStore):
             params["filter"] = _to_mongodb_filter(query.filters)
 
         if projection is None:
-            pipeline = [
-                    { "$search":
-                        {
-                            "vectorSearch": params
-                        }
-                    }
-                ]
+            pipeline = [{"$search": {"vectorSearch": params}}]
         else:
-            pipeline = [
-            { "$search":
-                {
-                    "vectorSearch": params
-                }
-            },
-            {
-                "$project": projection
-            }
-        ]
+            pipeline = [{"$search": {"vectorSearch": params}}, {"$project": projection}]
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
         top_k_nodes = []
@@ -295,26 +275,31 @@ class AWSDocDbVectorStore(VectorStore):
         logger.debug("Result of query: %s", result)
         return result
 
-    def query(self, query: VectorStoreQuery, projection: Optional[Dict[str, int]]=None, **kwargs: Any) -> VectorStoreQueryResult:
+    def query(
+        self,
+        query: VectorStoreQuery,
+        projection: Optional[Dict[str, int]] = None,
+        **kwargs: Any,
+    ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
 
         Args:
-            query: a VectorStoreQuery object. 
+            query: a VectorStoreQuery object.
             projection: a dictionary specifying which fields to return after the search
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.
         """
-        return self._query(query, projection = projection)
+        return self._query(query, projection=projection)
 
     def create_index(self, dimensions, similarity_score=None):
-        score = self._similarity_score 
-        if (similarity_score != None):
+        score = self._similarity_score
+        if similarity_score is not None:
             score = similarity
         return self._index_crud.create_index(dimensions, score)
-    
+
     def delete_index(self):
         return self._index_crud.delete_index()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.docdb_client.close()

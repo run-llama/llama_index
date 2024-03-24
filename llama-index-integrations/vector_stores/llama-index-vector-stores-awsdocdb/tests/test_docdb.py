@@ -7,6 +7,7 @@ from time import sleep
 import pytest
 
 from pymongo import MongoClient
+
 INDEX_NAME = "llamaindex-test-index"
 NAMESPACE = "llamaindex_test_db.llamaindex_test_collection"
 CONNECTION_STRING = os.getenv("DOCUMENTDB_URI", "")
@@ -18,16 +19,18 @@ pymongo_available = True
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 import sys
+
 sys.path.append("./llama_index/vector_stores")
-from awsdocdb import AWSDocDbVectorStore, DocDbIndex, AWSDocDbVectorStoreSimilarityType
+from awsdocdb import AWSDocDbVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery
 
 """
 Test instructions:
-Add a DocumentDB connection string to your environment after creating an instance 
+Add a DocumentDB connection string to your environment after creating an instance
 Follow the instructions at https://docs.aws.amazon.com/documentdb/latest/developerguide/connect_programmatically.html to connect to your instance
 Use the contributor steps at https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md to setup the environment and run all the tests here
 """
+
 
 @pytest.fixture(scope="session")
 def node_embeddings() -> list[TextNode]:
@@ -62,7 +65,6 @@ def node_embeddings() -> list[TextNode]:
             embedding=[0.0, 0.0, 1.0],
         ),
     ]
-
 
 
 class TestAWSDocDBVectorSearch:
@@ -154,9 +156,6 @@ class TestAWSDocDBVectorSearch:
         assert res.nodes
         assert res.nodes[0].get_content() == "lorem ipsum"
 
-    
-
-    
     def test_embeddings(self):
         pass
 
