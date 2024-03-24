@@ -238,7 +238,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tools = self.get_tools(task.input)
 
         # get response and tool call (if exists)
-        response = self._llm.chat_with_tool(
+        response = self._llm.chat_with_tools(
             tools=tools,
             user_msg=None,
             chat_history=self.get_all_messages(task),
@@ -302,29 +302,40 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
 
-        response = await self._llm.achat_with_tool(
+        # get response and tool call (if exists)
+        response = await self._llm.achat_with_tools(
             tools=tools,
             user_msg=None,
             chat_history=self.get_all_messages(task),
             verbose=self._verbose,
+            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
         )
-        tool_call = self._llm._get_tool_calls_from_response(
+        tool_calls = self._llm._get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+        if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
+            raise ValueError(
+                "Parallel tool calls not supported for synchronous function calling agent"
+            )
+            
+        # call all tools, gather responses
         task.extra_state["new_memory"].put(response.message)
-        if tool_call is None:
+        if len(tool_calls) == 0 or task.extra_state["n_function_calls"] >= self._max_function_calls:
             # we are done
             is_done = True
             new_steps = []
         else:
             is_done = False
-            await self._acall_function(
-                tools,
-                tool_call,
-                task.extra_state["new_memory"],
-                task.extra_state["sources"],
-                verbose=self._verbose,
-            )
+            for tool_call in tool_calls:
+                # TODO: maybe execute this with multi-threading
+                await self._acall_function(
+                    tools,
+                    tool_call,
+                    task.extra_state["new_memory"],
+                    task.extra_state["sources"],
+                    verbose=self._verbose,
+                )
+                task.extra_state["n_function_calls"] += 1
             # put tool output in sources and memory
             new_steps = [
                 step.get_next_step(
@@ -333,7 +344,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     input=None,
                 )
             ]
-
         agent_response = AgentChatResponse(
             response=str(response), sources=task.extra_state["sources"]
         )
@@ -344,6 +354,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             is_last=is_done,
             next_steps=new_steps,
         )
+        
 
     @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:

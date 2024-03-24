@@ -547,7 +547,7 @@ class LLM(BaseLLM):
 
     # -- Tool Calling --
 
-    def chat_with_tool(
+    def chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -559,7 +559,7 @@ class LLM(BaseLLM):
         """Predict and call the tool."""
         raise NotImplementedError("predict_tool is not supported by default.")
 
-    async def achat_with_tool(
+    async def achat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
