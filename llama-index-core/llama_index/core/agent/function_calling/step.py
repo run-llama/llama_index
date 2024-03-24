@@ -62,6 +62,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         max_function_calls: int = 5,
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        allow_parallel_tool_calls: bool = True,
     ) -> None:
         """Init params."""
         if not llm.metadata.is_function_calling_model:
@@ -73,6 +74,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         self._max_function_calls = max_function_calls
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
+        self.allow_parallel_tool_calls = allow_parallel_tool_calls
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -128,6 +130,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
+            **kwargs,
         )
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
@@ -240,24 +243,34 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             user_msg=None,
             chat_history=self.get_all_messages(task),
             verbose=self._verbose,
+            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
         )
-        tool_call = self._llm._get_tool_call_from_response(
+        tool_calls = self._llm._get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+        if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
+            raise ValueError(
+                "Parallel tool calls not supported for synchronous function calling agent"
+            )
+            
+        # call all tools, gather responses
         task.extra_state["new_memory"].put(response.message)
-        if tool_call is None:
+        if len(tool_calls) == 0 or task.extra_state["n_function_calls"] >= self._max_function_calls:
             # we are done
             is_done = True
             new_steps = []
         else:
             is_done = False
-            self._call_function(
-                tools,
-                tool_call,
-                task.extra_state["new_memory"],
-                task.extra_state["sources"],
-                verbose=self._verbose,
-            )
+            for tool_call in tool_calls:
+                # TODO: maybe execute this with multi-threading
+                self._call_function(
+                    tools,
+                    tool_call,
+                    task.extra_state["new_memory"],
+                    task.extra_state["sources"],
+                    verbose=self._verbose,
+                )
+                task.extra_state["n_function_calls"] += 1
             # put tool output in sources and memory
             new_steps = [
                 step.get_next_step(
@@ -295,7 +308,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             chat_history=self.get_all_messages(task),
             verbose=self._verbose,
         )
-        tool_call = self._llm._get_tool_call_from_response(
+        tool_call = self._llm._get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
         task.extra_state["new_memory"].put(response.message)

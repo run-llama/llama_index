@@ -63,6 +63,11 @@ def to_mistral_chatmessage(
     return new_messages
 
 
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
 class MistralAI(LLM):
     """MistralAI LLM.
 
@@ -282,6 +287,7 @@ class MistralAI(LLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_multiple: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         from llama_index.core.tools.calling import (
@@ -300,9 +306,22 @@ class MistralAI(LLM):
         response = self.chat_with_tool(
             tools, user_msg, chat_history=chat_history, verbose=verbose, **kwargs
         )
-        tool_call = self._get_tool_call_from_response(response)
-        tool_output = call_tool_with_selection(tool_call, tools, verbose=verbose)
-        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
+        tool_calls = self._get_tool_calls_from_response(response)
+        tool_outputs = [
+            call_tool_with_selection(tool_call, tools, verbose=verbose)
+            for tool_call in tool_calls
+        ]
+        if allow_multiple:
+            output_text = "\n\n".join([tool_output.content for tool_output in tool_outputs])
+            return AgentChatResponse(
+                response=output_text, sources=tool_outputs
+            )
+        else:
+            if len(tool_outputs) > 1:
+                raise ValueError("Invalid")
+            return AgentChatResponse(
+                response=tool_outputs[0].content, sources=tool_outputs
+            )
 
     @llm_chat_callback()
     async def achat(
@@ -372,6 +391,7 @@ class MistralAI(LLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_multiple: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         from llama_index.core.tools.calling import (
@@ -379,7 +399,7 @@ class MistralAI(LLM):
         )
 
         if not self.metadata.is_function_calling_model:
-            return await super().predict_and_call(
+            return await super().apredict_and_call(
                 tools,
                 user_msg=user_msg,
                 chat_history=chat_history,
@@ -390,9 +410,23 @@ class MistralAI(LLM):
         response = await self.achat_with_tool(
             tools, user_msg, chat_history=chat_history, verbose=verbose, **kwargs
         )
-        tool_call = self._get_tool_call_from_response(response)
-        tool_output = acall_tool_with_selection(tool_call, tools, verbose=verbose)
-        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
+        tool_calls = self._get_tool_calls_from_response(response)
+        tool_outputs = [
+            acall_tool_with_selection(tool_call, tools, verbose=verbose)
+            for tool_call in tool_calls
+        ]
+        if allow_multiple:
+            output_text = "\n\n".join([tool_output.content for tool_output in tool_outputs])
+            return AgentChatResponse(
+                response=output_text, sources=tool_outputs
+            )
+        else:
+            if len(tool_outputs) > 1:
+                raise ValueError("Invalid")
+            return AgentChatResponse(
+                response=tool_outputs[0].content, sources=tool_outputs
+            )
+    
 
     def chat_with_tool(
         self,
@@ -400,6 +434,7 @@ class MistralAI(LLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
@@ -418,10 +453,8 @@ class MistralAI(LLM):
             tools=tool_specs,
             **kwargs,
         )
-        # TODO: this is a hack, in the future we should support multiple tool calls
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-        if len(tool_calls) > 1:
-            response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
         return response
 
     async def achat_with_tool(
@@ -430,6 +463,7 @@ class MistralAI(LLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
@@ -448,17 +482,15 @@ class MistralAI(LLM):
             tools=tool_specs,
             **kwargs,
         )
-        # TODO: this is a hack, in the future we should support multiple tool calls
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-        if len(tool_calls) > 1:
-            response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
         return response
 
-    def _get_tool_call_from_response(
+    def _get_tool_calls_from_response(
         self,
         response: "AgentChatResponse",
         error_on_no_tool_call: bool = True,
-    ) -> Optional[ToolSelection]:
+    ) -> List[ToolSelection]:
         """Predict and call the tool."""
         tool_calls = response.message.additional_kwargs.get("tool_calls", [])
 
@@ -468,20 +500,36 @@ class MistralAI(LLM):
                     f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
                 )
             else:
-                return None
+                return []
 
         # TODO: support more than one tool call?
-        tool_call = tool_calls[0]
-        if not isinstance(tool_call, ToolCall):
-            raise ValueError("Invalid tool_call object")
+        tool_selections = []
+        for tool_call in tool_calls:
+            if not isinstance(tool_call, ToolCall):
+                raise ValueError("Invalid tool_call object")
+            if tool_call.type != "function":
+                raise ValueError("Invalid tool type. Unsupported by Mistralai.")
+            argument_dict = json.loads(tool_call.function.arguments)
 
-        if tool_call.type != "function":
-            raise ValueError("Invalid tool type. Unsupported by Mistralai.")
+            tool_selections.append(ToolSelection(
+                tool_id=tool_call.id,
+                tool_name=tool_call.function.name,
+                tool_kwargs=argument_dict,
+            ))
 
-        argument_dict = json.loads(tool_call.function.arguments)
+        return tool_selections
 
-        return ToolSelection(
-            tool_id=tool_call.id,
-            tool_name=tool_call.function.name,
-            tool_kwargs=argument_dict,
-        )
+        # tool_call = tool_calls[0]
+        # if not isinstance(tool_call, ToolCall):
+        #     raise ValueError("Invalid tool_call object")
+
+        # if tool_call.type != "function":
+        #     raise ValueError("Invalid tool type. Unsupported by Mistralai.")
+
+        # argument_dict = json.loads(tool_call.function.arguments)
+
+        # return ToolSelection(
+        #     tool_id=tool_call.id,
+        #     tool_name=tool_call.function.name,
+        #     tool_kwargs=argument_dict,
+        # )
