@@ -252,10 +252,13 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             raise ValueError(
                 "Parallel tool calls not supported for synchronous function calling agent"
             )
-            
+
         # call all tools, gather responses
         task.extra_state["new_memory"].put(response.message)
-        if len(tool_calls) == 0 or task.extra_state["n_function_calls"] >= self._max_function_calls:
+        if (
+            len(tool_calls) == 0
+            or task.extra_state["n_function_calls"] >= self._max_function_calls
+        ):
             # we are done
             is_done = True
             new_steps = []
@@ -317,10 +320,13 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             raise ValueError(
                 "Parallel tool calls not supported for synchronous function calling agent"
             )
-            
+
         # call all tools, gather responses
         task.extra_state["new_memory"].put(response.message)
-        if len(tool_calls) == 0 or task.extra_state["n_function_calls"] >= self._max_function_calls:
+        if (
+            len(tool_calls) == 0
+            or task.extra_state["n_function_calls"] >= self._max_function_calls
+        ):
             # we are done
             is_done = True
             new_steps = []
@@ -354,7 +360,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             is_last=is_done,
             next_steps=new_steps,
         )
-        
 
     @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:

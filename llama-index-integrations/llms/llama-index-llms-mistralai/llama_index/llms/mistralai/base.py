@@ -68,6 +68,7 @@ def force_single_tool_call(response: ChatResponse) -> None:
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
+
 class MistralAI(LLM):
     """MistralAI LLM.
 
@@ -305,12 +306,12 @@ class MistralAI(LLM):
             )
 
         response = self.chat_with_tools(
-            tools, 
-            user_msg, 
-            chat_history=chat_history, 
-            verbose=verbose, 
+            tools,
+            user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs
+            **kwargs,
         )
         tool_calls = self._get_tool_calls_from_response(response)
         tool_outputs = [
@@ -318,10 +319,10 @@ class MistralAI(LLM):
             for tool_call in tool_calls
         ]
         if allow_parallel_tool_calls:
-            output_text = "\n\n".join([tool_output.content for tool_output in tool_outputs])
-            return AgentChatResponse(
-                response=output_text, sources=tool_outputs
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
             )
+            return AgentChatResponse(response=output_text, sources=tool_outputs)
         else:
             if len(tool_outputs) > 1:
                 raise ValueError("Invalid")
@@ -415,7 +416,12 @@ class MistralAI(LLM):
             )
 
         response = await self.achat_with_tools(
-            tools, user_msg, chat_history=chat_history, verbose=verbose, allow_parallel_tool_calls=allow_parallel_tool_calls, **kwargs
+            tools,
+            user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
         )
         tool_calls = self._get_tool_calls_from_response(response)
         tool_outputs = [
@@ -423,17 +429,16 @@ class MistralAI(LLM):
             for tool_call in tool_calls
         ]
         if allow_parallel_tool_calls:
-            output_text = "\n\n".join([tool_output.content for tool_output in tool_outputs])
-            return AgentChatResponse(
-                response=output_text, sources=tool_outputs
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
             )
+            return AgentChatResponse(response=output_text, sources=tool_outputs)
         else:
             if len(tool_outputs) > 1:
                 raise ValueError("Invalid")
             return AgentChatResponse(
                 response=tool_outputs[0].content, sources=tool_outputs
             )
-    
 
     def chat_with_tools(
         self,
@@ -517,10 +522,12 @@ class MistralAI(LLM):
                 raise ValueError("Invalid tool type. Unsupported by Mistralai.")
             argument_dict = json.loads(tool_call.function.arguments)
 
-            tool_selections.append(ToolSelection(
-                tool_id=tool_call.id,
-                tool_name=tool_call.function.name,
-                tool_kwargs=argument_dict,
-            ))
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.id,
+                    tool_name=tool_call.function.name,
+                    tool_kwargs=argument_dict,
+                )
+            )
 
         return tool_selections
