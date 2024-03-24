@@ -9,13 +9,13 @@ from datasets import Dataset
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core import SimpleDirectoryReader
 
-# from llama_index.core.node_parser import SemanticSplitterNodeParser
+from llama_index.core.node_parser import SemanticSplitterNodeParser
 from llama_index.core.llms import ChatMessage
 from llama_index.llms.openai import OpenAI
-from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 DEFAULT_CHUNK_SIZE = 512
-# DEFAULT_BREAKPOINT_PERCENTILE_THRESHOLD = 95 # Use when SemanticSplitterNodeParser
+DEFAULT_BREAKPOINT_PERCENTILE_THRESHOLD = 95
 
 
 class RAFTDatasetPack(BaseLlamaPack):
@@ -25,19 +25,23 @@ class RAFTDatasetPack(BaseLlamaPack):
         self,
         file_path: str,
         llm: Any = None,
+        embed_model: Any = None,
         num_questions_per_chunk: int = 5,
         num_distract_docs: int = 3,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
-        # default_breakpoint_percentile_threshold = DEFAULT_BREAKPOINT_PERCENTILE_THRESHOLD, # Use when SemanticSplitterNodeParser
+        default_breakpoint_percentile_threshold=DEFAULT_BREAKPOINT_PERCENTILE_THRESHOLD,
         **kwargs: Any,
     ):
         self.file_path = file_path
         self.num_questions_per_chunk = num_questions_per_chunk
         self.num_distract_docs = num_distract_docs
         self.chunk_size = chunk_size
-        # self.default_breakpoint_percentile_threshold = default_breakpoint_percentile_threshold # Use when SemanticSplitterNodeParser
+        self.default_breakpoint_percentile_threshold = (
+            default_breakpoint_percentile_threshold
+        )
         self.ds = None
         self.llm = OpenAI(temperature=0, n=1, model="gpt-4") if llm is None else llm
+        self.embed_model = OpenAIEmbedding() if embed_model is None else embed_model
 
     def strip_str(self, s) -> str:
         """
@@ -116,10 +120,11 @@ class RAFTDatasetPack(BaseLlamaPack):
 
         documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
         # TODO: Should be changed to SemanticSplitterNodeParser
-        # splitter = SemanticSplitterNodeParser(
-        # buffer_size=1, breakpoint_percentile_threshold=self.default_breakpoint_percentile_threshold, chunk_size=chunk_size
-        # )
-        splitter = SimpleNodeParser()
+        splitter = SemanticSplitterNodeParser(
+            buffer_size=1,
+            breakpoint_percentile_threshold=self.default_breakpoint_percentile_threshold,
+            embed_model=self.embed_model,
+        )
         nodes = splitter.get_nodes_from_documents(documents)
 
         return [node.get_content() for node in nodes]
