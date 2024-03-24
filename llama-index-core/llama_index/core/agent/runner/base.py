@@ -628,6 +628,7 @@ class AgentRunner(BaseAgentRunner):
         return chat_response
 
     @dispatcher.span
+    @trace_method("chat")
     def stream_chat(
         self,
         message: str,
@@ -637,13 +638,15 @@ class AgentRunner(BaseAgentRunner):
         # override tool choice is provided as input.
         if tool_choice is None:
             tool_choice = self.default_tool_choice
-        chat_response = self._chat(
-            message=message,
-            chat_history=chat_history,
-            tool_choice=tool_choice,
-            mode=ChatResponseMode.STREAM,
-        )
-        assert isinstance(chat_response, StreamingAgentChatResponse)
+        with self.callback_manager.event(
+            CBEventType.AGENT_STEP,
+            payload={EventPayload.MESSAGES: [message]},
+        ) as e:
+            chat_response = self._chat(
+                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
+            )
+            assert isinstance(chat_response, StreamingAgentChatResponse)
+            e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
     @trace_method("chat")

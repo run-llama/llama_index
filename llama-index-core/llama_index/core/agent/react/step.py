@@ -240,7 +240,15 @@ class ReActAgentWorker(BaseAgentWorker):
                 EventPayload.TOOL: tool.metadata,
             },
         ) as event:
-            tool_output = tool.call(**reasoning_step.action_input)
+            try:
+                tool_output = tool.call(**reasoning_step.action_input)
+            except Exception as e:
+                tool_output = ToolOutput(
+                    content=f"Error: {e!s}",
+                    tool_name=tool.metadata.name,
+                    raw_input={"kwargs": reasoning_step.action_input},
+                    raw_output=e,
+                )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         task.extra_state["sources"].append(tool_output)
@@ -276,7 +284,15 @@ class ReActAgentWorker(BaseAgentWorker):
                 EventPayload.TOOL: tool.metadata,
             },
         ) as event:
-            tool_output = await tool.acall(**reasoning_step.action_input)
+            try:
+                tool_output = await tool.acall(**reasoning_step.action_input)
+            except Exception as e:
+                tool_output = ToolOutput(
+                    content=f"Error: {e!s}",
+                    tool_name=tool.metadata.name,
+                    raw_input={"kwargs": reasoning_step.action_input},
+                    raw_output=e,
+                )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         task.extra_state["sources"].append(tool_output)
@@ -599,6 +615,8 @@ class ReActAgentWorker(BaseAgentWorker):
                 )
             )
             # wait until response writing is done
+            agent_response._ensure_async_setup()
+
             await agent_response._is_function_false_event.wait()
 
         return self._get_task_step_response(agent_response, step, is_done)

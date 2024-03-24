@@ -23,6 +23,37 @@ import_err_msg = (
 
 
 class PGVectoRsStore(BasePydanticVectorStore):
+    """PGVectoRs Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-pgvecto-rs`
+
+        ```python
+        from llama_index.vector_stores.pgvecto_rs import PGVectoRsStore
+
+        # Setup PGVectoRs client
+        from pgvecto_rs.sdk import PGVectoRs
+        import os
+
+        URL = "postgresql+psycopg://{username}:{password}@{host}:{port}/{db_name}".format(
+            port=os.getenv("DB_PORT", "5432"),
+            host=os.getenv("DB_HOST", "localhost"),
+            username=os.getenv("DB_USER", "postgres"),
+            password=os.getenv("DB_PASS", "mysecretpassword"),
+            db_name=os.getenv("DB_NAME", "postgres"),
+        )
+
+        client = PGVectoRs(
+            db_url=URL,
+            collection_name="example",
+            dimension=1536,  # Using OpenAI’s text-embedding-ada-002
+        )
+
+        # Initialize PGVectoRsStore
+        vector_store = PGVectoRsStore(client=client)
+        ```
+    """
+
     stores_text = True
 
     _client: "PGVectoRs" = PrivateAttr()
@@ -63,11 +94,13 @@ class PGVectoRsStore(BasePydanticVectorStore):
         results = self._client.search(
             embedding=query.query_embedding,
             top_k=query.similarity_top_k,
-            filter=meta_contains(
-                {pair.key: pair.value for pair in query.filters.legacy_filters()}
-            )
-            if query.filters is not None
-            else None,
+            filter=(
+                meta_contains(
+                    {pair.key: pair.value for pair in query.filters.legacy_filters()}
+                )
+                if query.filters is not None
+                else None
+            ),
         )
 
         nodes = [

@@ -32,6 +32,20 @@ import cohere
 
 
 class Cohere(LLM):
+    """Cohere LLM.
+
+    Examples:
+        `pip install llama-index-llms-cohere`
+
+        ```python
+        from llama_index.llms.cohere import Cohere
+
+        llm = Cohere(model="command", api_key=api_key)
+        resp = llm.complete("Paul Graham is ")
+        print(resp)
+        ```
+    """
+
     model: str = Field(description="The cohere model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_retries: int = Field(

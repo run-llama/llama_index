@@ -1,4 +1,5 @@
 """Azure AI Search vector store."""
+
 import enum
 import json
 import logging
@@ -50,6 +51,57 @@ class IndexManagement(int, enum.Enum):
 
 
 class AzureAISearchVectorStore(BasePydanticVectorStore):
+    """Azure AI Search vector store.
+
+    Examples:
+        `pip install llama-index-vector-stores-azureaisearch`
+
+        ```python
+        from azure.core.credentials import AzureKeyCredential
+        from azure.search.documents import SearchClient
+        from azure.search.documents.indexes import SearchIndexClient
+        from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
+        from llama_index.vector_stores.azureaisearch import IndexManagement, MetadataIndexFieldType
+
+        # Azure AI Search setup
+        search_service_api_key = "YOUR-AZURE-SEARCH-SERVICE-ADMIN-KEY"
+        search_service_endpoint = "YOUR-AZURE-SEARCH-SERVICE-ENDPOINT"
+        search_service_api_version = "2023-11-01"
+        credential = AzureKeyCredential(search_service_api_key)
+
+        # Index name to use
+        index_name = "llamaindex-vector-demo"
+
+        # Use index client to demonstrate creating an index
+        index_client = SearchIndexClient(
+            endpoint=search_service_endpoint,
+            credential=credential,
+        )
+
+        metadata_fields = {
+            "author": "author",
+            "theme": ("topic", MetadataIndexFieldType.STRING),
+            "director": "director",
+        }
+
+        # Creating an Azure AI Search Vector Store
+        vector_store = AzureAISearchVectorStore(
+            search_or_index_client=index_client,
+            filterable_metadata_field_keys=metadata_fields,
+            index_name=index_name,
+            index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
+            id_field_key="id",
+            chunk_field_key="chunk",
+            embedding_field_key="embedding",
+            embedding_dimensionality=1536,
+            metadata_string_field_key="metadata",
+            doc_id_field_key="doc_id",
+            language_analyzer="en.lucene",
+            vector_algorithm_type="exhaustiveKnn",
+        )
+        ```
+    """
+
     stores_text: bool = True
     flat_metadata: bool = True
 

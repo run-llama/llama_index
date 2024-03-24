@@ -7,13 +7,15 @@ import multiprocessing
 import warnings
 from datetime import datetime
 from functools import reduce
+import asyncio
 from itertools import repeat
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
 from llama_index.core.readers.base import BaseReader
+from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
@@ -196,18 +198,19 @@ class SimpleDirectoryReader(BaseReader):
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
+        _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
         if input_files:
             self.input_files = []
             for path in input_files:
                 if not self.fs.isfile(path):
                     raise ValueError(f"File {path} does not exist.")
-                input_file = Path(path)
+                input_file = _Path(path)
                 self.input_files.append(input_file)
         elif input_dir:
             if not self.fs.isdir(input_dir):
                 raise ValueError(f"Directory {input_dir} does not exist.")
-            self.input_dir = Path(input_dir)
+            self.input_dir = _Path(input_dir)
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
 
@@ -229,20 +232,22 @@ class SimpleDirectoryReader(BaseReader):
         all_files = set()
         rejected_files = set()
         rejected_dirs = set()
+        # Default to POSIX paths for non-default file systems (e.g. S3)
+        _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
         if self.exclude is not None:
             for excluded_pattern in self.exclude:
                 if self.recursive:
                     # Recursive glob
-                    excluded_glob = Path(input_dir) / Path("**") / excluded_pattern
+                    excluded_glob = _Path(input_dir) / _Path("**") / excluded_pattern
                 else:
                     # Non-recursive glob
-                    excluded_glob = Path(input_dir) / excluded_pattern
+                    excluded_glob = _Path(input_dir) / excluded_pattern
                 for file in self.fs.glob(str(excluded_glob)):
                     if self.fs.isdir(file):
-                        rejected_dirs.add(Path(file))
+                        rejected_dirs.add(_Path(file))
                     else:
-                        rejected_files.add(Path(file))
+                        rejected_files.add(_Path(file))
 
         file_refs: List[str] = []
         if self.recursive:
@@ -253,7 +258,7 @@ class SimpleDirectoryReader(BaseReader):
         for ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
-            ref = Path(ref)
+            ref = _Path(ref)
             is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
@@ -431,6 +436,67 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
+    async def aload_file(self, input_file: Path) -> List[Document]:
+        """Load file asynchronously."""
+        # TODO: make this less redundant
+        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
+        default_file_reader_suffix = list(default_file_reader_cls.keys())
+        metadata: Optional[dict] = None
+        documents: List[Document] = []
+
+        if self.file_metadata is not None:
+            metadata = self.file_metadata(str(input_file))
+
+        file_suffix = input_file.suffix.lower()
+        if (
+            file_suffix in default_file_reader_suffix
+            or file_suffix in self.file_extractor
+        ):
+            # use file readers
+            if file_suffix not in self.file_extractor:
+                # instantiate file reader if not already
+                reader_cls = default_file_reader_cls[file_suffix]
+                self.file_extractor[file_suffix] = reader_cls()
+            reader = self.file_extractor[file_suffix]
+
+            # load data -- catch all errors except for ImportError
+            try:
+                kwargs = {"extra_info": metadata}
+                if self.fs and not is_default_fs(self.fs):
+                    kwargs["fs"] = self.fs
+                docs = await reader.aload_data(input_file, **kwargs)
+            except ImportError as e:
+                # ensure that ImportError is raised so user knows
+                # about missing dependencies
+                raise ImportError(str(e))
+            except Exception as e:
+                # otherwise, just skip the file and report the error
+                print(
+                    f"Failed to load file {input_file} with error: {e}. Skipping...",
+                    flush=True,
+                )
+                return []
+
+            # iterate over docs if needed
+            if self.filename_as_id:
+                for i, doc in enumerate(docs):
+                    doc.id_ = f"{input_file!s}_part_{i}"
+
+            documents.extend(docs)
+        else:
+            # do standard read
+            fs = self.fs or get_default_fs()
+            with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
+                data = f.read().decode(self.encoding, errors=self.errors)
+
+            doc = Document(text=data, metadata=metadata or {})
+            if self.filename_as_id:
+                doc.id_ = str(input_file)
+
+            documents.append(doc)
+
+        return documents
+
     def load_data(
         self,
         show_progress: bool = False,
@@ -491,6 +557,40 @@ class SimpleDirectoryReader(BaseReader):
                         fs=fs,
                     )
                 )
+
+        return self._exclude_metadata(documents)
+
+    async def aload_data(
+        self,
+        show_progress: bool = False,
+        num_workers: Optional[int] = None,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> List[Document]:
+        """Load data from the input directory.
+
+        Args:
+            show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+            num_workers  (Optional[int]): Number of workers to parallelize data-loading over.
+            fs (Optional[fsspec.AbstractFileSystem]): File system to use. If fs was specified
+                in the constructor, it will override the fs parameter here.
+
+        Returns:
+            List[Document]: A list of documents.
+        """
+        files_to_process = self.input_files
+        fs = fs or self.fs
+
+        coroutines = [self.aload_file(input_file) for input_file in files_to_process]
+        if num_workers:
+            document_lists = await run_jobs(
+                coroutines, show_progress=show_progress, workers=num_workers
+            )
+        elif show_progress:
+            _asyncio = get_asyncio_module(show_progress=show_progress)
+            document_lists = await _asyncio.gather(*coroutines)
+        else:
+            document_lists = await asyncio.gather(*coroutines)
+        documents = [doc for doc_list in document_lists for doc in doc_list]
 
         return self._exclude_metadata(documents)
 

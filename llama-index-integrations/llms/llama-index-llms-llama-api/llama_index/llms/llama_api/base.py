@@ -23,6 +23,26 @@ from llamaapi import LlamaAPI as Client
 
 
 class LlamaAPI(CustomLLM):
+    """LlamaAPI LLM.
+
+    Examples:
+        `pip install llama-index-llms-llama-api`
+
+        ```python
+        from llama_index.llms.llama_api import LlamaAPI
+
+        # Obtain an API key from https://www.llama-api.com/
+        api_key = "your-api-key"
+
+        llm = LlamaAPI(api_key=api_key)
+
+        # Call the complete method with a prompt
+        resp = llm.complete("Paul Graham is ")
+
+        print(resp)
+        ```
+    """
+
     model: str = Field(description="The llama-api model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")

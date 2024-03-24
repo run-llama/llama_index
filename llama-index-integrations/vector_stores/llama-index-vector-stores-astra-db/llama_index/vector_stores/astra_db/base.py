@@ -51,6 +51,8 @@ class AstraDBVectorStore(BasePydanticVectorStore):
 
     All Astra operations are done through the astrapy library.
 
+    Visit https://astra.datastax.com/signup to create an account and get an API key.
+
     Args:
         collection_name (str): collection name to use. If not existing, it will be created.
         token (str): The Astra DB Application Token to use.
@@ -59,6 +61,21 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         namespace (Optional[str]): The namespace to use. If not provided, 'default_keyspace'
         ttl_seconds (Optional[int]): expiration time for inserted entries.
             Default is no expiration.
+
+    Examples:
+        `pip install llama-index-vector-stores-astra`
+
+        ```python
+        from llama_index.vector_stores.astra import AstraDBVectorStore
+
+        # Create the Astra DB Vector Store object
+        astra_db_store = AstraDBVectorStore(
+            collection_name="astra_v_table",
+            token=token,
+            api_endpoint=api_endpoint,
+            embedding_dimension=1536,
+        )
+        ```
 
     """
 

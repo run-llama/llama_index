@@ -64,6 +64,18 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     During query time, the index uses DuckDB to query for the top
     k most similar nodes.
 
+    Examples:
+        `pip install llama-index-vector-stores-duckdb`
+
+        ```python
+        from llama_index.vector_stores.duckdb import DuckDBVectorStore
+
+        # in-memory
+        vector_store = DuckDBVectorStore()
+
+        # persist to disk
+        vector_store = DuckDBVectorStore("pg.duckdb", persist_dir="./persist/")
+        ```
     """
 
     stores_text: bool = True
