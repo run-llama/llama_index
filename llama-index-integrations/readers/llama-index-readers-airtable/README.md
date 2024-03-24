@@ -1,5 +1,9 @@
 # Airtable Loader
 
+```bash
+pip install llama-index-readers-airtable
+```
+
 This loader loads documents from Airtable. The user specifies an API token to initialize the AirtableReader. They then specify a `table_id` and a `base_id` to load in the corresponding Document objects.
 
 ## Usage
@@ -7,10 +11,9 @@ This loader loads documents from Airtable. The user specifies an API token to in
 Here's an example usage of the AirtableReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-AirtableReader = download_loader("AirtableReader")
+from llama_index.readers.airtable import AirtableReader
 
 reader = AirtableReader("<Airtable_TOKEN>")
 documents = reader.load_data(table_id="<TABLE_ID>", base_id="<BASE_ID>")

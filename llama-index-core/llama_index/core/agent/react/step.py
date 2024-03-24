@@ -2,6 +2,7 @@
 
 import asyncio
 import uuid
+from functools import partial
 from itertools import chain
 from threading import Thread
 from typing import (
@@ -231,16 +232,27 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        tool = tools_dict[reasoning_step.action]
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: reasoning_step.action_input,
-                EventPayload.TOOL: tool.metadata,
-            },
-        ) as event:
-            tool_output = tool.call(**reasoning_step.action_input)
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        if reasoning_step.action in tools_dict:
+            tool = tools_dict[reasoning_step.action]
+            with self.callback_manager.event(
+                CBEventType.FUNCTION_CALL,
+                payload={
+                    EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                    EventPayload.TOOL: tool.metadata,
+                },
+            ) as event:
+                try:
+                    tool_output = tool.call(**reasoning_step.action_input)
+                except Exception as e:
+                    tool_output = ToolOutput(
+                        content=f"Error: {e!s}",
+                        tool_name=tool.metadata.name,
+                        raw_input={"kwargs": reasoning_step.action_input},
+                        raw_output=e,
+                    )
+                event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        else:
+            tool_output = self._handle_nonexistent_tool_name(reasoning_step)
 
         task.extra_state["sources"].append(tool_output)
 
@@ -267,16 +279,27 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        tool = tools_dict[reasoning_step.action]
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: reasoning_step.action_input,
-                EventPayload.TOOL: tool.metadata,
-            },
-        ) as event:
-            tool_output = await tool.acall(**reasoning_step.action_input)
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        if reasoning_step.action in tools_dict:
+            tool = tools_dict[reasoning_step.action]
+            with self.callback_manager.event(
+                CBEventType.FUNCTION_CALL,
+                payload={
+                    EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                    EventPayload.TOOL: tool.metadata,
+                },
+            ) as event:
+                try:
+                    tool_output = await tool.acall(**reasoning_step.action_input)
+                except Exception as e:
+                    tool_output = ToolOutput(
+                        content=f"Error: {e!s}",
+                        tool_name=tool.metadata.name,
+                        raw_input={"kwargs": reasoning_step.action_input},
+                        raw_output=e,
+                    )
+                event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        else:
+            tool_output = self._handle_nonexistent_tool_name(reasoning_step)
 
         task.extra_state["sources"].append(tool_output)
 
@@ -285,6 +308,26 @@ class ReActAgentWorker(BaseAgentWorker):
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
         return current_reasoning, False
+
+    def _handle_nonexistent_tool_name(self, reasoning_step):
+        # We still emit a `tool_output` object to the task, so that the LLM can know
+        # it has hallucinated in the next reasoning step.
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+            },
+        ) as event:
+            # TODO(L10N): This should be localized.
+            content = f"Error: No such tool named `{reasoning_step.action}`."
+            tool_output = ToolOutput(
+                content=content,
+                tool_name=reasoning_step.action,
+                raw_input={"kwargs": reasoning_step.action_input},
+                raw_output=content,
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        return tool_output
 
     def _get_response(
         self,
@@ -529,6 +572,7 @@ class ReActAgentWorker(BaseAgentWorker):
             thread = Thread(
                 target=agent_response.write_response_to_history,
                 args=(task.extra_state["new_memory"],),
+                kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
             )
             thread.start()
 
@@ -592,10 +636,13 @@ class ReActAgentWorker(BaseAgentWorker):
             # create task to write chat response to history
             asyncio.create_task(
                 agent_response.awrite_response_to_history(
-                    task.extra_state["new_memory"]
+                    task.extra_state["new_memory"],
+                    on_stream_end_fn=partial(self.finalize_task, task),
                 )
             )
             # wait until response writing is done
+            agent_response._ensure_async_setup()
+
             await agent_response._is_function_false_event.wait()
 
         return self._get_task_step_response(agent_response, step, is_done)
@@ -628,7 +675,9 @@ class ReActAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        task.memory.set(
+            task.memory.get_all() + task.extra_state["new_memory"].get_all()
+        )
         # reset new memory
         task.extra_state["new_memory"].reset()
 

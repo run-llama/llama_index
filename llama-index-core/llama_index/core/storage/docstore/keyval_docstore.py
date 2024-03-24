@@ -11,6 +11,9 @@ from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.core.storage.kvstore.types import DEFAULT_BATCH_SIZE, BaseKVStore
 
 DEFAULT_NAMESPACE = "docstore"
+DEFAULT_COLLECTION_DATA_SUFFIX = "/data"
+DEFAULT_REF_DOC_COLLECTION_SUFFIX = "/ref_doc_info"
+DEFAULT_METADATA_COLLECTION_SUFFIX = "/metadata"
 
 
 class KVDocumentStore(BaseDocumentStore):
@@ -46,13 +49,27 @@ class KVDocumentStore(BaseDocumentStore):
         kvstore: BaseKVStore,
         namespace: Optional[str] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
+        node_collection_suffix: Optional[str] = None,
+        ref_doc_collection_suffix: Optional[str] = None,
+        metadata_collection_suffix: Optional[str] = None,
     ) -> None:
         """Init a KVDocumentStore."""
         self._kvstore = kvstore
         self._namespace = namespace or DEFAULT_NAMESPACE
-        self._node_collection = f"{self._namespace}/data"
-        self._ref_doc_collection = f"{self._namespace}/ref_doc_info"
-        self._metadata_collection = f"{self._namespace}/metadata"
+        self._node_collection_suffix = (
+            node_collection_suffix or DEFAULT_COLLECTION_DATA_SUFFIX
+        )
+        self._ref_doc_collection_suffix = (
+            ref_doc_collection_suffix or DEFAULT_REF_DOC_COLLECTION_SUFFIX
+        )
+        self._metadata_collection_suffix = (
+            metadata_collection_suffix or DEFAULT_METADATA_COLLECTION_SUFFIX
+        )
+        self._node_collection = f"{self._namespace}{self._node_collection_suffix}"
+        self._ref_doc_collection = f"{self._namespace}{self._ref_doc_collection_suffix}"
+        self._metadata_collection = (
+            f"{self._namespace}{self._metadata_collection_suffix}"
+        )
         self._batch_size = batch_size
 
     @property

@@ -1,5 +1,9 @@
 # Rayyan Loader
 
+```bash
+pip install llama-index-readers-rayyan
+```
+
 This loader fetches review articles from [Rayyan](https://www.rayyan.ai/)
 using the [Rayyan SDK](https://github.com/rayyansys/rayyan-python-sdk). All articles
 for a given review are fetched by default unless a filter is specified.
@@ -11,9 +15,8 @@ and optionally the API server URL if different from the default. More details
 about these parameters can be found in the official Rayyan SDK repository.
 
 ```python
-from llama_index import download_loader
+from llama_index.readers.rayyan import RayyanReader
 
-RayyanReader = download_loader("RayyanReader")
 loader = RayyanReader(credentials_path="path/to/rayyan-creds.json")
 ```
 

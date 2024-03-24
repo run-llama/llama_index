@@ -7,7 +7,6 @@ from typing import Any, List, Optional
 
 import pandas as pd
 import tqdm
-from llama_index.core import ServiceContext
 from llama_index.core.evaluation import (
     CorrectnessEvaluator,
     EvaluationResult,
@@ -22,6 +21,7 @@ from llama_index.core.llama_dataset import BaseLlamaDataset, BaseLlamaPrediction
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
 from llama_index.core.query_engine import BaseQueryEngine
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from openai import RateLimitError
 from tqdm.asyncio import tqdm_asyncio
@@ -95,22 +95,16 @@ class RagEvaluatorPack(BaseLlamaPack):
         """Construct the evaluators."""
         judges = {}
         judges["correctness"] = CorrectnessEvaluator(
-            service_context=ServiceContext.from_defaults(
-                llm=self.judge_llm,
-            )
+            llm=self.judge_llm,
         )
         judges["relevancy"] = RelevancyEvaluator(
-            service_context=ServiceContext.from_defaults(
-                llm=self.judge_llm,
-            )
+            llm=self.judge_llm,
         )
         judges["faithfulness"] = FaithfulnessEvaluator(
-            service_context=ServiceContext.from_defaults(
-                llm=self.judge_llm,
-            )
+            llm=self.judge_llm,
         )
         judges["semantic_similarity"] = SemanticSimilarityEvaluator(
-            service_context=ServiceContext.from_defaults()
+            embed_model=OpenAIEmbedding()
         )
         return judges
 

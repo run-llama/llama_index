@@ -57,7 +57,8 @@ async def response_worker(
 
 
 class BatchEvalRunner:
-    """Batch evaluation runner.
+    """
+    Batch evaluation runner.
 
     Args:
         evaluators (Dict[str, BaseEvaluator]): Dictionary of evaluators.
@@ -96,7 +97,8 @@ class BatchEvalRunner:
         self,
         *inputs_list: Any,
     ) -> List[Any]:
-        """Validate and clean input lists.
+        """
+        Validate and clean input lists.
 
         Enforce that at least one of the inputs is not None.
         Make sure that all inputs have the same length.
@@ -123,10 +125,50 @@ class BatchEvalRunner:
                 new_inputs_list.append(inputs)
         return new_inputs_list
 
+    def _validate_nested_eval_kwargs_types(
+        self, eval_kwargs_lists: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Ensure eval kwargs are acceptable format.
+            either a Dict[str, List] or a Dict[str, Dict[str, List]].
+
+        Allows use of different kwargs (e.g. references) with different evaluators
+            while keeping backwards compatibility for single evaluators
+
+        """
+        if not isinstance(eval_kwargs_lists, dict):
+            raise ValueError(
+                f"eval_kwargs_lists must be a dict. Got {eval_kwargs_lists}"
+            )
+
+        for evaluator, eval_kwargs in eval_kwargs_lists.items():
+            if isinstance(eval_kwargs, list):
+                # maintain backwards compatibility - for use with single evaluator
+                eval_kwargs_lists[evaluator] = self._validate_and_clean_inputs(
+                    eval_kwargs
+                )[0]
+            elif isinstance(eval_kwargs, dict):
+                # for use with multiple evaluators
+                for k in eval_kwargs:
+                    v = eval_kwargs[k]
+                    if not isinstance(v, list):
+                        raise ValueError(
+                            f"nested inner values in eval_kwargs must be a list. Got {evaluator}: {k}: {v}"
+                        )
+                    eval_kwargs_lists[evaluator][k] = self._validate_and_clean_inputs(
+                        v
+                    )[0]
+            else:
+                raise ValueError(
+                    f"eval_kwargs must be a list or a dict. Got {evaluator}: {eval_kwargs}"
+                )
+        return eval_kwargs_lists
+
     def _get_eval_kwargs(
         self, eval_kwargs_lists: Dict[str, Any], idx: int
     ) -> Dict[str, Any]:
-        """Get eval kwargs from eval_kwargs_lists at a given idx.
+        """
+        Get eval kwargs from eval_kwargs_lists at a given idx.
 
         Since eval_kwargs_lists is a dict of lists, we need to get the
         value at idx for each key.
@@ -139,9 +181,10 @@ class BatchEvalRunner:
         queries: Optional[List[str]] = None,
         response_strs: Optional[List[str]] = None,
         contexts_list: Optional[List[List[str]]] = None,
-        **eval_kwargs_lists: List,
+        **eval_kwargs_lists: Dict[str, Any],
     ) -> Dict[str, List[EvaluationResult]]:
-        """Evaluate query, response pairs.
+        """
+        Evaluate query, response pairs.
 
         This evaluates queries, responses, contexts as string inputs.
         Can supply additional kwargs to the evaluator in eval_kwargs_lists.
@@ -152,28 +195,30 @@ class BatchEvalRunner:
                 Defaults to None.
             contexts_list (Optional[List[List[str]]]): List of context lists.
                 Defaults to None.
-            **eval_kwargs_lists (Dict[str, Any]): Dict of lists of kwargs to
-                pass to evaluator. Defaults to None.
+            **eval_kwargs_lists (Dict[str, Any]): Dict of either dicts or lists
+                of kwargs to pass to evaluator. Defaults to None.
+                    multiple evaluators: {evaluator: {kwarg: [list of values]},...}
+                    single evaluator:    {kwarg: [list of values]}
 
         """
         queries, response_strs, contexts_list = self._validate_and_clean_inputs(
             queries, response_strs, contexts_list
         )
-        for k in eval_kwargs_lists:
-            v = eval_kwargs_lists[k]
-            if not isinstance(v, list):
-                raise ValueError(
-                    f"Each value in eval_kwargs must be a list. Got {k}: {v}"
-                )
-            eval_kwargs_lists[k] = self._validate_and_clean_inputs(v)[0]
+        eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
         # run evaluations
         eval_jobs = []
         for idx, query in enumerate(cast(List[str], queries)):
             response_str = cast(List, response_strs)[idx]
             contexts = cast(List, contexts_list)[idx]
-            eval_kwargs = self._get_eval_kwargs(eval_kwargs_lists, idx)
             for name, evaluator in self.evaluators.items():
+                if name in eval_kwargs_lists:
+                    # multi-evaluator
+                    kwargs = eval_kwargs_lists[name]
+                else:
+                    # single evaluator (maintain backwards compatibility)
+                    kwargs = eval_kwargs_lists
+                eval_kwargs = self._get_eval_kwargs(kwargs, idx)
                 eval_jobs.append(
                     eval_worker(
                         self.semaphore,
@@ -196,7 +241,8 @@ class BatchEvalRunner:
         responses: Optional[List[Response]] = None,
         **eval_kwargs_lists: Dict[str, Any],
     ) -> Dict[str, List[EvaluationResult]]:
-        """Evaluate query, response pairs.
+        """
+        Evaluate query, response pairs.
 
         This evaluates queries and response objects.
 
@@ -204,25 +250,27 @@ class BatchEvalRunner:
             queries (Optional[List[str]]): List of query strings. Defaults to None.
             responses (Optional[List[Response]]): List of response objects.
                 Defaults to None.
-            **eval_kwargs_lists (Dict[str, Any]): Dict of lists of kwargs to
-                pass to evaluator. Defaults to None.
+            **eval_kwargs_lists (Dict[str, Any]): Dict of either dicts or lists
+                of kwargs to pass to evaluator. Defaults to None.
+                    multiple evaluators: {evaluator: {kwarg: [list of values]},...}
+                    single evaluator:    {kwarg: [list of values]}
 
         """
         queries, responses = self._validate_and_clean_inputs(queries, responses)
-        for k in eval_kwargs_lists:
-            v = eval_kwargs_lists[k]
-            if not isinstance(v, list):
-                raise ValueError(
-                    f"Each value in eval_kwargs must be a list. Got {k}: {v}"
-                )
-            eval_kwargs_lists[k] = self._validate_and_clean_inputs(v)[0]
+        eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
         # run evaluations
         eval_jobs = []
         for idx, query in enumerate(cast(List[str], queries)):
             response = cast(List, responses)[idx]
-            eval_kwargs = self._get_eval_kwargs(eval_kwargs_lists, idx)
             for name, evaluator in self.evaluators.items():
+                if name in eval_kwargs_lists:
+                    # multi-evaluator
+                    kwargs = eval_kwargs_lists[name]
+                else:
+                    # single evaluator (maintain backwards compatibility)
+                    kwargs = eval_kwargs_lists
+                eval_kwargs = self._get_eval_kwargs(kwargs, idx)
                 eval_jobs.append(
                     eval_response_worker(
                         self.semaphore,
@@ -244,7 +292,8 @@ class BatchEvalRunner:
         queries: Optional[List[str]] = None,
         **eval_kwargs_lists: Dict[str, Any],
     ) -> Dict[str, List[EvaluationResult]]:
-        """Evaluate queries.
+        """
+        Evaluate queries.
 
         Args:
             query_engine (BaseQueryEngine): Query engine.
@@ -275,7 +324,8 @@ class BatchEvalRunner:
         contexts_list: Optional[List[List[str]]] = None,
         **eval_kwargs_lists: List,
     ) -> Dict[str, List[EvaluationResult]]:
-        """Evaluate query, response pairs.
+        """
+        Evaluate query, response pairs.
 
         Sync version of aevaluate_response_strs.
 
@@ -295,7 +345,8 @@ class BatchEvalRunner:
         responses: Optional[List[Response]] = None,
         **eval_kwargs_lists: Dict[str, Any],
     ) -> Dict[str, List[EvaluationResult]]:
-        """Evaluate query, response objs.
+        """
+        Evaluate query, response objs.
 
         Sync version of aevaluate_responses.
 
@@ -314,7 +365,8 @@ class BatchEvalRunner:
         queries: Optional[List[str]] = None,
         **eval_kwargs_lists: Dict[str, Any],
     ) -> Dict[str, List[EvaluationResult]]:
-        """Evaluate queries.
+        """
+        Evaluate queries.
 
         Sync version of aevaluate_queries.
 

@@ -1,11 +1,5 @@
-from llama_index.networks.contributor import (
-    ContributorClient,
-    ContributorClientSettings,
-    ContributorService,
-    ContributorServiceSettings,
-)
-
-from llama_index.networks.query_engine import NetworkQueryEngine
+from llama_index.networks.network.query_engine import NetworkQueryEngine
+from llama_index.networks.network.retriever import NetworkRetriever
 
 __all__ = [
     "ContributorClient",
@@ -13,4 +7,5 @@ __all__ = [
     "ContributorService",
     "ContributorServiceSettings",
     "NetworkQueryEngine",
+    "NetworkRetriever",
 ]

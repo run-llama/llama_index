@@ -1,5 +1,9 @@
 # MultiOn Tool
 
+```bash
+pip install llama-index-tools-multion
+```
+
 This tool connects to [MultiOn](https://www.multion.ai/) to enable your agent to easily
 connect to the internet through your Chrome Web browser and act on your behalf
 
@@ -13,8 +17,8 @@ This tool has more a extensive example usage documented in a Jupyter notebook [h
 Here's an example usage of the MultionToolSpec.
 
 ```python
-from llama_index.tools.metaphor import MultionToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.tools.multion import MultionToolSpec
+from llama_index.agent.openai import OpenAIAgent
 
 multion_tool = MultionToolSpec()
 

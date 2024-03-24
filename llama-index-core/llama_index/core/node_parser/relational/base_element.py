@@ -54,6 +54,8 @@ class Element(BaseModel):
     title_level: Optional[int] = None
     table_output: Optional[TableOutput] = None
     table: Optional[pd.DataFrame] = None
+    markdown: Optional[str] = None
+    page_number: Optional[int] = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -78,14 +80,19 @@ class BaseElementNodeParser(NodeParser):
     )
     num_workers: int = Field(
         default=DEFAULT_NUM_WORKERS,
-        description="Num of works for async jobs.",
+        description="Num of workers for async jobs.",
     )
 
     show_progress: bool = Field(default=True, description="Whether to show progress.")
 
+    nested_node_parser: Optional[NodeParser] = Field(
+        default=None,
+        description="Other types of node parsers to handle some types of nodes.",
+    )
+
     @classmethod
     def class_name(cls) -> str:
-        return "BaseStructuredNodeParser"
+        return "BaseElementNodeParser"
 
     @classmethod
     def from_defaults(
@@ -136,22 +143,9 @@ class BaseElementNodeParser(NodeParser):
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
         from llama_index.core.indices.list.base import SummaryIndex
-        from llama_index.core.service_context import ServiceContext
+        from llama_index.core.settings import Settings
 
-        if self.llm:
-            llm = self.llm
-        else:
-            try:
-                from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
-            except ImportError as e:
-                raise ImportError(
-                    "`llama-index-llms-openai` package not found."
-                    " Please install with `pip install llama-index-llms-openai`."
-                )
-            llm = OpenAI()
-        llm = cast(LLM, llm)
-
-        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
+        llm = self.llm or Settings.llm
 
         table_context_list = []
         for idx, element in tqdm(enumerate(elements)):
@@ -171,7 +165,7 @@ class BaseElementNodeParser(NodeParser):
 
         async def _get_table_output(table_context: str, summary_query_str: str) -> Any:
             index = SummaryIndex.from_documents(
-                [Document(text=table_context)], service_context=service_context
+                [Document(text=table_context)],
             )
             query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
@@ -257,7 +251,7 @@ class BaseElementNodeParser(NodeParser):
         """Get nodes and mappings."""
         from llama_index.core.node_parser import SentenceSplitter
 
-        node_parser = SentenceSplitter()
+        node_parser = self.nested_node_parser or SentenceSplitter()
 
         nodes = []
         cur_text_el_buffer: List[str] = []
@@ -338,7 +332,8 @@ class BaseElementNodeParser(NodeParser):
                 nodes.extend([index_node, text_node])
             else:
                 cur_text_el_buffer.append(str(element.element))
-        # flush text buffer
+
+        # flush text buffer for the last batch
         if len(cur_text_el_buffer) > 0:
             cur_text_nodes = self._get_nodes_from_buffer(
                 cur_text_el_buffer, node_parser

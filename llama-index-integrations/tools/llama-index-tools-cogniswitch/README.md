@@ -36,7 +36,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import os
 from llama_index.tools.cogniswitch import CogniswitchToolSpec
-from llama_index.agent import ReActAgent
+from llama_index.core.agent import ReActAgent
 ```
 
 ### Cogniswitch Credentials and OpenAI token

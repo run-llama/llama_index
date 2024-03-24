@@ -1,5 +1,9 @@
 # OpenDAL Loaders
 
+```bash
+pip install llama-index-readers-opendal
+```
+
 ## Base OpendalReader
 
 This loader parses any file via [Apache OpenDAL](https://github.com/apache/incubator-opendal).
@@ -11,9 +15,7 @@ All files are temporarily downloaded locally and subsequently parsed with `Simpl
 `OpendalReader` can read data from any supported storage services including `s3`, `azblob`, `gcs` and so on.
 
 ```python
-from llama_index import download_loader
-
-OpendalReader = download_loader("OpendalReader")
+from llama_index.readers.opendal import OpendalReader
 
 loader = OpendalReader(
     scheme="s3",
@@ -40,9 +42,7 @@ All files are temporarily downloaded locally and subsequently parsed with `Simpl
 ### Usage
 
 ```python
-from llama_index import download_loader
-
-OpendalAzblobReader = download_loader("OpendalAzblobReader")
+from llama_index.readers.opendal import OpendalAzblobReader
 
 loader = OpendalAzblobReader(
     container="container",
@@ -69,9 +69,7 @@ All files are temporarily downloaded locally and subsequently parsed with `Simpl
 ### Usage
 
 ```python
-from llama_index import download_loader
-
-OpendalGcsReader = download_loader("OpendalGcsReader")
+from llama_index.readers.opendal import OpendalGcsReader
 
 loader = OpendalGcsReader(
     bucket="bucket",
@@ -99,10 +97,6 @@ All files are temporarily downloaded locally and subsequently parsed with `Simpl
 ### Usage
 
 ```python
-from llama_index import download_loader
-
-OpendalS3Reader = download_loader("OpendalS3Reader")
-
 loader = OpendalS3Reader(
     bucket="bucket",
     path="path/to/data/",

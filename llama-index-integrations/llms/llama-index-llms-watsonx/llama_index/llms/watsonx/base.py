@@ -28,7 +28,27 @@ from llama_index.llms.watsonx.utils import (
 
 
 class WatsonX(LLM):
-    """IBM WatsonX LLM."""
+    """IBM WatsonX LLM.
+
+    Examples:
+        `pip install llama-index-llms-watsonx`
+
+        ```python
+        from llama_index.llms.watsonx import WatsonX
+
+        credentials = {
+            "url": "https://enter.your-ibm.url",
+            "apikey": "insert_your_api_key",
+        }
+
+        project_id = "insert_your_project_id"
+
+        llm = WatsonX(credentials=credentials, project_id=project_id)
+
+        resp = llm.complete("Paul Graham is")
+        print(resp)
+        ```
+    """
 
     model_id: str = Field(description="The Model to use.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")

@@ -13,7 +13,7 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 Here's an example usage of the AzureTranslateToolSpec.
 
 ```python
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 from llama_index.tools.azure_translate import AzureTranslateToolSpec
 
 translate_tool = AzureTranslateToolSpec(api_key="your-key", region="eastus")

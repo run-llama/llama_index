@@ -21,7 +21,7 @@ You can then inspect the files at `./fuzzy_citation_pack` and use them as a temp
 You can download the pack to a the `./fuzzy_citation_pack` directory:
 
 ```python
-from llama_index import Document, VectorStoreIndex
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies

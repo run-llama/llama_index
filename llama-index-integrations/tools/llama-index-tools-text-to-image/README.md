@@ -10,7 +10,7 @@ Another example showcases retrieval augmentation over a knowledge corpus with te
 
 ```python
 from llama_index.tools.text_to_image import TextToImageToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 openai.api_key = "sk-your-key"
 tool_spec = TextToImageToolSpec()
