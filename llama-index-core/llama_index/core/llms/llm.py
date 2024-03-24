@@ -547,36 +547,39 @@ class LLM(BaseLLM):
 
     # -- Tool Calling --
 
-    def chat_with_tool(
+    def chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
         raise NotImplementedError("predict_tool is not supported by default.")
 
-    async def achat_with_tool(
+    async def achat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
         raise NotImplementedError("predict_tool is not supported by default.")
 
-    def _get_tool_call_from_response(
+    def _get_tool_calls_from_response(
         self,
         response: "AgentChatResponse",
+        error_on_no_tool_call: bool = True,
         **kwargs: Any,
-    ) -> ToolSelection:
+    ) -> List[ToolSelection]:
         """Predict and call the tool."""
         raise NotImplementedError(
-            "_get_tool_call_from_response is not supported by default."
+            "_get_tool_calls_from_response is not supported by default."
         )
 
     def predict_and_call(
