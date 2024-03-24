@@ -158,7 +158,7 @@ class RAFTDatasetPack(BaseLlamaPack):
 
             # add 4 distractor docs
             docs = [chunk]
-            indices = List(range(len(chunks)))
+            indices = list(range(len(chunks)))
             indices.remove(i)
             for j in random.sample(indices, num_distract):
                 docs.append(chunks[j])
