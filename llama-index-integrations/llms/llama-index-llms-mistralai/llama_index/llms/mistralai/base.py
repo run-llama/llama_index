@@ -326,7 +326,9 @@ class MistralAI(LLM):
             return AgentChatResponse(response=output_text, sources=tool_outputs)
         else:
             if len(tool_outputs) > 1:
-                raise ValueError("Invalid")
+                raise ValueError(
+                    "Can't have multiple tool outputs if `allow_parallel_tool_calls` is True."
+                )
             return AgentChatResponse(
                 response=tool_outputs[0].content, sources=tool_outputs
             )
@@ -437,7 +439,9 @@ class MistralAI(LLM):
             return AgentChatResponse(response=output_text, sources=tool_outputs)
         else:
             if len(tool_outputs) > 1:
-                raise ValueError("Invalid")
+                raise ValueError(
+                    "Can't have multiple tool outputs if `allow_parallel_tool_calls` is True."
+                )
             return AgentChatResponse(
                 response=tool_outputs[0].content, sources=tool_outputs
             )
