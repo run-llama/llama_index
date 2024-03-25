@@ -12,7 +12,6 @@ from typing import (
     runtime_checkable,
     TYPE_CHECKING,
 )
-import asyncio
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -57,7 +56,6 @@ from llama_index.core.instrumentation.events.llm import (
 import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.types import (
     ChatMessage,
-    ChatResponse,
 )
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -558,7 +556,7 @@ class LLM(BaseLLM):
 
         By default uses a ReAct agent to do tool calling (through text prompting),
         but function calling LLMs will implement this differnetly.
-        
+
         """
         from llama_index.core.agent.react import ReActAgentWorker
         from llama_index.core.agent.types import Task

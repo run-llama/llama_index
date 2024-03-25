@@ -315,11 +315,7 @@ class MistralAI(FunctionCallingLLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-<<<<<<< HEAD
         tool_calls = self.get_tool_calls_from_response(response)
-=======
-        tool_calls = self._get_tool_calls_from_response(response)
->>>>>>> main
         tool_outputs = [
             call_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
@@ -431,11 +427,7 @@ class MistralAI(FunctionCallingLLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-<<<<<<< HEAD
         tool_calls = self.get_tool_calls_from_response(response)
-=======
-        tool_calls = self._get_tool_calls_from_response(response)
->>>>>>> main
         tool_tasks = [
             acall_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
@@ -513,11 +505,7 @@ class MistralAI(FunctionCallingLLM):
             force_single_tool_call(response)
         return response
 
-<<<<<<< HEAD
     def get_tool_calls_from_response(
-=======
-    def _get_tool_calls_from_response(
->>>>>>> main
         self,
         response: "AgentChatResponse",
         error_on_no_tool_call: bool = True,
