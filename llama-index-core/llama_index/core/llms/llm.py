@@ -7,8 +7,10 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Union,
     get_args,
     runtime_checkable,
+    TYPE_CHECKING,
 )
 
 from llama_index.core.base.llms.types import (
@@ -52,8 +54,25 @@ from llama_index.core.instrumentation.events.llm import (
 )
 
 import llama_index.core.instrumentation as instrument
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+)
 
 dispatcher = instrument.get_dispatcher(__name__)
+
+if TYPE_CHECKING:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.types import BaseTool
+
+
+class ToolSelection(BaseModel):
+    """Tool selection."""
+
+    tool_id: str = Field(description="Tool ID to select.")
+    tool_name: str = Field(description="Tool name to select.")
+    tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
+    # NOTE: no args for now
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -165,6 +184,8 @@ class LLM(BaseLLM):
         exclude=True,
     )
 
+    # -- Pydantic Configs --
+
     @validator("messages_to_prompt", pre=True)
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
@@ -184,6 +205,8 @@ class LLM(BaseLLM):
         if values.get("messages_to_prompt") is None:
             values["messages_to_prompt"] = generic_messages_to_prompt
         return values
+
+    # -- Utils --
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
@@ -222,6 +245,47 @@ class LLM(BaseLLM):
         if self.output_parser is not None:
             messages = self.output_parser.format_messages(messages)
         return self._extend_messages(messages)
+
+    def _parse_output(self, output: str) -> str:
+        if self.output_parser is not None:
+            return str(self.output_parser.parse(output))
+
+        return output
+
+    def _extend_prompt(
+        self,
+        formatted_prompt: str,
+    ) -> str:
+        """Add system and query wrapper prompts to base prompt."""
+        extended_prompt = formatted_prompt
+
+        if self.system_prompt:
+            extended_prompt = self.system_prompt + "\n\n" + extended_prompt
+
+        if self.query_wrapper_prompt:
+            extended_prompt = self.query_wrapper_prompt.format(
+                query_str=extended_prompt
+            )
+
+        return extended_prompt
+
+    def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
+        """Add system prompt to chat message list."""
+        if self.system_prompt:
+            messages = [
+                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),
+                *messages,
+            ]
+        return messages
+
+    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
+        """Return query component."""
+        if self.metadata.is_chat_model:
+            return LLMChatComponent(llm=self, **kwargs)
+        else:
+            return LLMCompleteComponent(llm=self, **kwargs)
+
+    # -- Structured outputs --
 
     def structured_predict(
         self,
@@ -313,11 +377,7 @@ class LLM(BaseLLM):
 
         return await program.acall(**prompt_args)
 
-    def _parse_output(self, output: str) -> str:
-        if self.output_parser is not None:
-            return str(self.output_parser.parse(output))
-
-        return output
+    # -- Prompt Chaining --
 
     @dispatcher.span
     def predict(
@@ -485,38 +545,134 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
-    def _extend_prompt(
+    # -- Tool Calling --
+
+    def chat_with_tools(
         self,
-        formatted_prompt: str,
-    ) -> str:
-        """Add system and query wrapper prompts to base prompt."""
-        extended_prompt = formatted_prompt
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        raise NotImplementedError("predict_tool is not supported by default.")
 
-        if self.system_prompt:
-            extended_prompt = self.system_prompt + "\n\n" + extended_prompt
+    async def achat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        raise NotImplementedError("predict_tool is not supported by default.")
 
-        if self.query_wrapper_prompt:
-            extended_prompt = self.query_wrapper_prompt.format(
-                query_str=extended_prompt
+    def _get_tool_calls_from_response(
+        self,
+        response: "AgentChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        raise NotImplementedError(
+            "_get_tool_calls_from_response is not supported by default."
+        )
+
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        """Predict and call the tool."""
+        from llama_index.core.agent.react import ReActAgentWorker
+        from llama_index.core.agent.types import Task
+        from llama_index.core.memory import ChatMemoryBuffer
+
+        worker = ReActAgentWorker(
+            tools,
+            llm=self,
+            callback_manager=self.callback_manager,
+            verbose=verbose,
+            **kwargs,
+        )
+
+        if isinstance(user_msg, ChatMessage):
+            user_msg = user_msg.content
+
+        task = Task(
+            input=user_msg,
+            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
+            extra_state={},
+            callback_manager=self.callback_manager,
+        )
+        step = worker.initialize_step(task)
+
+        try:
+            output = worker.run_step(step, task).output
+
+            # react agent worker inserts a "Observation: " prefix to the response
+            if output.response and output.response.startswith("Observation: "):
+                output.response = output.response.replace("Observation: ", "")
+        except Exception as e:
+            output = AgentChatResponse(
+                response="An error occurred while running the tool: " + str(e),
+                sources=[],
             )
 
-        return extended_prompt
+        return output
 
-    def _extend_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
-        """Add system prompt to chat message list."""
-        if self.system_prompt:
-            messages = [
-                ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt),
-                *messages,
-            ]
-        return messages
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        """Predict and call the tool."""
+        from llama_index.core.agent.react import ReActAgentWorker
+        from llama_index.core.agent.types import Task
+        from llama_index.core.memory import ChatMemoryBuffer
 
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """Return query component."""
-        if self.metadata.is_chat_model:
-            return LLMChatComponent(llm=self, **kwargs)
-        else:
-            return LLMCompleteComponent(llm=self, **kwargs)
+        worker = ReActAgentWorker(
+            tools,
+            llm=self,
+            callback_manager=self.callback_manager,
+            verbose=verbose,
+            **kwargs,
+        )
+
+        if isinstance(user_msg, ChatMessage):
+            user_msg = user_msg.content
+
+        task = Task(
+            input=user_msg,
+            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
+            extra_state={},
+            callback_manager=self.callback_manager,
+        )
+        step = worker.initialize_step(task)
+
+        try:
+            output = await worker.arun_step(step, task).output
+
+            # react agent worker inserts a "Observation: " prefix to the response
+            if output.response and output.response.startswith("Observation: "):
+                output.response = output.response.replace("Observation: ", "")
+        except Exception as e:
+            output = AgentChatResponse(
+                response="An error occurred while running the tool: " + str(e),
+                sources=[],
+            )
+
+        return output
 
 
 class BaseLLMComponent(QueryComponent):

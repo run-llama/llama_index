@@ -1487,13 +1487,13 @@ tornado = {version = "*", markers = "python_version > \"2.7\""}
 
 [[package]]
 name = "llama-index-agent-openai"
-version = "0.1.6"
+version = "0.1.7"
 description = "llama-index agent openai integration"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_agent_openai-0.1.6-py3-none-any.whl", hash = "sha256:5e8b1f03b56630cfc96304fa748c3c584f78a55f08bf14974b38c9fb8a5d0c90"},
-    {file = "llama_index_agent_openai-0.1.6.tar.gz", hash = "sha256:9c56655822f5eb8b72648e87fe64119b1e907e4a7dbcc2da4b6f3fe162828b71"},
+    {file = "llama_index_agent_openai-0.1.7-py3-none-any.whl", hash = "sha256:6764d385699f4f40ee34bcd88309c820e9e71aa9675a4bde26d4f625d79190a8"},
+    {file = "llama_index_agent_openai-0.1.7.tar.gz", hash = "sha256:6962f02e94c097c6a823dad494568e62b83f4218eb852ef0dce90bd3ffb10406"},
 ]
 
 [package.dependencies]
@@ -1518,13 +1518,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.22"
+version = "0.10.23"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.22-py3-none-any.whl", hash = "sha256:7bc36bd39e2bd46291389f818da311e638043d22226130e84d0425906d79502c"},
-    {file = "llama_index_core-0.10.22.tar.gz", hash = "sha256:7a3a715a4a27c349e0241d477d6b6767c19b95b150116b924e6862325f33484b"},
+    {file = "llama_index_core-0.10.23-py3-none-any.whl", hash = "sha256:59379d5685b1a7a6d8cc4a7124fdcaa3be40b2ea86386d541ab46c7b64ab2550"},
+    {file = "llama_index_core-0.10.23.tar.gz", hash = "sha256:51673d35ec164fcde0fe49c433fbe8659a40a34def4ecf65e64d539f86179efc"},
 ]
 
 [package.dependencies]
@@ -1690,13 +1690,13 @@ llama-index-program-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-readers-file"
-version = "0.1.11"
+version = "0.1.12"
 description = "llama-index readers file integration"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_readers_file-0.1.11-py3-none-any.whl", hash = "sha256:69fe380ac46b7f6db43384e18bc37f880b2627d60677cb0b2c6074fbb42a5971"},
-    {file = "llama_index_readers_file-0.1.11.tar.gz", hash = "sha256:2414ea0d82aa151935cf3ff1669d324a01fd12b0059705ba5f62741ef980f8bd"},
+    {file = "llama_index_readers_file-0.1.12-py3-none-any.whl", hash = "sha256:029eecb9371c6c621cce026fa987212a55160c6cceafef5f470366ec410cc148"},
+    {file = "llama_index_readers_file-0.1.12.tar.gz", hash = "sha256:6065cbf80b0fb5d189558b8b90adbbdc92acb86147fca192d88fcc2704ad2af3"},
 ]
 
 [package.dependencies]
@@ -4302,4 +4302,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1f680c39946ab4a4ace47ba5ef584625132f922bd86d0e753205cdd8f54857b7"
+content-hash = "1d0d8dc47d815d6bfba2c471e88cb5b1dc07b6810bb49309b63fa89f367c0430"

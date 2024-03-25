@@ -1,14 +1,14 @@
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 
-from helpers.reports import ReportDetails
+from llama_index.packs.docugami_kg_rag.helpers.reports import ReportDetails
 from llama_index.core.readers import Document
-from config import (
+from llama_index.packs.docugami_kg_rag.config import (
     MAX_CHUNK_TEXT_LENGTH,
     LARGE_CONTEXT_INSTRUCT_LLM,
 )
 import re
-from helpers.prompts import (
+from llama_index.packs.docugami_kg_rag.helpers.prompts import (
     CREATE_DIRECT_RETRIEVAL_TOOL_DESCRIPTION_QUERY_PROMPT,
     CREATE_DIRECT_RETRIEVAL_TOOL_SYSTEM_PROMPT,
 )
@@ -18,8 +18,10 @@ from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.tools import BaseTool, ToolMetadata, QueryEngineTool
 
-from helpers.vector_store import get_vector_store
-from helpers.fused_summary_retriever import FusedSummaryRetriever
+from llama_index.packs.docugami_kg_rag.helpers.vector_store import get_vector_store
+from llama_index.packs.docugami_kg_rag.helpers.fused_summary_retriever import (
+    FusedSummaryRetriever,
+)
 
 
 @dataclass

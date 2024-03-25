@@ -5,11 +5,21 @@ from llama_index.core.tools import BaseTool
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.core.agent import ReActAgent
 
-from helpers.prompts import ASSISTANT_SYSTEM_MESSAGE
-from config import LARGE_CONTEXT_INSTRUCT_LLM, DEFAULT_USE_REPORTS
-from helpers.indexing import read_all_local_index_state, index_docset
-from helpers.reports import get_retrieval_tool_for_report
-from helpers.retrieval import get_retrieval_tool_for_docset
+from llama_index.packs.docugami_kg_rag.helpers.prompts import ASSISTANT_SYSTEM_MESSAGE
+from llama_index.packs.docugami_kg_rag.config import (
+    LARGE_CONTEXT_INSTRUCT_LLM,
+    DEFAULT_USE_REPORTS,
+)
+from llama_index.packs.docugami_kg_rag.helpers.indexing import (
+    read_all_local_index_state,
+    index_docset,
+)
+from llama_index.packs.docugami_kg_rag.helpers.reports import (
+    get_retrieval_tool_for_report,
+)
+from llama_index.packs.docugami_kg_rag.helpers.retrieval import (
+    get_retrieval_tool_for_docset,
+)
 
 
 class DocugamiKgRagPack(BaseLlamaPack):
@@ -36,7 +46,8 @@ class DocugamiKgRagPack(BaseLlamaPack):
         """
         docsets_response = self.docugami_client.docsets.list()
         docset = next(
-            [docset for docset in docsets_response.docsets if docset.id == docset_id]
+            (docset for docset in docsets_response.docsets if docset.id == docset_id),
+            None,
         )
 
         if not docset:

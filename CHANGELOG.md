@@ -1,5 +1,32 @@
 # ChangeLog
 
+## [2024-03-23]
+
+### `llama-index-core` [0.10.23]
+
+- Added `(a)predict_and_call()` function to base LLM class + openai + mistralai (#12188)
+- fixed bug with `wait()` in async agent streaming (#12187)
+
+### `llama-index-embeddings-alephalpha` [0.1.0]
+
+- Added alephalpha embeddings (#12149)
+
+### `llama-index-llms-alephalpha` [0.1.0]
+
+- Added alephalpha LLM (#12149)
+
+### `llama-index-llms-openai` [0.1.7]
+
+- fixed bug with `wait()` in async agent streaming (#12187)
+
+### `llama-index-readers-docugami` [0.1.4]
+
+- fixed import errors in docugami reader (#12154)
+
+### `llama-index-readers-file` [0.1.12]
+
+- fix PDFReader for remote fs (#12186)
+
 ## [2024-03-21]
 
 ### `llama-index-core` [0.10.22]
