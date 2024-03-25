@@ -314,7 +314,11 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             verbose=self._verbose,
             allow_parallel_tool_calls=self.allow_parallel_tool_calls,
         )
+<<<<<<< HEAD
         tool_calls = self._llm.get_tool_calls_from_response(
+=======
+        tool_calls = self._llm._get_tool_calls_from_response(
+>>>>>>> main
             response, error_on_no_tool_call=False
         )
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:

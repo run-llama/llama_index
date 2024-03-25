@@ -1,5 +1,4 @@
-llama_index/core/_static
-storage/
+llama_index/_static
 .DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -152,6 +151,3 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
-
-# persist dir for chromadb test
-/data/
