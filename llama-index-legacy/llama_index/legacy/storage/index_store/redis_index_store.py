@@ -34,6 +34,16 @@ class RedisIndexStore(KVIndexStore):
         return cls(redis_kvstore, namespace)
 
     @classmethod
+    def from_redis_aclient(
+        cls,
+        redis_aclient: Any,
+        namespace: Optional[str] = None,
+    ) -> "RedisIndexStore":
+        """Load a RedisIndexStore from a Redis Async Client."""
+        redis_kvstore = RedisKVStore.from_redis_aclient(redis_aclient=redis_aclient)
+        return cls(redis_kvstore, namespace)
+
+    @classmethod
     def from_host_and_port(
         cls,
         host: str,
