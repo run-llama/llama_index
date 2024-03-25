@@ -1,7 +1,6 @@
 from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
 from llama_index.core.graph_stores.types import (
     Entity,
-    LabelledPropertyGraphStore,
     Relation,
 )
 
@@ -17,6 +16,7 @@ def test_add() -> None:
 
     assert len(g.graph.get_triplets()) == 1
 
+
 def test_delete() -> None:
     g = SimpleLPGStore()
 
@@ -28,6 +28,7 @@ def test_delete() -> None:
     g.delete([e1.name])
 
     assert len(g.graph.get_triplets()) == 0
+
 
 def test_get() -> None:
     g = SimpleLPGStore()

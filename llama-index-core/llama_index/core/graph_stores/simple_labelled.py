@@ -2,7 +2,14 @@ import fsspec
 import os
 from typing import Any, List, Dict, Optional
 
-from llama_index.core.graph_stores.types import LabelledPropertyGraphStore, Triplet, Entity, Relation, LabelledPropertyGraph, DEFAULT_PERSIST_DIR, DEFUALT_LPG_PERSIST_FNAME
+from llama_index.core.graph_stores.types import (
+    LabelledPropertyGraphStore,
+    Triplet,
+    Entity,
+    LabelledPropertyGraph,
+    DEFAULT_PERSIST_DIR,
+    DEFUALT_LPG_PERSIST_FNAME,
+)
 
 
 class SimpleLPGStore(LabelledPropertyGraphStore):
@@ -23,25 +30,38 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         raise NotImplementedError("Client not implemented for SimpleLPGStore.")
 
     def get(
-        self, 
-        entity_names: Optional[List[str]] = None, 
-        relation_names: Optional[List[str]] = None, 
-        properties: Optional[dict] = None
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
     ) -> List[Triplet]:
         """Get triplets."""
         if entity_names is None and relation_names is None and properties is None:
             return self.graph.get_triplets()
-        
+
         triplets = self.graph.get_triplets()
         if entity_names:
-            triplets = [t for t in triplets if t[0].name in entity_names or t[2].name in entity_names]
-        
+            triplets = [
+                t
+                for t in triplets
+                if t[0].name in entity_names or t[2].name in entity_names
+            ]
+
         if relation_names:
             triplets = [t for t in triplets if t[1].name in relation_names]
-        
+
         if properties:
-            triplets = [t for t in triplets if any([t[0].properties.get(k) == v or t[1].properties.get(k) == v or t[2].properties.get(k) == v for k, v in properties.items()])]
-        
+            triplets = [
+                t
+                for t in triplets
+                if any(
+                    t[0].properties.get(k) == v
+                    or t[1].properties.get(k) == v
+                    or t[2].properties.get(k) == v
+                    for k, v in properties.items()
+                )
+            ]
+
         return triplets
 
     def get_rel_map(
@@ -59,9 +79,8 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
                 entity_triplets = self.get(entity_names=[triplet[2].name])
                 if len(entity_triplets) == 0:
                     break
-        
+
         return triplets[:limit]
-            
 
     def upsert_triplet(self, triplets: List[Triplet]) -> None:
         """Add triplets."""
@@ -69,13 +88,17 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
             self.graph.add_triplet(triplet)
 
     def delete(
-        self, 
-        entity_names: Optional[List[str]] = None, 
-        relation_names: Optional[List[str]] = None, 
-        properties: Optional[dict] = None
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
     ) -> None:
         """Delete matching data."""
-        triplets = self.get(entity_names=entity_names, relation_names=relation_names, properties=properties)
+        triplets = self.get(
+            entity_names=entity_names,
+            relation_names=relation_names,
+            properties=properties,
+        )
         for triplet in triplets:
             self.graph.delete_triplet(triplet)
 
@@ -87,7 +110,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
             fs = fsspec.filesystem("file")
         with fs.open(persist_path, "w") as f:
             f.write(self.graph.json())
-    
+
     @classmethod
     def from_persist_path(
         cls,
@@ -115,6 +138,8 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         """Get the schema of the graph store."""
         raise NotImplementedError("Schema not implemented for SimpleLPGStore.")
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> List[Triplet]:
+    def query(
+        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+    ) -> List[Triplet]:
         """Query the graph store with statement and parameters."""
         raise NotImplementedError("Query not implemented for SimpleLPGStore.")

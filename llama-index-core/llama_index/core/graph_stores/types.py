@@ -15,13 +15,16 @@ class Entity(BaseModel):
     name: str
     properties: Dict[str, Any] = Field(default_factory=dict)
 
+
 class Relation(BaseModel):
     """A relation connecting two entities in a graph."""
 
     name: str
     properties: Dict[str, Any] = Field(default_factory=dict)
 
+
 Triplet = Tuple[Entity, Relation, Entity]
+
 
 class LabelledPropertyGraph(BaseModel):
     """In memory labelled property graph containing entities and relations."""
@@ -39,20 +42,20 @@ class LabelledPropertyGraph(BaseModel):
     def get_all_relations(self) -> List[Relation]:
         """Get all relations."""
         return list(self.relations.values())
-    
+
     def get_triplets(self) -> List[Triplet]:
         """Get all triplets."""
         return [
             (self.entities[subj], self.relations[rel], self.entities[obj])
             for subj, rel, obj in self.triplets
         ]
-    
+
     def add_triplet(self, triplet: Triplet) -> None:
         """Add a triplet."""
         subj, rel, obj = triplet
         if (subj.name, rel.name, obj.name) in self.triplets:
             return
-        
+
         self.triplets.add((subj.name, rel.name, obj.name))
         self.entities[subj.name] = subj
         self.entities[obj.name] = obj
@@ -63,7 +66,7 @@ class LabelledPropertyGraph(BaseModel):
         subj, rel, obj = triplet
         if (subj.name, rel.name, obj.name) not in self.triplets:
             return
-        
+
         self.triplets.remove((subj.name, rel.name, obj.name))
         if subj.name in self.entities:
             del self.entities[subj.name]
@@ -159,10 +162,10 @@ class LabelledPropertyGraphStore(Protocol):
         ...
 
     def get(
-        self, 
-        entity_names: Optional[List[str]] = None, 
-        relation_names: Optional[List[str]] = None, 
-        properties: Optional[dict] = None
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
     ) -> List[Triplet]:
         """Get triplets."""
         ...
@@ -178,10 +181,10 @@ class LabelledPropertyGraphStore(Protocol):
         ...
 
     def delete(
-        self, 
-        entity_names: Optional[List[str]] = None, 
-        relation_names: Optional[List[str]] = None, 
-        properties: Optional[dict] = None
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
     ) -> None:
         """Delete matching data."""
         ...
@@ -196,6 +199,8 @@ class LabelledPropertyGraphStore(Protocol):
         """Get the schema of the graph store."""
         ...
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> List[Triplet]:
+    def query(
+        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+    ) -> List[Triplet]:
         """Query the graph store with statement and parameters."""
         ...
