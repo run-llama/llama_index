@@ -28,6 +28,7 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
     mistralai_modelname_to_contextsize,
@@ -70,7 +71,7 @@ def force_single_tool_call(response: ChatResponse) -> None:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
 
-class MistralAI(LLM):
+class MistralAI(FunctionCallingLLM):
     """MistralAI LLM.
 
     Examples:
@@ -314,7 +315,7 @@ class MistralAI(LLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-        tool_calls = self._get_tool_calls_from_response(response)
+        tool_calls = self.get_tool_calls_from_response(response)
         tool_outputs = [
             call_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
@@ -426,7 +427,7 @@ class MistralAI(LLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-        tool_calls = self._get_tool_calls_from_response(response)
+        tool_calls = self.get_tool_calls_from_response(response)
         tool_tasks = [
             acall_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
@@ -504,7 +505,7 @@ class MistralAI(LLM):
             force_single_tool_call(response)
         return response
 
-    def _get_tool_calls_from_response(
+    def get_tool_calls_from_response(
         self,
         response: "AgentChatResponse",
         error_on_no_tool_call: bool = True,
