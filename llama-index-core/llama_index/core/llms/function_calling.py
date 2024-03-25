@@ -40,7 +40,7 @@ class FunctionCallingLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
-        raise NotImplementedError("predict_tool is not supported by default.")
+        raise NotImplementedError("chat_with_tools is not supported by default.")
 
     async def achat_with_tools(
         self,
@@ -52,7 +52,7 @@ class FunctionCallingLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
-        raise NotImplementedError("predict_tool is not supported by default.")
+        raise NotImplementedError("achat_with_tools is not supported by default.")
 
     def get_tool_calls_from_response(
         self,
