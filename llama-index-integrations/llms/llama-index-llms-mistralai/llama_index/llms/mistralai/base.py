@@ -33,7 +33,6 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
     mistralai_modelname_to_contextsize,
 )
-import asyncio
 
 from mistralai.async_client import MistralAsyncClient
 from mistralai.client import MistralClient
@@ -284,56 +283,6 @@ class MistralAI(FunctionCallingLLM):
         stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
         return stream_complete_fn(prompt, **kwargs)
 
-    def predict_and_call(
-        self,
-        tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> "AgentChatResponse":
-        from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.tools.calling import (
-            call_tool_with_selection,
-        )
-
-        if not self.metadata.is_function_calling_model:
-            return super().predict_and_call(
-                tools,
-                user_msg=user_msg,
-                chat_history=chat_history,
-                verbose=verbose,
-                **kwargs,
-            )
-
-        response = self.chat_with_tools(
-            tools,
-            user_msg,
-            chat_history=chat_history,
-            verbose=verbose,
-            allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs,
-        )
-        tool_calls = self.get_tool_calls_from_response(response)
-        tool_outputs = [
-            call_tool_with_selection(tool_call, tools, verbose=verbose)
-            for tool_call in tool_calls
-        ]
-        if allow_parallel_tool_calls:
-            output_text = "\n\n".join(
-                [tool_output.content for tool_output in tool_outputs]
-            )
-            return AgentChatResponse(response=output_text, sources=tool_outputs)
-        else:
-            if len(tool_outputs) > 1:
-                raise ValueError(
-                    "Can't have multiple tool outputs if `allow_parallel_tool_calls` is True."
-                )
-            return AgentChatResponse(
-                response=tool_outputs[0].content, sources=tool_outputs
-            )
-
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -395,57 +344,6 @@ class MistralAI(FunctionCallingLLM):
     ) -> CompletionResponseAsyncGen:
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
-
-    async def apredict_and_call(
-        self,
-        tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> "AgentChatResponse":
-        from llama_index.core.tools.calling import (
-            acall_tool_with_selection,
-        )
-        from llama_index.core.chat_engine.types import AgentChatResponse
-
-        if not self.metadata.is_function_calling_model:
-            return await super().apredict_and_call(
-                tools,
-                user_msg=user_msg,
-                chat_history=chat_history,
-                verbose=verbose,
-                **kwargs,
-            )
-
-        response = await self.achat_with_tools(
-            tools,
-            user_msg,
-            chat_history=chat_history,
-            verbose=verbose,
-            allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs,
-        )
-        tool_calls = self.get_tool_calls_from_response(response)
-        tool_tasks = [
-            acall_tool_with_selection(tool_call, tools, verbose=verbose)
-            for tool_call in tool_calls
-        ]
-        tool_outputs = await asyncio.gather(*tool_tasks)
-        if allow_parallel_tool_calls:
-            output_text = "\n\n".join(
-                [tool_output.content for tool_output in tool_outputs]
-            )
-            return AgentChatResponse(response=output_text, sources=tool_outputs)
-        else:
-            if len(tool_outputs) > 1:
-                raise ValueError(
-                    "Can't have multiple tool outputs if `allow_parallel_tool_calls` is True."
-                )
-            return AgentChatResponse(
-                response=tool_outputs[0].content, sources=tool_outputs
-            )
 
     def chat_with_tools(
         self,
