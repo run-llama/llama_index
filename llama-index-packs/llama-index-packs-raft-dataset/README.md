@@ -4,6 +4,10 @@ This LlamaPack implements RAFT: Adapting Language Model to Domain Specific RAG [
 
 Retrieval Augmented FineTuning (RAFT) is a training recipe introduced in this paper that aims to improve the performance of large language models (LLMs) in open-book, in-domain question-answering tasks. Given a question and a set of retrieved documents, RAFT trains the LLM to identify and cite verbatim the most relevant sequences from the documents that help answer the question, while ignoring irrelevant or distracting information. By explicitly training the model to distinguish between relevant and irrelevant information and to provide evidence from the relevant documents, RAFT encourages the LLM to develop better reasoning and explanation abilities, ultimately improving its ability to answer questions accurately and rationally in scenarios where additional context or knowledge is available.
 
+A key component of RAFT is how the dataset is generated for fine-tuning. Each QA pair also includes an "oracle" document from which the answer to the question can be deduced as well as "distractor" documents which are irrelevant. During training this forces the model to learn which information is relevant/irrelevant and also memorize domain knowledge.
+
+We've implemented the dataset generation part in a LlamaPack. Check out our [full notebook here](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-raft-dataset/examples/raft_dataset.ipynb).
+
 ### Installation
 
 ```bash
