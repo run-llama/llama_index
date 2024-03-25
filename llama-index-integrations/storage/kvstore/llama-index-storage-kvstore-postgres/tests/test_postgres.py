@@ -35,8 +35,75 @@ def postgres_kvstore(
                 kvstore.delete(key)
 
 
+@pytest.fixture()
+def postgres_none_ssl_kvstore(
+    postgres_container: Dict[str, Union[str, Container]],
+) -> Generator[PostgresKVStore, None, None]:
+    kvstore = None
+    try:
+        kvstore = PostgresKVStore(
+            connection_string=postgres_container["connection_string"],
+            async_connection_string=postgres_container["async_connection_string"],
+            table_name="test_kvstore",
+            schema_name="test_schema",
+            use_jsonb=True,
+            sslmode=None,
+        )
+        yield kvstore
+    finally:
+        if kvstore:
+            keys = kvstore.get_all().keys()
+            for key in keys:
+                kvstore.delete(key)
+
+
+@pytest.fixture()
+def postgres_bool_ssl_kvstore(
+    postgres_container: Dict[str, Union[str, Container]],
+) -> Generator[PostgresKVStore, None, None]:
+    kvstore = None
+    try:
+        kvstore = PostgresKVStore(
+            connection_string=postgres_container["connection_string"],
+            async_connection_string=postgres_container["async_connection_string"],
+            table_name="test_kvstore",
+            schema_name="test_schema",
+            use_jsonb=True,
+            sslmode=False,
+        )
+        yield kvstore
+    finally:
+        if kvstore:
+            keys = kvstore.get_all().keys()
+            for key in keys:
+                kvstore.delete(key)
+
+
+@pytest.fixture()
+def postgres_disable_ssl_kvstore(
+    postgres_container: Dict[str, Union[str, Container]],
+) -> Generator[PostgresKVStore, None, None]:
+    kvstore = None
+    try:
+        kvstore = PostgresKVStore(
+            connection_string=postgres_container["connection_string"],
+            async_connection_string=postgres_container["async_connection_string"],
+            table_name="test_kvstore",
+            schema_name="test_schema",
+            use_jsonb=True,
+            sslmode="disable",
+        )
+        yield kvstore
+    finally:
+        if kvstore:
+            keys = kvstore.get_all().keys()
+            for key in keys:
+                kvstore.delete(key)
+
+
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_basic"
@@ -53,7 +120,8 @@ def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 def test_from_uri(postgres_container: Dict[str, Union[str, Container]]) -> None:
     kvstore = PostgresKVStore.from_uri(uri=postgres_container["connection_string"])
@@ -62,7 +130,8 @@ def test_from_uri(postgres_container: Dict[str, Union[str, Container]]) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 @pytest.mark.asyncio()
 async def test_kvstore_async_basic(postgres_kvstore: PostgresKVStore) -> None:
@@ -80,7 +149,8 @@ async def test_kvstore_async_basic(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 def test_kvstore_delete(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_delete"
@@ -95,7 +165,8 @@ def test_kvstore_delete(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 @pytest.mark.asyncio()
 async def test_kvstore_adelete(postgres_kvstore: PostgresKVStore) -> None:
@@ -111,7 +182,8 @@ async def test_kvstore_adelete(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 def test_kvstore_getall(postgres_kvstore: PostgresKVStore) -> None:
     test_key_1 = "test_key_1"
@@ -133,7 +205,8 @@ def test_kvstore_getall(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 @pytest.mark.asyncio()
 async def test_kvstore_agetall(postgres_kvstore: PostgresKVStore) -> None:
@@ -156,7 +229,8 @@ async def test_kvstore_agetall(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages,
+    reason="pscopg2-binary, sqlalchemy, asyncpg and/or pscyopg[binary] not installed",
 )
 @pytest.mark.asyncio()
 async def test_kvstore_putall(postgres_kvstore: PostgresKVStore) -> None:
