@@ -555,7 +555,7 @@ class LLM(BaseLLM):
         """Predict and call the tool.
 
         By default uses a ReAct agent to do tool calling (through text prompting),
-        but function calling LLMs will implement this differnetly.
+        but function calling LLMs will implement this differently.
 
         """
         from llama_index.core.agent.react import ReActAgentWorker
