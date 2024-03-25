@@ -93,7 +93,10 @@ class ReadmeReader(BaseReader):
         url = f"https://dash.readme.com/api/v1/categories/{category_slug}/docs"
         response = requests.get(url, headers=self._headers)
 
-        return response.json()
+        docs = response.json()
+
+        # Filter documents hidden=False
+        return [doc for doc in docs if not doc.get("hidden", True)]
 
     def get_document_info(self, document_slug):
         """
@@ -132,7 +135,7 @@ class ReadmeReader(BaseReader):
         Retrieves all categories from the API.
 
         Returns:
-            list: A list containing all categories.
+            list: A list containing all categories with type "guide".
         """
         perPage = 100
         page = 1
@@ -147,4 +150,5 @@ class ReadmeReader(BaseReader):
         for i in range(2, remaining_pages + 2):
             categories.extend(self.get_categories_page(params=params, page=i))
 
-        return categories
+        # Include just categories with type: "guide"
+        return [category for category in categories if category.get("type") == "guide"]
