@@ -70,12 +70,6 @@ class OptimumEmbedding(BaseEmbedding):
                     "Unable to find max_length from model config. "
                     "Please provide max_length."
                 )
-            try:
-                max_length = min(max_length, int(self._tokenizer.model_max_length))
-            except Exception as exc:
-                print(
-                    f"An error occurred while retrieving tokenizer max length: {exc}"
-                )
 
         if not pooling:
             pooling = get_pooling_mode(model)
