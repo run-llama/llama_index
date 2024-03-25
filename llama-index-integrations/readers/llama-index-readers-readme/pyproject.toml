@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -22,13 +22,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-readers-readme"
-version = "0.1.0"
-description = "llama-index readers readme.com integration"
 authors = ["Gonzalo Rios <contacto@gonzalorios.cl>"]
+description = "llama-index readers readme.com integration"
 license = "MIT"
+name = "llama-index-readers-readme"
+packages = [{include = "llama_index/"}]
 readme = "README.md"
-packages = [{ include = "llama_index/" }]
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -37,8 +37,8 @@ beautifulsoup4 = "^4.12.3"
 requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
-black = { extras = ["jupyter"], version = "<=23.9.1,>=23.7.0" }
-codespell = { extras = ["toml"], version = ">=v2.2.6" }
+black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
+codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

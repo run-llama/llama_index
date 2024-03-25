@@ -92,9 +92,8 @@ class ReadmeReader(BaseReader):
         """
         url = f"https://dash.readme.com/api/v1/categories/{category_slug}/docs"
         response = requests.get(url, headers=self._headers)
-        docs = response.json()
 
-        return docs
+        return response.json()
 
     def get_document_info(self, document_slug):
         """
@@ -113,7 +112,7 @@ class ReadmeReader(BaseReader):
 
     def get_categories_page(self, params, page):
         """
-        Sends a GET request to a specific page of categories
+        Sends a GET request to a specific page of categories.
 
         Args:
             params (dict): Parameters of the request, such as perPage and others.
