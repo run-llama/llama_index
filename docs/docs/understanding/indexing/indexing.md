@@ -12,8 +12,6 @@ LlamaIndex offers several different index types. We'll cover the two most common
 
 A `VectorStoreIndex` is by far the most frequent type of Index you'll encounter. The Vector Store Index takes your Documents and splits them up into Nodes. It then creates `vector embeddings` of the text of every node, ready to be queried by an LLM.
 
-(what-is-an-embedding)=
-
 ### What is an embedding?
 
 `Vector embeddings` are central to how LLM applications function.
