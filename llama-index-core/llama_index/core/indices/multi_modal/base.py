@@ -3,6 +3,7 @@
 An index that is built on top of multiple vector stores for different modalities.
 
 """
+
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
@@ -63,7 +64,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         # image_vector_store going to be deprecated. image_store can be passed from storage_context
         # keep image_vector_store here for backward compatibility
         image_vector_store: Optional[VectorStore] = None,
-        image_embed_model: EmbedType = "clip",
+        image_embed_model: EmbedType = "clip:ViT-B/32",
         is_image_to_text: bool = False,
         # is_image_vector_store_empty is used to indicate whether image_vector_store is empty
         # those flags are used for cases when only one vector store is used
@@ -184,11 +185,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,
-            embed_model=resolve_embed_model(
-                embed_model, callback_manager=kwargs.get("callback_manager", None)
-            )
-            if embed_model
-            else Settings.embed_model,
+            embed_model=(
+                resolve_embed_model(
+                    embed_model, callback_manager=kwargs.get("callback_manager", None)
+                )
+                if embed_model
+                else Settings.embed_model
+            ),
             **kwargs,
         )
 

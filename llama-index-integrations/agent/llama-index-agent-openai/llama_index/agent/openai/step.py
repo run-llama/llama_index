@@ -312,8 +312,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 on_stream_end_fn=partial(self.finalize_task, task),
             )
         )
+        chat_stream_response._ensure_async_setup()
+
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
+
         # return response stream
         return chat_stream_response
 

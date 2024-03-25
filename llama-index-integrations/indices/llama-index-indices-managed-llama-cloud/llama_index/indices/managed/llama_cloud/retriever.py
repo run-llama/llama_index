@@ -43,7 +43,10 @@ class LlamaCloudRetriever(BaseRetriever):
         self._alpha = alpha or OMIT
         self._search_filters = search_filters or OMIT
 
-        super().__init__(**kwargs)
+        super().__init__(
+            callback_manager=kwargs.get("callback_manager", None),
+            verbose=kwargs.get("verbose", False),
+        )
 
     def _result_nodes_to_node_with_score(
         self, result_nodes: List[TextNodeWithScore]

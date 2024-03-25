@@ -27,6 +27,27 @@ def get_additional_kwargs(
 
 
 class Ollama(CustomLLM):
+    """Ollama LLM.
+
+    Visit https://ollama.com/ to download and install Ollama.
+
+    Run `ollama serve` to start a server.
+
+    Run `ollama pull <name>` to download a model to run.
+
+    Examples:
+        `pip install llama-index-llms-ollama`
+
+        ```python
+        from llama_index.llms.ollama import Ollama
+
+        llm = Ollama(model="llama2", request_timeout=60.0)
+
+        response = llm.complete("What is the capital of France?")
+        print(response)
+        ```
+    """
+
     base_url: str = Field(
         default="http://localhost:11434",
         description="Base url the model is hosted under.",

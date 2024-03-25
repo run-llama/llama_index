@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -26,13 +26,18 @@ class WholeSiteReader(BaseReader):
         max_depth (int, optional): Maximum depth for BFS. Defaults to 10.
     """
 
-    def __init__(self, prefix: str, max_depth: int = 10) -> None:
+    def __init__(
+        self,
+        prefix: str,
+        max_depth: int = 10,
+        driver: Optional[webdriver.Chrome] = None,
+    ) -> None:
         """
         Initialize the WholeSiteReader with the provided prefix and maximum depth.
         """
         self.prefix = prefix
         self.max_depth = max_depth
-        self.driver = self.setup_driver()
+        self.driver = driver if driver else self.setup_driver()
 
     def setup_driver(self):
         """

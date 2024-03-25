@@ -68,6 +68,10 @@ class JSONReader(BaseReader):
         is_jsonl (Optional[bool]): If True, indicates that the file is in JSONL format.
         Defaults to False.
 
+        clean_json (Optional[bool]): If True, lines containing only JSON structure are removed.
+        This removes lines that are not as useful. If False, no lines are removed and the document maintains a valid JSON object structure.
+        If levels_back is set the json is not cleaned and this option is ignored.
+        Defaults to True.
     """
 
     def __init__(
@@ -76,6 +80,7 @@ class JSONReader(BaseReader):
         collapse_length: Optional[int] = None,
         ensure_ascii: bool = False,
         is_jsonl: Optional[bool] = False,
+        clean_json: Optional[bool] = True,
     ) -> None:
         """Initialize with arguments."""
         super().__init__()
@@ -83,6 +88,7 @@ class JSONReader(BaseReader):
         self.collapse_length = collapse_length
         self.ensure_ascii = ensure_ascii
         self.is_jsonl = is_jsonl
+        self.clean_json = clean_json
 
     def load_data(
         self, input_file: str, extra_info: Optional[Dict] = {}
@@ -98,9 +104,9 @@ class JSONReader(BaseReader):
 
             documents = []
             for data in load_data:
-                # print(data)
-                if self.levels_back is None:
-                    # If levels_back isn't set, we just format and make each
+                if self.levels_back is None and self.clean_json is True:
+                    # If levels_back isn't set and clean json is set,
+                    # remove lines containing only formatting, we just format and make each
                     # line an embedding
                     json_output = json.dumps(
                         data, indent=0, ensure_ascii=self.ensure_ascii
@@ -112,6 +118,12 @@ class JSONReader(BaseReader):
                     documents.append(
                         Document(text="\n".join(useful_lines), metadata=extra_info)
                     )
+
+                elif self.levels_back is None and self.clean_json is False:
+                    # If levels_back isn't set  and clean json is False, create documents without cleaning
+                    json_output = json.dumps(data, ensure_ascii=self.ensure_ascii)
+                    documents.append(Document(text=json_output, metadata=extra_info))
+
                 elif self.levels_back is not None:
                     # If levels_back is set, we make the embeddings contain the labels
                     # from further up the JSON tree
