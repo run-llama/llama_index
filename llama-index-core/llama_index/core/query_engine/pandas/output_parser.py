@@ -30,7 +30,7 @@ def default_output_processor(
         return output
 
     local_vars = {"df": df}
-    global_vars = {"np":np, "pd":pd}
+    global_vars = {"np": np, "pd": pd}
 
     output = parse_code_markdown(output, only_last=True)[0]
 
