@@ -95,7 +95,6 @@ class DunderVisitor(ast.NodeVisitor):
         self._builtins = builtins
 
     def visit_Name(self, node: ast.Name) -> None:
-        print(node.id)
         if node.id.startswith("_"):
             self.has_access_to_private_entity = True
         if node.id not in ALLOWED_BUILTINS and node.id in self._builtins:
@@ -103,7 +102,6 @@ class DunderVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
-        print(node.attr)
         if node.attr.startswith("_"):
             self.has_access_to_private_entity = True
         if node.attr not in ALLOWED_BUILTINS and node.attr in self._builtins:
@@ -112,12 +110,23 @@ class DunderVisitor(ast.NodeVisitor):
 
 
 def _contains_protected_access(code: str) -> bool:
+    # do not allow imports
+    imports_modules = False
     tree = ast.parse(code)
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.Import):
+            imports_modules = True
+        elif isinstance(node, ast.ImportFrom):
+            imports_modules = True
+        else:
+            continue
+
     dunder_visitor = DunderVisitor()
     dunder_visitor.visit(tree)
     return (
         dunder_visitor.has_access_to_private_entity
         or dunder_visitor.has_access_to_disallowed_builtin
+        or imports_modules
     )
 
 
@@ -133,7 +142,7 @@ def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
     if _contains_protected_access(__source):
         raise RuntimeError(
             "Execution of code containing references to private or dunder methods, "
-            "or disallowed builtins, is forbidden!"
+            "disallowed builtins, or any imports, is forbidden!"
         )
 
 
