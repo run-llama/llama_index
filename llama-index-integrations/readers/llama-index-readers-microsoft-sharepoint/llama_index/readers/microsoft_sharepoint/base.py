@@ -16,8 +16,20 @@ logger = logging.getLogger(__name__)
 class SharePointReader(BaseReader):
     """SharePoint reader.
 
+
     Reads folders from the SharePoint site from a folder under documents.
+
+    Args:
+        client_id (str): The Application ID for the app registered in Microsoft Azure Portal.
+            The application must also be configured with MS Graph permissions "Files.ReadAll", "Sites.ReadAll" and BrowserSiteLists.Read.All.
+        client_secret (str): The application secret for the app registered in Azure.
+        tenant_id (str): Unique identifier of the Azure Active Directory Instance.
     """
+
+    client_id: str = None
+    client_secret: str = None
+    tenant_id: str = None
+    _authorization_headers = None
 
     def __init__(
         self,
@@ -25,19 +37,11 @@ class SharePointReader(BaseReader):
         client_secret: str,
         tenant_id: str,
     ) -> None:
-        """
-        Initializes an instance of SharePoint reader.
-
-        Args:
-            client_id: The Application ID for the app registered in Microsoft Azure Portal.
-                       The application must also be configured with MS Graph permissions "Files.ReadAll", "Sites.ReadAll" and BrowserSiteLists.Read.All.
-            client_secret: The application secret for the app registered in Azure.
-            tenant_id: Unique identifier of the Azure Active Directory Instance.
-        """
-        self.client_id = (client_id,)
-        self.client_secret = (client_secret,)
-        self.tenant_id = tenant_id
-        self._authorization_headers = None
+        super().__init__(
+            client_id=client_id,
+            client_secret=client_secret,
+            tenant_id=tenant_id,
+        )
 
     def _get_access_token(self) -> str:
         """
