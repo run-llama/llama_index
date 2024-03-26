@@ -5,7 +5,7 @@ import os
 import json
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
@@ -13,6 +13,7 @@ from google.oauth2.credentials import Credentials
 
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BasePydanticReader
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -47,11 +48,14 @@ class GoogleDriveReader(BasePydanticReader):
 
     """
 
-    is_cloud: Optional[bool] = False
     client_config: Optional[dict] = None
     authorized_user_info: Optional[dict] = None
     service_account_key: Optional[dict] = None
     token_path: Optional[str] = None
+
+    _is_cloud: bool = PrivateAttr(default=False)
+    _creds: Credentials = PrivateAttr()
+    _mimetypes: dict = PrivateAttr()
 
     def __init__(
         self,
@@ -62,10 +66,11 @@ class GoogleDriveReader(BasePydanticReader):
         client_config: Optional[dict] = None,
         authorized_user_info: Optional[dict] = None,
         service_account_key: Optional[dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
         self._creds = None
-
+        self._is_cloud = (is_cloud,)
         # Download Google Docs/Slides/Sheets as actual files
         # See https://developers.google.com/drive/v3/web/mime-types
         self._mimetypes = {
@@ -86,31 +91,27 @@ class GoogleDriveReader(BasePydanticReader):
         }
 
         # Read the file contents so they can be serialized and stored.
-        if client_config is None and credentials_path is not None:
+        if client_config is None and os.path.isfile(credentials_path):
             with open(credentials_path, encoding="utf-8") as json_file:
                 client_config = json.load(json_file)
 
-        if authorized_user_info is None and token_path is not None:
+        if authorized_user_info is None and os.path.isfile(token_path):
             with open(token_path, encoding="utf-8") as json_file:
                 authorized_user_info = json.load(json_file)
 
-        if service_account_key is None and service_account_key_path is not None:
+        if service_account_key is None and os.path.isfile(service_account_key_path):
             with open(service_account_key_path, encoding="utf-8") as json_file:
                 service_account_key = json.load(json_file)
 
-        if (
-            client_config is None or authorized_user_info is None
-        ) and service_account_key is None:
-            raise ValueError(
-                "Must specify `credentials` and `token` or `service_account_key`."
-            )
+        if client_config is None and service_account_key is None:
+            raise ValueError("Must specify `client_config` or `service_account_key`.")
 
         super().__init__(
-            is_cloud=is_cloud,
             client_config=client_config,
             authorized_user_info=authorized_user_info,
             service_account_key=service_account_key,
             token_path=token_path,
+            **kwargs,
         )
 
     def _get_credentials(self) -> Tuple[Credentials]:
