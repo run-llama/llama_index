@@ -549,6 +549,7 @@ class SimpleDirectoryReader(BaseReader):
                         repeat(self.filename_as_id),
                         repeat(self.encoding),
                         repeat(self.errors),
+                        repeat(self.raise_on_error),
                         repeat(fs),
                     ),
                 )
@@ -568,6 +569,7 @@ class SimpleDirectoryReader(BaseReader):
                         filename_as_id=self.filename_as_id,
                         encoding=self.encoding,
                         errors=self.errors,
+                        raise_on_error=self.raise_on_error,
                         fs=fs,
                     )
                 )
@@ -632,6 +634,7 @@ class SimpleDirectoryReader(BaseReader):
                 filename_as_id=self.filename_as_id,
                 encoding=self.encoding,
                 errors=self.errors,
+                raise_on_error=self.raise_on_error,
                 fs=self.fs,
             )
 
