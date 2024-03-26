@@ -792,7 +792,6 @@ documents = reader.load_data(
 caption: Examples
 maxdepth: 1
 ---
-../../examples/vector_stores/AnalyticDBDemo.ipynb
 ../../examples/vector_stores/AstraDBIndexDemo.ipynb
 ../../examples/vector_stores/AsyncIndexCreationDemo.ipynb
 ../../examples/vector_stores/AzureAISearchIndexDemo.ipynb
