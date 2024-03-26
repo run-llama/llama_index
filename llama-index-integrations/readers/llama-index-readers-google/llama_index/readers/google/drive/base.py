@@ -44,8 +44,6 @@ class GoogleDriveReader(BasePydanticReader):
             user info. Defaults to None.
         service_account_key (Optional[dict]): Dictionary containing service
             account key. Defaults to None.
-
-
     """
 
     client_config: Optional[dict] = None
