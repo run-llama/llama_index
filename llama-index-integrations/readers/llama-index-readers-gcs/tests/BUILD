@@ -5,6 +5,6 @@ python_tests(
 )
 
 python_requirement(
-    name="s3fs",
-    requirements=["s3fs>=2024.3.0"],
+    name="gcsfs",
+    requirements=["gcsfs>=2023.12.2"],
 )
