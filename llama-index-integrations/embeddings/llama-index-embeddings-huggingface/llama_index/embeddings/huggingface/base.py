@@ -118,13 +118,12 @@ class HuggingFaceEmbedding(BaseEmbedding):
     def _embed(
         self,
         sentences: List[str],
-        batch_size: int = 32,
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """Embed sentences."""
         return self._model.encode(
             sentences,
-            batch_size=batch_size,
+            batch_size=self.embed_batch_size,
             prompt_name=prompt_name,
             normalize_embeddings=self.normalize,
         ).tolist()
@@ -147,7 +146,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return self._embed(texts, batch_size=len(texts), prompt_name="text")
+        return self._embed(texts, prompt_name="text")
 
 
 class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
