@@ -36,11 +36,13 @@ class SharePointReader(BasePydanticReader):
         client_id: str,
         client_secret: str,
         tenant_id: str,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            **kwargs,
         )
 
     def _get_access_token(self) -> str:
