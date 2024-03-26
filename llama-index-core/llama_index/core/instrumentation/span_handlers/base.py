@@ -37,17 +37,19 @@ class BaseSpanHandler(BaseModel, Generic[T]):
 
     def span_exit(self, *args, id: str, result: Optional[Any] = None, **kwargs) -> None:
         """Logic for exiting a span."""
-        self.prepare_to_exit_span(*args, id=id, result=result, **kwargs)
-        if self.current_span_id == id:
-            self.current_span_id = self.open_spans[id].parent_id
-        del self.open_spans[id]
+        span = self.prepare_to_exit_span(*args, id=id, result=result, **kwargs)
+        if span:
+            if self.current_span_id == id:
+                self.current_span_id = self.open_spans[id].parent_id
+            del self.open_spans[id]
 
     def span_drop(self, *args, id: str, err: Optional[Exception], **kwargs) -> None:
         """Logic for dropping a span i.e. early exit."""
-        self.prepare_to_drop_span(*args, id=id, err=err, **kwargs)
-        if self.current_span_id == id:
-            self.current_span_id = self.open_spans[id].parent_id
-        del self.open_spans[id]
+        span = self.prepare_to_drop_span(*args, id=id, err=err, **kwargs)
+        if span:
+            if self.current_span_id == id:
+                self.current_span_id = self.open_spans[id].parent_id
+            del self.open_spans[id]
 
     @abstractmethod
     def new_span(
@@ -59,13 +61,13 @@ class BaseSpanHandler(BaseModel, Generic[T]):
     @abstractmethod
     def prepare_to_exit_span(
         self, *args, id: str, result: Optional[Any] = None, **kwargs
-    ) -> Any:
+    ) -> Optional[T]:
         """Logic for preparing to exit a span."""
         ...
 
     @abstractmethod
     def prepare_to_drop_span(
         self, *args, id: str, err: Optional[Exception], **kwargs
-    ) -> Any:
+    ) -> Optional[T]:
         """Logic for preparing to drop a span."""
         ...
