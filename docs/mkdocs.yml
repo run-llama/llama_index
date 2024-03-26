@@ -78,6 +78,7 @@ nav:
           - ./examples/agent/openai_retrieval_benchmark.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
           - ./examples/agent/mistral_agent.ipynb
+          - ./examples/agent/openai_agent_tool_call_parser.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -900,6 +901,7 @@ nav:
           - ./api_reference/postprocessor/sentence_optimizer.md
           - ./api_reference/postprocessor/similarity.md
           - ./api_reference/postprocessor/time_weighted.md
+          - ./api_reference/postprocessor/voyageai_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
       - Output Parsers:
@@ -1011,6 +1013,7 @@ nav:
           - ./api_reference/readers/file.md
           - ./api_reference/readers/firebase_realtimedb.md
           - ./api_reference/readers/firestore.md
+          - ./api_reference/readers/gcs.md
           - ./api_reference/readers/genius.md
           - ./api_reference/readers/github.md
           - ./api_reference/readers/google.md
@@ -1068,6 +1071,7 @@ nav:
           - ./api_reference/readers/psychic.md
           - ./api_reference/readers/qdrant.md
           - ./api_reference/readers/rayyan.md
+          - ./api_reference/readers/readme.md
           - ./api_reference/readers/readwise.md
           - ./api_reference/readers/reddit.md
           - ./api_reference/readers/remote.md
@@ -1174,6 +1178,7 @@ nav:
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
+              - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
@@ -1748,6 +1753,9 @@ plugins:
             - ../llama-index-packs/llama-index-packs-raft-dataset
             - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-elasticsearch
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-elasticsearch
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-voyageai-rerank
+            - ../llama-index-integrations/readers/llama-index-readers-gcs
+            - ../llama-index-integrations/readers/llama-index-readers-readme
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
