@@ -9,6 +9,7 @@ import os
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Union
+from pydantic import Field
 
 from azure.storage.blob import ContainerClient
 from llama_index.core.readers import SimpleDirectoryReader
@@ -47,7 +48,9 @@ class AzStorageBlobReader(BasePydanticReader):
     blob: Optional[str] = None
     name_starts_with: Optional[str] = None
     include: Optional[Any] = None
-    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
     connection_string: Optional[str] = None
     account_url: Optional[str] = None
     credential: Optional[Any] = None
