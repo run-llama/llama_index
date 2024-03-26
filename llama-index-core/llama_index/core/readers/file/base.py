@@ -165,6 +165,7 @@ class SimpleDirectoryReader(BaseReader):
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
+        raise_on_error (bool): Whether to raise an error if a file cannot be read.
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
         to using the local file system. Can be changed to use any remote file system
         exposed via the fsspec interface.
@@ -186,6 +187,7 @@ class SimpleDirectoryReader(BaseReader):
         file_extractor: Optional[Dict[str, BaseReader]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
+        raise_on_error: bool = False,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Initialize with parameters."""
@@ -203,6 +205,7 @@ class SimpleDirectoryReader(BaseReader):
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
+        self.raise_on_error = raise_on_error
         _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
         if input_files:
@@ -353,6 +356,7 @@ class SimpleDirectoryReader(BaseReader):
         filename_as_id: bool = False,
         encoding: str = "utf-8",
         errors: str = "ignore",
+        raise_on_error: bool = False,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
         """Static method for loading file.
@@ -379,6 +383,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
+        raise_on_error (bool): Whether to raise an error if a file cannot be read.
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
             to using the local file system. Can be changed to use any remote file system
 
@@ -414,6 +419,8 @@ class SimpleDirectoryReader(BaseReader):
                 # about missing dependencies
                 raise ImportError(str(e))
             except Exception as e:
+                if raise_on_error:
+                    raise
                 # otherwise, just skip the file and report the error
                 print(
                     f"Failed to load file {input_file} with error: {e}. Skipping...",
@@ -475,6 +482,8 @@ class SimpleDirectoryReader(BaseReader):
                 # about missing dependencies
                 raise ImportError(str(e))
             except Exception as e:
+                if self.raise_on_error:
+                    raise
                 # otherwise, just skip the file and report the error
                 print(
                     f"Failed to load file {input_file} with error: {e}. Skipping...",
