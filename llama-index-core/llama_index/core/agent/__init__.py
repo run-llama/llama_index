@@ -9,6 +9,7 @@ from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.agent.runner.parallel import ParallelAgentRunner
 from llama_index.core.agent.types import Task
 from llama_index.core.chat_engine.types import AgentChatResponse
+from llama_index.core.agent.function_calling.step import FunctionCallingAgentWorker
 
 __all__ = [
     "AgentRunner",
@@ -18,6 +19,7 @@ __all__ = [
     "CustomSimpleAgentWorker",
     "QueryPipelineAgentWorker",
     "ReActChatFormatter",
+    "FunctionCallingAgentWorker",
     # beta
     "MultimodalReActAgentWorker",
     # schema-related

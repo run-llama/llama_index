@@ -59,13 +59,18 @@ class SummaryModule(BaseModel):
         arbitrary_types_allowed = True
 
     def __init__(
-        self, llm: Optional[LLM] = None, summary_prompt: str = DEFAULT_SUMMARY_PROMPT
+        self,
+        llm: Optional[LLM] = None,
+        summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
+        num_workers: int = 4,
     ) -> None:
         response_synthesizer = get_response_synthesizer(
             response_mode="tree_summarize", use_async=True, llm=llm
         )
         super().__init__(
-            response_synthesizer=response_synthesizer, summary_prompt=summary_prompt
+            response_synthesizer=response_synthesizer,
+            summary_prompt=summary_prompt,
+            num_workers=num_workers,
         )
 
     async def generate_summaries(

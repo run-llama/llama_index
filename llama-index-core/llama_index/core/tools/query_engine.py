@@ -61,18 +61,7 @@ class QueryEngineTool(AsyncBaseTool):
         return self._metadata
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        if args is not None and len(args) > 0:
-            query_str = str(args[0])
-        elif kwargs is not None and "input" in kwargs:
-            # NOTE: this assumes our default function schema of `input`
-            query_str = kwargs["input"]
-        elif kwargs is not None and self._resolve_input_errors:
-            query_str = str(kwargs)
-        else:
-            raise ValueError(
-                "Cannot call query engine without specifying `input` parameter."
-            )
-
+        query_str = self._get_query_str(*args, **kwargs)
         response = self._query_engine.query(query_str)
         return ToolOutput(
             content=str(response),
@@ -82,16 +71,7 @@ class QueryEngineTool(AsyncBaseTool):
         )
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        if args is not None and len(args) > 0:
-            query_str = str(args[0])
-        elif kwargs is not None and "input" in kwargs:
-            # NOTE: this assumes our default function schema of `input`
-            query_str = kwargs["input"]
-        elif kwargs is not None and self._resolve_input_errors:
-            query_str = str(kwargs)
-        else:
-            raise ValueError("Cannot call query engine without inputs")
-
+        query_str = self._get_query_str(*args, **kwargs)
         response = await self._query_engine.aquery(query_str)
         return ToolOutput(
             content=str(response),
@@ -112,3 +92,17 @@ class QueryEngineTool(AsyncBaseTool):
             description=self.metadata.description,
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
+
+    def _get_query_str(self, *args, **kwargs) -> str:
+        if args is not None and len(args) > 0:
+            query_str = str(args[0])
+        elif kwargs is not None and "input" in kwargs:
+            # NOTE: this assumes our default function schema of `input`
+            query_str = kwargs["input"]
+        elif kwargs is not None and self._resolve_input_errors:
+            query_str = str(kwargs)
+        else:
+            raise ValueError(
+                "Cannot call query engine without specifying `input` parameter."
+            )
+        return query_str

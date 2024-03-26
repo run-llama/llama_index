@@ -3,7 +3,7 @@ from typing import Optional
 from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
-from config import CHROMA_DIRECTORY, EMBEDDINGS
+from llama_index.packs.docugami_kg_rag.config import CHROMA_DIRECTORY, EMBEDDINGS
 
 import chromadb
 

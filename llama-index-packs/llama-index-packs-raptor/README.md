@@ -76,3 +76,30 @@ retriever = RaptorRetriever([], ..., vector_store=vector_store)
 ```
 
 Check out the [notebook here for complete details!](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-raptor/examples/raptor.ipynb).
+
+## Configure Summary Module
+
+Using the SummaryModule you can configure how the Raptor Pack does summaries and how many workers are applied to summaries.
+
+You can configure the LLM.
+
+You can configure summary_prompt. This will change the prompt sent to your LLM to summarize you docs.
+
+You can configure num_workers, which will influence the number of workers or rather async semaphores allowing more summaries to process simulatneously.
+This might affect openai or other LLm provider API limits, be aware.
+
+```python
+from llama_index.packs.raptor.base import SummaryModule
+from llama_index.packs.raptor import RaptorRetriever
+
+summary_prompt = "As a professional summarizer, create a concise and comprehensive summary of the provided text, be it an article, post, conversation, or passage with as much detail as possible."
+
+# Adding SummaryModule you can configure the summary prompt and number of workers doing summaries.
+summary_module = SummaryModule(
+    llm=llm, summary_prompt=summary_prompt, num_workers=16
+)
+
+pack = RaptorPack(
+    documents, llm=llm, embed_model=embed_model, summary_module=summary_module
+)
+```
