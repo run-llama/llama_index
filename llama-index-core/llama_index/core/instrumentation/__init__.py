@@ -5,7 +5,7 @@ from llama_index.core.instrumentation.span_handlers import NullSpanHandler
 root_dispatcher: Dispatcher = Dispatcher(
     name="root",
     event_handlers=[NullEventHandler()],
-    span_handler=NullSpanHandler(),
+    span_handlers=[NullSpanHandler()],
     propagate=False,
 )
 
