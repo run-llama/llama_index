@@ -24,7 +24,8 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 class GoogleDriveReader(BasePydanticReader):
     """Google Drive Reader.
 
-    Reads files from Google Drive.
+    Reads files from Google Drive. Credentials passed directly to the constructor
+    will take precedence over those passed as file paths.
 
     Args:
         is_cloud (Optional[bool]): Whether the reader is being used in
@@ -84,7 +85,7 @@ class GoogleDriveReader(BasePydanticReader):
             },
         }
 
-        # read the file contents
+        # Read the file contents so they can be serialized and stored.
         if client_config is None and credentials_path is not None:
             with open(credentials_path, encoding="utf-8") as json_file:
                 client_config = json.load(json_file)
