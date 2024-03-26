@@ -30,6 +30,7 @@ def default_output_processor(
         return output
 
     local_vars = {"df": df}
+    global_vars = {"np": np, "pd": pd}
 
     output = parse_code_markdown(output, only_last=True)[0]
 
@@ -44,13 +45,13 @@ def default_output_processor(
         if module_end_str.strip("'\"") != module_end_str:
             # if there's leading/trailing quotes, then we need to eval
             # string to get the actual expression
-            module_end_str = safe_eval(module_end_str, {"np": np}, local_vars)
+            module_end_str = safe_eval(module_end_str, global_vars, local_vars)
         try:
             # str(pd.dataframe) will truncate output by display.max_colwidth
             # set width temporarily to extract more text
             if "max_colwidth" in output_kwargs:
                 pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
-            output_str = str(safe_eval(module_end_str, {"np": np}, local_vars))
+            output_str = str(safe_eval(module_end_str, global_vars, local_vars))
             pd.reset_option("display.max_colwidth")
             return output_str
 
