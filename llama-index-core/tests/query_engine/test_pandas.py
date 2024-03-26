@@ -111,8 +111,7 @@ def test_default_output_processor_rce2() -> None:
     output = parser.parse(injected_code)
 
     assert (
-        "Execution of code containing references to private or dunder methods, or disallowed builtins, is forbidden!"
-        in output
+        "Execution of code containing references to private or dunder methods" in output
     ), "Injected code executed successfully!"
 
 
