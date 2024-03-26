@@ -9,6 +9,7 @@ class RankLLMRerank(BaseNodePostprocessor):
     """RankLLM-based reranker."""
     top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
     model: str = Field(default="zephyr", description="Reranker model name.")
+    with_retrieval: bool = Field(default=False, description="Perform retrieval before reranking.")
     _model: Any = PrivateAttr()
     _result: Any = PrivateAttr()
     _retriever: Any = PrivateAttr()
@@ -16,15 +17,24 @@ class RankLLMRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 10,
+        with_retrieval: bool = False,
         model: str = "zephyr",
     ):
         try: 
             from rank_llm.result import Result 
             self._result = Result
-            from rank_llm.rerank.zephyr_reranker import ZephyrReranker
-            self._model = ZephyrReranker()
-            from rank_llm.retrieve.retriever import Retriever
-            self._retriever = Retriever
+
+
+            if model == "vicuna":
+                from rank_llm.rerank.vicuna_reranker import VicunaReranker
+                self._model = VicunaReranker()
+            else:
+                from rank_llm.rerank.zephyr_reranker import ZephyrReranker
+                self._model = ZephyrReranker()
+                
+            if with_retrieval:
+                from rank_llm.retrieve.retriever import Retriever
+                self._retriever = Retriever
 
         except ImportError:
             raise ImportError(
@@ -34,6 +44,7 @@ class RankLLMRerank(BaseNodePostprocessor):
 
         super().__init__(
             top_n=top_n,
+            with_retrieval=with_retrieval,
             model=model,
         )
     
@@ -49,26 +60,20 @@ class RankLLMRerank(BaseNodePostprocessor):
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
 
-        docs = [node.get_content() for node in nodes]
+        docs = [(node.get_content(),node.get_score()) for node in nodes]
 
-        # items = self._result(query=query_bundle.query_str, hits=[{"content": doc, "qid": 1, "docid": str(index), "rank": index, "score": index} for index,doc in enumerate(docs,start=1)])
-        # print(items)
-
-
-        #hits = [{"content": doc, "qid": 1, "docid": str(index), "rank": index, "score": index} for index,doc in enumerate(docs,start=1)]
-
-        retrieved_results = self._retriever.from_inline_documents(query=query_bundle.query_str,documents=docs)
-        print(retrieved_results)
-
-        permutation = self._model.rerank(retrieved_results)
-
-        print(permutation)
+        if self.with_retrieval:
+            hits = [{"content": doc[0], "qid": 1, "docid": str(index), "rank": index, "score": doc[1]} for index,doc in enumerate(docs)]
+            retrieved_results = self._retriever.from_inline_hits(query=query_bundle.query_str, hits=hits)
+        else:
+            retrieved_results = [self._result(query=query_bundle.query_str, hits=[{"content": doc[0], "qid": 1, "docid": str(index), "rank": index, "score": doc[1]} for index,doc in enumerate(docs)])]
+            
+        permutation = self._model.rerank(retrieved_results = retrieved_results, rank_end = len(docs), window_size = min(20,len(docs)))
 
         new_nodes: List[NodeWithScore] = []
-
         for hit in permutation[0].hits:
             idx: int = int(hit['docid'])
             new_nodes.append(
-                NodeWithScore(node=nodes[idx-1].node, score=nodes[idx-1].score)
+                NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
-        return nodes[: self.top_n]
+        return new_nodes[: self.top_n]
