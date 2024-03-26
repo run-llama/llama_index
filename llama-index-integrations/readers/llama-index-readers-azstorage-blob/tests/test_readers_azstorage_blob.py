@@ -17,7 +17,7 @@ def test_serialize():
     schema = reader.schema()
     assert schema is not None
     assert len(schema) > 0
-    assert "bucket" in schema["properties"]
+    assert "container_name" in schema["properties"]
 
     json = reader.json(exclude_unset=True)
 
