@@ -420,7 +420,7 @@ class SimpleDirectoryReader(BaseReader):
                 raise ImportError(str(e))
             except Exception as e:
                 if raise_on_error:
-                    raise
+                    raise Exception("Error loading file") from e
                 # otherwise, just skip the file and report the error
                 print(
                     f"Failed to load file {input_file} with error: {e}. Skipping...",
