@@ -91,17 +91,22 @@ class DunderVisitor(ast.NodeVisitor):
         self.has_access_to_private_entity = False
         self.has_access_to_disallowed_builtin = False
 
+        builtins = globals()["__builtins__"].keys()
+        self._builtins = builtins
+
     def visit_Name(self, node: ast.Name) -> None:
+        print(node.id)
         if node.id.startswith("_"):
             self.has_access_to_private_entity = True
-        if node.id not in ALLOWED_BUILTINS:
+        if node.id not in ALLOWED_BUILTINS and node.id in self._builtins:
             self.has_access_to_disallowed_builtin = True
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
+        print(node.attr)
         if node.attr.startswith("_"):
             self.has_access_to_private_entity = True
-        if node.attr not in ALLOWED_BUILTINS:
+        if node.attr not in ALLOWED_BUILTINS and node.attr in self._builtins:
             self.has_access_to_disallowed_builtin = True
         self.generic_visit(node)
 
