@@ -114,6 +114,10 @@ class GoogleDriveReader(BasePydanticReader):
             **kwargs,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "GoogleDriveReader"
+
     def _get_credentials(self) -> Tuple[Credentials]:
         """Authenticate with Google and save credentials.
         Download the service_account_key.json file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
