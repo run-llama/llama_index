@@ -325,7 +325,7 @@ postprocessor = RankLLMRerank(top_n=5, model="zephyr")
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [2021 Lyft 10-k](/examples/node_postprocessor/rankLLM.ipynb).
+Full notebook guide is available [Van Gogh Wiki](/examples/node_postprocessor/rankLLM.ipynb).
 
 ## All Notebooks
 
