@@ -77,6 +77,7 @@ nav:
           - ./examples/agent/openai_agent_query_plan.ipynb
           - ./examples/agent/openai_retrieval_benchmark.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
+          - ./examples/agent/mistral_agent.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -427,6 +428,7 @@ nav:
           - ./examples/retrievers/videodb_retriever.ipynb
       - Tools:
           - ./examples/tools/OnDemandLoaderTool.ipynb
+          - ./examples/tools/eval_query_engine_tool.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -814,6 +816,7 @@ nav:
           - ./api_reference/packs/ollama_query_engine.md
           - ./api_reference/packs/panel_chatbot.md
           - ./api_reference/packs/query_understanding_agent.md
+          - ./api_reference/packs/raft_dataset.md
           - ./api_reference/packs/rag_cli_local.md
           - ./api_reference/packs/rag_evaluator.md
           - ./api_reference/packs/rag_fusion_query_pipeline.md
@@ -1134,6 +1137,7 @@ nav:
               - ./api_reference/storage/chat_store/simple.md
           - Docstore:
               - ./api_reference/storage/docstore/dynamodb.md
+              - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
               - ./api_reference/storage/docstore/index.md
               - ./api_reference/storage/docstore/mongodb.md
@@ -1150,6 +1154,7 @@ nav:
               - ./api_reference/storage/graph_stores/simple.md
           - Index Store:
               - ./api_reference/storage/index_store/dynamodb.md
+              - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
               - ./api_reference/storage/index_store/index.md
               - ./api_reference/storage/index_store/mongodb.md
@@ -1740,6 +1745,9 @@ plugins:
             - ../llama-index-integrations/graph_stores/llama-index-graph-stores-neptune
             - ../llama-index-integrations/embeddings/llama-index-embeddings-alephalpha
             - ../llama-index-integrations/llms/llama-index-llms-alephalpha
+            - ../llama-index-packs/llama-index-packs-raft-dataset
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-elasticsearch
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-elasticsearch
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

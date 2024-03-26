@@ -30,12 +30,16 @@ readme = "README.md"
 version = "0.1.4"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.9,<3.13"
 llama-index-core = "^0.10.1"
 qdrant-client = "^1.7.1"
 grpcio = "^1.60.0"
 
+[tool.poetry.extras]
+fastembed = ["fastembed"]
+
 [tool.poetry.group.dev.dependencies]
+fastembed = {optional = true, version = "^0.2.5"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

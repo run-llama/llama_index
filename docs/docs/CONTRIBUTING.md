@@ -375,22 +375,31 @@ Whether if it's the latest research, or what you thought of in the shower, we'd 
 
 We would love your help in making the project cleaner, more robust, and more understandable. If you find something confusing, it most likely is for other people as well. Help us be better!
 
-## Development Guideline
+## Development Guidelines
 
-### Environment Setup
+### Setting up environment
 
 LlamaIndex is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
-and dirty guide to getting your environment setup.
+and dirty guide to setting up your environment for local development.
 
-First, create a fork of LlamaIndex, by clicking the "Fork" button on the [LlamaIndex Github page](https://github.com/jerryjliu/llama_index).
-Following [these steps](https://docs.github.com/en/get-started/quickstart/fork-a-repo) for more details
-on how to fork the repo and clone the forked repo.
+1. Fork [LlamaIndex Github repo][ghr]\* and clone it locally. (New to GitHub / git? Here's [how][frk].)
+2. In a terminal, `cd` into the directory of your local clone of your forked repo.
+3. Install [pre-commit hooks][pch]\* by running `pre-commit install`. These hooks are small house-keeping scripts executed every time you make a git commit, which automates away a lot of chores.
+4. `cd` into the specific package you want to work on. For example, if I want to work on the core package, I execute `cd llama-index-core/`. (New to terminal / command line? Here's a [getting started guide][gsg].)
+5. Prepare a [virtual environment][vev].
+   1. [Install Poetry][pet]\*. This will help you manage package dependencies.
+   2. Execute `poetry shell`. This command will create a [virtual environment][vev] specific for this package, which keeps installed packages contained to this project. (New to Poetry, the dependency & packaging manager for Python? Read about its basic usage [here][bus].)
+   3. Execute `poetry install --with dev,docs`\*. This will install all dependencies needed for local development. To see what will be installed, read the `pyproject.toml` under that directory.
 
-Then, create a new Python virtual environment using poetry.
+[frk]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
+[ghr]: https://github.com/run-llama/llama_index/
+[pch]: https://pre-commit.com/
+[gsg]: https://www.freecodecamp.org/news/command-line-for-beginners/
+[pet]: https://python-poetry.org/docs/#installation
+[vev]: https://python-poetry.org/docs/managing-environments/
+[bus]: https://python-poetry.org/docs/basic-usage/
 
-- [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
-- `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
-- `poetry install --with dev,docs` - this will install all dependencies needed for most local development
+Steps marked with an asterisk (`*`) are one-time tasks. You don't have to repeat them when you attempt to contribute on something else next time.
 
 Now you should be set!
 
@@ -401,41 +410,52 @@ let's also make sure to `test` it and perhaps create an `example notebook`.
 
 #### Formatting/Linting
 
-You can format and lint your changes with the following commands in the root directory:
+We run an assortment of linters: `black`, `ruff`, `mypy`.
+
+If you have installed pre-commit hooks in this repo, they should have taken care of the formatting and linting automatically.
+
+If -- for whatever reason -- you would like to do it manually, you can format and lint your changes with the following commands in the root directory:
 
 ```bash
 make format; make lint
 ```
 
-You can also make use of our pre-commit hooks by setting up git hook scripts:
-
-```bash
-pre-commit install
-```
-
-We run an assortment of linters: `black`, `ruff`, `mypy`.
+Under the hood, we still install pre-commit hooks for you, so that you don't have to do this manually next time.
 
 #### Testing
 
-For bigger changes, you'll want to create a unit test. Our tests are in the `tests` folder.
-We use `pytest` for unit testing. To run all unit tests, run the following in the root dir:
+If you modified or added code logic, **create test(s)**, because they help preventing other maintainers from accidentally breaking the nice things you added / re-introducing the bugs you fixed.
 
-```bash
-pytest tests
-```
+- In almost all cases, add **unit tests**.
+- If your change involves adding a new integration, also add **integration tests**. When doing so, please [mock away][mck] the remote system that you're integrating LlamaIndex with, so that when the remote system changes, LlamaIndex developers won't see test failures.
 
-or
+Reciprocally, you should **run existing tests** (from every package that you touched) before making a git commit, so that you can be sure you didn't break someone else's good work.
 
-```bash
+(By the way, when a test is run with the goal of detecting whether something broke in a new version of the codebase, it's referred to as a "[regression test][reg]". You'll also hear people say "the test _regressed_" as a more diplomatic way of saying "the test _failed_".)
+
+Our tests are stored in the `tests` folders under each package directory. We use the testing framework [pytest][pyt], so you can **just run `pytest` in each package you touched** to run all its tests.
+
+Just like with formatting and linting, if you prefer to do things the [make][mkf] way, run:
+
+```shell
 make test
 ```
+
+Regardless of whether you have run them locally, a [CI system][cis] will run all affected tests on your PR when you submit one anyway. There, tests are orchestrated with [Pants][pts], the build system of our choice. There is a slight chance that tests broke on CI didn't break on your local machine or the other way around. When that happens, please take our CI as the source of truth. This is because our release pipeline (which builds the packages users are going to download from PyPI) are run in the CI, not on your machine (even if you volunteer), so it's the CI that is the golden standard.
+
+[reg]: https://www.browserstack.com/guide/regression-testing
+[mck]: https://pytest-mock.readthedocs.io/en/latest/
+[pyt]: https://docs.pytest.org/
+[mkf]: https://makefiletutorial.com/
+[cis]: https://www.atlassian.com/continuous-delivery/continuous-integration
+[pts]: https://www.pantsbuild.org/
 
 ### Creating an Example Notebook
 
 For changes that involve entirely new features, it may be worth adding an example Jupyter notebook to showcase
 this feature.
 
-Example notebooks can be found in this folder: <https://github.com/run-llama/llama_index/tree/main/docs/examples>.
+Example notebooks can be found in [this folder](https://github.com/run-llama/llama_index/tree/main/docs/examples).
 
 ### Creating a pull request
 
