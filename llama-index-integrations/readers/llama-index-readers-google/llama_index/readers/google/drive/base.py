@@ -25,9 +25,9 @@ class GoogleDriveReader(BaseReader):
 
     def __init__(
         self,
-        service_account_key_path: str = "service_account_key.json",
         client_secrets_path: str = "credentials.json",
         authorized_user_creds_path: str = "token.json",
+        service_account_key_path: str = "service_account_key.json",
     ) -> None:
         """Initialize with parameters."""
         self.service_account_key_path = service_account_key_path
