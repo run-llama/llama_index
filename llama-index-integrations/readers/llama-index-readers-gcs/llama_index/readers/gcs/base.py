@@ -5,7 +5,6 @@ A loader that fetches a file or iterates through a directory on Google Cloud Sto
 
 """
 
-import warnings
 from typing import Callable, Dict, List, Optional, Union
 
 from google.oauth2 import service_account
@@ -59,13 +58,12 @@ class GCSReader(BasePydanticReader):
     num_files_limit: Optional[int] = None
     file_metadata: Optional[Callable[[str], Dict]] = Field(default=None, exclude=True)
     service_account_key_json: Optional[str] = None
-    custom_reader_path: Optional[str] = None
 
     @classmethod
     def class_name(cls) -> str:
         return "GCSReader"
 
-    def load_gcs_files_as_docs(self, temp_dir=None) -> List[Document]:
+    def load_gcs_files_as_docs(self) -> List[Document]:
         """Load file(s) from GCS."""
         from gcsfs import GCSFileSystem
 
@@ -92,31 +90,22 @@ class GCSReader(BasePydanticReader):
         loader = SimpleDirectoryReader(
             input_dir=input_dir,
             input_files=input_files,
+            recursive=self.recursive,
             file_extractor=self.file_extractor,
             required_exts=self.required_exts,
             filename_as_id=self.filename_as_id,
             num_files_limit=self.num_files_limit,
             file_metadata=self.file_metadata,
-            recursive=self.recursive,
             fs=gcsfs,
         )
 
         return loader.load_data()
 
-    def load_data(self, custom_temp_subdir: str = None) -> List[Document]:
+    def load_data(self) -> List[Document]:
         """
         Load the file(s) from GCS.
-
-        Args:
-            custom_temp_subdir (str, optional): This parameter is deprecated and unused. Defaults to None.
 
         Returns:
             List[Document]: A list of documents loaded from GCS.
         """
-        if custom_temp_subdir is not None:
-            warnings.warn(
-                "The `custom_temp_subdir` parameter is deprecated and unused. Please remove it from your code.",
-                DeprecationWarning,
-            )
-
         return self.load_gcs_files_as_docs()
