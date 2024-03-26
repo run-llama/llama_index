@@ -24,7 +24,7 @@ from llama_index.core.chat_engine.types import (
     AgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.llms.llm import LLM, ToolSelection
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
@@ -33,7 +33,6 @@ from llama_index.core.tools.calling import (
     call_tool_with_selection,
     acall_tool_with_selection,
 )
-from llama_index.llms.openai import OpenAI
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 
@@ -57,7 +56,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     def __init__(
         self,
         tools: List[BaseTool],
-        llm: OpenAI,
+        llm: FunctionCallingLLM,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = 5,
@@ -93,7 +92,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         cls,
         tools: Optional[List[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        llm: Optional[LLM] = None,
+        llm: Optional[FunctionCallingLLM] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
