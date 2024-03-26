@@ -112,7 +112,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 max_length = min(max_length, int(self._tokenizer.model_max_length))
             except Exception as exc:
                 logger.warning(
-                    f"An error occurred while retrieving tokenizer max length: {exc}", exc_info=True
+                    f"An error occurred while retrieving tokenizer max length: {exc}",
+                    exc_info=True,
                 )
 
         if isinstance(pooling, str):
