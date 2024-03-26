@@ -25,14 +25,14 @@ class GoogleDriveReader(BaseReader):
 
     def __init__(
         self,
-        client_secrets_path: str = "credentials.json",
-        authorized_user_creds_path: str = "token.json",
+        credentials_path: str = "credentials.json",
+        token_path: str = "token.json",
         service_account_key_path: str = "service_account_key.json",
     ) -> None:
         """Initialize with parameters."""
         self.service_account_key_path = service_account_key_path
-        self.client_secrets_path = client_secrets_path
-        self.authorized_user_creds_path = authorized_user_creds_path
+        self.credentials_path = credentials_path
+        self.token_path = token_path
 
         self._creds = None
 
@@ -67,10 +67,8 @@ class GoogleDriveReader(BaseReader):
         # First, we need the Google API credentials for the app
         creds = None
 
-        if Path(self.authorized_user_creds_path).exists():
-            creds = Credentials.from_authorized_user_file(
-                self.authorized_user_creds_path, SCOPES
-            )
+        if Path(self.token_path).exists():
+            creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
         elif Path(self.service_account_key_path).exists():
             return service_account.Credentials.from_service_account_file(
                 self.service_account_key_path, scopes=SCOPES
@@ -81,12 +79,12 @@ class GoogleDriveReader(BaseReader):
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.client_secrets_path, SCOPES
+                flow = InstalledAppFlow.from_credentials_file(
+                    self.credentials_path, SCOPES
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(self.authorized_user_creds_path, "w", encoding="utf-8") as token:
+            with open(self.token_path, "w", encoding="utf-8") as token:
                 token.write(creds.to_json())
 
         return creds
