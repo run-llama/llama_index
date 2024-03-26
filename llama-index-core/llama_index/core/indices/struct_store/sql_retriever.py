@@ -294,7 +294,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         logger.info(f"> Table desc str: {table_desc_str}")
         if self._verbose:
             print(f"> Table desc str: {table_desc_str}")
-
         response_str = self._llm.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,

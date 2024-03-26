@@ -137,7 +137,6 @@ if __name__ == "__main__":
     )
 
     msg_uuid = response.headers["msg_uuid"]
-    breakpoint()
     if response.headers["report"]:
         report = requests.get(
             url=base_url + f"/chat/{chat_uuid}/message/{msg_uuid}/report/",
