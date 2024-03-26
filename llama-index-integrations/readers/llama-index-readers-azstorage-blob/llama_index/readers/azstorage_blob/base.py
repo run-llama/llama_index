@@ -9,9 +9,10 @@ import os
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Union
-from pydantic import Field
 
 from azure.storage.blob import ContainerClient
+
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
@@ -54,9 +55,14 @@ class AzStorageBlobReader(BasePydanticReader):
     connection_string: Optional[str] = None
     account_url: Optional[str] = None
     credential: Optional[Any] = None
+    is_remote: bool = True
 
     # Not in use. As part of the TODO below. Is part of the kwargs.
     # self.preloaded_data_path = kwargs.get('preloaded_data_path', None)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AzStorageBlobReader"
 
     def load_data(self) -> List[Document]:
         """Load file(s) from Azure Storage Blob."""
