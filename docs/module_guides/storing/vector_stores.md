@@ -15,7 +15,6 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store             | Type                    | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 | ------------------------ | ----------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
-| AnalyticDB              | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Apache Cassandra®       | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Astra DB                 | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Azure Cognitive Search   | cloud                   |                    | ✓             | ✓      | ✓               |       |
@@ -63,7 +62,6 @@ For more details, see [Vector Store Integrations](/community/integrations/vector
 caption: Examples
 maxdepth: 1
 ---
-/examples/vector_stores/AnalyticDBDemo.ipynb
 /examples/vector_stores/AstraDBIndexDemo.ipynb
 /examples/vector_stores/AsyncIndexCreationDemo.ipynb
 /examples/vector_stores/AzureAISearchIndexDemo.ipynb

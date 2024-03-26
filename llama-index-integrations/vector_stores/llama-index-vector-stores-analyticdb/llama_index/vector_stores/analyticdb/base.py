@@ -2,7 +2,7 @@
 
 import logging
 import json
-from typing import Any, List
+from typing import Any, List, Union
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -51,7 +51,9 @@ def _build_filter_clause(filter_: MetadataFilter) -> str:
         return f"metadata_->>'{filter_.key}' {adb_operator} '{filter_.value}'"
 
 
-def _recursively_parse_adb_filter(filters: MetadataFilters) -> str:
+def _recursively_parse_adb_filter(filters: MetadataFilters) -> Union[str, None]:
+    if not filters:
+        return None
     return f" {filters.condition} ".join(
         [
             _build_filter_clause(filter_) if isinstance(filter_, MetadataFilter)
@@ -290,6 +292,17 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             similarities=similarities,
             ids=ids,
         )
+
+    def delete_collection(self):
+        request = gpdb_20160503_models.DeleteCollectionRequest(
+            dbinstance_id=self.instance_id,
+            region_id=self.region_id,
+            namespace=self.namespace,
+            namespace_password=self.namespace_password,
+            collection=self.collection,
+        )
+        self._client.delete_collection(request)
+        _logger.debug(f"collection {self.collection} deleted")
 
     def _initialize(self) -> None:
         if not self._is_initialized:
