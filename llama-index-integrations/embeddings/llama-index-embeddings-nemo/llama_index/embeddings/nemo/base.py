@@ -49,9 +49,9 @@ class NeMoEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "NeMoEmbedding"
 
-    def _get_embedding(self, text: str, input_type: str) -> List[float]:
+    def _get_embedding(self, texts: List[str], input_type: str) -> List[List[float]]:
         payload = json.dumps(
-            {"input": text, "model": self.model_name, "input_type": input_type}
+            {"input": texts, "model": self.model_name, "input_type": input_type}
         )
         headers = {"Content-Type": "application/json"}
 
@@ -69,41 +69,56 @@ class NeMoEmbedding(BaseEmbedding):
             )
         else:
             response = json.loads(response.text)
-            return response["data"][0]["embedding"]
+            return response["data"]
 
     async def _aget_embedding(
-        self, session: Any, text: str, input_type: str
-    ) -> List[float]:
+        self, session: Any, texts: List[str], input_type: str
+    ) -> List[List[float]]:
         headers = {"Content-Type": "application/json"}
 
         async with session.post(
             self._api_endpoint_url,
-            json={"input": text, "model": self.model_name, "input_type": input_type},
+            json={"input": texts, "model": self.model_name, "input_type": input_type},
             headers=headers,
         ) as response:
             response.raise_for_status()
             answer = await response.text()
             answer = json.loads(answer)
-            return answer["data"][0]["embedding"]
+            return answer["data"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return self._get_embedding(query, input_type="query")
+        return self._get_embedding([query], input_type="query")[0]["embedding"]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self._get_embedding(text, input_type="passage")
+        return self._get_embedding([text], input_type="passage")[0]["embedding"]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        return [self._get_embedding(text, input_type="passage") for text in texts]
+        return [
+            embedding["embedding"]
+            for embedding in self._get_embedding(texts, input_type="passage")
+        ]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """Asynchronously get query embedding."""
         async with aiohttp.ClientSession() as session:
-            return await self._aget_embedding(session, query, input_type="query")
+            embedding = await self._aget_embedding(session, [query], input_type="query")
+            return embedding[0]["embedding"]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         async with aiohttp.ClientSession() as session:
-            return await self._aget_embedding(session, text, input_type="passage")
+            embedding = await self._aget_embedding(
+                session, [text], input_type="passage"
+            )
+            return embedding[0]["embedding"]
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[float]:
+        """Asynchronously get text embedding."""
+        async with aiohttp.ClientSession() as session:
+            embeddings = await self._aget_embedding(
+                session, texts, input_type="passage"
+            )
+            return [embedding["embedding"] for embedding in embeddings]
