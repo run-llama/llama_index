@@ -7,13 +7,13 @@ from typing import Any, Dict, List
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
 
 
-class SharePointReader(BaseReader):
+class SharePointReader(BasePydanticReader):
     """SharePoint reader.
 
 
