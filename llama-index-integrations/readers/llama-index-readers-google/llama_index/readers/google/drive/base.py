@@ -144,7 +144,7 @@ class GoogleDriveReader(BasePydanticReader):
                 creds = flow.run_local_server(port=0)
 
             # Save the credentials for the next run
-            if not self.is_cloud:
+            if not self._is_cloud:
                 with open(self.token_path, "w", encoding="utf-8") as token:
                     token.write(creds.to_json())
 
