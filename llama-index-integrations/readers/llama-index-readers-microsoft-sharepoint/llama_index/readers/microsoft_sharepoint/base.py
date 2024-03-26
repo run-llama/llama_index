@@ -45,6 +45,10 @@ class SharePointReader(BasePydanticReader):
             **kwargs,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "SharePointReader"
+
     def _get_access_token(self) -> str:
         """
         Gets the access_token for accessing file from SharePoint.
