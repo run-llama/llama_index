@@ -9,6 +9,7 @@ import os
 from importlib.metadata import version
 from typing import Any, Dict, List, Optional, cast
 
+import pymongo.collection
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -103,7 +104,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",
-        id_key: str = "id",
+        id_key: str = "_id",
         embedding_key: str = "embedding",
         text_key: str = "text",
         metadata_key: str = "metadata",
@@ -193,9 +194,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        self._collection.delete_one(
+        res = self._collection.delete_many(
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
         )
+        return res
 
     @property
     def client(self) -> Any:
@@ -244,7 +246,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     metadata_dict
                 )
 
-                node = TextNode(
+                node = TextNode(  # TODO Consider using TextNodeWithScore
                     text=text,
                     id_=id,
                     metadata=metadata,
