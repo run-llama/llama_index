@@ -28,20 +28,22 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def prepare_to_exit_span(
         self, *args, id: str, result: Optional[Any] = None, **kwargs
-    ) -> None:
+    ) -> SimpleSpan:
         """Logic for preparing to drop a span."""
         span = self.open_spans[id]
         span = cast(SimpleSpan, span)
         span.end_time = datetime.now()
         span.duration = (span.end_time - span.start_time).total_seconds()
         self.completed_spans += [span]
+        return span
 
     def prepare_to_drop_span(
         self, *args, id: str, err: Optional[Exception], **kwargs
-    ) -> None:
+    ) -> SimpleSpan:
         """Logic for droppping a span."""
-        if err:
-            raise err
+        if id in self.open_spans:
+            return self.open_spans[id]
+        return None
 
     def _get_trace_trees(self) -> List["Tree"]:
         """Method for getting trace trees."""

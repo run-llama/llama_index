@@ -2,16 +2,18 @@
 
 import logging
 import os
+import json
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -20,22 +22,55 @@ logger = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
-class GoogleDriveReader(BaseReader):
-    """Google drive reader."""
+class GoogleDriveReader(BasePydanticReader):
+    """Google Drive Reader.
+
+    Reads files from Google Drive. Credentials passed directly to the constructor
+    will take precedence over those passed as file paths.
+
+    Args:
+        is_cloud (Optional[bool]): Whether the reader is being used in
+            a cloud environment. Will not save credentials to disk if so.
+            Defaults to False.
+        credentials_path (Optional[str]): Path to client config file.
+            Defaults to None.
+        token_path (Optional[str]): Path to authorized user info file. Defaults
+            to None.
+        service_account_key_path (Optional[str]): Path to service account key
+            file. Defaults to None.
+        client_config (Optional[dict]): Dictionary containing client config.
+            Defaults to None.
+        authorized_user_info (Optional[dict]): Dicstionary containing authorized
+            user info. Defaults to None.
+        service_account_key (Optional[dict]): Dictionary containing service
+            account key. Defaults to None.
+
+
+    """
+
+    client_config: Optional[dict] = None
+    authorized_user_info: Optional[dict] = None
+    service_account_key: Optional[dict] = None
+    token_path: Optional[str] = None
+
+    _is_cloud: bool = PrivateAttr(default=False)
+    _creds: Credentials = PrivateAttr()
+    _mimetypes: dict = PrivateAttr()
 
     def __init__(
         self,
+        is_cloud: Optional[bool] = False,
         credentials_path: str = "credentials.json",
         token_path: str = "token.json",
         service_account_key_path: str = "service_account_key.json",
+        client_config: Optional[dict] = None,
+        authorized_user_info: Optional[dict] = None,
+        service_account_key: Optional[dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
-        self.service_account_key_path = service_account_key_path
-        self.credentials_path = credentials_path
-        self.token_path = token_path
-
         self._creds = None
-
+        self._is_cloud = (is_cloud,)
         # Download Google Docs/Slides/Sheets as actual files
         # See https://developers.google.com/drive/v3/web/mime-types
         self._mimetypes = {
@@ -55,6 +90,30 @@ class GoogleDriveReader(BaseReader):
             },
         }
 
+        # Read the file contents so they can be serialized and stored.
+        if client_config is None and os.path.isfile(credentials_path):
+            with open(credentials_path, encoding="utf-8") as json_file:
+                client_config = json.load(json_file)
+
+        if authorized_user_info is None and os.path.isfile(token_path):
+            with open(token_path, encoding="utf-8") as json_file:
+                authorized_user_info = json.load(json_file)
+
+        if service_account_key is None and os.path.isfile(service_account_key_path):
+            with open(service_account_key_path, encoding="utf-8") as json_file:
+                service_account_key = json.load(json_file)
+
+        if client_config is None and service_account_key is None:
+            raise ValueError("Must specify `client_config` or `service_account_key`.")
+
+        super().__init__(
+            client_config=client_config,
+            authorized_user_info=authorized_user_info,
+            service_account_key=service_account_key,
+            token_path=token_path,
+            **kwargs,
+        )
+
     def _get_credentials(self) -> Tuple[Credentials]:
         """Authenticate with Google and save credentials.
         Download the service_account_key.json file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
@@ -67,11 +126,13 @@ class GoogleDriveReader(BaseReader):
         # First, we need the Google API credentials for the app
         creds = None
 
-        if Path(self.token_path).exists():
-            creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-        elif Path(self.service_account_key_path).exists():
-            return service_account.Credentials.from_service_account_file(
-                self.service_account_key_path, scopes=SCOPES
+        if Path(self.authorized_user_info).exists():
+            creds = Credentials.from_authorized_user_info(
+                self.authorized_user_info, SCOPES
+            )
+        elif Path(self.service_account_key).exists():
+            return service_account.Credentials.from_service_account_info(
+                self.service_account_key, scopes=SCOPES
             )
 
         # If there are no (valid) credentials available, let the user log in.
@@ -79,13 +140,13 @@ class GoogleDriveReader(BaseReader):
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_credentials_file(
-                    self.credentials_path, SCOPES
-                )
+                flow = InstalledAppFlow.from_client_config(self.client_config, SCOPES)
                 creds = flow.run_local_server(port=0)
+
             # Save the credentials for the next run
-            with open(self.token_path, "w", encoding="utf-8") as token:
-                token.write(creds.to_json())
+            if not self._is_cloud:
+                with open(self.token_path, "w", encoding="utf-8") as token:
+                    token.write(creds.to_json())
 
         return creds
 
