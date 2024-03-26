@@ -13,6 +13,7 @@ from llama_index.core.agent.legacy.react.base import ReActAgent
 from typing import (
     Any,
     List,
+    Callable,
     Optional,
     Sequence,
     Type,
@@ -61,6 +62,8 @@ class ReActAgent(AgentRunner):
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         context: Optional[str] = None,
         init_task_state_kwargs: Optional[dict] = None,
+        response_hook: Optional[Callable] = None,
+        # TODO: Remove state
         state: Optional[AgentState] = None,
     ) -> None:
         """Init params."""
@@ -79,6 +82,7 @@ class ReActAgent(AgentRunner):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
+            response_hook=response_hook,
         )
         super().__init__(
             step_engine,
@@ -104,6 +108,7 @@ class ReActAgent(AgentRunner):
         verbose: bool = False,
         context: Optional[str] = None,
         state: Optional[AgentState] = None,
+        response_hook: Optional[Callable] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
         """
@@ -135,6 +140,7 @@ class ReActAgent(AgentRunner):
             verbose=verbose,
             context=context,
             state=state,
+            response_hook=response_hook,
         )
 
     def _get_prompt_modules(self) -> PromptMixinType:

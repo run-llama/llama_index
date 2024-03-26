@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     Tuple,
     cast,
+    Callable,
 )
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
@@ -87,6 +88,7 @@ class ReActAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        response_hook: Optional[Callable] = None,
     ) -> None:
         self._llm = llm
         self.callback_manager = callback_manager or llm.callback_manager
@@ -94,6 +96,7 @@ class ReActAgentWorker(BaseAgentWorker):
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
+        self.response_hook = response_hook
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -116,6 +119,7 @@ class ReActAgentWorker(BaseAgentWorker):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        response_hook: Optional[Callable] = None,
         **kwargs: Any,
     ) -> "ReActAgentWorker":
         """
@@ -141,6 +145,7 @@ class ReActAgentWorker(BaseAgentWorker):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
+            response_hook=response_hook,
         )
 
     def _get_prompts(self) -> PromptDictType:
@@ -202,7 +207,11 @@ class ReActAgentWorker(BaseAgentWorker):
         except BaseException as exc:
             raise ValueError(f"Could not parse output: {message_content}") from exc
         if self._verbose:
-            print_text(f"{reasoning_step.get_content()}\n", color="pink")
+            print_text(
+                f"{reasoning_step.get_content()}\n",
+                color="pink",
+                response_hook=self.response_hook,
+            )
         current_reasoning.append(reasoning_step)
 
         if reasoning_step.is_done:
@@ -249,7 +258,11 @@ class ReActAgentWorker(BaseAgentWorker):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue")
+            print_text(
+                f"{observation_step.get_content()}\n",
+                color="blue",
+                response_hook=self.response_hook,
+            )
         return current_reasoning, False
 
     async def _aprocess_actions(
@@ -285,7 +298,7 @@ class ReActAgentWorker(BaseAgentWorker):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue")
+            print_text(f"{observation_step.get_content()}\n", color="blue",  response_hook=self.response_hook)
         return current_reasoning, False
 
     def _get_response(
