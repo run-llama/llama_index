@@ -9,7 +9,6 @@ from typing import List, Optional, Tuple
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
-from pydrive.drive import GoogleDrive
 
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BaseReader
@@ -28,15 +27,14 @@ class GoogleDriveReader(BaseReader):
         self,
         credentials_path: str = "credentials.json",
         token_path: str = "token.json",
-        pydrive_creds_path: str = "creds.txt",
+        service_account_key_path: str = "service_account_key.json",
     ) -> None:
         """Initialize with parameters."""
+        self.service_account_key_path = service_account_key_path
         self.credentials_path = credentials_path
         self.token_path = token_path
-        self.pydrive_creds_path = pydrive_creds_path
 
         self._creds = None
-        self._drive = None
 
         # Download Google Docs/Slides/Sheets as actual files
         # See https://developers.google.com/drive/v3/web/mime-types
@@ -57,41 +55,31 @@ class GoogleDriveReader(BaseReader):
             },
         }
 
-    def _get_credentials(self) -> Tuple[Credentials, GoogleDrive]:
+    def _get_credentials(self) -> Tuple[Credentials]:
         """Authenticate with Google and save credentials.
-        Download the credentials.json file with these instructions: https://developers.google.com/drive/api/v3/quickstart/python.
-            Copy credentials.json file and rename it to client_secrets.json file which will be used by pydrive for downloading files.
-            So, we need two files:
-                1. credentials.json
-                2. client_secrets.json
-            Both 1, 2 are essentially same but needed with two different names according to google-api-python-client, google-auth-httplib2, google-auth-oauthlib and pydrive libraries.
+        Download the service_account_key.json file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
 
         Returns:
-            credentials, pydrive object.
+            credentials
         """
         from google_auth_oauthlib.flow import InstalledAppFlow
-        from pydrive.auth import GoogleAuth
 
         # First, we need the Google API credentials for the app
         creds = None
 
         if Path(self.token_path).exists():
             creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-        elif Path(self.credentials_path).exists():
-            creds = service_account.Credentials.from_service_account_file(
-                self.credentials_path, scopes=SCOPES
+        elif Path(self.service_account_key_path).exists():
+            return service_account.Credentials.from_service_account_file(
+                self.service_account_key_path, scopes=SCOPES
             )
-            gauth = GoogleAuth()
-            gauth.credentials = creds
-            drive = GoogleDrive(gauth)
-            return creds, drive
 
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
+                flow = InstalledAppFlow.from_credentials_file(
                     self.credentials_path, SCOPES
                 )
                 creds = flow.run_local_server(port=0)
@@ -99,26 +87,7 @@ class GoogleDriveReader(BaseReader):
             with open(self.token_path, "w", encoding="utf-8") as token:
                 token.write(creds.to_json())
 
-        # Next, we need user authentication to download files (via pydrive)
-        # Uses client_secrets.json file for authorization.
-        gauth = GoogleAuth()
-        # Try to load saved client credentials
-        gauth.LoadCredentialsFile(self.pydrive_creds_path)
-        if gauth.credentials is None:
-            # Authenticate if they're not there
-            gauth.LocalWebserverAuth()
-        elif gauth.access_token_expired:
-            # Refresh them if expired
-            gauth.Refresh()
-        else:
-            # Initialize the saved creds
-            gauth.Authorize()
-        # Save the current credentials to a file so user doesn't have to auth every time
-        gauth.SaveCredentialsFile(self.pydrive_creds_path)
-
-        drive = GoogleDrive(gauth)
-
-        return creds, drive
+        return creds
 
     def _get_fileids_meta(
         self,
@@ -414,7 +383,7 @@ class GoogleDriveReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
-        self._creds, self._drive = self._get_credentials()
+        self._creds = self._get_credentials()
 
         if folder_id:
             return self._load_from_folder(folder_id, mime_types, query_string)
