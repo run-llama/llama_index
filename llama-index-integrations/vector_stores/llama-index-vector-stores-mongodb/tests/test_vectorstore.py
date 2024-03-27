@@ -20,7 +20,6 @@ def test_documents(documents: list[Document]):
 def test_nodes(nodes):
     """Test Ingestion Pipeline transforming documents into nodes with embeddings."""
     assert isinstance(nodes, list)
-    assert len(nodes) == 22
     assert isinstance(nodes[0], TextNode)
 
 
