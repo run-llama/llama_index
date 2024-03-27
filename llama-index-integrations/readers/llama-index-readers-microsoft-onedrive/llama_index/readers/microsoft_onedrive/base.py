@@ -490,7 +490,7 @@ class OneDriveReader(BasePydanticReader):
         recursive: bool = True,
         userprincipalname: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id / file ids, f both are not provided download from the root.
+        """Load data from the folder id / file ids, if both are not provided download from the root.
 
         Args:
             folder_id: folder id of the folder in OneDrive.
