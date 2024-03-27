@@ -128,11 +128,11 @@ class GoogleDriveReader(BasePydanticReader):
         # First, we need the Google API credentials for the app
         creds = None
 
-        if Path(self.authorized_user_info).exists():
+        if self.authorized_user_info is not None:
             creds = Credentials.from_authorized_user_info(
                 self.authorized_user_info, SCOPES
             )
-        elif Path(self.service_account_key).exists():
+        elif self.service_account_key is not None:
             return service_account.Credentials.from_service_account_info(
                 self.service_account_key, scopes=SCOPES
             )
@@ -396,6 +396,7 @@ class GoogleDriveReader(BasePydanticReader):
 
     def _load_from_file_ids(
         self,
+        drive_id: Optional[str],
         file_ids: List[str],
         mime_types: Optional[List[str]],
         query_string: Optional[str],
@@ -414,6 +415,7 @@ class GoogleDriveReader(BasePydanticReader):
             for file_id in file_ids:
                 fileids_meta.extend(
                     self._get_fileids_meta(
+                        drive_id=drive_id,
                         file_id=file_id,
                         mime_types=mime_types,
                         query_string=query_string,
@@ -427,7 +429,7 @@ class GoogleDriveReader(BasePydanticReader):
 
     def _load_from_folder(
         self,
-        drive_id: str,
+        drive_id: Optional[str],
         folder_id: str,
         mime_types: Optional[List[str]],
         query_string: Optional[str],
