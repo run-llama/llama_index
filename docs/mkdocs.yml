@@ -99,6 +99,11 @@ nav:
           - ./examples/chat_engine/chat_engine_repl.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
           - ./examples/chat_engine/chat_engine_condense_question.ipynb
+      - Cookbooks:
+          - ./examples/cookbooks/cohere_retriever_eval.ipynb
+          - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/mistralai.ipynb
+          - ./examples/cookbooks/anthropic_haiku.ipynb
       - Customization:
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
@@ -138,6 +143,7 @@ nav:
           - ./examples/data_connectors/MakeDemo.ipynb
           - ./examples/data_connectors/GoogleSheetsDemo.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
+          - ./examples/data_connectors/GoogleDriveDemo.ipynb
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
@@ -1178,7 +1184,6 @@ nav:
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
-              - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
               - ./api_reference/storage/vector_store/azureaisearch.md

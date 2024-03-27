@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.1.5] - 2024-03-27
+
+- Update `README.md` to include installation instructions.
+
 ## [0.1.4] - 2024-03-18
 
 - Refactor: Take advantage of `SimpleDirectoryReader` now supporting `fs` by using `s3fs` instead of downloading files to local disk.
