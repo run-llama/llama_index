@@ -1,5 +1,24 @@
 # ChangeLog
 
+## [2024-03-27]
+
+### `llama-index-core` [0.10.25]
+
+- Add score to NodeWithScore in KnowledgeGraphQueryEngine (#12326)
+- Batch eval runner fixes (#12302)
+
+### `llama-index-embeddings-cohere` [0.1.5]
+
+- Added support for binary / quantized embeddings (#12321)
+
+### `llama-index-llms-mistralai` [0.1.10]
+
+- add support for custom endpoints to MistralAI (#12328)
+
+### `llama-index-storage-kvstore-redis` [0.1.3]
+
+- Fix RedisDocstore node retrieval from docs property (#12324)
+
 ## [2024-03-26]
 
 ### `llama-index-core` [0.10.24]
