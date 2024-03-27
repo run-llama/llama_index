@@ -91,7 +91,6 @@ class MistralAI(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        endpoint: Optional[str] = None,
     ) -> None:
         try:
             from mistralai.async_client import MistralAsyncClient
@@ -113,18 +112,15 @@ class MistralAI(LLM):
                 "You can either pass it in as an argument or set it `MISTRAL_API_KEY`."
             )
 
-        # Use the custom endpoint if provided, otherwise default to DEFAULT_MISTRALAI_ENDPOINT
-        endpoint = endpoint or DEFAULT_MISTRALAI_ENDPOINT
-
         self._client = MistralClient(
             api_key=api_key,
-            endpoint=endpoint,
+            endpoint=DEFAULT_MISTRALAI_ENDPOINT,
             timeout=timeout,
             max_retries=max_retries,
         )
         self._aclient = MistralAsyncClient(
             api_key=api_key,
-            endpoint=endpoint,
+            endpoint=DEFAULT_MISTRALAI_ENDPOINT,
             timeout=timeout,
             max_retries=max_retries,
         )
