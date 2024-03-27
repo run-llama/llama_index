@@ -1,3 +1,3 @@
 python_tests(
-  dependencies=["!llama-index-core:poetry#langchain"]
+  dependencies=["!!llama-index-core:poetry#langchain"]
 )
