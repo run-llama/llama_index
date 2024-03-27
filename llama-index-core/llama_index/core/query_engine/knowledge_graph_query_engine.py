@@ -241,7 +241,6 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         node = NodeWithScore(
             node=TextNode(
                 text=retrieved_graph_context,
-                
                 metadata={
                     "query_str": query_bundle.query_str,
                     "graph_store_query": graph_store_query,
