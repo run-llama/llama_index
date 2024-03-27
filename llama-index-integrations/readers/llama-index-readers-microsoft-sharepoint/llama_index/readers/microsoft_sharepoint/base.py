@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import BasePydanticReader
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class SharePointReader(BasePydanticReader):
     client_id: str = None
     client_secret: str = None
     tenant_id: str = None
-    _authorization_headers = None
+    _authorization_headers = PrivateAttr()
 
     def __init__(
         self,
