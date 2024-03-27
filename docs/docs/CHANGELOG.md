@@ -1,5 +1,46 @@
 # ChangeLog
 
+## [2024-03-26]
+
+### `llama-index-core` [0.10.24]
+
+- pretty prints in `LlamaDebugHandler` (#12216)
+- stricter interpreter constraints on pandas query engine (#12278)
+- PandasQueryEngine can now execute 'pd.\*' functions (#12240)
+- delete proper metadata in docstore delete function (#12276)
+- improved openai agent parsing function hook (#12062)
+- add raise_on_error flag for SimpleDirectoryReader (#12263)
+- remove un-caught openai import in core (#12262)
+- Fix download_llama_dataset and download_llama_pack (#12273)
+- Implement EvalQueryEngineTool (#11679)
+- Expand instrumenation Span coverage for AgentRunner (#12249)
+- Adding concept of function calling agent/llm (mistral supported for now) (#12222, )
+
+### `llama-index-embeddings-huggingface` [0.2.0]
+
+- Use `sentence-transformers` as a backend (#12277)
+
+### `llama-index-postprocessor-voyageai-rerank` [0.1.0]
+
+- Added voyageai as a reranker (#12111)
+
+### `llama-index-readers-gcs` [0.1.0]
+
+- Added google cloud storage reader (#12259)
+
+### `llama-index-readers-google` [0.2.1]
+
+- Support for different drives (#12146)
+- Remove unnecessary PyDrive dependency from Google Drive Reader (#12257)
+
+### `llama-index-readers-readme` [0.1.0]
+
+- added readme.com reader (#12246)
+
+### `llama-index-packs-raft` [0.1.3]
+
+- added pack for RAFT (#12275)
+
 ## [2024-03-23]
 
 ### `llama-index-core` [0.10.23]
