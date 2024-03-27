@@ -5,6 +5,7 @@ from llama_index.core.async_utils import asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
+from llama_index.core.ingestion.api_utils import get_client
 
 
 async def eval_response_worker(
@@ -377,4 +378,18 @@ class BatchEvalRunner:
                 queries=queries,
                 **eval_kwargs_lists,
             )
+        )
+
+    def upload(
+        self, project_id: str, app_name: str, results: Dict[str, List[EvaluationResult]]
+    ) -> None:
+        """
+        Upload the evaluation results to LlamaCloud
+        """
+        client = get_client()
+        client.project.create_local_eval_set_for_project(
+            project_id=project_id,
+            local_eval_set_create_project_id=project_id,
+            app_name=app_name,
+            results=results,
         )
