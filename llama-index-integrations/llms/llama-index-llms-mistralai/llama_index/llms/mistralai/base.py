@@ -143,6 +143,7 @@ class MistralAI(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        endpoint: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -155,15 +156,18 @@ class MistralAI(FunctionCallingLLM):
                 "You can either pass it in as an argument or set it `MISTRAL_API_KEY`."
             )
 
+        # Use the custom endpoint if provided, otherwise default to DEFAULT_MISTRALAI_ENDPOINT
+        endpoint = endpoint or DEFAULT_MISTRALAI_ENDPOINT
+
         self._client = MistralClient(
             api_key=api_key,
-            endpoint=DEFAULT_MISTRALAI_ENDPOINT,
+            endpoint=endpoint,
             timeout=timeout,
             max_retries=max_retries,
         )
         self._aclient = MistralAsyncClient(
             api_key=api_key,
-            endpoint=DEFAULT_MISTRALAI_ENDPOINT,
+            endpoint=endpoint,
             timeout=timeout,
             max_retries=max_retries,
         )
