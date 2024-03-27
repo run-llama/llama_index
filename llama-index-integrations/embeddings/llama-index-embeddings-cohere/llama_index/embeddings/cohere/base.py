@@ -8,8 +8,6 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 
-import cohere  # pants: no-infer-dep
-
 
 # Enums for validation and type safety
 class CohereAIModelName(str, Enum):
@@ -128,6 +126,11 @@ class CohereEmbedding(BaseEmbedding):
             model_name (str): The name of the model to be used for generating embeddings. The class ensures that
                           this model is supported and that the input type provided is compatible with the model.
         """
+        try:
+            import cohere
+        except:
+            raise ImportError("`cohere` package not found. Please run `pip install 'cohere>=5.1.1,<6.0.0'.")
+        
         # Validate model_name and input_type
         if model_name not in VALID_MODEL_INPUT_TYPES:
             raise ValueError(f"{model_name} is not a valid model name")
