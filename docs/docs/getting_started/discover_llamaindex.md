@@ -29,7 +29,7 @@ This video covers managing documents from a source that is constantly updating (
 
 [Youtube](https://www.youtube.com/watch?v=j6dJcODLd_c)
 
-[Notebook and Supplementary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/discover_llamaindex/document_management/)
+[Notebook and Supplementary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/docs/examples/discover_llamaindex/document_management/)
 
 [Reference Docs](../module_guides/indexing/document_management.md)
 

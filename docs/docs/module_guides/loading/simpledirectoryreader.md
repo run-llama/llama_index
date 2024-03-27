@@ -169,4 +169,4 @@ documents = reader.load_data()
 print(documents)
 ```
 
-A full example notebook can be found [here](https://github.com/run-llama/llama_index/blob/main/docs/examples/data_connectors/simple_directory_reader_remote_fs.ipynb).
+A full example notebook can be found [here](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/data_connectors/simple_directory_reader_remote_fs.ipynb).
