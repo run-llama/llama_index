@@ -383,12 +383,16 @@ class BatchEvalRunner:
     def upload(
         self, project_id: str, app_name: str, results: Dict[str, List[EvaluationResult]]
     ) -> None:
-        """
-        Upload the evaluation results to LlamaCloud
-        """
+        """Upload the evaluation results to LlamaCloud."""
         client = get_client()
-        client.project.create_local_eval_set_for_project(
+
+        results = client.project.create_local_eval_set_for_project(
             project_id=project_id,
             app_name=app_name,
             results=results,
         )
+
+        for key, val in results:
+            print(
+                f"Uploaded {len(val)} results for metric {key} under project {project_id}/{app_name}."
+            )
