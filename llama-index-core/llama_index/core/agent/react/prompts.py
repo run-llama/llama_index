@@ -1,11 +1,8 @@
 """Default prompt for ReAct agent."""
-
-# ReAct chat prompt
-# TODO: have formatting instructions be a part of react output parser
 from pathlib import Path
 
-p = Path(__file__).with_name("system_headaer_template.md")
-with p.open("r") as f:
+# TODO: have formatting instructions be a part of react output parser
+with Path(__file__).with_name("system_headaer_template.md").open("r") as f:
     __BASE_REACT_CHAT_SYSTEM_HEADER = f.read()
 
 REACT_CHAT_SYSTEM_HEADER = __BASE_REACT_CHAT_SYSTEM_HEADER.replace(
