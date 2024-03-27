@@ -1,6 +1,8 @@
-"""LLM reranker."""
+# LLM-based reranker implementation
+
 from typing import Callable, List, Optional
 
+# Importing necessary modules and classes from llama_index package
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
@@ -19,6 +21,7 @@ from llama_index.core.settings import Settings, llm_from_settings_or_context
 class LLMRerank(BaseNodePostprocessor):
     """LLM-based reranker."""
 
+    # Class attributes with field descriptions
     top_n: int = Field(description="Top N nodes to return.")
     choice_select_prompt: BasePromptTemplate = Field(
         description="Choice select prompt."
@@ -26,6 +29,7 @@ class LLMRerank(BaseNodePostprocessor):
     choice_batch_size: int = Field(description="Batch size for choice select.")
     llm: LLM = Field(description="The LLM to rerank with.")
 
+    # Private attributes
     _format_node_batch_fn: Callable = PrivateAttr()
     _parse_choice_select_answer_fn: Callable = PrivateAttr()
 
@@ -39,10 +43,23 @@ class LLMRerank(BaseNodePostprocessor):
         service_context: Optional[ServiceContext] = None,
         top_n: int = 10,
     ) -> None:
-        choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
+        """Initialize LLMRerank.
 
+        Args:
+            llm (Optional[LLM]): The LLM instance to use. Defaults to None.
+            choice_select_prompt (Optional[BasePromptTemplate]): The prompt template for choice selection. Defaults to None.
+            choice_batch_size (int): The batch size for choice selection. Defaults to 10.
+            format_node_batch_fn (Optional[Callable]): Function to format node batch. Defaults to None.
+            parse_choice_select_answer_fn (Optional[Callable]): Function to parse choice select answer. Defaults to None.
+            service_context (Optional[ServiceContext]): Service context. Defaults to None.
+            top_n (int): The number of top-ranked nodes to return. Defaults to 10.
+
+        """
+        # Assigning default values if not provided
+        choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
         llm = llm or llm_from_settings_or_context(Settings, service_context)
 
+        # Assigning private attributes
         self._format_node_batch_fn = (
             format_node_batch_fn or default_format_node_batch_fn
         )
@@ -50,6 +67,7 @@ class LLMRerank(BaseNodePostprocessor):
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
 
+        # Calling superclass constructor
         super().__init__(
             llm=llm,
             choice_select_prompt=choice_select_prompt,
@@ -69,6 +87,7 @@ class LLMRerank(BaseNodePostprocessor):
 
     @classmethod
     def class_name(cls) -> str:
+        """Return the class name."""
         return "LLMRerank"
 
     def _postprocess_nodes(
@@ -76,6 +95,19 @@ class LLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        """Rerank nodes based on LLM predictions.
+
+        Args:
+            nodes (List[NodeWithScore]): The list of nodes to rerank.
+            query_bundle (Optional[QueryBundle]): The query bundle. Defaults to None.
+
+        Returns:
+            List[NodeWithScore]: The reranked nodes.
+
+        Raises:
+            ValueError: If query bundle is not provided.
+
+        """
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
         if len(nodes) == 0:
@@ -89,7 +121,7 @@ class LLMRerank(BaseNodePostprocessor):
 
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
-            # call each batch independently
+            # Call each batch independently
             raw_response = self.llm.predict(
                 self.choice_select_prompt,
                 context_str=fmt_batch_str,
@@ -109,6 +141,4 @@ class LLMRerank(BaseNodePostprocessor):
                 ]
             )
 
-        return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
-            : self.top_n
-        ]
+        return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[: self.top_n]
