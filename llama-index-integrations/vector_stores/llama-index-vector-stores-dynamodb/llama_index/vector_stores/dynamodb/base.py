@@ -1,4 +1,5 @@
 """DynamoDB vector store index."""
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -37,6 +38,15 @@ class DynamoDBVectorStore(VectorStore):
     Args:
         dynamodb_kvstore (DynamoDBKVStore): data store
         namespace (Optional[str]): namespace
+
+    Examples:
+        `pip install llama-index-vector-stores-dynamodb`
+
+        ```python
+        from llama_index.vector_stores.dynamodb import DynamoDBVectorStore
+
+        vector_store = DynamoDBVectorStore.from_table_name(table_name="my_table")
+        ```
     """
 
     stores_text: bool = False

@@ -66,6 +66,24 @@ class PydanticResponse:
         else:
             return None
 
+    def __post_init_post_parse__(self) -> None:
+        """This method is required.
+
+        According to the Pydantic docs, if a stdlib dataclass (which this class
+        is one) gets mixed with a BaseModel (in the sense that this gets used as a
+        Field in another BaseModel), then this stdlib dataclass will automatically
+        get converted to a pydantic.v1.dataclass.
+
+        However, it appears that in that automatic conversion, this method
+        is left as NoneType, which raises an error. To safeguard against that,
+        we are expilcitly defining this method as something that can be called.
+
+        Sources:
+            - https://docs.pydantic.dev/1.10/usage/dataclasses/#use-of-stdlib-dataclasses-with-basemodel
+            - https://docs.pydantic.dev/1.10/usage/dataclasses/#initialize-hooks
+        """
+        return
+
     def get_formatted_sources(self, length: int = 100) -> str:
         """Get formatted sources text."""
         texts = []

@@ -20,12 +20,14 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         """Class name."""
         return "SimpleSpanHandler"
 
-    def new_span(self, id: str, parent_span_id: Optional[str], **kwargs) -> SimpleSpan:
+    def new_span(
+        self, *args, id: str, parent_span_id: Optional[str], **kwargs
+    ) -> SimpleSpan:
         """Create a span."""
         return SimpleSpan(id_=id, parent_id=parent_span_id)
 
     def prepare_to_exit_span(
-        self, id: str, result: Optional[Any] = None, **kwargs
+        self, *args, id: str, result: Optional[Any] = None, **kwargs
     ) -> None:
         """Logic for preparing to drop a span."""
         span = self.open_spans[id]
@@ -34,7 +36,9 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         span.duration = (span.end_time - span.start_time).total_seconds()
         self.completed_spans += [span]
 
-    def prepare_to_drop_span(self, id: str, err: Optional[Exception], **kwargs) -> None:
+    def prepare_to_drop_span(
+        self, *args, id: str, err: Optional[Exception], **kwargs
+    ) -> None:
         """Logic for droppping a span."""
         if err:
             raise err

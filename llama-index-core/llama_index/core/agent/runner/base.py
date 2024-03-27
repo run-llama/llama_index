@@ -395,6 +395,7 @@ class AgentRunner(BaseAgentRunner):
         dispatcher.event(AgentRunStepEndEvent())
         return cur_step_output
 
+    @dispatcher.span
     async def _arun_step(
         self,
         task_id: str,
@@ -431,6 +432,7 @@ class AgentRunner(BaseAgentRunner):
 
         return cur_step_output
 
+    @dispatcher.span
     def run_step(
         self,
         task_id: str,
@@ -444,6 +446,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
+    @dispatcher.span
     async def arun_step(
         self,
         task_id: str,
@@ -457,6 +460,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
+    @dispatcher.span
     def stream_step(
         self,
         task_id: str,
@@ -470,6 +474,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    @dispatcher.span
     async def astream_step(
         self,
         task_id: str,
@@ -483,6 +488,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    @dispatcher.span
     def finalize_response(
         self,
         task_id: str,
@@ -548,6 +554,7 @@ class AgentRunner(BaseAgentRunner):
         dispatcher.event(AgentChatWithStepEndEvent())
         return result
 
+    @dispatcher.span
     async def _achat(
         self,
         message: str,
@@ -579,6 +586,7 @@ class AgentRunner(BaseAgentRunner):
             result_output,
         )
 
+    @dispatcher.span
     @trace_method("chat")
     def chat(
         self,
@@ -603,6 +611,7 @@ class AgentRunner(BaseAgentRunner):
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     async def achat(
         self,
@@ -628,6 +637,7 @@ class AgentRunner(BaseAgentRunner):
         return chat_response
 
     @dispatcher.span
+    @trace_method("chat")
     def stream_chat(
         self,
         message: str,
@@ -637,15 +647,18 @@ class AgentRunner(BaseAgentRunner):
         # override tool choice is provided as input.
         if tool_choice is None:
             tool_choice = self.default_tool_choice
-        chat_response = self._chat(
-            message=message,
-            chat_history=chat_history,
-            tool_choice=tool_choice,
-            mode=ChatResponseMode.STREAM,
-        )
-        assert isinstance(chat_response, StreamingAgentChatResponse)
+        with self.callback_manager.event(
+            CBEventType.AGENT_STEP,
+            payload={EventPayload.MESSAGES: [message]},
+        ) as e:
+            chat_response = self._chat(
+                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
+            )
+            assert isinstance(chat_response, StreamingAgentChatResponse)
+            e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     async def astream_chat(
         self,
