@@ -35,7 +35,7 @@ version = "0.1.4"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-readers-file = "^0.1.11"
-gcsfs = "^2023.12.2"
+gcsfs = "^2024.3.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
