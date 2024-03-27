@@ -37,11 +37,10 @@ class OneDriveReader(BasePydanticReader):
     """
 
     client_id: str = None
-    tenant_id: str = None
     client_secret: Optional[str] = None
+    tenant_id: Optional[str] = None
 
     _is_interactive_auth: bool = PrivateAttr(False)
-    _is_cloud: bool = PrivateAttr(False)
 
     def __init__(
         self,
@@ -50,8 +49,7 @@ class OneDriveReader(BasePydanticReader):
         tenant_id: Optional[str] = "consumers",
         is_cloud: Optional[bool] = False,
     ) -> None:
-        self._is_interactive_auth = not self.client_secret
-        self._is_cloud = is_cloud
+        self._is_interactive_auth = not client_secret
 
         super().__init__(
             client_id=client_id,
