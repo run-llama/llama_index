@@ -8,7 +8,7 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 
-import cohere
+import cohere  # pants: no-infer-dep
 
 
 # Enums for validation and type safety
