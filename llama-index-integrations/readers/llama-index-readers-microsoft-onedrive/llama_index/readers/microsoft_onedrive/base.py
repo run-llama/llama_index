@@ -47,7 +47,7 @@ class OneDriveReader(BasePydanticReader):
         client_id: str,
         client_secret: Optional[str] = None,
         tenant_id: Optional[str] = "consumers",
-        is_cloud: Optional[bool] = False,
+        **kwargs: Any,
     ) -> None:
         self._is_interactive_auth = not client_secret
 
@@ -55,6 +55,7 @@ class OneDriveReader(BasePydanticReader):
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            **kwargs,
         )
 
     @classmethod
