@@ -26,7 +26,7 @@ vector_store = AnalyticDBVectorStore.from_params(
     collection="llama",  # Table name of the AnalyticDB instance
     namespace_password="llamapassword",  # Namespace corresponding password of the AnalyticDB instance
     metrics="cosine",  # Similarity algorithm, e.g. "cosine", "l2", "ip"
-    embedding_dimension=1536, # Embedding dimension of the embeddings model used
+    embedding_dimension=1536,  # Embedding dimension of the embeddings model used
 )
 ```
 

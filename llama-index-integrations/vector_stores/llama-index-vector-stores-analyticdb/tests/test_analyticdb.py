@@ -7,8 +7,6 @@ from llama_index.vector_stores.analyticdb import AnalyticDBVectorStore
 
 try:
     from alibabacloud_gpdb20160503.client import Client
-    from alibabacloud_tea_openapi import models as open_api_models
-    from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
 
     analyticdb_installed = True
 except ImportError:
@@ -33,7 +31,8 @@ def _create_sample_documents(n: int) -> List[TextNode]:
                 NodeRelationship.SOURCE: RelatedNodeInfo(node_id=f"test doc id {i}")
             },
             embedding=[0.5, 0.5, 0.5, 0.5],
-        ) for i in range(n)
+        )
+        for i in range(n)
     ]
 
 

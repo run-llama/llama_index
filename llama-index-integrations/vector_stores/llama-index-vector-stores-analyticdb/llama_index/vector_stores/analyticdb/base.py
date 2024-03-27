@@ -20,13 +20,12 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-from alibabacloud_gpdb20160503.client import Client
-from alibabacloud_tea_openapi import models as open_api_models
-from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
-from Tea.exceptions import TeaException
-
 
 _logger = logging.getLogger(__name__)
+_import_err_msg = (
+    "`alibabacloud_gpdb20160503` and `alibabacloud_tea_openapi` packages not found, "
+    "please run `pip install alibabacloud_gpdb20160503 alibabacloud_tea_openapi`"
+)
 
 OPERATOR_MAP = {
     FilterOperator.EQ: "=",
@@ -46,7 +45,9 @@ def _build_filter_clause(filter_: MetadataFilter) -> str:
     if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
         return f"metadata_->>'{filter_.key}' {adb_operator} {tuple(filter_.value)}"
     elif filter_.operator == FilterOperator.CONTAINS:
-        return f"metadata_::jsonb->'{filter_.key}' {adb_operator} '[\"{filter_.value}\"]'"
+        return (
+            f"metadata_::jsonb->'{filter_.key}' {adb_operator} '[\"{filter_.value}\"]'"
+        )
     else:
         return f"metadata_->>'{filter_.key}' {adb_operator} '{filter_.value}'"
 
@@ -56,7 +57,8 @@ def _recursively_parse_adb_filter(filters: MetadataFilters) -> Union[str, None]:
         return None
     return f" {filters.condition} ".join(
         [
-            _build_filter_clause(filter_) if isinstance(filter_, MetadataFilter)
+            _build_filter_clause(filter_)
+            if isinstance(filter_, MetadataFilter)
             else f"({_recursively_parse_adb_filter(filter_)})"
             for filter_ in filters.filters
         ]
@@ -83,6 +85,7 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         metrics: str
         collection: str
     """
+
     stores_text: bool = True
     flat_metadata = False
 
@@ -96,12 +99,12 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
     metrics: str
     collection: str
 
-    _client: Client = PrivateAttr()
+    _client: Any = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
-        client: Client,
+        client: Any,
         region_id: str,
         instance_id: str,
         account: str,
@@ -112,6 +115,18 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         embedding_dimension: int = 1536,
         metrics: str = "cosine",
     ):
+        try:
+            from alibabacloud_gpdb20160503.client import Client
+        except ImportError:
+            raise ImportError(_import_err_msg)
+
+        if client is not None:
+            if not isinstance(client, Client):
+                raise ValueError(
+                    "client must be of type alibabacloud_gpdb20160503.client.Client"
+                )
+        else:
+            raise ValueError("client not specified")
         if not namespace_password:
             namespace_password = account_password
         self._client = client
@@ -134,15 +149,22 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         access_key_secret: str,
         region_id: str,
         read_timeout: int = 60000,
-    ) -> Client:
+    ) -> Any:
         """
         Initialize ADB client.
         """
+        try:
+            from alibabacloud_gpdb20160503.client import Client
+            from alibabacloud_tea_openapi import models as open_api_models
+        except ImportError:
+            raise ImportError(_import_err_msg)
+
         config = open_api_models.Config(
             access_key_id=access_key_id,
             access_key_secret=access_key_secret,
             region_id=region_id,
             read_timeout=read_timeout,
+            user_agent="llama-index",
         )
         return Client(config)
 
@@ -183,7 +205,7 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         return "AnalyticDBVectorStore"
 
     @property
-    def client(self) -> Client:
+    def client(self) -> Any:
         return self._client
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
@@ -193,6 +215,8 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
         """
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+
         self._initialize()
         ids = []
         rows: List[gpdb_20160503_models.UpsertCollectionDataRequestRows] = []
@@ -209,10 +233,12 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
                 "content": node.get_content(metadata_mode=MetadataMode.NONE),
                 "metadata_": json.dumps(node_metadata_dict),
             }
-            rows.append(gpdb_20160503_models.UpsertCollectionDataRequestRows(
-                vector=node.get_embedding(),
-                metadata=metadata,
-            ))
+            rows.append(
+                gpdb_20160503_models.UpsertCollectionDataRequestRows(
+                    vector=node.get_embedding(),
+                    metadata=metadata,
+                )
+            )
         _logger.debug("adding nodes to vector store...")
         request = gpdb_20160503_models.UpsertCollectionDataRequest(
             dbinstance_id=self.instance_id,
@@ -223,8 +249,10 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             rows=rows,
         )
         response = self._client.upsert_collection_data(request)
-        _logger.info(f"successfully adding nodes to vector store, size: {len(nodes)},"
-                     f"response body:{response.body}")
+        _logger.info(
+            f"successfully adding nodes to vector store, size: {len(nodes)},"
+            f"response body:{response.body}"
+        )
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -234,8 +262,10 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         Args:
             ref_doc_id: str: the doc_id of the document to delete.
         """
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+
         self._initialize()
-        collection_data = '''{"ref_doc_id": ["%s"]}''' % ref_doc_id
+        collection_data = '{"ref_doc_id": ["%s"]}' % ref_doc_id
         request = gpdb_20160503_models.DeleteCollectionDataRequest(
             dbinstance_id=self.instance_id,
             region_id=self.region_id,
@@ -246,7 +276,9 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         )
         _logger.debug(f"deleting nodes from vector store of ref_doc_id: {ref_doc_id}")
         response = self._client.delete_collection_data(request)
-        _logger.info(f"successfully delete nodes from vector store, response body: {response.body}")
+        _logger.info(
+            f"successfully delete nodes from vector store, response body: {response.body}"
+        )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
@@ -254,14 +286,23 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
 
         Args:
             query: VectorStoreQuery: the query to execute.
+
         Returns:
             VectorStoreQueryResult: the result of the query.
         """
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+
         self._initialize()
-        vector = query.query_embedding if \
-            query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID) else None
-        content = query.query_str if \
-            query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID) else None
+        vector = (
+            query.query_embedding
+            if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID)
+            else None
+        )
+        content = (
+            query.query_str
+            if query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
+            else None
+        )
         request = gpdb_20160503_models.QueryCollectionDataRequest(
             dbinstance_id=self.instance_id,
             region_id=self.region_id,
@@ -281,12 +322,12 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         ids = []
         for match in response.body.matches.match:
             node = metadata_dict_to_node(
-                json.loads(match.metadata.get('metadata_')),
-                match.metadata.get('content'),
+                json.loads(match.metadata.get("metadata_")),
+                match.metadata.get("content"),
             )
             nodes.append(node)
             similarities.append(match.score)
-            ids.append(match.metadata.get('node_id'))
+            ids.append(match.metadata.get("node_id"))
         return VectorStoreQueryResult(
             nodes=nodes,
             similarities=similarities,
@@ -294,6 +335,8 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
         )
 
     def delete_collection(self):
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+
         request = gpdb_20160503_models.DeleteCollectionRequest(
             dbinstance_id=self.instance_id,
             region_id=self.region_id,
@@ -312,6 +355,8 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             self._is_initialized = True
 
     def _initialize_vector_database(self):
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+
         request = gpdb_20160503_models.InitVectorDatabaseRequest(
             dbinstance_id=self.instance_id,
             region_id=self.region_id,
@@ -319,9 +364,14 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             manager_account_password=self.account_password,
         )
         response = self._client.init_vector_database(request)
-        _logger.debug(f"successfully initialize vector database, response body:{response.body}")
+        _logger.debug(
+            f"successfully initialize vector database, response body:{response.body}"
+        )
 
     def _create_namespace_if_not_exists(self):
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+        from Tea.exceptions import TeaException
+
         try:
             request = gpdb_20160503_models.DescribeNamespaceRequest(
                 dbinstance_id=self.instance_id,
@@ -346,9 +396,12 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
                 self._client.create_namespace(request)
                 _logger.debug(f"namespace {self.namespace} created")
             else:
-                raise e
+                raise ValueError(f"failed to create namespace {self.namespace}: {e}")
 
     def _create_collection_if_not_exists(self):
+        from alibabacloud_gpdb20160503 import models as gpdb_20160503_models
+        from Tea.exceptions import TeaException
+
         try:
             request = gpdb_20160503_models.DescribeCollectionRequest(
                 dbinstance_id=self.instance_id,
@@ -361,8 +414,10 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             _logger.debug(f"collection {self.collection} already exists")
         except TeaException as e:
             if e.statusCode == 404:
-                _logger.debug(f"collection {self.namespace} does not exist, creating...")
-                metadata = '''{"node_id":"text","ref_doc_id":"text","content":"text","metadata_":"jsonb"}'''
+                _logger.debug(
+                    f"collection {self.namespace} does not exist, creating..."
+                )
+                metadata = '{"node_id":"text","ref_doc_id":"text","content":"text","metadata_":"jsonb"}'
                 full_text_retrieval_fields = "content"
                 request = gpdb_20160503_models.CreateCollectionRequest(
                     dbinstance_id=self.instance_id,
@@ -379,4 +434,4 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
                 self._client.create_collection(request)
                 _logger.debug(f"collection {self.namespace} created")
             else:
-                raise e
+                raise ValueError(f"failed to create collection {self.collection}: {e}")
