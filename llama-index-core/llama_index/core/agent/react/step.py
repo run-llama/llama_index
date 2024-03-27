@@ -87,6 +87,7 @@ class ReActAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        complaint_when_no_reasoning_step: str = "",
     ) -> None:
         self._llm = llm
         self.callback_manager = callback_manager or llm.callback_manager
@@ -94,6 +95,18 @@ class ReActAgentWorker(BaseAgentWorker):
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
+        if complaint_when_no_reasoning_step:
+            # TODO(feature): Instead of always giving a static message, let developer extend
+            #  `_handle_failure_in_extract_reasoning_step` such that the message can point out exactly what didn't match
+            #  the expectation of `_extract_reasoning_step` / violated the System Prompt.
+            self.dummy_tool_output_when_no_reasoning_step = ToolOutput(
+                content=complaint_when_no_reasoning_step,
+                tool_name="unknown",
+                raw_input={},
+                raw_output=complaint_when_no_reasoning_step,
+            )
+        else:
+            self.dummy_tool_output_when_no_reasoning_step = None
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -116,9 +129,10 @@ class ReActAgentWorker(BaseAgentWorker):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
+        complaint_when_no_reasoning_step: str = "",
         **kwargs: Any,
     ) -> "ReActAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -126,7 +140,7 @@ class ReActAgentWorker(BaseAgentWorker):
         constructions.
 
         Returns:
-            ReActAgent
+            ReActAgentWorker
         """
         llm = llm or Settings.llm
         if callback_manager is not None:
@@ -140,6 +154,7 @@ class ReActAgentWorker(BaseAgentWorker):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
+            complaint_when_no_reasoning_step=complaint_when_no_reasoning_step,
         )
 
     def _get_prompts(self) -> PromptDictType:
@@ -223,36 +238,42 @@ class ReActAgentWorker(BaseAgentWorker):
         tools_dict: Dict[str, AsyncBaseTool] = {
             tool.metadata.get_name(): tool for tool in tools
         }
-        _, current_reasoning, is_done = self._extract_reasoning_step(
-            output, is_streaming
-        )
-
-        if is_done:
-            return current_reasoning, True
-
-        # call tool with input
-        reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        if reasoning_step.action in tools_dict:
-            tool = tools_dict[reasoning_step.action]
-            with self.callback_manager.event(
-                CBEventType.FUNCTION_CALL,
-                payload={
-                    EventPayload.FUNCTION_CALL: reasoning_step.action_input,
-                    EventPayload.TOOL: tool.metadata,
-                },
-            ) as event:
-                try:
-                    tool_output = tool.call(**reasoning_step.action_input)
-                except Exception as e:
-                    tool_output = ToolOutput(
-                        content=f"Error: {e!s}",
-                        tool_name=tool.metadata.name,
-                        raw_input={"kwargs": reasoning_step.action_input},
-                        raw_output=e,
-                    )
-                event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        try:
+            _, current_reasoning, is_done = self._extract_reasoning_step(
+                output, is_streaming
+            )
+        except ValueError as exp:
+            current_reasoning = []
+            tool_output = self._handle_failure_in_extract_reasoning_step(exp)
         else:
-            tool_output = self._handle_nonexistent_tool_name(reasoning_step)
+            if is_done:
+                return current_reasoning, True
+
+            # call tool with input
+            reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+            if reasoning_step.action in tools_dict:
+                tool = tools_dict[reasoning_step.action]
+                with self.callback_manager.event(
+                    CBEventType.FUNCTION_CALL,
+                    payload={
+                        EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                        EventPayload.TOOL: tool.metadata,
+                    },
+                ) as event:
+                    try:
+                        tool_output = tool.call(**reasoning_step.action_input)
+                    except Exception as e:
+                        tool_output = ToolOutput(
+                            content=f"Error: {e!s}",
+                            tool_name=tool.metadata.name,
+                            raw_input={"kwargs": reasoning_step.action_input},
+                            raw_output=e,
+                        )
+                    event.on_end(
+                        payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)}
+                    )
+            else:
+                tool_output = self._handle_nonexistent_tool_name(reasoning_step)
 
         task.extra_state["sources"].append(tool_output)
 
@@ -270,36 +291,42 @@ class ReActAgentWorker(BaseAgentWorker):
         is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict = {tool.metadata.name: tool for tool in tools}
-        _, current_reasoning, is_done = self._extract_reasoning_step(
-            output, is_streaming
-        )
-
-        if is_done:
-            return current_reasoning, True
-
-        # call tool with input
-        reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        if reasoning_step.action in tools_dict:
-            tool = tools_dict[reasoning_step.action]
-            with self.callback_manager.event(
-                CBEventType.FUNCTION_CALL,
-                payload={
-                    EventPayload.FUNCTION_CALL: reasoning_step.action_input,
-                    EventPayload.TOOL: tool.metadata,
-                },
-            ) as event:
-                try:
-                    tool_output = await tool.acall(**reasoning_step.action_input)
-                except Exception as e:
-                    tool_output = ToolOutput(
-                        content=f"Error: {e!s}",
-                        tool_name=tool.metadata.name,
-                        raw_input={"kwargs": reasoning_step.action_input},
-                        raw_output=e,
-                    )
-                event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        try:
+            _, current_reasoning, is_done = self._extract_reasoning_step(
+                output, is_streaming
+            )
+        except ValueError as exp:
+            current_reasoning = []
+            tool_output = self._handle_failure_in_extract_reasoning_step(exp)
         else:
-            tool_output = self._handle_nonexistent_tool_name(reasoning_step)
+            if is_done:
+                return current_reasoning, True
+
+            # call tool with input
+            reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+            if reasoning_step.action in tools_dict:
+                tool = tools_dict[reasoning_step.action]
+                with self.callback_manager.event(
+                    CBEventType.FUNCTION_CALL,
+                    payload={
+                        EventPayload.FUNCTION_CALL: reasoning_step.action_input,
+                        EventPayload.TOOL: tool.metadata,
+                    },
+                ) as event:
+                    try:
+                        tool_output = await tool.acall(**reasoning_step.action_input)
+                    except Exception as e:
+                        tool_output = ToolOutput(
+                            content=f"Error: {e!s}",
+                            tool_name=tool.metadata.name,
+                            raw_input={"kwargs": reasoning_step.action_input},
+                            raw_output=e,
+                        )
+                    event.on_end(
+                        payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)}
+                    )
+            else:
+                tool_output = self._handle_nonexistent_tool_name(reasoning_step)
 
         task.extra_state["sources"].append(tool_output)
 
@@ -328,6 +355,33 @@ class ReActAgentWorker(BaseAgentWorker):
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         return tool_output
+
+    def _handle_failure_in_extract_reasoning_step(self, exp: ValueError) -> ToolOutput:
+        """
+        If the developer has instructed to tell the Agent a complaint about its non-cooperation,
+        we will emit a Tool Output that we prepared (at initialization time) to the LLM, so that
+        the LLM can be more cooperative in its next generation.
+        """
+        # We still emit a `tool_output` object to the task, so that the LLM can know
+        # it has hallucinated in the next reasoning step.
+        if self.dummy_tool_output_when_no_reasoning_step is None:
+            # Maybe the developer wants to handle the exception elsewhere.
+            raise ValueError from exp
+        # else:
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: "unknown",
+            },
+        ) as event:
+            event.on_end(
+                payload={
+                    EventPayload.FUNCTION_OUTPUT: str(
+                        self.dummy_tool_output_when_no_reasoning_step
+                    )
+                }
+            )
+        return self.dummy_tool_output_when_no_reasoning_step
 
     def _get_response(
         self,

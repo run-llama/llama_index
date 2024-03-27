@@ -305,6 +305,27 @@ def _get_observations(task: Task) -> List[str]:
     return [s.observation for s in obs_steps]
 
 
+def test_complaint_when_no_reasoning_step():
+    message = (
+        "You didn't follow the format I specified in the System Prompt. Try again."
+    )
+    runner = ReActAgent.from_tools(
+        tools=[],
+        llm=MockLLM(),
+        complaint_when_no_reasoning_step=message,
+    )
+    task = runner.create_task("lorem")
+    chat_response = ChatResponse(
+        message=ChatMessage(
+            content="Thought: ipsum\nAction: dolor", role=MessageRole.ASSISTANT
+        )
+    )
+    current_reasoning, is_done = runner.agent_worker._process_actions(
+        task, tools=[], output=chat_response
+    )
+    assert current_reasoning[0].get_content() == "Observation: " + message
+
+
 def test_add_step(
     add_tool: FunctionTool,
 ) -> None:
