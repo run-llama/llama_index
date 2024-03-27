@@ -2824,13 +2824,13 @@ tornado = {version = "*", markers = "python_version > \"2.7\""}
 
 [[package]]
 name = "llamaindex-py-client"
-version = "0.1.14a1"
+version = "0.1.14a2"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "llamaindex_py_client-0.1.14a1-py3-none-any.whl", hash = "sha256:651d839e52ea0a0b9b11489299225f8ce8e63e00c31fd795eccdb94ec11733c1"},
-    {file = "llamaindex_py_client-0.1.14a1.tar.gz", hash = "sha256:14dbcb14a4fc61bdc5557d1bd75c9953cee3c57b916d3913c0bc31c7680fcda5"},
+    {file = "llamaindex_py_client-0.1.14a2-py3-none-any.whl", hash = "sha256:4172fd919adec1d05a9bf0960553fa97fc09db12ba50fc7f5b9c87a750ee5d53"},
+    {file = "llamaindex_py_client-0.1.14a2.tar.gz", hash = "sha256:53ff9a221322fba14747c87c53804c0cf7e47eaa7db40f736bda35dc4e71ea8c"},
 ]
 
 [package.dependencies]
@@ -8025,4 +8025,4 @@ query-tools = ["guidance", "jsonpath-ng", "lm-format-enforcer", "rank-bm25", "sc
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "066850b21803d7534602ad33b52a8fcbcd62a8eb9ad858c15597d5a26c2b3d45"
+content-hash = "9549c495040268a606de3706319945f58d9cdb19f9d42c8f17748ca5ed1a8928"

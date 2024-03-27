@@ -389,7 +389,6 @@ class BatchEvalRunner:
         client = get_client()
         client.project.create_local_eval_set_for_project(
             project_id=project_id,
-            local_eval_set_create_project_id=project_id,
             app_name=app_name,
             results=results,
         )
