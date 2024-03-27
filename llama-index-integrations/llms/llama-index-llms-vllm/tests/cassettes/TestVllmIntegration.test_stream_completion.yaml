@@ -1,0 +1,261 @@
+interactions:
+  - request:
+      body:
+        '{"temperature": 1.0, "max_tokens": 512, "n": 1, "frequency_penalty": 0.0,
+        "presence_penalty": 0.0, "use_beam_search": false, "best_of": null, "ignore_eos":
+        false, "stop": null, "logprobs": null, "top_k": -1, "top_p": 1.0, "prompt":
+        "When AI hype is over?", "stream": true}'
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "272"
+        Content-Type:
+          - application/json
+        User-Agent:
+          - Test Client
+      method: POST
+      uri: http://localhost:8000/generate
+    response:
+      body:
+        string:
+          "{\"text\": [\"When AI hype is over? OK\"]}\0{\"text\": [\"When AI hype
+          is over? OK.\"]}\0{\"text\": [\"When AI hype is over? OK. Edit\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit:\"]}\0{\"text\": [\"When AI hype is over?
+          OK. Edit: Was\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the\"]}\0{\"text\": [\"When AI
+          hype is over? OK. Edit: Was thinking of the latest\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI hip\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI hip crack or the
+          latest related\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking
+          of the latest AI hip crack or the latest related to\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI hip crack or the
+          latest related to such\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoy\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances\"]}\0{\"text\": [\"When AI hype is
+          over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was
+          thinking of the latest AI hip crack or the latest related to such annoyances.\\n\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n>\"]}\0{\"text\": [\"When AI hype
+          is over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\\n> FIX\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the latest related to such annoyances.\\n> FIXED:\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the latest related to such annoyances.\\n> FIXED: Avoid
+          the inconvenience of _\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Oh\"]}\0{\"text\": [\"When AI hype is over?
+          OK. Edit: Was thinking of the latest AI hip crack or the latest related to
+          such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohim\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking
+          of the latest AI hip crack or the latest related to such annoyances.\\n> FIXED:
+          Avoid the inconvenience of _Ohimaze_\"]}\0{\"text\": [\"When AI hype is over?
+          OK. Edit: Was thinking of the latest AI hip crack or the latest related to
+          such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ plan\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was
+          thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing,\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI hip crack or the
+          latest related to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_
+          planing, when\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking
+          of the latest AI hip crack or the latest related to such annoyances.\\n> FIXED:
+          Avoid the inconvenience of _Ohimaze_ planing, when targeting\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting -\"]}\0{\"text\": [\"When AI hype is
+          over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing, when targeting - since
+          it\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the latest related to such annoyances.\\n> FIXED: Avoid
+          the inconvenience of _Ohimaze_ planing, when targeting - since it often\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking
+          of the latest AI hip crack or the latest related to such annoyances.\\n> FIXED:
+          Avoid the inconvenience of _Ohimaze_ planing, when targeting - since it often
+          results in accidental launching,\"]}\0{\"text\": [\"When AI hype is over?
+          OK. Edit: Was thinking of the latest AI hip crack or the latest related to
+          such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was
+          thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing, when targeting - since
+          it often results in accidental launching, by adding rest\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI hip crack or the
+          latest related to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_
+          planing, when targeting - since it often results in accidental launching,
+          by adding restarts\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was
+          thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing, when targeting - since
+          it often results in accidental launching, by adding restarts in\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the\"]}\0{\"text\": [\"When AI hype is over?
+          OK. Edit: Was thinking of the latest AI hip crack or the latest related to
+          such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by adding
+          restarts in the middle\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing, when targeting - since
+          it often results in accidental launching, by adding restarts in the middle
+          of\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the latest related to such annoyances.\\n> FIXED: Avoid
+          the inconvenience of _Ohimaze_ planing, when targeting - since it often results
+          in accidental launching, by adding restarts in the middle of them\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\"]}\0{\"text\": [\"When
+          AI hype is over? OK. Edit: Was thinking of the latest AI hip crack or the
+          latest related to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_
+          planing, when targeting - since it often results in accidental launching,
+          by adding restarts in the middle of them!\\n\"]}\0{\"text\": [\"When AI hype
+          is over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by adding
+          restarts in the middle of them!\\nAnd\"]}\0{\"text\": [\"When AI hype is over?
+          OK. Edit: Was thinking of the latest AI hip crack or the latest related to
+          such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by adding
+          restarts in the middle of them!\\nAnd En\"]}\0{\"text\": [\"When AI hype is
+          over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by adding
+          restarts in the middle of them!\\nAnd Enforcer\"]}\0{\"text\": [\"When AI
+          hype is over? OK. Edit: Was thinking of the latest AI hip crack or the latest
+          related to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_
+          planing, when targeting - since it often results in accidental launching,
+          by adding restarts in the middle of them!\\nAnd Enforcer,\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, Dot\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, data\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, DotA2\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, DotA2,\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, DotA2,
+          CS\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the latest related to such annoyances.\\n> FIXED: Avoid
+          the inconvenience of _Ohimaze_ planing, when targeting - since it often results
+          in accidental launching, by adding restarts in the middle of them!\\nAnd Enforcer,
+          DotA2, CSGO\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking
+          of the latest AI hip crack or the latest related to such annoyances.\\n> FIXED:
+          Avoid the inconvenience of _Ohimaze_ planing, when targeting - since it often
+          results in accidental launching, by adding restarts in the middle of them!\\nAnd
+          Enforcer, DotA2, CSGO.\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing, when targeting - since
+          it often results in accidental launching, by adding restarts in the middle
+          of them!\\nAnd Enforcer, DotA2, CSGO. B\"]}\0{\"text\": [\"When AI hype is
+          over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by adding
+          restarts in the middle of them!\\nAnd Enforcer, DotA2, CSGO. Btw\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, DotA2,
+          CSGO. Btw,\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking
+          of the latest AI hip crack or the latest related to such annoyances.\\n> FIXED:
+          Avoid the inconvenience of _Ohimaze_ planing, when targeting - since it often
+          results in accidental launching, by adding restarts in the middle of them!\\nAnd
+          Enforcer, DotA2, CSGO. Btw, its\"]}\0{\"text\": [\"When AI hype is over? OK.
+          Edit: Was thinking of the latest AI hip crack or the latest related to such
+          annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing, when
+          targeting - since it often results in accidental launching, by adding restarts
+          in the middle of them!\\nAnd Enforcer, DotA2, CSGO. Btw, its not\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, DotA2,
+          CSGO. Btw, its not linked\"]}\0{\"text\": [\"When AI hype is over? OK. Edit:
+          Was thinking of the latest AI hip crack or the latest related to such annoyances.\\n>
+          FIXED: Avoid the inconvenience of _Ohimaze_ planing, when targeting - since
+          it often results in accidental launching, by adding restarts in the middle
+          of them!\\nAnd Enforcer, DotA2, CSGO. Btw, its not linked to\"]}\0{\"text\":
+          [\"When AI hype is over? OK. Edit: Was thinking of the latest AI hip crack
+          or the latest related to such annoyances.\\n> FIXED: Avoid the inconvenience
+          of _Ohimaze_ planing, when targeting - since it often results in accidental
+          launching, by adding restarts in the middle of them!\\nAnd Enforcer, DotA2,
+          CSGO. Btw, its not linked to I\"]}\0{\"text\": [\"When AI hype is over? OK.
+          Edit: Was thinking of the latest AI hip crack or the latest related to such
+          annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing, when
+          targeting - since it often results in accidental launching, by adding restarts
+          in the middle of them!\\nAnd Enforcer, DotA2, CSGO. Btw, its not linked to
+          IW\"]}\0{\"text\": [\"When AI hype is over? OK. Edit: Was thinking of the
+          latest AI hip crack or the latest related to such annoyances.\\n> FIXED: Avoid
+          the inconvenience of _Ohimaze_ planing, when targeting - since it often results
+          in accidental launching, by adding restarts in the middle of them!\\nAnd Enforcer,
+          DotA2, CSGO. Btw, its not linked to IW.\"]}\0{\"text\": [\"When AI hype is
+          over? OK. Edit: Was thinking of the latest AI hip crack or the latest related
+          to such annoyances.\\n> FIXED: Avoid the inconvenience of _Ohimaze_ planing,
+          when targeting - since it often results in accidental launching, by adding
+          restarts in the middle of them!\\nAnd Enforcer, DotA2, CSGO. Btw, its not
+          linked to IW.\"]}\0"
+      headers:
+        date:
+          - Thu, 21 Mar 2024 11:08:06 GMT
+        server:
+          - uvicorn
+        transfer-encoding:
+          - chunked
+      status:
+        code: 200
+        message: OK
+version: 1
