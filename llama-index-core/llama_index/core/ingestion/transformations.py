@@ -14,6 +14,7 @@ from llama_index.core.node_parser import (
     SentenceSplitter,
     SimpleFileNodeParser,
     TokenTextSplitter,
+    MarkdownElementNodeParser,
 )
 from llama_index.core.schema import BaseComponent, BaseNode, Document
 
@@ -170,6 +171,17 @@ def build_configurable_transformation_enum():
                 name="Markdown Node Parser",
                 transformation_category=TransformationCategories.NODE_PARSER,
                 component_type=MarkdownNodeParser,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "MARKDOWN_ELEMENT_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Markdown Element Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=MarkdownElementNodeParser,
             ),
         )
     )
