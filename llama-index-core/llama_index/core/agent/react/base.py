@@ -57,6 +57,7 @@ class ReActAgent(AgentRunner):
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         context: Optional[str] = None,
+        complaint_when_no_reasoning_step: str = "",
     ) -> None:
         """Init params."""
         callback_manager = callback_manager or llm.callback_manager
@@ -74,6 +75,7 @@ class ReActAgent(AgentRunner):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
+            complaint_when_no_reasoning_step=complaint_when_no_reasoning_step,
         )
         super().__init__(
             step_engine,
@@ -97,14 +99,23 @@ class ReActAgent(AgentRunner):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         context: Optional[str] = None,
+        complaint_when_no_reasoning_step: str = "",
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
         or BaseRetriever should have picked up off their respective kwargs in their
         constructions.
+
+        If `complaint_when_no_reasoning_step` is provided, when LLM fails to follow the response templates specified in
+        the System Prompt, this message will be sent to the Agent, so that the Agent can have a second chance to fix
+        its mistakes. If this parameter is not given, a `ValueError` will be raised whenever we can't parse the output
+        from LLM, and you'll have to handle the exception yourself somewhere else.
+
+        Note: If you modified any response template in the System Prompt, you should override the method
+        `_extract_reasoning_step` in `ReActAgentWorker`.
 
         Returns:
             ReActAgent
@@ -126,6 +137,7 @@ class ReActAgent(AgentRunner):
             callback_manager=callback_manager,
             verbose=verbose,
             context=context,
+            complaint_when_no_reasoning_step=complaint_when_no_reasoning_step,
         )
 
     def _get_prompt_modules(self) -> PromptMixinType:
