@@ -82,7 +82,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
         return triplets[:limit]
 
-    def upsert_triplet(self, triplets: List[Triplet]) -> None:
+    def upsert_triplets(self, triplets: List[Triplet]) -> None:
         """Add triplets."""
         for triplet in triplets:
             self.graph.add_triplet(triplet)

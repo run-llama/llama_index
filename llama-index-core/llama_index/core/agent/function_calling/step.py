@@ -33,7 +33,6 @@ from llama_index.core.tools.calling import (
     call_tool_with_selection,
     acall_tool_with_selection,
 )
-from llama_index.llms.openai import OpenAI
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 
@@ -57,7 +56,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     def __init__(
         self,
         tools: List[BaseTool],
-        llm: OpenAI,
+        llm: Any,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = 5,

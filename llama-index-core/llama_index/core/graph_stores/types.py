@@ -167,7 +167,7 @@ class LabelledPropertyGraphStore(Protocol):
         relation_names: Optional[List[str]] = None,
         properties: Optional[dict] = None,
     ) -> List[Triplet]:
-        """Get triplets."""
+        """Get triplets with matching values."""
         ...
 
     def get_rel_map(
@@ -176,7 +176,7 @@ class LabelledPropertyGraphStore(Protocol):
         """Get depth-aware rel map."""
         ...
 
-    def upsert_triplet(self, triplets: List[Triplet]) -> None:
+    def upsert_triplets(self, triplets: List[Triplet]) -> None:
         """Add triplets."""
         ...
 

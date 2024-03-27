@@ -12,7 +12,7 @@ def test_add() -> None:
     e2 = Entity(name="e2")
     r = Relation(name="r")
 
-    g.upsert_triplet([(e1, r, e2)])
+    g.upsert_triplets([(e1, r, e2)])
 
     assert len(g.graph.get_triplets()) == 1
 
@@ -24,7 +24,7 @@ def test_delete() -> None:
     e2 = Entity(name="e2")
     r = Relation(name="r")
 
-    g.upsert_triplet([(e1, r, e2)])
+    g.upsert_triplets([(e1, r, e2)])
     g.delete([e1.name])
 
     assert len(g.graph.get_triplets()) == 0
@@ -37,7 +37,7 @@ def test_get() -> None:
     e2 = Entity(name="e2", properties={"key": "value"})
     r = Relation(name="r")
 
-    g.upsert_triplet([(e1, r, e2)])
+    g.upsert_triplets([(e1, r, e2)])
 
     assert g.get() == [(e1, r, e2)]
     assert g.get(entity_names=["e1"]) == [(e1, r, e2)]
