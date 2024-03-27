@@ -129,8 +129,10 @@ class CohereEmbedding(BaseEmbedding):
         try:
             import cohere
         except ImportError:
-            raise ImportError("`cohere` package not found. Please run `pip install 'cohere>=5.1.1,<6.0.0'.")
-        
+            raise ImportError(
+                "`cohere` package not found. Please run `pip install 'cohere>=5.1.1,<6.0.0'."
+            )
+
         # Validate model_name and input_type
         if model_name not in VALID_MODEL_INPUT_TYPES:
             raise ValueError(f"{model_name} is not a valid model name")
