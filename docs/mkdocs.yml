@@ -508,6 +508,11 @@ nav:
           - ./examples/vector_stores/BaiduVectorDBIndexDemo.ipynb
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGFireworks.ipynb
           - ./examples/vector_stores/KDBAI_Advanced_RAG_Demo.ipynb
+      - Cookbooks:
+          - ./examples/cookbooks/cohere_retriever_eval.ipynb
+          - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/mistralai.ipynb
+          - ./examples/cookbooks/anthropic_haiku.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
