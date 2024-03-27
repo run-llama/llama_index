@@ -1,13 +1,10 @@
 import os
-from time import sleep
 
 import openai
 import pytest
-from llama_index.core import (SimpleDirectoryReader, StorageContext,
-                              VectorStoreIndex)
+from llama_index.core import SimpleDirectoryReader
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.core.node_parser import NodeParser, SentenceSplitter
-from llama_index.core.schema import Document, TextNode
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from pymongo import MongoClient
