@@ -9,7 +9,6 @@ import os
 from importlib.metadata import version
 from typing import Any, Dict, List, Optional, cast
 
-import pymongo.collection
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -246,7 +245,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     metadata_dict
                 )
 
-                node = TextNode(  # TODO Consider using TextNodeWithScore
+                node = TextNode(
                     text=text,
                     id_=id,
                     metadata=metadata,
