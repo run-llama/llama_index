@@ -15,26 +15,29 @@ from redis.cluster import RedisCluster
 
 # Convert a ChatMessage to a json object for Redis
 def _message_to_dict(message: ChatMessage) -> dict:
-    msg =  {"type": message.role, "content": message.content}
-    if 'tool_calls' in message.additional_kwargs:
-        tool_calls = message.additional_kwargs['tool_calls']
-        msg['tool_calls'] = []
+    msg = {"type": message.role, "content": message.content}
+    if "tool_calls" in message.additional_kwargs:
+        tool_calls = message.additional_kwargs["tool_calls"]
+        msg["tool_calls"] = []
         for tc in tool_calls:
-           ret_func = {'name': tc.function.name, 'arguments': tc.function.arguments}
-           ret = {'id': tc.id, 'type': 'function', 'function': ret_func}
-           msg['tool_calls'].append(ret)
-    elif 'tool_call_id' in message.additional_kwargs:
-        msg['tool_call_id'] = message.additional_kwargs['tool_call_id']
-        msg['name'] = message.additional_kwargs['name']
+            ret_func = {"name": tc.function.name, "arguments": tc.function.arguments}
+            ret = {"id": tc.id, "type": "function", "function": ret_func}
+            msg["tool_calls"].append(ret)
+    elif "tool_call_id" in message.additional_kwargs:
+        msg["tool_call_id"] = message.additional_kwargs["tool_call_id"]
+        msg["name"] = message.additional_kwargs["name"]
     return msg
+
 
 def _dict_to_message(d: dict) -> ChatMessage:
     msg = ChatMessage(role=d["type"], content=d["content"])
-    if 'tool_calls' in d:
-        msg.additional_kwargs['tool_calls'] = [ChatCompletionMessageToolCall.model_validate(tc) for tc in d['tool_calls']]
-    elif 'tool_call_id' in d:
-        msg.additional_kwargs['tool_call_id'] = d['tool_call_id']
-        msg.additional_kwargs['name'] = d['name']
+    if "tool_calls" in d:
+        msg.additional_kwargs["tool_calls"] = [
+            ChatCompletionMessageToolCall.model_validate(tc) for tc in d["tool_calls"]
+        ]
+    elif "tool_call_id" in d:
+        msg.additional_kwargs["tool_call_id"] = d["tool_call_id"]
+        msg.additional_kwargs["name"] = d["name"]
     return msg
 
 
