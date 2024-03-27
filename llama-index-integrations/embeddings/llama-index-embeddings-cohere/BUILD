@@ -4,5 +4,5 @@ poetry_requirements(
 
 python_requirement(
    requirements=[],
-   dependencies=["!!llama-index-core:poetry#langchain"]
+   dependencies=["!llama-index-core:poetry#langchain"]
 )
