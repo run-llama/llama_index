@@ -1,6 +1,6 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple, Type
-from urllib.parse import urlparse
+from typing import Any, Dict, List, Optional, Tuple, Type, Literal, Union
+from urllib.parse import urlparse, quote
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -52,14 +52,27 @@ def get_data_model(
 
 
 class PostgresKVStore(BaseKVStore):
-    """Postgres Key-Value store.
+    """
+    A key-value store class that interfaces with a PostgreSQL database, optionally utilizing JSONB
+    for storage. This class provides synchronous and asynchronous methods to put, get, and delete
+    key-value pairs, supporting transactions and efficient batch operations. It's designed to work
+    with both standard PostgreSQL connections and AWS RDS with IAM authentication, handling SSL
+    connections as needed.
 
-    Args:
-        mongo_client (Any): MongoDB client
-        uri (Optional[str]): MongoDB URI
-        host (Optional[str]): MongoDB host
-        port (Optional[int]): MongoDB port
-        db_name (Optional[str]): MongoDB database name
+    Attributes:
+        connection_string (str): The PostgreSQL connection string for synchronous operations.
+        async_connection_string (str): The PostgreSQL connection string for asynchronous operations.
+        table_name (str): The name of the table used to store key-value pairs.
+        schema_name (str): The database schema name. Defaults to 'public'.
+        perform_setup (bool): If True, the table and schema are created during initialization.
+                              Defaults to True.
+        debug (bool): Enables debug output if True. Defaults to False.
+        use_jsonb (bool): Determines whether to use JSONB datatype for value storage. Defaults to False.
+        sslmode (Union[str, bool]): Specifies the SSL mode for PostgreSQL connections. Accepts
+                                    standard PostgreSQL SSL modes.
+        sslcert (Optional[str]): Path to the SSL client certificate.
+        sslkey (Optional[str]): Path to the SSL client key.
+        sslrootcert (Optional[str]): Path to the SSL root certificate.
     """
 
     connection_string: str
@@ -69,6 +82,10 @@ class PostgresKVStore(BaseKVStore):
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    sslmode: Union[str, bool]
+    sslcert: str
+    sslkey: str
+    sslrootcert: str
 
     def __init__(
         self,
@@ -79,17 +96,32 @@ class PostgresKVStore(BaseKVStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        sslmode: Optional[
+            Union[
+                Literal[
+                    "disable", "allow", "prefer", "require", "verify-ca", "verify-full"
+                ],
+                bool,
+            ]
+        ] = None,
+        sslcert: Optional[str] = None,
+        sslkey: Optional[str] = None,
+        sslrootcert: Optional[str] = None,
     ) -> None:
         try:
-            import asyncpg  # noqa
+            if sslmode is not None:
+                import psycopg  # noqa
+            else:
+                import asyncpg  # noqa
             import psycopg2  # noqa
             import sqlalchemy
             import sqlalchemy.ext.asyncio  # noqa
-        except ImportError:
+
+        except ImportError as e:
             raise ImportError(
-                "`sqlalchemy[asyncio]`, `psycopg2-binary` and `asyncpg` "
-                "packages should be pre installed"
-            )
+                "`sqlalchemy[asyncio]`, `psycopg2-binary`, `asyncpg`, and `psycopg` "
+                f"packages should be pre-installed. Missing package: {e.name}"
+            ) from e
 
         table_name = table_name.lower()
         schema_name = schema_name.lower()
@@ -101,6 +133,10 @@ class PostgresKVStore(BaseKVStore):
         self.debug = debug
         self.use_jsonb = use_jsonb
         self._is_initialized = False
+        self.sslmode = standardize_sslmode(sslmode)
+        self.sslcert = sslcert
+        self.sslkey = sslkey
+        self.sslrootcert = sslrootcert
 
         from sqlalchemy.orm import declarative_base
 
@@ -128,15 +164,33 @@ class PostgresKVStore(BaseKVStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        sslmode: Optional[
+            Union[
+                Literal[
+                    "disable", "allow", "prefer", "require", "verify-ca", "verify-full"
+                ],
+                bool,
+            ]
+        ] = None,
+        sslcert: Optional[str] = None,
+        sslkey: Optional[str] = None,
+        sslrootcert: Optional[str] = None,
     ) -> "PostgresKVStore":
         """Return connection string from database parameters."""
+        sslmode = standardize_sslmode(sslmode)
         conn_str = (
             connection_string
             or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
         )
-        async_conn_str = async_connection_string or (
-            f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
-        )
+        if sslmode is None:
+            async_conn_str = async_connection_string or (
+                f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+            )
+        else:
+            async_conn_str = async_connection_string or (
+                f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+            )
+
         return cls(
             connection_string=conn_str,
             async_connection_string=async_conn_str,
@@ -145,6 +199,10 @@ class PostgresKVStore(BaseKVStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            sslmode=sslmode,
+            sslcrt=sslcert,
+            sslkey=sslkey,
+            sslrootcert=sslrootcert,
         )
 
     @classmethod
@@ -156,6 +214,17 @@ class PostgresKVStore(BaseKVStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        sslmode: Optional[
+            Union[
+                Literal[
+                    "disable", "allow", "prefer", "require", "verify-ca", "verify-full"
+                ],
+                bool,
+            ]
+        ] = None,
+        sslcert: Optional[str] = None,
+        sslkey: Optional[str] = None,
+        sslrootcert: Optional[str] = None,
     ) -> "PostgresKVStore":
         """Return connection string from database parameters."""
         params = params_from_uri(uri)
@@ -166,6 +235,10 @@ class PostgresKVStore(BaseKVStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            sslmode=sslmode,
+            sslcrt=sslcert,
+            sslkey=sslkey,
+            sslrootcert=sslrootcert,
         )
 
     def _connect(self) -> Any:
@@ -173,10 +246,25 @@ class PostgresKVStore(BaseKVStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        engine_kwargs: dict = {}
+        if self.sslmode is not None:
+            engine_kwargs: dict = {
+                "connect_args": {
+                    "sslmode": self.sslmode,
+                    "sslcert": self.sslcert,
+                    "sslkey": self.sslkey,
+                    "sslrootcert": self.sslrootcert,
+                }
+            }
+
+        self._engine = create_engine(
+            self.connection_string, echo=self.debug, **engine_kwargs
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = create_async_engine(
+            self.async_connection_string, **engine_kwargs
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
     def _create_schema_if_not_exists(self) -> None:
@@ -448,13 +536,71 @@ class PostgresKVStore(BaseKVStore):
 
 
 def params_from_uri(uri: str) -> dict:
+    """
+    Parses a PostgreSQL connection URI and returns connection parameters as a dictionary.
+
+    This function extracts the database connection parameters from a given URI and returns them
+    as a dictionary. It handles special characters in the password by URL-encoding it, making
+    this function suitable for URIs containing AWS RDS IAM tokens or other credentials that
+    might include characters that require escapement.
+
+    Args:
+        uri (str): The PostgreSQL connection URI. It should follow the standard format:
+                   postgresql+[driver]://[user]:[password]@[host]:[port]/[dbname]
+
+    Returns:
+        dict: A dictionary containing the connection parameters extracted from the URI. The
+              keys in the dictionary are 'database', 'user', 'password', 'host', and 'port'.
+              The password is URL-encoded if present to handle special characters.
+
+    Example:
+        >>> uri = "postgresql://username:password@localhost:5432/mydatabase"
+        >>> params_from_uri(uri)
+        {'database': 'mydatabase', 'user': 'username', 'password': 'password', 'host': 'localhost', 'port': 5432}
+
+        For URIs with special characters in the password:
+        >>> uri = "postgresql://username:p@ssw0rd!@localhost:5432/mydatabase"
+        >>> params = params_from_uri(uri)
+        >>> params['password']
+        'p%40ssw0rd%21'
+    """
     result = urlparse(uri)
-    database = result.path[1:]
-    port = result.port if result.port else 5432
+    database = result.path[1:]  # Strip leading '/'
+    port = result.port if result.port else 5432  # Default port if not specified
+    # URL-encode the password to handle special characters
     return {
         "database": database,
         "user": result.username,
-        "password": result.password,
+        "password": quote(result.password) if result.password else result.password,
         "host": result.hostname,
         "port": port,
     }
+
+
+def standardize_sslmode(sslmode: Optional[Union[str, bool]]) -> Optional[str]:
+    """
+    Converts the 'sslmode' parameter value to None if it represents a non-secure connection.
+
+    This function standardizes the 'sslmode' parameter by converting values that indicate a
+    non-secure connection ('disable' or False) to None. It is designed to simplify SSL mode
+    handling by providing a unified representation of non-secure connection modes.
+
+    Args:
+        sslmode (Optional[Union[str, bool]]): The original 'sslmode' parameter value, which
+            can be a string indicating the SSL mode for PostgreSQL connections, or a boolean
+            where False indicates no SSL.
+
+    Returns:
+        Optional[str]: The standardized 'sslmode' value. Returns None if the original 'sslmode'
+            is 'disable' or False, indicating no SSL should be used. Otherwise, returns the
+            original 'sslmode' value unchanged.
+
+    Example:
+        >>> standardize_sslmode('disable')
+        None
+        >>> standardize_sslmode(False)
+        None
+        >>> standardize_sslmode('require')
+        'require'
+    """
+    return None if (sslmode == "disable" or sslmode is False) else sslmode
