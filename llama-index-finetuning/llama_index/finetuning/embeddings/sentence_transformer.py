@@ -25,16 +25,21 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         show_progress_bar: bool = True,
         evaluation_steps: int = 50,
         use_all_docs: bool = False,
+        log_path: str = None
     ) -> None:
         """Init params."""
         from sentence_transformers import InputExample, SentenceTransformer, losses
+        from sentence_transformers_tb import TBSentenceTransformer
         from torch.utils.data import DataLoader
 
         self.dataset = dataset
 
         self.model_id = model_id
         self.model_output_path = model_output_path
-        self.model = SentenceTransformer(model_id)
+        if log_path:
+            self.model = TBSentenceTransformer(model_id, writer_path = log_path)
+        else:
+            self.model = SentenceTransformer(model_id)
 
         self.use_all_docs = use_all_docs
 
