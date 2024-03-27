@@ -1184,7 +1184,6 @@ nav:
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
-              - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
