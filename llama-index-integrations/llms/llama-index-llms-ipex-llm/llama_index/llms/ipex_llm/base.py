@@ -394,7 +394,7 @@ class IpexLLM(CustomLLM):
         Returns:
             CompletionReponse after generation.
         """
-        from transformers import TextStreamer
+        from transformers import TextIteratorStreamer
 
         full_prompt = prompt
         if not formatted:
@@ -410,11 +410,11 @@ class IpexLLM(CustomLLM):
             if key in input_ids:
                 input_ids.pop(key, None)
 
-        streamer = TextStreamer(
+        streamer = TextIteratorStreamer(
             self._tokenizer, skip_prompt=True, skip_special_tokens=True
         )
         generation_kwargs = dict(
-            input_ids,
+            input_ids=input_ids,
             streamer=streamer,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
