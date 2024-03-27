@@ -119,7 +119,7 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
             query=query,
             documents=retrieved_texts,
         )
-        relevance_scores = [r.relevance_score for r in results]
+        relevance_scores = [r.relevance_score for r in results.results]
         agg_func = self._get_agg_func(agg)
 
         return RetrievalMetricResult(
