@@ -138,6 +138,7 @@ nav:
           - ./examples/data_connectors/MakeDemo.ipynb
           - ./examples/data_connectors/GoogleSheetsDemo.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
+          - ./examples/data_connectors/GoogleDriveDemo.ipynb
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
