@@ -44,8 +44,6 @@ class GoogleDriveReader(BasePydanticReader):
             user info. Defaults to None.
         service_account_key (Optional[dict]): Dictionary containing service
             account key. Defaults to None.
-
-
     """
 
     client_config: Optional[dict] = None
@@ -113,6 +111,10 @@ class GoogleDriveReader(BasePydanticReader):
             token_path=token_path,
             **kwargs,
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "GoogleDriveReader"
 
     def _get_credentials(self) -> Tuple[Credentials]:
         """Authenticate with Google and save credentials.
