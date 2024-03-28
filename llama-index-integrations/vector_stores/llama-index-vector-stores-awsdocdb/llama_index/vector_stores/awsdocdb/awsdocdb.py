@@ -202,12 +202,12 @@ class AWSDocDbVectorStore(VectorStore):
         logger.debug("Result of insert: %s", insert_result)
         return ids
 
-    def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using by id.
 
         Args:
-            doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
         try:
@@ -217,9 +217,9 @@ class AWSDocDbVectorStore(VectorStore):
                 "Unable to import bson, please install with `pip install bson`."
             ) from e
 
-        if doc_id is None:
+        if ref_doc_id is None:
             raise ValueError("No document id provided to delete.")
-        self._collection.delete_one({"id": doc_id})
+        self._collection.delete_one({self._metadata_key + ".ref_doc_id": ref_doc_id})
 
     @property
     def client(self) -> Any:
