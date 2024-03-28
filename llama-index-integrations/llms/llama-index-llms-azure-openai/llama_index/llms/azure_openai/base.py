@@ -29,7 +29,7 @@ class AzureOpenAI(OpenAI):
         for your deployment when you deployed a model.
 
     You must have the following environment variables set:
-    - `OPENAI_API_VERSION`: set this to `2023-05-15`
+    - `OPENAI_API_VERSION`: set this to `2023-07-01-preview` or newer.
         This may change in the future.
     - `AZURE_OPENAI_ENDPOINT`: your endpoint should look like the following
         https://YOUR_RESOURCE_NAME.openai.azure.com/
@@ -37,6 +37,25 @@ class AzureOpenAI(OpenAI):
 
     More information can be found here:
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
+
+    Examples:
+        `pip install llama-index-llms-azure-openai`
+
+        ```python
+        from llama_index.llms.azure_openai import AzureOpenAI
+
+        aoai_api_key = "YOUR_AZURE_OPENAI_API_KEY"
+        aoai_endpoint = "YOUR_AZURE_OPENAI_ENDPOINT"
+        aoai_api_version = "2023-07-01-preview"
+
+        llm = AzureOpenAI(
+            model="YOUR_AZURE_OPENAI_COMPLETION_MODEL_NAME",
+            deployment_name="YOUR_AZURE_OPENAI_COMPLETION_DEPLOYMENT_NAME",
+            api_key=aoai_api_key,
+            azure_endpoint=aoai_endpoint,
+            api_version=aoai_api_version,
+        )
+        ```
     """
 
     engine: str = Field(description="The name of the deployed azure engine.")

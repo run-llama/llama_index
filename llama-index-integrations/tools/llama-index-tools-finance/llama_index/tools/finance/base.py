@@ -1,7 +1,7 @@
 from typing import List, Optional, Any, Dict
 
 import pandas as pd
-
+from datetime import datetime, timedelta
 from llama_index.tools.finance import comparisons, earnings, news
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -142,7 +142,7 @@ class FinanceAgentToolSpec(BaseToolSpec):
 
     def get_latest_news_for_stock(self, stock_id: str) -> List[str]:
         """Given a stock_id representing the name of a company or the stock ticker symbol, Returns a list of news published related to top business articles in US in last 7 days from now."""
-        articles = news.get_latest_news_for_stock(stock_id=stock_id)
+        articles = news.get_latest_news_for_stock(self._api_key, stock_id=stock_id)
         return [a["title"] for a in articles]
 
     def get_current_stock_price_info(

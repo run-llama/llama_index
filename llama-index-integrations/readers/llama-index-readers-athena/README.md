@@ -1,5 +1,11 @@
 # Athena reader.
 
+```bash
+pip install llama-index-readers-athena
+
+pip install llama-index-llms-openai
+```
+
 Athena reader allow execute SQL with AWS Athena. We using SQLAlchemy and PyAthena under the hood.
 
 ## Permissions
@@ -13,10 +19,10 @@ Here's an example usage of the AthenaReader.
 ```
 import os
 import dotenv
-from llama_index import SQLDatabase,ServiceContext
-from llama_index.indices.struct_store import NLSQLTableQueryEngine
-from llama_index.llms import OpenAI
-from llama_hub.athena import AthenaReader
+from llama_index.core import SQLDatabase,ServiceContext
+from llama_index.core.query_engine import NLSQLTableQueryEngine
+from llama_index.llms.openai import OpenAI
+from llama_index.readers.athena import AthenaReader
 
 dotenv.load_dotenv()
 

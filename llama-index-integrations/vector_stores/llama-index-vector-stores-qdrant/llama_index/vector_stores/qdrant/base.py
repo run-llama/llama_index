@@ -74,6 +74,20 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
+
+    Examples:
+        `pip install llama-index-vector-stores-qdrant`
+
+        ```python
+        import qdrant_client
+        from llama_index.vector_stores.qdrant import QdrantVectorStore
+
+        client = qdrant_client.QdrantClient()
+
+        vector_store = QdrantVectorStore(
+            collection_name="example_collection", client=client
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -370,7 +384,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
+        except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(
@@ -408,7 +422,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
+        except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(

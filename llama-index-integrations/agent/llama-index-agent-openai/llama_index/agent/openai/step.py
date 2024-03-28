@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import uuid
+from functools import partial
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Union, cast, get_args
 
@@ -285,6 +286,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
             args=(task.extra_state["new_memory"],),
+            kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
         )
         thread.start()
         # Wait for the event to be set
@@ -306,11 +308,15 @@ class OpenAIAgentWorker(BaseAgentWorker):
         # create task to write chat response to history
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(
-                task.extra_state["new_memory"]
+                task.extra_state["new_memory"],
+                on_stream_end_fn=partial(self.finalize_task, task),
             )
         )
+        chat_stream_response._ensure_async_setup()
+
         # wait until openAI functions stop executing
         await chat_stream_response._is_function_false_event.wait()
+
         # return response stream
         return chat_stream_response
 
@@ -605,7 +611,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        task.memory.set(
+            task.memory.get_all() + task.extra_state["new_memory"].get_all()
+        )
         # reset new memory
         task.extra_state["new_memory"].reset()
 

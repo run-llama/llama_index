@@ -1,5 +1,9 @@
 # Patentsview Loader
 
+```bash
+pip install llama-index-readers-patentsview
+```
+
 This loader loads patent abstract from `a list of patent numbers` with API provided by [Patentsview](https://patentsview.org/).
 
 ## Usage
@@ -7,9 +11,8 @@ This loader loads patent abstract from `a list of patent numbers` with API provi
 Here'a an example usage of PatentsviewReader.
 
 ```python
-from llama_index import download_loader
+from llama_index.readers.patentsview import PatentsviewReader
 
-PatentsviewReader = download_loader("PatentsviewReader")
 loader = PatentsviewReader()
 patents = ["8848839", "10452978"]
 abstracts = loader.load_data(patents)

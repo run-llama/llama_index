@@ -5,8 +5,6 @@ import json
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
-import nest_asyncio
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -320,6 +318,7 @@ class OpensearchVectorClient:
         }
         self._os_client = _get_async_opensearch_client(self._endpoint, **kwargs)
         not_found_error = _import_not_found_error()
+
         event_loop = asyncio.get_event_loop()
         try:
             event_loop.run_until_complete(
@@ -359,14 +358,17 @@ class OpensearchVectorClient:
             is_aoss=self.is_aoss,
         )
 
-    async def delete_doc_id(self, doc_id: str) -> None:
+    async def delete_by_doc_id(self, doc_id: str) -> None:
         """
-        Delete a document.
+        Deletes all OpenSearch documents corresponding to the given LlamaIndex `Document` ID.
 
         Args:
-            doc_id (str): document id
+            doc_id (str): a LlamaIndex `Document` id
         """
-        await self._os_client.delete(index=self._index, id=doc_id)
+        search_query = {
+            "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
+        }
+        await self._os_client.delete_by_query(index=self._index, body=search_query)
 
     async def aquery(
         self,
@@ -441,6 +443,35 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     Args:
         client (OpensearchVectorClient): Vector index client to use
             for data insertion/querying.
+
+    Examples:
+        `pip install llama-index-vector-stores-opensearch`
+
+        ```python
+        from llama_index.vector_stores.opensearch import (
+            OpensearchVectorStore,
+            OpensearchVectorClient,
+        )
+
+        # http endpoint for your cluster (opensearch required for vector index usage)
+        endpoint = "http://localhost:9200"
+        # index to demonstrate the VectorStore impl
+        idx = "gpt-index-demo"
+
+        # OpensearchVectorClient stores text in this field by default
+        text_field = "content"
+        # OpensearchVectorClient stores embeddings in this field by default
+        embedding_field = "embedding"
+
+        # OpensearchVectorClient encapsulates logic for a
+        # single opensearch index with vector search enabled
+        client = OpensearchVectorClient(
+            endpoint, idx, 1536, embedding_field=embedding_field, text_field=text_field
+        )
+
+        # initialize vector store
+        vector_store = OpensearchVectorStore(client)
+        ```
     """
 
     stores_text: bool = True
@@ -452,7 +483,6 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         super().__init__()
-        nest_asyncio.apply()
         self._client = client
 
     @property
@@ -493,10 +523,10 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes using a ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
 
         """
         asyncio.get_event_loop().run_until_complete(
@@ -505,13 +535,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Async delete nodes using with ref_doc_id.
+        Async delete nodes using a ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
 
         """
-        await self._client.delete_doc_id(ref_doc_id)
+        await self._client.delete_by_doc_id(ref_doc_id)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """

@@ -1,5 +1,9 @@
 # GraphQL Loader
 
+```bash
+pip install llama-index-readers-graphql
+```
+
 This loader loads documents via GraphQL queries from a GraphQL endpoint.
 The user specifies a GraphQL endpoint URL with optional credentials to initialize the reader.
 By declaring the GraphQL query and optional variables (parameters) the loader can fetch the nested result docs.
@@ -10,10 +14,9 @@ Here's an example usage of the GraphQLReader.
 You can test out queries directly [on the site](https://countries.trevorblades.com/)
 
 ```python
-from llama_index import download_loader
 import os
 
-GraphQLReader = download_loader("GraphQLReader")
+from llama_index.readers.graphql import GraphQLReader
 
 uri = "https://countries.trevorblades.com/"
 headers = {}

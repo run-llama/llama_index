@@ -27,6 +27,26 @@ class IndexType(enum.Enum):
 
 
 class TimescaleVectorStore(VectorStore):
+    """Timescale vector store.
+
+    Examples:
+        `pip install llama-index-vector-stores-timescalevector`
+
+        ```python
+        from llama_index.vector_stores.timescalevector import TimescaleVectorStore
+
+        # Set up the Timescale service URL
+        TIMESCALE_SERVICE_URL = "postgres://tsdbadmin:<password>@<id>.tsdb.cloud.timescale.com:<port>/tsdb?sslmode=require"
+
+        # Create a TimescaleVectorStore instance
+        vector_store = TimescaleVectorStore.from_params(
+            service_url=TIMESCALE_SERVICE_URL,
+            table_name="your_table_name_here",
+            num_dimensions=1536,
+        )
+        ```
+    """
+
     stores_text = True
     flat_metadata = False
 

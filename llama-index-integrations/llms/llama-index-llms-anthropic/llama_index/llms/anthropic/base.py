@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence
-
+from anthropic.types import ContentBlockDeltaEvent
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -28,16 +28,32 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
-    messages_to_anthropic_prompt,
+    messages_to_anthropic_messages,
 )
+from llama_index.core.utils import Tokenizer
 
 import anthropic
 
-DEFAULT_ANTHROPIC_MODEL = "claude-2"
+DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
 class Anthropic(LLM):
+    """Anthropic LLM.
+
+    Examples:
+        `pip install llama-index-llms-anthropic`
+
+        ```python
+        from llama_index.llms.anthropic import Anthropic
+
+        llm = Anthropic(model="claude-instant-1")
+        resp = llm.stream_complete("Paul Graham is ")
+        for r in resp:
+            print(r.delta, end="")
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_ANTHROPIC_MODEL, description="The anthropic model to use."
     )
@@ -124,11 +140,15 @@ class Anthropic(LLM):
         )
 
     @property
+    def tokenizer(self) -> Tokenizer:
+        return self._client.get_tokenizer()
+
+    @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
-            "max_tokens_to_sample": self.max_tokens,
+            "max_tokens": self.max_tokens,
         }
         return {
             **base_kwargs,
@@ -143,15 +163,18 @@ class Anthropic(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = messages_to_anthropic_prompt(messages)
+        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.completions.create(
-            prompt=prompt, stream=False, **all_kwargs
+        response = self._client.messages.create(
+            messages=anthropic_messages,
+            stream=False,
+            system=system_prompt,
+            **all_kwargs,
         )
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response.completion
+                role=MessageRole.ASSISTANT, content=response.content[0].text
             ),
             raw=dict(response),
         )
@@ -167,24 +190,25 @@ class Anthropic(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = messages_to_anthropic_prompt(messages)
+        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.completions.create(
-            prompt=prompt, stream=True, **all_kwargs
+        response = self._client.messages.create(
+            messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
         )
 
         def gen() -> ChatResponseGen:
             content = ""
             role = MessageRole.ASSISTANT
             for r in response:
-                content_delta = r.completion
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=r,
-                )
+                if isinstance(r, ContentBlockDeltaEvent):
+                    content_delta = r.delta.text
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=r,
+                    )
 
         return gen()
 
@@ -199,15 +223,18 @@ class Anthropic(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        prompt = messages_to_anthropic_prompt(messages)
+        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.completions.create(
-            prompt=prompt, stream=False, **all_kwargs
+        response = await self._aclient.messages.create(
+            messages=anthropic_messages,
+            system=system_prompt,
+            stream=False,
+            **all_kwargs,
         )
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response.completion
+                role=MessageRole.ASSISTANT, content=response.content[0].text
             ),
             raw=dict(response),
         )
@@ -223,24 +250,25 @@ class Anthropic(LLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        prompt = messages_to_anthropic_prompt(messages)
+        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.completions.create(
-            prompt=prompt, stream=True, **all_kwargs
+        response = await self._aclient.messages.create(
+            messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
         )
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             role = MessageRole.ASSISTANT
             async for r in response:
-                content_delta = r.completion
-                content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=r,
-                )
+                if isinstance(r, ContentBlockDeltaEvent):
+                    content_delta = r.delta.text
+                    content += content_delta
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=r,
+                    )
 
         return gen()
 

@@ -21,6 +21,32 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 
 class Perplexity(LLM):
+    """Perplexity LLM.
+
+    Examples:
+        `pip install llama-index-llms-perplexity`
+
+        ```python
+        from llama_index.llms.perplexity import Perplexity
+        from llama_index.core.llms import ChatMessage
+
+        pplx_api_key = "your-perplexity-api-key"
+
+        llm = Perplexity(
+            api_key=pplx_api_key, model="mistral-7b-instruct", temperature=0.5
+        )
+
+        messages_dict = [
+            {"role": "system", "content": "Be precise and concise."},
+            {"role": "user", "content": "Tell me 5 sentences about Perplexity."},
+        ]
+        messages = [ChatMessage(**msg) for msg in messages_dict]
+
+        response = llm.chat(messages)
+        print(str(response))
+        ```
+    """
+
     model: str = Field(description="The Perplexity model to use.")
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
@@ -98,9 +124,11 @@ class Perplexity(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self.context_window
-            if self.context_window is not None
-            else self._get_context_window(),
+            context_window=(
+                self.context_window
+                if self.context_window is not None
+                else self._get_context_window()
+            ),
             num_output=self.max_tokens
             or -1,  # You can replace this with the appropriate value
             is_chat_model=self._is_chat_model(),
@@ -109,14 +137,13 @@ class Perplexity(LLM):
 
     def _get_context_window(self) -> int:
         model_context_windows = {
+            "sonar-small-chat": 16384,
+            "sonar-small-online": 12000,
+            "sonar-medium-chat": 16384,
+            "sonar-medium-online": 12000,
             "codellama-34b-instruct": 16384,
-            "llama-2-70b-chat": 4096,
-            "mistral-7b-instruct": 4096,
-            "mixtral-8x7b-instruct": 4096,
-            "pplx-7b-chat": 8192,
-            "pplx-70b-chat": 4096,
-            "pplx-7b-online": 4096,
-            "pplx-70b-online": 4096,
+            "mistral-7b-instruct": 16384,
+            "mixtral-8x7b-instruct": 16384,
         }
         return model_context_windows.get(
             self.model, 4096
@@ -124,14 +151,12 @@ class Perplexity(LLM):
 
     def _is_chat_model(self) -> bool:
         chat_models = {
-            "codellama-34b-instruct",
-            "llama-2-70b-chat",
+            "sonar-small-chat",
+            "sonar-small-online",
+            "sonar-medium-chat",
+            "sonar-medium-online" "codellama-34b-instruct",
             "mistral-7b-instruct",
             "mixtral-8x7b-instruct",
-            "pplx-7b-chat",
-            "pplx-70b-chat",
-            "pplx-7b-online",
-            "pplx-70b-online",
         }
         return self.model in chat_models
 

@@ -1,5 +1,9 @@
 # Azure Storage Blob Loader
 
+```bash
+pip install llama-index-readers-azstorage-blob
+```
+
 This loader parses any file stored as an Azure Storage blob or the entire container (with an optional prefix / attribute filter) if no particular file is specified. When initializing `AzStorageBlobReader`, you may pass in your account url with a SAS token or crdentials to authenticate.
 
 All files are temporarily downloaded locally and subsequently parsed with `SimpleDirectoryReader`. Hence, you may also specify a custom `file_extractor`, relying on any of the loaders in this library (or your own)! If you need a clue on finding the file extractor object because you'd like to use your own file extractor, follow this sample.
@@ -20,9 +24,7 @@ To use this loader, you need to pass in the name of your Azure Storage Container
 ### Using a Storage Account SAS URL
 
 ```python
-from llama_index import download_loader
-
-AzStorageBlobReader = download_loader("AzStorageBlobReader")
+from llama_index.readers.azstorage_blob import AzStorageBlobReader
 
 loader = AzStorageBlobReader(
     container="scrabble-dictionary",
@@ -38,9 +40,7 @@ documents = loader.load_data()
 The sample below will download all files in a container, by only specifying the storage account's connection string and the container name.
 
 ```python
-from llama_index import download_loader
-
-AzStorageBlobReader = download_loader("AzStorageBlobReader")
+from llama_index.readers.azstorage_blob import AzStorageBlobReader
 
 loader = AzStorageBlobReader(
     container_name="<CONTAINER_NAME>",
@@ -57,12 +57,11 @@ Ensure the Azure Identity library is available `pip install azure-identity`
 The sample below downloads all files in the container using the default credential, alternative credential options are available such as a service principal `ClientSecretCredential`
 
 ```python
-from llama_index import download_loader
 from azure.identity import DefaultAzureCredential
 
 default_credential = DefaultAzureCredential()
 
-AzStorageBlobReader = download_loader("AzStorageBlobReader")
+from llama_index.readers.azstorage_blob import AzStorageBlobReader
 
 loader = AzStorageBlobReader(
     container_name="scrabble-dictionary",

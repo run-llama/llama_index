@@ -29,7 +29,7 @@ Please see the [examples](./examples/) folder for more specific examples.
 from llama_index.packs.koda_retriever import KodaRetriever
 from llama_index.core import VectorStoreIndex
 from llama_index.llms.openai import OpenAI
-from llama_index.embeddings.openai.base import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.core import Settings
 

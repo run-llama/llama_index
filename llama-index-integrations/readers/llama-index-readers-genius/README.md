@@ -1,5 +1,9 @@
 # LlamaIndex Readers Integration: Genius
 
+```bash
+pip install llama-index-readers-genius
+```
+
 This loader connects to the Genius API and loads lyrics, metadata, and album art into `Documents`.
 
 As a prerequisite, you will need to register with [Genius API](https://genius.com/api-clients) and create an app in order to get a `client_id` and a `client_secret`. You should then set a `redirect_uri` for the app. The `redirect_uri` does not need to be functional. You should then generate an access token as an instantiator for the GeniusReader.
@@ -60,9 +64,7 @@ Here's an example usage of the GeniusReader. It will retrieve songs that match s
 - **Returns**: List of `Document` objects with song lyrics.
 
 ```python
-from llama_index.core.readers import download_loader
-
-GeniusReader = download_loader("GeniusReader")
+from llama_index.readers.genius import GeniusReader
 
 access_token = "your_generated_access_token"
 
@@ -79,7 +81,7 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 ```python
 from llama_index.core import VectorStoreIndex, download_loader
 
-GeniusReader = download_loader("GeniusReader")
+from llama_index.readers.genius import GeniusReader
 
 access_token = "your_generated_access_token"
 

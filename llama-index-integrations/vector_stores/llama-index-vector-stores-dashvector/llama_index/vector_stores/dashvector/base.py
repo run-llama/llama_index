@@ -55,6 +55,23 @@ class DashVectorStore(VectorStore):
         collection (Optional[dashvector.Collection]): DashVector collection instance
         support_sparse_vector (bool): whether support sparse vector for collection.
         encoder (Optional[dashtext.SparseVectorEncoder]): encoder for generating sparse vector from document
+
+    Examples:
+        `pip install llama-index-vector-stores-dashvector`
+
+        ```python
+        import dashvector
+
+        api_key = os.environ["DASHVECTOR_API_KEY"]
+        client = dashvector.Client(api_key=api_key)
+
+        # dimensions are for text-embedding-ada-002
+        client.create("llama-demo", dimension=1536)
+
+        dashvector_collection = client.get("quickstart")
+
+        vector_store = DashVectorStore(dashvector_collection)
+        ```
     """
 
     stores_text: bool = True

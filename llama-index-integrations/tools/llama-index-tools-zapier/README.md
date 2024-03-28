@@ -10,7 +10,7 @@ Here's an example usage of the ZapierToolSpec.
 
 ```python
 from llama_index.tools.zapier import ZapierToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 
 zapier_spec = ZapierToolSpec(api_key="sk-ak-your-key")

@@ -1,4 +1,5 @@
 """Vector store index types."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -68,9 +69,10 @@ class FilterOperator(str, Enum):
     NE = "!="  # not equal to (string, int, float)
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
-    IN = "in"  # In array (string or number)
-    NIN = "nin"  # Not in array (string or number)
+    IN = "in"  # metadata in value array (string or number)
+    NIN = "nin"  # metadata not in value array (string or number)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+    CONTAINS = "contains"  # metadata array contains value (string or number)
 
 
 class FilterCondition(str, Enum):
@@ -91,7 +93,12 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[StrictInt, StrictFloat, StrictStr]
+    value: Union[
+        StrictInt,
+        StrictFloat,
+        StrictStr,
+        List[Union[StrictInt, StrictFloat, StrictStr]],
+    ]
     operator: FilterOperator = FilterOperator.EQ
 
     @classmethod
@@ -119,14 +126,10 @@ ExactMatchFilter = MetadataFilter
 
 
 class MetadataFilters(BaseModel):
-    """Metadata filters for vector stores.
-
-    Currently only supports exact match filters.
-    TODO: support more advanced expressions.
-    """
+    """Metadata filters for vector stores."""
 
     # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
-    filters: List[Union[MetadataFilter, ExactMatchFilter]]
+    filters: List[Union[MetadataFilter, ExactMatchFilter, "MetadataFilters"]]
     # and/or such conditions for combining different filters
     condition: Optional[FilterCondition] = FilterCondition.AND
 

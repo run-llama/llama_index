@@ -1,5 +1,9 @@
 # Astra DB Loader
 
+```bash
+pip install llama-index-readers-astra-db
+```
+
 The Astra DB Loader returns a set of documents retrieved from Astra DB.
 The user initializes the loader with an Astra DB index. They then pass in a vector.
 
@@ -9,8 +13,6 @@ Here's an example usage of the AstraDBReader.
 
 ```python
 from openai import OpenAI
-
-from llama_index import download_loader
 
 
 # Get the credentials for Astra DB
@@ -29,7 +31,7 @@ response = client.embeddings.create(
 query_vector = response.data[0].embedding
 
 # Initialize the Reader object
-AstraDBReader = download_loader("AstraDBReader")
+from llama_index.readers.astra_db import AstraDBReader
 
 # Your Astra DB Account will provide you with the endpoint URL and Token
 reader = AstraDBReader(

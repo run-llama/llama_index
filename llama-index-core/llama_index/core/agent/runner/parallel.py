@@ -361,7 +361,10 @@ class ParallelAgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     async def _achat(
         self,
@@ -393,7 +396,10 @@ class ParallelAgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     @trace_method("chat")
     def chat(

@@ -85,6 +85,9 @@ class BaseIndex(Generic[IS], ABC):
 
         objects = objects or []
         self._object_map = {obj.index_id: obj.obj for obj in objects}
+        for obj in objects:
+            obj.obj = None  # clear the object to avoid serialization issues
+
         with self._callback_manager.as_trace("index_construction"):
             if index_struct is None:
                 nodes = nodes or []
@@ -214,6 +217,14 @@ class BaseIndex(Generic[IS], ABC):
 
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes."""
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                try:
+                    node.dict()
+                except ValueError:
+                    self._object_map[node.index_id] = node.obj
+                    node.obj = None
+
         with self._callback_manager.as_trace("insert_nodes"):
             self.docstore.add_documents(nodes, allow_update=True)
             self._insert(nodes, **insert_kwargs)

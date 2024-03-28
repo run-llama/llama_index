@@ -1,5 +1,9 @@
 # LlamaIndex Readers Integration: Couchbase
 
+```bash
+pip install llama-index-readers-couchbase
+```
+
 This loader loads documents from Couchbase cluster.
 The user specifies a Couchbase client or credentials to initialize the reader. They can specify the SQL++ query to
 fetch the relevant docs.
@@ -9,10 +13,9 @@ fetch the relevant docs.
 Here's an example usage of the CouchbaseReader.
 
 ```python
-from llama_index.core.readers import download_loader
 import os
 
-CouchbaseLoader = download_loader("CouchbaseReader")
+from llama_index.readers.couchbase import CouchbaseReader
 
 connection_string = (
     "couchbase://localhost"  # valid Couchbase connection string

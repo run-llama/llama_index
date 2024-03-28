@@ -1,5 +1,9 @@
 # Telegram Loader
 
+```bash
+pip install llama-index-readers-telegram
+```
+
 This loader fetches posts/chat messages/comments from Telegram channels or chats into `Document`s.
 
 Before working with Telegram’s API, you need to get your own API ID and hash:
@@ -31,9 +35,8 @@ If the `.session` file already existed, it will not login again, so be aware of 
 To use this loader, you simply need to pass in a entity name.
 
 ```python
-from llama_index.core import download_loader
+from llama_index.readers.telegram import TelegramReader
 
-TelegramReader = download_loader("TelegramReader")
 loader = TelegramReader(
     session_name="[YOUR_SESSION_NAME]",
     api_id="[YOUR_API_ID]",

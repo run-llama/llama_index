@@ -8,12 +8,13 @@ from typing import Generator, Generic, List, Optional, Type, TypeVar, Union
 import tqdm
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.evaluation import BaseEvaluator
 from openai import RateLimitError
 from pandas import DataFrame as PandasDataFrame
 
-PredictorType = Union[BaseQueryEngine, BaseEvaluator]
+PredictorType = Union[BaseQueryEngine, BaseEvaluator, LLM]
 P = TypeVar("P", bound=PredictorType)
 
 

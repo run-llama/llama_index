@@ -16,6 +16,7 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 from llama_index.llms.vertex.gemini_utils import create_gemini_client, is_gemini_model
 from llama_index.llms.vertex.utils import (
     CHAT_MODELS,
@@ -32,6 +33,33 @@ from llama_index.llms.vertex.utils import (
 
 
 class Vertex(LLM):
+    """Vertext LLM.
+
+    Examples:
+        `pip install llama-index-llms-vertex`
+
+        ```python
+        from llama_index.llms.openai import Vertex
+
+        # Set up necessary variables
+        credentials = {
+            "project_id": "INSERT_PROJECT_ID",
+            "api_key": "INSERT_API_KEY",
+        }
+
+        # Create an instance of the Vertex class
+        llm = Vertex(
+            model="text-bison",
+            project=credentials["project_id"],
+            credentials=credentials,
+        )
+
+        # Access the complete method from the instance
+        response = llm.complete("Hello world!")
+        print(str(response))
+        ```
+    """
+
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -130,7 +158,9 @@ class Vertex(LLM):
         return LLMMetadata(
             is_chat_model=self._is_chat_model,
             model_name=self.model,
-            system_role=MessageRole.USER,  # Vertex does not support the default: MessageRole.SYSTEM
+            system_role=(
+                MessageRole.USER if self._is_gemini else MessageRole.SYSTEM
+            ),  # Gemini does not support the default: MessageRole.SYSTEM
         )
 
     @property
@@ -152,8 +182,13 @@ class Vertex(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        question = _parse_message(messages[-1], self._is_gemini)
-        chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
+        merged_messages = (
+            merge_neighboring_same_role_messages(messages)
+            if self._is_gemini
+            else messages
+        )
+        question = _parse_message(merged_messages[-1], self._is_gemini)
+        chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
 
         kwargs = kwargs if kwargs else {}
@@ -209,8 +244,13 @@ class Vertex(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        question = _parse_message(messages[-1], self._is_gemini)
-        chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
+        merged_messages = (
+            merge_neighboring_same_role_messages(messages)
+            if self._is_gemini
+            else messages
+        )
+        question = _parse_message(merged_messages[-1], self._is_gemini)
+        chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
@@ -283,8 +323,13 @@ class Vertex(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        question = _parse_message(messages[-1], self._is_gemini)
-        chat_history = _parse_chat_history(messages[:-1], self._is_gemini)
+        merged_messages = (
+            merge_neighboring_same_role_messages(messages)
+            if self._is_gemini
+            else messages
+        )
+        question = _parse_message(merged_messages[-1], self._is_gemini)
+        chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
         chat_params = {**chat_history}
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}

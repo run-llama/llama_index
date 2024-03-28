@@ -11,6 +11,7 @@ env:
 
 jobs:
   publish_subpackage_if_needed:
+    if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

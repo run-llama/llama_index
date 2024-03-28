@@ -1,5 +1,9 @@
 # CouchDB Loader
 
+```bash
+pip install llama-index-readers-couchdb
+```
+
 This loader loads documents from CouchDB. The loader currently supports CouchDB 3.x
 using the CouchDB3 python wrapper from https://github.com/n-vlahovic/couchdb3
 The user specifies a CouchDB instance to initialize the reader. They then specify
@@ -10,10 +14,9 @@ the database name and query params to fetch the relevant docs.
 Here's an example usage of the SimpleCouchDBReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-SimpleCouchDBReader = download_loader("SimpleCouchDBReader")
+from llama_index.readers.couchdb import SimpleCouchDBReader
 
 host = "<host>"
 port = "<port>"

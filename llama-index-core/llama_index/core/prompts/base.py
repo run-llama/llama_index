@@ -246,6 +246,20 @@ class ChatPromptTemplate(BasePromptTemplate):
             function_mappings=function_mappings,
         )
 
+    @classmethod
+    def from_messages(
+        cls,
+        message_templates: Union[List[Tuple[str, str]], List[ChatMessage]],
+        **kwargs: Any,
+    ) -> "ChatPromptTemplate":
+        """From messages."""
+        if isinstance(message_templates[0], tuple):
+            message_templates = [
+                ChatMessage.from_str(role=role, content=content)
+                for role, content in message_templates
+            ]
+        return cls(message_templates=message_templates, **kwargs)
+
     def partial_format(self, **kwargs: Any) -> "ChatPromptTemplate":
         prompt = deepcopy(self)
         prompt.kwargs.update(kwargs)

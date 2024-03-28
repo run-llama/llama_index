@@ -1,6 +1,10 @@
 # PyMuPDF Loader
 
-This loader extracts text from a local PDF file using the `PyMuPDF` Python library. This is the fastest among all other PDF parsing options available in `llama_hub`. If `metadata` is passed as True while calling `load` function; extracted documents will include basic metadata such as page numbers, file path and total number of pages in pdf.
+```bash
+pip install llama-index-readers-file pymupdf
+```
+
+This loader extracts text from a local PDF file using the `PyMuPDF` Python library. If `metadata` is passed as True while calling `load` function; extracted documents will include basic metadata such as page numbers, file path and total number of pages in pdf.
 
 ## Usage
 
@@ -8,9 +12,8 @@ To use this loader, you need to pass file path of the local file as string or `P
 
 ```python
 from pathlib import Path
-from llama_index import download_loader
 
-PyMuPDFReader = download_loader("PyMuPDFReader")
+from llama_index.readers.file import PyMuPDFReader
 
 loader = PyMuPDFReader()
 documents = loader.load_data(file_path=Path("./article.pdf"), metadata=True)

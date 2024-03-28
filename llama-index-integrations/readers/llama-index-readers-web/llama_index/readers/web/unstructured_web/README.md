@@ -1,14 +1,16 @@
 # Unstructured.io URL Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader extracts the text from URLs using [Unstructured.io](https://github.com/Unstructured-IO/unstructured). The partition_html function partitions an HTML document and returns a list
 of document Element objects.
 
 ## Usage
 
 ```python
-from llama_index import download_loader
-
-UnstructuredURLLoader = download_loader("UnstructuredURLLoader")
+from llama_index.readers.web import UnstructuredURLLoader
 
 urls = [
     "https://www.understandingwar.org/backgrounder/russian-offensive-campaign-assessment-february-8-2023",
@@ -18,7 +20,7 @@ urls = [
 loader = UnstructuredURLLoader(
     urls=urls, continue_on_failure=False, headers={"User-Agent": "value"}
 )
-loader.load()
+loader.load_data()
 ```
 
 > Note:
