@@ -1,5 +1,4 @@
 from typing import Any, List, Optional, Dict
-import functools
 import inspect
 import uuid
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -9,6 +8,7 @@ from llama_index.core.instrumentation.span_handlers import (
     NullSpanHandler,
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
+import wrapt
 
 
 class Dispatcher(BaseModel):
@@ -58,68 +58,119 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span_enter(self, *args, id: str, **kwargs) -> None:
-        """Send notice to handlers that a span with id has started."""
+    def span_enter(
+        self,
+        *args: Any,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Send notice to handlers that a span with id_ has started."""
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_enter(*args, id=id, **kwargs)
+                h.span_enter(
+                    *args,
+                    id_=id_,
+                    bound_args=bound_args,
+                    instance=instance,
+                    **kwargs,
+                )
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
-    def span_drop(self, *args, id: str, err: Optional[Exception], **kwargs) -> None:
-        """Send notice to handlers that a span with id is being dropped."""
+    def span_drop(
+        self,
+        *args: Any,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        err: Optional[BaseException] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Send notice to handlers that a span with id_ is being dropped."""
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_drop(*args, id=id, err=err, **kwargs)
+                h.span_drop(
+                    *args,
+                    id_=id_,
+                    bound_args=bound_args,
+                    instance=instance,
+                    err=err,
+                    **kwargs,
+                )
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
-    def span_exit(self, *args, id: str, result: Optional[Any] = None, **kwargs) -> None:
-        """Send notice to handlers that a span with id is exiting."""
+    def span_exit(
+        self,
+        *args: Any,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        result: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Send notice to handlers that a span with id_ is exiting."""
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_exit(*args, id=id, result=result, **kwargs)
+                h.span_exit(
+                    *args,
+                    id_=id_,
+                    bound_args=bound_args,
+                    instance=instance,
+                    result=result,
+                    **kwargs,
+                )
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
     def span(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            id = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.span_enter(*args, id=id, **kwargs)
+        @wrapt.decorator
+        def wrapper(func, instance, args, kwargs):
+            bound_args = inspect.signature(func).bind(*args, **kwargs)
+            id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = func(*args, **kwargs)
-            except Exception as e:
-                self.span_drop(*args, id=id, err=e, **kwargs)
+            except BaseException as e:
+                self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
+                raise
             else:
-                self.span_exit(*args, id=id, result=result, **kwargs)
+                self.span_exit(
+                    id_=id_, bound_args=bound_args, instance=instance, result=result
+                )
                 return result
 
-        @functools.wraps(func)
-        async def async_wrapper(*args, **kwargs):
-            id = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.span_enter(*args, id=id, **kwargs)
+        @wrapt.decorator
+        async def async_wrapper(func, instance, args, kwargs):
+            bound_args = inspect.signature(func).bind(*args, **kwargs)
+            id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = await func(*args, **kwargs)
-            except Exception as e:
-                self.span_drop(*args, id=id, err=e, **kwargs)
+            except BaseException as e:
+                self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
+                raise
             else:
-                self.span_exit(*args, id=id, result=result, **kwargs)
+                self.span_exit(
+                    id_=id_, bound_args=bound_args, instance=instance, result=result
+                )
                 return result
 
         if inspect.iscoroutinefunction(func):
-            return async_wrapper
+            return async_wrapper(func)
         else:
-            return wrapper
+            return wrapper(func)
 
     @property
     def log_name(self) -> str:
