@@ -177,17 +177,6 @@ def build_configurable_transformation_enum():
 
     enum_members.append(
         (
-            "MARKDOWN_ELEMENT_NODE_PARSER",
-            ConfigurableTransformation(
-                name="Markdown Element Node Parser",
-                transformation_category=TransformationCategories.NODE_PARSER,
-                component_type=MarkdownElementNodeParser,
-            ),
-        )
-    )
-
-    enum_members.append(
-        (
             "JSON_NODE_PARSER",
             ConfigurableTransformation(
                 name="JSON Node Parser",
@@ -204,6 +193,17 @@ def build_configurable_transformation_enum():
                 name="Simple File Node Parser",
                 transformation_category=TransformationCategories.NODE_PARSER,
                 component_type=SimpleFileNodeParser,
+            ),
+        )
+    )
+
+    enum_members.append(
+        (
+            "MARKDOWN_ELEMENT_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Markdown Element Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=MarkdownElementNodeParser,
             ),
         )
     )
