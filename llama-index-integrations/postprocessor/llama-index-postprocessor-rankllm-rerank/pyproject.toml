@@ -9,12 +9,12 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
-# [tool.llamahub]
-# contains_example = false
-# import_path = "llama_index.postprocessor.rankllm_rerank"
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.postprocessor.rankllm_rerank"
 
-# [tool.llamahub.class_authors]
-# CLASS = "xpbowler"
+[tool.llamahub.class_authors]
+CLASS = "xpbowler"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,11 +26,13 @@ python_version = "3.8"
 [tool.poetry]
 name = "llama-index-postprocessor-rankllm-rerank"
 version = "0.1.0"
+excludes = ["**/BUILD"]
 description = "llama-index postprocessor rankllm-rerank integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "llama_index/"}]
+
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

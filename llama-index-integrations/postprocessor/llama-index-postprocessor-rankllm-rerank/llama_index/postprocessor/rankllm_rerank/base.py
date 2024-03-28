@@ -1,4 +1,5 @@
-from typing import Any, List, Optional
+from typing import Any, List
+from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -16,31 +17,27 @@ class RankLLMRerank(BaseNodePostprocessor):
     
     def __init__(
         self,
+        model,
         top_n: int = 10,
         with_retrieval: bool = False,
-        model: str = "zephyr",
     ):
-        try: 
-            from rank_llm.result import Result 
-            self._result = Result
+        try:
+            model_enum = ModelType(model.lower())
+        except ValueError:
+            raise ValueError("Unsupported model type. Please use 'vicuna' or 'zephyr'.")
+        from rank_llm.result import Result 
+        self._result = Result
 
+        if model_enum == ModelType.VICUNA:
+            from rank_llm.rerank.vicuna_reranker import VicunaReranker
+            self._model = VicunaReranker()
+        elif model_enum == ModelType.ZEPHYR:
+            from rank_llm.rerank.zephyr_reranker import ZephyrReranker
+            self._model = ZephyrReranker()
 
-            if model == "vicuna":
-                from rank_llm.rerank.vicuna_reranker import VicunaReranker
-                self._model = VicunaReranker()
-            else:
-                from rank_llm.rerank.zephyr_reranker import ZephyrReranker
-                self._model = ZephyrReranker()
-                
-            if with_retrieval:
-                from rank_llm.retrieve.retriever import Retriever
-                self._retriever = Retriever
-
-        except ImportError:
-            raise ImportError(
-                "Cannot import rank_llm",
-                "please `pip install rank_llm`",
-            )
+        if with_retrieval:
+            from rank_llm.retrieve.retriever import Retriever
+            self._retriever = Retriever
 
         super().__init__(
             top_n=top_n,
@@ -55,10 +52,8 @@ class RankLLMRerank(BaseNodePostprocessor):
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
-        query_bundle: Optional[QueryBundle] = None,
+        query_bundle: QueryBundle, 
     ) -> List[NodeWithScore]:
-        if query_bundle is None:
-            raise ValueError("Query bundle must be provided.")
 
         docs = [(node.get_content(),node.get_score()) for node in nodes]
 
@@ -77,3 +72,7 @@ class RankLLMRerank(BaseNodePostprocessor):
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
         return new_nodes[: self.top_n]
+    
+class ModelType(Enum):
+    VICUNA = "vicuna"
+    ZEPHYR = "zephyr"
