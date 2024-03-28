@@ -1,0 +1,36 @@
+name: Enforce Folder Requirements
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check for py.typed
+        shell: bash
+        run: |
+          #!/bin/bash
+          set -e # Exit immediately if a command exits with a non-zero status.
+
+          # Function to check for py.typed in the same directory as a found file
+          check_py_typed() {
+            dir=$(dirname "$1")
+            if [[ ! -f "$dir/py.typed" ]]; then
+              echo "ERROR: py.typed not found in $dir"
+              exit 1
+            fi
+          }
+
+          # Find all pyproject.toml and requirements.txt files
+          while IFS= read -r file; do
+            echo "Checking $file..."
+            check_py_typed "$file"
+          done < <(find . -type f \( -name "pyproject.toml" -o -name "requirements.txt" \))
