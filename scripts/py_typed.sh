@@ -5,6 +5,16 @@
 MODE="$1" # The operation mode: "check" or "create"
 MISSING_PY_TYPED=0 # Flag to track missing py.typed files
 
+increment_patch_version() {
+    local version=$1
+    IFS='.' read -ra PARTS <<< "$version" # Split version into an array.
+    local major=${PARTS[0]}
+    local minor=${PARTS[1]}
+    local patch=${PARTS[2]}
+    ((patch++)) # Increment patch
+    echo "${major}.${minor}.${patch}" # Return new version
+}
+
 # This function processes directories based on the mode.
 process_directory() {
     local dir=$1
@@ -51,6 +61,16 @@ find . -type f -name "pyproject.toml" | while read -r toml_file; do
 
     if [ -d "$llama_index_dir" ]; then
         process_directory "$llama_index_dir"
+        if [[ $MODE == "create" ]]; then
+            current_version=$(grep '^version =' "$toml_file" | head -1 | sed 's/version = "\(.*\)"/\1/')
+            if [[ ! -z "$current_version" ]]; then
+                new_version=$(increment_patch_version "$current_version")
+                sed -i "s/version = \"$current_version\"/version = \"$new_version\"/" "$toml_file"
+                echo "Updated $toml_file to version $new_version."
+            else
+                echo "No version found in $toml_file."
+            fi
+        fi
     fi
 done
 
@@ -59,5 +79,10 @@ if [[ $MODE == "check" && $MISSING_PY_TYPED -eq 1 ]]; then
     echo "One or more py.typed files are missing."
     exit 1
 else
-    echo "Looks good!"
+    echo "All necessary py.typed files present."
+fi
+
+# Final message for create mode to indicate process completion
+if [[ $MODE == "create" ]]; then
+    echo "py.typed creation and version increment completed."
 fi
