@@ -46,6 +46,12 @@ process_directory() {
                 echo "ERROR: Missing py.typed in $dir"
                 MISSING_PY_TYPED=1 # Mark as missing
             fi
+
+            # Check that BUILD file is present and contains the expected content
+            if [[ ! -f "$dir/BUILD" || ! $(grep -q "py_typed" "$dir/BUILD") ]]; then
+                echo "ERROR: Missing or incorrect BUILD file in $dir"
+                MISSING_PY_TYPED=1 # Mark as missing
+            fi
         fi
     fi
 
