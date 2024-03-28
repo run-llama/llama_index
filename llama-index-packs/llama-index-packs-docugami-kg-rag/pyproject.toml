@@ -23,7 +23,7 @@ exclude = ["**/BUILD"]
 keywords = ["infer", "rag", "retrieve", "retriever"]
 name = "llama-index-packs-docugami-kg-rag"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = "^3.9"

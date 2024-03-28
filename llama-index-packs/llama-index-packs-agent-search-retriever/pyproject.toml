@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["logan-markewich"]
 name = "llama-index-packs-agent-search-retriever"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
