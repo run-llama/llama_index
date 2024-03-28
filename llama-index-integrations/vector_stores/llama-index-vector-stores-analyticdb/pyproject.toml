@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.gcs"
+import_path = "llama_index.vector_stores.analyticdb"
 
 [tool.llamahub.class_authors]
-GCSReader = "nfiacco"
+AnalyticDBVectorStore = "spyyang"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,21 +21,19 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index readers gcs integration"
+authors = ["JingYi <yangshangpo.ysp@alibaba-inc.com>"]
+description = "llama-index vector_stores analyticdb integration"
 exclude = ["**/BUILD"]
-keywords = ["bucket", "gcp", "gcs", "google cloud storage"]
 license = "MIT"
-maintainers = ["nfiacco"]
-name = "llama-index-readers-gcs"
+name = "llama-index-vector-stores-analyticdb"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-llama-index-readers-file = "^0.1.11"
-gcsfs = "^2024.3.1"
+alibabacloud_gpdb20160503 = "^3.5.0"
+alibabacloud_tea_openapi = "^0.3.8"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -45,7 +43,7 @@ pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
-ruff = "^0.2.1"
+ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"

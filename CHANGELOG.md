@@ -125,7 +125,7 @@
 
 - fix unclosed session in es add function #12135
 
-### `llama-index-vector-stores-kbdai` [0.1.3]
+### `llama-index-vector-stores-kdbai` [0.1.3]
 
 - Add support for `KDBAIVectorStore` (#11967)
 
