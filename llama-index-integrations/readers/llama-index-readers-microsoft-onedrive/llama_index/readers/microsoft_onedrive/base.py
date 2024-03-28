@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -18,32 +19,48 @@ SCOPES = ["Files.Read.All"]
 CLIENTCREDENTIALSCOPES = ["https://graph.microsoft.com/.default"]
 
 
-class OneDriveReader(BaseReader):
-    """Microsoft OneDrive reader."""
+class OneDriveReader(BasePydanticReader):
+    """
+    Microsoft OneDrive reader.
+
+    Initializes a new instance of the OneDriveReader.
+
+    :param client_id: The Application (client) ID for the app registered in the Azure Entra (formerly Azure Active directory) portal with MS Graph permission "Files.Read.All".
+    :param tenant_id: The Directory (tenant) ID of the Azure Active Directory (AAD) tenant the app is registered with.
+                      Defaults to "consumers" for multi-tenant applications and onderive personal.
+    :param client_secret: The Application Secret for the app registered in the Azure portal.
+                          If provided, the MSAL client credential flow will be used for authentication (ConfidentialClientApplication).
+                          If not provided, interactive authentication will be used (Not recommended for CI/CD or scenarios where manual interaction for authentication is not feasible).
+
+    For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'
+    for mobile and native applications.
+    """
+
+    client_id: str = None
+    client_secret: Optional[str] = None
+    tenant_id: Optional[str] = None
+
+    _is_interactive_auth: bool = PrivateAttr(False)
 
     def __init__(
         self,
         client_id: str,
         client_secret: Optional[str] = None,
-        tenant_id: str = "consumers",
+        tenant_id: Optional[str] = "consumers",
+        **kwargs: Any,
     ) -> None:
-        """
-        Initializes a new instance of the OneDriveReader.
+        self._is_interactive_auth = not client_secret
 
-        :param client_id: The Application (client) ID for the app registered in the Azure Entra (formerly Azure Active directory) portal with MS Graph permission "Files.Read.All".
-        :param tenant_id: The Directory (tenant) ID of the Azure Active Directory (AAD) tenant the app is registered with.
-                          Defaults to "consumers" for multi-tenant applications and onderive personal.
-        :param client_secret: The Application Secret for the app registered in the Azure portal.
-                              If provided, the MSAL client credential flow will be used for authentication (ConfidentialClientApplication).
-                              If not provided, interactive authentication will be used (Not recommended for CI/CD or scenarios where manual interaction for authentication is not feasible).
+        super().__init__(
+            client_id=client_id,
+            client_secret=client_secret,
+            tenant_id=tenant_id,
+            **kwargs,
+        )
 
-        For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'
-        for mobile and native applications.
-        """
-        self.client_id = client_id
-        self.tenant_id = tenant_id
-        self.client_secret = client_secret
-        self._is_interactive_auth = not self.client_secret
+    @classmethod
+    def class_name(cls) -> str:
+        return "OneDriveReader"
 
     def _authenticate_with_msal(self) -> Any:
         """Authenticate with MSAL.
@@ -473,7 +490,7 @@ class OneDriveReader(BaseReader):
         recursive: bool = True,
         userprincipalname: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id / file ids, f both are not provided download from the root.
+        """Load data from the folder id / file ids, if both are not provided download from the root.
 
         Args:
             folder_id: folder id of the folder in OneDrive.
