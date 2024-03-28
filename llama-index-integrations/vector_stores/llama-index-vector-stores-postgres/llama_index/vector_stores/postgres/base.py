@@ -109,6 +109,27 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
+    """Postgres Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-postgres`
+
+        ```python
+        from llama_index.vector_stores.postgres import PGVectorStore
+
+        # Create PGVectorStore instance
+        vector_store = PGVectorStore.from_params(
+            database="vector_db",
+            host="localhost",
+            password="password",
+            port=5432,
+            user="postgres",
+            table_name="paul_graham_essay",
+            embed_dim=1536  # openai embedding dimension
+        )
+        ```
+    """
+
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True

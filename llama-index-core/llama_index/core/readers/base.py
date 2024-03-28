@@ -25,9 +25,20 @@ class BaseReader(ABC):
             f"{self.__class__.__name__} does not provide lazy_load_data method currently"
         )
 
+    async def alazy_load_data(
+        self, *args: Any, **load_kwargs: Any
+    ) -> Iterable[Document]:
+        """Load data from the input directory lazily."""
+        # Fake async - just calls the sync method. Override in subclasses for real async implementations.
+        return self.lazy_load_data(*args, **load_kwargs)
+
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
         return list(self.lazy_load_data(*args, **load_kwargs))
+
+    async def aload_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
+        """Load data from the input directory."""
+        return self.load_data(*args, **load_kwargs)
 
     def load_langchain_documents(self, **load_kwargs: Any) -> List["LCDocument"]:
         """Load data in LangChain document format."""

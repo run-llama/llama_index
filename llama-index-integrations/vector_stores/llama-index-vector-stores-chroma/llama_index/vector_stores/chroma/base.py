@@ -116,6 +116,21 @@ class ChromaVectorStore(BasePydanticVectorStore):
         chroma_collection (chromadb.api.models.Collection.Collection):
             ChromaDB collection instance
 
+    Examples:
+        `pip install llama-index-vector-stores-chroma`
+
+        ```python
+        import chromadb
+        from llama_index.vector_stores.chroma import ChromaVectorStore
+
+        # Create a Chroma client and collection
+        chroma_client = chromadb.EphemeralClient()
+        chroma_collection = chroma_client.create_collection("example_collection")
+
+        # Set up the ChromaVectorStore and StorageContext
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        ```
+
     """
 
     stores_text: bool = True

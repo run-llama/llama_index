@@ -27,6 +27,40 @@ from llama_index.llms.vllm.utils import get_response, post_http_request
 
 
 class Vllm(LLM):
+    r"""Vllm LLM.
+
+    This class runs a vLLM model locally.
+
+    Examples:
+        `pip install llama-index-llms-vllm`
+
+
+        ```python
+        from llama_index.llms.vllm import Vllm
+
+        # specific functions to format for mistral instruct
+        def messages_to_prompt(messages):
+            prompt = "\n".join([str(x) for x in messages])
+            return f"<s>[INST] {prompt} [/INST] </s>\n"
+
+        def completion_to_prompt(completion):
+            return f"<s>[INST] {completion} [/INST] </s>\n"
+
+        llm = Vllm(
+            model="mistralai/Mistral-7B-Instruct-v0.1",
+            tensor_parallel_size=4,
+            max_new_tokens=256,
+            vllm_kwargs={"swap_space": 1, "gpu_memory_utilization": 0.5},
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+        )
+
+        llm.complete(
+            "What is a black hole?"
+        )
+        ```
+    """
+
     model: Optional[str] = Field(description="The HuggingFace Model to use.")
 
     temperature: float = Field(description="The temperature to use for sampling.")
@@ -292,6 +326,41 @@ class Vllm(LLM):
 
 
 class VllmServer(Vllm):
+    r"""Vllm LLM.
+
+    This class connects to a vLLM server (non-openai versions).
+
+    If using the OpenAI-API vLLM server, please see the `OpenAILike` LLM class.
+
+    Examples:
+        `pip install llama-index-llms-vllm`
+
+
+        ```python
+        from llama_index.llms.vllm import VllmServer
+
+        # specific functions to format for mistral instruct
+        def messages_to_prompt(messages):
+            prompt = "\n".join([str(x) for x in messages])
+            return f"<s>[INST] {prompt} [/INST] </s>\n"
+
+        def completion_to_prompt(completion):
+            return f"<s>[INST] {completion} [/INST] </s>\n"
+
+        llm = VllmServer(
+            api_url=api_url,
+            max_new_tokens=256,
+            temperature=0.1,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+        )
+
+        llm.complete(
+            "What is a black hole?"
+        )
+        ```
+    """
+
     def __init__(
         self,
         model: str = "facebook/opt-125m",

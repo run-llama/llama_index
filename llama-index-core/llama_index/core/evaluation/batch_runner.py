@@ -378,3 +378,34 @@ class BatchEvalRunner:
                 **eval_kwargs_lists,
             )
         )
+
+    def upload_eval_results(
+        self,
+        project_name: str,
+        app_name: str,
+        results: Dict[str, List[EvaluationResult]],
+    ) -> None:
+        """Upload the evaluation results to LlamaCloud.
+
+        Args:
+            project_name (str): The name of the project.
+            app_name (str): The name of the app.
+            results (Dict[str, List[EvaluationResult]]):
+                The evaluation results, a mapping of metric name to a list of EvaluationResult objects.
+
+        Examples:
+            ```python
+            results = batch_runner.evaluate_responses(...)
+
+            batch_runner.upload_eval_results(
+                project_name="my_project",
+                app_name="my_app",
+                results=results
+            )
+            ```
+        """
+        from llama_index.core.evaluation.eval_utils import upload_eval_results
+
+        upload_eval_results(
+            project_name=project_name, app_name=app_name, results=results
+        )

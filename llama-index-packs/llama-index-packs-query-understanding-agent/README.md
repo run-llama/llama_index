@@ -4,6 +4,8 @@ This LlamaPack implements Query Understanding Agent
 
 Taking inspiration from Humans - when asked a query, humans would clarify what the query means before proceeding if the human sensed the query is unclear. This LlamaPack implements this.
 
+Check out the [full notebook here](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-query-understanding-agent/examples/query_understanding_agent.ipynb).
+
 ### Installation
 
 ```bash

@@ -4,6 +4,12 @@ This loader parses any file stored on S3, or the entire Bucket (with an optional
 
 All files are parsed with `SimpleDirectoryReader`. Hence, you may also specify a custom `file_extractor`, relying on any of the loaders in this library (or your own)!
 
+## Installation
+
+```bash
+pip install llama-index-readers-s3
+```
+
 ## Usage
 
 To use this loader, you need to pass in the name of your S3 Bucket. After that, if you want to just parse a single file, pass in its key. Note that if the file is nested in a subdirectory, the key should contain that, so like `subdirectory/input.txt`.
@@ -20,4 +26,4 @@ loader = S3Reader(
 documents = loader.load_data()
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.

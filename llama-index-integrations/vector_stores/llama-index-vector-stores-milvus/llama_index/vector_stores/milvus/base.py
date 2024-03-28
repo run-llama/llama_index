@@ -3,6 +3,7 @@
 An index that is built within Milvus.
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Union
 
@@ -83,6 +84,22 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     Returns:
         MilvusVectorstore: Vectorstore that supports add, delete, and query.
+
+    Examples:
+        `pip install llama-index-vector-stores-milvus`
+
+        ```python
+        from llama_index.vector_stores.milvus import MilvusVectorStore
+
+        # Setup MilvusVectorStore
+        vector_store = MilvusVectorStore(
+            dim=1536,
+            collection_name="your_collection_name",
+            uri="http://milvus_address:port",
+            token="your_milvus_token_here",
+            overwrite=True
+        )
+        ```
     """
 
     stores_text: bool = True

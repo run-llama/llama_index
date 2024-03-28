@@ -294,6 +294,21 @@ def build_configurable_data_source_enum():
     except ImportError:
         pass
 
+    try:
+        from llama_index.readers.s3 import S3Reader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "S3",
+                DataSource(
+                    name="S3",
+                    component_type=S3Reader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
     enum_members.append(
         (
             "READER",
