@@ -5,6 +5,18 @@
 MODE="$1" # The operation mode: "check" or "create"
 MISSING_PY_TYPED=0 # Flag to track missing py.typed files
 
+# Detect macOS and adjust sed command accordingly
+SED_CMD="sed -i"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Check if GNU sed (gsed) is available for macOS, which supports the same syntax as sed on Linux
+    if command -v gsed &>/dev/null; then
+        SED_CMD="gsed -i"
+    else
+        # For BSD sed on macOS, use sed -i '' for in-place edit
+        SED_CMD="sed -i ''"
+    fi
+fi
+
 increment_patch_version() {
     local version=$1
     IFS='.' read -ra PARTS <<< "$version" # Split version into an array.
@@ -21,13 +33,13 @@ process_directory() {
     local found_py_files=false
 
     # Check for Python files in the current directory.
-    created=false
+    created=0
     if ls "$dir"/*.py &>/dev/null; then
         found_py_files=true
         if [[ $MODE == "create" && ! -f "$dir/py.typed" ]]; then
             echo "Creating py.typed in $dir"
             touch "$dir/py.typed"
-            created=true
+            created=1
         elif [[ $MODE == "check" ]]; then
             if [[ ! -f "$dir/py.typed" ]]; then
                 echo "ERROR: Missing py.typed in $dir"
@@ -64,12 +76,13 @@ find . -type f -name "pyproject.toml" | while read -r toml_file; do
     llama_index_dir="$base_dir/llama_index"
 
     if [ -d "$llama_index_dir" ]; then
-        created=$(process_directory "$llama_index_dir")
-        if [[ "$MODE" == "create" && "$created" == "true" ]]; then
+        process_directory "$llama_index_dir"
+        created=$?
+        if [[ "$MODE" == "create" && $created -eq 1 ]]; then
             current_version=$(grep '^version =' "$toml_file" | head -1 | sed 's/version = "\(.*\)"/\1/')
             if [[ ! -z "$current_version" ]]; then
                 new_version=$(increment_patch_version "$current_version")
-                sed -i "s/version = \"$current_version\"/version = \"$new_version\"/" "$toml_file"
+                $SED_CMD "s/version = \"$current_version\"/version = \"$new_version\"/" "$toml_file"
                 echo "Updated $toml_file to version $new_version."
             else
                 echo "No version found in $toml_file."
