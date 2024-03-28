@@ -84,6 +84,7 @@ tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 llamaindex-py-client = "^0.1.15"
+wrapt = "*"
 
 [tool.poetry.extras]
 gradientai = [
