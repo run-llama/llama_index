@@ -34,19 +34,19 @@ async def async_func_exc(*args, a, b=3, c=4, **kwargs):
 
 class _TestObject:
     @dispatcher.span
-    def func(*args, a, b=3, **kwargs):
+    def func(self, *args, a, b=3, **kwargs):
         return a + b
 
     @dispatcher.span
-    async def async_func(*args, a, b=3, **kwargs):
+    async def async_func(self, *args, a, b=3, **kwargs):
         return a + b
 
     @dispatcher.span
-    def func_exc(*args, a, b=3, c=4, **kwargs):
+    def func_exc(self, *args, a, b=3, c=4, **kwargs):
         raise value_error
 
     @dispatcher.span
-    async def async_func_exc(*args, a, b=3, c=4, **kwargs):
+    async def async_func_exc(self, *args, a, b=3, c=4, **kwargs):
         raise cancelled_error
 
 
