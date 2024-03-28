@@ -8,13 +8,16 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 class RankLLMRerank(BaseNodePostprocessor):
     """RankLLM-based reranker."""
+
     top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
     model: str = Field(default="zephyr", description="Reranker model name.")
-    with_retrieval: bool = Field(default=False, description="Perform retrieval before reranking.")
+    with_retrieval: bool = Field(
+        default=False, description="Perform retrieval before reranking."
+    )
     _model: Any = PrivateAttr()
     _result: Any = PrivateAttr()
     _retriever: Any = PrivateAttr()
-    
+
     def __init__(
         self,
         model,
@@ -25,18 +28,22 @@ class RankLLMRerank(BaseNodePostprocessor):
             model_enum = ModelType(model.lower())
         except ValueError:
             raise ValueError("Unsupported model type. Please use 'vicuna' or 'zephyr'.")
-        from rank_llm.result import Result 
+        from rank_llm.result import Result
+
         self._result = Result
 
         if model_enum == ModelType.VICUNA:
             from rank_llm.rerank.vicuna_reranker import VicunaReranker
+
             self._model = VicunaReranker()
         elif model_enum == ModelType.ZEPHYR:
             from rank_llm.rerank.zephyr_reranker import ZephyrReranker
+
             self._model = ZephyrReranker()
 
         if with_retrieval:
             from rank_llm.retrieve.retriever import Retriever
+
             self._retriever = Retriever
 
         super().__init__(
@@ -44,35 +51,64 @@ class RankLLMRerank(BaseNodePostprocessor):
             with_retrieval=with_retrieval,
             model=model,
         )
-    
+
     @classmethod
     def class_name(cls) -> str:
         return "RankLLMRerank"
-    
+
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
-        query_bundle: QueryBundle, 
+        query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-
-        docs = [(node.get_content(),node.get_score()) for node in nodes]
+        docs = [(node.get_content(), node.get_score()) for node in nodes]
 
         if self.with_retrieval:
-            hits = [{"content": doc[0], "qid": 1, "docid": str(index), "rank": index, "score": doc[1]} for index,doc in enumerate(docs)]
-            retrieved_results = self._retriever.from_inline_hits(query=query_bundle.query_str, hits=hits)
+            hits = [
+                {
+                    "content": doc[0],
+                    "qid": 1,
+                    "docid": str(index),
+                    "rank": index,
+                    "score": doc[1],
+                }
+                for index, doc in enumerate(docs)
+            ]
+            retrieved_results = self._retriever.from_inline_hits(
+                query=query_bundle.query_str, hits=hits
+            )
         else:
-            retrieved_results = [self._result(query=query_bundle.query_str, hits=[{"content": doc[0], "qid": 1, "docid": str(index), "rank": index, "score": doc[1]} for index,doc in enumerate(docs)])]
-            
-        permutation = self._model.rerank(retrieved_results = retrieved_results, rank_end = len(docs), window_size = min(20,len(docs)))
+            retrieved_results = [
+                self._result(
+                    query=query_bundle.query_str,
+                    hits=[
+                        {
+                            "content": doc[0],
+                            "qid": 1,
+                            "docid": str(index),
+                            "rank": index,
+                            "score": doc[1],
+                        }
+                        for index, doc in enumerate(docs)
+                    ],
+                )
+            ]
+
+        permutation = self._model.rerank(
+            retrieved_results=retrieved_results,
+            rank_end=len(docs),
+            window_size=min(20, len(docs)),
+        )
 
         new_nodes: List[NodeWithScore] = []
         for hit in permutation[0].hits:
-            idx: int = int(hit['docid'])
+            idx: int = int(hit["docid"])
             new_nodes.append(
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
         return new_nodes[: self.top_n]
-    
+
+
 class ModelType(Enum):
     VICUNA = "vicuna"
     ZEPHYR = "zephyr"
