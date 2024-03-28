@@ -54,12 +54,15 @@ class ArxivReader(BaseReader):
 
         if not os.path.exists(papers_dir):
             os.makedirs(papers_dir)
+        # get fs dirname to keep same behavior with SimpleDirectoryReader for lookup
+        from fsspec.implementations.local import LocalFileSystem
+        fs_papers_dir = LocalFileSystem().glob(papers_dir)[0]
 
         paper_lookup = {}
         for paper in search_results:
             # Hash filename to avoid bad characters in file path
             filename = f"{self._hacky_hash(paper.title)}.pdf"
-            paper_lookup[os.path.join(papers_dir, filename)] = {
+            paper_lookup[os.path.join(fs_papers_dir, filename)] = {
                 "Title of this paper": paper.title,
                 "Authors": (", ").join([a.name for a in paper.authors]),
                 "Date published": paper.published.strftime("%m/%d/%Y"),
