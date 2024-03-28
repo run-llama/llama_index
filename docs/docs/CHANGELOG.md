@@ -1,5 +1,92 @@
 # ChangeLog
 
+## [2024-03-27]
+
+### `llama-index-core` [0.10.25]
+
+- Add score to NodeWithScore in KnowledgeGraphQueryEngine (#12326)
+- Batch eval runner fixes (#12302)
+
+### `llama-index-embeddings-cohere` [0.1.5]
+
+- Added support for binary / quantized embeddings (#12321)
+
+### `llama-index-llms-mistralai` [0.1.10]
+
+- add support for custom endpoints to MistralAI (#12328)
+
+### `llama-index-storage-kvstore-redis` [0.1.3]
+
+- Fix RedisDocstore node retrieval from docs property (#12324)
+
+## [2024-03-26]
+
+### `llama-index-core` [0.10.24]
+
+- pretty prints in `LlamaDebugHandler` (#12216)
+- stricter interpreter constraints on pandas query engine (#12278)
+- PandasQueryEngine can now execute 'pd.\*' functions (#12240)
+- delete proper metadata in docstore delete function (#12276)
+- improved openai agent parsing function hook (#12062)
+- add raise_on_error flag for SimpleDirectoryReader (#12263)
+- remove un-caught openai import in core (#12262)
+- Fix download_llama_dataset and download_llama_pack (#12273)
+- Implement EvalQueryEngineTool (#11679)
+- Expand instrumenation Span coverage for AgentRunner (#12249)
+- Adding concept of function calling agent/llm (mistral supported for now) (#12222, )
+
+### `llama-index-embeddings-huggingface` [0.2.0]
+
+- Use `sentence-transformers` as a backend (#12277)
+
+### `llama-index-postprocessor-voyageai-rerank` [0.1.0]
+
+- Added voyageai as a reranker (#12111)
+
+### `llama-index-readers-gcs` [0.1.0]
+
+- Added google cloud storage reader (#12259)
+
+### `llama-index-readers-google` [0.2.1]
+
+- Support for different drives (#12146)
+- Remove unnecessary PyDrive dependency from Google Drive Reader (#12257)
+
+### `llama-index-readers-readme` [0.1.0]
+
+- added readme.com reader (#12246)
+
+### `llama-index-packs-raft` [0.1.3]
+
+- added pack for RAFT (#12275)
+
+## [2024-03-23]
+
+### `llama-index-core` [0.10.23]
+
+- Added `(a)predict_and_call()` function to base LLM class + openai + mistralai (#12188)
+- fixed bug with `wait()` in async agent streaming (#12187)
+
+### `llama-index-embeddings-alephalpha` [0.1.0]
+
+- Added alephalpha embeddings (#12149)
+
+### `llama-index-llms-alephalpha` [0.1.0]
+
+- Added alephalpha LLM (#12149)
+
+### `llama-index-llms-openai` [0.1.7]
+
+- fixed bug with `wait()` in async agent streaming (#12187)
+
+### `llama-index-readers-docugami` [0.1.4]
+
+- fixed import errors in docugami reader (#12154)
+
+### `llama-index-readers-file` [0.1.12]
+
+- fix PDFReader for remote fs (#12186)
+
 ## [2024-03-21]
 
 ### `llama-index-core` [0.10.22]

@@ -395,6 +395,7 @@ class AgentRunner(BaseAgentRunner):
         dispatcher.event(AgentRunStepEndEvent())
         return cur_step_output
 
+    @dispatcher.span
     async def _arun_step(
         self,
         task_id: str,
@@ -431,6 +432,7 @@ class AgentRunner(BaseAgentRunner):
 
         return cur_step_output
 
+    @dispatcher.span
     def run_step(
         self,
         task_id: str,
@@ -444,6 +446,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
+    @dispatcher.span
     async def arun_step(
         self,
         task_id: str,
@@ -457,6 +460,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
+    @dispatcher.span
     def stream_step(
         self,
         task_id: str,
@@ -470,6 +474,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    @dispatcher.span
     async def astream_step(
         self,
         task_id: str,
@@ -483,6 +488,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    @dispatcher.span
     def finalize_response(
         self,
         task_id: str,
@@ -548,6 +554,7 @@ class AgentRunner(BaseAgentRunner):
         dispatcher.event(AgentChatWithStepEndEvent())
         return result
 
+    @dispatcher.span
     async def _achat(
         self,
         message: str,
@@ -579,6 +586,7 @@ class AgentRunner(BaseAgentRunner):
             result_output,
         )
 
+    @dispatcher.span
     @trace_method("chat")
     def chat(
         self,
@@ -603,6 +611,7 @@ class AgentRunner(BaseAgentRunner):
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     async def achat(
         self,
@@ -649,6 +658,7 @@ class AgentRunner(BaseAgentRunner):
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     async def astream_chat(
         self,
