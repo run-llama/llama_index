@@ -39,7 +39,7 @@ process_directory() {
         if [[ $MODE == "create" && ! -f "$dir/py.typed" ]]; then
             echo "Creating py.typed in $dir"
             touch "$dir/py.typed"
-            echo "resource(\nname="py_typed",\nsource="py.typed",\n)" >> "$dir/BUILD"
+            echo -e "resource(\nname="py_typed",\nsource="py.typed",\n)" >> "$dir/BUILD"
             created=1
         elif [[ $MODE == "check" ]]; then
             if [[ ! -f "$dir/py.typed" ]]; then
