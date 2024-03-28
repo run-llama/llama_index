@@ -1,6 +1,6 @@
 import logging
 from threading import Thread
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence
 
 import torch
 
@@ -29,7 +29,6 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from transformers import (
     StoppingCriteria,
@@ -69,21 +68,6 @@ class IpexLLM(CustomLLM):
         default=DEFAULT_NUM_OUTPUTS,
         description="The maximum number of tokens to generate.",
         gt=0,
-    )
-    system_prompt: str = Field(
-        default="",
-        description=(
-            "The system prompt, containing any extra instructions or context. "
-            "The model card on HuggingFace should specify if this is needed."
-        ),
-    )
-    query_wrapper_prompt: PromptTemplate = Field(
-        default=PromptTemplate("{query_str}"),
-        description=(
-            "The query wrapper prompt, containing the query placeholder. "
-            "The model card on HuggingFace should specify if this is needed. "
-            "Should contain a `{query_str}` placeholder."
-        ),
     )
     tokenizer_name: str = Field(
         default=DEFAULT_HUGGINGFACE_MODEL,
@@ -138,7 +122,6 @@ class IpexLLM(CustomLLM):
         self,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
-        query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
         tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model: Optional[Any] = None,
@@ -151,7 +134,6 @@ class IpexLLM(CustomLLM):
         generate_kwargs: Optional[dict] = None,
         is_chat_model: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
-        system_prompt: str = "",
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
@@ -163,8 +145,6 @@ class IpexLLM(CustomLLM):
         Args:
             context_window: The maximum number of tokens available for input.
             max_new_tokens: The maximum number of tokens to generate.
-            query_wrapper_prompt: The query wrapper prompt, containing the query placeholder.
-                        Should contain a `{query_str}` placeholder.
             tokenizer_name: The name of the tokenizer to use from HuggingFace.
                         Unused if `tokenizer` is passed in directly.
             model_name: The model name to use from HuggingFace.
@@ -181,7 +161,6 @@ class IpexLLM(CustomLLM):
             generate_kwargs: The kwargs to pass to the model during generation.
             is_chat_model: Whether the model is `chat`
             callback_manager: Callback manager.
-            system_prompt: The system prompt, containing any extra instructions or context.
             messages_to_prompt: Function to convert messages to prompt.
             completion_to_prompt: Function to convert messages to prompt.
             pydantic_program_mode: DEFAULT.
@@ -267,15 +246,11 @@ class IpexLLM(CustomLLM):
 
         self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
-        if isinstance(query_wrapper_prompt, str):
-            query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
-
         messages_to_prompt = messages_to_prompt or self._tokenizer_messages_to_prompt
 
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
-            query_wrapper_prompt=query_wrapper_prompt,
             tokenizer_name=tokenizer_name,
             model_name=model_name,
             device_map=device_map,
@@ -286,7 +261,6 @@ class IpexLLM(CustomLLM):
             generate_kwargs=generate_kwargs or {},
             is_chat_model=is_chat_model,
             callback_manager=callback_manager,
-            system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
@@ -356,13 +330,9 @@ class IpexLLM(CustomLLM):
         Returns:
             CompletionReponse after generation.
         """
-        full_prompt = prompt
         if not formatted:
-            if self.query_wrapper_prompt:
-                full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
-                full_prompt = f"{self.system_prompt} {full_prompt}"
-        input_ids = self._tokenizer(full_prompt, return_tensors="pt")
+            prompt = self.completion_to_prompt(prompt)
+        input_ids = self._tokenizer(prompt, return_tensors="pt")
         input_ids = input_ids.to(self._model.device)
         # remove keys from the tokenizer if needed, to avoid HF errors
         for key in self.tokenizer_outputs_to_remove:
@@ -396,14 +366,10 @@ class IpexLLM(CustomLLM):
         """
         from transformers import TextIteratorStreamer
 
-        full_prompt = prompt
         if not formatted:
-            if self.query_wrapper_prompt:
-                full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
-                full_prompt = f"{self.system_prompt} {full_prompt}"
+            prompt = self.completion_to_prompt(prompt)
 
-        input_ids = self._tokenizer.encode(full_prompt, return_tensors="pt")
+        input_ids = self._tokenizer.encode(prompt, return_tensors="pt")
         input_ids = input_ids.to(self._model.device)
 
         for key in self.tokenizer_outputs_to_remove:
