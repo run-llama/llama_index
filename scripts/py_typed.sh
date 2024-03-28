@@ -21,11 +21,13 @@ process_directory() {
     local found_py_files=false
 
     # Check for Python files in the current directory.
+    created=false
     if ls "$dir"/*.py &>/dev/null; then
         found_py_files=true
         if [[ $MODE == "create" && ! -f "$dir/py.typed" ]]; then
             echo "Creating py.typed in $dir"
             touch "$dir/py.typed"
+            created=true
         elif [[ $MODE == "check" ]]; then
             if [[ ! -f "$dir/py.typed" ]]; then
                 echo "ERROR: Missing py.typed in $dir"
@@ -36,7 +38,7 @@ process_directory() {
 
     # Stop recursion if Python files were found.
     if $found_py_files; then
-        return
+        return $created
     fi
 
     # Recursively process subdirectories.
@@ -45,6 +47,8 @@ process_directory() {
             process_directory "$subdir"
         fi
     done
+
+    return $created
 }
 
 # Validate mode.
@@ -60,8 +64,8 @@ find . -type f -name "pyproject.toml" | while read -r toml_file; do
     llama_index_dir="$base_dir/llama_index"
 
     if [ -d "$llama_index_dir" ]; then
-        process_directory "$llama_index_dir"
-        if [[ $MODE == "create" ]]; then
+        created=$(process_directory "$llama_index_dir")
+        if [[ "$MODE" == "create" && "$created" == "true" ]]; then
             current_version=$(grep '^version =' "$toml_file" | head -1 | sed 's/version = "\(.*\)"/\1/')
             if [[ ! -z "$current_version" ]]; then
                 new_version=$(increment_patch_version "$current_version")
