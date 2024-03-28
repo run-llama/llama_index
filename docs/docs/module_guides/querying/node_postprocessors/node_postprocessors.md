@@ -297,7 +297,6 @@ response = query_engine.query(
 
 Full notebook guide is available [here](../../../examples/node_postprocessor/ColbertRerank.ipynb).
 
-
 ## rankLLM
 
 Uses models from [rankLLM](https://github.com/castorini/rank_llm) to rerank documents. Returns the top N ranked nodes.
@@ -306,12 +305,10 @@ Uses models from [rankLLM](https://github.com/castorini/rank_llm) to rerank docu
 from llama_index.postprocessor import RankLLMRerank
 
 postprocessor = RankLLMRerank(top_n=5, model="zephyr")
-
 postprocessor.postprocess_nodes(nodes)
 ```
 
 Full notebook guide is available [Van Gogh Wiki](/examples/node_postprocessor/rankLLM.ipynb).
-
 
 ## All Notebooks
 
