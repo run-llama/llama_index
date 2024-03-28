@@ -10,6 +10,7 @@ from redisvl.schema.fields import (
     FieldFactory
 )
 
+
 class RedisIndexInfo(IndexInfo):
     """The default Redis Vector Store Index Info."""
     name: str = "llama_index"
