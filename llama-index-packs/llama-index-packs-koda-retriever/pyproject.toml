@@ -39,7 +39,7 @@ llama-index-readers-wikipedia = "^0.1.3"
 wikipedia = "^1.4.0"
 
 [tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
+black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"

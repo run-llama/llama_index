@@ -477,8 +477,8 @@ class KVDocumentStore(BaseDocumentStore):
 
         for doc_id in ref_doc_info.node_ids:
             self.delete_document(doc_id, raise_error=False, remove_ref_doc_node=False)
+            self._kvstore.delete(doc_id, collection=self._metadata_collection)
 
-        self._kvstore.delete(ref_doc_id, collection=self._metadata_collection)
         self._kvstore.delete(ref_doc_id, collection=self._ref_doc_collection)
 
     async def adelete_ref_doc(self, ref_doc_id: str, raise_error: bool = True) -> None:
@@ -494,8 +494,8 @@ class KVDocumentStore(BaseDocumentStore):
             await self.adelete_document(
                 doc_id, raise_error=False, remove_ref_doc_node=False
             )
+            await self._kvstore.adelete(doc_id, collection=self._metadata_collection)
 
-        await self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection)
         await self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection)
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
