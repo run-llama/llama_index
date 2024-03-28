@@ -191,13 +191,13 @@ def upload_eval_results(
     project = client.project.upsert_project(request=ProjectCreate(name=project_name))
     assert project.id is not None
 
-    results = client.project.create_local_eval_set_for_project(
+    client.project.create_local_eval_set_for_project(
         project_id=project.id,
         app_name=app_name,
         results=results,
     )
 
-    for key, val in results:
+    for key, val in results.items():
         print(
             f"Uploaded {len(val)} results for metric {key} under project {project_name}/{app_name}."
         )
