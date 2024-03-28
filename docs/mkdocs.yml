@@ -513,6 +513,7 @@ nav:
           - ./examples/vector_stores/BaiduVectorDBIndexDemo.ipynb
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGFireworks.ipynb
           - ./examples/vector_stores/KDBAI_Advanced_RAG_Demo.ipynb
+          - ./examples/vector_stores/AnalyticDBDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -1758,6 +1759,7 @@ plugins:
             - ../llama-index-packs/llama-index-packs-raft-dataset
             - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-elasticsearch
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-elasticsearch
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-analyticdb
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-voyageai-rerank
             - ../llama-index-integrations/readers/llama-index-readers-gcs
             - ../llama-index-integrations/readers/llama-index-readers-readme
