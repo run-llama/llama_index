@@ -1,4 +1,5 @@
 """Response schema."""
+
 import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
@@ -64,6 +65,24 @@ class PydanticResponse:
             return getattr(self.response, name)
         else:
             return None
+
+    def __post_init_post_parse__(self) -> None:
+        """This method is required.
+
+        According to the Pydantic docs, if a stdlib dataclass (which this class
+        is one) gets mixed with a BaseModel (in the sense that this gets used as a
+        Field in another BaseModel), then this stdlib dataclass will automatically
+        get converted to a pydantic.v1.dataclass.
+
+        However, it appears that in that automatic conversion, this method
+        is left as NoneType, which raises an error. To safeguard against that,
+        we are expilcitly defining this method as something that can be called.
+
+        Sources:
+            - https://docs.pydantic.dev/1.10/usage/dataclasses/#use-of-stdlib-dataclasses-with-basemodel
+            - https://docs.pydantic.dev/1.10/usage/dataclasses/#initialize-hooks
+        """
+        return
 
     def get_formatted_sources(self, length: int = 100) -> str:
         """Get formatted sources text."""
@@ -154,7 +173,19 @@ class AsyncStreamingResponse:
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
-    _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
+    def __post_init__(self) -> None:
+        self._lock = asyncio.Lock()
+
+    def __str__(self) -> str:
+        """Convert to string representation."""
+        return asyncio.run(self._async_str)
+
+    async def _async_str(self) -> str:
+        """Convert to string representation."""
+        async for _ in self._yield_response():
+            ...
+        return self.response_txt or "None"
 
     async def _yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""

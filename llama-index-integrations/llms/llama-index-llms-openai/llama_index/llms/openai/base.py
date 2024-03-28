@@ -7,10 +7,14 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Union,
     cast,
+    get_args,
     runtime_checkable,
+    TYPE_CHECKING,
 )
 
+import json
 import httpx
 import tiktoken
 from llama_index.core.base.llms.types import (
@@ -46,6 +50,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
+    OpenAIToolCall,
     create_retry_decorator,
     from_openai_message,
     from_openai_token_logprobs,
@@ -64,6 +69,10 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.types import BaseTool
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
@@ -85,6 +94,29 @@ class Tokenizer(Protocol):
 
 
 class OpenAI(LLM):
+    """OpenAI LLM.
+
+    Examples:
+        `pip install llama-index-llms-openai`
+
+        ```python
+        import os
+        import openai
+
+        os.environ["OPENAI_API_KEY"] = "sk-..."
+        openai.api_key = os.environ["OPENAI_API_KEY"]
+
+        from llama_index.llms.openai import OpenAI
+
+        llm = OpenAI(model="gpt-3.5-turbo")
+
+        stream = llm.stream("Hi, write a short story")
+
+        for r in stream:
+            print(r.delta, end="")
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_OPENAI_MODEL, description="The OpenAI model to use."
     )
@@ -329,7 +361,7 @@ class OpenAI(LLM):
         message = from_openai_message(openai_message)
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
-        if openai_token_logprobs:
+        if openai_token_logprobs and openai_token_logprobs.content:
             logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
 
         return ChatResponse(
@@ -521,6 +553,85 @@ class OpenAI(LLM):
             "total_tokens": usage.get("total_tokens", 0),
         }
 
+    def _get_tool_call(
+        self,
+        response: ChatResponse,
+    ) -> OpenAIToolCall:
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            raise ValueError(
+                f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+            )
+
+        # TODO: support more than one tool call?
+        tool_call = tool_calls[0]
+        if not isinstance(tool_call, get_args(OpenAIToolCall)):
+            raise ValueError("Invalid tool_call object")
+
+        if tool_call.type != "function":
+            raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
+        return tool_call
+
+    def _call_tool(
+        self,
+        tool_call: OpenAIToolCall,
+        tools_by_name: Dict[str, "BaseTool"],
+        verbose: bool = False,
+    ) -> "AgentChatResponse":
+        from llama_index.core.chat_engine.types import AgentChatResponse
+        from llama_index.core.tools.calling import call_tool
+
+        arguments_str = tool_call.function.arguments
+        name = tool_call.function.name
+        if verbose:
+            print("=== Calling Function ===")
+            print(f"Calling function: {name} with args: {arguments_str}")
+        tool = tools_by_name[name]
+        argument_dict = json.loads(arguments_str)
+
+        tool_output = call_tool(tool, argument_dict)
+
+        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
+
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        if not self.metadata.is_function_calling_model:
+            return super().predict_and_call(
+                tools,
+                user_msg=user_msg,
+                chat_history=chat_history,
+                verbose=verbose,
+                **kwargs,
+            )
+
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tools_by_name = {tool.metadata.name: tool for tool in tools}
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = self.chat(
+            messages,
+            tools=tool_specs,
+            **kwargs,
+        )
+
+        tool_call = self._get_tool_call(response)
+
+        return self._call_tool(tool_call, tools_by_name, verbose=verbose)
+
     # ===== Async Endpoints =====
     @llm_chat_callback()
     async def achat(
@@ -666,10 +777,17 @@ class OpenAI(LLM):
             stream=False,
             **all_kwargs,
         )
+
         text = response.choices[0].text
+        openai_completion_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_completion_logprobs:
+            logprobs = from_openai_completion_logprobs(openai_completion_logprobs)
+
         return CompletionResponse(
             text=text,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
@@ -701,3 +819,55 @@ class OpenAI(LLM):
                 )
 
         return gen()
+
+    async def _acall_tool(
+        self,
+        tool_call: OpenAIToolCall,
+        tools_by_name: Dict[str, "BaseTool"],
+        verbose: bool = False,
+    ) -> "AgentChatResponse":
+        from llama_index.core.chat_engine.types import AgentChatResponse
+        from llama_index.core.tools.calling import acall_tool
+
+        arguments_str = tool_call.function.arguments
+        name = tool_call.function.name
+        if verbose:
+            print("=== Calling Function ===")
+            print(f"Calling function: {name} with args: {arguments_str}")
+        tool = tools_by_name[name]
+        argument_dict = json.loads(arguments_str)
+
+        tool_output = await acall_tool(tool, argument_dict)
+
+        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
+
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        if not self.metadata.is_function_calling_model:
+            return await super().apredict_and_call(user_msg, tools, verbose, **kwargs)
+
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tools_by_name = {tool.metadata.name: tool for tool in tools}
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = await self.achat(
+            messages,
+            tools=tool_specs,
+            **kwargs,
+        )
+
+        tool_call = self._get_tool_call(response)
+
+        return await self._acall_tool(tool_call, tools_by_name, verbose=verbose)
