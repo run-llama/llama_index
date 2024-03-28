@@ -32,6 +32,7 @@ def _message_to_dict(message: ChatMessage) -> dict:
 def _dict_to_message(d: dict) -> ChatMessage:
     msg = ChatMessage(role=d["type"], content=d["content"])
     if "tool_calls" in d:
+        from openai.types.chat.chat_completion_message_tool_call import ChatCompletionMessageToolCall
         msg.additional_kwargs["tool_calls"] = [
             ChatCompletionMessageToolCall.model_validate(tc) for tc in d["tool_calls"]
         ]
