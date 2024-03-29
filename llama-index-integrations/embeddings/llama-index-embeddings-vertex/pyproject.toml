@@ -37,6 +37,7 @@ version = "0.1.0"
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
 google-cloud-aiplatform = ">=1.43.0"
+pyarrow = "^15.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

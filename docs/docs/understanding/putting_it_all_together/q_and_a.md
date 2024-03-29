@@ -194,7 +194,7 @@ query the index, and then ask followup questions.
 **Guides**
 
 - [Query Transformations](../../optimizing/advanced_retrieval/query_transformations.md)
-- [Multi-Step Query Decomposition](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
+- [Multi-Step Query Decomposition](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 ## Temporal Queries
 

@@ -286,6 +286,7 @@ class LLM(BaseLLM):
 
     # -- Structured outputs --
 
+    @dispatcher.span
     def structured_predict(
         self,
         output_cls: BaseModel,
@@ -331,6 +332,7 @@ class LLM(BaseLLM):
 
         return program(**prompt_args)
 
+    @dispatcher.span
     async def astructured_predict(
         self,
         output_cls: BaseModel,
@@ -418,6 +420,7 @@ class LLM(BaseLLM):
         dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
+    @dispatcher.span
     def stream(
         self,
         prompt: BasePromptTemplate,
@@ -500,6 +503,7 @@ class LLM(BaseLLM):
         dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
+    @dispatcher.span
     async def astream(
         self,
         prompt: BasePromptTemplate,
@@ -544,6 +548,7 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
+    @dispatcher.span
     def predict_and_call(
         self,
         tools: List["BaseTool"],
@@ -595,6 +600,7 @@ class LLM(BaseLLM):
 
         return output
 
+    @dispatcher.span
     async def apredict_and_call(
         self,
         tools: List["BaseTool"],
