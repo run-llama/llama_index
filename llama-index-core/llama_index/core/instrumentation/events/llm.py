@@ -54,6 +54,16 @@ class LLMChatStartEvent(BaseEvent):
         return "LLMChatStartEvent"
 
 
+class LLMChatInProgressEvent(BaseEvent):
+    messages: List[ChatMessage]
+    response: ChatResponse
+
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "LLMChatInProgressEvent"
+
+
 class LLMChatEndEvent(BaseEvent):
     messages: List[ChatMessage]
     response: ChatResponse

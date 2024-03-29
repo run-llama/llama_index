@@ -27,6 +27,7 @@ from llama_index.core.instrumentation.events.llm import (
     LLMCompletionStartEvent,
     LLMChatEndEvent,
     LLMChatStartEvent,
+    LLMChatInProgressEvent,
 )
 
 dispatcher = get_dispatcher(__name__)
@@ -73,7 +74,7 @@ def llm_chat_callback() -> Callable:
                         last_response = None
                         async for x in f_return_val:
                             dispatcher.event(
-                                LLMChatEndEvent(
+                                LLMChatInProgressEvent(
                                     messages=messages,
                                     response=x,
                                     span_id=dispatcher.root.current_span_id or "",
@@ -89,6 +90,13 @@ def llm_chat_callback() -> Callable:
                                 EventPayload.RESPONSE: last_response,
                             },
                             event_id=event_id,
+                        )
+                        dispatcher.event(
+                            LLMChatEndEvent(
+                                messages=messages,
+                                response=x,
+                                span_id=dispatcher.root.current_span_id or "",
+                            )
                         )
 
                     return wrapped_gen()
@@ -139,7 +147,7 @@ def llm_chat_callback() -> Callable:
                         last_response = None
                         for x in f_return_val:
                             dispatcher.event(
-                                LLMChatEndEvent(
+                                LLMChatInProgressEvent(
                                     messages=messages,
                                     response=x,
                                     span_id=dispatcher.root.current_span_id or "",
@@ -155,6 +163,13 @@ def llm_chat_callback() -> Callable:
                                 EventPayload.RESPONSE: last_response,
                             },
                             event_id=event_id,
+                        )
+                        dispatcher.event(
+                            LLMChatEndEvent(
+                                messages=messages,
+                                response=x,
+                                span_id=dispatcher.root.current_span_id or "",
+                            )
                         )
 
                     return wrapped_gen()
