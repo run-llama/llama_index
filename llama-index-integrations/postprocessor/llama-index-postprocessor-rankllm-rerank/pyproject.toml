@@ -26,7 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
 description = "llama-index postprocessor rankllm-rerank integration"
-excludes = ["**/BUILD"]
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-postprocessor-rankllm-rerank"
 packages = [{include = "llama_index/"}]

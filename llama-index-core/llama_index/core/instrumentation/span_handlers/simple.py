@@ -1,3 +1,4 @@
+import inspect
 from typing import Any, cast, List, Optional, TYPE_CHECKING
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.instrumentation.span.simple import SimpleSpan
@@ -21,16 +22,28 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         return "SimpleSpanHandler"
 
     def new_span(
-        self, *args, id: str, parent_span_id: Optional[str], **kwargs
+        self,
+        *args: Any,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        parent_span_id: Optional[str] = None,
+        **kwargs: Any,
     ) -> SimpleSpan:
         """Create a span."""
-        return SimpleSpan(id_=id, parent_id=parent_span_id)
+        return SimpleSpan(id_=id_, parent_id=parent_span_id)
 
     def prepare_to_exit_span(
-        self, *args, id: str, result: Optional[Any] = None, **kwargs
+        self,
+        *args: Any,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        result: Optional[Any] = None,
+        **kwargs: Any,
     ) -> SimpleSpan:
         """Logic for preparing to drop a span."""
-        span = self.open_spans[id]
+        span = self.open_spans[id_]
         span = cast(SimpleSpan, span)
         span.end_time = datetime.now()
         span.duration = (span.end_time - span.start_time).total_seconds()
@@ -38,11 +51,17 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         return span
 
     def prepare_to_drop_span(
-        self, *args, id: str, err: Optional[Exception], **kwargs
+        self,
+        *args: Any,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        err: Optional[BaseException] = None,
+        **kwargs: Any,
     ) -> SimpleSpan:
         """Logic for droppping a span."""
-        if id in self.open_spans:
-            return self.open_spans[id]
+        if id_ in self.open_spans:
+            return self.open_spans[id_]
         return None
 
     def _get_trace_trees(self) -> List["Tree"]:
