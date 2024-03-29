@@ -52,7 +52,7 @@ reranked_nodes = reranker.postprocess_nodes(
 
 ### 🔧 Dependencies
 
-Currently, RankLLM rerankers require `CUDA` and for `rank_llm` to be installed (`pip install rank_llm`). The built-in retriever, which uses [Pyserini](https://github.com/castorini/pyserini), requires `JDK11`, `PyTorch`, and `Faiss`.
+Currently, RankLLM rerankers require `CUDA` and for `rank-llm` to be installed (`pip install rank-llm`). The built-in retriever, which uses [Pyserini](https://github.com/castorini/pyserini), requires `JDK11`, `PyTorch`, and `Faiss`.
 
 ### castorini/rank_llm
 
