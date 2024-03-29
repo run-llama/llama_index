@@ -568,11 +568,13 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
+        span_id = dispatcher.current_span_id
         if chat_history is not None:
             self.memory.set(chat_history)
         task = self.create_task(message)
 
         result_output = None
+        dispatcher.event(AgentChatWithStepStartEvent(span_id=span_id))
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
@@ -586,10 +588,12 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(
+        result = self.finalize_response(
             task.task_id,
             result_output,
         )
+        dispatcher.event(AgentChatWithStepEndEvent(span_id=span_id))
+        return result
 
     @dispatcher.span
     @trace_method("chat")

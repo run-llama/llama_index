@@ -67,6 +67,8 @@ class BaseSpanHandler(BaseModel, Generic[T]):
             if self.current_span_id == id_:
                 self.current_span_id = self.open_spans[id_].parent_id
             del self.open_spans[id_]
+        if not self.open_spans:  # empty so flush
+            self.current_span_id = None
 
     def span_drop(
         self,
