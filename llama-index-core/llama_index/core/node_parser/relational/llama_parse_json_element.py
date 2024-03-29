@@ -260,7 +260,10 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 and element.type == "text"
                 and merged_elements[-1].type == "text"
             ):
-                merged_elements[-1].element += "\n" + element.element
+                if isinstance(element.element, list):
+                    merged_elements[-1].element += "\n" + ' '.join(str(e) for e in element.element)
+                else:
+                    merged_elements[-1].element += "\n" + element.element
             else:
                 merged_elements.append(element)
         elements = merged_elements
