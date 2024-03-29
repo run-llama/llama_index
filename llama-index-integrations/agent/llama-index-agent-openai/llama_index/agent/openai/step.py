@@ -80,7 +80,7 @@ def call_tool_with_error_handling(
 
 def default_tool_call_parser(tool_call: OpenAIToolCall):
     try:
-        json.loads(tool_call.function.arguments)
+        return json.loads(tool_call.function.arguments)
     except json.JSONDecodeError as e:
         raise ValueError(
             f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"

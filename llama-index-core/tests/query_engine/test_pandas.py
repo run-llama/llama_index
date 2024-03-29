@@ -111,8 +111,7 @@ def test_default_output_processor_rce2() -> None:
     output = parser.parse(injected_code)
 
     assert (
-        "Execution of code containing references to private or dunder methods is forbidden!"
-        in output
+        "Execution of code containing references to private or dunder methods" in output
     ), "Injected code executed successfully!"
 
 
@@ -152,7 +151,7 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
     assert isinstance(response, Response)
     # raw df should be equal to slice of dataframe that's just population at location 2
     rmetadata = cast(Dict[str, Any], response.metadata)
-    assert rmetadata["raw_pandas_output"] == str(df["population"].iloc[2:3])
+    assert rmetadata["raw_pandas_output"] == str(df["population"].iloc[2])
 
     # attack 1: fail!
     print("[+] Attack 1 starts, it should fail!")

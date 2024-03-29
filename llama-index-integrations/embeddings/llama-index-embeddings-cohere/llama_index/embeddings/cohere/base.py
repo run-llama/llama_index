@@ -8,8 +8,6 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 
-import cohere
-
 
 # Enums for validation and type safety
 class CohereAIModelName(str, Enum):
@@ -76,6 +74,18 @@ VALID_MODEL_INPUT_TYPES = {
     CAMN.MULTILINGUAL_V2: [None],
 }
 
+# This list would be used for model name and embedding types validation
+# Embedding type can be float/ int8/ uint8/ binary/ ubinary based on model.
+VALID_MODEL_EMBEDDING_TYPES = {
+    CAMN.ENGLISH_V3: ["float", "int8", "uint8", "binary", "ubinary"],
+    CAMN.ENGLISH_LIGHT_V3: ["float", "int8", "uint8", "binary", "ubinary"],
+    CAMN.MULTILINGUAL_V3: ["float", "int8", "uint8", "binary", "ubinary"],
+    CAMN.MULTILINGUAL_LIGHT_V3: ["float", "int8", "uint8", "binary", "ubinary"],
+    CAMN.ENGLISH_V2: ["float"],
+    CAMN.ENGLISH_LIGHT_V2: ["float"],
+    CAMN.MULTILINGUAL_V2: ["float"],
+}
+
 VALID_TRUNCATE_OPTIONS = [CAT.START, CAT.END, CAT.NONE]
 
 
@@ -89,6 +99,9 @@ class CohereEmbedding(BaseEmbedding):
     input_type: Optional[str] = Field(
         description="Model Input type. If not provided, search_document and search_query are used when needed."
     )
+    embedding_type: str = Field(
+        description="Embedding type. If not provided float embedding_type is used when needed."
+    )
 
     def __init__(
         self,
@@ -96,6 +109,7 @@ class CohereEmbedding(BaseEmbedding):
         model_name: str = "embed-english-v3.0",
         truncate: str = "END",
         input_type: Optional[str] = None,
+        embedding_type: str = "float",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
     ):
@@ -112,6 +126,13 @@ class CohereEmbedding(BaseEmbedding):
             model_name (str): The name of the model to be used for generating embeddings. The class ensures that
                           this model is supported and that the input type provided is compatible with the model.
         """
+        try:
+            import cohere
+        except ImportError:
+            raise ImportError(
+                "`cohere` package not found. Please run `pip install 'cohere>=5.1.1,<6.0.0'."
+            )
+
         # Validate model_name and input_type
         if model_name not in VALID_MODEL_INPUT_TYPES:
             raise ValueError(f"{model_name} is not a valid model name")
@@ -119,6 +140,10 @@ class CohereEmbedding(BaseEmbedding):
         if input_type not in VALID_MODEL_INPUT_TYPES[model_name]:
             raise ValueError(
                 f"{input_type} is not a valid input type for the provided model."
+            )
+        if embedding_type not in VALID_MODEL_EMBEDDING_TYPES[model_name]:
+            raise ValueError(
+                f"{embedding_type} is not a embedding type for the provided model."
             )
 
         if truncate not in VALID_TRUNCATE_OPTIONS:
@@ -129,6 +154,7 @@ class CohereEmbedding(BaseEmbedding):
             cohere_api_key=cohere_api_key,
             model_name=model_name,
             input_type=input_type,
+            embedding_type=embedding_type,
             truncate=truncate,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -149,14 +175,18 @@ class CohereEmbedding(BaseEmbedding):
             result = self.cohere_client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
+                embedding_types=[self.embedding_type],
                 model=self.model_name,
                 truncate=self.truncate,
             ).embeddings
         else:
             result = self.cohere_client.embed(
-                texts=texts, model=self.model_name, truncate=self.truncate
+                texts=texts,
+                model=self.model_name,
+                embedding_types=[self.embedding_type],
+                truncate=self.truncate,
             ).embeddings
-        return [list(map(float, e)) for e in result]
+        return getattr(result, self.embedding_type, None)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding. For query embeddings, input_type='search_query'."""
