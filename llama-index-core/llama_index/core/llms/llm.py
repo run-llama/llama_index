@@ -54,6 +54,9 @@ from llama_index.core.instrumentation.events.llm import (
 )
 
 import llama_index.core.instrumentation as instrument
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+)
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -65,9 +68,10 @@ if TYPE_CHECKING:
 class ToolSelection(BaseModel):
     """Tool selection."""
 
+    tool_id: str = Field(description="Tool ID to select.")
     tool_name: str = Field(description="Tool name to select.")
-    tool_args: List[str] = Field(description="Arguments for the tool")
     tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
+    # NOTE: no args for now
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -282,6 +286,7 @@ class LLM(BaseLLM):
 
     # -- Structured outputs --
 
+    @dispatcher.span
     def structured_predict(
         self,
         output_cls: BaseModel,
@@ -327,6 +332,7 @@ class LLM(BaseLLM):
 
         return program(**prompt_args)
 
+    @dispatcher.span
     async def astructured_predict(
         self,
         output_cls: BaseModel,
@@ -414,6 +420,7 @@ class LLM(BaseLLM):
         dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
+    @dispatcher.span
     def stream(
         self,
         prompt: BasePromptTemplate,
@@ -496,6 +503,7 @@ class LLM(BaseLLM):
         dispatcher.event(LLMPredictEndEvent())
         return self._parse_output(output)
 
+    @dispatcher.span
     async def astream(
         self,
         prompt: BasePromptTemplate,
@@ -540,17 +548,7 @@ class LLM(BaseLLM):
 
         return stream_tokens
 
-    # -- Tool Calling --
-
-    def _get_tools_str(self, tools: List[Any]) -> str:
-        tools_str += "\n----\n".join(
-            [tool.metadata.simple_fn_schema_str for tool in tools]
-        )
-
-    def _call_tool(self, tool_selection: ToolSelection, tool: Any) -> Any:
-        """Call tool."""
-        return tool(*tool_selection.tool_args, **tool_selection.tool_kwargs)
-
+    @dispatcher.span
     def predict_and_call(
         self,
         tools: List["BaseTool"],
@@ -559,7 +557,12 @@ class LLM(BaseLLM):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
-        """Predict and call the tool."""
+        """Predict and call the tool.
+
+        By default uses a ReAct agent to do tool calling (through text prompting),
+        but function calling LLMs will implement this differently.
+
+        """
         from llama_index.core.agent.react import ReActAgentWorker
         from llama_index.core.agent.types import Task
         from llama_index.core.memory import ChatMemoryBuffer
@@ -597,6 +600,7 @@ class LLM(BaseLLM):
 
         return output
 
+    @dispatcher.span
     async def apredict_and_call(
         self,
         tools: List["BaseTool"],

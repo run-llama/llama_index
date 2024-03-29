@@ -16,7 +16,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.kbdai.utils import default_sparse_encoder
+from llama_index.vector_stores.kdbai.utils import default_sparse_encoder
 
 DEFAULT_COLUMN_NAMES = ["document_id", "text", "embedding"]
 

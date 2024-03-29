@@ -77,14 +77,19 @@ def _format_file_timestamp(timestamp: float) -> Optional[str]:
 def default_file_metadata_func(
     file_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
 ) -> Dict:
-    """Get some handy metadate from filesystem.
+    """Get some handy metadata from filesystem.
 
     Args:
         file_path: str: file path in str
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
-    file_name = os.path.basename(str(stat_result["name"]))
+
+    try:
+        file_name = os.path.basename(str(stat_result["name"]))
+    except Exception as e:
+        file_name = os.path.basename(file_path)
+
     creation_date = _format_file_timestamp(stat_result.get("created"))
     last_modified_date = _format_file_timestamp(stat_result.get("mtime"))
     last_accessed_date = _format_file_timestamp(stat_result.get("atime"))
@@ -160,6 +165,7 @@ class SimpleDirectoryReader(BaseReader):
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
+        raise_on_error (bool): Whether to raise an error if a file cannot be read.
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
         to using the local file system. Can be changed to use any remote file system
         exposed via the fsspec interface.
@@ -181,6 +187,7 @@ class SimpleDirectoryReader(BaseReader):
         file_extractor: Optional[Dict[str, BaseReader]] = None,
         num_files_limit: Optional[int] = None,
         file_metadata: Optional[Callable[[str], Dict]] = None,
+        raise_on_error: bool = False,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Initialize with parameters."""
@@ -198,6 +205,7 @@ class SimpleDirectoryReader(BaseReader):
         self.exclude_hidden = exclude_hidden
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
+        self.raise_on_error = raise_on_error
         _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
         if input_files:
@@ -348,6 +356,7 @@ class SimpleDirectoryReader(BaseReader):
         filename_as_id: bool = False,
         encoding: str = "utf-8",
         errors: str = "ignore",
+        raise_on_error: bool = False,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
         """Static method for loading file.
@@ -374,6 +383,7 @@ class SimpleDirectoryReader(BaseReader):
             Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
               see https://docs.python.org/3/library/functions.html#open
+        raise_on_error (bool): Whether to raise an error if a file cannot be read.
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
             to using the local file system. Can be changed to use any remote file system
 
@@ -409,6 +419,8 @@ class SimpleDirectoryReader(BaseReader):
                 # about missing dependencies
                 raise ImportError(str(e))
             except Exception as e:
+                if raise_on_error:
+                    raise Exception("Error loading file") from e
                 # otherwise, just skip the file and report the error
                 print(
                     f"Failed to load file {input_file} with error: {e}. Skipping...",
@@ -470,6 +482,8 @@ class SimpleDirectoryReader(BaseReader):
                 # about missing dependencies
                 raise ImportError(str(e))
             except Exception as e:
+                if self.raise_on_error:
+                    raise
                 # otherwise, just skip the file and report the error
                 print(
                     f"Failed to load file {input_file} with error: {e}. Skipping...",
@@ -535,6 +549,7 @@ class SimpleDirectoryReader(BaseReader):
                         repeat(self.filename_as_id),
                         repeat(self.encoding),
                         repeat(self.errors),
+                        repeat(self.raise_on_error),
                         repeat(fs),
                     ),
                 )
@@ -554,6 +569,7 @@ class SimpleDirectoryReader(BaseReader):
                         filename_as_id=self.filename_as_id,
                         encoding=self.encoding,
                         errors=self.errors,
+                        raise_on_error=self.raise_on_error,
                         fs=fs,
                     )
                 )
@@ -618,6 +634,7 @@ class SimpleDirectoryReader(BaseReader):
                 filename_as_id=self.filename_as_id,
                 encoding=self.encoding,
                 errors=self.errors,
+                raise_on_error=self.raise_on_error,
                 fs=self.fs,
             )
 

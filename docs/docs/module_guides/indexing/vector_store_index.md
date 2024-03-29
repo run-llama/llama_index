@@ -116,7 +116,7 @@ index = VectorStoreIndex.from_documents(
 
 For more examples of how to use VectorStoreIndex, see our [vector store index usage examples notebook](./vector_store_guide.ipynb).
 
-For examples of how to use VectorStoreIndex with specific vector stores, check out our [vector stores](../storing/vector_stores.md) section under Loading.
+For examples of how to use VectorStoreIndex with specific vector stores, check out [vector stores](../storing/vector_stores.md) under the Storing section.
 
 ## Composable Retrieval
 

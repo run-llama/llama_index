@@ -28,6 +28,10 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 - [ReAct Agent](../../../examples/agent/react_agent.ipynb)
 - [ReAct Agent with Query Engine Tools](../../../examples/agent/react_agent_with_query_engine.ipynb)
 
+## Function Calling Agents
+
+- [Mistral Agent](../../../examples/agent/mistral_agent.ipynb)
+
 ## Additional Agents (available on LlamaHub)
 
 - [LLMCompiler Agent Cookbook](https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_packs/agents/llm_compiler/llm_compiler.ipynb)

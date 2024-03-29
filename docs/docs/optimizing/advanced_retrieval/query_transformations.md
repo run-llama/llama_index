@@ -45,7 +45,7 @@ response = query_engine.query(query_str)
 print(response)
 ```
 
-Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
+Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb) for a full walkthrough.
 
 ### Multi-Step Query Transformations
 
