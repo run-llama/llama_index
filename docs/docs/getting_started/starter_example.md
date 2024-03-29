@@ -119,6 +119,6 @@ print(response)
 Now you can efficiently query to your heart's content! But this is just the beginning of what you can do with LlamaIndex.
 
 !!! tip
-    - learn more about the [high-level concepts](./concepts.md). 
-    - tell me how to [customize things](./customization.md). 
+    - learn more about the [high-level concepts](./concepts.md).
+    - tell me how to [customize things](./customization.md).
     - curious about a specific module? check out the [component guides](../module_guides/index.md).
