@@ -1,9 +1,9 @@
 """Default query for PandasIndex.
 
-WARNING: This tool provides the Agent access to the `eval` function.
+WARNING: This tool provides the LLM access to the `eval` function.
 Arbitrary code execution is possible on the machine running this tool.
 This tool is not recommended to be used in a production setting, and would
-require heavy sandboxing or virtual machines
+require heavy sandboxing or virtual machines.
 
 DEPRECATED: Use `PandasQueryEngine` from `llama-index-experimental` instead.
 
