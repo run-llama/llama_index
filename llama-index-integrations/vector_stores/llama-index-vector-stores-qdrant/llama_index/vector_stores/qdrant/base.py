@@ -836,5 +836,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         match=MatchExcept(**{"except": [subfilter.value]}),
                     )
                 )
+            elif subfilter.operator == "in":
+                # match any of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-any
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchAny(any=str(subfilter.value).split(",")),
+                    )
+                )
 
         return Filter(must=must_conditions)
