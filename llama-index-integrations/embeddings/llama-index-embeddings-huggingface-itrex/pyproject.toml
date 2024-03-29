@@ -9,30 +9,35 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.cohere"
+import_path = "llama_index.embeddings.huggingface_itrex"
 
 [tool.llamahub.class_authors]
-Cohere = "llama-index"
+QuantizedBgeEmbedding = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms cohere integration"
+description = "llama-index embeddings Intel Extension for Transformers integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-cohere"
+name = "llama-index-embeddings-itrex"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-cohere = "^5.1.1"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.25"
+intel-extension-for-transformers = "^1.3.2"
+torch = "^2.2.2"
+accelerate = "^0.28.0"
+datasets = "^2.18.0"
+onnx = "^1.15.0"
+llama-index-embeddings-huggingface = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

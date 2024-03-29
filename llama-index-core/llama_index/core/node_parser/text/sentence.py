@@ -306,7 +306,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             splits = split_fn(text)
             if len(splits) > 1:
                 return splits, True
-                break
 
         for split_fn in self._sub_sentence_split_fns:
             splits = split_fn(text)
