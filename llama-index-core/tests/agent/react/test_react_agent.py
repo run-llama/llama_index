@@ -306,13 +306,9 @@ def _get_observations(task: Task) -> List[str]:
 
 
 def test_complaint_when_no_reasoning_step():
-    message = (
-        "You didn't follow the format I specified in the System Prompt. Try again."
-    )
     runner = ReActAgent.from_tools(
         tools=[],
         llm=MockLLM(),
-        complaint_when_no_reasoning_step=message,
     )
     task = runner.create_task("lorem")
     chat_response = ChatResponse(
@@ -323,7 +319,10 @@ def test_complaint_when_no_reasoning_step():
     current_reasoning, is_done = runner.agent_worker._process_actions(
         task, tools=[], output=chat_response
     )
-    assert current_reasoning[0].get_content() == "Observation: " + message
+    assert (
+        current_reasoning[0].get_content()
+        == "Observation: Error: Could not parse output. Please follow the thought-action-input format. Try again."
+    )
 
 
 def test_add_step(

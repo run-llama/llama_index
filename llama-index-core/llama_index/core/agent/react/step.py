@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     Tuple,
     cast,
+    Callable,
 )
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
@@ -74,6 +75,31 @@ def add_user_step_to_reasoning(
             print(f"Added user message to memory: {step.input}")
 
 
+def tell_llm_about_failure_in_extract_reasoning_step(
+    callback_manager: CallbackManager, _: ValueError
+) -> ToolOutput:
+    """
+    If the developer has instructed to tell the Agent a complaint about its non-cooperation,
+    we will emit a Tool Output that we prepared (at initialization time) to the LLM, so that
+    the LLM can be more cooperative in its next generation.
+    """
+    message = "Error: Could not parse output. Please follow the thought-action-input format. Try again."
+    dummy_tool_output = ToolOutput(
+        content=message,
+        tool_name="unknown",
+        raw_input={},
+        raw_output=message,
+    )
+    with callback_manager.event(
+        CBEventType.FUNCTION_CALL,
+        payload={
+            EventPayload.FUNCTION_CALL: "unknown",
+        },
+    ) as event:
+        event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(dummy_tool_output)})
+    return dummy_tool_output
+
+
 class ReActAgentWorker(BaseAgentWorker):
     """OpenAI Agent worker."""
 
@@ -87,7 +113,9 @@ class ReActAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        complaint_when_no_reasoning_step: str = "",
+        handle_reasoning_failure_fn: Optional[
+            Callable[[CallbackManager, Exception], ToolOutput]
+        ] = None,
     ) -> None:
         self._llm = llm
         self.callback_manager = callback_manager or llm.callback_manager
@@ -95,18 +123,10 @@ class ReActAgentWorker(BaseAgentWorker):
         self._react_chat_formatter = react_chat_formatter or ReActChatFormatter()
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
-        if complaint_when_no_reasoning_step:
-            # TODO(feature): Instead of always giving a static message, let developer extend
-            #  `_handle_failure_in_extract_reasoning_step` such that the message can point out exactly what didn't match
-            #  the expectation of `_extract_reasoning_step` / violated the System Prompt.
-            self.dummy_tool_output_when_no_reasoning_step = ToolOutput(
-                content=complaint_when_no_reasoning_step,
-                tool_name="unknown",
-                raw_input={},
-                raw_output=complaint_when_no_reasoning_step,
-            )
-        else:
-            self.dummy_tool_output_when_no_reasoning_step = None
+        self._handle_reasoning_failure_fn = (
+            handle_reasoning_failure_fn
+            or tell_llm_about_failure_in_extract_reasoning_step
+        )
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -129,7 +149,9 @@ class ReActAgentWorker(BaseAgentWorker):
         output_parser: Optional[ReActOutputParser] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
-        complaint_when_no_reasoning_step: str = "",
+        handle_reasoning_failure_fn: Optional[
+            Callable[[CallbackManager, Exception], ToolOutput]
+        ] = None,
         **kwargs: Any,
     ) -> "ReActAgentWorker":
         """Convenience constructor method from set of BaseTools (Optional).
@@ -154,7 +176,7 @@ class ReActAgentWorker(BaseAgentWorker):
             output_parser=output_parser,
             callback_manager=callback_manager,
             verbose=verbose,
-            complaint_when_no_reasoning_step=complaint_when_no_reasoning_step,
+            handle_reasoning_failure_fn=handle_reasoning_failure_fn,
         )
 
     def _get_prompts(self) -> PromptDictType:
@@ -244,7 +266,7 @@ class ReActAgentWorker(BaseAgentWorker):
             )
         except ValueError as exp:
             current_reasoning = []
-            tool_output = self._handle_failure_in_extract_reasoning_step(exp)
+            tool_output = self._handle_reasoning_failure_fn(self.callback_manager, exp)
         else:
             if is_done:
                 return current_reasoning, True
@@ -297,7 +319,7 @@ class ReActAgentWorker(BaseAgentWorker):
             )
         except ValueError as exp:
             current_reasoning = []
-            tool_output = self._handle_failure_in_extract_reasoning_step(exp)
+            tool_output = self._handle_reasoning_failure_fn(self.callback_manager, exp)
         else:
             if is_done:
                 return current_reasoning, True
@@ -355,33 +377,6 @@ class ReActAgentWorker(BaseAgentWorker):
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         return tool_output
-
-    def _handle_failure_in_extract_reasoning_step(self, exp: ValueError) -> ToolOutput:
-        """
-        If the developer has instructed to tell the Agent a complaint about its non-cooperation,
-        we will emit a Tool Output that we prepared (at initialization time) to the LLM, so that
-        the LLM can be more cooperative in its next generation.
-        """
-        # We still emit a `tool_output` object to the task, so that the LLM can know
-        # it has hallucinated in the next reasoning step.
-        if self.dummy_tool_output_when_no_reasoning_step is None:
-            # Maybe the developer wants to handle the exception elsewhere.
-            raise ValueError from exp
-        # else:
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: "unknown",
-            },
-        ) as event:
-            event.on_end(
-                payload={
-                    EventPayload.FUNCTION_OUTPUT: str(
-                        self.dummy_tool_output_when_no_reasoning_step
-                    )
-                }
-            )
-        return self.dummy_tool_output_when_no_reasoning_step
 
     def _get_response(
         self,
