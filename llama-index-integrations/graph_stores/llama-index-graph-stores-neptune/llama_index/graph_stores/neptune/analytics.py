@@ -62,12 +62,10 @@ class NeptuneAnalyticsGraphStore(NeptuneBaseGraphStore):
         try:
             self._refresh_schema()
         except Exception as e:
-            raise NeptuneQueryException(
-                {
-                    "message": "Could not get schema for Neptune database",
-                    "detail": str(e),
-                }
+            logger.error(
+                f"Could not retrieve schema for Neptune due to the following error: {e}"
             )
+            self.schema = None
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune Analytics graph."""
