@@ -51,7 +51,7 @@ class OneDriveReader(BasePydanticReader):
         **kwargs: Any,
     ) -> None:
         self._is_interactive_auth = not client_secret
-        self._authority = f"https://login.microsoftonline.com/{self.tenant_id}/"
+        self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
 
         super().__init__(
             client_id=client_id,
