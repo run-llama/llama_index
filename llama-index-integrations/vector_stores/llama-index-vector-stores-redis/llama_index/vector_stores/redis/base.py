@@ -45,6 +45,40 @@ logger = logging.getLogger(__name__)
 
 
 class RedisVectorStore(BasePydanticVectorStore):
+    """Initialize RedisVectorStore.
+
+    Args:
+        schema (IndexSchema, optional): Redis index schema object.
+        redis_client (Redis, optional): Redis client connection.
+        redis_url (str, optional): Redis server URL.
+            Defaults to "redis://localhost:6379".
+        overwrite (bool, optional): Whether to overwrite the index if it already exists.
+            Defaults to False.
+
+    Raises:
+        ValueError: If redis-py is not installed
+        ValueError: If RediSearch is not installed
+
+    Example:
+        from redisvl.schema import IndexSchema
+        from llama_index.vector_stores.redis import RedisVectorStore
+
+        # Use default schema
+        rds = RedisVectorStore(redis_url="redis://localhost:6379")
+
+        # Use custom schema
+        schema = IndexSchema.from_dict({
+            "index": {"name": "my-index", "prefix": "docs"},
+            "fields": [
+                # TODO
+            ]
+        })
+        rds = RedisVectorStore(
+            schema=schema,
+            redis_url="redis://localhost:6379"
+        )
+    """
+
     stores_text = True
     stores_node = True
     flat_metadata = False
@@ -64,22 +98,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Initialize RedisVectorStore.
+        self._flag_old_kwargs(**kwargs)
 
-        Args:
-            schema (IndexSchema, optional): Redis index schema object.
-            redis_client (Redis, optional): Redis client connection.
-            redis_url (str, optional): Redis server URL.
-                Defaults to "redis://localhost:6379".
-            overwrite (bool, optional): Whether to overwrite the index if it already exists.
-                Defaults to False.
-
-        Raises:
-            ValueError: If redis-py is not installed
-            ValueError: If RediSearch is not installed
-
-        # TODO -- update example
-        """
         # Setup schema
         if not schema:
             logger.info("Using default RedisVectorStore schema.")
@@ -109,6 +129,10 @@ class RedisVectorStore(BasePydanticVectorStore):
             )
 
         super().__init__()
+
+    def _flag_old_kwargs(self, **kwargs):
+        # TODO
+        pass
 
     def _validate_schema(self, schema: IndexSchema) -> str:
         base_schema = RedisVectorStoreSchema()
@@ -375,14 +399,6 @@ class RedisVectorStore(BasePydanticVectorStore):
         except RedisError as e:
             logger.error(f"Error querying {self._index.name}: {e}")
             raise
-
-        if not results:
-            raise ValueError(
-                f"No docs found on index '{self._index.name}' with "
-                f"prefix '{self._index.prefix}' and filters '{redis_query.get_filter()}'. "
-                "* Did you originally create the index with a different prefix? "
-                "* Did you index your metadata fields when you created the index?"
-            )
 
         return self._process_query_results(results, redis_query)
 
