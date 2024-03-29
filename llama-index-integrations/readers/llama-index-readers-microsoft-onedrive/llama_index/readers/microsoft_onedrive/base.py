@@ -67,6 +67,7 @@ class OneDriveReader(BasePydanticReader):
         file_ids: Optional[List[str]] = None,
         folder_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
+        **kwargs,
     ) -> None:
         self._is_interactive_auth = not client_secret
         self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
@@ -80,6 +81,7 @@ class OneDriveReader(BasePydanticReader):
             file_ids=file_ids,
             folder_path=folder_path,
             file_paths=file_paths,
+            **kwargs,
         )
 
     def _authenticate_with_msal(self) -> Any:
