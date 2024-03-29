@@ -84,7 +84,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     database_name: Optional[str]
     table_name: Optional[str]
     # schema_name: Optional[str] # TODO: support schema name
-    embed_dim: Optional[int]
+    embed_dim: int
     # hybrid_search: Optional[bool] # TODO: support hybrid search
     text_search_config: Optional[dict]
     persist_dir: Optional[str]
@@ -95,10 +95,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
+        embed_dim: int,
         database_name: Optional[str] = ":memory:",
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: Optional[int] = 1536,
         # hybrid_search: Optional[bool] = False,
         # https://duckdb.org/docs/extensions/full_text_search
         text_search_config: Optional[dict] = {
@@ -161,13 +161,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             except Exception as e:
                 raise ValueError(f"Index table {table_name} not found in the database.")
 
-            _std = {
-                "text": "VARCHAR",
-                "node_id": "VARCHAR",
-                "embedding": "FLOAT[]",
-                "metadata_": "JSON",
-            }
-            _ti = {_i[0]: _i[1] for _i in _table_info}
+            # Not testing for the column type similarity only testing for the column names.
+            _std = {"text", "node_id", "embedding", "metadata_"}
+            _ti = {_i[0] for _i in _table_info}
             if _std != _ti:
                 raise ValueError(
                     f"Index table {table_name} does not have the correct schema."
@@ -185,10 +181,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_params(
         cls,
+        embed_dim: int,
         database_name: Optional[str] = ":memory:",
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: Optional[int] = 1536,
         # hybrid_search: Optional[bool] = False,
         text_search_config: Optional[dict] = {
             "stemmer": "english",
@@ -366,7 +362,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             # TODO: results from the metadata filter query
             _filter_string = self._build_metadata_filter_condition(query.filters)
             _ddb_query = f"""
-            SELECT node_id, text, embedding, metadata_, score
+            SELECT node_id, text, metadata_, score
             FROM (
                 SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
                 FROM {self.table_name}
@@ -377,7 +373,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             """
         else:
             _ddb_query = f"""
-            SELECT node_id, text, embedding, metadata_, score
+            SELECT node_id, text, metadata_, score
             FROM (
                 SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
                 FROM {self.table_name}
@@ -396,11 +392,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             node = TextNode(
                 id_=_row[0],
                 text=_row[1],
-                embedding=_row[2],
-                metadata=json.loads(_row[3]),
+                metadata=json.loads(_row[2]),
             )
             nodes.append(node)
-            similarities.append(_row[4])
+            similarities.append(_row[3])
             ids.append(_row[0])
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
