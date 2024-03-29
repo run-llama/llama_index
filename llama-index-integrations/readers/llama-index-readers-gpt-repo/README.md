@@ -5,7 +5,7 @@ pip install llama-index-readers-gpt-repo
 ```
 
 This loader is an adaptation of https://github.com/mpoon/gpt-repository-loader
-to LlamaHub. Full credit goes to mpoon for coming up with this!
+to LlamaIndex. Full credit goes to mpoon for coming up with this!
 
 ## Usage
 
