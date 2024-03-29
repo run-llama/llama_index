@@ -14,6 +14,7 @@ from llama_index.readers.file.pymu_pdf import PyMuPDFReader
 from llama_index.readers.file.slides import PptxReader
 from llama_index.readers.file.tabular import PandasCSVReader, CSVReader
 from llama_index.readers.file.unstructured import UnstructuredReader
+from llama_index.readers.file.upstage import UpstageDocumentReader
 from llama_index.readers.file.video_audio import VideoAudioReader
 from llama_index.readers.file.xml import XMLReader
 from llama_index.readers.file.rtf import RTFReader
@@ -41,4 +42,5 @@ __all__ = [
     "PagedCSVReader",
     "CSVReader",
     "RTFReader",
+    "UpstageDocumentReader",
 ]
