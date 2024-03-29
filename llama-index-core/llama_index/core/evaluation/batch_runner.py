@@ -206,7 +206,7 @@ class BatchEvalRunner:
         )
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
-        # boolean to check if using multi kwarg evaluator are being used
+        # boolean to check if using multi kwarg evaluator
         multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
 
         # run evaluations
@@ -216,7 +216,7 @@ class BatchEvalRunner:
             contexts = cast(List, contexts_list)[idx]
             for name, evaluator in self.evaluators.items():
                 if multi_kwargs:
-                    # multi-evaluator
+                    # multi-evaluator - get appropriate runtime kwargs if present
                     kwargs = (
                         eval_kwargs_lists[name] if name in eval_kwargs_lists else {}
                     )
@@ -264,7 +264,7 @@ class BatchEvalRunner:
         queries, responses = self._validate_and_clean_inputs(queries, responses)
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
-        # boolean to check if using multi kwarg evaluator are being used
+        # boolean to check if using multi kwarg evaluator
         multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
 
         # run evaluations
@@ -273,7 +273,7 @@ class BatchEvalRunner:
             response = cast(List, responses)[idx]
             for name, evaluator in self.evaluators.items():
                 if multi_kwargs:
-                    # multi-evaluator
+                    # multi-evaluator - get appropriate runtime kwargs if present
                     kwargs = (
                         eval_kwargs_lists[name] if name in eval_kwargs_lists else {}
                     )
