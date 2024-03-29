@@ -2,7 +2,9 @@
 from pathlib import Path
 
 # TODO: have formatting instructions be a part of react output parser
-with Path(__file__).with_name("system_header_template.md").open("r") as f:
+with (
+    Path(__file__).parents[0] / Path("templates") / Path("system_header_template.md")
+).open("r") as f:
     __BASE_REACT_CHAT_SYSTEM_HEADER = f.read()
 
 REACT_CHAT_SYSTEM_HEADER = __BASE_REACT_CHAT_SYSTEM_HEADER.replace(
