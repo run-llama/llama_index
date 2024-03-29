@@ -166,6 +166,7 @@ class Dispatcher(BaseModel):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             self.current_span_id = id_
+            self.root.current_span_id = id_
             print(f"{self.name} ENTERING SPAN {id_}", flush=True)
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
@@ -187,6 +188,8 @@ class Dispatcher(BaseModel):
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             async with self._asyncio_lock:
                 self.current_span_id = id_
+            async with self.root._asyncio_lock:
+                self.root.current_span_id = id_
             print(f"{self.name} ENTERING SPAN {id_}", flush=True)
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:

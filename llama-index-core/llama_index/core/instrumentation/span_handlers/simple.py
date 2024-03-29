@@ -55,9 +55,7 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         **kwargs: Any,
     ) -> SimpleSpan:
         """Logic for droppping a span."""
-        print(f"{self.class_name()} ATTEMPTING TO DROP SPAN {id_}", flush=True)
         if id_ in self.open_spans:
-            print(f"SPAN {id_} found", flush=True)
             span = self.open_spans[id_]
             span.metadata = {"error": str(err)}
             self.dropped_spans += [span]

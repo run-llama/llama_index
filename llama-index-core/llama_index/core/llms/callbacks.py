@@ -54,7 +54,7 @@ def llm_chat_callback() -> Callable:
                         model_dict=_self.to_dict(),
                         messages=messages,
                         additional_kwargs=kwargs,
-                        span_id=dispatcher.current_span_id,
+                        span_id=dispatcher.root.current_span_id or "",
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -76,7 +76,7 @@ def llm_chat_callback() -> Callable:
                                 LLMChatEndEvent(
                                     messages=messages,
                                     response=x,
-                                    span_id=dispatcher.current_span_id,
+                                    span_id=dispatcher.root.current_span_id or "",
                                 )
                             )
                             yield cast(ChatResponse, x)
@@ -105,7 +105,7 @@ def llm_chat_callback() -> Callable:
                         LLMChatEndEvent(
                             messages=messages,
                             response=f_return_val,
-                            span_id=dispatcher.current_span_id,
+                            span_id=dispatcher.root.current_span_id or "",
                         )
                     )
 
@@ -120,7 +120,7 @@ def llm_chat_callback() -> Callable:
                         model_dict=_self.to_dict(),
                         messages=messages,
                         additional_kwargs=kwargs,
-                        span_id=dispatcher.current_span_id,
+                        span_id=dispatcher.root.current_span_id or "",
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -142,7 +142,7 @@ def llm_chat_callback() -> Callable:
                                 LLMChatEndEvent(
                                     messages=messages,
                                     response=x,
-                                    span_id=dispatcher.current_span_id,
+                                    span_id=dispatcher.root.current_span_id or "",
                                 )
                             )
                             yield cast(ChatResponse, x)
@@ -171,7 +171,7 @@ def llm_chat_callback() -> Callable:
                         LLMChatEndEvent(
                             messages=messages,
                             response=f_return_val,
-                            span_id=dispatcher.current_span_id,
+                            span_id=dispatcher.root.current_span_id or "",
                         )
                     )
 

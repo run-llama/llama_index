@@ -80,7 +80,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         **kwargs: Any,
     ) -> None:
         """Logic for dropping a span i.e. early exit."""
-        print(f"{self.class_name()} DROPPING SPAN {id_}", flush=True)
         span = self.prepare_to_drop_span(
             id_=id_, bound_args=bound_args, instance=instance, err=err
         )
