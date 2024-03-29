@@ -9,6 +9,7 @@ from llama_index.core.instrumentation.span_handlers import (
     NullSpanHandler,
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
 
 
@@ -167,6 +168,7 @@ class Dispatcher(BaseModel):
                 result = func(*args, **kwargs)
             except BaseException as e:
                 print(f"{self.name} DROPPING SPAN {id_} due to {e}", flush=True)
+                self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             else:
@@ -190,6 +192,7 @@ class Dispatcher(BaseModel):
                 result = await func(*args, **kwargs)
             except BaseException as e:
                 print(f"{self.name} DROPPING SPAN {id_}", flush=True)
+                self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             else:
