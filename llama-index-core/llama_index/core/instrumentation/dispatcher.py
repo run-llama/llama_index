@@ -86,7 +86,6 @@ class Dispatcher(BaseModel):
 
     def span_enter(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -97,7 +96,6 @@ class Dispatcher(BaseModel):
         while c:
             for h in c.span_handlers:
                 h.span_enter(
-                    *args,
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
@@ -110,7 +108,6 @@ class Dispatcher(BaseModel):
 
     def span_drop(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -122,7 +119,6 @@ class Dispatcher(BaseModel):
         while c:
             for h in c.span_handlers:
                 h.span_drop(
-                    *args,
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
@@ -136,7 +132,6 @@ class Dispatcher(BaseModel):
 
     def span_exit(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -148,7 +143,6 @@ class Dispatcher(BaseModel):
         while c:
             for h in c.span_handlers:
                 h.span_exit(
-                    *args,
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,

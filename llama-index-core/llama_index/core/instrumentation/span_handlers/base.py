@@ -31,7 +31,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
 
     def span_enter(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -54,7 +53,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
 
     def span_exit(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -72,7 +70,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
 
     def span_drop(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -91,7 +88,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
     @abstractmethod
     def new_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -104,7 +100,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
     @abstractmethod
     def prepare_to_exit_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -117,7 +112,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
     @abstractmethod
     def prepare_to_drop_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,

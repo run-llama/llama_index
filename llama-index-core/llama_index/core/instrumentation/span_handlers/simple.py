@@ -18,7 +18,6 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def new_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -30,7 +29,6 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def prepare_to_exit_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -47,7 +45,6 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def prepare_to_drop_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
