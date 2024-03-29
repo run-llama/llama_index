@@ -1,6 +1,6 @@
 import inspect
 from abc import abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, List, Generic, Optional, TypeVar
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.instrumentation.span.base import BaseSpan
@@ -11,6 +11,12 @@ T = TypeVar("T", bound=BaseSpan)
 class BaseSpanHandler(BaseModel, Generic[T]):
     open_spans: Dict[str, T] = Field(
         default_factory=dict, description="Dictionary of open spans."
+    )
+    completed_spans: List[T] = Field(
+        default_factory=list, description="List of completed spans."
+    )
+    dropped_spans: List[T] = Field(
+        default_factory=list, description="List of completed spans."
     )
     current_span_id: Optional[str] = Field(
         default=None, description="Id of current span."
@@ -74,6 +80,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         **kwargs: Any,
     ) -> None:
         """Logic for dropping a span i.e. early exit."""
+        print(f"{self.class_name()} DROPPING SPAN {id_}", flush=True)
         span = self.prepare_to_drop_span(
             id_=id_, bound_args=bound_args, instance=instance, err=err
         )

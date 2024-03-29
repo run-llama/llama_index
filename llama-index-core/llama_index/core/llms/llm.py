@@ -418,7 +418,6 @@ class LLM(BaseLLM):
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
-
         dispatcher.event(LLMPredictEndEvent(span_id=dispatcher.current_span_id))
         return self._parse_output(output)
 

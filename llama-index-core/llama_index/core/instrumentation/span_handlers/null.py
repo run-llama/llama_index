@@ -67,5 +67,4 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         **kwargs: Any
     ) -> None:
         """Logic for droppping a span."""
-        if err:
-            raise err
+        return
