@@ -87,10 +87,9 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         self._validate_schema(schema)
 
-        self._vector_field_name = next([
-            name for name, field in schema.fields.items()
-            if field.type == "vector"
-        ])
+        self._vector_field_name = next(
+            [name for name, field in schema.fields.items() if field.type == "vector"]
+        )
         self._return_fields = [
             self._node_id_field_name,
             self._doc_id_field_name,
@@ -141,7 +140,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             return []
 
         # set vector dim for creation if index doesn't exist
-        #self._index_args["dims"] = len(nodes[0].get_embedding())
+        # self._index_args["dims"] = len(nodes[0].get_embedding())
         # TODO discuss with logan -- this is risky... updating schema based on provided embeddings...
 
         if self._index.exists():
@@ -154,7 +153,9 @@ class RedisVectorStore(BasePydanticVectorStore):
             record = {
                 self._node_id_field_name: node.node_id,
                 self._doc_id_field_name: node.ref_doc_id,
-                self._text_field_name: node.get_content(metadata_mode=MetadataMode.NONE),
+                self._text_field_name: node.get_content(
+                    metadata_mode=MetadataMode.NONE
+                ),
                 self._vector_field_name: array_to_buffer(node.get_embedding()),
             }
             # parse and append metadata
@@ -187,7 +188,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         delete_query = FilterQuery(
             return_fields=[self._node_id_field_name],
             filter_expression=doc_filter,
-            num_results=total
+            num_results=total,
         )
         # fetch docs to delete and flush them
         docs_to_delete = self._index.search(delete_query.query, delete_query.params)
@@ -236,7 +237,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         field_instance = field_info["class"](field.name)
         return field_info["operators"][filter.operator](field_instance, filter.value)
 
-    def _create_redis_filter_expression(self, metadata_filters: MetadataFilters) -> FilterExpression:
+    def _create_redis_filter_expression(
+        self, metadata_filters: MetadataFilters
+    ) -> FilterExpression:
         """
         Generate a Redis Filter Expression as a combination of metadata filters.
 
@@ -268,14 +271,13 @@ class RedisVectorStore(BasePydanticVectorStore):
     def _to_redis_query(self, query: VectorStoreQuery) -> VectorQuery:
         """Creates a RedisQuery from a VectorStoreQuery."""
         filter_expression = self._create_redis_filter_expression(query.filters)
-        redis_query = VectorQuery(
+        return VectorQuery(
             vector=query.query_embedding,
             vector_field_name=self._vector_field_name,
             return_fields=self._return_fields,
             num_results=query.similarity_top_k,
-            filter_expression=filter_expression
+            filter_expression=filter_expression,
         )
-        return redis_query
 
     def _extract_node_and_score(self, doc, redis_query: VectorQuery):
         """Extracts a node and its score from a document."""
@@ -293,12 +295,14 @@ class RedisVectorStore(BasePydanticVectorStore):
                     NodeRelationship.SOURCE: RelatedNodeInfo(
                         node_id=doc[self._doc_id_field_name]
                     )
-                }
+                },
             )
         score = 1 - float(doc[redis_query.DISTANCE_ID])
         return node, score
 
-    def _process_query_results(self, results, redis_query: VectorQuery) -> VectorStoreQueryResult:
+    def _process_query_results(
+        self, results, redis_query: VectorQuery
+    ) -> VectorStoreQueryResult:
         """Processes query results and returns a VectorStoreQueryResult."""
         ids, nodes, scores = [], [], []
         for doc in results:
@@ -324,12 +328,13 @@ class RedisVectorStore(BasePydanticVectorStore):
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
             ValueError: If no documents are found when querying the index.
         """
-
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 
         redis_query = self._to_redis_query(query)
-        logger.info(f"Querying index {self._index.name} with filters {redis_query.filters}")
+        logger.info(
+            f"Querying index {self._index.name} with filters {redis_query.filters}"
+        )
 
         try:
             results = self._index.query(redis_query)

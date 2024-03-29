@@ -1,18 +1,11 @@
-from pydantic.v1 import Field
 from typing import Dict
-from redisvl.schema import (
-    IndexSchema,
-    IndexInfo,
-    StorageType
-)
-from redisvl.schema.fields import (
-    BaseField,
-    FieldFactory
-)
+from redisvl.schema import IndexSchema, IndexInfo, StorageType
+from redisvl.schema.fields import BaseField, FieldFactory
 
 
 class RedisIndexInfo(IndexInfo):
     """The default Redis Vector Store Index Info."""
+
     name: str = "llama_index"
     """The unique name of the index."""
     prefix: str = "llama_index/vector"
@@ -25,7 +18,8 @@ class RedisIndexInfo(IndexInfo):
 
 class RedisVectorStoreSchema(IndexSchema):
     """The default Redis Vector Store Schema."""
-    def __init__(self, **data):
+
+    def __init__(self, **data) -> None:
         index = RedisIndexInfo()
         fields: Dict[str, BaseField] = {
             "id": FieldFactory.create_field("tag", "id", {"sortable": False}),
