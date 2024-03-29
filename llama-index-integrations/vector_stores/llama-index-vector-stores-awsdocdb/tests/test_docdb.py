@@ -14,8 +14,10 @@ CONNECTION_STRING = os.getenv("DOCUMENTDB_URI", "")
 DB_NAME, COLLECTION_NAME = "mydatabase", "customers"
 test_client = MongoClient(CONNECTION_STRING)  # type: ignore
 collection = test_client[DB_NAME][COLLECTION_NAME]
-
 pymongo_available = True
+pytestmark = pytest.mark.skipif(
+    CONNECTION_STRING is None, reason="A DocumentDB instance has not been configured"
+)
 
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 import sys
