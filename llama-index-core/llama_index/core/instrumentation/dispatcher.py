@@ -1,7 +1,8 @@
 from typing import Any, List, Optional, Dict
+import asyncio
 import inspect
 import uuid
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span_handlers import (
     BaseSpanHandler,
@@ -30,6 +31,31 @@ class Dispatcher(BaseModel):
         default=True,
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
+    current_span_id: Optional[str] = Field(
+        default=None, description="Id of current span."
+    )
+    _asyncio_lock: asyncio.Lock = PrivateAttr()
+
+    def __init__(
+        self,
+        name: str = "",
+        event_handlers: List[BaseEventHandler] = [],
+        span_handlers: List[BaseSpanHandler] = [],
+        parent_name: str = "",
+        manager: Optional["Manager"] = None,
+        root_name: str = "root",
+        propagate: bool = True,
+    ):
+        self._asyncio_lock = asyncio.Lock()
+        super().__init__(
+            name=name,
+            event_handlers=event_handlers,
+            span_handlers=span_handlers,
+            parent_name=parent_name,
+            manager=manager,
+            root_name=root_name,
+            propagate=propagate,
+        )
 
     @property
     def parent(self) -> "Dispatcher":
@@ -139,6 +165,7 @@ class Dispatcher(BaseModel):
         def wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            self.current_span_id = id_
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = func(*args, **kwargs)
@@ -155,6 +182,8 @@ class Dispatcher(BaseModel):
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            async with self._asyncio_lock:
+                self.current_span_id = id_
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = await func(*args, **kwargs)

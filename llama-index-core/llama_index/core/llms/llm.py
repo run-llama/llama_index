@@ -51,6 +51,7 @@ from llama_index.core.types import (
 )
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
+    LLMPredictStartEvent,
 )
 
 import llama_index.core.instrumentation as instrument
@@ -406,6 +407,7 @@ class LLM(BaseLLM):
             print(output)
             ```
         """
+        dispatcher.event(LLMPredictStartEvent(span_id=dispatcher.current_span_id))
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -417,7 +419,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
 
-        dispatcher.event(LLMPredictEndEvent())
+        dispatcher.event(LLMPredictEndEvent(span_id=dispatcher.current_span_id))
         return self._parse_output(output)
 
     @dispatcher.span
@@ -489,6 +491,7 @@ class LLM(BaseLLM):
             print(output)
             ```
         """
+        dispatcher.event(LLMPredictStartEvent(span_id=dispatcher.current_span_id))
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -500,7 +503,7 @@ class LLM(BaseLLM):
             response = await self.acomplete(formatted_prompt, formatted=True)
             output = response.text
 
-        dispatcher.event(LLMPredictEndEvent())
+        dispatcher.event(LLMPredictEndEvent(span_id=dispatcher.current_span_id))
         return self._parse_output(output)
 
     @dispatcher.span

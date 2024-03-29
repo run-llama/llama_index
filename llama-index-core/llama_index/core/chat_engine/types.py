@@ -129,13 +129,17 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        dispatcher.event(StreamChatStartEvent())
+        dispatcher.event(StreamChatStartEvent(span_id=dispatcher.current_span_id))
         try:
             final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    dispatcher.event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta, span_id=dispatcher.current_span_id
+                        )
+                    )
                     self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
@@ -144,14 +148,18 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatcher.event(StreamChatErrorEvent())
+            dispatcher.event(
+                StreamChatErrorEvent(
+                    span_id=dispatcher.current_span_id,
+                )
+            )
             if not raise_error:
                 logger.warning(
                     f"Encountered exception writing response to history: {e}"
                 )
             else:
                 raise
-        dispatcher.event(StreamChatEndEvent())
+        dispatcher.event(StreamChatEndEvent(span_id=dispatcher.current_span_id))
 
         self._is_done = True
 
@@ -175,13 +183,17 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        dispatcher.event(StreamChatStartEvent())
+        dispatcher.event(StreamChatStartEvent(span_id=dispatcher.current_span_id))
         try:
             final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    dispatcher.event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta, span_id=dispatcher.current_span_id
+                        )
+                    )
                     self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 self._new_item_event.set()
@@ -193,9 +205,9 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatcher.event(StreamChatErrorEvent())
+            dispatcher.event(StreamChatErrorEvent(span_id=dispatcher.current_span_id))
             logger.warning(f"Encountered exception writing response to history: {e}")
-        dispatcher.event(StreamChatEndEvent())
+        dispatcher.event(StreamChatEndEvent(span_id=dispatcher.current_span_id))
         self._is_done = True
 
         # These act as is_done events for any consumers waiting

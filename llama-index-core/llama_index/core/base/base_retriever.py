@@ -225,7 +225,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
 
         """
         self._check_callback_manager()
-        dispatcher.event(RetrievalStartEvent(str_or_query_bundle=str_or_query_bundle))
+        dispatcher.event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                span_id=dispatcher.current_span_id,
+            )
+        )
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -241,14 +246,23 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                     payload={EventPayload.NODES: nodes},
                 )
         dispatcher.event(
-            RetrievalEndEvent(str_or_query_bundle=str_or_query_bundle, nodes=nodes)
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+                span_id=dispatcher.current_span_id,
+            )
         )
         return nodes
 
     @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-        dispatcher.event(RetrievalStartEvent(str_or_query_bundle=str_or_query_bundle))
+        dispatcher.event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                span_id=dispatcher.current_span_id,
+            )
+        )
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -266,7 +280,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                     payload={EventPayload.NODES: nodes},
                 )
         dispatcher.event(
-            RetrievalEndEvent(str_or_query_bundle=str_or_query_bundle, nodes=nodes)
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+                span_id=dispatcher.current_span_id,
+            )
         )
         return nodes
 

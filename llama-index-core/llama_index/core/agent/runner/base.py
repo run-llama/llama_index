@@ -365,7 +365,7 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        dispatcher.event(AgentRunStepStartEvent())
+        dispatcher.event(AgentRunStepStartEvent(span_id=dispatcher.current_span_id))
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -392,7 +392,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
-        dispatcher.event(AgentRunStepEndEvent())
+        dispatcher.event(AgentRunStepEndEvent(span_id=dispatcher.current_span_id))
         return cur_step_output
 
     @dispatcher.span
@@ -405,6 +405,7 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
+        dispatcher.event(AgentRunStepStartEvent(span_id=dispatcher.current_span_id))
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -430,6 +431,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
+        dispatcher.event(AgentRunStepEndEvent(span_id=dispatcher.current_span_id))
         return cur_step_output
 
     @dispatcher.span
@@ -533,7 +535,9 @@ class AgentRunner(BaseAgentRunner):
         task = self.create_task(message)
 
         result_output = None
-        dispatcher.event(AgentChatWithStepStartEvent())
+        dispatcher.event(
+            AgentChatWithStepStartEvent(span_id=dispatcher.current_span_id)
+        )
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = self._run_step(
@@ -551,7 +555,7 @@ class AgentRunner(BaseAgentRunner):
             task.task_id,
             result_output,
         )
-        dispatcher.event(AgentChatWithStepEndEvent())
+        dispatcher.event(AgentChatWithStepEndEvent(span_id=dispatcher.current_span_id))
         return result
 
     @dispatcher.span

@@ -172,7 +172,7 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        dispatcher.event(GetResponseStartEvent())
+        dispatcher.event(GetResponseStartEvent(span_id=dispatcher.current_span_id))
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:
@@ -194,7 +194,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(Generator, response)
-        dispatcher.event(GetResponseEndEvent())
+        dispatcher.event(GetResponseEndEvent(span_id=dispatcher.current_span_id))
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
@@ -350,7 +350,7 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        dispatcher.event(GetResponseStartEvent())
+        dispatcher.event(GetResponseStartEvent(span_id=dispatcher.current_span_id))
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:
@@ -373,6 +373,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(AsyncGenerator, response)
+        dispatcher.event(GetResponseEndEvent(span_id=dispatcher.current_span_id))
         return response
 
     async def _arefine_response_single(

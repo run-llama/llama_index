@@ -54,6 +54,7 @@ def llm_chat_callback() -> Callable:
                         model_dict=_self.to_dict(),
                         messages=messages,
                         additional_kwargs=kwargs,
+                        span_id=dispatcher.current_span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -75,6 +76,7 @@ def llm_chat_callback() -> Callable:
                                 LLMChatEndEvent(
                                     messages=messages,
                                     response=x,
+                                    span_id=dispatcher.current_span_id,
                                 )
                             )
                             yield cast(ChatResponse, x)
@@ -103,6 +105,7 @@ def llm_chat_callback() -> Callable:
                         LLMChatEndEvent(
                             messages=messages,
                             response=f_return_val,
+                            span_id=dispatcher.current_span_id,
                         )
                     )
 
@@ -117,6 +120,7 @@ def llm_chat_callback() -> Callable:
                         model_dict=_self.to_dict(),
                         messages=messages,
                         additional_kwargs=kwargs,
+                        span_id=dispatcher.current_span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -138,6 +142,7 @@ def llm_chat_callback() -> Callable:
                                 LLMChatEndEvent(
                                     messages=messages,
                                     response=x,
+                                    span_id=dispatcher.current_span_id,
                                 )
                             )
                             yield cast(ChatResponse, x)
@@ -166,6 +171,7 @@ def llm_chat_callback() -> Callable:
                         LLMChatEndEvent(
                             messages=messages,
                             response=f_return_val,
+                            span_id=dispatcher.current_span_id,
                         )
                     )
 
@@ -218,6 +224,7 @@ def llm_completion_callback() -> Callable:
                         model_dict=_self.to_dict(),
                         prompt=str(args[0]),
                         additional_kwargs=kwargs,
+                        span_id=dispatcher.current_span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -240,6 +247,7 @@ def llm_completion_callback() -> Callable:
                                 LLMCompletionEndEvent(
                                     prompt=str(args[0]),
                                     response=x,
+                                    span_id=dispatcher.current_span_id,
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -268,6 +276,7 @@ def llm_completion_callback() -> Callable:
                         LLMCompletionEndEvent(
                             prompt=str(args[0]),
                             response=f_return_val,
+                            span_id=dispatcher.current_span_id,
                         )
                     )
 
@@ -280,6 +289,7 @@ def llm_completion_callback() -> Callable:
                         model_dict=_self.to_dict(),
                         prompt=str(args[0]),
                         additional_kwargs=kwargs,
+                        span_id=dispatcher.current_span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -329,6 +339,7 @@ def llm_completion_callback() -> Callable:
                         LLMCompletionEndEvent(
                             prompt=str(args[0]),
                             response=f_return_val,
+                            span_id=dispatcher.current_span_id,
                         )
                     )
 

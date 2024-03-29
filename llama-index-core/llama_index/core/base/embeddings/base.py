@@ -114,7 +114,11 @@ class BaseEmbedding(TransformComponent):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
-        dispatcher.event(EmbeddingStartEvent(model_dict=self.to_dict()))
+        dispatcher.event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(), span_id=dispatcher.current_span_id
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -127,14 +131,22 @@ class BaseEmbedding(TransformComponent):
                 },
             )
         dispatcher.event(
-            EmbeddingEndEvent(chunks=[query], embeddings=[query_embedding])
+            EmbeddingEndEvent(
+                chunks=[query],
+                embeddings=[query_embedding],
+                span_id=dispatcher.current_span_id,
+            )
         )
         return query_embedding
 
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        dispatcher.event(EmbeddingStartEvent(model_dict=self.to_dict()))
+        dispatcher.event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(), span_id=dispatcher.current_span_id
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -147,7 +159,11 @@ class BaseEmbedding(TransformComponent):
                 },
             )
         dispatcher.event(
-            EmbeddingEndEvent(chunks=[query], embeddings=[query_embedding])
+            EmbeddingEndEvent(
+                chunks=[query],
+                embeddings=[query_embedding],
+                span_id=dispatcher.current_span_id,
+            )
         )
         return query_embedding
 
@@ -220,7 +236,11 @@ class BaseEmbedding(TransformComponent):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
-        dispatcher.event(EmbeddingStartEvent(model_dict=self.to_dict()))
+        dispatcher.event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(), span_id=dispatcher.current_span_id
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -232,13 +252,23 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-        dispatcher.event(EmbeddingEndEvent(chunks=[text], embeddings=[text_embedding]))
+        dispatcher.event(
+            EmbeddingEndEvent(
+                chunks=[text],
+                embeddings=[text_embedding],
+                span_id=dispatcher.current_span_id,
+            )
+        )
         return text_embedding
 
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        dispatcher.event(EmbeddingStartEvent(model_dict=self.to_dict()))
+        dispatcher.event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(), span_id=dispatcher.current_span_id
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -250,7 +280,13 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-        dispatcher.event(EmbeddingEndEvent(chunks=[text], embeddings=[text_embedding]))
+        dispatcher.event(
+            EmbeddingEndEvent(
+                chunks=[text],
+                embeddings=[text_embedding],
+                span_id=dispatcher.current_span_id,
+            )
+        )
         return text_embedding
 
     @dispatcher.span
@@ -272,7 +308,11 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatcher.event(EmbeddingStartEvent(model_dict=self.to_dict()))
+                dispatcher.event(
+                    EmbeddingStartEvent(
+                        model_dict=self.to_dict(), span_id=dispatcher.current_span_id
+                    )
+                )
                 with self.callback_manager.event(
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: self.to_dict()},
@@ -286,7 +326,11 @@ class BaseEmbedding(TransformComponent):
                         },
                     )
                 dispatcher.event(
-                    EmbeddingEndEvent(chunks=cur_batch, embeddings=embeddings)
+                    EmbeddingEndEvent(
+                        chunks=cur_batch,
+                        embeddings=embeddings,
+                        span_id=dispatcher.current_span_id,
+                    )
                 )
                 cur_batch = []
 
@@ -305,7 +349,11 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatcher.event(EmbeddingStartEvent(model_dict=self.to_dict()))
+                dispatcher.event(
+                    EmbeddingStartEvent(
+                        model_dict=self.to_dict(), span_id=dispatcher.current_span_id
+                    )
+                )
                 event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: self.to_dict()},
@@ -338,7 +386,11 @@ class BaseEmbedding(TransformComponent):
             callback_payloads, nested_embeddings
         ):
             dispatcher.event(
-                EmbeddingEndEvent(chunks=text_batch, embeddings=embeddings)
+                EmbeddingEndEvent(
+                    chunks=text_batch,
+                    embeddings=embeddings,
+                    span_id=dispatcher.current_span_id,
+                )
             )
             self.callback_manager.on_event_end(
                 CBEventType.EMBEDDING,
