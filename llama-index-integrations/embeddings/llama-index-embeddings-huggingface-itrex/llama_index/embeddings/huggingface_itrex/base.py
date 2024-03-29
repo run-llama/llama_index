@@ -7,7 +7,6 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.utils import infer_torch_device
 from llama_index.embeddings.huggingface.utils import format_query, format_text
 from transformers import AutoTokenizer, AutoConfig
 
@@ -54,12 +53,13 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
             )
 
         from huggingface_hub import hf_hub_download
+
         onnx_model_path = os.path.join(folder_name, onnx_file_name)
         if not os.path.exists(onnx_model_path):
-            onnx_model_path = hf_hub_download(
-                folder_name, filename=onnx_file_name
-            )
-        self._model = AutoModel.from_pretrained(onnx_model_path, use_embedding_runtime=True)
+            onnx_model_path = hf_hub_download(folder_name, filename=onnx_file_name)
+        self._model = AutoModel.from_pretrained(
+            onnx_model_path, use_embedding_runtime=True
+        )
         config = AutoConfig.from_pretrained(folder_name)
         self._hidden_size = config.hidden_size
 
@@ -122,14 +122,16 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
         )
         import torch
 
-        engine_input = [value for value in encoded_input.values()]
+        engine_input = list(encoded_input.values())
         outputs = self._model.generate(engine_input)
         if "last_hidden_state:0" in outputs:
             last_hidden_state = outputs["last_hidden_state:0"]
         else:
-            last_hidden_state = [out for out in outputs.values()][0]
+            last_hidden_state = next(iter(outputs.values()))
         last_hidden_state = torch.tensor(last_hidden_state).reshape(
-            encoded_input["input_ids"].shape[0], encoded_input["input_ids"].shape[1], self._hidden_size
+            encoded_input["input_ids"].shape[0],
+            encoded_input["input_ids"].shape[1],
+            self._hidden_size,
         )
         if self.pooling == "mean":
             emb = self._mean_pooling(last_hidden_state, encoded_input["attention_mask"])
