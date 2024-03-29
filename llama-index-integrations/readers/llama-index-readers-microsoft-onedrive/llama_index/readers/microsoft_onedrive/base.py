@@ -41,6 +41,7 @@ class OneDriveReader(BasePydanticReader):
     tenant_id: Optional[str] = None
 
     _is_interactive_auth: bool = PrivateAttr(False)
+    _authority = PrivateAttr()
 
     def __init__(
         self,
@@ -50,6 +51,7 @@ class OneDriveReader(BasePydanticReader):
         **kwargs: Any,
     ) -> None:
         self._is_interactive_auth = not client_secret
+        self._authority = f"https://login.microsoftonline.com/{self.tenant_id}/"
 
         super().__init__(
             client_id=client_id,
@@ -70,7 +72,6 @@ class OneDriveReader(BasePydanticReader):
         """
         import msal
 
-        self._authority = f"https://login.microsoftonline.com/{self.tenant_id}/"
         result = None
 
         if self._is_interactive_auth:
