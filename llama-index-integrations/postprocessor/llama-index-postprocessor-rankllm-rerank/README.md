@@ -2,9 +2,7 @@
 
 RankLLM offers a suite of listwise rerankers, albeit with focus on open source LLMs finetuned for the task. Currently, RankLLM supports 2 of these models: RankZephyr (`model="zephyr"`) and RankVicuna (`model="vicuna"`).
 
-Please `pip install llama-index-postprocessor-rankllm-rerank` to install RankLLM rerank package. 
-
-
+Please `pip install llama-index-postprocessor-rankllm-rerank` to install RankLLM rerank package.
 
 ### 💻 Example Usage
 
@@ -23,6 +21,7 @@ index = VectorStoreIndex.from_documents(
 ```
 
 To set up the retriever and reranker:
+
 ```
 query_bundle = QueryBundle(query_str)
 
@@ -40,6 +39,7 @@ reranker = RankLLMRerank(
 ```
 
 To run retrieval+reranking:
+
 ```
 # retrieve nodes
 retrieved_nodes = retriever.retrieve(query_bundle)
@@ -50,13 +50,9 @@ reranked_nodes = reranker.postprocess_nodes(
 )
 ```
 
-
-
-
 ### 🔧 Dependencies
+
 Currently, RankLLM rerankers require `CUDA` and for `rank_llm` to be installed (`pip install rank_llm`). The built-in retriever, which uses [Pyserini](https://github.com/castorini/pyserini), requires `JDK11`, `PyTorch`, and `Faiss`.
-
-
 
 ### castorini/rank_llm
 
