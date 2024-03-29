@@ -234,12 +234,13 @@ def llm_completion_callback() -> Callable:
             _self: Any, *args: Any, **kwargs: Any
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
+                span_id = dispatcher.current_span_id
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=_self.to_dict(),
                         prompt=str(args[0]),
                         additional_kwargs=kwargs,
-                        span_id=dispatcher.current_span_id,
+                        span_id=span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -262,7 +263,7 @@ def llm_completion_callback() -> Callable:
                                 LLMCompletionEndEvent(
                                     prompt=str(args[0]),
                                     response=x,
-                                    span_id=dispatcher.current_span_id,
+                                    span_id=span_id,
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -291,7 +292,7 @@ def llm_completion_callback() -> Callable:
                         LLMCompletionEndEvent(
                             prompt=str(args[0]),
                             response=f_return_val,
-                            span_id=dispatcher.current_span_id,
+                            span_id=span_id,
                         )
                     )
 
@@ -299,12 +300,13 @@ def llm_completion_callback() -> Callable:
 
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             with wrapper_logic(_self) as callback_manager:
+                span_id = dispatcher.current_span_id
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=_self.to_dict(),
                         prompt=str(args[0]),
                         additional_kwargs=kwargs,
-                        span_id=dispatcher.current_span_id,
+                        span_id=span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -324,8 +326,7 @@ def llm_completion_callback() -> Callable:
                         for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=str(args[0]),
-                                    response=x,
+                                    prompt=str(args[0]), response=x, span_id=span_id
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -354,7 +355,7 @@ def llm_completion_callback() -> Callable:
                         LLMCompletionEndEvent(
                             prompt=str(args[0]),
                             response=f_return_val,
-                            span_id=dispatcher.current_span_id,
+                            span_id=span_id,
                         )
                     )
 

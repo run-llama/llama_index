@@ -224,11 +224,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 a QueryBundle object.
 
         """
+        span_id = dispatcher.current_span_id
         self._check_callback_manager()
         dispatcher.event(
             RetrievalStartEvent(
                 str_or_query_bundle=str_or_query_bundle,
-                span_id=dispatcher.current_span_id,
+                span_id=span_id,
             )
         )
         if isinstance(str_or_query_bundle, str):
@@ -249,7 +250,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             RetrievalEndEvent(
                 str_or_query_bundle=str_or_query_bundle,
                 nodes=nodes,
-                span_id=dispatcher.current_span_id,
+                span_id=span_id,
             )
         )
         return nodes
@@ -257,10 +258,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
     @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
+        span_id = dispatcher.current_span_id
         dispatcher.event(
             RetrievalStartEvent(
                 str_or_query_bundle=str_or_query_bundle,
-                span_id=dispatcher.current_span_id,
+                span_id=span_id,
             )
         )
         if isinstance(str_or_query_bundle, str):
@@ -283,7 +285,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             RetrievalEndEvent(
                 str_or_query_bundle=str_or_query_bundle,
                 nodes=nodes,
-                span_id=dispatcher.current_span_id,
+                span_id=span_id,
             )
         )
         return nodes

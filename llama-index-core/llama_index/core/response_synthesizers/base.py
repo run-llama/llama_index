@@ -201,9 +201,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatcher.event(
-            SynthesizeStartEvent(query=query, span_id=dispatcher.current_span_id)
-        )
+        span_id = dispatcher.current_span_id
+        dispatcher.event(SynthesizeStartEvent(query=query, span_id=span_id))
 
         if len(nodes) == 0:
             if self._streaming:
@@ -214,7 +213,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
-                        span_id=dispatcher.current_span_id,
+                        span_id=span_id,
                     )
                 )
                 return empty_response
@@ -224,7 +223,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
-                        span_id=dispatcher.current_span_id,
+                        span_id=span_id,
                     )
                 )
                 return empty_response
@@ -251,9 +250,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             event.on_end(payload={EventPayload.RESPONSE: response})
 
         dispatcher.event(
-            SynthesizeEndEvent(
-                query=query, response=response, span_id=dispatcher.current_span_id
-            )
+            SynthesizeEndEvent(query=query, response=response, span_id=span_id)
         )
         return response
 
@@ -265,9 +262,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatcher.event(
-            SynthesizeStartEvent(query=query, span_id=dispatcher.current_span_id)
-        )
+        span_id = dispatcher.current_span_id
+        dispatcher.event(SynthesizeStartEvent(query=query, span_id=span_id))
         if len(nodes) == 0:
             if self._streaming:
                 empty_response = AsyncStreamingResponse(
@@ -277,7 +273,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
-                        span_id=dispatcher.current_span_id,
+                        span_id=span_id,
                     )
                 )
                 return empty_response
@@ -287,7 +283,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
-                        span_id=dispatcher.current_span_id,
+                        span_id=span_id,
                     )
                 )
                 return empty_response
@@ -314,9 +310,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             event.on_end(payload={EventPayload.RESPONSE: response})
 
         dispatcher.event(
-            SynthesizeEndEvent(
-                query=query, response=response, span_id=dispatcher.current_span_id
-            )
+            SynthesizeEndEvent(query=query, response=response, span_id=span_id)
         )
         return response
 
