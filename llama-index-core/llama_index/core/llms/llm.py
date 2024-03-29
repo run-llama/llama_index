@@ -52,6 +52,8 @@ from llama_index.core.types import (
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
+    LLMStructuredPredictEndEvent,
+    LLMStructuredPredictStartEvent,
 )
 
 import llama_index.core.instrumentation as instrument
@@ -324,6 +326,9 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(span_id=dispatcher.current_span_id)
+        )
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -331,7 +336,11 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        return program(**prompt_args)
+        result = program(**prompt_args)
+        dispatcher.event(
+            LLMStructuredPredictEndEvent(span_id=dispatcher.current_span_id)
+        )
+        return result
 
     @dispatcher.span
     async def astructured_predict(
@@ -370,6 +379,10 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(span_id=dispatcher.current_span_id)
+        )
+
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -377,7 +390,11 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        return await program.acall(**prompt_args)
+        result = await program.acall(**prompt_args)
+        dispatcher.event(
+            LLMStructuredPredictEndEvent(span_id=dispatcher.current_span_id)
+        )
+        return result
 
     # -- Prompt Chaining --
 
