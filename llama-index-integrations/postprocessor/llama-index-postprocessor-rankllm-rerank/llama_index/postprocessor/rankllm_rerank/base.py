@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -14,6 +14,9 @@ class RankLLMRerank(BaseNodePostprocessor):
     with_retrieval: bool = Field(
         default=False, description="Perform retrieval before reranking."
     )
+    step_size: int = Field(
+        default=10, description="Step size for moving sliding window."
+    )
     _model: Any = PrivateAttr()
     _result: Any = PrivateAttr()
     _retriever: Any = PrivateAttr()
@@ -22,7 +25,8 @@ class RankLLMRerank(BaseNodePostprocessor):
         self,
         model,
         top_n: int = 10,
-        with_retrieval: bool = False,
+        with_retrieval: Optional[bool] = False,
+        step_size: Optional[int] = 10,
     ):
         try:
             model_enum = ModelType(model.lower())
@@ -47,9 +51,10 @@ class RankLLMRerank(BaseNodePostprocessor):
             self._retriever = Retriever
 
         super().__init__(
+            model=model,
             top_n=top_n,
             with_retrieval=with_retrieval,
-            model=model,
+            step_size=step_size,
         )
 
     @classmethod
@@ -98,6 +103,7 @@ class RankLLMRerank(BaseNodePostprocessor):
             retrieved_results=retrieved_results,
             rank_end=len(docs),
             window_size=min(20, len(docs)),
+            step=self.step_size,
         )
 
         new_nodes: List[NodeWithScore] = []
