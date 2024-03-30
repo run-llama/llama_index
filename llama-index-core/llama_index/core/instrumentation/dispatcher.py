@@ -162,17 +162,14 @@ class Dispatcher(BaseModel):
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             self.current_span_id = id_
             self.root.current_span_id = id_
-            print(f"{self.name} ENTERING SPAN {id_}", flush=True)
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = func(*args, **kwargs)
             except BaseException as e:
-                print(f"{self.name} DROPPING SPAN {id_} due to {e}", flush=True)
                 self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             else:
-                print(f"{self.name} EXITING SPAN {id_}", flush=True)
                 self.span_exit(
                     id_=id_, bound_args=bound_args, instance=instance, result=result
                 )
@@ -186,17 +183,14 @@ class Dispatcher(BaseModel):
                 self.current_span_id = id_
             async with self.root._asyncio_lock:
                 self.root.current_span_id = id_
-            print(f"{self.name} ENTERING SPAN {id_}", flush=True)
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = await func(*args, **kwargs)
             except BaseException as e:
-                print(f"{self.name} DROPPING SPAN {id_}", flush=True)
                 self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             else:
-                print(f"{self.name} EXITING SPAN {id_}", flush=True)
                 self.span_exit(
                     id_=id_, bound_args=bound_args, instance=instance, result=result
                 )
