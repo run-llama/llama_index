@@ -27,14 +27,14 @@ class FalkorDBGraphStore(GraphStore):
         **kwargs: Any,
     ) -> None:
         try:
-            import redis
+            import falkordb
         except ImportError:
-            raise ImportError("Please install redis client: pip install redis")
+            raise ImportError("Please install falkordb client: pip install falkordb")
 
         """Initialize params."""
         self._node_label = node_label
 
-        self._driver = redis.Redis.from_url(url).graph(database)
+        self._driver = falkordb.FalkorDB.from_url(url).select_graph(database)
         self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
 
         self._database = database
