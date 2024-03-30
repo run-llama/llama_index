@@ -337,6 +337,15 @@ class ChatMode(str, Enum):
     Then pass the context along with prompt and user message to LLM to generate a response.
     """
 
+    FLOW = "flow"
+    """Corresponds to `FlowChatEngine`.
+
+    For each chat interaction:
+    First retrieves text from the index using the user message, then augments the context
+    in the latest user message prompt (text_qa_template) to generate a response from the LLM.
+    Finally, it condenses previous user messages to simple queries (excluding the full prompt from history).
+    """
+
     REACT = "react"
     """Corresponds to `ReActAgent`.
 

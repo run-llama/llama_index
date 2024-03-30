@@ -6,10 +6,12 @@ from llama_index.core.chat_engine.condense_question import (
 )
 from llama_index.core.chat_engine.context import ContextChatEngine
 from llama_index.core.chat_engine.simple import SimpleChatEngine
+from llama_index.core.chat_engine.flow import FlowChatEngine
 
 __all__ = [
     "SimpleChatEngine",
     "CondenseQuestionChatEngine",
     "ContextChatEngine",
     "CondensePlusContextChatEngine",
+    "FlowChatEngine",
 ]

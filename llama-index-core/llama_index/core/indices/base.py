@@ -381,8 +381,7 @@ class BaseIndex(Generic[IS], ABC):
         ...
 
     @abstractmethod
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        ...
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever: ...
 
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
@@ -466,6 +465,15 @@ class BaseIndex(Generic[IS], ABC):
             from llama_index.core.chat_engine import CondensePlusContextChatEngine
 
             return CondensePlusContextChatEngine.from_defaults(
+                retriever=self.as_retriever(**kwargs),
+                llm=llm,
+                **kwargs,
+            )
+
+        elif chat_mode == ChatMode.FLOW:
+            from llama_index.core.chat_engine import FlowChatEngine
+
+            return FlowChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),
                 llm=llm,
                 **kwargs,
