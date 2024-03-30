@@ -260,7 +260,7 @@ def llm_completion_callback() -> Callable:
                         CBEventType.LLM,
                         payload={
                             EventPayload.PROMPT: args[0],
-                            EventPayload.RESPONSE: f_return_val,
+                            EventPayload.COMPLETION: f_return_val,
                         },
                         event_id=event_id,
                     )

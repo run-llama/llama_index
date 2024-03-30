@@ -174,7 +174,7 @@ class BaseElementNodeParser(NodeParser):
             except ValidationError:
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
-                query_engine = index.as_query_engine()
+                query_engine = index.as_query_engine(llm=llm)
                 response_txt = await query_engine.aquery(summary_query_str)
                 return TableOutput(summary=str(response_txt), columns=[])
 
