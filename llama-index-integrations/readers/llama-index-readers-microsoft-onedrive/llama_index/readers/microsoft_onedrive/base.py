@@ -8,9 +8,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+from llama_index.core.bridge.pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
 
@@ -31,46 +31,67 @@ class OneDriveReader(BasePydanticReader):
     :param client_secret: The Application Secret for the app registered in the Azure portal.
                           If provided, the MSAL client credential flow will be used for authentication (ConfidentialClientApplication).
                           If not provided, interactive authentication will be used (Not recommended for CI/CD or scenarios where manual interaction for authentication is not feasible).
+                          Required for App authentication.
+    :param userprinciplename: The user principal name (normally organization provided email) whose OneDrive will be accessed. Required for App authentication. Will be used if the
+                              parameter is not provided when calling load_data().
+    :param folder_id: The folder ID of the folder to fetch from OneDrive. Will be used if the parameter is not provided when calling load_data().
+    :param file_ids: A list of file IDs of files to fetch from OneDrive. Will be used if the parameter is not provided when calling load_data().
+    :param folder_path (str, optional): The relative path of the OneDrive folder to download. If provided, files within the folder are downloaded.  Will be used if the parameter is
+                                        not provided when calling load_data().
+    :param file_paths (List[str], optional): List of specific file paths to download. Will be used if the parameter is not provided when calling load_data().
+
 
     For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'
     for mobile and native applications.
     """
 
-    client_id: str = None
+    client_id: str
     client_secret: Optional[str] = None
     tenant_id: Optional[str] = None
+    userprincipalname: Optional[str] = None
+    folder_id: Optional[str] = None
+    file_ids: Optional[List[str]] = None
+    folder_path: Optional[str] = None
+    file_paths: Optional[List[str]] = None
 
-    _is_interactive_auth: bool = PrivateAttr(False)
+    _is_interactive_auth = PrivateAttr(False)
+    _authority = PrivateAttr()
 
     def __init__(
         self,
         client_id: str,
         client_secret: Optional[str] = None,
         tenant_id: Optional[str] = "consumers",
-        **kwargs: Any,
+        userprincipalname: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        file_ids: Optional[List[str]] = None,
+        folder_path: Optional[str] = None,
+        file_paths: Optional[List[str]] = None,
+        **kwargs,
     ) -> None:
         self._is_interactive_auth = not client_secret
+        self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
 
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            userprincipalname=userprincipalname,
+            folder_id=folder_id,
+            file_ids=file_ids,
+            folder_path=folder_path,
+            file_paths=file_paths,
             **kwargs,
         )
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "OneDriveReader"
 
     def _authenticate_with_msal(self) -> Any:
         """Authenticate with MSAL.
 
-           For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'localhost'
+        For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'localhost'
         for mobile and native applications.
         """
         import msal
 
-        self._authority = f"https://login.microsoftonline.com/{self.tenant_id}/"
         result = None
 
         if self._is_interactive_auth:
@@ -123,7 +144,7 @@ class OneDriveReader(BasePydanticReader):
         """
         if not self._is_interactive_auth and not userprincipalname:
             raise Exception(
-                "userprincipalname cannot be empty for App authentication. Provide the userprincipalname (email mostly) of user whose OneDrive needs to be accessed"
+                "userprincipalname cannot be empty for App authentication. Provide the userprincipalname (usually email) of the user whose OneDrive will be accessed."
             )
 
         endpoint = "https://graph.microsoft.com/v1.0/"
@@ -164,7 +185,7 @@ class OneDriveReader(BasePydanticReader):
         access_token (str): Access token for API calls.
         item_ref (Optional[str]): Specific item ID/path or root for root folder.
         max_retries (int): Max number of retries on rate limit or server errors.
-        userprincipalname: str value indicating the userprincipalname(normally organization provided email id) whose ondrive needs to be accessed. Mandatory for App authentication scenarios.
+        userprincipalname: str value indicating the userprincipalname (usually organization-provided email) whose OneDrive will be accessed. Required for App authentication.
         isFile: bool value to indicate if to query file or folder
         isRelativePath: bool value to indicate if to query file or folder using relative path
         Returns:
@@ -379,7 +400,7 @@ class OneDriveReader(BasePydanticReader):
         - file_paths (List[str], optional): List of specific file paths to download.
         - recursive (bool): Flag indicating whether to download files from subfolders if a folder_id is provided.
         - mime_types(List[str], optional): the mimeTypes you want to allow e.g.: "application/pdf", default is None which loads all files
-        - userprincipalname (str): The userprincipalname(normally organization provided email id) whose ondrive needs to be accessed. Mandatory for App authentication scenarios.
+        - userprincipalname (str): The userprincipalname (normally organization-provided email) whose OneDrive will be accessed. Required for App authentication.
 
         """
         access_token = self._authenticate_with_msal()
@@ -482,29 +503,45 @@ class OneDriveReader(BasePydanticReader):
 
     def load_data(
         self,
-        folder_id: str = None,
-        file_ids: List[str] = None,
+        folder_id: Optional[str] = None,
+        file_ids: Optional[List[str]] = None,
         folder_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
         mime_types: Optional[List[str]] = None,
         recursive: bool = True,
         userprincipalname: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id / file ids, if both are not provided download from the root.
+        """Load data from the folder id / file ids, f both are not provided download from the root.
 
         Args:
-            folder_id: folder id of the folder in OneDrive.
-            file_ids: file ids of the files in OneDrive.
+            folder_id (str, optional): folder id of the folder in OneDrive.
+            file_ids (List[str], optional): file ids of the files in OneDrive.
             folder_path (str, optional): The relative path of the OneDrive folder to download. If provided, files within the folder are downloaded.
             file_paths (List[str], optional): List of specific file paths to download.
             mime_types: the mimeTypes you want to allow e.g.: "application/pdf", default is none, which loads all files found
             recursive: boolean value to traverse and read subfolder, default is True
-            userprincipalname: str value indicating the userprincipalname(normally organization provided email id) whose ondrive needs to be accessed. Mandatory for App authentication scenarios.
+            userprincipalname: str value indicating the userprincipalname (normally organization-provided email) whose OneDrive will be accessed. Required for App authentication scenarios.
 
 
         Returns:
             List[Document]: A list of documents.
         """
+        # If arguments are not provided to load_data(), initialize them from the object's attributes
+        if not userprincipalname:
+            userprincipalname = self.userprincipalname
+
+        if not folder_id:
+            folder_id = self.folder_id
+
+        if not file_ids:
+            file_ids = self.file_ids
+
+        if not folder_path:
+            folder_path = self.folder_path
+
+        if not file_paths:
+            file_paths = self.file_paths
+
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 self._downloaded_files_metadata = self._init_download_and_get_metadata(
