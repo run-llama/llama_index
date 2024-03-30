@@ -27,7 +27,7 @@ class OneDriveReader(BasePydanticReader):
 
     :param client_id: The Application (client) ID for the app registered in the Azure Entra (formerly Azure Active directory) portal with MS Graph permission "Files.Read.All".
     :param tenant_id: The Directory (tenant) ID of the Azure Active Directory (AAD) tenant the app is registered with.
-                      Defaults to "consumers" for multi-tenant applications and onderive personal.
+                      Defaults to "consumers" for multi-tenant applications and OneDrive personal.
     :param client_secret: The Application Secret for the app registered in the Azure portal.
                           If provided, the MSAL client credential flow will be used for authentication (ConfidentialClientApplication).
                           If not provided, interactive authentication will be used (Not recommended for CI/CD or scenarios where manual interaction for authentication is not feasible).
@@ -56,6 +56,7 @@ class OneDriveReader(BasePydanticReader):
 
     _is_interactive_auth = PrivateAttr(False)
     _authority = PrivateAttr()
+    _downloaded_files_metadata = PrivateAttr({})
 
     def __init__(
         self,
@@ -105,7 +106,7 @@ class OneDriveReader(BasePydanticReader):
             # under mobile and native applications.
             result = app.acquire_token_interactive(SCOPES)
         else:
-            logger.debug("Starting app autheetication...")
+            logger.debug("Starting app authentication...")
             app = msal.ConfidentialClientApplication(
                 self.client_id,
                 authority=self._authority,
