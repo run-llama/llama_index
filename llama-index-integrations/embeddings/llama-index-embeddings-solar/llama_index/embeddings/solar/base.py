@@ -28,7 +28,7 @@ class SolarEmbedding(BaseEmbedding):
         self,
         model_name: str = "solar-1-mini-embedding-query",
         api_key: str = "",
-        api_base: str = "https://api.upstage.ai/v1/solar/embeddings",
+        api_base: str = DEFAULT_SOLAR_API_BASE,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
@@ -47,7 +47,7 @@ class SolarEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "SolarEmbedding"
 
-    def _get_embedding(self, text: str, input_type: str) -> List[float]:
+    def _get_embedding(self, text: str) -> List[float]:
         payload = json.dumps({"input": text, "model": self.model_name})
         headers = {
             "Content-Type": "application/json",
@@ -57,8 +57,13 @@ class SolarEmbedding(BaseEmbedding):
         response = requests.request(
             "POST", self.api_base, headers=headers, data=payload
         )
-        response = json.loads(response.text)
-        return response["data"][0]["embedding"]
+        if response.ok:
+            response = json.loads(response.text)
+            return response["data"][0]["embedding"]
+        else:
+            raise Exception(
+                f"Failed to get {self.api_base} (status: {response.status_code})"
+            )
 
     async def _aget_embedding(
         self, session: Any, text: str, input_type: str
@@ -67,7 +72,7 @@ class SolarEmbedding(BaseEmbedding):
 
         async with session.post(
             self.api_base,
-            json={"input": text, "model": self.model, "input_type": input_type},
+            json={"input": text, "model": self.model},
             headers=headers,
         ) as response:
             response.raise_for_status()
@@ -79,10 +84,10 @@ class SolarEmbedding(BaseEmbedding):
         return self._get_embedding(query, input_type="query")
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        return self._get_embedding(text, input_type="passage")
+        return self._get_embedding(text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        return [self._get_embedding(text, input_type="passage") for text in texts]
+        return [self._get_embedding(text) for text in texts]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding async. For query embeddings, input_type='search_query'."""

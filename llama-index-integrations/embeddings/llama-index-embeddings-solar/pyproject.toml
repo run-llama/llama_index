@@ -14,7 +14,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["ary <mrgao.ary@gmail.com>"]
+authors = ["upstage <solar@upstage.ai>"]
 description = "llama-index embeddings solar integration"
 license = "MIT"
 name = "llama-index-embeddings-solar"
