@@ -36,7 +36,8 @@ def test_object_index_default_mapping(mock_service_context: ServiceContext) -> N
 
 def test_object_index_fn_mapping(mock_service_context: ServiceContext) -> None:
     """Test object index."""
-    objects = {obj: obj for obj in ["a", "b", "c"]}
+    objects = {obj: obj for obj in ["a", "b", "c", "d"]}
+    print(objects)
 
     def to_node_fn(obj: str) -> TextNode:
         return TextNode(id_=obj, text=obj)
