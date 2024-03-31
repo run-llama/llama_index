@@ -665,3 +665,315 @@ class HuggingFaceInferenceAPI(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError
+
+
+from llama_index.core.llms.function_calling import FunctionCallingLLM
+from text_generation import (
+    Client as TGIClient,
+    AsyncClient as TGIAsyncClient,
+)
+from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.base.llms.generic_utils import (
+    chat_to_completion_decorator,
+    get_from_param_or_env,
+)
+from text_generation.types import (
+    Message as TGIMessage,
+)
+from llama_index.core.tools.types import BaseTool
+
+
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
+class TextGenerationInference(FunctionCallingLLM):
+    @classmethod
+    def class_name(cls) -> str:
+        return "TextGenerationInference"
+
+    # Corresponds with huggingface_hub.InferenceClient
+    model_name: Optional[str] = Field(
+        default=DEFAULT_HUGGINGFACE_MODEL,
+        description=("The URL of TGI endpoint"),
+    )
+    temperature: float = Field(
+        default=0.7,
+        description="The temperature to use for sampling.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_tokens: int = Field(
+        default=2048,
+        description="The maximum number of tokens to generate.",
+        gt=0,
+    )
+    token: Union[str, bool, None] = Field(
+        default=None,
+        description=(
+            "Hugging Face token. Will default to the locally saved token. Pass "
+            "token=False if you don’t want to send your token to the server."
+        ),
+    )
+    timeout: Optional[float] = Field(
+        default=None,
+        description=(
+            "The maximum number of seconds to wait for a response from the server."
+            " Loading a new model in Inference API can take up to several minutes."
+            " Defaults to None, meaning it will loop until the server is available."
+        ),
+    )
+    headers: Dict[str, str] = Field(
+        default=None,
+        description=(
+            "Additional headers to send to the server. By default only the"
+            " authorization and user-agent headers are sent. Values in this dictionary"
+            " will override the default values."
+        ),
+    )
+    cookies: Dict[str, str] = Field(
+        default=None, description="Additional cookies to send to the server."
+    )
+    seed: str = Field(default=None, description="The random seed to use for sampling.")
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional kwargs for the TGI API."
+    )
+
+    _sync_client: "TGIClient" = PrivateAttr()
+    _async_client: "TGIAsyncClient" = PrivateAttr()
+    _get_model_info: "Callable[..., ModelInfo]" = PrivateAttr()
+
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description=(
+            LLMMetadata.__fields__["context_window"].field_info.description
+            + " This may be looked up in a model's `config.json`."
+        ),
+    )
+    num_output: int = Field(
+        default=DEFAULT_NUM_OUTPUTS,
+        description=LLMMetadata.__fields__["num_output"].field_info.description,
+    )
+    is_chat_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + " Unless chat templating is intentionally applied, Hugging Face models"
+            " are not chat models."
+        ),
+    )
+    is_function_calling_model: bool = Field(
+        default=False,
+        description=(
+            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            + " As of 10/17/2023, Hugging Face doesn't support function calling"
+            " messages."
+        ),
+    )
+
+    def __init__(
+        self,
+        model_url,
+        model_name: Optional[str] = None,
+        cookies: Optional[dict] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        timeout: int = 120,
+        max_retries: int = 5,
+        seed: Optional[int] = None,
+        api_key: Optional[str] = None,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        generate_kwargs: Optional[dict] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
+    ) -> None:
+        additional_kwargs = additional_kwargs or {}
+        callback_manager = callback_manager or CallbackManager([])
+
+        api_key = get_from_param_or_env("api_key", api_key, "HF_TOKEN", "")
+
+        headers = {}
+        if api_key:
+            headers.update({"Authorization": f"Bearer {api_key}"})
+
+        self._sync_client = TGIClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+        )
+        self._async_client = TGIAsyncClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+        )
+
+        super().__init__(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            timeout=timeout,
+            max_retries=max_retries,
+            # safe_mode=safe_mode,
+            seed=seed,
+            model=model_name,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
+
+    @property
+    def metadata(self) -> LLMMetadata:
+        pass
+
+    @property
+    def _model_kwargs(self) -> Dict[str, Any]:
+        base_kwargs = {
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "seed": self.seed,
+        }
+        return {
+            **base_kwargs,
+            **self.additional_kwargs,
+        }
+
+    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        return {
+            **self._model_kwargs,
+            **kwargs,
+        }
+
+    # def complete(
+    #     self, prompt: str, formatted: bool = False, **kwargs: Any
+    # ) -> CompletionResponse:
+
+    #     return self._sync_client.generate(
+    #         prompt,
+    #         **kwargs
+    #     )
+    # NOTE no tools with client.generate!
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        formatted_messages = []
+        for m in messages:
+            tool_calls = m.additional_kwargs.get("tool_calls")
+            formatted_messages.append(
+                TGIMessage(role=m.role.value, content=m.content, tool_calls=tool_calls)
+            )
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = self._sync_client.chat(messages=formatted_messages, **all_kwargs)
+        tool_calls = response.choices[0].message.tool_calls
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response.choices[0].message.content,
+                additional_kwargs={"tool_calls": tool_calls}
+                if tool_calls is not None
+                else {},
+            ),
+            raw=dict(response),
+        )
+
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        pass
+
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        pass
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        pass
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        pass
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        pass
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        pass
+
+    def chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        # misralai uses the same openai tool format
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = self.chat(
+            messages,
+            tools=tool_specs,
+            **kwargs,
+        )
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    async def achat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        pass
+
+    def get_tool_calls_from_response(
+        self,
+        response: "AgentChatResponse",
+        error_on_no_tool_call: bool = True,
+    ) -> List[ToolSelection]:
+        pass
