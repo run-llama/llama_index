@@ -1,8 +1,11 @@
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Protocol
+from functools import partial
+from contextlib import contextmanager
 import asyncio
 import inspect
 import uuid
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span_handlers import (
     BaseSpanHandler,
@@ -11,6 +14,11 @@ from llama_index.core.instrumentation.span_handlers import (
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
+
+
+class EventDispatcher(Protocol):
+    def __call__(self, event: BaseEvent) -> None:
+        ...
 
 
 class Dispatcher(BaseModel):
@@ -74,9 +82,11 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.span_handlers += [handler]
 
-    def event(self, event: BaseEvent, **kwargs) -> None:
+    def event(self, event: BaseEvent, span_id: Optional[str] = None, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
         c = self
+        if span_id:
+            event.span_id = span_id
         while c:
             for h in c.event_handlers:
                 h.handle(event, **kwargs)
@@ -155,6 +165,17 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
+    @contextmanager
+    def dispatch_event(self):
+        """Context manager for firing events within a span session."""
+        span_id = self.current_span_id
+        dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
+
+        try:
+            yield dispatch_event
+        finally:
+            del dispatch_event
+
     def span(self, func):
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
@@ -183,6 +204,7 @@ class Dispatcher(BaseModel):
                 self.current_span_id = id_
             async with self.root._asyncio_lock:
                 self.root.current_span_id = id_
+
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = await func(*args, **kwargs)

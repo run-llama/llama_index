@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 from asyncio import CancelledError
+from collections import Counter
 
 import pytest
 import llama_index.core.instrumentation as instrument
@@ -17,13 +18,13 @@ cancelled_error = CancelledError("cancelled error")
 
 class _TestStartEvent(BaseEvent):
     @classmethod
-    def class_name():
+    def class_name(cls):
         return "_TestStartEvent"
 
 
 class _TestEndEvent(BaseEvent):
     @classmethod
-    def class_name():
+    def class_name(cls):
         return "_TestEndEvent"
 
 
@@ -31,7 +32,7 @@ class _TestEventHandler(BaseEventHandler):
     events = []
 
     @classmethod
-    def class_name():
+    def class_name(cls):
         return "_TestEventHandler"
 
     def handle(self, e: BaseEvent):
@@ -60,16 +61,16 @@ async def async_func_exc(a, b=3, c=4, **kwargs):
 
 @dispatcher.span
 def func_with_event(a, b=3, **kwargs):
-    span_id = dispatcher.current_span_id
-    dispatcher.event(_TestStartEvent(span_id=span_id))
+    with dispatcher.dispatch_event() as dispatch_event:
+        dispatch_event(_TestStartEvent())
 
 
 @dispatcher.span
 async def async_func_with_event(a, b=3, **kwargs):
-    span_id = dispatcher.current_span_id
-    dispatcher.event(_TestStartEvent(span_id=span_id))
-    await asyncio.sleep(0.1)
-    dispatcher.event(_TestEndEvent(span_id=span_id))
+    with dispatcher.dispatch_event() as dispatch_event:
+        dispatch_event(_TestStartEvent())
+        await asyncio.sleep(0.1)
+        dispatch_event(_TestEndEvent())
 
 
 class _TestObject:
@@ -91,15 +92,17 @@ class _TestObject:
 
     @dispatcher.span
     def func_with_event(self, a, b=3, **kwargs):
-        span_id = dispatcher.current_span_id
-        dispatcher.event(_TestStartEvent(span_id=span_id))
+        with dispatcher.dispatch_event() as dispatch_event:
+            dispatch_event(_TestStartEvent())
 
     @dispatcher.span
     async def async_func_with_event(self, a, b=3, **kwargs):
-        span_id = dispatcher.current_span_id
-        dispatcher.event(_TestStartEvent(span_id=span_id))
-        await asyncio.sleep(0.1)
-        dispatcher.event(_TestEndEvent(span_id=span_id))
+        with dispatcher.dispatch_event() as dispatch_event:
+            dispatch_event(_TestStartEvent())
+            await asyncio.sleep(0.1)
+            await self.async_func(1)  # this should create a new span_id
+            # that is fine because we have dispatch_event
+            dispatch_event(_TestEndEvent())
 
 
 @patch.object(Dispatcher, "span_exit")
@@ -420,33 +423,36 @@ def test_dispatcher_fire_event(
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
-@patch("llama_index.core.instrumentation.dispatcher.uuid")
 async def test_dispatcher_async_fire_event(
-    mock_uuid: MagicMock,
     mock_span_enter: MagicMock,
     mock_span_drop: MagicMock,
     mock_span_exit: MagicMock,
 ):
     # arrange
-    mock_uuid.uuid4.return_value = "mock"
     event_handler = _TestEventHandler()
     dispatcher.add_event_handler(event_handler)
 
     # act
-    _ = await async_func_with_event(3, c=5)
+    tasks = [
+        async_func_with_event(a=3, c=5),
+        async_func_with_event(5),
+        async_func_with_event(4),
+    ]
+    _ = await asyncio.gather(*tasks)
 
     # assert
-    span_id = f"{async_func_with_event.__qualname__}-mock"
-    assert all(e.span_id == span_id for e in event_handler.events)
+    span_ids = [e.span_id for e in event_handler.events]
+    id_counts = Counter(span_ids)
+    assert set(id_counts.values()) == {2}
 
     # span_enter
-    mock_span_enter.assert_called_once()
+    mock_span_enter.call_count == 3
 
     # span
     mock_span_drop.assert_not_called()
 
     # span_exit
-    mock_span_exit.assert_called_once()
+    mock_span_exit.call_count == 3
 
 
 @patch.object(Dispatcher, "span_exit")
@@ -483,28 +489,34 @@ def test_dispatcher_fire_event_with_instance(
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
-@patch("llama_index.core.instrumentation.dispatcher.uuid")
 async def test_dispatcher_async_fire_event_with_instance(
-    mock_uuid, mock_span_enter, mock_span_drop, mock_span_exit
+    mock_span_enter: MagicMock,
+    mock_span_drop: MagicMock,
+    mock_span_exit: MagicMock,
 ):
     # arrange
-    mock_uuid.uuid4.return_value = "mock"
+    # mock_uuid.return_value = "mock"
     event_handler = _TestEventHandler()
     dispatcher.add_event_handler(event_handler)
 
     # act
     instance = _TestObject()
-    _ = await instance.async_func_with_event(a=3, c=5)
+    tasks = [
+        instance.async_func_with_event(a=3, c=5),
+        instance.async_func_with_event(5),
+    ]
+    _ = await asyncio.gather(*tasks)
 
     # assert
-    span_id = f"{instance.async_func_with_event.__qualname__}-mock"
-    assert all(e.span_id == span_id for e in event_handler.events)
+    span_ids = [e.span_id for e in event_handler.events]
+    id_counts = Counter(span_ids)
+    assert set(id_counts.values()) == {2}
 
     # span_enter
-    mock_span_enter.assert_called_once()
+    mock_span_enter.call_count == 2
 
     # span
     mock_span_drop.assert_not_called()
 
     # span_exit
-    mock_span_exit.assert_called_once()
+    mock_span_exit.call_count == 2
