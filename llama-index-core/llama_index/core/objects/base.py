@@ -2,7 +2,7 @@
 
 import pickle
 import warnings
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.query_pipeline.query import (
@@ -22,7 +22,7 @@ from llama_index.core.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
-from llama_index.core.schema import QueryBundle, QueryType
+from llama_index.core.schema import QueryBundle, QueryType, TextNode
 from llama_index.core.storage.storage_context import (
     DEFAULT_PERSIST_DIR,
     StorageContext,
@@ -150,28 +150,25 @@ class ObjectIndex(Generic[OT]):
         """Object node mapping."""
         return self._object_node_mapping
 
-    @staticmethod
-    def get_object_mapping(objects: Sequence[OT]) -> BaseObjectNodeMapping:
-        """Get object mapping according to object."""
-        from llama_index.core.tools import BaseTool
-        from llama_index.core.objects.tool_node_mapping import SimpleToolNodeMapping
-
-        if all(isinstance(obj, BaseTool) for obj in objects):
-            return SimpleToolNodeMapping.from_objects(objects)
-        else:
-            return SimpleObjectNodeMapping.from_objects(objects)
-
     @classmethod
     def from_objects(
         cls,
         objects: Sequence[OT],
         object_mapping: Optional[BaseObjectNodeMapping] = None,
+        from_node_fn: Optional[Callable[[TextNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], TextNode]] = None,
         index_cls: Type[BaseIndex] = VectorStoreIndex,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
+        from llama_index.core.objects.utils import get_object_mapping
+
         # pick the best mapping if not provided
         if object_mapping is None:
-            object_mapping = cls.get_object_mapping(objects)
+            object_mapping = get_object_mapping(
+                objects,
+                from_node_fn=from_node_fn,
+                to_node_fn=to_node_fn,
+            )
 
         nodes = object_mapping.to_nodes(objects)
         index = index_cls(nodes, **index_kwargs)
@@ -183,10 +180,18 @@ class ObjectIndex(Generic[OT]):
         objects: Sequence[OT],
         index: BaseIndex,
         object_mapping: Optional[BaseObjectNodeMapping] = None,
+        from_node_fn: Optional[Callable[[TextNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], TextNode]] = None,
     ) -> "ObjectIndex":
+        from llama_index.core.objects.utils import get_object_mapping
+
         # pick the best mapping if not provided
         if object_mapping is None:
-            object_mapping = cls.get_object_mapping(objects)
+            object_mapping = get_object_mapping(
+                objects,
+                from_node_fn=from_node_fn,
+                to_node_fn=to_node_fn,
+            )
 
         return cls(index, object_mapping)
 
