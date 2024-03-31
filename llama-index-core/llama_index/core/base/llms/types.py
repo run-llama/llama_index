@@ -47,16 +47,16 @@ class ChatMessage(BaseModel):
             role = MessageRole(role)
         return cls(role=role, content=content, **kwargs)
 
-    def _recusrive_serialization(self, value: Any) -> Any:
+    def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, (V1BaseModel, V2BaseModel)):
             return value.dict()
         if isinstance(value, dict):
             return {
-                key: self._recusrive_serialization(value)
+                key: self._recursive_serialization(value)
                 for key, value in value.items()
             }
         if isinstance(value, list):
-            return [self._recusrive_serialization(item) for item in value]
+            return [self._recursive_serialization(item) for item in value]
         return value
 
     def dict(self, **kwargs: Any) -> dict:
@@ -64,9 +64,11 @@ class ChatMessage(BaseModel):
         msg = super().dict(**kwargs)
 
         for key, value in msg["additional_kwargs"].items():
-            value = self._recusrive_serialization(value)
+            value = self._recursive_serialization(value)
             if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
-                value = str(value)
+                raise ValueError(
+                    f"Failed to serialize additional_kwargs value: {value}"
+                )
             msg["additional_kwargs"][key] = value
 
         return msg
