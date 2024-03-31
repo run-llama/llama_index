@@ -3,13 +3,13 @@
 import logging
 import os
 import tempfile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union, Optional
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BasePydanticReader
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
+from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +25,17 @@ class SharePointReader(BasePydanticReader):
             The application must also be configured with MS Graph permissions "Files.ReadAll", "Sites.ReadAll" and BrowserSiteLists.Read.All.
         client_secret (str): The application secret for the app registered in Azure.
         tenant_id (str): Unique identifier of the Azure Active Directory Instance.
+        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
+                                                          file to text. See `SimpleDirectoryReader` for more details.
     """
 
     client_id: str = None
     client_secret: str = None
     tenant_id: str = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
+
     _authorization_headers = PrivateAttr()
 
     def __init__(
@@ -37,12 +43,14 @@ class SharePointReader(BasePydanticReader):
         client_id: str,
         client_secret: str,
         tenant_id: str,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
@@ -340,7 +348,10 @@ class SharePointReader(BasePydanticReader):
             return files_metadata[filename]
 
         simple_loader = SimpleDirectoryReader(
-            download_dir, file_metadata=get_metadata, recursive=recursive
+            download_dir,
+            file_extractor=self.file_extractor,
+            file_metadata=get_metadata,
+            recursive=recursive,
         )
         return simple_loader.load_data()
 
