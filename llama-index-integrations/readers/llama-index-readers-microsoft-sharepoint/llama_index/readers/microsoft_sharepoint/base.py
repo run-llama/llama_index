@@ -43,12 +43,14 @@ class SharePointReader(BasePydanticReader):
         client_id: str,
         client_secret: str,
         tenant_id: str,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
@@ -346,7 +348,10 @@ class SharePointReader(BasePydanticReader):
             return files_metadata[filename]
 
         simple_loader = SimpleDirectoryReader(
-            download_dir, file_metadata=get_metadata, recursive=recursive
+            download_dir,
+            file_extractor=self.file_extractor,
+            file_metadata=get_metadata,
+            recursive=recursive,
         )
         return simple_loader.load_data()
 

@@ -70,6 +70,7 @@ class GoogleDriveReader(BasePydanticReader):
         client_config: Optional[dict] = None,
         authorized_user_info: Optional[dict] = None,
         service_account_key: Optional[dict] = None,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -115,6 +116,7 @@ class GoogleDriveReader(BasePydanticReader):
             authorized_user_info=authorized_user_info,
             service_account_key=service_account_key,
             token_path=token_path,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
@@ -388,7 +390,11 @@ class GoogleDriveReader(BasePydanticReader):
                         "created at": fileid_meta[4],
                         "modified at": fileid_meta[5],
                     }
-                loader = SimpleDirectoryReader(temp_dir, file_metadata=get_metadata)
+                loader = SimpleDirectoryReader(
+                    temp_dir,
+                    file_extractor=self.file_extractor,
+                    file_metadata=get_metadata,
+                )
                 documents = loader.load_data()
                 for doc in documents:
                     doc.id_ = doc.metadata.get("file id", doc.id_)

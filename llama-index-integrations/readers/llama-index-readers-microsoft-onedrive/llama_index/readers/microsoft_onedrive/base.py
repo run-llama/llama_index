@@ -73,6 +73,7 @@ class OneDriveReader(BasePydanticReader):
         file_ids: Optional[List[str]] = None,
         folder_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs,
     ) -> None:
         self._is_interactive_auth = not client_secret
@@ -87,6 +88,7 @@ class OneDriveReader(BasePydanticReader):
             file_ids=file_ids,
             folder_path=folder_path,
             file_paths=file_paths,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
@@ -503,7 +505,10 @@ class OneDriveReader(BasePydanticReader):
             return self._downloaded_files_metadata[filename]
 
         simple_loader = SimpleDirectoryReader(
-            directory, file_metadata=get_metadata, recursive=recursive
+            directory,
+            file_extractor=self.file_extractor,
+            file_metadata=get_metadata,
+            recursive=recursive,
         )
         return simple_loader.load_data()
 
