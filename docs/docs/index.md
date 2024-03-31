@@ -5,7 +5,6 @@
 LlamaIndex is a data framework for [LLM](https://en.wikipedia.org/wiki/Large_language_model)-based applications which benefit from context augmentation. Such LLM systems have been termed as RAG systems, standing for "Retrieval-Augemented Generation". LlamaIndex provides the essential abstractions to more easily ingest, structure, and access private or domain-specific data in order to inject these safely and reliably into LLMs for more accurate text generation. It's available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/).
 
 !!! tip
-
     Updating to LlamaIndex v0.10.0? Check out the [migration guide](./getting_started/v0_10_0_migration.md).
 
 ## 🚀 Why Context Augmentation?
