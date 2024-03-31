@@ -90,10 +90,11 @@ class CloudflareEmbedding(BaseEmbedding):
             API_URL_TEMPLATE.format(self.account_id, self.model), json={"text": texts}
         ).json()
 
-        if "data" not in response:
+        if "result" not in response:
+            print(response)
             raise RuntimeError("Failed to fetch embeddings")
 
-        return response["data"]
+        return response["result"]["data"]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
@@ -110,7 +111,7 @@ class CloudflareEmbedding(BaseEmbedding):
                 headers=headers,
             ) as response:
                 resp = await response.json()
-                if "data" not in resp:
+                if "result" not in resp:
                     raise RuntimeError("Failed to fetch embeddings asynchronously")
 
-                return resp["data"]
+                return resp["result"]["data"]

@@ -4,3 +4,5 @@ Cloudflare Workers AI provides text embedding service for Cloudflare users. You 
 https://developers.cloudflare.com/workers-ai/models/#text-embeddings
 
 To learn more about Cloudflare Workers AI in general, visit https://developers.cloudflare.com/workers-ai/
+
+For detailed example of installation and usage, please refer to the [Jupyter Notebook example](https://docs.llamaindex.ai/en/stable/examples/embeddings/cloudflare_workersai/).
