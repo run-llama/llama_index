@@ -161,25 +161,25 @@ We first build an `ObjectIndex` over an existing set of Tools.
 ```python
 # define an "object" index over these tools
 from llama_index.core import VectorStoreIndex
-from llama_index.core.objects import ObjectIndex, SimpleToolNodeMapping
+from llama_index.core.objects import ObjectIndex
 
-tool_mapping = SimpleToolNodeMapping.from_objects(all_tools)
 obj_index = ObjectIndex.from_objects(
     all_tools,
-    tool_mapping,
-    VectorStoreIndex,
+    index_cls=VectorStoreIndex,
 )
 ```
 
-We then define our `FnRetrieverOpenAIAgent`:
+We then define our `OpenAIAgent`:
 
 ```python
-from llama_index.agent.openai_legacy import FnRetrieverOpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
-agent = FnRetrieverOpenAIAgent.from_retriever(
-    obj_index.as_retriever(), verbose=True
+agent = OpenAIAgent.from_tools(
+    tool_retriever=obj_index.as_retriever(similarity_top_k=2), verbose=True
 )
 ```
+
+You can find more details on the object index in the [full guide](../../../examples/objects/object_index.ipynb).
 
 ### Context Retrieval Agents
 
