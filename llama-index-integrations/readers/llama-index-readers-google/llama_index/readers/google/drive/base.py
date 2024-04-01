@@ -29,6 +29,11 @@ class GoogleDriveReader(BasePydanticReader):
     will take precedence over those passed as file paths.
 
     Args:
+        drive_id (Optional[str]): Drive id of the shared drive in google drive.
+        folder_id (Optional[str]): Folder id of the folder in google drive.
+        file_ids (Optional[str]): File ids of the files in google drive.
+        query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+            It gives more flexibility to filter the documents. More info: https://developers.google.com/drive/api/v3/search-files
         is_cloud (Optional[bool]): Whether the reader is being used in
             a cloud environment. Will not save credentials to disk if so.
             Defaults to False.
@@ -49,6 +54,10 @@ class GoogleDriveReader(BasePydanticReader):
             file to text. See `SimpleDirectoryReader` for more details.
     """
 
+    drive_id: Optional[str] = None
+    folder_id: Optional[str] = None
+    file_ids: Optional[List[str]] = None
+    query_string: Optional[str] = None
     client_config: Optional[dict] = None
     authorized_user_info: Optional[dict] = None
     service_account_key: Optional[dict] = None
@@ -63,6 +72,10 @@ class GoogleDriveReader(BasePydanticReader):
 
     def __init__(
         self,
+        drive_id: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        file_ids: Optional[List[str]] = None,
+        query_string: Optional[str] = None,
         is_cloud: Optional[bool] = False,
         credentials_path: str = "credentials.json",
         token_path: str = "token.json",
@@ -112,6 +125,10 @@ class GoogleDriveReader(BasePydanticReader):
             raise ValueError("Must specify `client_config` or `service_account_key`.")
 
         super().__init__(
+            drive_id=drive_id,
+            folder_id=folder_id,
+            file_ids=file_ids,
+            query_string=query_string,
             client_config=client_config,
             authorized_user_info=authorized_user_info,
             service_account_key=service_account_key,
@@ -492,6 +509,16 @@ class GoogleDriveReader(BasePydanticReader):
             List[Document]: A list of documents.
         """
         self._creds = self._get_credentials()
+
+        # If no arguments are provided to load_data, default to the object attributes
+        if drive_id is None:
+            drive_id = self.drive_id
+        if folder_id is None:
+            folder_id = self.folder_id
+        if file_ids is None:
+            file_ids = self.file_ids
+        if query_string is None:
+            query_string = self.query_string
 
         if folder_id:
             return self._load_from_folder(drive_id, folder_id, mime_types, query_string)

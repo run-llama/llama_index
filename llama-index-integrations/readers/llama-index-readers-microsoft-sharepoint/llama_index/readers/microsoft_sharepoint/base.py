@@ -4,6 +4,7 @@ import logging
 import os
 import tempfile
 from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
@@ -25,6 +26,9 @@ class SharePointReader(BasePydanticReader):
             The application must also be configured with MS Graph permissions "Files.ReadAll", "Sites.ReadAll" and BrowserSiteLists.Read.All.
         client_secret (str): The application secret for the app registered in Azure.
         tenant_id (str): Unique identifier of the Azure Active Directory Instance.
+        sharepoint_site_name (Optional[str]): The name of the SharePoint site to download from.
+        sharepoint_folder_path (Optional[str]): The path of the SharePoint folder to download from.
+        sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
     """
@@ -32,17 +36,26 @@ class SharePointReader(BasePydanticReader):
     client_id: str = None
     client_secret: str = None
     tenant_id: str = None
+    sharepoint_site_name: Optional[str] = None
+    sharepoint_folder_path: Optional[str] = None
+    sharepoint_folder_id: Optional[str] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
 
     _authorization_headers = PrivateAttr()
+    _site_id_with_host_name = PrivateAttr()
+    _drive_id_endpoint = PrivateAttr()
+    _drive_id = PrivateAttr()
 
     def __init__(
         self,
         client_id: str,
         client_secret: str,
         tenant_id: str,
+        sharepoint_site_name: Optional[str] = None,
+        sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
@@ -50,6 +63,9 @@ class SharePointReader(BasePydanticReader):
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            sharepoint_site_name=sharepoint_site_name,
+            sharepoint_folder_path=sharepoint_folder_path,
+            sharepoint_folder_id=sharepoint_folder_id,
             file_extractor=file_extractor,
             **kwargs,
         )
@@ -294,7 +310,8 @@ class SharePointReader(BasePydanticReader):
         self,
         download_dir: str,
         sharepoint_site_name: str,
-        sharepoint_folder_path: str,
+        sharepoint_folder_path: Optional[str],
+        sharepoint_folder_id: Optional[str],
         recursive: bool,
     ) -> Dict[str, str]:
         """
@@ -318,12 +335,13 @@ class SharePointReader(BasePydanticReader):
 
         self._drive_id = self._get_drive_id()
 
-        self.sharepoint_folder_id = self._get_sharepoint_folder_id(
-            sharepoint_folder_path
-        )
+        if sharepoint_folder_id is None:
+            sharepoint_folder_id = self._get_sharepoint_folder_id(
+                sharepoint_folder_path
+            )
 
         return self._download_files_and_extract_metadata(
-            self.sharepoint_folder_id, download_dir, recursive
+            sharepoint_folder_id, download_dir, recursive
         )
 
     def _load_documents_with_metadata(
@@ -357,16 +375,17 @@ class SharePointReader(BasePydanticReader):
 
     def load_data(
         self,
-        sharepoint_site_name: str,
-        sharepoint_folder_path: str,
+        sharepoint_site_name: Optional[str] = None,
+        sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
         recursive: bool = False,
     ) -> List[Document]:
         """
         Loads the files from the specified folder in the SharePoint site.
 
         Args:
-            sharepoint_site_name (str): The name of the SharePoint site.
-            sharepoint_folder_path (str): The path of the folder in the SharePoint site.
+            sharepoint_site_name (Optional[str]): The name of the SharePoint site.
+            sharepoint_folder_path (Optional[str]): The path of the folder in the SharePoint site.
             recursive (bool): If True, files from all subfolders are downloaded.
 
         Returns:
@@ -375,10 +394,33 @@ class SharePointReader(BasePydanticReader):
         Raises:
             Exception: If an error occurs while accessing SharePoint site.
         """
+        # If no arguments are provided to load_data, default to the object attributes
+        if sharepoint_site_name is None:
+            sharepoint_site_name = self.sharepoint_site_name
+
+        if sharepoint_folder_path is None:
+            sharepoint_folder_path = self.sharepoint_folder_path
+
+        if sharepoint_folder_id is None:
+            sharepoint_folder_id = self.sharepoint_folder_id
+
+        # TODO: make both of these values optional — and just default to the client ID defaults
+        if sharepoint_site_name is None:
+            raise ValueError("sharepoint_site_name must be provided.")
+
+        if sharepoint_folder_path is None and sharepoint_folder_id is None:
+            raise ValueError(
+                "sharepoint_folder_path or sharepoint_folder_id must be provided."
+            )
+
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 files_metadata = self._download_files_from_sharepoint(
-                    temp_dir, sharepoint_site_name, sharepoint_folder_path, recursive
+                    temp_dir,
+                    sharepoint_site_name,
+                    sharepoint_folder_path,
+                    sharepoint_folder_id,
+                    recursive,
                 )
                 # return self.files_metadata
                 return self._load_documents_with_metadata(
