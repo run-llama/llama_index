@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [0.1.5] - 2024-04-01
+## [0.1.6] - 2024-04-01
 
 - Allow passing arguments for sitename and folder path during construction of reader
 

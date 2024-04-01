@@ -32,11 +32,11 @@ class SharePointReader(BasePydanticReader):
                                                           file to text. See `SimpleDirectoryReader` for more details.
     """
 
-    sharepoint_site_name: Optional[str] = None
-    sharepoint_folder_path: Optional[str] = None
     client_id: str = None
     client_secret: str = None
     tenant_id: str = None
+    sharepoint_site_name: Optional[str] = None
+    sharepoint_folder_path: Optional[str] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
@@ -48,18 +48,18 @@ class SharePointReader(BasePydanticReader):
         client_id: str,
         client_secret: str,
         tenant_id: str,
-        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
-            file_extractor=file_extractor,
             sharepoint_site_name=sharepoint_site_name,
             sharepoint_folder_path=sharepoint_folder_path,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
