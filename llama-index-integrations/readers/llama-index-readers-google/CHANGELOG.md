@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [0.2.3] - 2024-04-01
+## [0.2.4] - 2024-04-01
 
 - Add support for additional params when initializing GoogleDriveReader
 
