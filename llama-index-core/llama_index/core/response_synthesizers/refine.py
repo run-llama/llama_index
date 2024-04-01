@@ -172,30 +172,30 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        span_id = dispatcher.current_span_id
-        dispatcher.event(GetResponseStartEvent(span_id=span_id))
-        response: Optional[RESPONSE_TEXT_TYPE] = None
-        for text_chunk in text_chunks:
-            if prev_response is None:
-                # if this is the first chunk, and text chunk already
-                # is an answer, then return it
-                response = self._give_response_single(
-                    query_str, text_chunk, **response_kwargs
-                )
+        with dispatcher.dispatch_event as dispatch_event:
+            dispatch_event(GetResponseStartEvent())
+            response: Optional[RESPONSE_TEXT_TYPE] = None
+            for text_chunk in text_chunks:
+                if prev_response is None:
+                    # if this is the first chunk, and text chunk already
+                    # is an answer, then return it
+                    response = self._give_response_single(
+                        query_str, text_chunk, **response_kwargs
+                    )
+                else:
+                    # refine response if possible
+                    response = self._refine_response_single(
+                        prev_response, query_str, text_chunk, **response_kwargs
+                    )
+                prev_response = response
+            if isinstance(response, str):
+                if self._output_cls is not None:
+                    response = self._output_cls.parse_raw(response)
+                else:
+                    response = response or "Empty Response"
             else:
-                # refine response if possible
-                response = self._refine_response_single(
-                    prev_response, query_str, text_chunk, **response_kwargs
-                )
-            prev_response = response
-        if isinstance(response, str):
-            if self._output_cls is not None:
-                response = self._output_cls.parse_raw(response)
-            else:
-                response = response or "Empty Response"
-        else:
-            response = cast(Generator, response)
-        dispatcher.event(GetResponseEndEvent(span_id=span_id))
+                response = cast(Generator, response)
+            dispatch_event(GetResponseEndEvent())
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
@@ -351,31 +351,31 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        span_id = dispatcher.current_span_id
-        dispatcher.event(GetResponseStartEvent(span_id=span_id))
-        response: Optional[RESPONSE_TEXT_TYPE] = None
-        for text_chunk in text_chunks:
-            if prev_response is None:
-                # if this is the first chunk, and text chunk already
-                # is an answer, then return it
-                response = await self._agive_response_single(
-                    query_str, text_chunk, **response_kwargs
-                )
+        with dispatcher.dispatch_event as dispatch_event:
+            dispatch_event(GetResponseStartEvent())
+            response: Optional[RESPONSE_TEXT_TYPE] = None
+            for text_chunk in text_chunks:
+                if prev_response is None:
+                    # if this is the first chunk, and text chunk already
+                    # is an answer, then return it
+                    response = await self._agive_response_single(
+                        query_str, text_chunk, **response_kwargs
+                    )
+                else:
+                    response = await self._arefine_response_single(
+                        prev_response, query_str, text_chunk, **response_kwargs
+                    )
+                prev_response = response
+            if response is None:
+                response = "Empty Response"
+            if isinstance(response, str):
+                if self._output_cls is not None:
+                    response = self._output_cls.parse_raw(response)
+                else:
+                    response = response or "Empty Response"
             else:
-                response = await self._arefine_response_single(
-                    prev_response, query_str, text_chunk, **response_kwargs
-                )
-            prev_response = response
-        if response is None:
-            response = "Empty Response"
-        if isinstance(response, str):
-            if self._output_cls is not None:
-                response = self._output_cls.parse_raw(response)
-            else:
-                response = response or "Empty Response"
-        else:
-            response = cast(AsyncGenerator, response)
-        dispatcher.event(GetResponseEndEvent(span_id=span_id))
+                response = cast(AsyncGenerator, response)
+            dispatch_event(GetResponseEndEvent())
         return response
 
     async def _arefine_response_single(
