@@ -44,7 +44,7 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
 
     @dispatcher.span
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(QueryStartEvent())
             with self.callback_manager.as_trace("query"):
                 if isinstance(str_or_query_bundle, str):
@@ -55,7 +55,7 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
 
     @dispatcher.span
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(QueryStartEvent())
             with self.callback_manager.as_trace("query"):
                 if isinstance(str_or_query_bundle, str):

@@ -201,7 +201,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 SynthesizeStartEvent(
                     query=query,
@@ -269,7 +269,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 SynthesizeStartEvent(
                     query=query,

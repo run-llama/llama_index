@@ -129,7 +129,7 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(StreamChatStartEvent())
             try:
                 final_text = ""
@@ -172,7 +172,7 @@ class StreamingAgentChatResponse:
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         self._ensure_async_setup()
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             if self.achat_stream is None:
                 raise ValueError(
                     "achat_stream is None. Cannot asynchronously write to "

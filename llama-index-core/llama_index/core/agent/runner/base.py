@@ -365,7 +365,7 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(AgentRunStepStartEvent())
             task = self.state.get_task(task_id)
             step_queue = self.state.get_step_queue(task_id)
@@ -406,7 +406,7 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(AgentRunStepStartEvent())
             task = self.state.get_task(task_id)
             step_queue = self.state.get_step_queue(task_id)
@@ -536,7 +536,7 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             if chat_history is not None:
                 self.memory.set(chat_history)
             task = self.create_task(message)
@@ -572,7 +572,7 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             if chat_history is not None:
                 self.memory.set(chat_history)
             task = self.create_task(message)

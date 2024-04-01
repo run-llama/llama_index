@@ -114,7 +114,7 @@ class BaseEmbedding(TransformComponent):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 EmbeddingStartEvent(
                     model_dict=self.to_dict(),
@@ -142,7 +142,7 @@ class BaseEmbedding(TransformComponent):
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 EmbeddingStartEvent(
                     model_dict=self.to_dict(),
@@ -236,7 +236,7 @@ class BaseEmbedding(TransformComponent):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 EmbeddingStartEvent(
                     model_dict=self.to_dict(),
@@ -264,7 +264,7 @@ class BaseEmbedding(TransformComponent):
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 EmbeddingStartEvent(
                     model_dict=self.to_dict(),
@@ -297,7 +297,7 @@ class BaseEmbedding(TransformComponent):
         **kwargs: Any,
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             cur_batch: List[str] = []
             result_embeddings: List[Embedding] = []
 
@@ -341,7 +341,7 @@ class BaseEmbedding(TransformComponent):
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             cur_batch: List[str] = []
             callback_payloads: List[Tuple[str, List[str]]] = []
             result_embeddings: List[Embedding] = []

@@ -172,7 +172,7 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(GetResponseStartEvent())
             response: Optional[RESPONSE_TEXT_TYPE] = None
             for text_chunk in text_chunks:
@@ -351,7 +351,7 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(GetResponseStartEvent())
             response: Optional[RESPONSE_TEXT_TYPE] = None
             for text_chunk in text_chunks:

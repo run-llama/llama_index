@@ -224,7 +224,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 a QueryBundle object.
 
         """
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             self._check_callback_manager()
             dispatch_event(
                 RetrievalStartEvent(
@@ -256,7 +256,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
     @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-        with dispatcher.dispatch_event as dispatch_event:
+        with dispatcher.dispatch_event() as dispatch_event:
             dispatch_event(
                 RetrievalStartEvent(
                     str_or_query_bundle=str_or_query_bundle,

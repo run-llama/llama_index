@@ -167,7 +167,12 @@ class Dispatcher(BaseModel):
 
     @contextmanager
     def dispatch_event(self):
-        """Context manager for firing events within a span session."""
+        """Context manager for firing events within a span session.
+
+        This context manager should be used with @dispatcher.span decorated
+        functions only. Otherwise, the span_id should not be trusted, as the
+        span decorator sets the span_id.
+        """
         span_id = self.current_span_id
         dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
 
