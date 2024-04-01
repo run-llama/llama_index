@@ -21,6 +21,13 @@ class EventDispatcher(Protocol):
         ...
 
 
+class EventContext(BaseModel):
+    span_id: str = Field(default="")
+
+
+event_context = EventContext()
+
+
 class Dispatcher(BaseModel):
     name: str = Field(default_factory=str, description="Name of dispatcher")
     event_handlers: List[BaseEventHandler] = Field(
@@ -164,6 +171,17 @@ class Dispatcher(BaseModel):
                 c = None
             else:
                 c = c.parent
+
+    def get_dispatch_event(self) -> EventDispatcher:
+        """Get dispatch_event for firing events within the context of a span.
+
+        This method should be used with @dispatcher.span decorated
+        functions only. Otherwise, the span_id should not be trusted, as the
+        span decorator sets the span_id.
+        """
+        span_id = self.current_span_id
+        dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
+        return dispatch_event
 
     @contextmanager
     def dispatch_event(self):

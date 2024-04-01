@@ -114,57 +114,59 @@ class BaseEmbedding(TransformComponent):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(
-                EmbeddingStartEvent(
-                    model_dict=self.to_dict(),
-                )
-            )
-            with self.callback_manager.event(
-                CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
-            ) as event:
-                query_embedding = self._get_query_embedding(query)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-                event.on_end(
-                    payload={
-                        EventPayload.CHUNKS: [query],
-                        EventPayload.EMBEDDINGS: [query_embedding],
-                    },
-                )
-            dispatch_event(
-                EmbeddingEndEvent(
-                    chunks=[query],
-                    embeddings=[query_embedding],
-                )
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
             )
+        )
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            query_embedding = self._get_query_embedding(query)
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [query],
+                    EventPayload.EMBEDDINGS: [query_embedding],
+                },
+            )
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[query],
+                embeddings=[query_embedding],
+            )
+        )
         return query_embedding
 
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(
-                EmbeddingStartEvent(
-                    model_dict=self.to_dict(),
-                )
-            )
-            with self.callback_manager.event(
-                CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
-            ) as event:
-                query_embedding = await self._aget_query_embedding(query)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-                event.on_end(
-                    payload={
-                        EventPayload.CHUNKS: [query],
-                        EventPayload.EMBEDDINGS: [query_embedding],
-                    },
-                )
-            dispatch_event(
-                EmbeddingEndEvent(
-                    chunks=[query],
-                    embeddings=[query_embedding],
-                )
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
             )
+        )
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            query_embedding = await self._aget_query_embedding(query)
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [query],
+                    EventPayload.EMBEDDINGS: [query_embedding],
+                },
+            )
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[query],
+                embeddings=[query_embedding],
+            )
+        )
         return query_embedding
 
     def get_agg_embedding_from_queries(
@@ -236,57 +238,59 @@ class BaseEmbedding(TransformComponent):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(
-                EmbeddingStartEvent(
-                    model_dict=self.to_dict(),
-                )
-            )
-            with self.callback_manager.event(
-                CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
-            ) as event:
-                text_embedding = self._get_text_embedding(text)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-                event.on_end(
-                    payload={
-                        EventPayload.CHUNKS: [text],
-                        EventPayload.EMBEDDINGS: [text_embedding],
-                    }
-                )
-            dispatch_event(
-                EmbeddingEndEvent(
-                    chunks=[text],
-                    embeddings=[text_embedding],
-                )
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
             )
+        )
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            text_embedding = self._get_text_embedding(text)
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [text],
+                    EventPayload.EMBEDDINGS: [text_embedding],
+                }
+            )
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[text],
+                embeddings=[text_embedding],
+            )
+        )
         return text_embedding
 
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(
-                EmbeddingStartEvent(
-                    model_dict=self.to_dict(),
-                )
-            )
-            with self.callback_manager.event(
-                CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
-            ) as event:
-                text_embedding = await self._aget_text_embedding(text)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-                event.on_end(
-                    payload={
-                        EventPayload.CHUNKS: [text],
-                        EventPayload.EMBEDDINGS: [text_embedding],
-                    }
-                )
-            dispatch_event(
-                EmbeddingEndEvent(
-                    chunks=[text],
-                    embeddings=[text_embedding],
-                )
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
             )
+        )
+        with self.callback_manager.event(
+            CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
+        ) as event:
+            text_embedding = await self._aget_text_embedding(text)
+
+            event.on_end(
+                payload={
+                    EventPayload.CHUNKS: [text],
+                    EventPayload.EMBEDDINGS: [text_embedding],
+                }
+            )
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[text],
+                embeddings=[text_embedding],
+            )
+        )
         return text_embedding
 
     @dispatcher.span
@@ -297,42 +301,43 @@ class BaseEmbedding(TransformComponent):
         **kwargs: Any,
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            cur_batch: List[str] = []
-            result_embeddings: List[Embedding] = []
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            queue_with_progress = enumerate(
-                get_tqdm_iterable(texts, show_progress, "Generating embeddings")
-            )
+        cur_batch: List[str] = []
+        result_embeddings: List[Embedding] = []
 
-            for idx, text in queue_with_progress:
-                cur_batch.append(text)
-                if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
-                    # flush
-                    dispatch_event(
-                        EmbeddingStartEvent(
-                            model_dict=self.to_dict(),
-                        )
+        queue_with_progress = enumerate(
+            get_tqdm_iterable(texts, show_progress, "Generating embeddings")
+        )
+
+        for idx, text in queue_with_progress:
+            cur_batch.append(text)
+            if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
+                # flush
+                dispatch_event(
+                    EmbeddingStartEvent(
+                        model_dict=self.to_dict(),
                     )
-                    with self.callback_manager.event(
-                        CBEventType.EMBEDDING,
-                        payload={EventPayload.SERIALIZED: self.to_dict()},
-                    ) as event:
-                        embeddings = self._get_text_embeddings(cur_batch)
-                        result_embeddings.extend(embeddings)
-                        event.on_end(
-                            payload={
-                                EventPayload.CHUNKS: cur_batch,
-                                EventPayload.EMBEDDINGS: embeddings,
-                            },
-                        )
-                    dispatch_event(
-                        EmbeddingEndEvent(
-                            chunks=cur_batch,
-                            embeddings=embeddings,
-                        )
+                )
+                with self.callback_manager.event(
+                    CBEventType.EMBEDDING,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
+                ) as event:
+                    embeddings = self._get_text_embeddings(cur_batch)
+                    result_embeddings.extend(embeddings)
+                    event.on_end(
+                        payload={
+                            EventPayload.CHUNKS: cur_batch,
+                            EventPayload.EMBEDDINGS: embeddings,
+                        },
                     )
-                    cur_batch = []
+                dispatch_event(
+                    EmbeddingEndEvent(
+                        chunks=cur_batch,
+                        embeddings=embeddings,
+                    )
+                )
+                cur_batch = []
 
         return result_embeddings
 
@@ -341,67 +346,66 @@ class BaseEmbedding(TransformComponent):
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            cur_batch: List[str] = []
-            callback_payloads: List[Tuple[str, List[str]]] = []
-            result_embeddings: List[Embedding] = []
-            embeddings_coroutines: List[Coroutine] = []
-            for idx, text in enumerate(texts):
-                cur_batch.append(text)
-                if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
-                    # flush
-                    dispatch_event(
-                        EmbeddingStartEvent(
-                            model_dict=self.to_dict(),
-                        )
-                    )
-                    event_id = self.callback_manager.on_event_start(
-                        CBEventType.EMBEDDING,
-                        payload={EventPayload.SERIALIZED: self.to_dict()},
-                    )
-                    callback_payloads.append((event_id, cur_batch))
-                    embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
-                    cur_batch = []
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            # flatten the results of asyncio.gather, which is a list of embeddings lists
-            nested_embeddings = []
-            if show_progress:
-                try:
-                    from tqdm.asyncio import tqdm_asyncio
-
-                    nested_embeddings = await tqdm_asyncio.gather(
-                        *embeddings_coroutines,
-                        total=len(embeddings_coroutines),
-                        desc="Generating embeddings",
-                    )
-                except ImportError:
-                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
-            else:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
-
-            result_embeddings = [
-                embedding
-                for embeddings in nested_embeddings
-                for embedding in embeddings
-            ]
-
-            for (event_id, text_batch), embeddings in zip(
-                callback_payloads, nested_embeddings
-            ):
+        cur_batch: List[str] = []
+        callback_payloads: List[Tuple[str, List[str]]] = []
+        result_embeddings: List[Embedding] = []
+        embeddings_coroutines: List[Coroutine] = []
+        for idx, text in enumerate(texts):
+            cur_batch.append(text)
+            if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
+                # flush
                 dispatch_event(
-                    EmbeddingEndEvent(
-                        chunks=text_batch,
-                        embeddings=embeddings,
+                    EmbeddingStartEvent(
+                        model_dict=self.to_dict(),
                     )
                 )
-                self.callback_manager.on_event_end(
+                event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
-                    payload={
-                        EventPayload.CHUNKS: text_batch,
-                        EventPayload.EMBEDDINGS: embeddings,
-                    },
-                    event_id=event_id,
+                    payload={EventPayload.SERIALIZED: self.to_dict()},
                 )
+                callback_payloads.append((event_id, cur_batch))
+                embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                cur_batch = []
+
+        # flatten the results of asyncio.gather, which is a list of embeddings lists
+        nested_embeddings = []
+        if show_progress:
+            try:
+                from tqdm.asyncio import tqdm_asyncio
+
+                nested_embeddings = await tqdm_asyncio.gather(
+                    *embeddings_coroutines,
+                    total=len(embeddings_coroutines),
+                    desc="Generating embeddings",
+                )
+            except ImportError:
+                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+        else:
+            nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+
+        result_embeddings = [
+            embedding for embeddings in nested_embeddings for embedding in embeddings
+        ]
+
+        for (event_id, text_batch), embeddings in zip(
+            callback_payloads, nested_embeddings
+        ):
+            dispatch_event(
+                EmbeddingEndEvent(
+                    chunks=text_batch,
+                    embeddings=embeddings,
+                )
+            )
+            self.callback_manager.on_event_end(
+                CBEventType.EMBEDDING,
+                payload={
+                    EventPayload.CHUNKS: text_batch,
+                    EventPayload.EMBEDDINGS: embeddings,
+                },
+                event_id=event_id,
+            )
 
         return result_embeddings
 

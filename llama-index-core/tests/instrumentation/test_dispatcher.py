@@ -61,16 +61,18 @@ async def async_func_exc(a, b=3, c=4, **kwargs):
 
 @dispatcher.span
 def func_with_event(a, b=3, **kwargs):
-    with dispatcher.dispatch_event() as dispatch_event:
-        dispatch_event(_TestStartEvent())
+    dispatch_event = dispatcher.get_dispatch_event()
+
+    dispatch_event(_TestStartEvent())
 
 
 @dispatcher.span
 async def async_func_with_event(a, b=3, **kwargs):
-    with dispatcher.dispatch_event() as dispatch_event:
-        dispatch_event(_TestStartEvent())
-        await asyncio.sleep(0.1)
-        dispatch_event(_TestEndEvent())
+    dispatch_event = dispatcher.get_dispatch_event()
+
+    dispatch_event(_TestStartEvent())
+    await asyncio.sleep(0.1)
+    dispatch_event(_TestEndEvent())
 
 
 class _TestObject:
@@ -92,17 +94,19 @@ class _TestObject:
 
     @dispatcher.span
     def func_with_event(self, a, b=3, **kwargs):
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(_TestStartEvent())
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(_TestStartEvent())
 
     @dispatcher.span
     async def async_func_with_event(self, a, b=3, **kwargs):
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(_TestStartEvent())
-            await asyncio.sleep(0.1)
-            await self.async_func(1)  # this should create a new span_id
-            # that is fine because we have dispatch_event
-            dispatch_event(_TestEndEvent())
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(_TestStartEvent())
+        await asyncio.sleep(0.1)
+        await self.async_func(1)  # this should create a new span_id
+        # that is fine because we have dispatch_event
+        dispatch_event(_TestEndEvent())
 
 
 @patch.object(Dispatcher, "span_exit")

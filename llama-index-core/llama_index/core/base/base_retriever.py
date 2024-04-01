@@ -224,66 +224,68 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 a QueryBundle object.
 
         """
-        with dispatcher.dispatch_event() as dispatch_event:
-            self._check_callback_manager()
-            dispatch_event(
-                RetrievalStartEvent(
-                    str_or_query_bundle=str_or_query_bundle,
-                )
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        self._check_callback_manager()
+        dispatch_event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
             )
-            if isinstance(str_or_query_bundle, str):
-                query_bundle = QueryBundle(str_or_query_bundle)
-            else:
-                query_bundle = str_or_query_bundle
-            with self.callback_manager.as_trace("query"):
-                with self.callback_manager.event(
-                    CBEventType.RETRIEVE,
-                    payload={EventPayload.QUERY_STR: query_bundle.query_str},
-                ) as retrieve_event:
-                    nodes = self._retrieve(query_bundle)
-                    nodes = self._handle_recursive_retrieval(query_bundle, nodes)
-                    retrieve_event.on_end(
-                        payload={EventPayload.NODES: nodes},
-                    )
-            dispatch_event(
-                RetrievalEndEvent(
-                    str_or_query_bundle=str_or_query_bundle,
-                    nodes=nodes,
+        )
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = self._retrieve(query_bundle)
+                nodes = self._handle_recursive_retrieval(query_bundle, nodes)
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
                 )
+        dispatch_event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
             )
+        )
         return nodes
 
     @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(
-                RetrievalStartEvent(
-                    str_or_query_bundle=str_or_query_bundle,
-                )
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
             )
-            if isinstance(str_or_query_bundle, str):
-                query_bundle = QueryBundle(str_or_query_bundle)
-            else:
-                query_bundle = str_or_query_bundle
-            with self.callback_manager.as_trace("query"):
-                with self.callback_manager.event(
-                    CBEventType.RETRIEVE,
-                    payload={EventPayload.QUERY_STR: query_bundle.query_str},
-                ) as retrieve_event:
-                    nodes = await self._aretrieve(query_bundle=query_bundle)
-                    nodes = await self._ahandle_recursive_retrieval(
-                        query_bundle=query_bundle, nodes=nodes
-                    )
-                    retrieve_event.on_end(
-                        payload={EventPayload.NODES: nodes},
-                    )
-            dispatch_event(
-                RetrievalEndEvent(
-                    str_or_query_bundle=str_or_query_bundle,
-                    nodes=nodes,
+        )
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.RETRIEVE,
+                payload={EventPayload.QUERY_STR: query_bundle.query_str},
+            ) as retrieve_event:
+                nodes = await self._aretrieve(query_bundle=query_bundle)
+                nodes = await self._ahandle_recursive_retrieval(
+                    query_bundle=query_bundle, nodes=nodes
                 )
+                retrieve_event.on_end(
+                    payload={EventPayload.NODES: nodes},
+                )
+        dispatch_event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
             )
+        )
         return nodes
 
     @abstractmethod

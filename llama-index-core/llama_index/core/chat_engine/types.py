@@ -127,43 +127,43 @@ class StreamingAgentChatResponse:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
+        dispatch_event = dispatcher.get_dispatch_event()
 
         # try/except to prevent hanging on error
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(StreamChatStartEvent())
-            try:
-                final_text = ""
-                for chat in self.chat_stream:
-                    self._is_function = is_function(chat.message)
-                    if chat.delta:
-                        dispatch_event(
-                            StreamChatDeltaReceivedEvent(
-                                delta=chat.delta,
-                            )
+        dispatch_event(StreamChatStartEvent())
+        try:
+            final_text = ""
+            for chat in self.chat_stream:
+                self._is_function = is_function(chat.message)
+                if chat.delta:
+                    dispatch_event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta,
                         )
-                        self.put_in_queue(chat.delta)
-                    final_text += chat.delta or ""
-                if self._is_function is not None:  # if loop has gone through iteration
-                    # NOTE: this is to handle the special case where we consume some of the
-                    # chat stream, but not all of it (e.g. in react agent)
-                    chat.message.content = final_text.strip()  # final message
-                    memory.put(chat.message)
-            except Exception as e:
-                dispatch_event(StreamChatErrorEvent())
-                if not raise_error:
-                    logger.warning(
-                        f"Encountered exception writing response to history: {e}"
                     )
-                else:
-                    raise
-            dispatch_event(StreamChatEndEvent())
+                    self.put_in_queue(chat.delta)
+                final_text += chat.delta or ""
+            if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text.strip()  # final message
+                memory.put(chat.message)
+        except Exception as e:
+            dispatch_event(StreamChatErrorEvent())
+            if not raise_error:
+                logger.warning(
+                    f"Encountered exception writing response to history: {e}"
+                )
+            else:
+                raise
+        dispatch_event(StreamChatEndEvent())
 
-            self._is_done = True
+        self._is_done = True
 
-            # This act as is_done events for any consumers waiting
-            self._is_function_not_none_thread_event.set()
-            if on_stream_end_fn is not None and not self._is_function:
-                on_stream_end_fn()
+        # This act as is_done events for any consumers waiting
+        self._is_function_not_none_thread_event.set()
+        if on_stream_end_fn is not None and not self._is_function:
+            on_stream_end_fn()
 
     @dispatcher.span
     async def awrite_response_to_history(
@@ -172,48 +172,47 @@ class StreamingAgentChatResponse:
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         self._ensure_async_setup()
-        with dispatcher.dispatch_event() as dispatch_event:
-            if self.achat_stream is None:
-                raise ValueError(
-                    "achat_stream is None. Cannot asynchronously write to "
-                    "history without achat_stream."
-                )
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            # try/except to prevent hanging on error
-            dispatch_event(StreamChatStartEvent())
-            try:
-                final_text = ""
-                async for chat in self.achat_stream:
-                    self._is_function = is_function(chat.message)
-                    if chat.delta:
-                        dispatch_event(
-                            StreamChatDeltaReceivedEvent(
-                                delta=chat.delta,
-                            )
+        if self.achat_stream is None:
+            raise ValueError(
+                "achat_stream is None. Cannot asynchronously write to "
+                "history without achat_stream."
+            )
+
+        # try/except to prevent hanging on error
+        dispatch_event(StreamChatStartEvent())
+        try:
+            final_text = ""
+            async for chat in self.achat_stream:
+                self._is_function = is_function(chat.message)
+                if chat.delta:
+                    dispatch_event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta,
                         )
-                        self.aput_in_queue(chat.delta)
-                    final_text += chat.delta or ""
-                    self._new_item_event.set()
-                    if self._is_function is False:
-                        self._is_function_false_event.set()
-                if self._is_function is not None:  # if loop has gone through iteration
-                    # NOTE: this is to handle the special case where we consume some of the
-                    # chat stream, but not all of it (e.g. in react agent)
-                    chat.message.content = final_text.strip()  # final message
-                    memory.put(chat.message)
-            except Exception as e:
-                dispatch_event(StreamChatErrorEvent())
-                logger.warning(
-                    f"Encountered exception writing response to history: {e}"
-                )
-            dispatch_event(StreamChatEndEvent())
-            self._is_done = True
+                    )
+                    self.aput_in_queue(chat.delta)
+                final_text += chat.delta or ""
+                self._new_item_event.set()
+                if self._is_function is False:
+                    self._is_function_false_event.set()
+            if self._is_function is not None:  # if loop has gone through iteration
+                # NOTE: this is to handle the special case where we consume some of the
+                # chat stream, but not all of it (e.g. in react agent)
+                chat.message.content = final_text.strip()  # final message
+                memory.put(chat.message)
+        except Exception as e:
+            dispatch_event(StreamChatErrorEvent())
+            logger.warning(f"Encountered exception writing response to history: {e}")
+        dispatch_event(StreamChatEndEvent())
+        self._is_done = True
 
-            # These act as is_done events for any consumers waiting
-            self._is_function_false_event.set()
-            self._new_item_event.set()
-            if on_stream_end_fn is not None and not self._is_function:
-                on_stream_end_fn()
+        # These act as is_done events for any consumers waiting
+        self._is_function_false_event.set()
+        self._new_item_event.set()
+        if on_stream_end_fn is not None and not self._is_function:
+            on_stream_end_fn()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:

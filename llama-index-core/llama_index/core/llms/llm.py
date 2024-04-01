@@ -326,17 +326,18 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(LLMStructuredPredictStartEvent())
-            program = get_program_for_llm(
-                output_cls,
-                prompt,
-                self,
-                pydantic_program_mode=self.pydantic_program_mode,
-            )
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            result = program(**prompt_args)
-            dispatch_event(LLMStructuredPredictEndEvent())
+        dispatch_event(LLMStructuredPredictStartEvent())
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = program(**prompt_args)
+        dispatch_event(LLMStructuredPredictEndEvent())
         return result
 
     @dispatcher.span
@@ -376,18 +377,19 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(LLMStructuredPredictStartEvent())
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            program = get_program_for_llm(
-                output_cls,
-                prompt,
-                self,
-                pydantic_program_mode=self.pydantic_program_mode,
-            )
+        dispatch_event(LLMStructuredPredictStartEvent())
 
-            result = await program.acall(**prompt_args)
-            dispatch_event(LLMStructuredPredictEndEvent())
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = await program.acall(**prompt_args)
+        dispatch_event(LLMStructuredPredictEndEvent())
         return result
 
     # -- Prompt Chaining --
@@ -418,19 +420,20 @@ class LLM(BaseLLM):
             print(output)
             ```
         """
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(LLMPredictStartEvent())
-            self._log_template_data(prompt, **prompt_args)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            if self.metadata.is_chat_model:
-                messages = self._get_messages(prompt, **prompt_args)
-                chat_response = self.chat(messages)
-                output = chat_response.message.content or ""
-            else:
-                formatted_prompt = self._get_prompt(prompt, **prompt_args)
-                response = self.complete(formatted_prompt, formatted=True)
-                output = response.text
-            dispatch_event(LLMPredictEndEvent())
+        dispatch_event(LLMPredictStartEvent())
+        self._log_template_data(prompt, **prompt_args)
+
+        if self.metadata.is_chat_model:
+            messages = self._get_messages(prompt, **prompt_args)
+            chat_response = self.chat(messages)
+            output = chat_response.message.content or ""
+        else:
+            formatted_prompt = self._get_prompt(prompt, **prompt_args)
+            response = self.complete(formatted_prompt, formatted=True)
+            output = response.text
+        dispatch_event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     @dispatcher.span
@@ -502,20 +505,21 @@ class LLM(BaseLLM):
             print(output)
             ```
         """
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(LLMPredictStartEvent())
-            self._log_template_data(prompt, **prompt_args)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            if self.metadata.is_chat_model:
-                messages = self._get_messages(prompt, **prompt_args)
-                chat_response = await self.achat(messages)
-                output = chat_response.message.content or ""
-            else:
-                formatted_prompt = self._get_prompt(prompt, **prompt_args)
-                response = await self.acomplete(formatted_prompt, formatted=True)
-                output = response.text
+        dispatch_event(LLMPredictStartEvent())
+        self._log_template_data(prompt, **prompt_args)
 
-            dispatch_event(LLMPredictEndEvent())
+        if self.metadata.is_chat_model:
+            messages = self._get_messages(prompt, **prompt_args)
+            chat_response = await self.achat(messages)
+            output = chat_response.message.content or ""
+        else:
+            formatted_prompt = self._get_prompt(prompt, **prompt_args)
+            response = await self.acomplete(formatted_prompt, formatted=True)
+            output = response.text
+
+        dispatch_event(LLMPredictEndEvent())
         return self._parse_output(output)
 
     @dispatcher.span

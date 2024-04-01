@@ -365,35 +365,36 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(AgentRunStepStartEvent())
-            task = self.state.get_task(task_id)
-            step_queue = self.state.get_step_queue(task_id)
-            step = step or step_queue.popleft()
-            if input is not None:
-                step.input = input
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            if self.verbose:
-                print(f"> Running step {step.step_id}. Step input: {step.input}")
+        dispatch_event(AgentRunStepStartEvent())
+        task = self.state.get_task(task_id)
+        step_queue = self.state.get_step_queue(task_id)
+        step = step or step_queue.popleft()
+        if input is not None:
+            step.input = input
 
-            # TODO: figure out if you can dynamically swap in different step executors
-            # not clear when you would do that by theoretically possible
+        if self.verbose:
+            print(f"> Running step {step.step_id}. Step input: {step.input}")
 
-            if mode == ChatResponseMode.WAIT:
-                cur_step_output = self.agent_worker.run_step(step, task, **kwargs)
-            elif mode == ChatResponseMode.STREAM:
-                cur_step_output = self.agent_worker.stream_step(step, task, **kwargs)
-            else:
-                raise ValueError(f"Invalid mode: {mode}")
-            # append cur_step_output next steps to queue
-            next_steps = cur_step_output.next_steps
-            step_queue.extend(next_steps)
+        # TODO: figure out if you can dynamically swap in different step executors
+        # not clear when you would do that by theoretically possible
 
-            # add cur_step_output to completed steps
-            completed_steps = self.state.get_completed_steps(task_id)
-            completed_steps.append(cur_step_output)
+        if mode == ChatResponseMode.WAIT:
+            cur_step_output = self.agent_worker.run_step(step, task, **kwargs)
+        elif mode == ChatResponseMode.STREAM:
+            cur_step_output = self.agent_worker.stream_step(step, task, **kwargs)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+        # append cur_step_output next steps to queue
+        next_steps = cur_step_output.next_steps
+        step_queue.extend(next_steps)
 
-            dispatch_event(AgentRunStepEndEvent())
+        # add cur_step_output to completed steps
+        completed_steps = self.state.get_completed_steps(task_id)
+        completed_steps.append(cur_step_output)
+
+        dispatch_event(AgentRunStepEndEvent())
         return cur_step_output
 
     @dispatcher.span
@@ -406,38 +407,35 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            dispatch_event(AgentRunStepStartEvent())
-            task = self.state.get_task(task_id)
-            step_queue = self.state.get_step_queue(task_id)
-            step = step or step_queue.popleft()
-            if input is not None:
-                step.input = input
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            if self.verbose:
-                print(f"> Running step {step.step_id}. Step input: {step.input}")
+        dispatch_event(AgentRunStepStartEvent())
+        task = self.state.get_task(task_id)
+        step_queue = self.state.get_step_queue(task_id)
+        step = step or step_queue.popleft()
+        if input is not None:
+            step.input = input
 
-            # TODO: figure out if you can dynamically swap in different step executors
-            # not clear when you would do that by theoretically possible
-            if mode == ChatResponseMode.WAIT:
-                cur_step_output = await self.agent_worker.arun_step(
-                    step, task, **kwargs
-                )
-            elif mode == ChatResponseMode.STREAM:
-                cur_step_output = await self.agent_worker.astream_step(
-                    step, task, **kwargs
-                )
-            else:
-                raise ValueError(f"Invalid mode: {mode}")
-            # append cur_step_output next steps to queue
-            next_steps = cur_step_output.next_steps
-            step_queue.extend(next_steps)
+        if self.verbose:
+            print(f"> Running step {step.step_id}. Step input: {step.input}")
 
-            # add cur_step_output to completed steps
-            completed_steps = self.state.get_completed_steps(task_id)
-            completed_steps.append(cur_step_output)
+        # TODO: figure out if you can dynamically swap in different step executors
+        # not clear when you would do that by theoretically possible
+        if mode == ChatResponseMode.WAIT:
+            cur_step_output = await self.agent_worker.arun_step(step, task, **kwargs)
+        elif mode == ChatResponseMode.STREAM:
+            cur_step_output = await self.agent_worker.astream_step(step, task, **kwargs)
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+        # append cur_step_output next steps to queue
+        next_steps = cur_step_output.next_steps
+        step_queue.extend(next_steps)
 
-            dispatch_event(AgentRunStepEndEvent())
+        # add cur_step_output to completed steps
+        completed_steps = self.state.get_completed_steps(task_id)
+        completed_steps.append(cur_step_output)
+
+        dispatch_event(AgentRunStepEndEvent())
         return cur_step_output
 
     @dispatcher.span
@@ -536,31 +534,32 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            if chat_history is not None:
-                self.memory.set(chat_history)
-            task = self.create_task(message)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            result_output = None
-            dispatch_event(AgentChatWithStepStartEvent())
-            while True:
-                # pass step queue in as argument, assume step executor is stateless
-                cur_step_output = self._run_step(
-                    task.task_id, mode=mode, tool_choice=tool_choice
-                )
+        if chat_history is not None:
+            self.memory.set(chat_history)
+        task = self.create_task(message)
 
-                if cur_step_output.is_last:
-                    result_output = cur_step_output
-                    break
-
-                # ensure tool_choice does not cause endless loops
-                tool_choice = "auto"
-
-            result = self.finalize_response(
-                task.task_id,
-                result_output,
+        result_output = None
+        dispatch_event(AgentChatWithStepStartEvent())
+        while True:
+            # pass step queue in as argument, assume step executor is stateless
+            cur_step_output = self._run_step(
+                task.task_id, mode=mode, tool_choice=tool_choice
             )
-            dispatch_event(AgentChatWithStepEndEvent())
+
+            if cur_step_output.is_last:
+                result_output = cur_step_output
+                break
+
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
+
+        result = self.finalize_response(
+            task.task_id,
+            result_output,
+        )
+        dispatch_event(AgentChatWithStepEndEvent())
         return result
 
     @dispatcher.span
@@ -572,31 +571,32 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
-        with dispatcher.dispatch_event() as dispatch_event:
-            if chat_history is not None:
-                self.memory.set(chat_history)
-            task = self.create_task(message)
+        dispatch_event = dispatcher.get_dispatch_event()
 
-            result_output = None
-            dispatch_event(AgentChatWithStepStartEvent())
-            while True:
-                # pass step queue in as argument, assume step executor is stateless
-                cur_step_output = await self._arun_step(
-                    task.task_id, mode=mode, tool_choice=tool_choice
-                )
+        if chat_history is not None:
+            self.memory.set(chat_history)
+        task = self.create_task(message)
 
-                if cur_step_output.is_last:
-                    result_output = cur_step_output
-                    break
-
-                # ensure tool_choice does not cause endless loops
-                tool_choice = "auto"
-
-            result = self.finalize_response(
-                task.task_id,
-                result_output,
+        result_output = None
+        dispatch_event(AgentChatWithStepStartEvent())
+        while True:
+            # pass step queue in as argument, assume step executor is stateless
+            cur_step_output = await self._arun_step(
+                task.task_id, mode=mode, tool_choice=tool_choice
             )
-            dispatch_event(AgentChatWithStepEndEvent())
+
+            if cur_step_output.is_last:
+                result_output = cur_step_output
+                break
+
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
+
+        result = self.finalize_response(
+            task.task_id,
+            result_output,
+        )
+        dispatch_event(AgentChatWithStepEndEvent())
         return result
 
     @dispatcher.span
