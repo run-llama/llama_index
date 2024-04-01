@@ -41,7 +41,7 @@ class GCSReader(BasePydanticReader):
     file_metadata (Optional[Callable[str, Dict]]): A function that takes
         in a filename and returns a Dict of metadata for the Document.
         Default is None.
-    service_account_key_json (Optional[str]): provide GCP service account key JSON directly.
+    service_account_key_json (Optional[Dict[str, str]]): provide GCP service account key JSON directly.
     """
 
     is_remote: bool = True
@@ -57,7 +57,7 @@ class GCSReader(BasePydanticReader):
     filename_as_id: bool = True
     num_files_limit: Optional[int] = None
     file_metadata: Optional[Callable[[str], Dict]] = Field(default=None, exclude=True)
-    service_account_key_json: Optional[str] = None
+    service_account_key_json: Optional[Dict[str, str]] = None
 
     @classmethod
     def class_name(cls) -> str:
