@@ -2,7 +2,7 @@ from llama_index.core.readers.base import BasePydanticReader
 from llama_index.readers.gcs import GCSReader
 
 test_bucket = "test"
-test_service_account_key_json = "test-key"
+test_service_account_key_json = '{"test-key": "test-value"}'
 
 
 def test_class():
