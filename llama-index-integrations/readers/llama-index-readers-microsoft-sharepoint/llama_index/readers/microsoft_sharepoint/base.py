@@ -310,7 +310,8 @@ class SharePointReader(BasePydanticReader):
         self,
         download_dir: str,
         sharepoint_site_name: str,
-        sharepoint_folder_path: str,
+        sharepoint_folder_path: Optional[str],
+        sharepoint_folder_id: Optional[str],
         recursive: bool,
     ) -> Dict[str, str]:
         """
@@ -334,9 +335,7 @@ class SharePointReader(BasePydanticReader):
 
         self._drive_id = self._get_drive_id()
 
-        if self.sharepoint_folder_id is not None:
-            sharepoint_folder_id = self.sharepoint_folder_id
-        else:
+        if sharepoint_folder_id is None:
             sharepoint_folder_id = self._get_sharepoint_folder_id(
                 sharepoint_folder_path
             )
@@ -378,6 +377,7 @@ class SharePointReader(BasePydanticReader):
         self,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
         recursive: bool = False,
     ) -> List[Document]:
         """
@@ -401,13 +401,14 @@ class SharePointReader(BasePydanticReader):
         if sharepoint_folder_path is None:
             sharepoint_folder_path = self.sharepoint_folder_path
 
+        if sharepoint_folder_id is None:
+            sharepoint_folder_id = self.sharepoint_folder_id
+
         # TODO: make both of these values optional — and just default to the client ID defaults
         if sharepoint_site_name is None:
-            raise ValueError(
-                "sharepoint_site_name and sharepoint_folder_path must be provided."
-            )
+            raise ValueError("sharepoint_site_name must be provided.")
 
-        if sharepoint_folder_path is None and self.sharepoint_folder_id is None:
+        if sharepoint_folder_path is None and sharepoint_folder_id is None:
             raise ValueError(
                 "sharepoint_folder_path or sharepoint_folder_id must be provided."
             )
@@ -415,7 +416,11 @@ class SharePointReader(BasePydanticReader):
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 files_metadata = self._download_files_from_sharepoint(
-                    temp_dir, sharepoint_site_name, sharepoint_folder_path, recursive
+                    temp_dir,
+                    sharepoint_site_name,
+                    sharepoint_folder_path,
+                    sharepoint_folder_id,
+                    recursive,
                 )
                 # return self.files_metadata
                 return self._load_documents_with_metadata(
