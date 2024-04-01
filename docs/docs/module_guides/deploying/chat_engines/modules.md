@@ -10,4 +10,5 @@ whereas all others make use of a query engine over knowledge base.
 - [Condense Question Chat Engine](../../../examples/chat_engine/chat_engine_condense_question.ipynb)
 - [Context Chat Engine](../../../examples/chat_engine/chat_engine_context.ipynb)
 - [Context Plus Condense Chat Engine](../../../examples/chat_engine/chat_engine_condense_plus_context.ipynb)
+- [Flow Chat Engine](../../../examples/chat_engine/chat_engine_flow.ipynb)
 - [Simple Chat Engine](../../../examples/chat_engine/chat_engine_repl.ipynb)
