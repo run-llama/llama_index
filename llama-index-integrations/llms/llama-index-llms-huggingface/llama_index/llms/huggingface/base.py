@@ -34,9 +34,11 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
+    prompt_to_messages,
 )
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.chat_engine.types import AgentChatResponse
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -675,18 +677,14 @@ from text_generation import (
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
+    achat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
     get_from_param_or_env,
 )
-from text_generation.types import (
-    Message as TGIMessage,
-)
+
 from llama_index.core.tools.types import BaseTool
-
-
-def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-    if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+from llama_index.llms.huggingface.utils import to_tgi_messages, force_single_tool_call
 
 
 class TextGenerationInference(FunctionCallingLLM):
@@ -834,7 +832,7 @@ class TextGenerationInference(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        pass
+        pass  # TODO add metadat and check for TGI version for function call
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -866,15 +864,10 @@ class TextGenerationInference(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        formatted_messages = []
-        for m in messages:
-            tool_calls = m.additional_kwargs.get("tool_calls")
-            formatted_messages.append(
-                TGIMessage(role=m.role.value, content=m.content, tool_calls=tool_calls)
-            )
-
+        # convert to TGI Message
+        messages = to_tgi_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = self._sync_client.chat(messages=formatted_messages, **all_kwargs)
+        response = self._sync_client.chat(messages=messages, **all_kwargs)
         tool_calls = response.choices[0].message.tool_calls
 
         return ChatResponse(
@@ -899,37 +892,97 @@ class TextGenerationInference(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        pass
+        # convert to TGI Message
+        messages = to_tgi_messages(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = self._sync_client.chat(messages=messages, stream=True, **all_kwargs)
+        # TODO test with tool calls
+
+        def generator() -> ChatResponseGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+            for chunk in response:
+                content_delta = chunk.choices[0].delta.content
+                if content_delta is None:
+                    continue
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=chunk,
+                )
+
+        return generator()
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        pass
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        pass
+        # convert to TGI Message
+        messages = to_tgi_messages(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = await self._async_client.chat(messages=messages, **all_kwargs)
+        tool_calls = response.choices[0].message.tool_calls
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response.choices[0].message.content,
+                additional_kwargs={"tool_calls": tool_calls}
+                if tool_calls is not None
+                else {},
+            ),
+            raw=dict(response),
+        )
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        pass
+        acomplete_fn = achat_to_completion_decorator(self.achat)
+        return await acomplete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        pass
+        # convert to TGI Message
+        messages = to_tgi_messages(messages)
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        response = await self._async_client.chat(
+            messages=messages, stream=True, **all_kwargs
+        )
+        # TODO test with tool calls
+
+        async def generator() -> ChatResponseAsyncGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+            async for chunk in response:
+                content_delta = chunk.choices[0].delta.content
+                if content_delta is None:
+                    continue
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=role, content=content),
+                    delta=content_delta,
+                    raw=chunk,
+                )
+
+        return generator()
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        pass
+        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await astream_complete_fn(prompt, **kwargs)
 
     def chat_with_tools(
         self,
@@ -941,16 +994,17 @@ class TextGenerationInference(FunctionCallingLLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
-        # misralai uses the same openai tool format
+        # openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            user_msg = prompt_to_messages(user_msg)
 
         messages = chat_history or []
         if user_msg:
-            messages.append(user_msg)
+            messages.extend(user_msg)
 
+        # TODO handle tool choice
         response = self.chat(
             messages,
             tools=tool_specs,
@@ -969,11 +1023,59 @@ class TextGenerationInference(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
-        pass
+        # openai tool format
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        if isinstance(user_msg, str):
+            user_msg = prompt_to_messages(user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.extend(user_msg)
+
+        # TODO handle tool choice
+        response = self.achat(
+            messages,
+            tools=tool_specs,
+            **kwargs,
+        )
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
 
     def get_tool_calls_from_response(
         self,
         response: "AgentChatResponse",
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
-        pass
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            # TODO Add typecheck with ToolCall instance from TGI once the API is updated
+            if tool_call and (tc_type := tool_call["type"]) != "function":
+                raise ValueError(
+                    f"Invalid tool type: got {tc_type}, expect 'function'."
+                )
+            argument_dict = tool_call["function"]["parameters"]
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call["id"],
+                    tool_name=tool_call["function"][
+                        "name"
+                    ],  # NOTE for now the tool_name is hardcoded 'tools' in TGI
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
