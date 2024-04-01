@@ -69,7 +69,7 @@ class ReadabilityWebPageReader(BaseReader):
         """
         from playwright.async_api import async_playwright
 
-        with async_playwright() as async_playwright:
+        async with async_playwright() as async_playwright:
             browser = await async_playwright.chromium.launch(**self._launch_options)
 
             article = await self.scrape_page(
