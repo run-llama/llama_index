@@ -28,6 +28,7 @@ class SharePointReader(BasePydanticReader):
         tenant_id (str): Unique identifier of the Azure Active Directory Instance.
         sharepoint_site_name (Optional[str]): The name of the SharePoint site to download from.
         sharepoint_folder_path (Optional[str]): The path of the SharePoint folder to download from.
+        sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
     """
@@ -37,11 +38,15 @@ class SharePointReader(BasePydanticReader):
     tenant_id: str = None
     sharepoint_site_name: Optional[str] = None
     sharepoint_folder_path: Optional[str] = None
+    sharepoint_folder_id: Optional[str] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
 
     _authorization_headers = PrivateAttr()
+    _site_id_with_host_name = PrivateAttr()
+    _drive_id_endpoint = PrivateAttr()
+    _drive_id = PrivateAttr()
 
     def __init__(
         self,
@@ -50,6 +55,7 @@ class SharePointReader(BasePydanticReader):
         tenant_id: str,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
@@ -59,6 +65,7 @@ class SharePointReader(BasePydanticReader):
             tenant_id=tenant_id,
             sharepoint_site_name=sharepoint_site_name,
             sharepoint_folder_path=sharepoint_folder_path,
+            sharepoint_folder_id=sharepoint_folder_id,
             file_extractor=file_extractor,
             **kwargs,
         )
@@ -327,12 +334,15 @@ class SharePointReader(BasePydanticReader):
 
         self._drive_id = self._get_drive_id()
 
-        self.sharepoint_folder_id = self._get_sharepoint_folder_id(
-            sharepoint_folder_path
-        )
+        if self.sharepoint_folder_id is not None:
+            sharepoint_folder_id = self.sharepoint_folder_id
+        else:
+            sharepoint_folder_id = self._get_sharepoint_folder_id(
+                sharepoint_folder_path
+            )
 
         return self._download_files_and_extract_metadata(
-            self.sharepoint_folder_id, download_dir, recursive
+            sharepoint_folder_id, download_dir, recursive
         )
 
     def _load_documents_with_metadata(
@@ -392,9 +402,14 @@ class SharePointReader(BasePydanticReader):
             sharepoint_folder_path = self.sharepoint_folder_path
 
         # TODO: make both of these values optional — and just default to the client ID defaults
-        if sharepoint_site_name is None or sharepoint_folder_path is None:
+        if sharepoint_site_name is None:
             raise ValueError(
-                "Both sharepoint_site_name and sharepoint_folder_path must be provided."
+                "sharepoint_site_name and sharepoint_folder_path must be provided."
+            )
+
+        if sharepoint_folder_path is None and self.sharepoint_folder_id is None:
+            raise ValueError(
+                "sharepoint_folder_path or sharepoint_folder_id must be provided."
             )
 
         try:
