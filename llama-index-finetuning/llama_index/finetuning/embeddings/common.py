@@ -53,7 +53,7 @@ Context information is below.
 {context_str}
 ---------------------
 
-Given the context information and not prior knowledge.
+Given the context information and no prior knowledge.
 generate only questions based on the below query.
 
 You are a Teacher/ Professor. Your task is to setup \
