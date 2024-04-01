@@ -182,6 +182,7 @@ nav:
           - ./examples/embeddings/llamafile.ipynb
           - ./examples/embeddings/premai.ipynb
           - ./examples/embeddings/alephalpha.ipynb
+          - ./examples/embeddings/itrex.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -291,6 +292,7 @@ nav:
           - ./examples/llm/premai.ipynb
           - ./examples/llm/solar.ipynb
           - ./examples/llm/alephalpha.ipynb
+          - ./examples/llm/ipex_llm.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -351,6 +353,7 @@ nav:
           - ./examples/node_postprocessor/OptimizerDemo.ipynb
           - ./examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
           - ./examples/node_postprocessor/JinaRerank.ipynb
+          - ./examples/node_postprocessor/rankLLM.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
@@ -676,6 +679,7 @@ nav:
           - ./api_reference/embeddings/google.md
           - ./api_reference/embeddings/gradient.md
           - ./api_reference/embeddings/huggingface.md
+          - ./api_reference/embeddings/huggingface_itrex.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
           - ./api_reference/embeddings/index.md
@@ -750,6 +754,7 @@ nav:
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/index.md
+          - ./api_reference/llms/ipex_llm.md
           - ./api_reference/llms/konko.md
           - ./api_reference/llms/langchain.md
           - ./api_reference/llms/litellm.md
@@ -904,6 +909,7 @@ nav:
           - ./api_reference/postprocessor/presidio.md
           - ./api_reference/postprocessor/prev_next.md
           - ./api_reference/postprocessor/rankgpt_rerank.md
+          - ./api_reference/postprocessor/rankllm_rerank.md
           - ./api_reference/postprocessor/sbert_rerank.md
           - ./api_reference/postprocessor/sentence_optimizer.md
           - ./api_reference/postprocessor/similarity.md
@@ -1185,6 +1191,7 @@ nav:
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
+              - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
@@ -1763,6 +1770,9 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-voyageai-rerank
             - ../llama-index-integrations/readers/llama-index-readers-gcs
             - ../llama-index-integrations/readers/llama-index-readers-readme
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-itrex
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-rankllm-rerank
+            - ../llama-index-integrations/llms/llama-index-llms-ipex-llm
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
