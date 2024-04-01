@@ -20,6 +20,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
+    DEFAULT_TEMPERATURE,
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
@@ -27,23 +28,40 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
-)
-from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
     prompt_to_messages,
+    chat_to_completion_decorator,
+    achat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    get_from_param_or_env,
 )
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.chat_engine.types import AgentChatResponse
+from llama_index.core.tools.types import BaseTool
+from llama_index.llms.huggingface.utils import (
+    to_tgi_messages,
+    force_single_tool_call,
+    resolve_tgi_function_call,
+    get_max_input_length,
+    resolve_tool_choice,
+)
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     StoppingCriteria,
     StoppingCriteriaList,
+)
+from text_generation import (
+    Client as TGIClient,
+    AsyncClient as TGIAsyncClient,
 )
 
 DEFAULT_HUGGINGFACE_MODEL = "StabilityAI/stablelm-tuned-alpha-3b"
@@ -669,43 +687,20 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
 
-from llama_index.core.llms.function_calling import FunctionCallingLLM
-from text_generation import (
-    Client as TGIClient,
-    AsyncClient as TGIAsyncClient,
-)
-from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
-    achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    get_from_param_or_env,
-)
-
-from llama_index.core.tools.types import BaseTool
-from llama_index.llms.huggingface.utils import to_tgi_messages, force_single_tool_call
-
-
 class TextGenerationInference(FunctionCallingLLM):
-    @classmethod
-    def class_name(cls) -> str:
-        return "TextGenerationInference"
-
-    # Corresponds with huggingface_hub.InferenceClient
     model_name: Optional[str] = Field(
-        default=DEFAULT_HUGGINGFACE_MODEL,
-        description=("The URL of TGI endpoint"),
+        default=None,
+        description=("The name of the model served at the TGI endpoint"),
     )
     temperature: float = Field(
-        default=0.7,
-        description="The temperature to use for sampling.",
+        default=DEFAULT_TEMPERATURE,
+        description=("The temperature to use for sampling."),
         gte=0.0,
         lte=1.0,
     )
     max_tokens: int = Field(
-        default=2048,
-        description="The maximum number of tokens to generate.",
+        default=DEFAULT_NUM_OUTPUTS,
+        description=("The maximum number of tokens to generate."),
         gt=0,
     )
     token: Union[str, bool, None] = Field(
@@ -715,59 +710,52 @@ class TextGenerationInference(FunctionCallingLLM):
             "token=False if you don’t want to send your token to the server."
         ),
     )
-    timeout: Optional[float] = Field(
-        default=None,
-        description=(
-            "The maximum number of seconds to wait for a response from the server."
-            " Loading a new model in Inference API can take up to several minutes."
-            " Defaults to None, meaning it will loop until the server is available."
-        ),
+    timeout: float = Field(
+        default=120, description=("The timeout to use in seconds."), gte=0
+    )
+    max_retries: int = Field(
+        default=5, description=("The maximum number of API retries."), gte=0
     )
     headers: Dict[str, str] = Field(
         default=None,
         description=(
             "Additional headers to send to the server. By default only the"
-            " authorization and user-agent headers are sent. Values in this dictionary"
+            " authorization headers are sent. Values in this dictionary"
             " will override the default values."
         ),
     )
     cookies: Dict[str, str] = Field(
-        default=None, description="Additional cookies to send to the server."
+        default=None, description=("Additional cookies to send to the server.")
     )
-    seed: str = Field(default=None, description="The random seed to use for sampling.")
+    seed: str = Field(
+        default=None, description=("The random seed to use for sampling.")
+    )
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the TGI API."
+        default_factory=dict, description=("Additional kwargs for the TGI API.")
     )
 
     _sync_client: "TGIClient" = PrivateAttr()
     _async_client: "TGIAsyncClient" = PrivateAttr()
-    _get_model_info: "Callable[..., ModelInfo]" = PrivateAttr()
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description=(
-            LLMMetadata.__fields__["context_window"].field_info.description
-            + " This may be looked up in a model's `config.json`."
-        ),
-    )
-    num_output: int = Field(
-        default=DEFAULT_NUM_OUTPUTS,
-        description=LLMMetadata.__fields__["num_output"].field_info.description,
+        description=("Maximum input length in tokens returned from TGI endpoint"),
     )
     is_chat_model: bool = Field(
-        default=False,
+        default=True,
         description=(
             LLMMetadata.__fields__["is_chat_model"].field_info.description
-            + " Unless chat templating is intentionally applied, Hugging Face models"
-            " are not chat models."
+            + " TGI makes use of chat templating,"
+            " function call is available only for '/v1/chat/completions' route"
+            " of TGI endpoint"
         ),
     )
     is_function_calling_model: bool = Field(
         default=False,
         description=(
             LLMMetadata.__fields__["is_function_calling_model"].field_info.description
-            + " As of 10/17/2023, Hugging Face doesn't support function calling"
-            " messages."
+            + " 'text-generation-inference' supports function call"
+            " starting from v1.4.3"
         ),
     )
 
@@ -776,15 +764,14 @@ class TextGenerationInference(FunctionCallingLLM):
         model_url,
         model_name: Optional[str] = None,
         cookies: Optional[dict] = None,
-        temperature: float = 0.7,
-        max_tokens: int = 2048,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         timeout: int = 120,
         max_retries: int = 5,
         seed: Optional[int] = None,
-        api_key: Optional[str] = None,
+        token: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
-        generate_kwargs: Optional[dict] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
@@ -794,11 +781,11 @@ class TextGenerationInference(FunctionCallingLLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        api_key = get_from_param_or_env("api_key", api_key, "HF_TOKEN", "")
+        token = get_from_param_or_env("token", token, "HF_TOKEN", "")
 
         headers = {}
-        if api_key:
-            headers.update({"Authorization": f"Bearer {api_key}"})
+        if token:
+            headers.update({"Authorization": f"Bearer {token}"})
 
         self._sync_client = TGIClient(
             base_url=model_url,
@@ -813,15 +800,24 @@ class TextGenerationInference(FunctionCallingLLM):
             timeout=timeout,
         )
 
+        try:
+            is_function_calling_model = resolve_tgi_function_call(model_url)
+        except Exception as e:
+            logger.warning(f"TGI client has no function call support: {e}")
+            is_function_calling_model = False
+
+        context_window = get_max_input_length(model_url) or DEFAULT_CONTEXT_WINDOW
+
         super().__init__(
+            context_window=context_window,
             temperature=temperature,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             timeout=timeout,
             max_retries=max_retries,
-            # safe_mode=safe_mode,
             seed=seed,
             model=model_name,
+            is_function_calling_model=is_function_calling_model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
@@ -830,9 +826,20 @@ class TextGenerationInference(FunctionCallingLLM):
             output_parser=output_parser,
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "TextGenerationInference"
+
     @property
     def metadata(self) -> LLMMetadata:
-        pass  # TODO add metadat and check for TGI version for function call
+        return LLMMetadata(
+            context_window=self.context_window,
+            num_output=self.max_tokens,
+            is_chat_model=True,
+            model_name=self.model_name,
+            random_seed=self.seed,
+            is_function_calling_model=self.is_function_calling_model,
+        )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -851,16 +858,6 @@ class TextGenerationInference(FunctionCallingLLM):
             **self._model_kwargs,
             **kwargs,
         }
-
-    # def complete(
-    #     self, prompt: str, formatted: bool = False, **kwargs: Any
-    # ) -> CompletionResponse:
-
-    #     return self._sync_client.generate(
-    #         prompt,
-    #         **kwargs
-    #     )
-    # NOTE no tools with client.generate!
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -896,7 +893,6 @@ class TextGenerationInference(FunctionCallingLLM):
         messages = to_tgi_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._sync_client.chat(messages=messages, stream=True, **all_kwargs)
-        # TODO test with tool calls
 
         def generator() -> ChatResponseGen:
             content = ""
@@ -959,7 +955,6 @@ class TextGenerationInference(FunctionCallingLLM):
         response = await self._async_client.chat(
             messages=messages, stream=True, **all_kwargs
         )
-        # TODO test with tool calls
 
         async def generator() -> ChatResponseAsyncGen:
             content = ""
@@ -991,10 +986,11 @@ class TextGenerationInference(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
-        # openai tool format
+        # use openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         if isinstance(user_msg, str):
@@ -1004,11 +1000,10 @@ class TextGenerationInference(FunctionCallingLLM):
         if user_msg:
             messages.extend(user_msg)
 
-        # TODO handle tool choice
         response = self.chat(
             messages,
             tools=tool_specs,
-            **kwargs,
+            tool_choice=resolve_tool_choice(tool_choice) ** kwargs,
         )
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
@@ -1021,9 +1016,10 @@ class TextGenerationInference(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        # openai tool format
+        # use openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         if isinstance(user_msg, str):
@@ -1033,11 +1029,10 @@ class TextGenerationInference(FunctionCallingLLM):
         if user_msg:
             messages.extend(user_msg)
 
-        # TODO handle tool choice
         response = self.achat(
             messages,
             tools=tool_specs,
-            **kwargs,
+            tool_choice=resolve_tool_choice(tool_choice) ** kwargs,
         )
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
@@ -1061,7 +1056,7 @@ class TextGenerationInference(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            # TODO Add typecheck with ToolCall instance from TGI once the API is updated
+            # TODO Add typecheck with ToolCall from TGI once the client is updated
             if tool_call and (tc_type := tool_call["type"]) != "function":
                 raise ValueError(
                     f"Invalid tool type: got {tc_type}, expect 'function'."
