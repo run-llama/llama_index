@@ -5,15 +5,15 @@ import os
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BasePydanticReader
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.readers.base import BaseReader, BasePydanticReader
+from llama_index.core.bridge.pydantic import PrivateAttr, Field
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -49,6 +49,9 @@ class GoogleDriveReader(BasePydanticReader):
             user info. Defaults to None.
         service_account_key (Optional[dict]): Dictionary containing service
             account key. Defaults to None.
+        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
+            extension to a BaseReader class that specifies how to convert that
+            file to text. See `SimpleDirectoryReader` for more details.
     """
 
     drive_id: Optional[str] = None
@@ -59,6 +62,9 @@ class GoogleDriveReader(BasePydanticReader):
     authorized_user_info: Optional[dict] = None
     service_account_key: Optional[dict] = None
     token_path: Optional[str] = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
 
     _is_cloud: bool = PrivateAttr(default=False)
     _creds: Credentials = PrivateAttr()
@@ -77,6 +83,7 @@ class GoogleDriveReader(BasePydanticReader):
         client_config: Optional[dict] = None,
         authorized_user_info: Optional[dict] = None,
         service_account_key: Optional[dict] = None,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -126,6 +133,7 @@ class GoogleDriveReader(BasePydanticReader):
             authorized_user_info=authorized_user_info,
             service_account_key=service_account_key,
             token_path=token_path,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
@@ -399,7 +407,11 @@ class GoogleDriveReader(BasePydanticReader):
                         "created at": fileid_meta[4],
                         "modified at": fileid_meta[5],
                     }
-                loader = SimpleDirectoryReader(temp_dir, file_metadata=get_metadata)
+                loader = SimpleDirectoryReader(
+                    temp_dir,
+                    file_extractor=self.file_extractor,
+                    file_metadata=get_metadata,
+                )
                 documents = loader.load_data()
                 for doc in documents:
                     doc.id_ = doc.metadata.get("file id", doc.id_)

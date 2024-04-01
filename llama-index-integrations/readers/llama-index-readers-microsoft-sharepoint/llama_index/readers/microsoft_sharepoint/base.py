@@ -3,13 +3,14 @@
 import logging
 import os
 import tempfile
+from typing import Any, Dict, List, Union, Optional
 from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BasePydanticReader
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
+from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,8 @@ class SharePointReader(BasePydanticReader):
         tenant_id (str): Unique identifier of the Azure Active Directory Instance.
         sharepoint_site_name (Optional[str]): The name of the SharePoint site to download from.
         sharepoint_folder_path (Optional[str]): The path of the SharePoint folder to download from.
+        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
+                                                          file to text. See `SimpleDirectoryReader` for more details.
     """
 
     sharepoint_site_name: Optional[str] = None
@@ -34,6 +37,10 @@ class SharePointReader(BasePydanticReader):
     client_id: str = None
     client_secret: str = None
     tenant_id: str = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
+
     _authorization_headers = PrivateAttr()
 
     def __init__(
@@ -41,6 +48,7 @@ class SharePointReader(BasePydanticReader):
         client_id: str,
         client_secret: str,
         tenant_id: str,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         **kwargs: Any,
@@ -49,6 +57,7 @@ class SharePointReader(BasePydanticReader):
             client_id=client_id,
             client_secret=client_secret,
             tenant_id=tenant_id,
+            file_extractor=file_extractor,
             sharepoint_site_name=sharepoint_site_name,
             sharepoint_folder_path=sharepoint_folder_path,
             **kwargs,
@@ -348,7 +357,10 @@ class SharePointReader(BasePydanticReader):
             return files_metadata[filename]
 
         simple_loader = SimpleDirectoryReader(
-            download_dir, file_metadata=get_metadata, recursive=recursive
+            download_dir,
+            file_extractor=self.file_extractor,
+            file_metadata=get_metadata,
+            recursive=recursive,
         )
         return simple_loader.load_data()
 
