@@ -5,7 +5,7 @@
 A data connector (aka `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 !!! tip
-Once you've ingested your data, you can build an [Index](../../indexing/index.md) on top, ask questions using a [Query Engine](../../deploying/query_engine/index.md), and have a conversation using a [Chat Engine](../../deploying/chat_engines/index.md).
+    Once you've ingested your data, you can build an [Index](../../indexing/index.md) on top, ask questions using a [Query Engine](../../deploying/query_engine/index.md), and have a conversation using a [Chat Engine](../../deploying/chat_engines/index.md).
 
 ## LlamaHub
 

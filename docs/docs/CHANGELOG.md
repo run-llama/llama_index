@@ -1,5 +1,82 @@
 # ChangeLog
 
+## [2024-03-31]
+
+### `llama-index-core` [0.10.26]
+
+- pass proper query bundle in QueryFusionRetriever (#12387)
+- Update llama_parse_json_element.py to fix error on lists (#12402)
+- Add node postprocessors to retriever tool (#12415)
+- Fix bug where user specified llm is not respected in fallback logic in element node parsers(#12403)
+- log proper LLM response key for async callback manager events (#12421)
+- Deduplicate the two built-in react system prompts; Also make it read from a Markdown file (#12307)
+- fix bug in BatchEvalRunner for multi-evaluator eval_kwargs_lists (#12418)
+- add the callback manager event for vector store index insert_nodes (#12443)
+- fixes an issue with serializing chat messages into chat stores when they contain pydantic API objects (#12394)
+- fixes an issue with slow memory.get() operation (caused by multiple calls to get_all()) (#12394)
+- fixes an issue where an agent+tool message pair is cut from the memory (#12394)
+- Added `FnNodeMapping` for object index (#12391)
+- Make object mapping optional / hidden for object index (#12391)
+- Make object index easier to create from existing vector db (#12391)
+- When LLM failed to follow the react response template, tell it so #12300
+
+### `llama-index-embeddings-cohere` [0.1.5]
+
+- Bump cohere version to 5.1.1 (#12279)
+
+### `llama-index-embeddings-itrex` [0.1.0]
+
+- add Intel Extension for Transformers embedding model (#12410)
+
+### `llama-index-graph-stores-neo4j` [0.1.4]
+
+- make neo4j query insensitive (#12337)
+
+### `llama-index-llms-cohere` [0.1.5]
+
+- Bump cohere version to 5.1.1 (#12279)
+
+### `llama-index-llms-ipex-llm` [0.1.0]
+
+- add ipex-llm integration (#12322)
+
+### `llama-index-llms-litellm` [0.1.4]
+
+- Fix litellm ChatMessage role validation error (#12449)
+
+### `llama-index-llms-openai` [0.1.14]
+
+- Use `FunctionCallingLLM` base class in OpenAI (#12227)
+
+### `llama-index-packs-self-rag` [0.1.4]
+
+- Fix llama-index-core dep (#12374)
+
+### `llama-index-postprocessor-cohere-rerank` [0.1.4]
+
+- Bump cohere version to 5.1.1 (#12279)
+
+### `llama-index-postprocessor-rankllm-rerank` [0.1.1]
+
+- Added RankLLM rerank (#12296)
+- RankLLM fixes (#12399)
+
+### `llama-index-readers-papers` [0.1.4]
+
+- Fixed bug with path names (#12366)
+
+### `llama-index-vector-stores-analyticdb` [0.1.1]
+
+- Add AnalyticDB VectorStore (#12230)
+
+### `llama-index-vector-stores-kdbai` [0.1.4]
+
+- Fixed typo in imports/readme (#12370)
+
+### `llama-index-vector-stores-qdrant` [0.1.5]
+
+- add `in` filter operator for qdrant (#12376)
+
 ## [2024-03-27]
 
 ### `llama-index-core` [0.10.25]
