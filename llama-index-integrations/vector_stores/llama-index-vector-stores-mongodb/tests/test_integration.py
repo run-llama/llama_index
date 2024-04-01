@@ -44,10 +44,14 @@ def test_index(documents, vector_store):
         question = "Who is the author of this essay?"
         no_response = True
         response = None
-        while no_response:
+        retries = 5
+        search_limit = query_engine.retriever.similarity_top_k
+        while no_response and retries:
             response = query_engine.query(question)
-            if response.response == "Empty Response":
-                sleep(2)
-            else:
+            if len(response.source_nodes) == search_limit:
                 no_response = False
+            else:
+                retries -= 1
+                sleep(5)
+
         assert "Paul Graham" == response.response
