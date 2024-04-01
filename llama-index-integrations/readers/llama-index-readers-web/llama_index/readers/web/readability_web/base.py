@@ -1,11 +1,12 @@
 import asyncio
 import unicodedata
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional, cast
+from typing import Callable, Dict, List, Literal, Optional
 
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from playwright.async_api._generated import Browser
 
 path = Path(__file__).parent / "Readability.js"
 
@@ -68,8 +69,8 @@ class ReadabilityWebPageReader(BaseReader):
         """
         from playwright.async_api import async_playwright
 
-        with async_playwright() as p:
-            browser = await p.chromium.launch(**self._launch_options)
+        with async_playwright() as async_playwright:
+            browser = await async_playwright.chromium.launch(**self._launch_options)
 
             article = await self.scrape_page(
                 browser,
@@ -105,7 +106,7 @@ class ReadabilityWebPageReader(BaseReader):
 
     async def scrape_page(
         self,
-        browser: Any,
+        browser: Browser,
         url: str,
     ) -> Dict[str, str]:
         """Scrape a single article url.
@@ -127,8 +128,6 @@ class ReadabilityWebPageReader(BaseReader):
             lang: content language
 
         """
-        from playwright.async_api._generated import Browser
-
         if self._readability_js is None:
             with open(path) as f:
                 self._readability_js = f.read()
@@ -143,7 +142,7 @@ class ReadabilityWebPageReader(BaseReader):
             }}())
         """
 
-        browser = cast(Browser, browser)
+        # browser = cast(Browser, browser)
         page = await browser.new_page(ignore_https_errors=True)
         page.set_default_timeout(60000)
         await page.goto(url, wait_until=self._wait_until)
