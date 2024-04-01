@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Set, Protocol, runtime_chec
 import fsspec
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.schema import BaseNode
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
@@ -154,6 +155,9 @@ class LabelledPropertyGraphStore(Protocol):
         get_schema: Callable[[bool], str]: Get the schema of the graph store.
     """
 
+    supports_vectors: bool = False
+    supports_queries: bool = False
+    supports_nodes: bool = False
     schema: str = ""
 
     @property
@@ -168,6 +172,13 @@ class LabelledPropertyGraphStore(Protocol):
         properties: Optional[dict] = None,
     ) -> List[Triplet]:
         """Get triplets with matching values."""
+        ...
+
+    def get_by_ids(
+        self,
+        node_ids: List[str] = None,
+    ) -> List[BaseNode]:
+        """Get nodes by ids, if supported."""
         ...
 
     def get_rel_map(

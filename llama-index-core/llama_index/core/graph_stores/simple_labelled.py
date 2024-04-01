@@ -10,6 +10,7 @@ from llama_index.core.graph_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFUALT_LPG_PERSIST_FNAME,
 )
+from llama_index.core.schema import BaseNode
 
 
 class SimpleLPGStore(LabelledPropertyGraphStore):
@@ -20,6 +21,10 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
     Args:
         graph (Optional[LabelledPropertyGraph]): Labelled property graph to initialize the store.
     """
+
+    supports_vectors: bool = False
+    supports_queries: bool = False
+    supports_nodes: bool = False
 
     def __init__(self, graph: Optional[LabelledPropertyGraph] = None):
         self.graph = graph or LabelledPropertyGraph()
@@ -63,6 +68,9 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
             ]
 
         return triplets
+
+    def get_by_ids(self, node_ids: List[str] = None) -> List[BaseNode]:
+        raise NotImplementedError("Get by ids not implemented for SimpleLPGStore.")
 
     def get_rel_map(
         self, entities: List[Entity], depth: int = 2, limit: int = 30
