@@ -263,14 +263,18 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # if the query engine is a retriever, then use the retrieve method
-        if(isinstance(self._query_engine, RetrieverQueryEngine)):
+        if isinstance(self._query_engine, RetrieverQueryEngine):
             return self._query_engine.retrieve(query_bundle)
         else:
-            raise NotImplementedError("This query engine does not support retrieve, use query directly")
+            raise NotImplementedError(
+                "This query engine does not support retrieve, use query directly"
+            )
 
     async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         # if the query engine is a retriever, then use the retrieve method
-        if(isinstance(self._query_engine, RetrieverQueryEngine)):
+        if isinstance(self._query_engine, RetrieverQueryEngine):
             return await self._query_engine.aretrieve(query_bundle)
         else:
-            raise NotImplementedError("This query engine does not support retrieve, use query directly")
+            raise NotImplementedError(
+                "This query engine does not support retrieve, use query directly"
+            )
