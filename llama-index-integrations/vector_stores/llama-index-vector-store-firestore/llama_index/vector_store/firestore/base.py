@@ -99,7 +99,9 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             result_dict = result.to_dict()
             metadata = result_dict.get(self.metadata_key)
             node = metadata_dict_to_node(metadata)
-            node.set_content(result_dict.get(self.text_key))
+            
+            if result_dict.get(self.text_key) is not None:
+                node.set_content(result_dict.get(self.text_key))
 
             top_k_ids.append(id)
             top_k_nodes.append(node)
