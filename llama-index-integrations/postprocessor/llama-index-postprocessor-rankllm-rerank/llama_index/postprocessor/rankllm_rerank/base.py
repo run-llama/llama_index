@@ -1,5 +1,4 @@
 from typing import Any, List, Optional
-from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -28,23 +27,30 @@ class RankLLMRerank(BaseNodePostprocessor):
         with_retrieval: Optional[bool] = False,
         step_size: Optional[int] = 10,
     ):
-        try:
-            model_enum = ModelType(model.lower())
-        except ValueError:
-            raise ValueError("Unsupported model type. Please use 'vicuna' or 'zephyr'.")
+        model_name = model.lower()
         from rank_llm.result import Result
 
         self._result = Result
 
-        if model_enum == ModelType.VICUNA:
+        if model_name == "vicuna":
             from rank_llm.rerank.vicuna_reranker import VicunaReranker
 
             self._model = VicunaReranker()
-        elif model_enum == ModelType.ZEPHYR:
+        elif model_name == "zephyr":
             from rank_llm.rerank.zephyr_reranker import ZephyrReranker
 
             self._model = ZephyrReranker()
+        else:
+            from rank_llm.rerank.rank_gpt import SafeOpenai
+            from rank_llm.rerank.reranker import Reranker
+            from llama_index.llms.openai import OpenAI
 
+            llm = OpenAI(
+                model=model_name,
+                temperature=0.0,
+            )
+            agent = SafeOpenai(model=model_name, context_size=4096, keys=llm.api_key)
+            self._model = Reranker(agent)
         if with_retrieval:
             from rank_llm.retrieve.retriever import Retriever
 
@@ -113,8 +119,3 @@ class RankLLMRerank(BaseNodePostprocessor):
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
         return new_nodes[: self.top_n]
-
-
-class ModelType(Enum):
-    VICUNA = "vicuna"
-    ZEPHYR = "zephyr"
