@@ -18,6 +18,7 @@ The best part of LlamaIndex is our community of users and contributors.
 
 Also, join our Discord for ideas and discussions: <https://discord.gg/dGcwcsnxhU>.
 
+
 ### 1. 🆕 Extend Core Modules
 
 The most impactful way to contribute to LlamaIndex is by extending our core modules:
@@ -124,6 +125,32 @@ See [the API reference](https://docs.llamaindex.ai/en/latest/api_reference/index
 - Add new `Node` relationships to model hierarchical documents (e.g. play-act-scene, chapter-section-heading).
 
 ---
+
+
+
+
+### Difference between AutoMerging, SentenceWindow and others, with respect to indexing, query engines and node parsers.
+
+Let's break down the differences between AutoMerging, SentenceWindow, and generic node parsers like sentence splitters:
+
+1. **AutoMerging**:
+   - **Functionality**: AutoMerging is primarily concerned with identifying and merging similar or related documents or data entities to reduce redundancy and improve efficiency. It involves algorithms that analyze the content of documents or data sets and automatically group together items that share common characteristics.
+   - **Purpose**: The main purpose of AutoMerging is to streamline the search process and improve the organization and presentation of search results by eliminating duplicate or highly similar entries.
+   - **Example**: In a search engine, AutoMerging might involve aggregating search results from different sources or indexes that contain similar content into a single unified result set.
+
+2. **SentenceWindow**:
+   - **Functionality**: SentenceWindow techniques focus on considering the context or surrounding sentences of a given sentence or query term. This is often used to capture the semantic context of the text, which can aid in tasks such as document summarization, context-aware search, or entity recognition.
+   - **Purpose**: The purpose of SentenceWindow techniques is to provide a more nuanced understanding of the text by considering the surrounding context, which can lead to more accurate parsing, analysis, and retrieval of information.
+   - **Example**: In a search engine, SentenceWindow might involve retrieving documents that contain the query term within a certain proximity of other relevant terms or within a specific context.
+
+3. **Generic Node Parsers (e.g., Sentence Splitter)**:
+   - **Functionality**: Generic node parsers are tools or algorithms designed to parse or segment text into smaller units, such as sentences, paragraphs, or tokens. These parsers typically operate on individual nodes or segments of a text data structure, breaking it down into smaller, more manageable components.
+   - **Purpose**: The purpose of generic node parsers like sentence splitters is to facilitate further processing or analysis of text by breaking it down into its constituent parts. This can be useful for tasks such as natural language understanding, information extraction, or text summarization.
+   - **Example**: A sentence splitter might take a paragraph of text as input and output a list of individual sentences, each of which can then be analyzed or processed separately.
+
+In summary, while AutoMerging focuses on merging similar documents or data entities to reduce redundancy, SentenceWindow techniques consider the context of text to improve understanding and relevance. Generic node parsers like sentence splitters, on the other hand, are tools for segmenting text into smaller units to facilitate further processing or analysis. Each serves a distinct purpose in the broader field of natural language processing and information retrieval.
+
+
 
 #### Text Splitters
 
