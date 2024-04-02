@@ -1,14 +1,31 @@
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Protocol
+from functools import partial
+from contextlib import contextmanager
+import asyncio
 import inspect
 import uuid
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span_handlers import (
     BaseSpanHandler,
     NullSpanHandler,
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
+
+
+class EventDispatcher(Protocol):
+    def __call__(self, event: BaseEvent) -> None:
+        ...
+
+
+class EventContext(BaseModel):
+    span_id: str = Field(default="")
+
+
+event_context = EventContext()
 
 
 class Dispatcher(BaseModel):
@@ -30,6 +47,31 @@ class Dispatcher(BaseModel):
         default=True,
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
+    current_span_id: Optional[str] = Field(
+        default=None, description="Id of current span."
+    )
+    _asyncio_lock: asyncio.Lock = PrivateAttr()
+
+    def __init__(
+        self,
+        name: str = "",
+        event_handlers: List[BaseEventHandler] = [],
+        span_handlers: List[BaseSpanHandler] = [],
+        parent_name: str = "",
+        manager: Optional["Manager"] = None,
+        root_name: str = "root",
+        propagate: bool = True,
+    ):
+        self._asyncio_lock = asyncio.Lock()
+        super().__init__(
+            name=name,
+            event_handlers=event_handlers,
+            span_handlers=span_handlers,
+            parent_name=parent_name,
+            manager=manager,
+            root_name=root_name,
+            propagate=propagate,
+        )
 
     @property
     def parent(self) -> "Dispatcher":
@@ -47,9 +89,11 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.span_handlers += [handler]
 
-    def event(self, event: BaseEvent, **kwargs) -> None:
+    def event(self, event: BaseEvent, span_id: Optional[str] = None, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
         c = self
+        if span_id:
+            event.span_id = span_id
         while c:
             for h in c.event_handlers:
                 h.handle(event, **kwargs)
@@ -60,7 +104,6 @@ class Dispatcher(BaseModel):
 
     def span_enter(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -71,7 +114,6 @@ class Dispatcher(BaseModel):
         while c:
             for h in c.span_handlers:
                 h.span_enter(
-                    *args,
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
@@ -84,7 +126,6 @@ class Dispatcher(BaseModel):
 
     def span_drop(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -96,7 +137,6 @@ class Dispatcher(BaseModel):
         while c:
             for h in c.span_handlers:
                 h.span_drop(
-                    *args,
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
@@ -110,7 +150,6 @@ class Dispatcher(BaseModel):
 
     def span_exit(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -122,7 +161,6 @@ class Dispatcher(BaseModel):
         while c:
             for h in c.span_handlers:
                 h.span_exit(
-                    *args,
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
@@ -134,15 +172,45 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
+    def get_dispatch_event(self) -> EventDispatcher:
+        """Get dispatch_event for firing events within the context of a span.
+
+        This method should be used with @dispatcher.span decorated
+        functions only. Otherwise, the span_id should not be trusted, as the
+        span decorator sets the span_id.
+        """
+        span_id = self.current_span_id
+        dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
+        return dispatch_event
+
+    @contextmanager
+    def dispatch_event(self):
+        """Context manager for firing events within a span session.
+
+        This context manager should be used with @dispatcher.span decorated
+        functions only. Otherwise, the span_id should not be trusted, as the
+        span decorator sets the span_id.
+        """
+        span_id = self.current_span_id
+        dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
+
+        try:
+            yield dispatch_event
+        finally:
+            del dispatch_event
+
     def span(self, func):
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            self.current_span_id = id_
+            self.root.current_span_id = id_
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = func(*args, **kwargs)
             except BaseException as e:
+                self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             else:
@@ -155,10 +223,16 @@ class Dispatcher(BaseModel):
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            async with self._asyncio_lock:
+                self.current_span_id = id_
+            async with self.root._asyncio_lock:
+                self.root.current_span_id = id_
+
             self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
             try:
                 result = await func(*args, **kwargs)
             except BaseException as e:
+                self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
             else:

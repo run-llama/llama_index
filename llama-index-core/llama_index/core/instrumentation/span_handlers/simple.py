@@ -1,6 +1,5 @@
 import inspect
 from typing import Any, cast, List, Optional, TYPE_CHECKING
-from llama_index.core.bridge.pydantic import Field
 from llama_index.core.instrumentation.span.simple import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from datetime import datetime
@@ -13,17 +12,12 @@ if TYPE_CHECKING:
 class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
     """Span Handler that managest SimpleSpan's."""
 
-    completed_spans: List[SimpleSpan] = Field(
-        default_factory=list, description="List of completed spans."
-    )
-
     def class_name(cls) -> str:
         """Class name."""
         return "SimpleSpanHandler"
 
     def new_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -35,7 +29,6 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def prepare_to_exit_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -52,7 +45,6 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
 
     def prepare_to_drop_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -61,7 +53,11 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
     ) -> SimpleSpan:
         """Logic for droppping a span."""
         if id_ in self.open_spans:
-            return self.open_spans[id_]
+            span = self.open_spans[id_]
+            span.metadata = {"error": str(err)}
+            self.dropped_spans += [span]
+            return span
+
         return None
 
     def _get_trace_trees(self) -> List["Tree"]:
@@ -74,7 +70,9 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
                 "`treelib` package is missing. Please install it by using "
                 "`pip install treelib`."
             )
-        sorted_spans = sorted(self.completed_spans, key=lambda x: x.start_time)
+        sorted_spans = sorted(
+            self.completed_spans + self.dropped_spans, key=lambda x: x.start_time
+        )
 
         trees = []
         tree = Tree()
