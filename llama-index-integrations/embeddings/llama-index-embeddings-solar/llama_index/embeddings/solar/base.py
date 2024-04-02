@@ -13,6 +13,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_SOLAR_API_BASE = "https://api.upstage.ai/v1/solar/embeddings"
+DEFAULT_SOLAR_MODEL = "solar-1-mini-embedding-query"
 
 
 class SolarEmbedding(BaseEmbedding):
@@ -26,7 +27,7 @@ class SolarEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "solar-1-mini-embedding-query",
+        model_name: str = DEFAULT_SOLAR_MODEL,
         api_key: str = "",
         api_base: str = DEFAULT_SOLAR_API_BASE,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
@@ -65,14 +66,12 @@ class SolarEmbedding(BaseEmbedding):
                 f"Failed to get {self.api_base} (status: {response.status_code})"
             )
 
-    async def _aget_embedding(
-        self, session: Any, text: str, input_type: str
-    ) -> List[float]:
+    async def _aget_embedding(self, session: Any, text: str) -> List[float]:
         headers = {"Content-Type": "application/json"}
 
         async with session.post(
             self.api_base,
-            json={"input": text, "model": self.model},
+            json={"input": text, "model": self.model_name},
             headers=headers,
         ) as response:
             response.raise_for_status()
@@ -81,7 +80,7 @@ class SolarEmbedding(BaseEmbedding):
             return answer["data"][0]["embedding"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        return self._get_embedding(query, input_type="query")
+        return self._get_embedding(query)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         return self._get_embedding(text)
@@ -90,7 +89,7 @@ class SolarEmbedding(BaseEmbedding):
         return [self._get_embedding(text) for text in texts]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding async. For query embeddings, input_type='search_query'."""
+        """Get query embedding async."""
         return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
