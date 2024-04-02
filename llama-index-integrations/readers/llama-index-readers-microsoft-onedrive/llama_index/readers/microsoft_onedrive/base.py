@@ -4,13 +4,13 @@ import logging
 import os
 import tempfile
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BasePydanticReader
+from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,8 @@ class OneDriveReader(BasePydanticReader):
     :param folder_path (str, optional): The relative path of the OneDrive folder to download. If provided, files within the folder are downloaded.  Will be used if the parameter is
                                         not provided when calling load_data().
     :param file_paths (List[str], optional): List of specific file paths to download. Will be used if the parameter is not provided when calling load_data().
+    :param file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that file to text.
+                                                             See `SimpleDirectoryReader` for more details.
 
 
     For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'
@@ -53,6 +55,9 @@ class OneDriveReader(BasePydanticReader):
     file_ids: Optional[List[str]] = None
     folder_path: Optional[str] = None
     file_paths: Optional[List[str]] = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
 
     _is_interactive_auth = PrivateAttr(False)
     _authority = PrivateAttr()
@@ -68,6 +73,7 @@ class OneDriveReader(BasePydanticReader):
         file_ids: Optional[List[str]] = None,
         folder_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs,
     ) -> None:
         self._is_interactive_auth = not client_secret
@@ -82,6 +88,7 @@ class OneDriveReader(BasePydanticReader):
             file_ids=file_ids,
             folder_path=folder_path,
             file_paths=file_paths,
+            file_extractor=file_extractor,
             **kwargs,
         )
 
@@ -498,7 +505,10 @@ class OneDriveReader(BasePydanticReader):
             return self._downloaded_files_metadata[filename]
 
         simple_loader = SimpleDirectoryReader(
-            directory, file_metadata=get_metadata, recursive=recursive
+            directory,
+            file_extractor=self.file_extractor,
+            file_metadata=get_metadata,
+            recursive=recursive,
         )
         return simple_loader.load_data()
 

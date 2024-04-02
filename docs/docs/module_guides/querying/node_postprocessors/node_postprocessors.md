@@ -76,8 +76,6 @@ postprocessor.postprocess_nodes(nodes)
 
 A full notebook guide can be found [here](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
 
-(cohere_rerank)=
-
 ## CohereRerank
 
 Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N nodes.
@@ -308,7 +306,7 @@ postprocessor = RankLLMRerank(top_n=5, model="zephyr")
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [Van Gogh Wiki](/examples/node_postprocessor/rankLLM.ipynb).
+A full [notebook example is available](../../../examples/node_postprocessor/rankLLM.ipynb).
 
 ## All Notebooks
 

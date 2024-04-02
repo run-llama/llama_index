@@ -1,7 +1,7 @@
 # Using LLMs
 
 !!! tip
-For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](../../module_guides/models/llms.md).
+    For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](../../module_guides/models/llms.md).
 
 One of the first steps when building an LLM-based application is which LLM to use; you can also use more than one if you wish.
 
@@ -39,14 +39,14 @@ index = VectorStoreIndex.from_documents(
 In this case, you've instantiated OpenAI and customized it to use the `gpt-4` model instead of the default `gpt-3.5-turbo`, and also modified the `temperature`. The `VectorStoreIndex` will now use gpt-4 to answer questions when querying.
 
 !!! tip
-The `Settings` is a bundle of configuration data that you pass into different parts of LlamaIndex. You can [learn more about Settings](../../module_guides/supporting_modules/settings.md) and how to customize it.
+    The `Settings` is a bundle of configuration data that you pass into different parts of LlamaIndex. You can [learn more about Settings](../../module_guides/supporting_modules/settings.md) and how to customize it.
 
 ## Available LLMs
 
 We support integrations with OpenAI, Hugging Face, PaLM, and more. Check out our [module guide to LLMs](../../module_guides/models/llms.md) for a full list, including how to run a local model.
 
 !!! tip
-A general note on privacy and LLMs can be found on the [privacy page](./privacy.md).
+    A general note on privacy and LLMs can be found on the [privacy page](./privacy.md).
 
 ### Using a local LLM
 

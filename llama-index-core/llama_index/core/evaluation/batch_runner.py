@@ -206,15 +206,20 @@ class BatchEvalRunner:
         )
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
+        # boolean to check if using multi kwarg evaluator
+        multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
+
         # run evaluations
         eval_jobs = []
         for idx, query in enumerate(cast(List[str], queries)):
             response_str = cast(List, response_strs)[idx]
             contexts = cast(List, contexts_list)[idx]
             for name, evaluator in self.evaluators.items():
-                if name in eval_kwargs_lists:
-                    # multi-evaluator
-                    kwargs = eval_kwargs_lists[name]
+                if multi_kwargs:
+                    # multi-evaluator - get appropriate runtime kwargs if present
+                    kwargs = (
+                        eval_kwargs_lists[name] if name in eval_kwargs_lists else {}
+                    )
                 else:
                     # single evaluator (maintain backwards compatibility)
                     kwargs = eval_kwargs_lists
@@ -259,14 +264,19 @@ class BatchEvalRunner:
         queries, responses = self._validate_and_clean_inputs(queries, responses)
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
+        # boolean to check if using multi kwarg evaluator
+        multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
+
         # run evaluations
         eval_jobs = []
         for idx, query in enumerate(cast(List[str], queries)):
             response = cast(List, responses)[idx]
             for name, evaluator in self.evaluators.items():
-                if name in eval_kwargs_lists:
-                    # multi-evaluator
-                    kwargs = eval_kwargs_lists[name]
+                if multi_kwargs:
+                    # multi-evaluator - get appropriate runtime kwargs if present
+                    kwargs = (
+                        eval_kwargs_lists[name] if name in eval_kwargs_lists else {}
+                    )
                 else:
                     # single evaluator (maintain backwards compatibility)
                     kwargs = eval_kwargs_lists
@@ -385,7 +395,8 @@ class BatchEvalRunner:
         app_name: str,
         results: Dict[str, List[EvaluationResult]],
     ) -> None:
-        """Upload the evaluation results to LlamaCloud.
+        """
+        Upload the evaluation results to LlamaCloud.
 
         Args:
             project_name (str): The name of the project.

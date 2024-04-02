@@ -15,6 +15,7 @@ class BaseEvent(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        copy_on_model_validation = "deep"
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = super().dict(**kwargs)

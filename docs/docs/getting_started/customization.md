@@ -1,7 +1,7 @@
 # Frequently Asked Questions (FAQ)
 
 !!! tip
-If you haven't already, [install LlamaIndex](installation.md) and complete the [starter tutorial](starter_example.md). If you run into terms you don't recognize, check out the [high-level concepts](concepts.md).
+    If you haven't already, [install LlamaIndex](installation.md) and complete the [starter tutorial](starter_example.md). If you run into terms you don't recognize, check out the [high-level concepts](concepts.md).
 
 In this section, we start with the code you wrote for the [starter example](starter_example.md) and show you the most common ways you might want to customize it for your use case:
 
@@ -161,4 +161,4 @@ Learn more about the [chat engine](../module_guides/deploying/chat_engines/usage
 ## Next Steps
 
 - Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](../understanding/index.md).
-- Want more in-depth understanding of specific modules? Check out the module guides in the left nav 👈
+- Want more in-depth understanding of specific modules? Check out the [component guides](../module_guides/index.md).
