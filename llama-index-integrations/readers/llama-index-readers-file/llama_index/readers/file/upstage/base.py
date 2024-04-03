@@ -1,7 +1,9 @@
+import io
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import Dict, List, Union
 
+import fitz
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -9,6 +11,7 @@ from llama_index.legacy.llms.generic_utils import get_from_param_or_env
 from typing_extensions import Literal
 
 LAYOUT_ANALYZER_URL = "https://api.upstage.ai/v1/document-ai/layout-analyzer"
+LIMIT_OF_PAGE_REQUEST = 10
 
 OutputType = Literal["text", "html"]
 SplitType = Literal["none", "element", "page"]
@@ -89,20 +92,22 @@ class UpstageDocumentReader(BaseReader):
 
         validate_api_key(self.api_key)
 
-    def _get_response(self, file_path) -> requests.Response:
+    def _get_response(self, files) -> Dict:
         """
-        Sends a POST request to the specified URL with the document file
-        and returns the response.
+        Sends a POST request to the API endpoint with the provided files and
+        returns the response.
+
+        Args:
+            files (dict): A dictionary containing the files to be sent in the request.
 
         Returns:
-            requests.Response: The response object from the API call.
+            dict: The JSON response from the API.
 
         Raises:
             ValueError: If there is an error in the API call.
         """
         try:
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            files = {"document": open(file_path, "rb")}
             response = requests.post(self.api_base, headers=headers, files=files)
         except requests.exceptions.RequestException as e:
             raise ValueError(f"API call error: {e}")
@@ -110,6 +115,85 @@ class UpstageDocumentReader(BaseReader):
             files["document"].close()
 
         return response.json()
+
+    def _split_and_request(
+        self, full_docs, start_page: int, split_pages: int = LIMIT_OF_PAGE_REQUEST
+    ) -> Dict:
+        """
+        Splits the full document into chunks and sends a request for each chunk.
+
+        Args:
+            full_docs: The full document to be split and requested.
+            start_page (int): The starting page number for splitting the document.
+            split_pages (int, optional): The number of pages to split the document into.
+                                         Defaults to LIMIT_OF_PAGE_REQUEST.
+
+        Returns:
+            dict: The response from the request.
+
+        """
+        with fitz.open() as chunk_pdf:
+            chunk_pdf.insert_pdf(
+                full_docs,
+                from_page=start_page,
+                to_page=start_page + split_pages - 1,
+            )
+            pdf_bytes = chunk_pdf.write()
+
+        files = {"document": io.BytesIO(pdf_bytes)}
+        return self._get_response(files)
+
+    def _element_document(
+        self, element: Dict, output_type: OutputType, split: SplitType = "element"
+    ) -> List[Document]:
+        return Document(
+            text=(parse_output(element, output_type)),
+            extra_info={
+                "page": element["page"],
+                "id": element["id"],
+                "type": output_type,
+                "split": split,
+            },
+        )
+
+    def _page_document(
+        self, element: Dict, output_type: OutputType, split: SplitType = "page"
+    ) -> List[Document]:
+        """
+        Generate a list of Document objects based on the provided element, output type, and split type.
+
+        Args:
+            element (Dict): The element to process.
+            output_type (OutputType): The type of output to generate.
+            split (SplitType, optional): The type of split to apply. Defaults to "page".
+
+        Returns:
+            List[Document]: A list of Document objects.
+        """
+        _docs = []
+        pages = sorted({x["page"] for x in elements})
+
+        page_group = [
+            [element for element in elements if element["page"] == x] for x in pages
+        ]
+
+        for group in page_group:
+            page_content = " ".join(
+                [parse_output(element, output_type) for element in group]
+            )
+
+            _docs.append(
+                Document(
+                    text=page_content.strip(),
+                    extra_info={
+                        "page": group[0]["page"],
+                        "type": output_type,
+                        "split": split,
+                    },
+                )
+            )
+
+        return _docs
 
     def load_data(
         self,
@@ -140,12 +224,31 @@ class UpstageDocumentReader(BaseReader):
         file_name = os.path.basename(file_path)
         validate_file_path(file_path)
 
-        response = self._get_response(file_path)
+        full_docs = fitz.open(file_path)
+        number_of_pages = full_docs.page_count
 
         if split == "none":
-            # Split by document (NONE)
-            docs = []
-            docs.append(
+            if full_docs.is_pdf:
+                result = ""
+                start_page = 0
+                split_pages = LIMIT_OF_PAGE_REQUEST
+                for _ in range(number_of_pages):
+                    if start_page >= number_of_pages:
+                        break
+
+                    response = self._split_and_request(
+                        full_docs, start_page, split_pages
+                    )
+                    result += parse_output(response, output_type)
+
+                    start_page += split_pages
+
+            else:
+                files = {"document": open(file_path, "rb")}
+                response = self._get_response(files)
+                result = parse_output(response, output_type)
+
+            return [
                 Document(
                     text=(parse_output(response, output_type)),
                     extra_info={
@@ -154,54 +257,58 @@ class UpstageDocumentReader(BaseReader):
                         "split": split,
                     },
                 )
-            )
-            return docs
+            ]
 
         elif split == "element":
-            # Split by element
             docs = []
-            for element in response["elements"]:
-                docs.append(
-                    Document(
-                        text=(parse_output(element, output_type)),
-                        extra_info={
-                            "page": element["page"],
-                            "id": element["id"],
-                            "type": output_type,
-                            "split": split,
-                        },
+            if full_docs.is_pdf:
+                start_page = 0
+                split_pages = LIMIT_OF_PAGE_REQUEST
+                for _ in range(number_of_pages):
+                    if start_page >= number_of_pages:
+                        break
+
+                    response = self._split_and_request(
+                        full_docs, start_page, split_pages
                     )
-                )
+                    for element in response["elements"]:
+                        docs.append(self._element_document(element, output_type, split))
+
+                    start_page += split_pages
+
+            else:
+                files = {"document": open(file_path, "rb")}
+                response = self._get_response(files)
+
+                for element in response["elements"]:
+                    docs.append(self._element_document(element, output_type, split))
 
             return docs
 
         elif split == "page":
-            # Split by page
-            elements = response["elements"]
-            pages = sorted({x["page"] for x in elements})
-
-            page_group = [
-                [element for element in elements if element["page"] == x] for x in pages
-            ]
-
             docs = []
-            for group in page_group:
-                page_content = " ".join([parse_output(x, output_type) for x in group])
-                docs.append(
-                    Document(
-                        text=page_content.strip(),
-                        extra_info={
-                            "page": group[0]["page"],
-                            "type": output_type,
-                            "split": split,
-                        },
+            if full_docs.is_pdf:
+                start_page = 0
+                split_pages = LIMIT_OF_PAGE_REQUEST
+                for _ in range(number_of_pages):
+                    if start_page >= number_of_pages:
+                        break
+
+                    response = self._split_and_request(
+                        full_docs, start_page, split_pages
                     )
-                )
+                    elements = response["elements"]
+                    docs.extend(self._page_document(elements, output_type, split))
+
+                    start_page += split_pages
+            else:
+                files = {"document": open(file_path, "rb")}
+                response = self._get_response(files)
+                elements = response["elements"]
+                docs.extend(self._page_document(elements, output_type, split))
 
             return docs
 
         else:
             # Invalid split type
             raise ValueError(f"Invalid split type: {split}")
-
-        return []
