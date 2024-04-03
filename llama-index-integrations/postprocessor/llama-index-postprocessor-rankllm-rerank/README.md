@@ -1,6 +1,6 @@
 # LlamaIndex Postprocessor Integration: Rankllm-Rerank
 
-RankLLM offers a suite of listwise rerankers, albeit with focus on open source LLMs finetuned for the task. Currently, RankLLM supports 2 of these models: RankZephyr (`model="zephyr"`) and RankVicuna (`model="vicuna"`). RankLLM also support RankGPT usage (`model=VALID_OPENAI_MODEL_NAME`)
+RankLLM offers a suite of listwise rerankers, albeit with focus on open source LLMs finetuned for the task. Currently, RankLLM supports 2 of these models: RankZephyr (`model="zephyr"`) and RankVicuna (`model="vicuna"`). RankLLM also support RankGPT usage (`model="gpt"`, `gpt_model="VALID_OPENAI_MODEL_NAME`).
 
 Please `pip install llama-index-postprocessor-rankllm-rerank` to install RankLLM rerank package.
 

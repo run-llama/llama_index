@@ -1,4 +1,5 @@
 from typing import Any, List, Optional
+from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -16,6 +17,7 @@ class RankLLMRerank(BaseNodePostprocessor):
     step_size: int = Field(
         default=10, description="Step size for moving sliding window."
     )
+    gpt_model: str = Field(default="gpt-3.5-turbo", description="OpenAI model name.")
     _model: Any = PrivateAttr()
     _result: Any = PrivateAttr()
     _retriever: Any = PrivateAttr()
@@ -26,30 +28,40 @@ class RankLLMRerank(BaseNodePostprocessor):
         top_n: int = 10,
         with_retrieval: Optional[bool] = False,
         step_size: Optional[int] = 10,
+        gpt_model: Optional[str] = "gpt-3.5-turbo",
     ):
-        model_name = model.lower()
+        try:
+            model_enum = ModelType(model.lower())
+        except ValueError:
+            raise ValueError(
+                "Unsupported model type. Please use 'vicuna', 'zephyr', or 'gpt'."
+            )
+
         from rank_llm.result import Result
 
         self._result = Result
 
-        if model_name == "vicuna":
+        if model_enum == ModelType.VICUNA:
             from rank_llm.rerank.vicuna_reranker import VicunaReranker
 
             self._model = VicunaReranker()
-        elif model_name == "zephyr":
+        elif model_enum == ModelType.ZEPHYR:
             from rank_llm.rerank.zephyr_reranker import ZephyrReranker
 
             self._model = ZephyrReranker()
-        else:
+        elif model_enum == ModelType.GPT:
             from rank_llm.rerank.rank_gpt import SafeOpenai
             from rank_llm.rerank.reranker import Reranker
             from llama_index.llms.openai import OpenAI
 
             llm = OpenAI(
-                model=model_name,
+                model=gpt_model,
                 temperature=0.0,
             )
-            agent = SafeOpenai(model=model_name, context_size=4096, keys=llm.api_key)
+
+            llm.metadata
+
+            agent = SafeOpenai(model=gpt_model, context_size=4096, keys=llm.api_key)
             self._model = Reranker(agent)
         if with_retrieval:
             from rank_llm.retrieve.retriever import Retriever
@@ -119,3 +131,9 @@ class RankLLMRerank(BaseNodePostprocessor):
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
         return new_nodes[: self.top_n]
+
+
+class ModelType(Enum):
+    VICUNA = "vicuna"
+    ZEPHYR = "zephyr"
+    GPT = "gpt"
