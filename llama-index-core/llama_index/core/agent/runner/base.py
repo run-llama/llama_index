@@ -365,7 +365,9 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        dispatcher.event(AgentRunStepStartEvent())
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(AgentRunStepStartEvent())
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -392,7 +394,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
-        dispatcher.event(AgentRunStepEndEvent())
+        dispatch_event(AgentRunStepEndEvent())
         return cur_step_output
 
     @dispatcher.span
@@ -405,6 +407,9 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(AgentRunStepStartEvent())
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -430,6 +435,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
+        dispatch_event(AgentRunStepEndEvent())
         return cur_step_output
 
     @dispatcher.span
@@ -528,12 +534,14 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
         if chat_history is not None:
             self.memory.set(chat_history)
         task = self.create_task(message)
 
         result_output = None
-        dispatcher.event(AgentChatWithStepStartEvent())
+        dispatch_event(AgentChatWithStepStartEvent())
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = self._run_step(
@@ -551,7 +559,7 @@ class AgentRunner(BaseAgentRunner):
             task.task_id,
             result_output,
         )
-        dispatcher.event(AgentChatWithStepEndEvent())
+        dispatch_event(AgentChatWithStepEndEvent())
         return result
 
     @dispatcher.span
@@ -563,11 +571,14 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
         if chat_history is not None:
             self.memory.set(chat_history)
         task = self.create_task(message)
 
         result_output = None
+        dispatch_event(AgentChatWithStepStartEvent())
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
@@ -581,10 +592,12 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(
+        result = self.finalize_response(
             task.task_id,
             result_output,
         )
+        dispatch_event(AgentChatWithStepEndEvent())
+        return result
 
     @dispatcher.span
     @trace_method("chat")
