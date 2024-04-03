@@ -11,7 +11,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 # [tool.llamahub]
 # contains_example = false
-# import_path = "llama_index.llms.nvidia_ai_playground"
+# import_path = "llama_index.llms.nvidia"
 
 # [tool.llamahub.class_authors]
 # CLASS = "chrisalexiuk-nvidia"
@@ -24,9 +24,9 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-llms-nvidia-ai-playground"
+name = "llama-index-llms-nvidia"
 version = "0.1.0"
-description = "llama-index llms nvidia-ai-playground integration"
+description = "llama-index llms nvidia api catalog integration"
 authors = ["Chris Alexiuk <calexiuk@nvidia.com>"]
 license = "MIT"
 readme = "README.md"

@@ -1,4 +1,4 @@
-""" NVIDIA AI Playground """
+""" NVIDIA LLM API Catalog Connector"""
 
 from typing import Any, Callable, Dict, Optional, Sequence, cast, Awaitable
 
@@ -21,10 +21,8 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.base.llms.generic_utils import (
-    acompletion_to_chat_decorator,
     achat_to_completion_decorator,
     astream_chat_to_completion_decorator,
-    astream_completion_to_chat_decorator,
     chat_to_completion_decorator,
     get_from_param_or_env,
     stream_chat_to_completion_decorator,
@@ -32,7 +30,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
-from llama_index.llms.nvidia_ai_playground.utils import (
+from llama_index.llms.nvidia.utils import (
     playground_modelname_to_contextsize,
 )
 
@@ -44,22 +42,17 @@ from llama_index.llms.openai.utils import (
 from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
 
-from openai.types.chat.chat_completion_chunk import (
-    ChatCompletionChunk,
-    ChoiceDelta,
-)
-
-DEFAULT_PLAYGROUND_MODEL = "playground_nemotron_steerlm_8b"
+DEFAULT_PLAYGROUND_MODEL = "mistralai/mistral-7b-instruct-v0.2"
 BASE_PLAYGROUND_URL = "https://integrate.api.nvidia.com/v1/"
 DEFAULT_PLAYGROUND_MAX_TOKENS = 512
 
 
-class NvidiaAIPlayground(LLM):
-    """NVIDIA's AI Playground API"""
+class NVIDIA(LLM):
+    """NVIDIA's API Catalog Connector"""
 
     model: str = Field(
         default=DEFAULT_PLAYGROUND_MODEL,
-        description="The NVIDIA AI Playground model to use.",
+        description="The NVIDIA API Catalog model to use.",
     )
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
