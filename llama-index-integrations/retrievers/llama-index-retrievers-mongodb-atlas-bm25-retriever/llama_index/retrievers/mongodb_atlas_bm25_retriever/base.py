@@ -5,7 +5,7 @@ from typing import Any, List, Optional, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,6 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
         """Retrieve nodes given query."""
         query = query_bundle.query_str
 
-        # BM25検索を実行
         pipeline = [
             {
                 "$search": {
