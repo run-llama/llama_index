@@ -18,6 +18,8 @@
 __version__ = "1.0.0"
 
 # import apis into sdk package
+from manager_client.api.vector_search_nodes_api import VectorSearchNodesApi
+from manager_client.api.vector_search_queries_api import VectorSearchQueriesApi
 
 # import ApiClient
 from manager_client.api_response import ApiResponse
