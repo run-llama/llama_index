@@ -1,1 +1,0 @@
-# LlamaIndex Embeddings Integration: NeMo
