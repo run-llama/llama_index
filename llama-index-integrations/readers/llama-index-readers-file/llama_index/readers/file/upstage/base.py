@@ -111,7 +111,7 @@ class UpstageDocumentReader(BaseReader):
 
         return response.json()
 
-    def load(
+    def load_data(
         self,
         file_path: Union[Path, str],
         output_type: OutputType = "text",
