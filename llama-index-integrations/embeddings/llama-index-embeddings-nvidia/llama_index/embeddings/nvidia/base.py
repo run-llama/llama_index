@@ -13,7 +13,7 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 
 
-class NvidiaEmbedding(BaseEmbedding):
+class NVIDIAEmbedding(BaseEmbedding):
     """NVIDIA embeddings."""
 
     model_name: str = Field(
@@ -77,22 +77,23 @@ class NvidiaEmbedding(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
         payload = {"input": texts, "model": self.model_name, "input_type": input_type}
 
-        async with aiohttp.ClientSession().post(
-            self._api_endpoint_url,
-            json=payload,
-            headers=headers,
-        ) as response:
-            answer = await response.json()
-            try:
-                response.raise_for_status()
-            except aiohttp.ClientResponseError:
-                raise Exception(
-                    f"Endpoint returned a non-successful status code: "
-                    f"{response.status} "
-                    f"Response text: {answer}"
-                )
-            else:
-                return answer["data"]
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                self._api_endpoint_url,
+                json=payload,
+                headers=headers,
+            ) as response:
+                answer = await response.json()
+                try:
+                    response.raise_for_status()
+                except aiohttp.ClientResponseError:
+                    raise Exception(
+                        f"Endpoint returned a non-successful status code: "
+                        f"{response.status} "
+                        f"Response text: {answer}"
+                    )
+                else:
+                    return answer["data"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
