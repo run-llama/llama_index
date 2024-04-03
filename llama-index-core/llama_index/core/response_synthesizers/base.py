@@ -201,21 +201,33 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatcher.event(SynthesizeStartEvent(query=query))
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            SynthesizeStartEvent(
+                query=query,
+            )
+        )
 
         if len(nodes) == 0:
             if self._streaming:
                 empty_response = StreamingResponse(
                     response_gen=empty_response_generator()
                 )
-                dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=empty_response)
+                dispatch_event(
+                    SynthesizeEndEvent(
+                        query=query,
+                        response=empty_response,
+                    )
                 )
                 return empty_response
             else:
                 empty_response = Response("Empty Response")
-                dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=empty_response)
+                dispatch_event(
+                    SynthesizeEndEvent(
+                        query=query,
+                        response=empty_response,
+                    )
                 )
                 return empty_response
 
@@ -223,7 +235,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             query = QueryBundle(query_str=query)
 
         with self._callback_manager.event(
-            CBEventType.SYNTHESIZE, payload={EventPayload.QUERY_STR: query.query_str}
+            CBEventType.SYNTHESIZE,
+            payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
             response_str = self.get_response(
                 query_str=query.query_str,
@@ -240,7 +253,12 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatcher.event(SynthesizeEndEvent(query=query, response=response))
+        dispatch_event(
+            SynthesizeEndEvent(
+                query=query,
+                response=response,
+            )
+        )
         return response
 
     @dispatcher.span
@@ -251,20 +269,32 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatcher.event(SynthesizeStartEvent(query=query))
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            SynthesizeStartEvent(
+                query=query,
+            )
+        )
         if len(nodes) == 0:
             if self._streaming:
                 empty_response = AsyncStreamingResponse(
                     response_gen=empty_response_agenerator()
                 )
-                dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=empty_response)
+                dispatch_event(
+                    SynthesizeEndEvent(
+                        query=query,
+                        response=empty_response,
+                    )
                 )
                 return empty_response
             else:
                 empty_response = Response("Empty Response")
-                dispatcher.event(
-                    SynthesizeEndEvent(query=query, response=empty_response)
+                dispatch_event(
+                    SynthesizeEndEvent(
+                        query=query,
+                        response=empty_response,
+                    )
                 )
                 return empty_response
 
@@ -272,7 +302,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
             query = QueryBundle(query_str=query)
 
         with self._callback_manager.event(
-            CBEventType.SYNTHESIZE, payload={EventPayload.QUERY_STR: query.query_str}
+            CBEventType.SYNTHESIZE,
+            payload={EventPayload.QUERY_STR: query.query_str},
         ) as event:
             response_str = await self.aget_response(
                 query_str=query.query_str,
@@ -289,7 +320,12 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatcher.event(SynthesizeEndEvent(query=query, response=response))
+        dispatch_event(
+            SynthesizeEndEvent(
+                query=query,
+                response=response,
+            )
+        )
         return response
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:

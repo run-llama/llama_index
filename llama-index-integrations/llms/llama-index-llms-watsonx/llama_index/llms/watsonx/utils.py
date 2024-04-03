@@ -2,15 +2,21 @@ import os
 from typing import Optional, Union
 
 WATSONX_MODELS = {
+    "google/flan-t5-xl": 4096,
     "google/flan-t5-xxl": 4096,
     "google/flan-ul2": 4096,
     "bigscience/mt0-xxl": 4096,
     "eleutherai/gpt-neox-20b": 8192,
     "bigcode/starcoder": 8192,
+    "codellama/codellama-34b-instruct-hf": 4096,
+    "meta-llama/llama-2-13b-chat": 4096,
     "meta-llama/llama-2-70b-chat": 4096,
-    "ibm/mpt-7b-instruct2": 2048,
+    "ibm-mistralai/mixtral-8x7b-instruct-v01-q": 32768,
     "ibm/granite-13b-instruct-v1": 8192,
     "ibm/granite-13b-chat-v1": 8192,
+    "ibm/granite-13b-instruct-v2": 8192,
+    "ibm/granite-13b-chat-v2": 8192,
+    "ibm/granite-20b-multilingual": 8190,
 }
 
 

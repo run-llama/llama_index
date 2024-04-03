@@ -15,7 +15,7 @@ However, while LLMs are trained on a great deal of data, they are not trained on
 
 You may choose to **fine-tune** a LLM with your data, but:
 
-- Training a LLM is **expensive**.
+- Training an LLM is **expensive**.
 - Due to the cost to train, it's **hard to update** a LLM with latest information.
 - **Observability** is lacking. When you ask a LLM a question, it's not obvious how the LLM arrived at its answer.
 

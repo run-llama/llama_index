@@ -127,15 +127,20 @@ class StreamingAgentChatResponse:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
+        dispatch_event = dispatcher.get_dispatch_event()
 
         # try/except to prevent hanging on error
-        dispatcher.event(StreamChatStartEvent())
+        dispatch_event(StreamChatStartEvent())
         try:
             final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    dispatch_event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta,
+                        )
+                    )
                     self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
@@ -144,14 +149,14 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatcher.event(StreamChatErrorEvent())
+            dispatch_event(StreamChatErrorEvent())
             if not raise_error:
                 logger.warning(
                     f"Encountered exception writing response to history: {e}"
                 )
             else:
                 raise
-        dispatcher.event(StreamChatEndEvent())
+        dispatch_event(StreamChatEndEvent())
 
         self._is_done = True
 
@@ -167,6 +172,7 @@ class StreamingAgentChatResponse:
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         self._ensure_async_setup()
+        dispatch_event = dispatcher.get_dispatch_event()
 
         if self.achat_stream is None:
             raise ValueError(
@@ -175,13 +181,17 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        dispatcher.event(StreamChatStartEvent())
+        dispatch_event(StreamChatStartEvent())
         try:
             final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    dispatch_event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta,
+                        )
+                    )
                     self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 self._new_item_event.set()
@@ -193,9 +203,9 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatcher.event(StreamChatErrorEvent())
+            dispatch_event(StreamChatErrorEvent())
             logger.warning(f"Encountered exception writing response to history: {e}")
-        dispatcher.event(StreamChatEndEvent())
+        dispatch_event(StreamChatEndEvent())
         self._is_done = True
 
         # These act as is_done events for any consumers waiting
