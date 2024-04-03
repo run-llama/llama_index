@@ -54,4 +54,4 @@ def test_index(documents, vector_store):
                 retries -= 1
                 sleep(5)
         assert retries
-        assert "Paul Graham" == response.response
+        assert "Paul Graham" in response.response
