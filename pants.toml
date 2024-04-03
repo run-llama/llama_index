@@ -9,7 +9,7 @@ pants_version = "2.19.0"
 remote_cache_read = true
 remote_cache_write = true
 remote_instance_name = "main"
-remote_store_address = "grpc://44.204.50.6:9092"
+remote_store_address = "grpc://framework-ci-balancer-1983728860.us-east-1.elb.amazonaws.com:9092"
 unmatched_build_file_globs = "error"
 
 [black]
