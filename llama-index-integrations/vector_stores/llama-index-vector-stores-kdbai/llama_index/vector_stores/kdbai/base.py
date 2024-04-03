@@ -167,7 +167,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                         f"Failed to insert batch {i} of documents into the datastore: {e}"
                     )
 
-            return List(df["document_id"])
+            return df["document_id"].tolist()
 
         except Exception as e:
             logger.error(f"Error preparing data for KDB.AI: {e}.")
