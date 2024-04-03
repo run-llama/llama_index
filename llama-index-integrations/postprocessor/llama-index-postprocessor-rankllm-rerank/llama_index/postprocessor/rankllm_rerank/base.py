@@ -73,6 +73,7 @@ class RankLLMRerank(BaseNodePostprocessor):
             top_n=top_n,
             with_retrieval=with_retrieval,
             step_size=step_size,
+            gpt_model=gpt_model,
         )
 
     @classmethod
