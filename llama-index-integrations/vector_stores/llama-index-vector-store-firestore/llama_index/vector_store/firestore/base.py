@@ -29,6 +29,14 @@ DEFAULT_TOP_K = 10
 _logger = logging.getLogger(__name__)
 
 
+# def _to_firestore_filter(standard_filters: MetadataFilters) -> Any:
+#     """Convert from standard dataclass to filter dict."""
+#     filters = {}
+#     for f in standard_filters.filters():
+
+#     return filters
+
+
 class FirestoreVectorStore(BasePydanticVectorStore):
     """Firestore Vector Store."""
 
@@ -41,6 +49,8 @@ class FirestoreVectorStore(BasePydanticVectorStore):
     text_key: Optional[str] = "text"
     metadata_key: Optional[str] = "metadata"
     distance_strategy: Optional[DistanceMeasure] = DistanceMeasure.COSINE
+
+    _client: Client
 
     def __init__(
         self,
@@ -82,13 +92,16 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         self._upsert_batch(entries, ids)
         return ids
 
-    def delete(self, ref_doc_id: str, **delete_kwargs) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id."""
         self._client.collection(self.collection_name).document(ref_doc_id).delete()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
+        if query.query_embedding is None:
+            raise ValueError("Query embedding is required.")
+
         k = kwargs.get("k") or DEFAULT_TOP_K
         results = self._similarity_search(query.query_embedding, k, **kwargs)
 
@@ -96,26 +109,36 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         top_k_nodes = []
 
         for result in results:
-            result_dict = result.to_dict()
-            metadata = result_dict.get(self.metadata_key)
+            result_dict = result.to_dict() or {}
+            if self.metadata_key:
+                metadata = result_dict.get(self.metadata_key)
+
             node = metadata_dict_to_node(metadata)
-            
+
             if result_dict.get(self.text_key) is not None:
                 node.set_content(result_dict.get(self.text_key))
 
-            top_k_ids.append(id)
+            top_k_ids.append(result.id)
             top_k_nodes.append(node)
 
-        result = VectorStoreQueryResult(nodes=top_k_nodes, ids=top_k_ids)
-        _logger.debug("Result of query: %s", result)
-        return result
+        final_result = VectorStoreQueryResult(nodes=top_k_nodes, ids=top_k_ids)
+        _logger.debug("Result of query: %s", final_result)
+        return final_result
 
-    def _upsert_batch(self, entries: dict, ids: Optional[List[str]]) -> None:
+    def _upsert_batch(self, entries: List[dict], ids: Optional[List[str]]) -> None:
         """Upsert batch of vectors to Firestore."""
+        if ids and len(ids) != len(entries):
+            raise ValueError("Length of ids and entries should be the same.")
+
         db_batch = self._client.batch()
+
         for batch in more_itertools.chunked(entries, DEFAULT_BATCH_SIZE):
             for i, entry in enumerate(batch):
-                doc = self._client.collection(self.collection_name).document(ids[i])
+                # Convert the embedding array to a Firestore Vector
+                entry[self.embedding_key] = Vector(entry[self.embedding_key])
+                doc = self._client.collection(self.collection_name).document(
+                    ids[i] if ids else None
+                )
                 db_batch.set(doc, entry, merge=True)
             db_batch.commit()
 
