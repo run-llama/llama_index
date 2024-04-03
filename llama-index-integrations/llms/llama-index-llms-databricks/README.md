@@ -37,7 +37,11 @@ Without environmental variables
 from llama_index.llms.databricks import DataBricks
 
 # Set up the DataBricks class with the required model, API key and serving endpoint
-llm = DataBricks(model="databricks-dbrx-instruct", api_key="your_api_key", api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints/[your-serving-endpoint]")
+llm = DataBricks(
+    model="databricks-dbrx-instruct",
+    api_key="your_api_key",
+    api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints/[your-serving-endpoint]",
+)
 
 # Call the complete method with a query
 response = llm.complete("Explain the importance of open source LLMs")
