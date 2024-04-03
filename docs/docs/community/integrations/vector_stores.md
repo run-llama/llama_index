@@ -10,6 +10,7 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
@@ -93,6 +94,19 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Amazon Neptune - Neptune Analytics**
+
+```python
+from llama_index.vector_stores.neptune import NeptuneAnalyticsVectorStore
+
+graph_identifier = ""
+embed_dim = 1536
+
+neptune_vector_store = NeptuneAnalyticsVectorStore(
+    graph_identifier=graph_identifier, embedding_dimension=1536
+)
+```
 
 **Apache Cassandra®**
 
@@ -787,6 +801,7 @@ documents = reader.load_data(
 
 ## Vector Store Examples
 
+- [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
 - [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)
