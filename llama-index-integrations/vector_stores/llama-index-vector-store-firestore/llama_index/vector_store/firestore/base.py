@@ -29,6 +29,8 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
+from .utils import client_with_user_agent
+
 DEFAULT_BATCH_SIZE = 500
 DEFAULT_TOP_K = 10
 
@@ -109,7 +111,7 @@ class FirestoreVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Initialize params."""
         super().__init__(**kwargs)
-        object.__setattr__(self, "_client", client or Client())
+        object.__setattr__(self, "_client", client_with_user_agent(client))
 
     @classmethod
     def class_name(cls) -> str:
@@ -164,7 +166,7 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         for result in results:
             # Convert the Firestore document to dict
             result_dict = result.to_dict() or {}
-            metadata = result_dict[self.metadata_key]
+            metadata = result_dict.get(self.metadata_key) or {}
 
             # Convert metadata to node, and add text if available
             node = metadata_dict_to_node(metadata, text=result_dict.get(self.text_key))

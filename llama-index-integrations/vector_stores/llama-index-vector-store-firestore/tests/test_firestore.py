@@ -15,6 +15,7 @@ from llama_index.core.vector_stores.types import (
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 
 from llama_index.vector_store.firestore import FirestoreVectorStore
+from llama_index.vector_store.firestore.utils import USER_AGENT
 
 TEST_COLLECTION = "mock_collection"
 TEST_EMBEDDING = [1.0, 2.0, 3.0]
@@ -24,8 +25,10 @@ TEST_EMBEDDING = [1.0, 2.0, 3.0]
 def mock_firestore_client() -> Any:
     """Returns a mock Firestore client."""
     with patch("google.cloud.firestore.Client") as mock_client_cls:
-        mock_client = mock_client_cls.return_value
-        yield mock_client
+        with patch("importlib.metadata.version", return_value="0.1.0", autospec=True):
+            mock_client = mock_client_cls.return_value
+            mock_client._client_info.user_agent = USER_AGENT
+            yield mock_client
 
 
 @pytest.fixture(autouse=True, name="test_case")
@@ -78,9 +81,10 @@ def firestore_vector_store(
     mock_client: Mock, docs: List[DocumentSnapshot]
 ) -> FirestoreVectorStore:
     """Returns a FirestoreVectorStore instance."""
-    mock_collection = mock_client.collection.return_value
-    mock_collection.find_nearest.return_value.get.return_value = docs
-    return FirestoreVectorStore(mock_client, collection_name=TEST_COLLECTION)
+    with patch("importlib.metadata.version", return_value="0.1.0"):
+        mock_collection = mock_client.collection.return_value
+        mock_collection.find_nearest.return_value.get.return_value = docs
+        return FirestoreVectorStore(mock_client, collection_name=TEST_COLLECTION)
 
 
 def _get_sample_vector(num: float) -> List[float]:
