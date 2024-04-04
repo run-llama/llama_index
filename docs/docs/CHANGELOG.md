@@ -1,5 +1,83 @@
 # ChangeLog
 
+## [2024-04-04]
+
+### `llama-index-agent-openai` [0.2.2]
+
+- Update imports for message thread typing (#12437)
+
+### `llama-index-core` [0.10.27]
+
+- Fix for pydantic query engine outputs being blank (#12469)
+- Add span_id attribute to Events (instrumentation) (#12417)
+- Fix RedisDocstore node retrieval from docs property (#12324)
+- Add node-postprocessors to retriever_tool (#12415)
+- FLAREInstructQueryEngine : delegating retriever api if the query engine supports it (#12503)
+- Make chat message to dict safer (#12526)
+- fix check in batch eval runner for multi-kwargs (#12563)
+- Fixes agent_react_multimodal_step.py bug with partial args (#12566)
+
+### `llama-index-embeddings-clip` [0.1.5]
+
+- Added support to load clip model from local file path (#12577)
+
+### `llama-index-embeddings-cloudflar-workersai` [0.1.0]
+
+- text embedding integration: Cloudflare Workers AI (#12446)
+
+### `llama-index-embeddings-voyageai` [0.1.4]
+
+- Fix pydantic issue in class definition (#12469)
+
+### `llama-index-finetuning` [0.1.5]
+
+- Small typo fix in QA generation prompt (#12470)
+
+### `llama-index-graph-stores-falkordb` [0.1.3]
+
+- Replace redis driver with FalkorDB driver (#12434)
+
+### `llama-index-llms-anthropic` [0.1.8]
+
+- Add ability to pass custom HTTP headers to Anthropic client (#12558)
+
+### `llama-index-llms-cohere` [0.1.6]
+
+- Add support for Cohere Command R+ model (#12581)
+
+### `llama-index-llms-databricks` [0.1.0]
+
+- Integrations with DataBricks LLM API (#12432)
+
+### `llama-index-llms-watsonx` [0.1.6]
+
+- Updated Watsonx foundation models (#12493)
+- Updated base model name on watsonx integration #12491
+
+### `lama-index-postprocessor-rankllm-rerank` [0.1.2]
+
+- Add RankGPT support inside RankLLM (#12475)
+
+### `llama-index-readers-microsoft-sharepoint` [0.1.7]
+
+- Use recursive strategy by default for SharePoint (#12557)
+
+### `llama-index-readers-web` [0.1.8]
+
+- Readability web page reader fix playwright async api bug (#12520)
+
+### `llama-index-vector-stores-kdbai` [0.1.5]
+
+- small `to_list` fix (#12515)
+
+### `llama-index-vector-stores-neptune` [0.1.0]
+
+- Add support for Neptune Analytics as a Vector Store (#12423)
+
+### `llama-index-vector-stores-postgres` [0.1.5]
+
+- fix(postgres): numeric metadata filters (#12583)
+
 ## [2024-03-31]
 
 ### `llama-index-core` [0.10.26]
