@@ -8,8 +8,7 @@ import logging
 from typing import Any, List, Optional, Union
 
 import more_itertools
-from google.cloud.firestore import Client
-from google.cloud.firestore_v1 import And, FieldFilter, Or
+from google.cloud.firestore import Client, And, FieldFilter, Or
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.document import DocumentSnapshot
 from google.cloud.firestore_v1.vector import Vector
