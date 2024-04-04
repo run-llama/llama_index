@@ -196,8 +196,6 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         self, query: List[float], k: int = DEFAULT_TOP_K, **kwargs: Any
     ) -> List[DocumentSnapshot]:
         _filters = kwargs.get("filters")
-        print(_filters)
-        _logger.info("Querying Firestore with filters: %s", _filters)
 
         wfilters = None
         collection = self._client.collection(self.collection_name)
