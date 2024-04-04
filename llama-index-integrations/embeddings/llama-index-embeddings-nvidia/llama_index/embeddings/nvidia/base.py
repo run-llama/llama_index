@@ -17,9 +17,9 @@ class NVIDIAEmbedding(BaseEmbedding):
     """NVIDIA embeddings."""
 
     model_name: str = Field(
-        default="NV-Embed-QA-003",
+        default="NV-Embed-QA",
         description="Name of the NVIDIA embedding model to use.\n"
-        "Defaults to 'NV-Embed-QA-003'.\n",
+        "Defaults to 'NV-Embed-QA'.\n",
     )
     api_endpoint_url: str = Field(
         default="http://localhost:12345/v1/embeddings",
@@ -30,7 +30,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "NV-Embed-QA-003",
+        model_name: str = "NV-Embed-QA",
         api_endpoint_url: str = "http://localhost:12345/v1/embeddings",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
