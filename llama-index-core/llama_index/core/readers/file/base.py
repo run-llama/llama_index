@@ -221,6 +221,8 @@ class SimpleDirectoryReader(BaseReader):
             self.input_dir = _Path(input_dir)
             self.exclude = exclude
             self.input_files = self._add_files(self.input_dir)
+            if self.input_files is None:
+                raise ValueError(f"No files found in {input_dir}")
 
         if file_extractor is not None:
             self.file_extractor = file_extractor
@@ -235,7 +237,7 @@ class SimpleDirectoryReader(BaseReader):
             part.startswith(".") and part not in [".", ".."] for part in path.parts
         )
 
-    def _add_files(self, input_dir: Path) -> List[Path]:
+    def _add_files(self, input_dir: Path) -> List[Path] | None:
         """Add files."""
         all_files = set()
         rejected_files = set()
@@ -302,7 +304,7 @@ class SimpleDirectoryReader(BaseReader):
         new_input_files = sorted(all_files)
 
         if len(new_input_files) == 0:
-            raise ValueError(f"No files found in {input_dir}.")
+            return None
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
@@ -528,6 +530,9 @@ class SimpleDirectoryReader(BaseReader):
         Returns:
             List[Document]: A list of documents.
         """
+        if self.input_files is None:
+            return []
+
         documents = []
 
         files_to_process = self.input_files
