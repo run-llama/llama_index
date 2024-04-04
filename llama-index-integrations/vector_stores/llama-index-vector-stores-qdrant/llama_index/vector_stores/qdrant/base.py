@@ -168,9 +168,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # setup hybrid search if enabled
         if enable_hybrid:
-            self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder()
+            self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
+                collection_name
+            )
             self._sparse_query_fn = (
-                sparse_query_fn or self.get_default_sparse_query_encoder()
+                sparse_query_fn
+                or self.get_default_sparse_query_encoder(collection_name)
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
@@ -857,30 +860,33 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return Filter(must=must_conditions)
 
-    @property
-    def use_old_sparse_encoder(self) -> bool:
+    def use_old_sparse_encoder(self, collection_name: str) -> bool:
         return (
-            self._collection_exists(self.collection_name)
+            self._collection_exists(collection_name)
             and SPARSE_VECTOR_NAME_OLD
-            in self.client.get_collection(self.collection_name).config.params.vectors
+            in self.client.get_collection(collection_name).config.params.vectors
         )
 
     @property
     def sparse_vector_name(self) -> str:
         return (
             SPARSE_VECTOR_NAME_OLD
-            if self.use_old_sparse_encoder
+            if self.use_old_sparse_encoder(self.collection_name)
             else SPARSE_VECTOR_NAME
         )
 
-    def get_default_sparse_doc_encoder(self) -> SparseEncoderCallable:
-        if self.use_old_sparse_encoder:
+    def get_default_sparse_doc_encoder(
+        self, collection_name: str
+    ) -> SparseEncoderCallable:
+        if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
         return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
 
-    def get_default_sparse_query_encoder(self) -> SparseEncoderCallable:
-        if self.use_old_sparse_encoder:
+    def get_default_sparse_query_encoder(
+        self, collection_name: str
+    ) -> SparseEncoderCallable:
+        if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
 
         return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
