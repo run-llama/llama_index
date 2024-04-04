@@ -9,22 +9,20 @@ from typing import Any, List, Optional, Union
 
 import more_itertools
 from google.cloud.firestore import Client
+from google.cloud.firestore_v1 import And, FieldFilter, Or
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.document import DocumentSnapshot
 from google.cloud.firestore_v1.vector import Vector
-from google.cloud.firestore_v1 import FieldFilter, Or, And
-from google.cloud.firestore_v1.base_query import StructuredQuery
-
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-    MetadataFilters,
-    MetadataFilter,
     ExactMatchFilter,
     FilterCondition,
     FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -39,7 +37,7 @@ _logger = logging.getLogger(__name__)
 
 def _to_firestore_operator(
     operator: FilterOperator,
-) -> StructuredQuery.FieldFilter.Operator:
+) -> str:
     """Convert from standard operator to Firestore operator."""
     if operator == FilterOperator.EQ:
         return "=="
@@ -58,7 +56,7 @@ def _to_firestore_operator(
     if operator == FilterOperator.NIN:
         return "not-in"
     if operator == FilterOperator.CONTAINS:
-        return "array_contains"
+        return "array-contains"
 
     raise ValueError(f"Operator {operator} not supported in Firestore.")
 
@@ -155,7 +153,10 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             raise ValueError("Query embedding is required.")
 
         k = kwargs.get("k") or DEFAULT_TOP_K
-        results = self._similarity_search(query.query_embedding, k, **kwargs)
+        filters = _to_firestore_filter(query.filters) if query.filters else None
+        results = self._similarity_search(
+            query.query_embedding, k, filters=filters, **kwargs
+        )
 
         top_k_ids = []
         top_k_nodes = []
@@ -198,7 +199,8 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         self, query: List[float], k: int = DEFAULT_TOP_K, **kwargs: Any
     ) -> List[DocumentSnapshot]:
         _filters = kwargs.get("filters")
-        _logger.debug("Querying Firestore with filters: %s", _filters)
+        print(_filters)
+        _logger.info("Querying Firestore with filters: %s", _filters)
 
         wfilters = None
         collection = self._client.collection(self.collection_name)
