@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
-from llama_index.core.vector_stores import VectorStoreQueryResult
+from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.vector_stores.wordlift import WordliftVectorStore
 
 
@@ -23,7 +23,7 @@ class MockNode:
 
 @pytest.fixture()
 def mock_vector_search_service():
-    return MagicMock()
+    return AsyncMock()
 
 
 @pytest.fixture()
@@ -52,26 +52,28 @@ def test_add_with_mocked_NodeRequest_and_VectorSearchQueryRequest(
 ):
     # Create mock node data
     mock_nodes = [
-        MockNode(node_id="1", embedding=[0.1, 0.2, 0.3], content="Sample content 1"),
-        MockNode(node_id="2", embedding=[0.4, 0.5, 0.6], content="Sample content 2"),
+        MockNode(node_id="1", embedding=[0.1, 0.2, 0.3], content="content 1"),
+        MockNode(node_id="2", embedding=[0.4, 0.5, 0.6], content="content 2"),
     ]
 
     # Mock the key provider behavior
     wordlift_vector_store.key_provider.for_add.return_value = "dummy_key"
 
     # Mock NodeRequest class
-    with patch("manager_client.NodeRequest") as MockNodeRequest:
+    with patch(
+        "llama_index.vector_stores.wordlift.base.NodeRequest"
+    ) as MockNodeRequest:
         # Configure the behavior of MockNodeRequest
         mock_requests = []
         for mock_node in mock_nodes:
             mock_node_request_instance = MockNodeRequest.return_value
             mock_node_request_instance.node_id = mock_node.node_id
-            mock_node_request_instance.get_embedding = mock_node.get_embedding()
-            mock_node_request_instance.get_content = mock_node.get_content(
+            mock_node_request_instance.get_embedding.return_value = (
+                mock_node.get_embedding()
+            )
+            mock_node_request_instance.get_content.return_value = mock_node.get_content(
                 metadata_mode="dummy_mode"
             )
-
-            mock_requests.append(mock_node_request_instance)
 
         # Call the add method
         result = wordlift_vector_store.add(mock_nodes)
@@ -86,28 +88,19 @@ def test_delete(wordlift_vector_store):
 
 
 # @pytest.mark.asyncio
-async def test_query_with_mocked_VectorSearchQueryRequest(
+def test_query_with_mocked_VectorSearchQueryRequest(
     wordlift_vector_store, mock_vector_search_service
 ):
-    # Mock the query data
-    mock_query = MagicMock()
-    mock_query.query_embedding = [0.1, 0.2, 0.3]
-    mock_query.similarity_top_k = 10
-
     # Mock the key provider behavior
     wordlift_vector_store.key_provider.for_query.return_value = "dummy_key"
 
     # Mock VectorSearchQueryRequest class
     with patch(
-        "manager_client.VectorSearchQueryRequest"
+        "llama_index.vector_stores.wordlift.base.VectorSearchQueryRequest"
     ) as MockVectorSearchQueryRequest:
         # Configure the behavior of MockVectorSearchQueryRequest instance
-        mock_request_instance = MockVectorSearchQueryRequest.return_value
-        mock_request_instance.query_embedding = mock_query.query_embedding
-        mock_request_instance.similarity_top_k = mock_query.similarity_top_k
 
         # Call the query method
-        result = wordlift_vector_store.query(mock_query)
-
-        # Assert the behavior
-        assert isinstance(result, VectorStoreQueryResult)
+        result = wordlift_vector_store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
+        )

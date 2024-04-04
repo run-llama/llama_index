@@ -33,5 +33,12 @@ from manager_client.exceptions import ApiAttributeError
 from manager_client.exceptions import ApiException
 
 # import models into sdk package
+from manager_client.models.filter import Filter
 from manager_client.models.node_request import NodeRequest
+from manager_client.models.page_vector_search_query_response_item import (
+    PageVectorSearchQueryResponseItem,
+)
 from manager_client.models.vector_search_query_request import VectorSearchQueryRequest
+from manager_client.models.vector_search_query_response_item import (
+    VectorSearchQueryResponseItem,
+)
