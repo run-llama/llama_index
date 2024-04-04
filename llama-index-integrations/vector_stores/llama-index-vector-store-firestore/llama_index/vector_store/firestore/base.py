@@ -144,8 +144,7 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """
-        Delete nodes using with ref_doc_id."""
+        """Delete nodes using with ref_doc_id."""
         self._client.collection(self.collection_name).document(ref_doc_id).delete()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
