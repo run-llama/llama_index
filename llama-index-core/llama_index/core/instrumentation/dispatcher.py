@@ -13,7 +13,86 @@ from llama_index.core.instrumentation.span_handlers import (
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
+from contextvars import ContextVar
 import wrapt
+
+
+span_ctx = ContextVar("span_ctx", default={})
+
+
+def get_await_stack(coro):
+    """Return a coroutine's chain of awaiters.
+
+    This follows the cr_await links.
+    """
+    stack = []
+    while coro is not None and hasattr(coro, "cr_await"):
+        stack.append(coro)
+        coro = coro.cr_await
+    return stack
+
+
+def get_task_tree():
+    """Return the task tree dict {awaited: awaiting}.
+
+    This follows the _fut_waiter links and constructs a map
+    from awaited tasks to the tasks that await them.
+    """
+    tree = {}
+    for task in asyncio.all_tasks():
+        awaited = task._fut_waiter
+        if awaited is not None:
+            tree[awaited] = task
+    return tree
+
+
+def get_task_stack(task):
+    """Return the stack of tasks awaiting a task.
+
+    For each task it returns a tuple (task, awaiters) where
+    awaiters is the chain of coroutines comprising the task.
+    The first entry is the argument task, the last entry is
+    the root task (often "Task-1", created by asyncio.run()).
+
+    For example, if we have a task A running a coroutine f1,
+    where f1 awaits f2, and f2 awaits a task B running a coroutine
+    f3 which awaits f4 which awaits f5, then we'll return
+
+        [
+            (B, [f3, f4, f5]),
+            (A, [f1, f2]),
+        ]
+
+    NOTE: The coroutine stack for the *current* task is inaccessible.
+    To work around this, use `await task_stack()`.
+
+    Todo:
+    - Maybe it would be nicer to reverse the stack?
+    - Classic coroutines and async generators are not supported yet.
+    - This is expensive due to the need to first create a reverse
+      mapping of awaited tasks to awaiting tasks.
+    """
+    tree = get_task_tree()
+    stack = []
+    while task is not None:
+        coro = task.get_coro()
+        awaiters = get_await_stack(coro)
+        stack.append((task, awaiters))
+        task = tree.get(task)
+    return stack
+
+
+async def async_task_stack():
+    """Return the stack of tasks awaiting the current task.
+
+    This exists so you can get the coroutine stack for the current task.
+    """
+    task = asyncio.current_task()
+
+    async def helper(task):
+        return get_task_stack(task)
+
+    return await asyncio.create_task(helper(task), name="TaskStackHelper")
 
 
 class EventDispatcher(Protocol):
@@ -107,6 +186,7 @@ class Dispatcher(BaseModel):
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
+        parent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
@@ -117,6 +197,7 @@ class Dispatcher(BaseModel):
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
+                    parent_id=parent_id,
                     **kwargs,
                 )
             if not c.propagate:
@@ -199,6 +280,69 @@ class Dispatcher(BaseModel):
         finally:
             del dispatch_event
 
+    def span_with_parent_id(self, parent_id):
+        def outer(func):
+            @wrapt.decorator
+            async def async_wrapper(func, instance, args, kwargs):
+                bound_args = inspect.signature(func).bind(*args, **kwargs)
+                id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+                async with self._asyncio_lock:
+                    self.current_span_id = id_
+                async with self.root._asyncio_lock:
+                    self.root.current_span_id = id_
+
+                task_stack = await async_task_stack()
+                current_task, _awaiters = task_stack[0]
+                current_task_name = current_task.get_name()
+                span_ctx_dict = span_ctx.get().copy()
+                if current_task_name not in span_ctx_dict:
+                    span_ctx_dict[current_task_name] = [id_]
+                else:
+                    span_ctx_dict[current_task_name].append(id_)
+                span_ctx.set(span_ctx_dict)
+
+                self.span_enter(
+                    id_=id_,
+                    bound_args=bound_args,
+                    instance=instance,
+                    parent_id=parent_id,
+                )
+                try:
+                    # print("\n")
+                    # print(f"CURRENT TASKS:\n\n")
+                    # for t in task_stack:
+                    #     print(f"{t}\n")
+                    # print("\n")
+                    coro = func(*args, **kwargs)
+                    print(f"CURRENT TASK NAME: {current_task.get_name()}\n")
+                    print(f"CURRENT CORO: {coro}\n\n")
+                    result = await coro
+                except BaseException as e:
+                    self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
+                    self.span_drop(
+                        id_=id_, bound_args=bound_args, instance=instance, err=e
+                    )
+                    raise
+                else:
+                    self.span_exit(
+                        id_=id_, bound_args=bound_args, instance=instance, result=result
+                    )
+                    return result
+                finally:
+                    # clean up
+                    task_stack = await async_task_stack()
+                    current_task, _awaiters = task_stack[0]
+                    current_task_name = current_task.get_name()
+                    span_ctx_dict = span_ctx.get().copy()
+                    span_ctx_dict[current_task_name].pop()
+                    if len(span_ctx_dict[current_task_name]) == 0:
+                        del span_ctx_dict[current_task_name]
+                    span_ctx.set(span_ctx_dict)
+
+            return async_wrapper(func)
+
+        return outer
+
     def span(self, func):
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
@@ -228,9 +372,32 @@ class Dispatcher(BaseModel):
             async with self.root._asyncio_lock:
                 self.root.current_span_id = id_
 
-            self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
+            # get parent_id
+            task_stack = await async_task_stack()
+            current_task, _awaiters = task_stack[0]
+            current_task_name = current_task.get_name()
+            span_ctx_dict = span_ctx.get().copy()
+            if current_task_name not in span_ctx_dict:
+                parent_id = None
+                span_ctx_dict[current_task_name] = [id_]
+            else:
+                parent_id = span_ctx_dict[current_task_name][-1]
+                span_ctx_dict[current_task_name].append(id_)
+            span_ctx.set(span_ctx_dict)
+
+            self.span_enter(
+                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+            )
             try:
-                result = await func(*args, **kwargs)
+                # print("\n")
+                # print(f"CURRENT TASKS:\n\n")
+                # for t in task_stack:
+                #     print(f"{t}\n")
+                # print("\n")
+                coro = func(*args, **kwargs)
+                print(f"CURRENT TASK NAME: {current_task.get_name()}\n")
+                print(f"CURRENT CORO: {coro}\n\n")
+                result = await coro
             except BaseException as e:
                 self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
@@ -240,6 +407,16 @@ class Dispatcher(BaseModel):
                     id_=id_, bound_args=bound_args, instance=instance, result=result
                 )
                 return result
+            finally:
+                # clean up
+                task_stack = await async_task_stack()
+                current_task, _awaiters = task_stack[0]
+                current_task_name = current_task.get_name()
+                span_ctx_dict = span_ctx.get().copy()
+                span_ctx_dict[current_task_name].pop()
+                if len(span_ctx_dict[current_task_name]) == 0:
+                    del span_ctx_dict[current_task_name]
+                span_ctx.set(span_ctx_dict)
 
         if inspect.iscoroutinefunction(func):
             return async_wrapper(func)
