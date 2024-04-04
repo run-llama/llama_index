@@ -298,7 +298,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, False
+        return current_reasoning, tool.metadata.return_direct
 
     async def _aprocess_actions(
         self,
@@ -334,7 +334,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, False
+        return current_reasoning, tool.metadata.return_direct
 
     def _get_response(
         self,

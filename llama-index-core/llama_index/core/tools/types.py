@@ -20,6 +20,7 @@ class ToolMetadata:
     description: str
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
+    return_direct: bool = False
 
     def get_parameters_dict(self) -> dict:
         if self.fn_schema is None:

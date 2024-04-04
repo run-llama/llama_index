@@ -299,11 +299,13 @@ class ReActAgentWorker(BaseAgentWorker):
 
         task.extra_state["sources"].append(tool_output)
 
-        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        observation_step = ObservationReasoningStep(
+            observation=str(tool_output), return_direct=tool.metadata.return_direct
+        )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, False
+        return current_reasoning, tool.metadata.return_direct
 
     async def _aprocess_actions(
         self,
@@ -352,11 +354,13 @@ class ReActAgentWorker(BaseAgentWorker):
 
         task.extra_state["sources"].append(tool_output)
 
-        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        observation_step = ObservationReasoningStep(
+            observation=str(tool_output), return_direct=tool.metadata.return_direct
+        )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, False
+        return current_reasoning, tool.metadata.return_direct
 
     def _handle_nonexistent_tool_name(self, reasoning_step):
         # We still emit a `tool_output` object to the task, so that the LLM can know
@@ -392,6 +396,11 @@ class ReActAgentWorker(BaseAgentWorker):
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
             response_step = cast(ResponseReasoningStep, current_reasoning[-1])
             response_str = response_step.response
+        elif (
+            isinstance(current_reasoning[-1], ObservationReasoningStep)
+            and current_reasoning[-1].is_done
+        ):
+            response_str = current_reasoning[-1].observation
         else:
             response_str = current_reasoning[-1].get_content()
 
@@ -501,7 +510,6 @@ class ReActAgentWorker(BaseAgentWorker):
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
-
         input_chat = self._react_chat_formatter.format(
             tools,
             chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
