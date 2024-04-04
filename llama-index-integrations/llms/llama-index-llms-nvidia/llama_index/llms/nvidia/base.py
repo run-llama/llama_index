@@ -96,12 +96,12 @@ class NVIDIA(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         api_key = get_from_param_or_env(
-            "api_key", api_key, "NVIDIA_AI_PLAYGROUND_API_KEY", ""
+            "api_key", api_key, "NVIDIA_API_KEY", ""
         )
 
         if not api_key:
             raise ValueError(
-                "The NVIDIA AI Playground API key must be provided as an environment variable or as a parameter."
+                "The NVIDIA API key must be provided as an environment variable or as a parameter."
             )
 
         self._client = SyncOpenAI(
@@ -133,7 +133,7 @@ class NVIDIA(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "NvidiaAIPlayground"
+        return "NVIDIA"
 
     @property
     def metadata(self) -> LLMMetadata:
