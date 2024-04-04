@@ -95,10 +95,10 @@ class FirestoreVectorStore(BasePydanticVectorStore):
 
     collection_name: str
     batch_size: Optional[int] = DEFAULT_BATCH_SIZE
-    embedding_key: Optional[str] = "embedding"
-    text_key: Optional[str] = "text"
-    metadata_key: Optional[str] = "metadata"
-    distance_strategy: Optional[DistanceMeasure] = DistanceMeasure.COSINE
+    embedding_key: str = "embedding"
+    text_key: str = "text"
+    metadata_key: str = "metadata"
+    distance_strategy: DistanceMeasure = DistanceMeasure.COSINE
 
     _client: Client
 
@@ -162,21 +162,18 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         top_k_nodes = []
 
         for result in results:
+            # Convert the Firestore document to dict
             result_dict = result.to_dict() or {}
-            if self.metadata_key:
-                metadata = result_dict.get(self.metadata_key)
+            metadata = result_dict[self.metadata_key]
 
-            node = metadata_dict_to_node(metadata)
+            # Convert metadata to node, and add text if available
+            node = metadata_dict_to_node(metadata, text=result_dict.get(self.text_key))
 
-            if result_dict.get(self.text_key) is not None:
-                node.set_content(result_dict.get(self.text_key))
-
+            # Keep track of the top k ids and nodes
             top_k_ids.append(result.id)
             top_k_nodes.append(node)
 
-        final_result = VectorStoreQueryResult(nodes=top_k_nodes, ids=top_k_ids)
-        _logger.debug("Result of query: %s", final_result)
-        return final_result
+        return VectorStoreQueryResult(nodes=top_k_nodes, ids=top_k_ids)
 
     def _upsert_batch(self, entries: List[dict], ids: Optional[List[str]]) -> None:
         """Upsert batch of vectors to Firestore."""
