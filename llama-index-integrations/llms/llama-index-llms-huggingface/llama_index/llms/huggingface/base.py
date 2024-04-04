@@ -35,7 +35,6 @@ from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
     messages_to_prompt as generic_messages_to_prompt,
-    prompt_to_messages,
     chat_to_completion_decorator,
     achat_to_completion_decorator,
     stream_chat_to_completion_decorator,
@@ -716,7 +715,7 @@ class TextGenerationInference(FunctionCallingLLM):
     max_retries: int = Field(
         default=5, description=("The maximum number of API retries."), gte=0
     )
-    headers: Dict[str, str] = Field(
+    headers: Optional[Dict[str, str]] = Field(
         default=None,
         description=(
             "Additional headers to send to the server. By default only the"
@@ -724,10 +723,10 @@ class TextGenerationInference(FunctionCallingLLM):
             " will override the default values."
         ),
     )
-    cookies: Dict[str, str] = Field(
+    cookies: Optional[Dict[str, str]] = Field(
         default=None, description=("Additional cookies to send to the server.")
     )
-    seed: str = Field(
+    seed: Optional[str] = Field(
         default=None, description=("The random seed to use for sampling.")
     )
     additional_kwargs: Dict[str, Any] = Field(
@@ -986,7 +985,7 @@ class TextGenerationInference(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: str = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
@@ -994,16 +993,17 @@ class TextGenerationInference(FunctionCallingLLM):
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         if isinstance(user_msg, str):
-            user_msg = prompt_to_messages(user_msg)
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
 
         messages = chat_history or []
         if user_msg:
-            messages.extend(user_msg)
+            messages.append(user_msg)
 
         response = self.chat(
-            messages,
+            messages=messages,
             tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice) ** kwargs,
+            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
+            **kwargs,
         )
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
@@ -1016,23 +1016,24 @@ class TextGenerationInference(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: str = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
         # use openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         if isinstance(user_msg, str):
-            user_msg = prompt_to_messages(user_msg)
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
 
         messages = chat_history or []
         if user_msg:
-            messages.extend(user_msg)
+            messages.append(user_msg)
 
         response = self.achat(
-            messages,
+            messages=messages,
             tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice) ** kwargs,
+            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
+            **kwargs,
         )
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)

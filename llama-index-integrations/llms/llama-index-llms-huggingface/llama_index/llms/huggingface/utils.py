@@ -1,6 +1,6 @@
 import requests
 from packaging import version
-from typing import Sequence, Union
+from typing import Sequence, Union, List, Optional
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -11,7 +11,7 @@ from text_generation.types import (
 
 
 def resolve_tgi_function_call(url: str) -> bool:
-    url = f"{url} + /info"
+    url = f"{url}/info"
     model_info = dict(requests.get(url).json())
     tgi_version = model_info.get("version", None)
     if version.parse(tgi_version) >= version.parse("1.4.3"):
@@ -25,20 +25,20 @@ def resolve_tgi_function_call(url: str) -> bool:
 
 
 def get_max_input_length(url: str) -> Union[int, None]:
-    url = f"{url} + /info"
+    url = f"{url}/info"
     model_info = dict(requests.get(url).json())
     return model_info.get("max_input_length", None)
 
 
 def to_tgi_messages(messages: Sequence[ChatMessage]) -> Sequence[Message]:
-    messages = []
+    out_messages = []
     for m in messages:
         tool_calls = m.additional_kwargs.get("tool_calls")
-        messages.append(
+        out_messages.append(
             Message(role=m.role.value, content=m.content, tool_calls=tool_calls)
         )
 
-    return messages
+    return out_messages
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -47,12 +47,20 @@ def force_single_tool_call(response: ChatResponse) -> None:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
 
-def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
+def resolve_tool_choice(
+    tools: Optional[List[dict]] = None, tool_choice: str = "none"
+) -> Union[str, dict]:
     """Resolve tool choice.
 
-    If tool_choice is a function name string, return the appropriate dict.
+    Check if tool_name exists in tools.
+    Note that unlike in OpenAI specification, 'auto' will ALWAYS choose the tool for you.
+    Set to 'none' explicitly if do not wish to use tool.
     """
-    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto"]:
-        return {"type": "function", "function": {"name": tool_choice}}
+    valid_tool_choices = ["none", "auto"] + [t["function"]["name"] for t in tools or []]
+
+    if tool_choice not in valid_tool_choices:
+        raise ValueError(
+            f"{tool_choice} is not a valid tool_choice. Must be one of {valid_tool_choices}"
+        )
 
     return tool_choice
