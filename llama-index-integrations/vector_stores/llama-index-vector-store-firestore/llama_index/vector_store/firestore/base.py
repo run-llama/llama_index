@@ -40,26 +40,20 @@ def _to_firestore_operator(
     operator: FilterOperator,
 ) -> str:
     """Convert from standard operator to Firestore operator."""
-    if operator == FilterOperator.EQ:
-        return "=="
-    if operator == FilterOperator.NE:
-        return "!="
-    if operator == FilterOperator.GT:
-        return ">"
-    if operator == FilterOperator.GTE:
-        return ">="
-    if operator == FilterOperator.LT:
-        return "<"
-    if operator == FilterOperator.LTE:
-        return "<="
-    if operator == FilterOperator.IN:
-        return "in"
-    if operator == FilterOperator.NIN:
-        return "not-in"
-    if operator == FilterOperator.CONTAINS:
-        return "array-contains"
-
-    raise ValueError(f"Operator {operator} not supported in Firestore.")
+    try:
+        return {
+            FilterOperator.EQ: "==",
+            FilterOperator.NE: "!=",
+            FilterOperator.GT: ">",
+            FilterOperator.GTE: ">=",
+            FilterOperator.LT: "<",
+            FilterOperator.LTE: "<=",
+            FilterOperator.IN: "in",
+            FilterOperator.NIN: "not-in",
+            FilterOperator.CONTAINS: "array-contains",
+        }.pop(operator)
+    except KeyError as exc:
+        raise ValueError(f"Operator {operator} not supported in Firestore.") from exc
 
 
 def _to_firestore_filter(
