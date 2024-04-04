@@ -69,6 +69,7 @@ class NVIDIA(LLM):
     timeout: float = Field(
         default=120, description="The timeout for the API request in seconds.", gte=0
     )
+
     max_retries: int = Field(
         default=5,
         description="The maximum number of retries for the API request.",
@@ -110,12 +111,14 @@ class NVIDIA(LLM):
             timeout=timeout,
             max_retries=max_retries,
         )
+        self._client._custom_headers = {"User-Agent": "llama-index-llms-nvidia"}
         self._aclient = AsyncOpenAI(
             api_key=api_key,
             base_url=BASE_PLAYGROUND_URL,
             timeout=timeout,
             max_retries=max_retries,
         )
+        self._aclient._custom_headers = {"User-Agent": "llama-index-llms-nvidia"}
 
         super().__init__(
             model=model,
