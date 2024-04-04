@@ -76,7 +76,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         search_config (dict, optional): The configuration used for searching
             the Milvus index. Note that this must be compatible with the index
             type specified by `index_config`. Defaults to None.
-        output_fields (list[str], optional): The default fields to return in the query
+        output_fields (List[str], optional): The default fields to return in the query
             metadata results. Used when bringing your own collection, can be overwritten
             at the query level. Defaults to None.
 
@@ -120,7 +120,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     text_key: Optional[str]
     index_config: Optional[dict]
     search_config: Optional[dict]
-    output_fields: Optional[list[str]]
+    output_fields: Optional[List[str]]
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -139,7 +139,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         text_key: Optional[str] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
-        output_fields: Optional[list[str]] = None,
+        output_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
