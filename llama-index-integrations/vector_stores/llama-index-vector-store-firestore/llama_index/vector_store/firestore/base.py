@@ -58,7 +58,7 @@ def _to_firestore_operator(
 
 def _to_firestore_filter(
     standard_filters: MetadataFilters,
-) -> Union[FieldFilter, Or, And, List[FieldFilter]]:
+) -> Union[FieldFilter, Or, And, List[FieldFilter], None]:
     """Convert from standard dataclass to filter dict."""
     firestore_filters = []
 
@@ -79,7 +79,7 @@ def _to_firestore_filter(
     if standard_filters.condition == FilterCondition.OR:
         return Or(filters=firestore_filters)
 
-    return firestore_filters
+    return firestore_filters or None
 
 
 class FirestoreVectorStore(BasePydanticVectorStore):
