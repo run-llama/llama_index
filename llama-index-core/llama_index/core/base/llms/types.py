@@ -63,7 +63,7 @@ class ChatMessage(BaseModel):
         # ensure all additional_kwargs are serializable
         msg = super().dict(**kwargs)
 
-        for key, value in msg["additional_kwargs"].items():
+        for key, value in msg.get("additional_kwargs", {}).items():
             value = self._recursive_serialization(value)
             if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
                 raise ValueError(

@@ -18,7 +18,7 @@ Our docs are structured so you should be able to roughly progress simply by movi
 
 3. **Use cases:** If you're a dev trying to figure out whether LlamaIndex will work for your use case, we have an overview of the types of things you can build.
 
-4. **Examples:** We have rich notebook examples for nearly every feature under the soon. Explore these to find and learn something new about LlamaIndex.
+4. **Examples:** We have rich notebook examples for nearly every feature under the sun. Explore these to find and learn something new about LlamaIndex.
 
 5. **Advanced:** Already got a working LlamaIndex application and looking to further refine it? Our advanced section will walk you through the [first things you should try optimizing](../optimizing/basic_strategies/basic_strategies.md) like your embedding model and chunk size through progressively more complex and subtle customizations all the way to [fine tuning](../optimizing/fine-tuning/fine-tuning.md) your model.
 
