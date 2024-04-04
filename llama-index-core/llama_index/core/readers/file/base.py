@@ -220,9 +220,17 @@ class SimpleDirectoryReader(BaseReader):
                 raise ValueError(f"Directory {input_dir} does not exist.")
             self.input_dir = _Path(input_dir)
             self.exclude = exclude
-            self.input_files = self._add_files(self.input_dir)
-            if self.input_files is None:
-                raise ValueError(f"No files found in {input_dir}")
+            try:
+                self.input_files = self._add_files(self.input_dir)
+            except ValueError as e:
+                self.input_files = None
+                if "No files found in" in str(e):
+                    print(
+                        f"WARNING: {e}. Skipping...",
+                        flush=True,
+                    )
+                else:
+                    raise ValueError(e)
 
         if file_extractor is not None:
             self.file_extractor = file_extractor
@@ -237,7 +245,7 @@ class SimpleDirectoryReader(BaseReader):
             part.startswith(".") and part not in [".", ".."] for part in path.parts
         )
 
-    def _add_files(self, input_dir: Path) -> List[Path] | None:
+    def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
         all_files = set()
         rejected_files = set()
@@ -304,7 +312,7 @@ class SimpleDirectoryReader(BaseReader):
         new_input_files = sorted(all_files)
 
         if len(new_input_files) == 0:
-            return None
+            raise ValueError(f"No files found in {input_dir}")
 
         if self.num_files_limit is not None and self.num_files_limit > 0:
             new_input_files = new_input_files[0 : self.num_files_limit]
