@@ -4,7 +4,6 @@ An index that is built on top of an existing vector store.
 
 """
 
-import logging
 from typing import Any, List, Optional, Union
 
 import more_itertools
@@ -31,9 +30,6 @@ from llama_index.core.vector_stores.utils import (
 from .utils import client_with_user_agent
 
 DEFAULT_BATCH_SIZE = 500
-DEFAULT_TOP_K = 10
-
-_logger = logging.getLogger(__name__)
 
 
 def _to_firestore_operator(
@@ -146,10 +142,9 @@ class FirestoreVectorStore(BasePydanticVectorStore):
         if query.query_embedding is None:
             raise ValueError("Query embedding is required.")
 
-        k = kwargs.get("k") or DEFAULT_TOP_K
         filters = _to_firestore_filter(query.filters) if query.filters else None
         results = self._similarity_search(
-            query.query_embedding, k, filters=filters, **kwargs
+            query.query_embedding, query.similarity_top_k, filters=filters, **kwargs
         )
 
         top_k_ids = []
@@ -187,7 +182,7 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             db_batch.commit()
 
     def _similarity_search(
-        self, query: List[float], k: int = DEFAULT_TOP_K, **kwargs: Any
+        self, query: List[float], k: int, **kwargs: Any
     ) -> List[DocumentSnapshot]:
         _filters = kwargs.get("filters")
 

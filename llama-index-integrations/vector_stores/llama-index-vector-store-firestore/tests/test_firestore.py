@@ -190,5 +190,5 @@ def test_query(
         vector_field="embedding",
         query_vector=Vector(query_embedding),
         distance_measure=DistanceMeasure.COSINE,
-        limit=10,
+        limit=1,
     )
