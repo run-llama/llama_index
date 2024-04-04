@@ -294,7 +294,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         task.extra_state["sources"].append(tool_output)
 
-        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        observation_step = ObservationReasoningStep(
+            observation=str(tool_output), return_direct=tool.metadata.return_direct
+        )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
@@ -330,7 +332,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         task.extra_state["sources"].append(tool_output)
 
-        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        observation_step = ObservationReasoningStep(
+            observation=str(tool_output), return_direct=tool.metadata.return_direct
+        )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
@@ -350,6 +354,11 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
             response_step = cast(ResponseReasoningStep, current_reasoning[-1])
             response_str = response_step.response
+        elif (
+            isinstance(current_reasoning[-1], ObservationReasoningStep)
+            and current_reasoning[-1].return_direct
+        ):
+            response_str = current_reasoning[-1].observation
         else:
             response_str = current_reasoning[-1].get_content()
 

@@ -398,7 +398,7 @@ class ReActAgentWorker(BaseAgentWorker):
             response_str = response_step.response
         elif (
             isinstance(current_reasoning[-1], ObservationReasoningStep)
-            and current_reasoning[-1].is_done
+            and current_reasoning[-1].return_direct
         ):
             response_str = current_reasoning[-1].observation
         else:
