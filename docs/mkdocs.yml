@@ -183,6 +183,7 @@ nav:
           - ./examples/embeddings/premai.ipynb
           - ./examples/embeddings/alephalpha.ipynb
           - ./examples/embeddings/itrex.ipynb
+          - ./examples/embeddings/cloudflare_workersai.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -293,6 +294,7 @@ nav:
           - ./examples/llm/solar.ipynb
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/ipex_llm.ipynb
+          - ./examples/llm/databricks.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -517,6 +519,8 @@ nav:
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGFireworks.ipynb
           - ./examples/vector_stores/KDBAI_Advanced_RAG_Demo.ipynb
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
+          - ./examples/vector_stores/TiDBVector.ipynb
+          - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -670,6 +674,7 @@ nav:
           - ./api_reference/embeddings/bedrock.md
           - ./api_reference/embeddings/clarifai.md
           - ./api_reference/embeddings/clip.md
+          - ./api_reference/embeddings/cloudflare_workersai.md
           - ./api_reference/embeddings/cohere.md
           - ./api_reference/embeddings/dashscope.md
           - ./api_reference/embeddings/elasticsearch.md
@@ -746,6 +751,7 @@ nav:
           - ./api_reference/llms/cohere.md
           - ./api_reference/llms/custom_llm.md
           - ./api_reference/llms/dashscope.md
+          - ./api_reference/llms/databricks.md
           - ./api_reference/llms/everlyai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
@@ -1222,6 +1228,7 @@ nav:
               - ./api_reference/storage/vector_store/mongodb.md
               - ./api_reference/storage/vector_store/myscale.md
               - ./api_reference/storage/vector_store/neo4jvector.md
+              - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
               - ./api_reference/storage/vector_store/pinecone.md
@@ -1773,6 +1780,9 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-itrex
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-rankllm-rerank
             - ../llama-index-integrations/llms/llama-index-llms-ipex-llm
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-neptune
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
+            - ../llama-index-integrations/llms/llama-index-llms-databricks
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
