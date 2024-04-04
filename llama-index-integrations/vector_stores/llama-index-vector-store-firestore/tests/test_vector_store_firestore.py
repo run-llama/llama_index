@@ -1,5 +1,7 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+
 from llama_index.vector_store.firestore import FirestoreVectorStore
+
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in FirestoreVectorStore.__mro__]

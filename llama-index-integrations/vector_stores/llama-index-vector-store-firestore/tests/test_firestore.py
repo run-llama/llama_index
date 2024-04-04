@@ -1,37 +1,42 @@
 import json
-from unittest.mock import patch
-import pytest
-from typing import List
-from llama_index.core.schema import TextNode
-from llama_index.vector_store.firestore import FirestoreVectorStore
-from llama_index.core.vector_stores.utils import node_to_metadata_dict
-from google.cloud.firestore_v1.vector import Vector
-from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+from typing import Any, List
+from unittest import TestCase
+from unittest.mock import Mock, patch
 
+import pytest
+from google.cloud.firestore import DocumentReference, DocumentSnapshot
+from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+from google.cloud.firestore_v1.vector import Vector
+from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from google.cloud.firestore import (
-    DocumentReference,
-    DocumentSnapshot,
-)
+from llama_index.core.vector_stores.utils import node_to_metadata_dict
+
+from llama_index.vector_store.firestore import FirestoreVectorStore
 
 TEST_COLLECTION = "mock_collection"
 TEST_EMBEDDING = [1.0, 2.0, 3.0]
 
 
 @pytest.fixture(scope="module", autouse=True, name="mock_client")
-def mock_firestore_client():
+def mock_firestore_client() -> Any:
     """Returns a mock Firestore client."""
     with patch("google.cloud.firestore.Client") as mock_client_cls:
         mock_client = mock_client_cls.return_value
         yield mock_client
 
 
-@pytest.fixture
-def document_snapshots():
-    """Returns a dict of mocked DocumentSnapshots."""
+@pytest.fixture(autouse=True, name="test_case")
+def init_test_case() -> TestCase:
+    """Returns a TestCase instance."""
+    return TestCase()
+
+
+@pytest.fixture(name="docs")
+def document_snapshots() -> List[DocumentSnapshot]:
+    """Returns a list of DocumentSnapshot instances."""
     return [
         DocumentSnapshot(
             reference=DocumentReference(TEST_COLLECTION, "aaa"),
@@ -68,11 +73,13 @@ def document_snapshots():
     ]
 
 
-@pytest.fixture
-def firestore_vector_store(mock_client, document_snapshots):
+@pytest.fixture(name="vector_store")
+def firestore_vector_store(
+    mock_client: Mock, docs: List[DocumentSnapshot]
+) -> FirestoreVectorStore:
     """Returns a FirestoreVectorStore instance."""
     mock_collection = mock_client.collection.return_value
-    mock_collection.find_nearest.return_value.get.return_value = document_snapshots
+    mock_collection.find_nearest.return_value.get.return_value = docs
     return FirestoreVectorStore(mock_client, collection_name=TEST_COLLECTION)
 
 
@@ -84,39 +91,44 @@ def _get_sample_vector(num: float) -> List[float]:
     return [num] + [1.0] * 10
 
 
-@pytest.fixture
-def sample_nodes():
-    """Returns a list of sample TextNode instances."""
-    return [
-        TextNode(
-            text="lorem ipsum",
-            id_="aaa",
-            embedding=_get_sample_vector(1.0),
-        ),
-        TextNode(
-            text="dolor sit amet",
-            id_="bbb",
-            extra_info={"test_key": "test_value"},
-            embedding=_get_sample_vector(0.1),
-        ),
-        TextNode(
-            text="The quick brown fox jumped over the lazy dog.",
-            id_="ccc",
-            index_id="ccc",
-            embedding=_get_sample_vector(5.0),
-        ),
-    ]
-
-
-def test_add_vectors(firestore_vector_store, sample_nodes, mock_client):
+@pytest.mark.parametrize(
+    "sample_nodes",
+    [
+        (
+            [
+                TextNode(
+                    text="lorem ipsum",
+                    id_="aaa",
+                    embedding=_get_sample_vector(1.0),
+                ),
+                TextNode(
+                    text="dolor sit amet",
+                    id_="bbb",
+                    extra_info={"test_key": "test_value"},
+                    embedding=_get_sample_vector(0.1),
+                ),
+                TextNode(
+                    text="The quick brown fox jumped over the lazy dog.",
+                    id_="ccc",
+                    embedding=_get_sample_vector(5.0),
+                ),
+            ]
+        )
+    ],
+)
+def test_add_vectors(
+    vector_store: FirestoreVectorStore,
+    sample_nodes: List[BaseNode],
+    mock_client: Mock,
+    test_case: TestCase,
+) -> None:
     """Test adding TextNodes to Firestore."""
-
-    result_ids = firestore_vector_store.add(sample_nodes)
-
-    assert result_ids == ["aaa", "bbb", "ccc"]
-    mock_client.batch.assert_called()
+    result_ids = vector_store.add(sample_nodes)
     batch_mock = mock_client.batch.return_value
-    batch_mock.commit.assert_called()
+
+    test_case.assertListEqual(result_ids, ["aaa", "bbb", "ccc"])
+    test_case.assertEqual(mock_client.batch.call_count, 1)
+    test_case.assertEqual(batch_mock.set.call_count, len(sample_nodes))
 
     for i, node in enumerate(sample_nodes):
         expected_metadata = node_to_metadata_dict(
@@ -124,20 +136,20 @@ def test_add_vectors(firestore_vector_store, sample_nodes, mock_client):
         )
 
         expected_entry = {
-            "embedding": node.get_embedding(),
+            "embedding": Vector(node.get_embedding()),
             "metadata": expected_metadata,
         }
 
-        call_args = batch_mock.set.call_args_list[i][0]
-        _, entry = call_args
+    call_args = batch_mock.set.call_args_list[i][0]
 
-        assert entry == expected_entry
+    _, entry = call_args
+
+    assert entry == expected_entry
 
 
-def test_delete_node(firestore_vector_store, mock_client):
+def test_delete_node(vector_store: FirestoreVectorStore, mock_client: Mock) -> None:
     """Test deleting a node from Firestore."""
-
-    firestore_vector_store.delete("ref_doc_id")
+    vector_store.delete("ref_doc_id")
 
     mock_client.collection.assert_called_with("mock_collection")
     collection_mock = mock_client.collection.return_value
@@ -146,16 +158,22 @@ def test_delete_node(firestore_vector_store, mock_client):
     document_mock.delete.assert_called()
 
 
-def test_query(firestore_vector_store, document_snapshots):
+def test_query(
+    vector_store: FirestoreVectorStore,
+    docs: List[DocumentSnapshot],
+) -> None:
+    """Test querying the vector store."""
     query_embedding = [1.0, 2.0, 3.0]
     query = VectorStoreQuery(query_embedding=query_embedding)
-    result = firestore_vector_store.query(query)
+    result = vector_store.query(query)
+
+    nodes_list = list(result.nodes)
 
     assert isinstance(result, VectorStoreQueryResult)
-    assert len(result.nodes) == len(document_snapshots)
-    assert len(result.ids) == len(document_snapshots)
+    assert len(nodes_list) == len(docs)
+    assert len(result.ids or []) == len(docs)
 
-    for node, expected_result in zip(result.nodes, document_snapshots):
+    for node, expected_result in zip(nodes_list, docs):
         expected_data = TextNode.from_json(
             expected_result.get("metadata").get("_node_content")
         )
@@ -163,8 +181,8 @@ def test_query(firestore_vector_store, document_snapshots):
         assert node.id_ == expected_data.id_
         assert node.text == expected_data.text
 
-    firestore_vector_store._client.collection.assert_called_with(TEST_COLLECTION)
-    firestore_vector_store._client.collection.return_value.find_nearest.assert_called_with(
+    vector_store.client.collection.assert_called_with(TEST_COLLECTION)
+    vector_store.client.collection.return_value.find_nearest.assert_called_with(
         vector_field="embedding",
         query_vector=Vector(query_embedding),
         distance_measure=DistanceMeasure.COSINE,
