@@ -207,7 +207,9 @@ class BatchEvalRunner:
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
         # boolean to check if using multi kwarg evaluator
-        multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
+        multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
+            next(iter(eval_kwargs_lists.values())), dict
+        )
 
         # run evaluations
         eval_jobs = []
@@ -265,7 +267,9 @@ class BatchEvalRunner:
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
         # boolean to check if using multi kwarg evaluator
-        multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
+        multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
+            next(iter(eval_kwargs_lists.values())), dict
+        )
 
         # run evaluations
         eval_jobs = []
