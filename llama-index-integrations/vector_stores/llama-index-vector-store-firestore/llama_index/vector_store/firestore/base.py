@@ -7,7 +7,8 @@ An index that is built on top of an existing vector store.
 from typing import Any, List, Optional, Union
 
 import more_itertools
-from google.cloud.firestore import Client, And, FieldFilter, Or
+from google.cloud.firestore import And, Client, FieldFilter, Or
+from google.cloud.firestore_v1.base_query import BaseFilter, BaseCompositeFilter
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.document import DocumentSnapshot
 from google.cloud.firestore_v1.vector import Vector
@@ -54,7 +55,7 @@ def _to_firestore_operator(
 
 def _to_firestore_filter(
     standard_filters: MetadataFilters,
-) -> Union[FieldFilter, Or, And, List[FieldFilter], None]:
+) -> Union[BaseFilter, BaseCompositeFilter, None]:
     """Convert from standard dataclass to filter dict."""
     firestore_filters = []
 
@@ -70,12 +71,15 @@ def _to_firestore_filter(
 
     if len(firestore_filters) == 1:
         return firestore_filters[0]
-    if standard_filters.condition == FilterCondition.AND:
+
+    condition = standard_filters.condition or FilterCondition.AND
+
+    if condition == FilterCondition.AND:
         return And(filters=firestore_filters)
-    if standard_filters.condition == FilterCondition.OR:
+    if condition == FilterCondition.OR:
         return Or(filters=firestore_filters)
 
-    return firestore_filters or None
+    return None
 
 
 class FirestoreVectorStore(BasePydanticVectorStore):
@@ -143,6 +147,7 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             raise ValueError("Query embedding is required.")
 
         filters = _to_firestore_filter(query.filters) if query.filters else None
+
         results = self._similarity_search(
             query.query_embedding, query.similarity_top_k, filters=filters, **kwargs
         )
@@ -182,15 +187,16 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             db_batch.commit()
 
     def _similarity_search(
-        self, query: List[float], k: int, **kwargs: Any
+        self,
+        query: List[float],
+        k: int,
+        filters: Union[BaseFilter, BaseCompositeFilter, None] = None,
     ) -> List[DocumentSnapshot]:
-        _filters = kwargs.get("filters")
-
         wfilters = None
         collection = self._client.collection(self.collection_name)
 
-        if _filters is not None:
-            wfilters = collection.where(filter=_filters)
+        if filters:
+            wfilters = collection.where(filter=filters)
 
         results = (wfilters or collection).find_nearest(
             vector_field=self.embedding_key,

@@ -1,9 +1,8 @@
 from importlib.metadata import version
-
 from typing import Optional
 
-from google.cloud import firestore  # type: ignore
-from google.cloud.firestore_v1.services.firestore.transports.base import (  # type: ignore
+from google.cloud import firestore
+from google.cloud.firestore_v1.services.firestore.transports.base import (
     DEFAULT_CLIENT_INFO,
 )
 

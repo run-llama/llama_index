@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 from llama_index.vector_store.firestore import FirestoreVectorStore
