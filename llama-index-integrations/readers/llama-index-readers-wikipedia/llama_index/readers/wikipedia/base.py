@@ -27,7 +27,9 @@ class WikipediaReader(BasePydanticReader):
     def class_name(cls) -> str:
         return "WikipediaReader"
 
-    def load_data(self, pages: List[str], lang_code: str = 'en', **load_kwargs: Any) -> List[Document]:
+    def load_data(
+        self, pages: List[str], lang_code: str = "en", **load_kwargs: Any
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -37,7 +39,7 @@ class WikipediaReader(BasePydanticReader):
         """
         import wikipedia
 
-        if lang_code.lower() != 'en':
+        if lang_code.lower() != "en":
             # Sets, without checking the validity of, the language code for Wikipedia.
             wikipedia.set_lang(lang_code)
 
