@@ -151,7 +151,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
 
         # Select the similarity metric
-        similarity_metrics_map = {"ip": "IP", "l2": "L2", "euclidean": "L2"}
+        similarity_metrics_map = {
+            "ip": "IP",
+            "l2": "L2",
+            "euclidean": "L2",
+            "cosine": "COSINE",
+        }
         self.similarity_metric = similarity_metrics_map.get(
             similarity_metric.lower(), "L2"
         )
