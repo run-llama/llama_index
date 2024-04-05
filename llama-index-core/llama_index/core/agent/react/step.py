@@ -292,6 +292,7 @@ class ReActAgentWorker(BaseAgentWorker):
                             tool_name=tool.metadata.name,
                             raw_input={"kwargs": reasoning_step.action_input},
                             raw_output=e,
+                            is_error=True,
                         )
                     event.on_end(
                         payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)}
@@ -303,12 +304,17 @@ class ReActAgentWorker(BaseAgentWorker):
 
         observation_step = ObservationReasoningStep(
             observation=str(tool_output),
-            return_direct=tool.metadata.return_direct if tool else False,
+            return_direct=tool.metadata.return_direct and not tool_output.is_error
+            if tool
+            else False,
         )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, tool.metadata.return_direct if tool else False
+        return (
+            current_reasoning,
+            tool.metadata.return_direct and not tool_output.is_error if tool else False,
+        )
 
     async def _aprocess_actions(
         self,
@@ -350,6 +356,7 @@ class ReActAgentWorker(BaseAgentWorker):
                             tool_name=tool.metadata.name,
                             raw_input={"kwargs": reasoning_step.action_input},
                             raw_output=e,
+                            is_error=True,
                         )
                     event.on_end(
                         payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)}
@@ -361,12 +368,17 @@ class ReActAgentWorker(BaseAgentWorker):
 
         observation_step = ObservationReasoningStep(
             observation=str(tool_output),
-            return_direct=tool.metadata.return_direct if tool else False,
+            return_direct=tool.metadata.return_direct and not tool_output.is_error
+            if tool
+            else False,
         )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, tool.metadata.return_direct if tool else False
+        return (
+            current_reasoning,
+            tool.metadata.return_direct and not tool_output.is_error if tool else False,
+        )
 
     def _handle_nonexistent_tool_name(self, reasoning_step):
         # We still emit a `tool_output` object to the task, so that the LLM can know
@@ -384,6 +396,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 tool_name=reasoning_step.action,
                 raw_input={"kwargs": reasoning_step.action_input},
                 raw_output=content,
+                is_error=True,
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         return tool_output
@@ -614,7 +627,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         if not is_done:
             # given react prompt outputs, call tools or return response
-            reasoning_steps, _ = self._process_actions(
+            reasoning_steps, is_done = self._process_actions(
                 task, tools=tools, output=full_response, is_streaming=True
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
@@ -622,6 +635,13 @@ class ReActAgentWorker(BaseAgentWorker):
             agent_response: AGENT_CHAT_RESPONSE_TYPE = self._get_response(
                 task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
+            if is_done:
+                agent_response.is_dummy_stream = True
+                task.extra_state["new_memory"].put(
+                    ChatMessage(
+                        content=agent_response.response, role=MessageRole.ASSISTANT
+                    )
+                )
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._add_back_chunk_to_stream(
@@ -678,7 +698,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         if not is_done:
             # given react prompt outputs, call tools or return response
-            reasoning_steps, _ = self._process_actions(
+            reasoning_steps, is_done = self._process_actions(
                 task, tools=tools, output=full_response, is_streaming=True
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
@@ -686,6 +706,14 @@ class ReActAgentWorker(BaseAgentWorker):
             agent_response: AGENT_CHAT_RESPONSE_TYPE = self._get_response(
                 task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
+
+            if is_done:
+                agent_response.is_dummy_stream = True
+                task.extra_state["new_memory"].put(
+                    ChatMessage(
+                        content=agent_response.response, role=MessageRole.ASSISTANT
+                    )
+                )
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._async_add_back_chunk_to_stream(

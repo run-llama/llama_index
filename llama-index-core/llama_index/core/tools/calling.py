@@ -24,6 +24,7 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             tool_name=tool.metadata.name,
             raw_input=arguments,
             raw_output=str(e),
+            is_error=True,
         )
 
 
@@ -45,6 +46,7 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             tool_name=tool.metadata.name,
             raw_input=arguments,
             raw_output=str(e),
+            is_error=True,
         )
 
 

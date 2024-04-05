@@ -162,6 +162,7 @@ def call_function(
                 tool_name=name,
                 raw_input={"args": arguments_str},
                 raw_output=error_message,
+                is_error=True,
             ),
         )
 
@@ -228,6 +229,7 @@ async def acall_function(
                 tool_name=name,
                 raw_input={"args": arguments_str},
                 raw_output=error_message,
+                is_error=True,
             ),
         )
 
@@ -471,7 +473,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct
+        return tool.metadata.return_direct and not tool_output.is_error
 
     async def _acall_function(
         self,
@@ -505,7 +507,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct
+        return tool.metadata.return_direct and not tool_output.is_error
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
@@ -599,6 +601,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
                         )
                     )
                     agent_chat_response = self._process_message(task, chat_response)
+                    agent_chat_response.is_dummy_stream = (
+                        mode == ChatResponseMode.STREAM
+                    )
                     break
 
             new_steps = (
@@ -682,6 +687,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
                         )
                     )
                     agent_chat_response = self._process_message(task, chat_response)
+                    agent_chat_response.is_dummy_stream = (
+                        mode == ChatResponseMode.STREAM
+                    )
                     break
 
         # generate next step, append to task queue
