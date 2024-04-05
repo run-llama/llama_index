@@ -54,7 +54,7 @@ class Dispatcher(BaseModel):
     current_span_id: Optional[str] = Field(
         default=None, description="Id of current span."
     )
-    _asyncio_lock: asyncio.Lock = PrivateAttr()
+    _asyncio_lock: Optional[asyncio.Lock] = PrivateAttr()
 
     def __init__(
         self,
@@ -66,7 +66,7 @@ class Dispatcher(BaseModel):
         root_name: str = "root",
         propagate: bool = True,
     ):
-        self._asyncio_lock = asyncio.Lock()
+        self._asyncio_lock = None
         super().__init__(
             name=name,
             event_handlers=event_handlers,
@@ -76,6 +76,12 @@ class Dispatcher(BaseModel):
             root_name=root_name,
             propagate=propagate,
         )
+
+    @property
+    def asyncio_lock(self) -> asyncio.Lock:
+        if self._asyncio_lock is None:
+            self._asyncio_lock = asyncio.Lock()
+        return self._asyncio_lock
 
     @property
     def parent(self) -> "Dispatcher":
@@ -219,9 +225,9 @@ class Dispatcher(BaseModel):
             async def async_wrapper(func, instance, args, kwargs):
                 bound_args = inspect.signature(func).bind(*args, **kwargs)
                 id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-                async with self._asyncio_lock:
+                async with self.asyncio_lock:
                     self.current_span_id = id_
-                async with self.root._asyncio_lock:
+                async with self.root.asyncio_lock:
                     self.root.current_span_id = id_
 
                 current_task = asyncio.current_task()
@@ -290,9 +296,9 @@ class Dispatcher(BaseModel):
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-            async with self._asyncio_lock:
+            async with self.asyncio_lock:
                 self.current_span_id = id_
-            async with self.root._asyncio_lock:
+            async with self.root.asyncio_lock:
                 self.root.current_span_id = id_
 
             # get parent_id
