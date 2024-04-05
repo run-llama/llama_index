@@ -260,6 +260,8 @@ class ReActAgentWorker(BaseAgentWorker):
         tools_dict: Dict[str, AsyncBaseTool] = {
             tool.metadata.get_name(): tool for tool in tools
         }
+        tool = None
+
         try:
             _, current_reasoning, is_done = self._extract_reasoning_step(
                 output, is_streaming
@@ -300,12 +302,13 @@ class ReActAgentWorker(BaseAgentWorker):
         task.extra_state["sources"].append(tool_output)
 
         observation_step = ObservationReasoningStep(
-            observation=str(tool_output), return_direct=tool.metadata.return_direct
+            observation=str(tool_output),
+            return_direct=tool.metadata.return_direct if tool else False,
         )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, tool.metadata.return_direct
+        return current_reasoning, tool.metadata.return_direct if tool else False
 
     async def _aprocess_actions(
         self,
@@ -315,6 +318,8 @@ class ReActAgentWorker(BaseAgentWorker):
         is_streaming: bool = False,
     ) -> Tuple[List[BaseReasoningStep], bool]:
         tools_dict = {tool.metadata.name: tool for tool in tools}
+        tool = None
+
         try:
             _, current_reasoning, is_done = self._extract_reasoning_step(
                 output, is_streaming
@@ -355,12 +360,13 @@ class ReActAgentWorker(BaseAgentWorker):
         task.extra_state["sources"].append(tool_output)
 
         observation_step = ObservationReasoningStep(
-            observation=str(tool_output), return_direct=tool.metadata.return_direct
+            observation=str(tool_output),
+            return_direct=tool.metadata.return_direct if tool else False,
         )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, tool.metadata.return_direct
+        return current_reasoning, tool.metadata.return_direct if tool else False
 
     def _handle_nonexistent_tool_name(self, reasoning_step):
         # We still emit a `tool_output` object to the task, so that the LLM can know
