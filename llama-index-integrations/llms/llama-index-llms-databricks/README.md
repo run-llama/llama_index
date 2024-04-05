@@ -2,7 +2,7 @@
 
 ## Overview
 
-Integrate with DataBricks LLMs APIs.
+Integrate with Databricks LLMs APIs.
 
 ## Installation
 
@@ -15,15 +15,15 @@ pip install llama-index-llms-databricks
 With environmental variables.
 
 ```.env
-DATABRICKS_API_KEY=your_api_key
-DATABRICKS_API_BASE=https://[your-work-space].cloud.databricks.com/serving-endpoints/[your-serving-endpoint]
+DATABRICKS_TOKEN=your_api_key
+DATABRICKS_SERVING_ENDPOINT=https://[your-work-space].cloud.databricks.com/serving-endpoints
 ```
 
 ```python
-from llama_index.llms.databricks import DataBricks
+from llama_index.llms.databricks import Databricks
 
-# Initialize DataBricks LLM without explicitly passing the API key and base
-llm = DataBricks(model="databricks-dbrx-instruct")
+# Initialize Databricks LLM without explicitly passing the API key and base
+llm = Databricks(model="databricks-dbrx-instruct")
 
 # Make a query to the LLM
 response = llm.complete("Explain the importance of open source LLMs")
@@ -34,13 +34,13 @@ print(response)
 Without environmental variables
 
 ```python
-from llama_index.llms.databricks import DataBricks
+from llama_index.llms.databricks import Databricks
 
-# Set up the DataBricks class with the required model, API key and serving endpoint
-llm = DataBricks(
+# Set up the Databricks class with the required model, API key and serving endpoint
+llm = Databricks(
     model="databricks-dbrx-instruct",
     api_key="your_api_key",
-    api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints/[your-serving-endpoint]",
+    api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints",
 )
 
 # Call the complete method with a query
