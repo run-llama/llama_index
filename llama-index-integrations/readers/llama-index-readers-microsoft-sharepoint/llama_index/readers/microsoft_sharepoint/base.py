@@ -335,7 +335,7 @@ class SharePointReader(BasePydanticReader):
 
         self._drive_id = self._get_drive_id()
 
-        if sharepoint_folder_id is None:
+        if not sharepoint_folder_id:
             sharepoint_folder_id = self._get_sharepoint_folder_id(
                 sharepoint_folder_path
             )
@@ -378,7 +378,7 @@ class SharePointReader(BasePydanticReader):
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
-        recursive: bool = False,
+        recursive: bool = True,
     ) -> List[Document]:
         """
         Loads the files from the specified folder in the SharePoint site.
@@ -395,20 +395,20 @@ class SharePointReader(BasePydanticReader):
             Exception: If an error occurs while accessing SharePoint site.
         """
         # If no arguments are provided to load_data, default to the object attributes
-        if sharepoint_site_name is None:
+        if not sharepoint_site_name:
             sharepoint_site_name = self.sharepoint_site_name
 
-        if sharepoint_folder_path is None:
+        if not sharepoint_folder_path:
             sharepoint_folder_path = self.sharepoint_folder_path
 
-        if sharepoint_folder_id is None:
+        if not sharepoint_folder_id:
             sharepoint_folder_id = self.sharepoint_folder_id
 
         # TODO: make both of these values optional — and just default to the client ID defaults
-        if sharepoint_site_name is None:
+        if not sharepoint_site_name:
             raise ValueError("sharepoint_site_name must be provided.")
 
-        if sharepoint_folder_path is None and sharepoint_folder_id is None:
+        if not sharepoint_folder_path and not sharepoint_folder_id:
             raise ValueError(
                 "sharepoint_folder_path or sharepoint_folder_id must be provided."
             )
