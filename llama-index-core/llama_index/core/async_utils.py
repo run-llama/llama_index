@@ -109,7 +109,7 @@ async def run_jobs(
     asyncio_mod = get_asyncio_module(show_progress=show_progress)
     semaphore = asyncio.Semaphore(workers)
 
-    @dispatcher.span_with_parent_id(parent_id=parent_span_id)
+    @dispatcher.async_span_with_parent_id(parent_id=parent_span_id)
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job

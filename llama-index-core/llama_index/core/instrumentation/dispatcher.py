@@ -205,7 +205,15 @@ class Dispatcher(BaseModel):
         finally:
             del dispatch_event
 
-    def span_with_parent_id(self, parent_id):
+    def async_span_with_parent_id(self, parent_id: str):
+        """This decorator should be used to span an async function nested in an outer span.
+
+        Primary example: llama_index.core.async_utils.run_jobs
+
+        Args:
+            parent_id (str): The span_id of the outer span.
+        """
+
         def outer(func):
             @wrapt.decorator
             async def async_wrapper(func, instance, args, kwargs):
