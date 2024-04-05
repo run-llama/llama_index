@@ -2,15 +2,16 @@ import os
 
 import pytest
 
-from llama_index.llms.databricks import DataBricks
+from llama_index.llms.databricks import Databricks
 
 
 @pytest.mark.skipif(
-    "DATABRICKS_API_KEY" not in os.environ or "DATABRICKS_API_BASE" not in os.environ,
-    reason="DATABRICKS_API_KEY or DATABRICKS_API_BASE not set in environment",
+    "DATABRICKS_TOKEN" not in os.environ
+    or "DATABRICKS_SERVING_ENDPOINT" not in os.environ,
+    reason="DATABRICKS_TOKEN or DATABRICKS_SERVING_ENDPOINT not set in environment",
 )
 def test_completion():
-    databricks = DataBricks(
+    databricks = Databricks(
         model="databricks-dbrx-instruct", temperature=0, max_tokens=2
     )
     resp = databricks.complete("hello")
@@ -18,11 +19,12 @@ def test_completion():
 
 
 @pytest.mark.skipif(
-    "DATABRICKS_API_KEY" not in os.environ or "DATABRICKS_API_BASE" not in os.environ,
-    reason="DATABRICKS_API_KEY or DATABRICKS_API_BASE not set in environment",
+    "DATABRICKS_TOKEN" not in os.environ
+    or "DATABRICKS_SERVING_ENDPOINT" not in os.environ,
+    reason="DATABRICKS_TOKEN or DATABRICKS_SERVING_ENDPOINT not set in environment",
 )
 def test_stream_completion():
-    databricks = DataBricks(
+    databricks = Databricks(
         model="databricks-dbrx-instruct", temperature=0, max_tokens=2
     )
     stream = databricks.stream_complete("hello")

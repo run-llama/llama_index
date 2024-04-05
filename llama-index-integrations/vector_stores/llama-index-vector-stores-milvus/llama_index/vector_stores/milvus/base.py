@@ -151,8 +151,15 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
 
         # Select the similarity metric
-        similarity_metrics_map = {"ip": "IP", "l2": "L2", "euclidean": "L2"}
-        similarity_metric = similarity_metrics_map.get(similarity_metric.lower(), "L2")
+        similarity_metrics_map = {
+            "ip": "IP",
+            "l2": "L2",
+            "euclidean": "L2",
+            "cosine": "COSINE",
+        }
+        self.similarity_metric = similarity_metrics_map.get(
+            similarity_metric.lower(), "L2"
+        )
 
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
@@ -174,7 +181,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 primary_field_name=MILVUS_ID_FIELD,
                 vector_field_name=embedding_field,
                 id_type="string",
-                metric_type=similarity_metric,
+                metric_type=self.similarity_metric,
                 max_length=65_535,
                 consistency_level=consistency_level,
             )

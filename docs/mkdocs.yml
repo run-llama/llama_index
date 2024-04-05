@@ -80,6 +80,7 @@ nav:
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/openai_agent_tool_call_parser.ipynb
           - ./examples/agent/return_direct_agent.ipynb
+          - ./examples/agent/anthropic_agent.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
