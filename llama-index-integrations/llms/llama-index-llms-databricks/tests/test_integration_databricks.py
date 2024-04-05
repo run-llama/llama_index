@@ -6,7 +6,8 @@ from llama_index.llms.databricks import Databricks
 
 
 @pytest.mark.skipif(
-    "DATABRICKS_TOKEN" not in os.environ or "DATABRICKS_SERVING_ENDPOINT" not in os.environ,
+    "DATABRICKS_TOKEN" not in os.environ
+    or "DATABRICKS_SERVING_ENDPOINT" not in os.environ,
     reason="DATABRICKS_TOKEN or DATABRICKS_SERVING_ENDPOINT not set in environment",
 )
 def test_completion():
@@ -18,7 +19,8 @@ def test_completion():
 
 
 @pytest.mark.skipif(
-    "DATABRICKS_TOKEN" not in os.environ or "DATABRICKS_SERVING_ENDPOINT" not in os.environ,
+    "DATABRICKS_TOKEN" not in os.environ
+    or "DATABRICKS_SERVING_ENDPOINT" not in os.environ,
     reason="DATABRICKS_TOKEN or DATABRICKS_SERVING_ENDPOINT not set in environment",
 )
 def test_stream_completion():
