@@ -316,15 +316,7 @@ class Dispatcher(BaseModel):
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
             )
             try:
-                # print("\n")
-                # print(f"CURRENT TASKS:\n\n")
-                # for t in task_stack:
-                #     print(f"{t}\n")
-                # print("\n")
-                coro = func(*args, **kwargs)
-                print(f"CURRENT TASK NAME: {current_task.get_name()}\n")
-                print(f"CURRENT CORO: {coro}\n\n")
-                result = await coro
+                result = await func(*args, **kwargs)
             except BaseException as e:
                 self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
