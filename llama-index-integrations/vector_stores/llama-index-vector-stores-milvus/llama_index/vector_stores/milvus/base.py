@@ -115,6 +115,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     consistency_level: str = "Strong"
     overwrite: bool = False
     text_key: Optional[str]
+    metadata_keys: list[str] = []
     index_config: Optional[dict]
     search_config: Optional[dict]
 
@@ -133,6 +134,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
+        metadata_keys: Optional[list[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
         **kwargs: Any,
@@ -160,6 +162,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.similarity_metric = similarity_metrics_map.get(
             similarity_metric.lower(), "L2"
         )
+        self.metadata_keys = metadata_keys or []
 
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
@@ -336,9 +339,19 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         "The passed in text_key value does not exist "
                         "in the retrieved entity."
                     )
-                node = TextNode(
-                    text=text,
-                )
+
+                metadata = {}
+                for key in self.metadata_keys:
+                    value = hit["entity"].get(key)
+                    if value:
+                        metadata[key] = value
+                    else:
+                        raise ValueError(
+                            f"The key {key} in metadata keys does not exist in the retrieved entity"
+                        )
+
+                node = TextNode(text=text, metadata=metadata)
+
             nodes.append(node)
             similarities.append(hit["distance"])
             ids.append(hit["id"])
