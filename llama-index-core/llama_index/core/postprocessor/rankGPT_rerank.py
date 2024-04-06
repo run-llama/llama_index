@@ -86,6 +86,50 @@ class RankGPTRerank(BaseNodePostprocessor):
         else:
             return nodes[: self.top_n]
 
+    async def _async_postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        items = {
+            "query": query_bundle.query_str,
+            "hits": [{"content": node.get_content()} for node in nodes],
+        }
+
+        messages = self.create_permutation_instruction(item=items)
+        permutation = await self.async_run_llm(messages=messages)
+        if permutation.message is not None and permutation.message.content is not None:
+            rerank_ranks = self._receive_permutation(
+                items, str(permutation.message.content)
+            )
+            if self.verbose:
+                print_text(f"After Reranking, new rank list for nodes: {rerank_ranks}")
+
+            initial_results: List[NodeWithScore] = []
+
+            for idx in rerank_ranks:
+                initial_results.append(
+                    NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
+                )
+            return initial_results[: self.top_n]
+        else:
+            return nodes[: self.top_n]
+
+    async def async_postprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+        query_str: Optional[str] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes asynchronously."""
+        if query_str is not None and query_bundle is not None:
+            raise ValueError("Cannot specify both query_str and query_bundle")
+        elif query_str is not None:
+            query_bundle = QueryBundle(query_str)
+        else:
+            pass
+        return await self._async_postprocess_nodes(nodes, query_bundle)
+
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
         return {"rankgpt_rerank_prompt": self.rankgpt_rerank_prompt}
@@ -135,6 +179,9 @@ class RankGPTRerank(BaseNodePostprocessor):
 
     def run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
         return self.llm.chat(messages)
+
+    async def async_run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
+        return await self.llm.achat(messages)
 
     def _clean_response(self, response: str) -> str:
         new_response = ""
