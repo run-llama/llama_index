@@ -145,6 +145,8 @@ class GoogleDriveReader(BasePydanticReader):
         """Authenticate with Google and save credentials.
         Download the service_account_key.json file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
 
+        IMPORTANT: Make sure to share the folders / files with the service account. Otherwise it will fail to read the docs
+
         Returns:
             credentials
         """
