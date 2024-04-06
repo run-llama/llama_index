@@ -388,9 +388,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         # an intermediate step in the middle
         if step.input is not None:
             self._add_user_step_to_reasoning(
-                step,
-                task.extra_state["new_memory"],
-                task.extra_state["current_reasoning"],
+                step=step,
+                memory=task.extra_state["new_memory"],
+                current_reasoning=task.extra_state["current_reasoning"],
                 verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs
@@ -428,9 +428,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             self._add_user_step_to_reasoning(
-                step,
-                task.extra_state["new_memory"],
-                task.extra_state["current_reasoning"],
+                step=step,
+                memory=task.extra_state["new_memory"],
+                current_reasoning=task.extra_state["current_reasoning"],
                 verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs

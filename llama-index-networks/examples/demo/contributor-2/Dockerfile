@@ -5,10 +5,9 @@ WORKDIR /app
 ENV POETRY_VERSION=1.7.1
 
 # Install libraries for necessary python package builds
-RUN apt-get update && apt-get install build-essential python3-dev libpq-dev -y
-
-RUN pip install --upgrade pip
-RUN pip install --upgrade poetry==${POETRY_VERSION}
+RUN apt-get update && apt-get install --no-install-recommends build-essential python3-dev libpq-dev -y && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --upgrade poetry==${POETRY_VERSION}
 
 # Configure Poetry
 ENV POETRY_CACHE_DIR=/tmp/poetry_cache
@@ -23,7 +22,9 @@ RUN poetry install --no-cache --no-root
 
 FROM --platform=linux/amd64 python:3.10-slim as runtime
 
-RUN apt-get update && apt-get install libpq5 -y && rm -rf /var/lib/apt/lists/*  # Install libpq for psycopg2
+RUN apt-get update &&  \
+    apt-get install --no-install-recommends libpq5 -y &&  \
+    rm -rf /var/lib/apt/lists/*  # Install libpq for psycopg2
 
 RUN groupadd -r appuser && useradd --no-create-home -g appuser -r appuser
 USER appuser

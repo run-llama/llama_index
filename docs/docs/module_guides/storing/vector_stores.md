@@ -49,6 +49,7 @@ We are actively adding more integrations and improving feature coverage for each
 | SingleStore              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Supabase                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Tair                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
+| TiDB                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Timescale                |                         | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
@@ -95,6 +96,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
 - [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
+- [TiDB](../../examples/vector_stores/TiDBVector.ipynb)
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
 - [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
 - [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
