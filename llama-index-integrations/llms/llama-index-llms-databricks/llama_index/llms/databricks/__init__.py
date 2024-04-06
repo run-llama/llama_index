@@ -1,3 +1,3 @@
-from llama_index.llms.databricks.base import DataBricks
+from llama_index.llms.databricks.base import Databricks
 
-__all__ = ["DataBricks"]
+__all__ = ["Databricks"]
