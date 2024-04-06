@@ -21,7 +21,7 @@ from llama_index.core.vector_stores.utils import (
 
 
 class DBEmbeddingRow(NamedTuple):
-    node_id: str  # FIXME: verify this type hint
+    node_id: str
     text: str
     metadata: dict
     similarity: float
@@ -125,7 +125,8 @@ def get_data_model(
 
 
 class LanternVectorStore(BasePydanticVectorStore):
-    """Latern vector store.
+    """
+    Latern vector store.
 
     Examples:
         `pip install llama-index-vector-stores-lantern`

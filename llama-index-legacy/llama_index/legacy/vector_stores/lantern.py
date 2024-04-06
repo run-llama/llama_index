@@ -17,7 +17,7 @@ from llama_index.legacy.vector_stores.utils import (
 
 
 class DBEmbeddingRow(NamedTuple):
-    node_id: str  # FIXME: verify this type hint
+    node_id: str
     text: str
     metadata: dict
     similarity: float
