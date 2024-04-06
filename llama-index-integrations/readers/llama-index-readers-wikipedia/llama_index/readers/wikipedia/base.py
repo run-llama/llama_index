@@ -29,20 +29,24 @@ class WikipediaReader(BasePydanticReader):
         return "WikipediaReader"
 
     def load_data(
-        self, pages: List[str], lang_code: str = "en", **load_kwargs: Any
+        self, pages: List[str], lang_prefix: str = "en", **load_kwargs: Any
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             pages (List[str]): List of pages to read.
-            lang_code (str): Language code for Wikipedia. Defaults to English. Valid Wikipedia language codes
+            lang_prefix (str): Language prefix for Wikipedia. Defaults to English. Valid Wikipedia language codes
             can be found at https://en.wikipedia.org/wiki/List_of_Wikipedias.
         """
         import wikipedia
 
-        if lang_code.lower() != "en":
-            # Sets, without checking the validity of, the language code for Wikipedia.
-            wikipedia.set_lang(lang_code)
+        if lang_prefix.lower() != "en":
+            if lang_prefix.lower() in wikipedia.languages():
+                wikipedia.set_lang(lang_prefix.lower())
+            else:
+                raise ValueError(
+                    f"Language prefix '{lang_prefix}' for Wikipedia is not supported. Check supported languages at https://en.wikipedia.org/wiki/List_of_Wikipedias."
+                )
 
         results = []
         for page in pages:
