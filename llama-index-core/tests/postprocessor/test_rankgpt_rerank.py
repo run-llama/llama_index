@@ -2,6 +2,7 @@ from typing import Any
 from unittest.mock import patch
 import asyncio
 
+import pytest
 from llama_index.core.base.llms.types import ChatResponse, ChatMessage, MessageRole
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.postprocessor.rankGPT_rerank import RankGPTRerank
@@ -51,13 +52,14 @@ def test_rankgpt_rerank():
     "achat",
     mock_rankgpt_achat,
 )
-def test_rankgpt_rerank_async():
+@pytest.mark.asyncio()
+async def test_rankgpt_rerank_async():
     rankgpt_rerank = RankGPTRerank(
         top_n=2,
         llm=MockLLM(),
     )
-    result = asyncio.run(
-        rankgpt_rerank.apostprocess_nodes(nodes_with_score, query_str="Test query")
+    result = await rankgpt_rerank.apostprocess_nodes(
+        nodes_with_score, query_str="Test query"
     )
     assert len(result) == 2
     assert result[0].node.get_content() == "Test2"
