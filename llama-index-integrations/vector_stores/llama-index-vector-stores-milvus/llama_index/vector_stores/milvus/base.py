@@ -115,7 +115,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     consistency_level: str = "Strong"
     overwrite: bool = False
     text_key: Optional[str]
-    metadata_keys: list[str] = []
+    metadata_keys: List[str] = []
     index_config: Optional[dict]
     search_config: Optional[dict]
 
@@ -134,7 +134,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
-        metadata_keys: Optional[list[str]] = None,
+        metadata_keys: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
         **kwargs: Any,
