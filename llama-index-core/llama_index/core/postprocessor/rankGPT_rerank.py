@@ -69,24 +69,9 @@ class RankGPTRerank(BaseNodePostprocessor):
 
         messages = self.create_permutation_instruction(item=items)
         permutation = self.run_llm(messages=messages)
-        if permutation.message is not None and permutation.message.content is not None:
-            rerank_ranks = self._receive_permutation(
-                items, str(permutation.message.content)
-            )
-            if self.verbose:
-                print_text(f"After Reranking, new rank list for nodes: {rerank_ranks}")
+        return self._llm_result_to_nodes(permutation, nodes, items)
 
-            initial_results: List[NodeWithScore] = []
-
-            for idx in rerank_ranks:
-                initial_results.append(
-                    NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
-                )
-            return initial_results[: self.top_n]
-        else:
-            return nodes[: self.top_n]
-
-    async def _async_postprocess_nodes(
+    async def _apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -97,25 +82,10 @@ class RankGPTRerank(BaseNodePostprocessor):
         }
 
         messages = self.create_permutation_instruction(item=items)
-        permutation = await self.async_run_llm(messages=messages)
-        if permutation.message is not None and permutation.message.content is not None:
-            rerank_ranks = self._receive_permutation(
-                items, str(permutation.message.content)
-            )
-            if self.verbose:
-                print_text(f"After Reranking, new rank list for nodes: {rerank_ranks}")
+        permutation = await self.arun_llm(messages=messages)
+        return self._llm_result_to_nodes(permutation, nodes, items)
 
-            initial_results: List[NodeWithScore] = []
-
-            for idx in rerank_ranks:
-                initial_results.append(
-                    NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
-                )
-            return initial_results[: self.top_n]
-        else:
-            return nodes[: self.top_n]
-
-    async def async_postprocess_nodes(
+    async def apostprocess_nodes(
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
@@ -128,7 +98,27 @@ class RankGPTRerank(BaseNodePostprocessor):
             query_bundle = QueryBundle(query_str)
         else:
             pass
-        return await self._async_postprocess_nodes(nodes, query_bundle)
+        return await self._apostprocess_nodes(nodes, query_bundle)
+
+    def _llm_result_to_nodes(
+        self, permutation: ChatResponse, nodes: List[NodeWithScore], items: Dict
+    ) -> List[NodeWithScore]:
+        if permutation.message is not None and permutation.message.content is not None:
+            rerank_ranks = self._receive_permutation(
+                items, str(permutation.message.content)
+            )
+            if self.verbose:
+                print_text(f"After Reranking, new rank list for nodes: {rerank_ranks}")
+
+            initial_results: List[NodeWithScore] = []
+
+            for idx in rerank_ranks:
+                initial_results.append(
+                    NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
+                )
+            return initial_results[: self.top_n]
+        else:
+            return nodes[: self.top_n]
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -180,7 +170,7 @@ class RankGPTRerank(BaseNodePostprocessor):
     def run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
         return self.llm.chat(messages)
 
-    async def async_run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
+    async def arun_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
         return await self.llm.achat(messages)
 
     def _clean_response(self, response: str) -> str:

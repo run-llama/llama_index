@@ -14,7 +14,7 @@ def mock_rankgpt_chat(self: Any, messages, **kwargs: Any) -> ChatResponse:
     )
 
 
-async def mock_rankgpt_acaht(self, messages, **kwargs: Any) -> ChatResponse:
+async def mock_rankgpt_achat(self, messages, **kwargs: Any) -> ChatResponse:
     # Mock api call
     await asyncio.sleep(1)
     return ChatResponse(
@@ -49,7 +49,7 @@ def test_rankgpt_rerank():
 @patch.object(
     MockLLM,
     "achat",
-    mock_rankgpt_acaht,
+    mock_rankgpt_achat,
 )
 def test_rankgpt_rerank_async():
     rankgpt_rerank = RankGPTRerank(
@@ -57,7 +57,7 @@ def test_rankgpt_rerank_async():
         llm=MockLLM(),
     )
     result = asyncio.run(
-        rankgpt_rerank.async_postporcess_nodes(nodes_with_score, query_str="Test query")
+        rankgpt_rerank.apostprocess_nodes(nodes_with_score, query_str="Test query")
     )
     assert len(result) == 2
     assert result[0].node.get_content() == "Test2"
