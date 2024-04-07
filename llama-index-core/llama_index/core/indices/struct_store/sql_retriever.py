@@ -310,9 +310,15 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             print(f"> Predicted SQL query: {sql_query_str}")
 
         if self._sql_only:
-            sql_only_node = TextNode(text=f"{sql_query_str}")
+            sql_only_node = TextNode(
+                text=f"Here is the SQL string: {sql_query_str}. The user will execute this query for you."
+            )
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
-            metadata = {"result": sql_query_str}
+            metadata = {
+                "result": sql_query_str,
+                "dialect": self._sql_database.dialect,
+                "schema": table_desc_str,
+            }
         else:
             try:
                 retrieved_nodes, metadata = self._sql_retriever.retrieve_with_metadata(
@@ -326,7 +332,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
                     metadata = {}
                 else:
                     raise
-
         return retrieved_nodes, {"sql_query": sql_query_str, **metadata}
 
     async def aretrieve_with_metadata(
