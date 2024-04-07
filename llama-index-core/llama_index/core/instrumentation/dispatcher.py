@@ -1,8 +1,10 @@
 from typing import Any, List, Optional, Dict, Protocol
 from functools import partial
 from contextlib import contextmanager
+from collections import defaultdict
 import asyncio
 import inspect
+import threading
 import uuid
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.instrumentation.events import BaseEvent
@@ -17,18 +19,12 @@ from contextvars import ContextVar
 import wrapt
 
 
-span_ctx = ContextVar("span_ctx", default={})
+span_ctx = ContextVar("span_ctx", default=defaultdict(dict))
+sync_span_ctx = ContextVar("sync_span_ctx", default={})
 
 
 class EventDispatcher(Protocol):
     def __call__(self, event: BaseEvent) -> None: ...
-
-
-class EventContext(BaseModel):
-    span_id: str = Field(default="")
-
-
-event_context = EventContext()
 
 
 class Dispatcher(BaseModel):
@@ -50,10 +46,11 @@ class Dispatcher(BaseModel):
         default=True,
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
-    current_span_id: Optional[str] = Field(
-        default=None, description="Id of current span."
+    current_span_ids: Optional[Dict[Any, str]] = Field(
+        default={}, description="Id of current span."
     )
     _asyncio_lock: Optional[asyncio.Lock] = PrivateAttr()
+    _lock: Optional[threading.Lock] = PrivateAttr()
 
     def __init__(
         self,
@@ -66,6 +63,7 @@ class Dispatcher(BaseModel):
         propagate: bool = True,
     ):
         self._asyncio_lock = None
+        self._lock = None
         super().__init__(
             name=name,
             event_handlers=event_handlers,
@@ -77,10 +75,27 @@ class Dispatcher(BaseModel):
         )
 
     @property
+    def current_span_id(self) -> Optional[str]:
+        current_thread = threading.get_ident()
+        if current_thread in self.current_span_ids:
+            return self.current_span_ids[current_thread]
+        return None
+
+    def set_current_span_id(self, value: str):
+        current_thread = threading.get_ident()
+        self.current_span_ids[current_thread] = value
+
+    @property
     def asyncio_lock(self) -> asyncio.Lock:
         if self._asyncio_lock is None:
             self._asyncio_lock = asyncio.Lock()
         return self._asyncio_lock
+
+    @property
+    def lock(self) -> threading.Lock:
+        if self._lock is None:
+            self._lock = threading.Lock()
+        return self._lock
 
     @property
     def parent(self) -> "Dispatcher":
@@ -190,7 +205,17 @@ class Dispatcher(BaseModel):
         functions only. Otherwise, the span_id should not be trusted, as the
         span decorator sets the span_id.
         """
-        span_id = self.current_span_id
+        current_thread = threading.get_ident()
+        print(
+            f"\n==============\nDISPATCH EVENT CURRENT THREAD: {current_thread}\n",
+            flush=True,
+        )
+        with self.lock:
+            span_id = self.current_span_id
+        print(
+            f"\n==============\nDISPATCH EVENT SPAN ID: {span_id}\n",
+            flush=True,
+        )
         dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
         return dispatch_event
 
@@ -225,18 +250,21 @@ class Dispatcher(BaseModel):
                 bound_args = inspect.signature(func).bind(*args, **kwargs)
                 id_ = f"{func.__qualname__}-{uuid.uuid4()}"
                 async with self.asyncio_lock:
-                    self.current_span_id = id_
+                    self.set_current_span_id(id_)
                 async with self.root.asyncio_lock:
-                    self.root.current_span_id = id_
+                    self.root.set_current_span_id(id_)
 
+                current_thread = threading.get_ident()
                 current_task = asyncio.current_task()
                 current_task_name = current_task.get_name()
-                span_ctx_dict = span_ctx.get().copy()
+                thread_span_ctx_dict = span_ctx.get().copy()
+                span_ctx_dict = thread_span_ctx_dict[current_thread]
+
                 if current_task_name not in span_ctx_dict:
                     span_ctx_dict[current_task_name] = [id_]
                 else:
                     span_ctx_dict[current_task_name].append(id_)
-                span_ctx.set(span_ctx_dict)
+                span_ctx.set(thread_span_ctx_dict)
 
                 self.span_enter(
                     id_=id_,
@@ -259,13 +287,16 @@ class Dispatcher(BaseModel):
                     return result
                 finally:
                     # clean up
+                    current_thread = threading.get_ident()
                     current_task = asyncio.current_task()
                     current_task_name = current_task.get_name()
-                    span_ctx_dict = span_ctx.get().copy()
+                    thread_span_ctx_dict = span_ctx.get().copy()
+                    span_ctx_dict = thread_span_ctx_dict[current_thread]
+
                     span_ctx_dict[current_task_name].pop()
                     if len(span_ctx_dict[current_task_name]) == 0:
                         del span_ctx_dict[current_task_name]
-                    span_ctx.set(span_ctx_dict)
+                    span_ctx.set(thread_span_ctx_dict)
 
             return async_wrapper(func)
 
@@ -276,9 +307,33 @@ class Dispatcher(BaseModel):
         def wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-            self.current_span_id = id_
-            self.root.current_span_id = id_
-            self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
+            with self.lock:
+                self.set_current_span_id(id_)
+            with self.root.lock:
+                self.root.set_current_span_id(id_)
+
+            current_thread = threading.get_ident()
+            print(
+                f"\n==============\nCURRENT THREAD: {current_thread}\n",
+                flush=True,
+            )
+            span_ctx = sync_span_ctx.get().copy()
+            print(
+                f"\n==============\nSYNC SPAN CTX: {span_ctx}\n",
+                flush=True,
+            )
+
+            if current_thread not in span_ctx:
+                parent_id = None
+                span_ctx[current_thread] = [id_]
+            else:
+                parent_id = span_ctx[current_thread][-1]
+                span_ctx[current_thread].append(id_)
+            sync_span_ctx.set(span_ctx)
+
+            self.span_enter(
+                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+            )
             try:
                 result = func(*args, **kwargs)
             except BaseException as e:
@@ -290,27 +345,38 @@ class Dispatcher(BaseModel):
                     id_=id_, bound_args=bound_args, instance=instance, result=result
                 )
                 return result
+            finally:
+                # clean up
+                span_ctx = sync_span_ctx.get().copy()
+
+                span_ctx[current_thread].pop()
+                if len(span_ctx[current_thread]) == 0:
+                    del span_ctx[current_thread]
+                sync_span_ctx.set(span_ctx)
 
         @wrapt.decorator
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             async with self.asyncio_lock:
-                self.current_span_id = id_
+                self.set_current_span_id(id_)
             async with self.root.asyncio_lock:
-                self.root.current_span_id = id_
+                self.root.set_current_span_id(id_)
 
             # get parent_id
+            current_thread = threading.get_ident()
             current_task = asyncio.current_task()
             current_task_name = current_task.get_name()
-            span_ctx_dict = span_ctx.get().copy()
+            thread_span_ctx_dict = span_ctx.get().copy()
+
+            span_ctx_dict = thread_span_ctx_dict[current_thread]
             if current_task_name not in span_ctx_dict:
                 parent_id = None
                 span_ctx_dict[current_task_name] = [id_]
             else:
                 parent_id = span_ctx_dict[current_task_name][-1]
                 span_ctx_dict[current_task_name].append(id_)
-            span_ctx.set(span_ctx_dict)
+            span_ctx.set(thread_span_ctx_dict)
 
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
@@ -328,13 +394,16 @@ class Dispatcher(BaseModel):
                 return result
             finally:
                 # clean up
+                current_thread = threading.get_ident()
                 current_task = asyncio.current_task()
                 current_task_name = current_task.get_name()
-                span_ctx_dict = span_ctx.get().copy()
+                thread_span_ctx_dict = span_ctx.get().copy()
+                span_ctx_dict = thread_span_ctx_dict[current_thread]
+
                 span_ctx_dict[current_task_name].pop()
                 if len(span_ctx_dict[current_task_name]) == 0:
                     del span_ctx_dict[current_task_name]
-                span_ctx.set(span_ctx_dict)
+                span_ctx.set(thread_span_ctx_dict)
 
         if inspect.iscoroutinefunction(func):
             return async_wrapper(func)
