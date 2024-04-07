@@ -24,7 +24,8 @@ sync_span_ctx = ContextVar("sync_span_ctx", default={})
 
 
 class EventDispatcher(Protocol):
-    def __call__(self, event: BaseEvent) -> None: ...
+    def __call__(self, event: BaseEvent) -> None:
+        ...
 
 
 class Dispatcher(BaseModel):
