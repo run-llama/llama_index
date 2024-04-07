@@ -29,6 +29,8 @@ from llama_index.llms.llama_cpp.llama_utils import (
 )
 from llama_index.llms.sagemaker_endpoint.utils import BaseIOHandler, IOHandler
 
+import warnings
+
 DEFAULT_IO_HANDLER = IOHandler()
 LLAMA_MESSAGES_TO_PROMPT = messages_to_prompt
 LLAMA_COMPLETION_TO_PROMPT = completion_to_prompt
@@ -109,6 +111,17 @@ class SageMakerLLM(LLM):
         model_kwargs["temperature"] = temperature
         content_handler = content_handler
         self._completion_to_prompt = completion_to_prompt
+        
+        region_name = kwargs.pop('region_name', None)
+        if region_name is not None:
+            warnings.warn(
+                "Kwarg `region_name` is deprecated and will be removed in a future version. "
+                "Please use `aws_region_name` instead.",
+                DeprecationWarning
+            )
+            if not aws_region_name:
+                aws_region_name = region_name
+
         self._client = get_aws_service_client(
             service_name="sagemaker-runtime",
             profile_name=profile_name,
