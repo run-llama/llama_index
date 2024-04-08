@@ -79,7 +79,9 @@ class GuidelineEvaluator(BaseEvaluator):
         else:
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
-        self._output_parser = PydanticOutputParser(output_cls=EvaluationData, pydantic_format_tmpl=PYDANTIC_FORMAT_TMPL)
+        self._output_parser = PydanticOutputParser(
+            output_cls=EvaluationData, pydantic_format_tmpl=PYDANTIC_FORMAT_TMPL
+        )
         self._eval_template.output_parser = self._output_parser
 
     def _get_prompts(self) -> PromptDictType:
