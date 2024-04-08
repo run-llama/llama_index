@@ -1,4 +1,5 @@
 import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from llama_index.core.async_utils import asyncio_module
@@ -25,7 +26,7 @@ async def eval_response_worker(
             ),
         )
 
-
+@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 async def eval_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
