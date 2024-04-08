@@ -199,7 +199,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
 
         """
         token_size = self._token_size(text)
-        if self._token_size(text) <= chunk_size:
+        if token_size <= chunk_size:
             return [_Split(text, is_sentence=True, token_size=token_size)]
 
         text_splits_by_fns, is_sentence = self._get_splits_by_fns(text)
