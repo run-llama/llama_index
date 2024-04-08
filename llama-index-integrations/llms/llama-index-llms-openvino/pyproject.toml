@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.openvino"
 
 [tool.llamahub.class_authors]
-IpexLLM = "llama-index"
+OpenVINOLLM = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -27,7 +27,7 @@ python_version = "3.9"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index llms openvino integration"
 license = "MIT"
-name = "llama-index-llms-openvino-llm"
+name = "llama-index-llms-openvino"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
