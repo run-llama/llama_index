@@ -13,7 +13,11 @@ from llama_index.core.instrumentation.span_handlers import (
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
+from contextvars import ContextVar
 import wrapt
+
+
+span_ctx = ContextVar("span_ctx", default={})
 
 
 class EventDispatcher(Protocol):
@@ -50,7 +54,7 @@ class Dispatcher(BaseModel):
     current_span_id: Optional[str] = Field(
         default=None, description="Id of current span."
     )
-    _asyncio_lock: asyncio.Lock = PrivateAttr()
+    _asyncio_lock: Optional[asyncio.Lock] = PrivateAttr()
 
     def __init__(
         self,
@@ -62,7 +66,7 @@ class Dispatcher(BaseModel):
         root_name: str = "root",
         propagate: bool = True,
     ):
-        self._asyncio_lock = asyncio.Lock()
+        self._asyncio_lock = None
         super().__init__(
             name=name,
             event_handlers=event_handlers,
@@ -72,6 +76,12 @@ class Dispatcher(BaseModel):
             root_name=root_name,
             propagate=propagate,
         )
+
+    @property
+    def asyncio_lock(self) -> asyncio.Lock:
+        if self._asyncio_lock is None:
+            self._asyncio_lock = asyncio.Lock()
+        return self._asyncio_lock
 
     @property
     def parent(self) -> "Dispatcher":
@@ -107,6 +117,7 @@ class Dispatcher(BaseModel):
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
+        parent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
@@ -117,6 +128,7 @@ class Dispatcher(BaseModel):
                     id_=id_,
                     bound_args=bound_args,
                     instance=instance,
+                    parent_id=parent_id,
                     **kwargs,
                 )
             if not c.propagate:
@@ -199,6 +211,67 @@ class Dispatcher(BaseModel):
         finally:
             del dispatch_event
 
+    def async_span_with_parent_id(self, parent_id: str):
+        """This decorator should be used to span an async function nested in an outer span.
+
+        Primary example: llama_index.core.async_utils.run_jobs
+
+        Args:
+            parent_id (str): The span_id of the outer span.
+        """
+
+        def outer(func):
+            @wrapt.decorator
+            async def async_wrapper(func, instance, args, kwargs):
+                bound_args = inspect.signature(func).bind(*args, **kwargs)
+                id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+                async with self.asyncio_lock:
+                    self.current_span_id = id_
+                async with self.root.asyncio_lock:
+                    self.root.current_span_id = id_
+
+                current_task = asyncio.current_task()
+                current_task_name = current_task.get_name()
+                span_ctx_dict = span_ctx.get().copy()
+                if current_task_name not in span_ctx_dict:
+                    span_ctx_dict[current_task_name] = [id_]
+                else:
+                    span_ctx_dict[current_task_name].append(id_)
+                span_ctx.set(span_ctx_dict)
+
+                self.span_enter(
+                    id_=id_,
+                    bound_args=bound_args,
+                    instance=instance,
+                    parent_id=parent_id,
+                )
+                try:
+                    result = await func(*args, **kwargs)
+                except BaseException as e:
+                    self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
+                    self.span_drop(
+                        id_=id_, bound_args=bound_args, instance=instance, err=e
+                    )
+                    raise
+                else:
+                    self.span_exit(
+                        id_=id_, bound_args=bound_args, instance=instance, result=result
+                    )
+                    return result
+                finally:
+                    # clean up
+                    current_task = asyncio.current_task()
+                    current_task_name = current_task.get_name()
+                    span_ctx_dict = span_ctx.get().copy()
+                    span_ctx_dict[current_task_name].pop()
+                    if len(span_ctx_dict[current_task_name]) == 0:
+                        del span_ctx_dict[current_task_name]
+                    span_ctx.set(span_ctx_dict)
+
+            return async_wrapper(func)
+
+        return outer
+
     def span(self, func):
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
@@ -223,12 +296,26 @@ class Dispatcher(BaseModel):
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-            async with self._asyncio_lock:
+            async with self.asyncio_lock:
                 self.current_span_id = id_
-            async with self.root._asyncio_lock:
+            async with self.root.asyncio_lock:
                 self.root.current_span_id = id_
 
-            self.span_enter(id_=id_, bound_args=bound_args, instance=instance)
+            # get parent_id
+            current_task = asyncio.current_task()
+            current_task_name = current_task.get_name()
+            span_ctx_dict = span_ctx.get().copy()
+            if current_task_name not in span_ctx_dict:
+                parent_id = None
+                span_ctx_dict[current_task_name] = [id_]
+            else:
+                parent_id = span_ctx_dict[current_task_name][-1]
+                span_ctx_dict[current_task_name].append(id_)
+            span_ctx.set(span_ctx_dict)
+
+            self.span_enter(
+                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+            )
             try:
                 result = await func(*args, **kwargs)
             except BaseException as e:
@@ -240,6 +327,15 @@ class Dispatcher(BaseModel):
                     id_=id_, bound_args=bound_args, instance=instance, result=result
                 )
                 return result
+            finally:
+                # clean up
+                current_task = asyncio.current_task()
+                current_task_name = current_task.get_name()
+                span_ctx_dict = span_ctx.get().copy()
+                span_ctx_dict[current_task_name].pop()
+                if len(span_ctx_dict[current_task_name]) == 0:
+                    del span_ctx_dict[current_task_name]
+                span_ctx.set(span_ctx_dict)
 
         if inspect.iscoroutinefunction(func):
             return async_wrapper(func)

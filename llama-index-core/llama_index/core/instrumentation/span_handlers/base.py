@@ -34,6 +34,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
+        parent_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Logic for entering a span."""
@@ -45,7 +46,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
                 id_=id_,
                 bound_args=bound_args,
                 instance=instance,
-                parent_span_id=self.current_span_id,
+                parent_span_id=parent_id or self.current_span_id,
             )
             if span:
                 self.open_spans[id_] = span
