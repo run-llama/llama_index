@@ -134,7 +134,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
-        metadata_keys: List[str] = [],
+        metadata_keys: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
         **kwargs: Any,
@@ -162,7 +162,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.similarity_metric = similarity_metrics_map.get(
             similarity_metric.lower(), "L2"
         )
-        self.metadata_keys = metadata_keys
+        self.metadata_keys = metadata_keys or []
 
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
