@@ -135,7 +135,11 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         parent_span_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Optional[T]:
-        """Create a span."""
+        """Create a span.
+
+        Subclasses of BaseSpanHandler should create the respective span type T
+        and return it. Only NullSpanHandler should return a None here.
+        """
         ...
 
     @abstractmethod
@@ -147,7 +151,12 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         result: Optional[Any] = None,
         **kwargs: Any,
     ) -> Optional[T]:
-        """Logic for preparing to exit a span."""
+        """Logic for preparing to exit a span.
+
+        Subclasses of BaseSpanHandler should return back the specific span T
+        that is to be exited. If None is returned, then the span won't actually
+        be exited.
+        """
         ...
 
     @abstractmethod
@@ -159,5 +168,10 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         err: Optional[BaseException] = None,
         **kwargs: Any,
     ) -> Optional[T]:
-        """Logic for preparing to drop a span."""
+        """Logic for preparing to drop a span.
+
+        Subclasses of BaseSpanHandler should return back the specific span T
+        that is to be dropped. If None is returned, then the span won't actually
+        be dropped.
+        """
         ...

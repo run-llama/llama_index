@@ -21,7 +21,7 @@ import wrapt
 # ContextVar's for managing active spans
 async_span_ctx = ContextVar(
     "async_span_ctx", default=defaultdict(dict)
-)  # per thread/async-task
+)  # per thread >> async-task
 sync_span_ctx = ContextVar("sync_span_ctx", default={})  # per thread
 
 
