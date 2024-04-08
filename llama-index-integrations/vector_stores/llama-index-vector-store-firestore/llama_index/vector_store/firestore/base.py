@@ -7,10 +7,9 @@ An index that is built on top of an existing vector store.
 from typing import Any, List, Optional, Union
 
 import more_itertools
-from google.cloud.firestore import And, Client, FieldFilter, Or
+from google.cloud.firestore import And, Client, FieldFilter, Or, DocumentSnapshot
 from google.cloud.firestore_v1.base_query import BaseFilter, BaseCompositeFilter
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
-from google.cloud.firestore_v1.document import DocumentSnapshot
 from google.cloud.firestore_v1.vector import Vector
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
