@@ -347,6 +347,10 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             # we are done
             is_done = True
             new_steps = []
+
+            if self._verbose:
+                print("=== LLM Response ===")
+                print(str(response.message))
         else:
             is_done = False
             tasks = [
