@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Tyler Hutcherson tyler.hutcherson@redis.com"]
+authors = ["Tyler Hutcherson <tyler.hutcherson@redis.com>"]
 description = "llama-index vector_stores redis integration"
 exclude = ["**/BUILD"]
 license = "MIT"
@@ -32,7 +32,6 @@ version = "0.2.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-redis = "^5.0.1"
 redisvl = "^0.1.2"
 
 [tool.poetry.group.dev.dependencies]

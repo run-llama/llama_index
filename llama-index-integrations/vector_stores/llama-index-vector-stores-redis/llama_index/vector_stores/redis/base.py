@@ -26,7 +26,13 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from llama_index.vector_stores.redis.schema import RedisVectorStoreSchema
+from llama_index.vector_stores.redis.schema import (
+    NODE_ID_FIELD_NAME,
+    NODE_CONTENT_FIELD_NAME,
+    DOC_ID_FIELD_NAME,
+    TEXT_FIELD_NAME,
+    RedisVectorStoreSchema,
+)
 from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
 
 from redis import Redis
@@ -45,7 +51,13 @@ logger = logging.getLogger(__name__)
 
 
 class RedisVectorStore(BasePydanticVectorStore):
-    """Initialize RedisVectorStore.
+    """RedisVectorStore.
+
+    The RedisVectorStore takes a user-defined schema object and a Redis connection
+    client or URL string. The schema is optional, but useful for defining
+    additional metadata fields to use in filterable queries or for setting
+    custom specifications on fields to improve search quality (like which vector
+    index algorithm to use).
 
     Args:
         schema (IndexSchema, optional): Redis index schema object.
@@ -56,8 +68,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             Defaults to False.
 
     Raises:
-        ValueError: If redis-py is not installed
-        ValueError: If RediSearch is not installed
+        ValueError: If your Redis server does not have search or JSON enabled.
 
     Example:
         from redisvl.schema import IndexSchema
@@ -66,29 +77,27 @@ class RedisVectorStore(BasePydanticVectorStore):
         # Use default schema
         rds = RedisVectorStore(redis_url="redis://localhost:6379")
 
-        # Use custom schema
+        # Use custom schema from dict
         schema = IndexSchema.from_dict({
             "index": {"name": "my-index", "prefix": "docs"},
             "fields": [
-                # TODO
+                {"name": "id", "type": "tag"},
+                {"name": "doc_id", "type": "tag},
+                {"name": "text", "type": "text"},
+                {"name": "vector", "type": "vector", "attrs": {"dims": 1536, "algorithm": "flat"}}
             ]
         })
-        rds = RedisVectorStore(
-            schema=schema,
-            redis_url="redis://localhost:6379"
-        )
+        rds = RedisVectorStore(schema=schema, redis_url="redis://localhost:6379")
     """
 
     stores_text = True
     stores_node = True
     flat_metadata = False
 
+    _index: SearchIndex = PrivateAttr()
     _overwrite: bool = PrivateAttr()
     _return_fields: List[str] = PrivateAttr()
     _vector_field_name: str = PrivateAttr()
-    _node_id_field_name: str = "id"
-    _doc_id_field_name: str = "doc_id"
-    _text_field_name: str = "text"
 
     def __init__(
         self,
@@ -105,14 +114,16 @@ class RedisVectorStore(BasePydanticVectorStore):
             logger.info("Using default RedisVectorStore schema.")
             schema = RedisVectorStoreSchema()
 
-        self._vector_field_name = self._validate_schema(schema)
+        self._validate_schema(schema)
+
+        self._vector_field_name: Optional[str] = None
 
         self._return_fields = [
-            self._node_id_field_name,
-            self._doc_id_field_name,
-            self._text_field_name,
+            NODE_ID_FIELD_NAME,
+            DOC_ID_FIELD_NAME,
+            TEXT_FIELD_NAME,
             VectorQuery.DISTANCE_ID,
-            "_node_content",
+            NODE_CONTENT_FIELD_NAME,
         ]
 
         self._index = SearchIndex(schema=schema)
@@ -132,7 +143,10 @@ class RedisVectorStore(BasePydanticVectorStore):
 
     def _flag_old_kwargs(self, **kwargs):
         # TODO
-        pass
+        old_kwargs = ["index_name", "index_prefix"]
+        for kwarg in old_kwargs:
+            if kwarg in kwargs:
+                raise ValueError
 
     def _validate_schema(self, schema: IndexSchema) -> str:
         base_schema = RedisVectorStoreSchema()
@@ -145,18 +159,28 @@ class RedisVectorStore(BasePydanticVectorStore):
                     f"and of type {schema.fields[name].type}"
                 )
 
-        vector_field_name = None
-        for name, field in schema.fields.items():
-            # TODO handle multiple fields??
-            if field.type == "vector":
-                vector_field_name = name
-
-        return vector_field_name
-
     @property
     def client(self) -> "Redis":
         """Return the redis client instance."""
         return self._index.client
+
+    @property
+    def index_name(self) -> str:
+        """Return the name of the index based on the schema."""
+        return self._index.name
+
+    @property
+    def schema(self) -> IndexSchema:
+        """Return the index schema."""
+        return self._index.schema
+
+    def index_exists(self) -> bool:
+        """Check whether the index exists in Redis.
+
+        Returns:
+            bool: True or False.
+        """
+        return self._index.exists()
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
@@ -170,14 +194,13 @@ class RedisVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If the index already exists and overwrite is False.
         """
-        # check to see if empty document list was passed
+        # Check to see if empty document list was passed
         if len(nodes) == 0:
             return []
 
-        # NOTE: What if vector field at this point does not exist?
-        ## Either user did not provide a vector field in their custom schema
-        ## Or user just leaned on the default schema, which doesn't have a vector field yet...
-        # TODO discuss with logan -- this is risky... updating schema based on provided embeddings...
+        # If the vector field, at this point, does not exist... either
+        ## They did not provide a vector field in their schema
+        ## OR They used the default schema
         embedding_len = len(nodes[0].get_embedding())
         if not self._vector_field_name:
             self._vector_field_name = "vector"
@@ -190,13 +213,11 @@ class RedisVectorStore(BasePydanticVectorStore):
             )
 
         # Now check for the scenario where user is trying to index embeddings that don't align with schema
-        if (
-            self._index.schema.fields[self._vector_field_name].attrs.dims
-            != embedding_len
-        ):
+        expected_dims = self._index.schema.fields[self._vector_field_name].attrs.dims
+        if expected_dims != embedding_len:
             raise ValueError(
                 f"Attempting to index embeddings of dim {embedding_len} "
-                "which doesn't match the index schema"
+                f"which doesn't match the index schema expectation of {expected_dims}"
             )
 
         # Create index honoring overwrite policy
@@ -205,26 +226,23 @@ class RedisVectorStore(BasePydanticVectorStore):
         else:
             self._index.create()
 
-        def preprocess_node(node: BaseNode) -> Dict[str, Any]:
+        data: List[Dict[str, Any]] = []
+        for node in nodes:
             embedding = node.get_embedding()
             record = {
-                self._node_id_field_name: node.node_id,
-                self._doc_id_field_name: node.ref_doc_id,
-                self._text_field_name: node.get_content(
-                    metadata_mode=MetadataMode.NONE
-                ),
+                NODE_ID_FIELD_NAME: node.node_id,
+                DOC_ID_FIELD_NAME: node.ref_doc_id,
+                TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
                 self._vector_field_name: array_to_buffer(embedding),
             }
             # parse and append metadata
             additional_metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata
             )
-            return {**record, **additional_metadata}
+            data.append({**record, **additional_metadata})
 
         # Load nodes to Redis
-        keys = self._index.load(
-            data=nodes, preprocess=preprocess_node, id_field="id", **add_kwargs
-        )
+        keys = self._index.load(data, id_field=NODE_ID_FIELD_NAME, **add_kwargs)
         logger.info(f"Added {len(keys)} documents to index {self._index.name}")
         return [
             key.strip(self._index.prefix + self._index.key_separator) for key in keys
@@ -239,10 +257,10 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         """
         # build a filter to target specific docs by doc ID
-        doc_filter = Tag(self._doc_id_field_name) == ref_doc_id
+        doc_filter = Tag(DOC_ID_FIELD_NAME) == ref_doc_id
         total = self._index.query(CountQuery(doc_filter))
         delete_query = FilterQuery(
-            return_fields=[self._node_id_field_name],
+            return_fields=[NODE_ID_FIELD_NAME],
             filter_expression=doc_filter,
             num_results=total,
         )
@@ -338,17 +356,19 @@ class RedisVectorStore(BasePydanticVectorStore):
     def _extract_node_and_score(self, doc, redis_query: VectorQuery):
         """Extracts a node and its score from a document."""
         try:
-            node = metadata_dict_to_node({"_node_content": doc["_node_content"]})
-            node.text = doc[self._text_field_name]
+            node = metadata_dict_to_node(
+                {NODE_CONTENT_FIELD_NAME: doc[NODE_CONTENT_FIELD_NAME]}
+            )
+            node.text = doc[TEXT_FIELD_NAME]
         except Exception:
             # Handle legacy metadata format
             node = TextNode(
-                text=doc[self._text_field_name],
-                id_=doc[self._id_field_name],
+                text=doc[TEXT_FIELD_NAME],
+                id_=doc[NODE_ID_FIELD_NAME],
                 embedding=None,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(
-                        node_id=doc[self._doc_id_field_name]
+                        node_id=doc[DOC_ID_FIELD_NAME]
                     )
                 },
             )
@@ -362,7 +382,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         ids, nodes, scores = [], [], []
         for doc in results:
             node, score = self._extract_node_and_score(doc, redis_query)
-            ids.append(doc[self._node_id_field_name])
+            ids.append(doc[NODE_ID_FIELD_NAME])
             nodes.append(node)
             scores.append(score)
         logger.info(f"Found {len(nodes)} results for query with id {ids}")

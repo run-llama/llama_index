@@ -1,6 +1,11 @@
-from typing import Dict
+from typing import Any, Dict, List
 from redisvl.schema import IndexSchema, IndexInfo, StorageType
-from redisvl.schema.fields import BaseField, FieldFactory
+
+# required llama index fields
+NODE_ID_FIELD_NAME: str = "id"
+DOC_ID_FIELD_NAME: str = "doc_id"
+TEXT_FIELD_NAME: str = "text"
+NODE_CONTENT_FIELD_NAME: str = "_node_content"
 
 
 class RedisIndexInfo(IndexInfo):
@@ -21,9 +26,9 @@ class RedisVectorStoreSchema(IndexSchema):
 
     def __init__(self, **data) -> None:
         index = RedisIndexInfo()
-        fields: Dict[str, BaseField] = {
-            "id": FieldFactory.create_field("tag", "id", {"sortable": False}),
-            "doc_id": FieldFactory.create_field("tag", "doc_id", {"sortable": False}),
-            "text": FieldFactory.create_field("text", "text", {"weight": 1.0}),
-        }
-        super().__init__(index=index, fields=fields)
+        fields: List[Dict[str, Any]] = [
+            {"type": "tag", "name": NODE_ID_FIELD_NAME, "attrs": {"sortable": False}},
+            {"type": "tag", "name": DOC_ID_FIELD_NAME, "attrs": {"sortable": False}},
+            {"type": "text", "name": TEXT_FIELD_NAME, "attrs": {"weight": 1.0}},
+        ]
+        super().__init__(index=index.__dict__, fields=fields)
