@@ -35,6 +35,9 @@ class PDFReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import pypdf
         except ImportError:
