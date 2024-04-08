@@ -204,7 +204,7 @@ class OpenVINOLLM(CustomLLM):
     ) -> None:
         """Initialize params."""
         model_kwargs = model_kwargs or {}
-        
+
         def require_model_export(
             model_id: str, revision: Any = None, subfolder: Any = None
         ) -> bool:
@@ -239,7 +239,7 @@ class OpenVINOLLM(CustomLLM):
                 )
             except Exception:
                 return True
-            
+
         if require_model_export(model_name):
             # use remote model
             self._model = model or OVModelForCausalLM.from_pretrained(
