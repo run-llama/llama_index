@@ -29,6 +29,20 @@ class EventDispatcher(Protocol):
 
 
 class Dispatcher(BaseModel):
+    """Dispatcher class.
+
+    Responsible for dispatching BaseEvent (and its subclasses) as well as
+    sending signals to enter/exit/drop a BaseSpan. It does so by sending
+    event and span signals to its attached BaseEventHandler as well as
+    BaseSpanHandler.
+
+    Concurrency:
+        - Dispatcher is async-task and thread safe in the sense that
+        spans of async coros will maintain its hieararchy or trace-trees and
+        spans which emanate from various threads will also maintain its
+        hierarchy.
+    """
+
     name: str = Field(default_factory=str, description="Name of dispatcher")
     event_handlers: List[BaseEventHandler] = Field(
         default=[], description="List of attached handlers"
@@ -206,17 +220,8 @@ class Dispatcher(BaseModel):
         functions only. Otherwise, the span_id should not be trusted, as the
         span decorator sets the span_id.
         """
-        current_thread = threading.get_ident()
-        print(
-            f"\n==============\nDISPATCH EVENT CURRENT THREAD: {current_thread}\n",
-            flush=True,
-        )
         with self.lock:
             span_id = self.current_span_id
-        print(
-            f"\n==============\nDISPATCH EVENT SPAN ID: {span_id}\n",
-            flush=True,
-        )
         dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
         return dispatch_event
 
@@ -255,6 +260,8 @@ class Dispatcher(BaseModel):
                 async with self.root.asyncio_lock:
                     self.root.set_current_span_id(id_)
 
+                # get parent_id (thread and async-task safe)
+                # spans are managed in this hieararchy: thread > async task > async coros
                 current_thread = threading.get_ident()
                 current_task = asyncio.current_task()
                 current_task_name = current_task.get_name()
@@ -313,17 +320,9 @@ class Dispatcher(BaseModel):
             with self.root.lock:
                 self.root.set_current_span_id(id_)
 
+            # get parent_id (thread-safe)
             current_thread = threading.get_ident()
-            print(
-                f"\n==============\nCURRENT THREAD: {current_thread}\n",
-                flush=True,
-            )
             span_ctx = sync_span_ctx.get().copy()
-            print(
-                f"\n==============\nSYNC SPAN CTX: {span_ctx}\n",
-                flush=True,
-            )
-
             if current_thread not in span_ctx:
                 parent_id = None
                 span_ctx[current_thread] = [id_]
@@ -349,7 +348,6 @@ class Dispatcher(BaseModel):
             finally:
                 # clean up
                 span_ctx = sync_span_ctx.get().copy()
-
                 span_ctx[current_thread].pop()
                 if len(span_ctx[current_thread]) == 0:
                     del span_ctx[current_thread]
@@ -364,7 +362,8 @@ class Dispatcher(BaseModel):
             async with self.root.asyncio_lock:
                 self.root.set_current_span_id(id_)
 
-            # get parent_id
+            # get parent_id (thread and async-task safe)
+            # spans are managed in this hieararchy: thread > async task > async coros
             current_thread = threading.get_ident()
             current_task = asyncio.current_task()
             current_task_name = current_task.get_name()
