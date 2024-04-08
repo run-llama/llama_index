@@ -64,7 +64,7 @@ class Dispatcher(BaseModel):
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
     current_span_ids: Optional[Dict[Any, str]] = Field(
-        default={},
+        default_factory=dict,
         description="Id of current enclosing span. Used for creating `dispatch_event` partials.",
     )
     _asyncio_lock: Optional[asyncio.Lock] = PrivateAttr()
