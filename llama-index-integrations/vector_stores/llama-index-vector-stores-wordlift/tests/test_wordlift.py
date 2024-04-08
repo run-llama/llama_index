@@ -36,18 +36,20 @@ def wordlift_vector_store(mock_key_provider, mock_vector_search_service):
     return WordliftVectorStore(mock_key_provider, mock_vector_search_service)
 
 
-def test_instance_creation(mock_key_provider, mock_vector_search_service) -> None:
+def test_instance_creation_with_key_provider_service_and_vector_search_service(
+    mock_key_provider, mock_vector_search_service
+) -> None:
     store = WordliftVectorStore(mock_key_provider, mock_vector_search_service)
     assert isinstance(store, WordliftVectorStore)
 
 
-def test_instance_creation_create() -> None:
+def test_instance_creation_with_create_method() -> None:
     store = WordliftVectorStore.create("dummy_key")
     assert isinstance(store, WordliftVectorStore)
 
 
 # @pytest.mark.asyncio
-def test_add_with_mocked_NodeRequest_and_VectorSearchQueryRequest(
+def test_add(
     wordlift_vector_store,
 ):
     # Create mock node data
@@ -87,7 +89,7 @@ def test_delete(wordlift_vector_store):
 
 
 # @pytest.mark.asyncio
-def test_query_with_mocked_VectorSearchQueryRequest(wordlift_vector_store):
+def test_query(wordlift_vector_store):
     # Mock the key provider behavior
     wordlift_vector_store.key_provider.for_query.return_value = "dummy_key"
 
