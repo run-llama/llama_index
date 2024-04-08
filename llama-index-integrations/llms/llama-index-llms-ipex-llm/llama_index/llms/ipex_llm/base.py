@@ -3,7 +3,6 @@ from threading import Thread
 from typing import Any, Callable, List, Optional, Sequence
 
 import torch
-
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
