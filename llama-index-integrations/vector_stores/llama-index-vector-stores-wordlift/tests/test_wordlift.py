@@ -64,10 +64,9 @@ def test_add_with_mocked_NodeRequest_and_VectorSearchQueryRequest(
         "llama_index.vector_stores.wordlift.base.NodeRequest"
     ) as MockNodeRequest:
         # Configure the behavior of MockNodeRequest
-        mock_requests = []
         for mock_node in mock_nodes:
             mock_node_request_instance = MockNodeRequest.return_value
-            mock_node_request_instance.node_id = mock_node.node_id
+            mock_node_request_instance.node_id.return_value = mock_node.node_id
             mock_node_request_instance.get_embedding.return_value = (
                 mock_node.get_embedding()
             )
@@ -88,9 +87,7 @@ def test_delete(wordlift_vector_store):
 
 
 # @pytest.mark.asyncio
-def test_query_with_mocked_VectorSearchQueryRequest(
-    wordlift_vector_store, mock_vector_search_service
-):
+def test_query_with_mocked_VectorSearchQueryRequest(wordlift_vector_store):
     # Mock the key provider behavior
     wordlift_vector_store.key_provider.for_query.return_value = "dummy_key"
 
@@ -99,8 +96,10 @@ def test_query_with_mocked_VectorSearchQueryRequest(
         "llama_index.vector_stores.wordlift.base.VectorSearchQueryRequest"
     ) as MockVectorSearchQueryRequest:
         # Configure the behavior of MockVectorSearchQueryRequest instance
-
+        mock_request = MockVectorSearchQueryRequest.return_value
+        mock_request.query_embedding.return_value = [1, 1, 1]
+        mock_request.similarity_top_k.return_value = 1
         # Call the query method
-        result = wordlift_vector_store.query(
+        wordlift_vector_store.query(
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
         )
