@@ -608,6 +608,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
             # build metadata filters
             query_filter = cast(Filter, self._build_query_filter(query))
 
+        #  NOTE: users can pass in search_params
+        search_params = kwargs.get("search_params")
+
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
                 "Hybrid search is not enabled. Please build the query with "
@@ -634,6 +637,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         ),
                         limit=query.similarity_top_k,
                         filter=query_filter,
+                        params=search_params,
                         with_payload=True,
                     ),
                     rest.SearchRequest(
@@ -646,6 +650,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         ),
                         limit=sparse_top_k,
                         filter=query_filter,
+                        params=search_params,
                         with_payload=True,
                     ),
                 ],
@@ -687,6 +692,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         ),
                         limit=sparse_top_k,
                         filter=query_filter,
+                        params=search_params,
                         with_payload=True,
                     ),
                 ],
@@ -704,6 +710,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         ),
                         limit=query.similarity_top_k,
                         filter=query_filter,
+                        params=search_params,
                         with_payload=True,
                     ),
                 ],
@@ -716,6 +723,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 query_vector=query_embedding,
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
+                search_params=search_params,
             )
 
             return self.parse_to_query_result(response)
