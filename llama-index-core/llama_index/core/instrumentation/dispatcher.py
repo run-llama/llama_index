@@ -19,10 +19,10 @@ import wrapt
 
 
 # ContextVar's for managing active spans
-async_span_ctx = ContextVar(
-    "async_span_ctx", default=defaultdict(dict)
+span_ctx_var = ContextVar(
+    "span_ctx_var", default=defaultdict(dict)
 )  # per thread >> async-task
-sync_span_ctx = ContextVar("sync_span_ctx", default={})  # per thread
+DEFAULT_SYNC_KEY = "sync_tasks"
 
 
 class EventDispatcher(Protocol):
@@ -228,34 +228,10 @@ class Dispatcher(BaseModel):
         dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
         return dispatch_event
 
-    def _get_parent_update_span_ctx(self, id_: str):
-        """Helper method to get parent id from the appropriate context var."""
-        current_thread = threading.get_ident()
-        span_ctx = sync_span_ctx.get().copy()
-        if current_thread not in span_ctx:
-            parent_id = None
-            span_ctx[current_thread] = [id_]
-        else:
-            parent_id = span_ctx[current_thread][-1]
-            span_ctx[current_thread].append(id_)
-        sync_span_ctx.set(span_ctx)
-        return parent_id
-
-    def _pop_span_from_ctx(self):
-        """Helper method to pop completed/dropped span from contextvar."""
-        current_thread = threading.get_ident()
-        span_ctx = sync_span_ctx.get().copy()
-        span_ctx[current_thread].pop()
-        if len(span_ctx[current_thread]) == 0:
-            del span_ctx[current_thread]
-        sync_span_ctx.set(span_ctx)
-
-    def _get_parent_update_async_span_ctx(self, id_: str):
+    def _get_parent_update_span_ctx_var(self, id_: str, current_task_name: str):
         """Helper method to get parent id from the appropriate async contextvar."""
         current_thread = threading.get_ident()
-        current_task = asyncio.current_task()
-        current_task_name = current_task.get_name()
-        thread_span_ctx = async_span_ctx.get().copy()
+        thread_span_ctx = span_ctx_var.get().copy()
         span_ctx = thread_span_ctx[current_thread]
         if current_task_name not in span_ctx:
             parent_id = None
@@ -263,22 +239,20 @@ class Dispatcher(BaseModel):
         else:
             parent_id = span_ctx[current_task_name][-1]
             span_ctx[current_task_name].append(id_)
-        async_span_ctx.set(thread_span_ctx)
+        span_ctx_var.set(thread_span_ctx)
 
         return parent_id
 
-    def _pop_span_from_async_ctx(self) -> None:
+    def _pop_span_from_ctx_var(self, current_task_name: str) -> None:
         """Helper method to pop completed/dropped span from async contextvar."""
         current_thread = threading.get_ident()
-        current_task = asyncio.current_task()
-        current_task_name = current_task.get_name()
-        thread_span_ctx = async_span_ctx.get().copy()
+        thread_span_ctx = span_ctx_var.get().copy()
         span_ctx = thread_span_ctx[current_thread]
 
         span_ctx[current_task_name].pop()
         if len(span_ctx[current_task_name]) == 0:
             del span_ctx[current_task_name]
-        async_span_ctx.set(thread_span_ctx)
+        span_ctx_var.set(thread_span_ctx)
 
     def span(self, func):
         @wrapt.decorator
@@ -291,7 +265,7 @@ class Dispatcher(BaseModel):
                 self.root.set_current_span_id(id_)
 
             # get parent_id (thread-safe)
-            parent_id = self._get_parent_update_span_ctx(id_)
+            parent_id = self._get_parent_update_span_ctx_var(id_, DEFAULT_SYNC_KEY)
 
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
@@ -309,7 +283,7 @@ class Dispatcher(BaseModel):
                 return result
             finally:
                 # clean up
-                self._pop_span_from_ctx()
+                self._pop_span_from_ctx_var(DEFAULT_SYNC_KEY)
 
         @wrapt.decorator
         async def async_wrapper(func, instance, args, kwargs):
@@ -322,7 +296,9 @@ class Dispatcher(BaseModel):
 
             # get parent_id (thread and async-task safe)
             # spans are managed in this hieararchy: thread > async task > async coros
-            parent_id = self._get_parent_update_async_span_ctx(id_)
+            current_task = asyncio.current_task()
+            current_task_name = current_task.get_name()
+            parent_id = self._get_parent_update_span_ctx_var(id_, current_task_name)
 
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
@@ -340,7 +316,7 @@ class Dispatcher(BaseModel):
                 return result
             finally:
                 # clean up
-                self._pop_span_from_async_ctx()
+                self._pop_span_from_ctx_var(current_task_name)
 
         if inspect.iscoroutinefunction(func):
             return async_wrapper(func)
@@ -366,8 +342,10 @@ class Dispatcher(BaseModel):
                 async with self.root.asyncio_lock:
                     self.root.set_current_span_id(id_)
 
-                # don't need parent_id
-                _ = self._get_parent_update_async_span_ctx(id_)
+                # don't need parent_id but need to update span ctx var
+                current_task = asyncio.current_task()
+                current_task_name = current_task.get_name()
+                _ = self._get_parent_update_span_ctx_var(id_, current_task_name)
 
                 self.span_enter(
                     id_=id_,
@@ -390,7 +368,7 @@ class Dispatcher(BaseModel):
                     return result
                 finally:
                     # clean up
-                    self._pop_span_from_async_ctx()
+                    self._pop_span_from_ctx_var(current_task_name)
 
             return async_wrapper(func)
 
