@@ -19,7 +19,9 @@ import wrapt
 
 
 # ContextVar's for managing active spans
-span_ctx = ContextVar("span_ctx", default=defaultdict(dict))  # per thread/async-task
+async_span_ctx = ContextVar(
+    "async_span_ctx", default=defaultdict(dict)
+)  # per thread/async-task
 sync_span_ctx = ContextVar("sync_span_ctx", default={})  # per thread
 
 
@@ -253,15 +255,15 @@ class Dispatcher(BaseModel):
         current_thread = threading.get_ident()
         current_task = asyncio.current_task()
         current_task_name = current_task.get_name()
-        thread_span_ctx_dict = span_ctx.get().copy()
-        span_ctx_dict = thread_span_ctx_dict[current_thread]
-        if current_task_name not in span_ctx_dict:
+        thread_span_ctx = async_span_ctx.get().copy()
+        span_ctx = thread_span_ctx[current_thread]
+        if current_task_name not in span_ctx:
             parent_id = None
-            span_ctx_dict[current_task_name] = [id_]
+            span_ctx[current_task_name] = [id_]
         else:
-            parent_id = span_ctx_dict[current_task_name][-1]
-            span_ctx_dict[current_task_name].append(id_)
-        span_ctx.set(thread_span_ctx_dict)
+            parent_id = span_ctx[current_task_name][-1]
+            span_ctx[current_task_name].append(id_)
+        async_span_ctx.set(thread_span_ctx)
 
         return parent_id
 
@@ -270,13 +272,13 @@ class Dispatcher(BaseModel):
         current_thread = threading.get_ident()
         current_task = asyncio.current_task()
         current_task_name = current_task.get_name()
-        thread_span_ctx_dict = span_ctx.get().copy()
-        span_ctx_dict = thread_span_ctx_dict[current_thread]
+        thread_span_ctx = async_span_ctx.get().copy()
+        span_ctx = thread_span_ctx[current_thread]
 
-        span_ctx_dict[current_task_name].pop()
-        if len(span_ctx_dict[current_task_name]) == 0:
-            del span_ctx_dict[current_task_name]
-        span_ctx.set(thread_span_ctx_dict)
+        span_ctx[current_task_name].pop()
+        if len(span_ctx[current_task_name]) == 0:
+            del span_ctx[current_task_name]
+        async_span_ctx.set(thread_span_ctx)
 
     def span(self, func):
         @wrapt.decorator
