@@ -26,7 +26,12 @@ async def eval_response_worker(
             ),
         )
 
-@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def eval_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
