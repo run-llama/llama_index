@@ -2,19 +2,19 @@
 
 All URIs are relative to *https://api.wordlift.io*
 
-| Method                                                                         | HTTP request                            | Description |
-| ------------------------------------------------------------------------------ | --------------------------------------- | ----------- |
-| [**update_nodes_collection**](VectorSearchNodesApi.md#update_nodes_collection) | **PUT** /vector-search/nodes-collection | Update      |
+Method | HTTP request | Description
+------------- | ------------- | -------------
+[**update_nodes_collection**](VectorSearchNodesApi.md#update_nodes_collection) | **PUT** /vector-search/nodes-collection | Update
+
 
 # **update_nodes_collection**
-
 > update_nodes_collection(node_request)
 
 Update
 
 ### Example
 
-- Api Key Authentication (ApiKey):
+* Api Key Authentication (ApiKey):
 
 ```python
 import manager_client
@@ -24,7 +24,9 @@ from pprint import pprint
 
 # Defining the host is optional and defaults to https://api.wordlift.io
 # See configuration.py for a list of all supported configuration parameters.
-configuration = manager_client.Configuration(host="https://api.wordlift.io")
+configuration = manager_client.Configuration(
+    host = "https://api.wordlift.io"
+)
 
 # The client must configure the authentication and authorization parameters
 # in accordance with the API server security policy.
@@ -32,7 +34,7 @@ configuration = manager_client.Configuration(host="https://api.wordlift.io")
 # satisfies your auth use case.
 
 # Configure API key authorization: ApiKey
-configuration.api_key["ApiKey"] = os.environ["API_KEY"]
+configuration.api_key['ApiKey'] = os.environ["API_KEY"]
 
 # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
 # configuration.api_key_prefix['ApiKey'] = 'Bearer'
@@ -41,23 +43,23 @@ configuration.api_key["ApiKey"] = os.environ["API_KEY"]
 async with manager_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = manager_client.VectorSearchNodesApi(api_client)
-    node_request = [manager_client.NodeRequest()]  # List[NodeRequest] |
+    node_request = [manager_client.NodeRequest()] # List[NodeRequest] | 
 
     try:
         # Update
         await api_instance.update_nodes_collection(node_request)
     except Exception as e:
-        print(
-            "Exception when calling VectorSearchNodesApi->update_nodes_collection: %s\n"
-            % e
-        )
+        print("Exception when calling VectorSearchNodesApi->update_nodes_collection: %s\n" % e)
 ```
+
+
 
 ### Parameters
 
-| Name             | Type                                    | Description | Notes |
-| ---------------- | --------------------------------------- | ----------- | ----- |
-| **node_request** | [**List[NodeRequest]**](NodeRequest.md) |             |
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **node_request** | [**List[NodeRequest]**](NodeRequest.md)|  | 
 
 ### Return type
 
@@ -69,15 +71,16 @@ void (empty response body)
 
 ### HTTP request headers
 
-- **Content-Type**: application/json
-- **Accept**: Not defined
+ - **Content-Type**: application/json
+ - **Accept**: Not defined
 
 ### HTTP response details
 
-| Status code | Description            | Response headers |
-| ----------- | ---------------------- | ---------------- |
-| **200**     | Found.                 | -                |
-| **401**     | Authentication Failure | -                |
-| **404**     | Not Found              | -                |
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Found. |  -  |
+**401** | Authentication Failure |  -  |
+**404** | Not Found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+

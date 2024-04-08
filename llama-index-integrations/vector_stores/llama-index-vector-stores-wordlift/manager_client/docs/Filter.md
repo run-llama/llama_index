@@ -4,11 +4,11 @@ A query request filter.
 
 ## Properties
 
-| Name         | Type    | Description                      | Notes |
-| ------------ | ------- | -------------------------------- | ----- |
-| **key**      | **str** | The filter key.                  |
-| **operator** | **str** | A query request filter operator. |
-| **value**    | **str** | The filter value.                |
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**key** | **str** | The filter key. | 
+**operator** | **str** | A query request filter operator. | 
+**value** | **str** | The filter value. | 
 
 ## Example
 
@@ -27,5 +27,6 @@ filter_dict = filter_instance.to_dict()
 # create an instance of Filter from a dict
 filter_form_dict = filter.from_dict(filter_dict)
 ```
-
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

@@ -127,3 +127,5 @@ class PageVectorSearchQueryResponseItem(BaseModel):
             "self": obj.get("self")
         })
         return _obj
+
+

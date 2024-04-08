@@ -99,3 +99,5 @@ class VectorSearchQueryRequest(BaseModel):
             "similarity_top_k": obj.get("similarity_top_k") if obj.get("similarity_top_k") is not None else 2
         })
         return _obj
+
+

@@ -38,8 +38,8 @@ class TestVectorSearchQueryRequest(unittest.TestCase):
             return VectorSearchQueryRequest(
                 filters = [
                     manager_client.models.filter.Filter(
-                        key = '',
-                        operator = 'EQ',
+                        key = '', 
+                        operator = 'EQ', 
                         value = '', )
                     ],
                 query_embedding = [

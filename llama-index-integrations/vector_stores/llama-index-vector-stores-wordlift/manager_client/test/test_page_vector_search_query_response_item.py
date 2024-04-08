@@ -41,13 +41,13 @@ class TestPageVectorSearchQueryResponseItem(unittest.TestCase):
                     manager_client.models.vector_search_query_response_item.VectorSearchQueryResponseItem(
                         embeddings = [
                             1.337
-                            ],
-                        id = '',
+                            ], 
+                        id = '', 
                         metadata = {
                             'key' : None
-                            },
-                        node_id = '',
-                        score = 1.337,
+                            }, 
+                        node_id = '', 
+                        score = 1.337, 
                         text = '', )
                     ],
                 last = '',
@@ -62,13 +62,13 @@ class TestPageVectorSearchQueryResponseItem(unittest.TestCase):
                     manager_client.models.vector_search_query_response_item.VectorSearchQueryResponseItem(
                         embeddings = [
                             1.337
-                            ],
-                        id = '',
+                            ], 
+                        id = '', 
                         metadata = {
                             'key' : None
-                            },
-                        node_id = '',
-                        score = 1.337,
+                            }, 
+                        node_id = '', 
+                        score = 1.337, 
                         text = '', )
                     ],
                 last = '',
