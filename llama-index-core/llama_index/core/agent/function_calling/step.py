@@ -252,6 +252,11 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+
+        if self._verbose and response.message.content:
+            print("=== LLM Response ===")
+            print(str(response.message.content))
+
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
                 "Parallel tool calls not supported for synchronous function calling agent"
@@ -333,6 +338,11 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+
+        if self._verbose and response.message.content:
+            print("=== LLM Response ===")
+            print(str(response.message.content))
+
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
                 "Parallel tool calls not supported for synchronous function calling agent"
@@ -347,10 +357,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             # we are done
             is_done = True
             new_steps = []
-
-            if self._verbose:
-                print("=== LLM Response ===")
-                print(str(response.message))
         else:
             is_done = False
             tasks = [
