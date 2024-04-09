@@ -8,7 +8,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 import pymilvus  # noqa
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -115,6 +115,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     consistency_level: str = "Strong"
     overwrite: bool = False
     text_key: Optional[str]
+    output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
     search_config: Optional[dict]
 
@@ -133,6 +134,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
+        output_fields: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
         **kwargs: Any,
@@ -146,6 +148,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             consistency_level=consistency_level,
             overwrite=overwrite,
             text_key=text_key,
+            output_fields=output_fields,
             index_config=index_config if index_config else {},
             search_config=search_config if search_config else {},
         )
@@ -336,9 +339,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         "The passed in text_key value does not exist "
                         "in the retrieved entity."
                     )
-                node = TextNode(
-                    text=text,
-                )
+
+                metadata = {key: hit["entity"].get(key) for key in self.output_fields}
+                node = TextNode(text=text, metadata=metadata)
+
             nodes.append(node)
             similarities.append(hit["distance"])
             ids.append(hit["id"])
