@@ -30,14 +30,6 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Now please provide constructive criticism.\n"
 )
 
-PYDANTIC_FORMAT_TMPL = """
-Here's a JSON schema to follow:
-{schema}
-
-Output a valid JSON object but do not repeat the schema.
-The response should be concise to ensure correct JSON format.
-"""
-
 
 class EvaluationData(BaseModel):
     passing: bool = Field(description="Whether the response passes the guidelines.")
@@ -67,7 +59,7 @@ class GuidelineEvaluator(BaseEvaluator):
         llm: Optional[LLM] = None,
         guidelines: Optional[str] = None,
         eval_template: Optional[Union[str, BasePromptTemplate]] = None,
-        # deprecated
+        output_parser: Optional[PydanticOutputParser] = None,
         service_context: Optional[ServiceContext] = None,
     ) -> None:
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
@@ -79,8 +71,8 @@ class GuidelineEvaluator(BaseEvaluator):
         else:
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
-        self._output_parser = PydanticOutputParser(
-            output_cls=EvaluationData, pydantic_format_tmpl=PYDANTIC_FORMAT_TMPL
+        self._output_parser = output_parser or PydanticOutputParser(
+            output_cls=EvaluationData
         )
         self._eval_template.output_parser = self._output_parser
 
