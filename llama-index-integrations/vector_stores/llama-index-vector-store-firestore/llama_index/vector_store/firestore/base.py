@@ -4,6 +4,7 @@ An index that is built on top of an existing vector store.
 
 """
 
+import logging
 from typing import Any, List, Optional, Union
 
 import more_itertools
@@ -28,8 +29,10 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from llama_index.vector_store.firestore.utils import client_with_user_agent
+from llama_index.core.base.embeddings.base import similarity, SimilarityMode
 
 DEFAULT_BATCH_SIZE = 500
+LOGGER = logging.getLogger(__name__)
 
 
 def _to_firestore_operator(
@@ -159,11 +162,20 @@ class FirestoreVectorStore(BasePydanticVectorStore):
 
         top_k_ids = []
         top_k_nodes = []
+        top_k_similarities = []
+
+        LOGGER.debug(f"Found {len(results)} results.")
 
         for result in results:
             # Convert the Firestore document to dict
             result_dict = result.to_dict() or {}
             metadata = result_dict.get(self.metadata_key) or {}
+            fir_vec: Optional[Vector] = result_dict.get(self.embedding_key)
+            if fir_vec is None:
+                raise ValueError(
+                    "Embedding is missing in Firestore document.", result.id
+                )
+            embedding = list(fir_vec.to_map_value()["value"])
 
             # Convert metadata to node, and add text if available
             node = metadata_dict_to_node(metadata, text=result_dict.get(self.text_key))
@@ -171,8 +183,25 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             # Keep track of the top k ids and nodes
             top_k_ids.append(result.id)
             top_k_nodes.append(node)
+            top_k_similarities.append(
+                similarity(
+                    query.query_embedding,
+                    embedding,
+                    self._distance_to_similarity_mode(self.distance_strategy),
+                )
+            )
 
-        return VectorStoreQueryResult(nodes=top_k_nodes, ids=top_k_ids)
+        return VectorStoreQueryResult(
+            nodes=top_k_nodes, ids=top_k_ids, similarities=top_k_similarities
+        )
+
+    def _distance_to_similarity_mode(self, distance: DistanceMeasure) -> SimilarityMode:
+        """Convert Firestore's distance measure to similarity mode."""
+        return {
+            DistanceMeasure.COSINE: SimilarityMode.DEFAULT,
+            DistanceMeasure.EUCLIDEAN: SimilarityMode.EUCLIDEAN,
+            DistanceMeasure.DOT_PRODUCT: SimilarityMode.DOT_PRODUCT,
+        }.get(distance, SimilarityMode.DEFAULT)
 
     def _delete_batch(self, ids: List[str]) -> None:
         """Delete batch of vectors from Firestore."""

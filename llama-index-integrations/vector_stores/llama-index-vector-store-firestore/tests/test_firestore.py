@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any, List
 from unittest import TestCase
 from unittest.mock import Mock, patch
@@ -47,7 +48,7 @@ def document_snapshots() -> List[DocumentSnapshot]:
         DocumentSnapshot(
             reference=DocumentReference(TEST_COLLECTION, "aaa"),
             data={
-                "embedding": TEST_EMBEDDING,
+                "embedding": Vector(TEST_EMBEDDING),
                 "metadata": {
                     "_node_content": json.dumps(
                         {
@@ -197,6 +198,9 @@ def test_query(
     )
 
 
+logger = logging.getLogger(__name__)
+
+
 def test_query_with_field_filter(
     vector_store: FirestoreVectorStore,
     test_case: TestCase,
@@ -206,14 +210,17 @@ def test_query_with_field_filter(
     query = VectorStoreQuery(
         query_embedding=query_embedding,
         filters=MetadataFilters(
-            filters=[MetadataFilter(key="test_key", value="test_value")]
+            filters=[MetadataFilter(key="metadata.ref_doc_id", value="1234")]
         ),
+    )
+    collection_ref_with_filter = (
+        vector_store.client.collection.return_value.where.return_value
     )
 
     vector_store.query(query)
 
     vector_store.client.collection.assert_called_with(TEST_COLLECTION)
-    vector_store.client.collection.return_value.find_nearest.assert_called_with(
+    collection_ref_with_filter.find_nearest.assert_called_with(
         vector_field="embedding",
         query_vector=Vector(query_embedding),
         distance_measure=DistanceMeasure.COSINE,
