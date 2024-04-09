@@ -35,6 +35,8 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
+llama-index-llms-huggingface = "^0.1.4"
+huggingface_hub = "^0.22.2"
 torch = "<2.2.0"
 optimum = {extras = ["nncf", "openvino"], version = ">=1.18.0"}
 
