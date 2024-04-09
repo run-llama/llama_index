@@ -138,7 +138,13 @@ class FirestoreVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes using with ref_doc_id."""
-        self._client.collection(self.collection_name).document(ref_doc_id).delete()
+        docs = (
+            self._client.collection(self.collection_name)
+            .where("metadata.ref_doc_id", "==", ref_doc_id)
+            .stream()
+        )
+
+        self._delete_batch([doc.id for doc in docs])
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
@@ -167,6 +173,15 @@ class FirestoreVectorStore(BasePydanticVectorStore):
             top_k_nodes.append(node)
 
         return VectorStoreQueryResult(nodes=top_k_nodes, ids=top_k_ids)
+
+    def _delete_batch(self, ids: List[str]) -> None:
+        """Delete batch of vectors from Firestore."""
+        db_batch = self._client.batch()
+        for batch in more_itertools.chunked(ids, DEFAULT_BATCH_SIZE):
+            for doc_id in batch:
+                doc = self._client.collection(self.collection_name).document(doc_id)
+                db_batch.delete(doc)
+            db_batch.commit()
 
     def _upsert_batch(self, entries: List[dict], ids: Optional[List[str]]) -> None:
         """Upsert batch of vectors to Firestore."""

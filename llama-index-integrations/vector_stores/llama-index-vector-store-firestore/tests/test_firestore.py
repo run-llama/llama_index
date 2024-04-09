@@ -24,7 +24,7 @@ TEST_COLLECTION = "mock_collection"
 TEST_EMBEDDING = [1.0, 2.0, 3.0]
 
 
-@pytest.fixture(scope="module", autouse=True, name="mock_client")
+@pytest.fixture(autouse=True, name="mock_client")
 def mock_firestore_client() -> Any:
     """Returns a mock Firestore client."""
     with patch("google.cloud.firestore.Client") as mock_client_cls:
@@ -69,6 +69,7 @@ def document_snapshots() -> List[DocumentSnapshot]:
                     "_node_type": "TextNode",
                     "doc_id": "aaa",
                     "document_id": "aaa",
+                    "ref_doc_id": "1234",
                 },
             },
             exists=True,
@@ -156,13 +157,11 @@ def test_add_vectors(
 
 def test_delete_node(vector_store: FirestoreVectorStore, mock_client: Mock) -> None:
     """Test deleting a node from Firestore."""
-    vector_store.delete("ref_doc_id")
+    vector_store.delete("1234")
 
     mock_client.collection.assert_called_with("mock_collection")
     collection_mock = mock_client.collection.return_value
-    collection_mock.document.assert_called_with("ref_doc_id")
-    document_mock = collection_mock.document.return_value
-    document_mock.delete.assert_called()
+    collection_mock.where.assert_called_with("metadata.ref_doc_id", "==", "1234")
 
 
 def test_query(
@@ -220,7 +219,6 @@ def test_query_with_field_filter(
         distance_measure=DistanceMeasure.COSINE,
         limit=1,
     )
-
     test_case.assertIsInstance(
         vector_store.client.collection.return_value.where.call_args_list[0][1][
             "filter"
