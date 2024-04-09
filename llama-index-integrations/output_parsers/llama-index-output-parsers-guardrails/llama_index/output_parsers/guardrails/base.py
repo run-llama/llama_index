@@ -1,15 +1,17 @@
-"""Guardrails output parser.
+"""
+Guardrails output parser.
 
 See https://github.com/ShreyaR/guardrails.
 
 """
+
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from deprecated import deprecated
-from llama_index.core.output_parsers.base import ChainableOutputParser
-
 from guardrails import Guard
+
+from llama_index.core.output_parsers.base import ChainableOutputParser
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import BaseLLM
@@ -34,7 +36,6 @@ class GuardrailsOutputParser(ChainableOutputParser):
     ):
         """Initialize a Guardrails output parser."""
         self.guard: Guard = guard
-        self.llm = llm
         self.format_key = format_key
 
     @classmethod
@@ -63,21 +64,9 @@ class GuardrailsOutputParser(ChainableOutputParser):
 
         return cls(Guard.from_rail_string(rail_string), llm=llm)
 
-    def parse(
-        self,
-        output: str,
-        llm: Optional["BaseLLM"] = None,
-        num_reasks: Optional[int] = 1,
-        *args: Any,
-        **kwargs: Any
-    ) -> Any:
+    def parse(self, output: str, *args: Any, **kwargs: Any) -> Any:
         """Parse, validate, and correct errors programmatically."""
-        llm = llm or self.llm
-        llm_fn = get_callable(llm)
-
-        return self.guard.parse(
-            output, llm_api=llm_fn, num_reasks=num_reasks, *args, **kwargs
-        )
+        return self.guard.parse(output, *args, **kwargs).validated_output
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
