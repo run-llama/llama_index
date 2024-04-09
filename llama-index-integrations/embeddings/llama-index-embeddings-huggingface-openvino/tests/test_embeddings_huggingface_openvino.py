@@ -1,5 +1,5 @@
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.embeddings.hugggingface_openvino import OpenVINOEmbedding
+from llama_index.embeddings.huggingface_openvino import OpenVINOEmbedding
 
 
 def test_openvinoembedding_class():
