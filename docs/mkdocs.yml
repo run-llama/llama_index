@@ -79,6 +79,7 @@ nav:
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/openai_agent_tool_call_parser.ipynb
+          - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/anthropic_agent.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
