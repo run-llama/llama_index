@@ -153,6 +153,7 @@ class IpexLLM(CustomLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        low_bit_model: Optional[bool] = False,
     ) -> None:
         """
         Construct IpexLLM.
@@ -190,34 +191,64 @@ class IpexLLM(CustomLLM):
         if model:
             self._model = model
         else:
-            try:
-                if load_in_low_bit:
-                    self._model = AutoModelForCausalLM.from_pretrained(
-                        model_name,
-                        load_in_low_bit=load_in_low_bit,
-                        use_cache=True,
-                        trust_remote_code=True,
-                        **model_kwargs,
-                    )
-                else:
-                    self._model = AutoModelForCausalLM.from_pretrained(
-                        model_name,
-                        load_in_4bit=load_in_4bit,
-                        use_cache=True,
-                        trust_remote_code=True,
-                        **model_kwargs,
-                    )
-            except Exception:
-                from ipex_llm.transformers import AutoModel
+            if not low_bit_model:
+                try:
+                    if load_in_low_bit:
+                        self._model = AutoModelForCausalLM.from_pretrained(
+                            model_name,
+                            load_in_low_bit=load_in_low_bit,
+                            use_cache=True,
+                            trust_remote_code=True,
+                            **model_kwargs,
+                        )
+                    else:
+                        self._model = AutoModelForCausalLM.from_pretrained(
+                            model_name,
+                            load_in_4bit=load_in_4bit,
+                            use_cache=True,
+                            trust_remote_code=True,
+                            **model_kwargs,
+                        )
+                except Exception:
+                    from ipex_llm.transformers import AutoModel
 
-                if load_in_low_bit:
-                    self._model = AutoModel.from_pretrained(
-                        model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
-                    )
-                else:
-                    self._model = AutoModel.from_pretrained(
-                        model_name, load_in_4bit=load_in_4bit, **model_kwargs
-                    )
+                    if load_in_low_bit:
+                        self._model = AutoModel.from_pretrained(
+                            model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
+                        )
+                    else:
+                        self._model = AutoModel.from_pretrained(
+                            model_name, load_in_4bit=load_in_4bit, **model_kwargs
+                        )
+            else:
+                try:
+                    if load_in_low_bit:
+                        self._model = AutoModelForCausalLM.load_low_bit(
+                            model_name,
+                            load_in_low_bit=load_in_low_bit,
+                            use_cache=True,
+                            trust_remote_code=True,
+                            **model_kwargs,
+                        )
+                    else:
+                        self._model = AutoModelForCausalLM.load_low_bit(
+                            model_name,
+                            load_in_4bit=load_in_4bit,
+                            use_cache=True,
+                            trust_remote_code=True,
+                            **model_kwargs,
+                        )
+                except Exception:
+                    from ipex_llm.transformers import AutoModel
+
+                    if load_in_low_bit:
+                        self._model = AutoModel.load_low_bit(
+                            model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
+                        )
+                    else:
+                        self._model = AutoModel.load_low_bit(
+                            model_name, load_in_4bit=load_in_4bit, **model_kwargs
+                        )
 
         if "xpu" in device_map:
             self._model = self._model.to(device_map)
@@ -242,7 +273,6 @@ class IpexLLM(CustomLLM):
         if tokenizer:
             self._tokenizer = tokenizer
         else:
-            print(f"load tokenizer: {tokenizer_name}")
             try:
                 self._tokenizer = AutoTokenizer.from_pretrained(
                     tokenizer_name, **tokenizer_kwargs
@@ -294,6 +324,98 @@ class IpexLLM(CustomLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+
+    @classmethod
+    def from_model_id(
+        cls,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
+        tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        load_in_4bit: Optional[bool] = True,
+        load_in_low_bit: Optional[str] = None,
+        model: Optional[Any] = None,
+        tokenizer: Optional[Any] = None,
+        device_map: Optional[str] = "auto",
+        stopping_ids: Optional[List[int]] = None,
+        tokenizer_kwargs: Optional[dict] = None,
+        tokenizer_outputs_to_remove: Optional[list] = None,
+        model_kwargs: Optional[dict] = None,
+        generate_kwargs: Optional[dict] = None,
+        is_chat_model: Optional[bool] = False,
+        callback_manager: Optional[CallbackManager] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
+    ):
+        return cls(
+            context_window=context_window,
+            max_new_tokens=max_new_tokens,
+            tokenizer_name=tokenizer_name,
+            model_name=model_name,
+            load_in_4bit=load_in_4bit,
+            load_in_low_bit=load_in_low_bit,
+            device_map=device_map,
+            stopping_ids=stopping_ids,
+            tokenizer_kwargs=tokenizer_kwargs,
+            tokenizer_outputs_to_remove=tokenizer_outputs_to_remove,
+            model_kwargs=model_kwargs,
+            generate_kwargs=generate_kwargs,
+            is_chat_model=is_chat_model,
+            callback_manager=callback_manager,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            low_bit_model=False,
+        )
+
+    @classmethod
+    def from_model_id_low_bit(
+        cls,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
+        tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        load_in_4bit: Optional[bool] = True,
+        load_in_low_bit: Optional[str] = None,
+        model: Optional[Any] = None,
+        tokenizer: Optional[Any] = None,
+        device_map: Optional[str] = "auto",
+        stopping_ids: Optional[List[int]] = None,
+        tokenizer_kwargs: Optional[dict] = None,
+        tokenizer_outputs_to_remove: Optional[list] = None,
+        model_kwargs: Optional[dict] = None,
+        generate_kwargs: Optional[dict] = None,
+        is_chat_model: Optional[bool] = False,
+        callback_manager: Optional[CallbackManager] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
+    ):
+        return cls(
+            context_window=context_window,
+            max_new_tokens=max_new_tokens,
+            tokenizer_name=tokenizer_name,
+            model_name=model_name,
+            load_in_4bit=load_in_4bit,
+            load_in_low_bit=load_in_low_bit,
+            device_map=device_map,
+            stopping_ids=stopping_ids,
+            tokenizer_kwargs=tokenizer_kwargs,
+            tokenizer_outputs_to_remove=tokenizer_outputs_to_remove,
+            model_kwargs=model_kwargs,
+            generate_kwargs=generate_kwargs,
+            is_chat_model=is_chat_model,
+            callback_manager=callback_manager,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            low_bit_model=True,
         )
 
     @classmethod
