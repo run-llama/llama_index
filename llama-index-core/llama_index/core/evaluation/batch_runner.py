@@ -1,4 +1,5 @@
 import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from llama_index.core.async_utils import asyncio_module
@@ -7,6 +8,11 @@ from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 
 
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def eval_response_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
@@ -26,6 +32,11 @@ async def eval_response_worker(
         )
 
 
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def eval_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
@@ -46,6 +57,11 @@ async def eval_worker(
         )
 
 
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def response_worker(
     semaphore: asyncio.Semaphore,
     query_engine: BaseQueryEngine,
@@ -207,7 +223,9 @@ class BatchEvalRunner:
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
         # boolean to check if using multi kwarg evaluator
-        multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
+        multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
+            next(iter(eval_kwargs_lists.values())), dict
+        )
 
         # run evaluations
         eval_jobs = []
@@ -265,7 +283,9 @@ class BatchEvalRunner:
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
         # boolean to check if using multi kwarg evaluator
-        multi_kwargs = isinstance(next(iter(eval_kwargs_lists.values())), dict)
+        multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
+            next(iter(eval_kwargs_lists.values())), dict
+        )
 
         # run evaluations
         eval_jobs = []

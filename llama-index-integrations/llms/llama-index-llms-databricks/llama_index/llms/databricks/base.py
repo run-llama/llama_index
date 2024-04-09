@@ -4,17 +4,17 @@ from typing import Any, Optional
 from llama_index.llms.openai_like import OpenAILike
 
 
-class DataBricks(OpenAILike):
-    """DataBricks LLM.
+class Databricks(OpenAILike):
+    """Databricks LLM.
 
     Examples:
         `pip install llama-index-llms-databricks`
 
         ```python
-        from llama_index.llms.databricks import DataBricks
+        from llama_index.llms.databricks import Databricks
 
-        # Set up the DataBricks class with the required model, API key and serving endpoint
-        llm = DataBricks(model="databricks-dbrx-instruct", api_key="your_api_key", api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints/[your-serving-endpoint]")
+        # Set up the Databricks class with the required model, API key and serving endpoint
+        llm = Databricks(model="databricks-dbrx-instruct", api_key="your_api_key", api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints")
 
         # Call the complete method with a query
         response = llm.complete("Explain the importance of open source LLMs")
@@ -31,8 +31,8 @@ class DataBricks(OpenAILike):
         is_chat_model: bool = True,
         **kwargs: Any,
     ) -> None:
-        api_key = api_key or os.environ.get("DATABRICKS_API_KEY", None)
-        api_base = api_base or os.environ.get("DATABRICKS_API_BASE", None)
+        api_key = api_key or os.environ.get("DATABRICKS_TOKEN", None)
+        api_base = api_base or os.environ.get("DATABRICKS_SERVING_ENDPOINT", None)
         super().__init__(
             model=model,
             api_key=api_key,
@@ -44,4 +44,4 @@ class DataBricks(OpenAILike):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return "DataBricks"
+        return "Databricks"

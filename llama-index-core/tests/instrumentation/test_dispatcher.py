@@ -126,7 +126,12 @@ def test_dispatcher_span_args(mock_uuid, mock_span_enter, mock_span_exit):
     mock_span_enter.assert_called_once()
     args, kwargs = mock_span_enter.call_args
     assert args == ()
-    assert kwargs == {"id_": span_id, "bound_args": bound_args, "instance": None}
+    assert kwargs == {
+        "id_": span_id,
+        "bound_args": bound_args,
+        "instance": None,
+        "parent_id": None,
+    }
 
     # span_exit
     args, kwargs = mock_span_exit.call_args
@@ -157,7 +162,12 @@ def test_dispatcher_span_args_with_instance(mock_uuid, mock_span_enter, mock_spa
     mock_span_enter.assert_called_once()
     args, kwargs = mock_span_enter.call_args
     assert args == ()
-    assert kwargs == {"id_": span_id, "bound_args": bound_args, "instance": instance}
+    assert kwargs == {
+        "id_": span_id,
+        "bound_args": bound_args,
+        "instance": instance,
+        "parent_id": None,
+    }
 
     # span_exit
     args, kwargs = mock_span_exit.call_args
@@ -265,7 +275,12 @@ async def test_dispatcher_async_span_args(mock_uuid, mock_span_enter, mock_span_
     mock_span_enter.assert_called_once()
     args, kwargs = mock_span_enter.call_args
     assert args == ()
-    assert kwargs == {"id_": span_id, "bound_args": bound_args, "instance": None}
+    assert kwargs == {
+        "id_": span_id,
+        "bound_args": bound_args,
+        "instance": None,
+        "parent_id": None,
+    }
 
     # span_exit
     args, kwargs = mock_span_exit.call_args
@@ -299,7 +314,12 @@ async def test_dispatcher_async_span_args_with_instance(
     mock_span_enter.assert_called_once()
     args, kwargs = mock_span_enter.call_args
     assert args == ()
-    assert kwargs == {"id_": span_id, "bound_args": bound_args, "instance": instance}
+    assert kwargs == {
+        "id_": span_id,
+        "bound_args": bound_args,
+        "instance": instance,
+        "parent_id": None,
+    }
 
     # span_exit
     args, kwargs = mock_span_exit.call_args

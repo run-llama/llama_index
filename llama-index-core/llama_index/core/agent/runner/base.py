@@ -667,7 +667,10 @@ class AgentRunner(BaseAgentRunner):
             chat_response = self._chat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
+            assert isinstance(chat_response, StreamingAgentChatResponse) or (
+                isinstance(chat_response, AgentChatResponse)
+                and chat_response.is_dummy_stream
+            )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
@@ -689,7 +692,10 @@ class AgentRunner(BaseAgentRunner):
             chat_response = await self._achat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
+            assert isinstance(chat_response, StreamingAgentChatResponse) or (
+                isinstance(chat_response, AgentChatResponse)
+                and chat_response.is_dummy_stream
+            )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 

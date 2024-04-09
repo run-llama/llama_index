@@ -3,6 +3,7 @@ from typing import Any, cast, List, Optional, TYPE_CHECKING
 from llama_index.core.instrumentation.span.simple import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from datetime import datetime
+from functools import reduce
 import warnings
 
 if TYPE_CHECKING:
@@ -40,7 +41,8 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         span = cast(SimpleSpan, span)
         span.end_time = datetime.now()
         span.duration = (span.end_time - span.start_time).total_seconds()
-        self.completed_spans += [span]
+        with self.lock:
+            self.completed_spans += [span]
         return span
 
     def prepare_to_drop_span(
@@ -53,55 +55,79 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
     ) -> SimpleSpan:
         """Logic for droppping a span."""
         if id_ in self.open_spans:
-            span = self.open_spans[id_]
-            span.metadata = {"error": str(err)}
-            self.dropped_spans += [span]
+            with self.lock:
+                span = self.open_spans[id_]
+                span.metadata = {"error": str(err)}
+                self.dropped_spans += [span]
             return span
 
         return None
+
+    def _get_parents(self) -> List[SimpleSpan]:
+        """Helper method to get all parent/root spans."""
+        all_spans = self.completed_spans + self.dropped_spans
+        return [s for s in all_spans if s.parent_id is None]
+
+    def _build_tree_by_parent(
+        self, parent: SimpleSpan, acc: List[SimpleSpan], spans: List[SimpleSpan]
+    ) -> List[SimpleSpan]:
+        """Builds the tree by parent root."""
+        if not spans:
+            return acc
+
+        children = [s for s in spans if s.parent_id == parent.id_]
+        if not children:
+            return acc
+        updated_spans = [s for s in spans if s not in children]
+
+        children_trees = [
+            self._build_tree_by_parent(
+                parent=c, acc=[c], spans=[s for s in updated_spans if c != s]
+            )
+            for c in children
+        ]
+
+        return acc + reduce(lambda x, y: x + y, children_trees)
 
     def _get_trace_trees(self) -> List["Tree"]:
         """Method for getting trace trees."""
         try:
             from treelib import Tree
-            from treelib.exceptions import NodeIDAbsentError
         except ImportError as e:
             raise ImportError(
                 "`treelib` package is missing. Please install it by using "
                 "`pip install treelib`."
             )
-        sorted_spans = sorted(
-            self.completed_spans + self.dropped_spans, key=lambda x: x.start_time
-        )
+
+        all_spans = self.completed_spans + self.dropped_spans
+        for s in all_spans:
+            if s.parent_id is None:
+                continue
+            if not any(ns.id_ == s.parent_id for ns in all_spans):
+                warnings.warn("Parent with id {span.parent_id} missing from spans")
+                s.parent_id += "-MISSING"
+                all_spans.append(SimpleSpan(id_=s.parent_id, parent_id=None))
+
+        parents = self._get_parents()
+        span_groups = []
+        for p in parents:
+            this_span_group = self._build_tree_by_parent(
+                parent=p, acc=[p], spans=[s for s in all_spans if s != p]
+            )
+            sorted_span_group = sorted(this_span_group, key=lambda x: x.start_time)
+            span_groups.append(sorted_span_group)
 
         trees = []
         tree = Tree()
-        for span in sorted_spans:
-            if span.parent_id is None:
-                # complete old tree unless its empty (i.e., start of loop)
-                if tree.all_nodes():
-                    trees.append(tree)
-                    # start new tree
-                    tree = Tree()
+        for grp in span_groups:
+            for span in grp:
+                if span.parent_id is None:
+                    # complete old tree unless its empty (i.e., start of loop)
+                    if tree.all_nodes():
+                        trees.append(tree)
+                        # start new tree
+                        tree = Tree()
 
-            try:
-                tree.create_node(
-                    tag=f"{span.id_} ({span.duration})",
-                    identifier=span.id_,
-                    parent=span.parent_id,
-                    data=span.start_time,
-                )
-            except NodeIDAbsentError:
-                warnings.warn("Parent with id {span.parent_id} missing from spans")
-                # create new tree and fake parent node
-                trees.append(tree)
-                tree = Tree()
-                tree.create_node(
-                    tag=f"{span.parent_id} (MISSING)",
-                    identifier=span.parent_id,
-                    parent=None,
-                    data=span.start_time,
-                )
                 tree.create_node(
                     tag=f"{span.id_} ({span.duration})",
                     identifier=span.id_,
