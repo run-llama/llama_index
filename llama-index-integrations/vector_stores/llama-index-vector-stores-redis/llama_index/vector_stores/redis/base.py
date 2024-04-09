@@ -31,6 +31,7 @@ from llama_index.vector_stores.redis.schema import (
     NODE_CONTENT_FIELD_NAME,
     DOC_ID_FIELD_NAME,
     TEXT_FIELD_NAME,
+    VECTOR_FIELD_NAME,
     RedisVectorStoreSchema,
 )
 from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
@@ -54,10 +55,17 @@ class RedisVectorStore(BasePydanticVectorStore):
     """RedisVectorStore.
 
     The RedisVectorStore takes a user-defined schema object and a Redis connection
-    client or URL string. The schema is optional, but useful for defining
-    additional metadata fields to use in filterable queries or for setting
-    custom specifications on fields to improve search quality (like which vector
-    index algorithm to use).
+    client or URL string. The schema is optional, but useful for:
+    - Defining a custom index name, key prefix, and key separator.
+    - Defining *additional* metadata fields to use as query filters.
+    - Setting custom specifications on fields to improve search quality, e.g
+    which vector index algorithm to use.
+
+    Other Notes:
+    - All embeddings and docs are stored in Redis. During query time, the index
+    uses Redis to query for the top k most similar nodes.
+    - Redis & LlamaIndex expect at least 4 *required* fields for any schema, default or custom,
+    `id`, `doc_id`, `text`, `vector`.
 
     Args:
         schema (IndexSchema, optional): Redis index schema object.
@@ -69,6 +77,8 @@ class RedisVectorStore(BasePydanticVectorStore):
 
     Raises:
         ValueError: If your Redis server does not have search or JSON enabled.
+        ValueError: If a Redis connection failed to be established.
+        ValueError: If an invalid schema is provided.
 
     Example:
         from redisvl.schema import IndexSchema
@@ -87,7 +97,10 @@ class RedisVectorStore(BasePydanticVectorStore):
                 {"name": "vector", "type": "vector", "attrs": {"dims": 1536, "algorithm": "flat"}}
             ]
         })
-        rds = RedisVectorStore(schema=schema, redis_url="redis://localhost:6379")
+        vector_store = RedisVectorStore(
+            schema=schema,
+            redis_url="redis://localhost:6379"
+        )
     """
 
     stores_text = True
@@ -97,7 +110,6 @@ class RedisVectorStore(BasePydanticVectorStore):
     _index: SearchIndex = PrivateAttr()
     _overwrite: bool = PrivateAttr()
     _return_fields: List[str] = PrivateAttr()
-    _vector_field_name: str = PrivateAttr()
 
     def __init__(
         self,
@@ -105,8 +117,10 @@ class RedisVectorStore(BasePydanticVectorStore):
         redis_client: Optional[Redis] = None,
         redis_url: Optional[str] = None,
         overwrite: bool = False,
+        return_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        # check for indicators of old schema
         self._flag_old_kwargs(**kwargs)
 
         # Setup schema
@@ -115,17 +129,12 @@ class RedisVectorStore(BasePydanticVectorStore):
             schema = RedisVectorStoreSchema()
 
         self._validate_schema(schema)
-
-        self._vector_field_name: Optional[str] = None
-
-        self._return_fields = [
+        self._return_fields = return_fields or [
             NODE_ID_FIELD_NAME,
             DOC_ID_FIELD_NAME,
             TEXT_FIELD_NAME,
-            VectorQuery.DISTANCE_ID,
             NODE_CONTENT_FIELD_NAME,
         ]
-
         self._index = SearchIndex(schema=schema)
         self._overwrite = overwrite
 
@@ -174,6 +183,10 @@ class RedisVectorStore(BasePydanticVectorStore):
         """Return the index schema."""
         return self._index.schema
 
+    def set_return_fields(self, return_fields: List[str]) -> None:
+        """Update the return fields for the query response."""
+        self._return_fields = return_fields
+
     def index_exists(self) -> bool:
         """Check whether the index exists in Redis.
 
@@ -198,26 +211,14 @@ class RedisVectorStore(BasePydanticVectorStore):
         if len(nodes) == 0:
             return []
 
-        # If the vector field, at this point, does not exist... either
-        ## They did not provide a vector field in their schema
-        ## OR They used the default schema
-        embedding_len = len(nodes[0].get_embedding())
-        if not self._vector_field_name:
-            self._vector_field_name = "vector"
-            self._index.schema.add_field(
-                {
-                    "name": self._vector_field_name,
-                    "type": "vector",
-                    "attrs": {"dims": embedding_len, "algorithm": "hnsw"},
-                }
-            )
-
         # Now check for the scenario where user is trying to index embeddings that don't align with schema
-        expected_dims = self._index.schema.fields[self._vector_field_name].attrs.dims
+        embedding_len = len(nodes[0].get_embedding())
+        expected_dims = self._index.schema.fields[VECTOR_FIELD_NAME].attrs.dims
         if expected_dims != embedding_len:
             raise ValueError(
                 f"Attempting to index embeddings of dim {embedding_len} "
-                f"which doesn't match the index schema expectation of {expected_dims}"
+                f"which doesn't match the index schema expectation of {expected_dims}. "
+                "Please review the Redis integration example to learn how to customize schema."
             )
 
         # Create index honoring overwrite policy
@@ -233,7 +234,7 @@ class RedisVectorStore(BasePydanticVectorStore):
                 NODE_ID_FIELD_NAME: node.node_id,
                 DOC_ID_FIELD_NAME: node.ref_doc_id,
                 TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
-                self._vector_field_name: array_to_buffer(embedding),
+                VECTOR_FIELD_NAME: array_to_buffer(embedding),
             }
             # parse and append metadata
             additional_metadata = node_to_metadata_dict(
@@ -267,12 +268,12 @@ class RedisVectorStore(BasePydanticVectorStore):
         # fetch docs to delete and flush them
         docs_to_delete = self._index.search(delete_query.query, delete_query.params)
         with self._index.client.pipeline(transaction=False) as pipe:
-            for doc in docs_to_delete:
+            for doc in docs_to_delete.docs:
                 pipe.delete(doc.id)
             res = pipe.execute()
 
         logger.info(
-            f"Deleted {len(docs_to_delete)} documents from index {self._index.name}"
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
         )
 
     def delete_index(self) -> None:
@@ -324,33 +325,35 @@ class RedisVectorStore(BasePydanticVectorStore):
             FilterExpression: A Redis filter expression.
         """
         filter_expression = FilterExpression("*")
-        if metadata_filters.filters:
-            for filter in metadata_filters.filters:
-                # Index must be created with the metadata field in the index schema
-                field = self._index.schema.fields.get(filter.key)
-                if not field:
-                    logger.warning(
-                        f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
-                    )
-                    continue
-                # Extract redis filter
-                redis_filter = self._to_redis_filter(field, filter)
-                # Combine with conditional
-                if metadata_filters.condition == "and":
-                    filter_expression = filter_expression & redis_filter
-                else:
-                    filter_expression = filter_expression | redis_filter
+        if metadata_filters:
+            if metadata_filters.filters:
+                for filter in metadata_filters.filters:
+                    # Index must be created with the metadata field in the index schema
+                    field = self._index.schema.fields.get(filter.key)
+                    if not field:
+                        logger.warning(
+                            f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
+                        )
+                        continue
+                    # Extract redis filter
+                    redis_filter = self._to_redis_filter(field, filter)
+                    # Combine with conditional
+                    if metadata_filters.condition == "and":
+                        filter_expression = filter_expression & redis_filter
+                    else:
+                        filter_expression = filter_expression | redis_filter
         return filter_expression
 
     def _to_redis_query(self, query: VectorStoreQuery) -> VectorQuery:
         """Creates a RedisQuery from a VectorStoreQuery."""
         filter_expression = self._create_redis_filter_expression(query.filters)
+        return_fields = self._return_fields.copy()
         return VectorQuery(
             vector=query.query_embedding,
-            vector_field_name=self._vector_field_name,
-            return_fields=self._return_fields,
+            vector_field_name=VECTOR_FIELD_NAME,
             num_results=query.similarity_top_k,
             filter_expression=filter_expression,
+            return_fields=return_fields,
         )
 
     def _extract_node_and_score(self, doc, redis_query: VectorQuery):
@@ -401,14 +404,13 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If query.query_embedding is None.
             redis.exceptions.RedisError: If there is an error querying the index.
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
-            ValueError: If no documents are found when querying the index.
         """
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 
         redis_query = self._to_redis_query(query)
         logger.info(
-            f"Querying index {self._index.name} with filters {redis_query.filters}"
+            f"Querying index {self._index.name} with filters {redis_query.get_filter()}"
         )
 
         try:
@@ -424,7 +426,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
     def persist(
         self,
-        persist_path: str,
+        persist_path: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
         in_background: bool = True,
     ) -> None:

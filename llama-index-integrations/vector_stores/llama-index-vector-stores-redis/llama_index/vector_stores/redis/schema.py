@@ -6,6 +6,7 @@ NODE_ID_FIELD_NAME: str = "id"
 DOC_ID_FIELD_NAME: str = "doc_id"
 TEXT_FIELD_NAME: str = "text"
 NODE_CONTENT_FIELD_NAME: str = "_node_content"
+VECTOR_FIELD_NAME: str = "vector"
 
 
 class RedisIndexInfo(IndexInfo):
@@ -30,5 +31,14 @@ class RedisVectorStoreSchema(IndexSchema):
             {"type": "tag", "name": NODE_ID_FIELD_NAME, "attrs": {"sortable": False}},
             {"type": "tag", "name": DOC_ID_FIELD_NAME, "attrs": {"sortable": False}},
             {"type": "text", "name": TEXT_FIELD_NAME, "attrs": {"weight": 1.0}},
+            {
+                "type": "vector",
+                "name": VECTOR_FIELD_NAME,
+                "attrs": {
+                    "dims": 1536,
+                    "algorithm": "flat",
+                    "distance_metric": "cosine",
+                },
+            },
         ]
         super().__init__(index=index.__dict__, fields=fields)
