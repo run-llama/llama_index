@@ -40,7 +40,7 @@ if __name__ == "__main__":
     low_bit = args.low_bit
 
     # load the model using low-bit format specified
-    llm = IpexLLM(
+    llm = IpexLLM.from_model_id(
         model_name=model_name,
         tokenizer_name=tokenizer_name,
         context_window=512,
