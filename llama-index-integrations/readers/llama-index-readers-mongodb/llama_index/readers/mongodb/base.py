@@ -81,7 +81,7 @@ class SimpleMongoReader(BaseReader):
         cursor = db[collection_name].find(
             filter=query_dict or {},
             limit=max_docs,
-            projection={name: 1 for name in field_names + (metadata_names or [])}
+            projection={name: 1 for name in field_names + (metadata_names or [])},
         )
 
         for item in cursor:
