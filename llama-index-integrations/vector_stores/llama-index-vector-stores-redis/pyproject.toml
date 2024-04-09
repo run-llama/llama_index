@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.redis"
 
 [tool.llamahub.class_authors]
-RedisVectorStore = "llama-index"
+RedisVectorStore = "redis"
 
 [tool.mypy]
 disallow_untyped_defs = true
