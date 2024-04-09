@@ -7,10 +7,11 @@ An index that is built on top of an existing vector store.
 from typing import Any, List, Optional, Union
 
 import more_itertools
-from google.cloud.firestore import And, Client, FieldFilter, Or, DocumentSnapshot
-from google.cloud.firestore_v1.base_query import BaseFilter, BaseCompositeFilter
+from google.cloud.firestore import And, Client, DocumentSnapshot, FieldFilter, Or
+from google.cloud.firestore_v1.base_query import BaseCompositeFilter, BaseFilter
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
+
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -26,8 +27,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-from .utils import client_with_user_agent
+from llama_index.vector_store.firestore.utils import client_with_user_agent
 
 DEFAULT_BATCH_SIZE = 500
 
