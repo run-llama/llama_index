@@ -60,6 +60,7 @@ class GuidelineEvaluator(BaseEvaluator):
         guidelines: Optional[str] = None,
         eval_template: Optional[Union[str, BasePromptTemplate]] = None,
         output_parser: Optional[PydanticOutputParser] = None,
+        # deprecated
         service_context: Optional[ServiceContext] = None,
     ) -> None:
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
