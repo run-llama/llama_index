@@ -151,11 +151,20 @@ class RedisVectorStore(BasePydanticVectorStore):
         super().__init__()
 
     def _flag_old_kwargs(self, **kwargs):
-        # TODO
-        old_kwargs = ["index_name", "index_prefix"]
+        old_kwargs = [
+            "index_name",
+            "index_prefix",
+            "prefix_ending",
+            "index_args",
+            "metadata_fields",
+        ]
         for kwarg in old_kwargs:
             if kwarg in kwargs:
-                raise ValueError
+                raise ValueError(
+                    f"Deprecated kwarg, {kwarg}, found upon initialization. "
+                    "RedisVectorStore now requires an IndexSchema object. "
+                    "See the documentation for a complete example: https://docs.llamaindex.ai/en/stable/examples/vector_stores/RedisIndexDemo/"
+                )
 
     def _validate_schema(self, schema: IndexSchema) -> str:
         base_schema = RedisVectorStoreSchema()
