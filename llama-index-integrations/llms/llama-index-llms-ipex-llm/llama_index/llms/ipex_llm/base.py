@@ -222,33 +222,16 @@ class IpexLLM(CustomLLM):
                         )
             else:
                 try:
-                    if load_in_low_bit:
-                        self._model = AutoModelForCausalLM.load_low_bit(
-                            model_name,
-                            load_in_low_bit=load_in_low_bit,
-                            use_cache=True,
-                            trust_remote_code=True,
-                            **model_kwargs,
-                        )
-                    else:
-                        self._model = AutoModelForCausalLM.load_low_bit(
-                            model_name,
-                            load_in_4bit=load_in_4bit,
-                            use_cache=True,
-                            trust_remote_code=True,
-                            **model_kwargs,
-                        )
+                    self._model = AutoModelForCausalLM.load_low_bit(
+                        model_name,
+                        use_cache=True,
+                        trust_remote_code=True,
+                        **model_kwargs,
+                    )
                 except Exception:
                     from ipex_llm.transformers import AutoModel
 
-                    if load_in_low_bit:
-                        self._model = AutoModel.load_low_bit(
-                            model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
-                        )
-                    else:
-                        self._model = AutoModel.load_low_bit(
-                            model_name, load_in_4bit=load_in_4bit, **model_kwargs
-                        )
+                    self._model = AutoModel.load_low_bit(model_name, **model_kwargs)
 
         if "xpu" in device_map:
             self._model = self._model.to(device_map)
@@ -379,8 +362,6 @@ class IpexLLM(CustomLLM):
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
-        load_in_4bit: Optional[bool] = True,
-        load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         device_map: Optional[str] = "auto",
@@ -401,8 +382,6 @@ class IpexLLM(CustomLLM):
             max_new_tokens=max_new_tokens,
             tokenizer_name=tokenizer_name,
             model_name=model_name,
-            load_in_4bit=load_in_4bit,
-            load_in_low_bit=load_in_low_bit,
             device_map=device_map,
             stopping_ids=stopping_ids,
             tokenizer_kwargs=tokenizer_kwargs,
