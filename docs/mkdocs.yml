@@ -186,6 +186,7 @@ nav:
           - ./examples/embeddings/alephalpha.ipynb
           - ./examples/embeddings/itrex.ipynb
           - ./examples/embeddings/cloudflare_workersai.ipynb
+          - ./examples/embeddings/openvino.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -700,6 +701,7 @@ nav:
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
+          - ./api_reference/embeddings/openvino.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
           - ./api_reference/embeddings/text_embeddings_inference.md
@@ -1786,6 +1788,7 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-neptune
             - ../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
             - ../llama-index-integrations/llms/llama-index-llms-databricks
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
