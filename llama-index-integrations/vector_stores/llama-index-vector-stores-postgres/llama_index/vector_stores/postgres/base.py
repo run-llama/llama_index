@@ -109,6 +109,27 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
+    """Postgres Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-postgres`
+
+        ```python
+        from llama_index.vector_stores.postgres import PGVectorStore
+
+        # Create PGVectorStore instance
+        vector_store = PGVectorStore.from_params(
+            database="vector_db",
+            host="localhost",
+            password="password",
+            port=5432,
+            user="postgres",
+            table_name="paul_graham_essay",
+            embed_dim=1536  # openai embedding dimension
+        )
+        ```
+    """
+
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True
@@ -359,21 +380,33 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy import text
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            # Expects a single value in the metadata, and a list to compare
             return text(
                 f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
             ).bindparams(values=tuple(filter_.value))
         elif filter_.operator == FilterOperator.CONTAINS:
+            # Expects a list stored in the metadata, and a single value to compare
             return text(
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
             )
         else:
-            return text(
-                f"metadata_->>'{filter_.key}' "
-                f"{self._to_postgres_operator(filter_.operator)} "
-                f"'{filter_.value}'"
-            )
+            # Check if value is a number. If so, cast the metadata value to a float
+            # This is necessary because the metadata is stored as a string
+            try:
+                return text(
+                    f"(metadata_->>'{filter_.key}')::float "
+                    f"{self._to_postgres_operator(filter_.operator)} "
+                    f"{float(filter_.value)}"
+                )
+            except ValueError:
+                # If not a number, then treat it as a string
+                return text(
+                    f"metadata_->>'{filter_.key}' "
+                    f"{self._to_postgres_operator(filter_.operator)} "
+                    f"'{filter_.value}'"
+                )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """

@@ -3,6 +3,7 @@
 An index that is built within Milvus.
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Union
 
@@ -83,6 +84,22 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     Returns:
         MilvusVectorstore: Vectorstore that supports add, delete, and query.
+
+    Examples:
+        `pip install llama-index-vector-stores-milvus`
+
+        ```python
+        from llama_index.vector_stores.milvus import MilvusVectorStore
+
+        # Setup MilvusVectorStore
+        vector_store = MilvusVectorStore(
+            dim=1536,
+            collection_name="your_collection_name",
+            uri="http://milvus_address:port",
+            token="your_milvus_token_here",
+            overwrite=True
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -134,8 +151,15 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
 
         # Select the similarity metric
-        similarity_metrics_map = {"ip": "IP", "l2": "L2", "euclidean": "L2"}
-        similarity_metric = similarity_metrics_map.get(similarity_metric.lower(), "L2")
+        similarity_metrics_map = {
+            "ip": "IP",
+            "l2": "L2",
+            "euclidean": "L2",
+            "cosine": "COSINE",
+        }
+        self.similarity_metric = similarity_metrics_map.get(
+            similarity_metric.lower(), "L2"
+        )
 
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
@@ -157,7 +181,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 primary_field_name=MILVUS_ID_FIELD,
                 vector_field_name=embedding_field,
                 id_type="string",
-                metric_type=similarity_metric,
+                metric_type=self.similarity_metric,
                 max_length=65_535,
                 consistency_level=consistency_level,
             )

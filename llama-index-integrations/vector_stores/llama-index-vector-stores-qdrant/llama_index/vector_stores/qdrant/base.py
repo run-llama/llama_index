@@ -74,6 +74,20 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
+
+    Examples:
+        `pip install llama-index-vector-stores-qdrant`
+
+        ```python
+        import qdrant_client
+        from llama_index.vector_stores.qdrant import QdrantVectorStore
+
+        client = qdrant_client.QdrantClient()
+
+        vector_store = QdrantVectorStore(
+            collection_name="example_collection", client=client
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -173,6 +187,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "QdrantVectorStore"
+
+    def set_query_functions(
+        self,
+        sparse_doc_fn: Optional[SparseEncoderCallable] = None,
+        sparse_query_fn: Optional[SparseEncoderCallable] = None,
+        hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
+    ):
+        self._sparse_doc_fn = sparse_doc_fn
+        self._sparse_query_fn = sparse_query_fn
+        self._hybrid_fusion_fn = hybrid_fusion_fn
 
     def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
         ids = []
@@ -820,6 +844,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     FieldCondition(
                         key=subfilter.key,
                         match=MatchExcept(**{"except": [subfilter.value]}),
+                    )
+                )
+            elif subfilter.operator == "in":
+                # match any of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-any
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchAny(any=str(subfilter.value).split(",")),
                     )
                 )
 

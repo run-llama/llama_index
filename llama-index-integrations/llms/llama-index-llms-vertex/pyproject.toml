@@ -33,6 +33,7 @@ version = "0.1.5"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 google-cloud-aiplatform = "^1.39.0"
+pyarrow = "^15.0.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -127,7 +127,7 @@ class RedisKVStore(BaseKVStore):
         collection_kv_dict = {}
         for key, val_str in self._redis_client.hscan_iter(name=collection):
             value = dict(json.loads(val_str))
-            collection_kv_dict[key.decode()] = value
+            collection_kv_dict[key] = value
         return collection_kv_dict
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:

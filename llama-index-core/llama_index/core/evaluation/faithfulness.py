@@ -1,4 +1,5 @@
 """Faithfulness evaluation."""
+
 from __future__ import annotations
 
 import asyncio
@@ -125,7 +126,6 @@ class FaithfulnessEvaluator(BaseEvaluator):
         **kwargs: Any,
     ) -> EvaluationResult:
         """Evaluate whether the response is faithful to the contexts."""
-        del query  # Unused
         del kwargs  # Unused
 
         await asyncio.sleep(sleep_time_in_seconds)
@@ -153,6 +153,7 @@ class FaithfulnessEvaluator(BaseEvaluator):
                 raise ValueError("The response is invalid")
 
         return EvaluationResult(
+            query=query,
             response=response,
             contexts=contexts,
             passing=passing,

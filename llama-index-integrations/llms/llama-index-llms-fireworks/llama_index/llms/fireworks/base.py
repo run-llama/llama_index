@@ -16,6 +16,26 @@ DEFAULT_MODEL = "accounts/fireworks/models/mixtral-8x7b-instruct"
 
 
 class Fireworks(OpenAI):
+    """Fireworks LLM.
+
+    Examples:
+        `pip install llama-index-llms-fireworks`
+
+        ```python
+        from llama_index.llms.fireworks import Fireworks
+
+        # Create an instance of the Fireworks class
+        llm = Fireworks(
+            model="accounts/fireworks/models/mixtral-8x7b-instruct",
+            api_key="YOUR_API_KEY"
+        )
+
+        # Call the complete method with a prompt
+        resp = llm.complete("Hello world!")
+        print(resp)
+        ```
+    """
+
     def __init__(
         self,
         model: str = DEFAULT_MODEL,
