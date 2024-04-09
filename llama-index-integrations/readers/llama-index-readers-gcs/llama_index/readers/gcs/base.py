@@ -4,7 +4,7 @@ GCS file and directory reader.
 A loader that fetches a file or iterates through a directory on Google Cloud Storage (GCS).
 
 """
-
+import json
 from typing import Callable, Dict, List, Optional, Union
 
 from google.oauth2 import service_account
@@ -41,7 +41,9 @@ class GCSReader(BasePydanticReader):
     file_metadata (Optional[Callable[str, Dict]]): A function that takes
         in a filename and returns a Dict of metadata for the Document.
         Default is None.
-    service_account_key_json (Optional[str]): provide GCP service account key JSON directly.
+    service_account_key (Optional[Dict[str, str]]): provide GCP service account key directly.
+    service_account_key_json (Optional[str]): provide GCP service account key as a JSON string.
+    service_account_key_path (Optional[str]): provide path to file containing GCP service account key.
     """
 
     is_remote: bool = True
@@ -57,7 +59,9 @@ class GCSReader(BasePydanticReader):
     filename_as_id: bool = True
     num_files_limit: Optional[int] = None
     file_metadata: Optional[Callable[[str], Dict]] = Field(default=None, exclude=True)
+    service_account_key: Optional[Dict[str, str]] = None
     service_account_key_json: Optional[str] = None
+    service_account_key_path: Optional[str] = None
 
     @classmethod
     def class_name(cls) -> str:
@@ -67,9 +71,17 @@ class GCSReader(BasePydanticReader):
         """Load file(s) from GCS."""
         from gcsfs import GCSFileSystem
 
-        if self.service_account_key_json is not None:
+        if self.service_account_key is not None:
             creds = service_account.Credentials.from_service_account_info(
-                self.service_account_key_json, scopes=SCOPES
+                self.service_account_key, scopes=SCOPES
+            )
+        elif self.service_account_key_json is not None:
+            creds = service_account.Credentials.from_service_account_info(
+                json.loads(self.service_account_key_json), scopes=SCOPES
+            )
+        elif self.service_account_key_path is not None:
+            creds = service_account.Credentials.from_service_account_file(
+                self.service_account_key_path, scopes=SCOPES
             )
         else:
             # Use anonymous access if none are specified

@@ -84,6 +84,8 @@ Under the hood, this splits your Document into Node objects, which are similar t
 If you want to customize core components, like the text splitter, through this abstraction you can pass in a custom `transformations` list or apply to the global `Settings`:
 
 ```python
+from llama_index.core.node_parser import SentenceSplitter
+
 text_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=10)
 
 # global

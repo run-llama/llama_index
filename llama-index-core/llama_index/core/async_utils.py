@@ -3,6 +3,9 @@
 import asyncio
 from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List, TypeVar
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -84,6 +87,7 @@ DEFAULT_NUM_WORKERS = 4
 T = TypeVar("T")
 
 
+@dispatcher.span
 async def run_jobs(
     jobs: List[Coroutine[Any, Any, T]],
     show_progress: bool = False,
@@ -101,9 +105,11 @@ async def run_jobs(
         List[Any]:
             List of results.
     """
+    parent_span_id = dispatcher.current_span_id
     asyncio_mod = get_asyncio_module(show_progress=show_progress)
     semaphore = asyncio.Semaphore(workers)
 
+    @dispatcher.async_span_with_parent_id(parent_id=parent_span_id)
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job

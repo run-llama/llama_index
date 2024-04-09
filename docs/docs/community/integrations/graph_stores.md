@@ -34,3 +34,11 @@ We support a `FalkorDBGraphStore` integration, for persisting graphs directly in
 See the associated guides below:
 
 - [FalkorDB Graph Store](../../examples/index_structs/knowledge_graph/FalkorDBGraphDemo.ipynb)
+
+## `Amazon Neptune Graph Stores`
+
+We support `Amazon Neptune` integrations for both [Neptune Database](https://docs.aws.amazon.com/neptune/latest/userguide/feature-overview.html) and [Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/what-is-neptune-analytics.html) as a graph store integration.
+
+See the associated guides below:
+
+- [Amazon Neptune Graph Store](../../examples/index_structs/knowledge_graph/NeptuneDatabaseKGIndexDemo).

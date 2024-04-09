@@ -5,7 +5,7 @@ Welcome to the beginning of Understanding LlamaIndex. This is a series of short,
 ## Key steps in building an LLM application
 
 !!! tip
-If you've already read our [high-level concepts](../getting_started/concepts.md) page you'll recognize several of these steps.
+    If you've already read our [high-level concepts](../getting_started/concepts.md) page you'll recognize several of these steps.
 
 There are a series of key steps involved in building any LLM-powered application, whether it's answering questions about your data, creating a chatbot, or an autonomous agent. Throughout our documentation, you'll notice sections are arranged roughly in the order you'll perform these steps while building your app. You'll learn about:
 
