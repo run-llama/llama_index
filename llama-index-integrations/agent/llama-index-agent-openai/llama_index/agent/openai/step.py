@@ -260,6 +260,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        raise_error: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
@@ -267,6 +268,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         self._llm = llm
         self._verbose = verbose
         self._max_function_calls = max_function_calls
+        self._raise_error = raise_error
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
         self.tool_call_parser = tool_call_parser or default_tool_call_parser
@@ -290,6 +292,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         llm: Optional[LLM] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        raise_error: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
@@ -333,6 +336,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
+            raise_error=raise_error,
             callback_manager=callback_manager,
             tool_call_parser=tool_call_parser,
         )
@@ -384,7 +388,10 @@ class OpenAIAgentWorker(BaseAgentWorker):
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
             target=chat_stream_response.write_response_to_history,
-            args=(task.extra_state["new_memory"],),
+            args=(
+                task.extra_state["new_memory"],
+                self._raise_error,
+            ),
             kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
         )
         thread.start()
