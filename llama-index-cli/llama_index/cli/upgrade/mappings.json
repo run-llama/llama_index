@@ -422,6 +422,7 @@
   "set_google_config": "llama_index.vector_stores.google",
   "GoogleVectorStore": "llama_index.vector_stores.google",
   "MetalVectorStore": "llama_index.vector_stores.metal",
+  "CouchbaseVectorStore": "llama_index.vector_stores.couchbase",
   "PathwayRetriever": "llama_index.retrievers.pathway",
   "VideoDBRetriever": "llama_index.retrievers.videodb",
   "YouRetriever": "llama_index.retrievers.you",
