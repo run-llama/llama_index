@@ -415,9 +415,9 @@ class CodeHierarchyNodeParser(NodeParser):
                             ].append(  # type: ignore
                                 d.as_related_node_info()
                             )
-                            d.relationships[
-                                NodeRelationship.PARENT
-                            ] = this_document.as_related_node_info()
+                            d.relationships[NodeRelationship.PARENT] = (
+                                this_document.as_related_node_info()
+                            )
                 # Otherwise we pass the children upstream
                 else:
                     # If we have been given a document, that means it's
@@ -545,7 +545,7 @@ class CodeHierarchyNodeParser(NodeParser):
                 or tree.root_node.children[0].type != "ERROR"
             ):
                 # Chunk the code
-                _chunks = self._chunk_node(tree.root_node, node.text)
+                _chunks = self._chunk_node(tree.root_node, bytes(node.text, "utf-8"))
                 assert _chunks.this_document is not None, "Root node must be a chunk"
                 chunks = _chunks.all_documents
 
@@ -556,9 +556,9 @@ class CodeHierarchyNodeParser(NodeParser):
                         **chunk.metadata,
                         **node.metadata,
                     }
-                    chunk.relationships[
-                        NodeRelationship.SOURCE
-                    ] = node.as_related_node_info()
+                    chunk.relationships[NodeRelationship.SOURCE] = (
+                        node.as_related_node_info()
+                    )
 
                 if self.skeleton:
                     self._skeletonize_list(chunks)
@@ -613,9 +613,9 @@ class CodeHierarchyNodeParser(NodeParser):
                                         new_split_nodes[0].as_related_node_info()
                                     )
                                 new_children.append(old_nodes_child)
-                            old_node.relationships[
-                                NodeRelationship.CHILD
-                            ] = new_children
+                            old_node.relationships[NodeRelationship.CHILD] = (
+                                new_children
+                            )
 
                             # Handle parent node
                             if (
@@ -623,9 +623,9 @@ class CodeHierarchyNodeParser(NodeParser):
                                 and old_node.parent_node.node_id
                                 == original_node.node_id
                             ):
-                                old_node.relationships[
-                                    NodeRelationship.PARENT
-                                ] = new_split_nodes[0].as_related_node_info()
+                                old_node.relationships[NodeRelationship.PARENT] = (
+                                    new_split_nodes[0].as_related_node_info()
+                                )
 
                         # Now save new_nodes_
                         new_nodes += new_split_nodes
