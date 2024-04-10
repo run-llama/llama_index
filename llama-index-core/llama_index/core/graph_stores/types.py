@@ -4,24 +4,33 @@ import fsspec
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.schema import BaseNode
+from llama_index.core.vector_stores.utils import (
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
+from llama_index.core.vector_stores.types import VectorStoreQuery
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
 DEFUALT_LPG_PERSIST_FNAME = "lpg_graph_store.json"
 
+TRIPLET_SOURCE_KEY = "triplet_source_id"
+
 
 class Entity(BaseModel):
     """An entity in a graph."""
 
-    name: str
+    text: str
     properties: Dict[str, Any] = Field(default_factory=dict)
+    embedding: Optional[List[float]] = None
 
 
 class Relation(BaseModel):
     """A relation connecting two entities in a graph."""
 
-    name: str
+    text: str
     properties: Dict[str, Any] = Field(default_factory=dict)
+    embedding: Optional[List[float]] = None
 
 
 Triplet = Tuple[Entity, Relation, Entity]
@@ -54,27 +63,39 @@ class LabelledPropertyGraph(BaseModel):
     def add_triplet(self, triplet: Triplet) -> None:
         """Add a triplet."""
         subj, rel, obj = triplet
-        if (subj.name, rel.name, obj.name) in self.triplets:
+        if (subj.text, rel.text, obj.text) in self.triplets:
             return
 
-        self.triplets.add((subj.name, rel.name, obj.name))
-        self.entities[subj.name] = subj
-        self.entities[obj.name] = obj
-        self.relations[rel.name] = rel
+        self.triplets.add((subj.text, rel.text, obj.text))
+        self.entities[subj.text] = subj
+        self.entities[obj.text] = obj
+        self.relations[rel.text] = rel
+
+    def add_node(self, node: BaseNode) -> None:
+        """Add a node."""
+        metadata_dict = node_to_metadata_dict(node)
+        metadata_dict["id_"] = node.id_
+        self.entities[node.id_] = Entity(text=node.id_, properties=metadata_dict)
+
+    def get_node(self, node_id: str) -> Optional[BaseNode]:
+        """Get a node."""
+        if node_id in self.entities:
+            return metadata_dict_to_node(self.entities[node_id].properties)
+        return None
 
     def delete_triplet(self, triplet: Triplet) -> None:
         """Delete a triplet."""
         subj, rel, obj = triplet
-        if (subj.name, rel.name, obj.name) not in self.triplets:
+        if (subj.text, rel.text, obj.text) not in self.triplets:
             return
 
-        self.triplets.remove((subj.name, rel.name, obj.name))
-        if subj.name in self.entities:
-            del self.entities[subj.name]
-        if obj.name in self.entities:
-            del self.entities[obj.name]
-        if rel.name in self.relations:
-            del self.relations[rel.name]
+        self.triplets.remove((subj.text, rel.text, obj.text))
+        if subj.text in self.entities:
+            del self.entities[subj.text]
+        if obj.text in self.entities:
+            del self.entities[obj.text]
+        if rel.text in self.relations:
+            del self.relations[rel.text]
 
 
 @runtime_checkable
@@ -155,9 +176,8 @@ class LabelledPropertyGraphStore(Protocol):
         get_schema: Callable[[bool], str]: Get the schema of the graph store.
     """
 
-    supports_vectors: bool = False
-    supports_queries: bool = False
-    supports_nodes: bool = False
+    supports_structured_queries: bool = False
+    supports_vector_queries: bool = False
     schema: str = ""
 
     @property
@@ -170,15 +190,9 @@ class LabelledPropertyGraphStore(Protocol):
         entity_names: Optional[List[str]] = None,
         relation_names: Optional[List[str]] = None,
         properties: Optional[dict] = None,
+        node_ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get triplets with matching values."""
-        ...
-
-    def get_by_ids(
-        self,
-        node_ids: List[str] = None,
-    ) -> List[BaseNode]:
-        """Get nodes by ids, if supported."""
         ...
 
     def get_rel_map(
@@ -187,8 +201,16 @@ class LabelledPropertyGraphStore(Protocol):
         """Get depth-aware rel map."""
         ...
 
+    def get_nodes(self, node_ids: List[str]) -> List[BaseNode]:
+        """Get nodes."""
+        ...
+
+    def upsert_nodes(self, nodes: List[BaseNode]) -> None:
+        """Add nodes."""
+        ...
+
     def upsert_triplets(self, triplets: List[Triplet]) -> None:
-        """Add triplets."""
+        """Upsert triplets."""
         ...
 
     def delete(
@@ -196,8 +218,27 @@ class LabelledPropertyGraphStore(Protocol):
         entity_names: Optional[List[str]] = None,
         relation_names: Optional[List[str]] = None,
         properties: Optional[dict] = None,
+        node_ids: Optional[List[str]] = None,
     ) -> None:
         """Delete matching data."""
+        ...
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        ref_doc_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Delete nodes."""
+        ...
+
+    def structured_query(
+        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+    ) -> List[Entity]:
+        """Query the graph store with statement and parameters."""
+        ...
+
+    def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> List[Entity]:
+        """Query the graph store with a vector store query."""
         ...
 
     def persist(
@@ -208,10 +249,4 @@ class LabelledPropertyGraphStore(Protocol):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
-        ...
-
-    def query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = {}
-    ) -> List[Triplet]:
-        """Query the graph store with statement and parameters."""
         ...

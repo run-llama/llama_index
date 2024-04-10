@@ -9,7 +9,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
 )
-from llama_index.core.schema import TransformComponent, BaseNode
+from llama_index.core.schema import TransformComponent, BaseNode, NodeRelationship
 from llama_index.core.llms.llm import LLM
 
 
@@ -80,6 +80,36 @@ class ExtractTripletsFromText(TransformComponent):
         )
 
 
-# TODO -- use node.relationships to extract triplets
 class ExtractTripletsFromNodeRelations(TransformComponent):
-    pass
+    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        """Extract triplets from node relationships."""
+        for node in nodes:
+            node.metadata["triplets"] = []
+
+            if node.source_node:
+                node.metadata["triplets"].append(
+                    (node.id_, NodeRelationship.SOURCE.value, node.source_node.node_id)
+                )
+
+            if node.parent_node:
+                node.metadata["triplets"].append(
+                    (node.id_, NodeRelationship.PARENT.value, node.parent_node.node_id)
+                )
+
+            if node.prev_node:
+                node.metadata["triplets"].append(
+                    (node.id_, NodeRelationship.PREVIOUS.value, node.prev_node.node_id)
+                )
+
+            if node.next_node:
+                node.metadata["triplets"].append(
+                    (node.id_, NodeRelationship.NEXT.value, node.next_node.node_id)
+                )
+
+            if node.child_nodes:
+                for child_node in node.child_nodes:
+                    node.metadata["triplets"].append(
+                        (node.id_, NodeRelationship.CHILD.value, child_node.node_id)
+                    )
+
+        return nodes
