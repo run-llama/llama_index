@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, List
+from pathlib import Path
 
-DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "BAAI/bge-small-en"
+DEFAULT_HUGGINGFACE_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-base"
 
 # Originally pulled from:
@@ -38,11 +39,19 @@ INSTRUCTOR_MODELS = (
 )
 
 
+def is_listed_model(model_name: Optional[str], model_list: List[str]) -> bool:
+    model_path = Path(model_name)
+    if model_path.exists() and model_path.is_dir():
+        return model_path.name in model_list
+    else:
+        return model_name in model_list
+
+
 def get_query_instruct_for_model_name(model_name: Optional[str]) -> str:
     """Get query text instruction for a given model name."""
-    if model_name in INSTRUCTOR_MODELS:
+    if is_listed_model(model_name, INSTRUCTOR_MODELS):
         return DEFAULT_QUERY_INSTRUCTION
-    if model_name in BGE_MODELS:
+    if is_listed_model(model_name, BGE_MODELS):
         if "zh" in model_name:
             return DEFAULT_QUERY_BGE_INSTRUCTION_ZH
         return DEFAULT_QUERY_BGE_INSTRUCTION_EN

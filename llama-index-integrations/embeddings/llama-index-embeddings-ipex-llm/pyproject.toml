@@ -21,7 +21,7 @@ disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"
+python_version = "3.11"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
@@ -35,8 +35,14 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
+ipex-llm = {allow-prereleases = true, version = "*"}
+numpy = "1.26.4"
 torch = "<2.2.0"
-ipex-llm = {allow-prereleases = true, extras = ["all"], version = "*"}
+transformers = ">=4.34.0,<4.39.0"
+sentencepiece = "^0.2.0"
+accelerate = "0.21.0"
+tabulate = "^0.9.0"
+sentence-transformers = "^2.6.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

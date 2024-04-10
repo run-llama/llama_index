@@ -11,6 +11,7 @@ from llama_index.core.utils import get_cache_dir, infer_torch_device
 from llama_index.embeddings.ipex_llm.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     BGE_MODELS,
+    is_listed_model,
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,
 )
@@ -58,11 +59,11 @@ class IpexLLMEmbedding(BaseEmbedding):
 
         if model_name is None:
             raise ValueError("The `model_name` argument must be provided.")
-        elif model_name not in BGE_MODELS:
+        if not is_listed_model(model_name, BGE_MODELS):
             bge_model_list_str = ", ".join(BGE_MODELS)
-            raise ValueError(
-                "IpexLLMEmbedding currently only support Hugging Face BGE models, "
-                f"which are: {bge_model_list_str}"
+            logger.warning(
+                "IpexLLMEmbedding currently only provide optimization support for"
+                f"Hugging Face BGE models, which are: {bge_model_list_str}"
             )
 
         self._model = SentenceTransformer(
