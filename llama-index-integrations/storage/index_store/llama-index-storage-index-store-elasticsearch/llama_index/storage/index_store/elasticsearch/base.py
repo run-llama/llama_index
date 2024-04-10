@@ -16,7 +16,12 @@ class ElasticsearchIndexStore(KVIndexStore):
     def __init__(
         self,
         elasticsearch_kvstore: ElasticsearchKVStore,
+        collection_index: Optional[str] = None,
         namespace: Optional[str] = None,
     ) -> None:
         """Init a ElasticsearchIndexStore."""
         super().__init__(elasticsearch_kvstore, namespace=namespace)
+        if collection_index:
+            self._collection = collection_index
+        else:
+            self._collection = f"llama_index-index_store.data-{self._namespace}"

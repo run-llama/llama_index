@@ -1,5 +1,226 @@
 # ChangeLog
 
+## [2024-04-09]
+
+### `llama-index-core` [0.10.28]
+
+- Support indented code block fences in markdown node parser (#12393)
+- Pass in output parser to guideline evaluator (#12646)
+- Added example of query pipeline + memory (#12654)
+- Add missing node postprocessor in CondensePlusContextChatEngine async mode (#12663)
+- Added `return_direct` option to tools /tool metadata (#12587)
+- Add retry for batch eval runner (#12647)
+- Thread-safe instrumentation (#12638)
+- Coroutine-safe instrumentation Spans #12589
+- Add in-memory loading for non-default filesystems in PDFReader (#12659)
+- Remove redundant tokenizer call in sentence splitter (#12655)
+- Add SynthesizeComponent import to shortcut imports (#12655)
+- Improved truncation in SimpleSummarize (#12655)
+- adding err handling in eval_utils default_parser for correctness (#12624)
+- Add async_postprocess_nodes at RankGPT Postprocessor Nodes (#12620)
+- Fix MarkdownNodeParser ref_doc_id (#12615)
+
+### `llama-index-embeddings-openvino` [0.1.5]
+
+- Added initial support for openvino embeddings (#12643)
+
+### `llama-index-llms-anthropic` [0.1.9]
+
+- add anthropic tool calling (#12591)
+
+### `llama-index-llms-ipex-llm` [0.1.1]
+
+- add ipex-llm integration (#12322)
+- add more data types support to ipex-llm llm integration (#12635)
+
+### `llama-index-llms-openllm` [0.1.4]
+
+- Proper PrivateAttr usage in OpenLLM (#12655)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.4]
+
+- Bumped anthropic dep version (#12655)
+
+### `llama-index-multi-modal-llms-gemini` [0.1.5]
+
+- bump generativeai dep (#12645)
+
+### `llama-index-packs-dense-x-retrieval` [0.1.4]
+
+- Add streaming support for DenseXRetrievalPack (#12607)
+
+### `llama-index-readers-mongodb` [0.1.4]
+
+- Improve efficiency of MongoDB reader (#12664)
+
+### `llama-index-readers-wikipedia` [0.1.4]
+
+- Added multilingual support for the Wikipedia reader (#12616)
+
+### `llama-index-storage-index-store-elasticsearch` [0.1.3]
+
+- remove invalid chars from default collection name (#12672)
+
+### `llama-index-vector-stores-milvus` [0.1.8]
+
+- Added support to retrieve metadata fields from milvus (#12626)
+- Bug fix - Similarity metric is always IP for MilvusVectorStore (#12611)
+
+## [2024-04-04]
+
+### `llama-index-agent-openai` [0.2.2]
+
+- Update imports for message thread typing (#12437)
+
+### `llama-index-core` [0.10.27]
+
+- Fix for pydantic query engine outputs being blank (#12469)
+- Add span_id attribute to Events (instrumentation) (#12417)
+- Fix RedisDocstore node retrieval from docs property (#12324)
+- Add node-postprocessors to retriever_tool (#12415)
+- FLAREInstructQueryEngine : delegating retriever api if the query engine supports it (#12503)
+- Make chat message to dict safer (#12526)
+- fix check in batch eval runner for multi-kwargs (#12563)
+- Fixes agent_react_multimodal_step.py bug with partial args (#12566)
+
+### `llama-index-embeddings-clip` [0.1.5]
+
+- Added support to load clip model from local file path (#12577)
+
+### `llama-index-embeddings-cloudflar-workersai` [0.1.0]
+
+- text embedding integration: Cloudflare Workers AI (#12446)
+
+### `llama-index-embeddings-voyageai` [0.1.4]
+
+- Fix pydantic issue in class definition (#12469)
+
+### `llama-index-finetuning` [0.1.5]
+
+- Small typo fix in QA generation prompt (#12470)
+
+### `llama-index-graph-stores-falkordb` [0.1.3]
+
+- Replace redis driver with FalkorDB driver (#12434)
+
+### `llama-index-llms-anthropic` [0.1.8]
+
+- Add ability to pass custom HTTP headers to Anthropic client (#12558)
+
+### `llama-index-llms-cohere` [0.1.6]
+
+- Add support for Cohere Command R+ model (#12581)
+
+### `llama-index-llms-databricks` [0.1.0]
+
+- Integrations with DataBricks LLM API (#12432)
+
+### `llama-index-llms-watsonx` [0.1.6]
+
+- Updated Watsonx foundation models (#12493)
+- Updated base model name on watsonx integration #12491
+
+### `lama-index-postprocessor-rankllm-rerank` [0.1.2]
+
+- Add RankGPT support inside RankLLM (#12475)
+
+### `llama-index-readers-microsoft-sharepoint` [0.1.7]
+
+- Use recursive strategy by default for SharePoint (#12557)
+
+### `llama-index-readers-web` [0.1.8]
+
+- Readability web page reader fix playwright async api bug (#12520)
+
+### `llama-index-vector-stores-kdbai` [0.1.5]
+
+- small `to_list` fix (#12515)
+
+### `llama-index-vector-stores-neptune` [0.1.0]
+
+- Add support for Neptune Analytics as a Vector Store (#12423)
+
+### `llama-index-vector-stores-postgres` [0.1.5]
+
+- fix(postgres): numeric metadata filters (#12583)
+
+## [2024-03-31]
+
+### `llama-index-core` [0.10.26]
+
+- pass proper query bundle in QueryFusionRetriever (#12387)
+- Update llama_parse_json_element.py to fix error on lists (#12402)
+- Add node postprocessors to retriever tool (#12415)
+- Fix bug where user specified llm is not respected in fallback logic in element node parsers(#12403)
+- log proper LLM response key for async callback manager events (#12421)
+- Deduplicate the two built-in react system prompts; Also make it read from a Markdown file (#12307)
+- fix bug in BatchEvalRunner for multi-evaluator eval_kwargs_lists (#12418)
+- add the callback manager event for vector store index insert_nodes (#12443)
+- fixes an issue with serializing chat messages into chat stores when they contain pydantic API objects (#12394)
+- fixes an issue with slow memory.get() operation (caused by multiple calls to get_all()) (#12394)
+- fixes an issue where an agent+tool message pair is cut from the memory (#12394)
+- Added `FnNodeMapping` for object index (#12391)
+- Make object mapping optional / hidden for object index (#12391)
+- Make object index easier to create from existing vector db (#12391)
+- When LLM failed to follow the react response template, tell it so #12300
+
+### `llama-index-embeddings-cohere` [0.1.5]
+
+- Bump cohere version to 5.1.1 (#12279)
+
+### `llama-index-embeddings-itrex` [0.1.0]
+
+- add Intel Extension for Transformers embedding model (#12410)
+
+### `llama-index-graph-stores-neo4j` [0.1.4]
+
+- make neo4j query insensitive (#12337)
+
+### `llama-index-llms-cohere` [0.1.5]
+
+- Bump cohere version to 5.1.1 (#12279)
+
+### `llama-index-llms-ipex-llm` [0.1.0]
+
+- add ipex-llm integration (#12322)
+
+### `llama-index-llms-litellm` [0.1.4]
+
+- Fix litellm ChatMessage role validation error (#12449)
+
+### `llama-index-llms-openai` [0.1.14]
+
+- Use `FunctionCallingLLM` base class in OpenAI (#12227)
+
+### `llama-index-packs-self-rag` [0.1.4]
+
+- Fix llama-index-core dep (#12374)
+
+### `llama-index-postprocessor-cohere-rerank` [0.1.4]
+
+- Bump cohere version to 5.1.1 (#12279)
+
+### `llama-index-postprocessor-rankllm-rerank` [0.1.1]
+
+- Added RankLLM rerank (#12296)
+- RankLLM fixes (#12399)
+
+### `llama-index-readers-papers` [0.1.4]
+
+- Fixed bug with path names (#12366)
+
+### `llama-index-vector-stores-analyticdb` [0.1.1]
+
+- Add AnalyticDB VectorStore (#12230)
+
+### `llama-index-vector-stores-kdbai` [0.1.4]
+
+- Fixed typo in imports/readme (#12370)
+
+### `llama-index-vector-stores-qdrant` [0.1.5]
+
+- add `in` filter operator for qdrant (#12376)
+
 ## [2024-03-27]
 
 ### `llama-index-core` [0.10.25]
