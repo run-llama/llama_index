@@ -100,7 +100,7 @@ class PredibaseLLM(CustomLLM):
 
         self._client = self.initialize_client(predibase_api_key)
 
-        self._adapter_id = adapter_id
+        self.adapter_id = adapter_id
 
         super().__init__(
             model_name=model_name,
