@@ -464,22 +464,26 @@ class QueryPipeline(QueryComponent):
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
         # call run_multi with one root key
-        (result_outputs, intermediate_outputs) = self._run_multi({root_key: kwargs})
+        result_outputs, intermediates = self._run_multi({root_key: kwargs})
+
+        single_output = self._get_single_result_output(
+            result_outputs, return_values_direct
+        )
+
         if self.show_intermediate_outputs:
-            formatted_intermediate_outputs = {}
-            for it in intermediate_outputs:
-                formatted_intermediate_outputs[it] = [
-                    self._get_multiple_result_output(
-                        intermediate_outputs[it], return_values_direct
-                    ),
-                    intermediate_outputs[it],
+            formatted_intermediates = {
+                key: [
+                    self._get_multiple_result_output(value, return_values_direct),
+                    value,
                 ]
+                for key, value in intermediates.items()
+            }
             return (
-                self._get_single_result_output(result_outputs, return_values_direct),
-                formatted_intermediate_outputs,
+                single_output,
+                formatted_intermediates,
             )
         else:
-            return self._get_single_result_output(result_outputs, return_values_direct)
+            return single_output
 
     async def _arun(
         self, *args: Any, return_values_direct: bool = True, **kwargs: Any
@@ -493,24 +497,26 @@ class QueryPipeline(QueryComponent):
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
         # call run_multi with one root key
-        (result_outputs, intermediate_outputs) = await self._arun_multi(
-            {root_key: kwargs}
+        result_outputs, intermediates = await self._arun_multi({root_key: kwargs})
+
+        single_output = self._get_single_result_output(
+            result_outputs, return_values_direct
         )
+
         if self.show_intermediate_outputs:
-            formatted_intermediate_outputs = {}
-            for it in intermediate_outputs:
-                formatted_intermediate_outputs[it] = [
-                    self._get_multiple_result_output(
-                        intermediate_outputs[it], return_values_direct
-                    ),
-                    intermediate_outputs[it],
+            formatted_intermediates = {
+                key: [
+                    self._get_multiple_result_output(value, return_values_direct),
+                    value,
                 ]
+                for key, value in intermediates.items()
+            }
             return (
-                self._get_single_result_output(result_outputs, return_values_direct),
-                formatted_intermediate_outputs,
+                single_output,
+                formatted_intermediates,
             )
         else:
-            return self._get_single_result_output(result_outputs, return_values_direct)
+            return single_output
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
         root_keys = self._get_root_keys()
