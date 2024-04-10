@@ -9,37 +9,36 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.qdrant"
+import_path = "llama_index.postprocessor.openvino_rerank"
 
 [tool.llamahub.class_authors]
-QdrantVectorStore = "llama-index"
+OpenVINORerank = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores qdrant integration"
+description = "llama-index postprocessor openvino rerank integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-qdrant"
+name = "llama-index-postprocessor-openvino-rerank"
 readme = "README.md"
-version = "0.2.0"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-qdrant-client = "^1.7.1"
-grpcio = "^1.60.0"
+huggingface-hub = "^0.20.3"
 
-[tool.poetry.extras]
-fastembed = ["fastembed"]
+[tool.poetry.dependencies.optimum]
+extras = ["openvino"]
+version = "^1.18.0"
 
 [tool.poetry.group.dev.dependencies]
-fastembed = {optional = true, version = "^0.2.5"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
