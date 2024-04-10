@@ -230,7 +230,7 @@ class CohereEmbedding(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding async. For query embeddings, input_type='search_query'."""
-        return await self._aembed([query], input_type="search_query")[0]
+        return (await self._aembed([query], input_type="search_query"))[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
@@ -238,7 +238,7 @@ class CohereEmbedding(BaseEmbedding):
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Get text embedding async."""
-        return await self._aembed([text], input_type="search_document")[0]
+        return (await self._aembed([text], input_type="search_document"))[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
