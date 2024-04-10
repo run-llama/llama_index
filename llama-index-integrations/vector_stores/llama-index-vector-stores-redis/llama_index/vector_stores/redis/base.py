@@ -165,7 +165,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         self._index_args["dims"] = len(nodes[0].get_embedding())
 
         if self._index_exists():
-            if self._overwrite:
+            if add_kwargs.get("first_batch", True) and self._overwrite:
                 self.delete_index()
                 self._create_index()
             else:

@@ -273,7 +273,7 @@ class VectorStore(Protocol):
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(nodes)
+        return self.add(nodes, **kwargs)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

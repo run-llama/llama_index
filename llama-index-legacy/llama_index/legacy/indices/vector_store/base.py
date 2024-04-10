@@ -155,11 +155,15 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
+        first_batch = True
         for nodes_batch in iter_batch(nodes, self._insert_batch_size):
             nodes_batch = await self._aget_node_with_embedding(
                 nodes_batch, show_progress
             )
-            new_ids = await self._vector_store.async_add(nodes_batch, **insert_kwargs)
+            new_ids = await self._vector_store.async_add(
+                nodes_batch, first_batch=first_batch, **insert_kwargs
+            )
+            first_batch = False
 
             # if the vector store doesn't store text, we need to add the nodes to the
             # index struct and document store
@@ -198,9 +202,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if not nodes:
             return
 
+        first_batch = True
         for nodes_batch in iter_batch(nodes, self._insert_batch_size):
             nodes_batch = self._get_node_with_embedding(nodes_batch, show_progress)
-            new_ids = self._vector_store.add(nodes_batch, **insert_kwargs)
+            new_ids = self._vector_store.add(
+                nodes_batch, first_batch=first_batch, **insert_kwargs
+            )
+            first_batch = False
 
             if not self._vector_store.stores_text or self._store_nodes_override:
                 # NOTE: if the vector store doesn't store text,
