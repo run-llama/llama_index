@@ -101,7 +101,7 @@ class OpenVINOEmbedding(BaseEmbedding):
 
         export_kwargs = export_kwargs or {}
         model = OVModelForFeatureExtraction.from_pretrained(
-            model_name_or_path, export=True, **export_kwargs
+            model_name_or_path, export=True, compile=False, **export_kwargs
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
 
