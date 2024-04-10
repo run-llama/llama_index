@@ -98,7 +98,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         database_name: Optional[str] = ":memory:",
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: Optional[int] = 1536,
+        embed_dim: Optional[int] = None,
         # hybrid_search: Optional[bool] = False,
         # https://duckdb.org/docs/extensions/full_text_search
         text_search_config: Optional[dict] = {
@@ -184,7 +184,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         database_name: Optional[str] = ":memory:",
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: Optional[int] = 1536,
+        embed_dim: Optional[int] = None,
         # hybrid_search: Optional[bool] = False,
         text_search_config: Optional[dict] = {
             "stemmer": "english",
@@ -222,9 +222,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             # TODO: schema.table also.
             # Check if table and type is present
             # if not, create table
-            if self.database_name == ":memory:":
-                self._conn.execute(
-                    f"""
+            if self.embed_dim is None:
+                _query = f"""
                     CREATE TABLE {self.table_name} (
                         node_id VARCHAR,
                         text TEXT,
@@ -232,19 +231,22 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                         metadata_ JSON
                         );
                     """
-                )
+            else:
+                _query = f"""
+                    CREATE TABLE {self.table_name} (
+                        node_id VARCHAR,
+                        text TEXT,
+                        embedding FLOAT[{self.embed_dim}],
+                        metadata_ JSON
+                        );
+                    """
+
+            if self.database_name == ":memory:":
+                self._conn.execute(_query)
             else:
                 with DuckDBLocalContext(self._database_path) as _conn:
-                    _conn.execute(
-                        f"""
-                        CREATE TABLE {self.table_name} (
-                            node_id VARCHAR,
-                            text TEXT,
-                            embedding FLOAT[],
-                            metadata_ JSON
-                            );
-                        """
-                    )
+                    _conn.execute(_query)
+
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
