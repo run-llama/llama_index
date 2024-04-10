@@ -148,7 +148,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             consistency_level=consistency_level,
             overwrite=overwrite,
             text_key=text_key,
-            output_fields=output_fields,
+            output_fields=output_fields or [],
             index_config=index_config if index_config else {},
             search_config=search_config if search_config else {},
         )
@@ -297,6 +297,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # Limit output fields
         if query.output_fields is not None:
             output_fields = query.output_fields
+        elif len(self.output_fields) > 0:
+            output_fields = self.output_fields
 
         # Convert to string expression
         string_expr = ""
