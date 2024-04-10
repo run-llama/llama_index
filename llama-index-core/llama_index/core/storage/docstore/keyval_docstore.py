@@ -406,7 +406,8 @@ class KVDocumentStore(BaseDocumentStore):
         if ref_doc_info is None:
             return
         ref_doc_obj = RefDocInfo(**ref_doc_info)
-        ref_doc_obj.node_ids.remove(doc_id)
+        if doc_id in ref_doc_obj.node_ids:  # sanity check
+            ref_doc_obj.node_ids.remove(doc_id)
         # delete ref_doc from collection if it has no more doc_ids
         if len(ref_doc_obj.node_ids) > 0:
             self._kvstore.put(
