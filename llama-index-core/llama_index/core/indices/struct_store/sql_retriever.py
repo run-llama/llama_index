@@ -318,6 +318,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
                 "result": sql_query_str,
                 "dialect": self._sql_database.dialect,
                 "schema": table_desc_str,
+                "engine": self._sql_database.engine
             }
         else:
             try:

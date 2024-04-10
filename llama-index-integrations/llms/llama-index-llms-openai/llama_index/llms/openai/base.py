@@ -80,8 +80,7 @@ llm_retry_decorator = create_retry_decorator(
 class Tokenizer(Protocol):
     """Tokenizers support an encode function that returns a list of ints."""
 
-    def encode(self, text: str) -> List[int]:
-        ...
+    def encode(self, text: str) -> List[int]: ...
 
 
 class OpenAI(LLM):
@@ -331,7 +330,6 @@ class OpenAI(LLM):
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
             logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
-
         return ChatResponse(
             message=message,
             raw=response,
@@ -424,7 +422,6 @@ class OpenAI(LLM):
                 if is_function:
                     tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
-
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
