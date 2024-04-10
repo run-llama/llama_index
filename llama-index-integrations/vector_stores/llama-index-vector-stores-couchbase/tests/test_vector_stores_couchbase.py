@@ -1,7 +1,6 @@
 """Test Couchbase Vector Search functionality."""
 
 from __future__ import annotations
-from dotenv import load_dotenv
 import os
 from typing import Any, List
 
@@ -18,9 +17,6 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
 )
 from llama_index.vector_stores.couchbase import CouchbaseVectorStore
-
-
-load_dotenv()
 
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")
