@@ -432,6 +432,28 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
+    def _get_multiple_result_output(
+        self,
+        result_outputs: Dict[str, Any],
+        return_values_direct: bool,
+    ) -> List[Any]:
+        """Get result output from a single module.
+
+        If output dict is a single key, return the value directly
+        if return_values_direct is True.
+
+        """
+        outputs = []
+        for value in result_outputs.values():
+            if isinstance(value, dict) and len(value) == 1 and return_values_direct:
+                # If value is a dict with one key and return_values_direct is True,
+                # return the value directly.
+                outputs.append(next(iter(value.values())))
+            else:
+                # Otherwise, add the dict or value as is.
+                outputs.append(value)
+        return outputs
+
     def _run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
         """Run the pipeline.
 
@@ -447,7 +469,7 @@ class QueryPipeline(QueryComponent):
             formatted_intermediate_outputs = {}
             for it in intermediate_outputs:
                 formatted_intermediate_outputs[it] = [
-                    self._get_single_result_output(
+                    self._get_multiple_result_output(
                         intermediate_outputs[it], return_values_direct
                     ),
                     intermediate_outputs[it],
@@ -478,7 +500,7 @@ class QueryPipeline(QueryComponent):
             formatted_intermediate_outputs = {}
             for it in intermediate_outputs:
                 formatted_intermediate_outputs[it] = [
-                    self._get_single_result_output(
+                    self._get_multiple_result_output(
                         intermediate_outputs[it], return_values_direct
                     ),
                     intermediate_outputs[it],
