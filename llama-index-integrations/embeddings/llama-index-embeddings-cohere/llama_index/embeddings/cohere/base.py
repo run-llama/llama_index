@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -8,6 +8,8 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 import cohere
+import httpx
+
 
 # Enums for validation and type safety
 class CohereAIModelName(str, Enum):
@@ -105,14 +107,17 @@ class CohereEmbedding(BaseEmbedding):
     )
 
     def __init__(
-            self,
-            cohere_api_key: Optional[str] = None,
-            model_name: str = "embed-english-v3.0",
-            truncate: str = "END",
-            input_type: Optional[str] = None,
-            embedding_type: str = "float",
-            embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-            callback_manager: Optional[CallbackManager] = None,
+        self,
+        cohere_api_key: Optional[str] = None,
+        model_name: str = "embed-english-v3.0",
+        truncate: str = "END",
+        input_type: Optional[str] = None,
+        embedding_type: str = "float",
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        callback_manager: Optional[CallbackManager] = None,
+        base_url: Optional[str] = None,
+        timeout: Optional[float] = None,
+        httpx_client: Optional[httpx.AsyncClient] = None,
     ):
         """
         A class representation for generating embeddings using the Cohere API.
@@ -127,7 +132,6 @@ class CohereEmbedding(BaseEmbedding):
             model_name (str): The name of the model to be used for generating embeddings. The class ensures that
                           this model is supported and that the input type provided is compatible with the model.
         """
-
         # Validate model_name and input_type
         if model_name not in VALID_MODEL_INPUT_TYPES:
             raise ValueError(f"{model_name} is not a valid model name")
@@ -145,8 +149,20 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            cohere_client=cohere.Client(cohere_api_key, client_name="llama_index"),
-            cohere_async_client=cohere.AsyncClient(cohere_api_key, client_name="llama_index"),
+            cohere_client=cohere.Client(
+                cohere_api_key,
+                client_name="llama_index",
+                base_url=base_url,
+                timeout=timeout,
+                httpx_client=httpx_client,
+            ),
+            cohere_async_client=cohere.AsyncClient(
+                cohere_api_key,
+                client_name="llama_index",
+                base_url=base_url,
+                timeout=timeout,
+                httpx_client=httpx_client,
+            ),
             cohere_api_key=cohere_api_key,
             model_name=model_name,
             input_type=input_type,
