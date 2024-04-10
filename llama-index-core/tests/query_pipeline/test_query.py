@@ -230,7 +230,7 @@ def test_query_pipeline_multi() -> None:
     output = p.run_multi(
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
-    assert output == ({"qc2": {"output": "3:7"}}, {})
+    assert output == {"qc2": {"output": "3:7"}}
 
 
 def test_query_pipeline_multi_intermediate_output() -> None:
@@ -303,7 +303,7 @@ async def test_query_pipeline_async() -> None:
     output = await p.arun_multi(
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
-    assert output == ({"qc2": {"output": "3:7"}}, {})
+    assert output == {"qc2": {"output": "3:7"}}
 
 
 def test_query_pipeline_init() -> None:

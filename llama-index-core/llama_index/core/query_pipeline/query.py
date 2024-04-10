@@ -463,14 +463,9 @@ class QueryPipeline(QueryComponent):
 
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
-        # call run_multi with one root key
-        result_outputs, intermediates = self._run_multi({root_key: kwargs})
-
-        single_output = self._get_single_result_output(
-            result_outputs, return_values_direct
-        )
 
         if self.show_intermediate_outputs:
+            result_outputs, intermediates = self._run_multi({root_key: kwargs})
             formatted_intermediates = {
                 key: [
                     self._get_multiple_result_output(value, return_values_direct),
@@ -479,11 +474,12 @@ class QueryPipeline(QueryComponent):
                 for key, value in intermediates.items()
             }
             return (
-                single_output,
+                self._get_single_result_output(result_outputs, return_values_direct),
                 formatted_intermediates,
             )
         else:
-            return single_output
+            result_outputs = self._run_multi({root_key: kwargs})
+            return self._get_single_result_output(result_outputs, return_values_direct)
 
     async def _arun(
         self, *args: Any, return_values_direct: bool = True, **kwargs: Any
@@ -496,14 +492,9 @@ class QueryPipeline(QueryComponent):
 
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
-        # call run_multi with one root key
-        result_outputs, intermediates = await self._arun_multi({root_key: kwargs})
-
-        single_output = self._get_single_result_output(
-            result_outputs, return_values_direct
-        )
 
         if self.show_intermediate_outputs:
+            result_outputs, intermediates = self._run_multi({root_key: kwargs})
             formatted_intermediates = {
                 key: [
                     self._get_multiple_result_output(value, return_values_direct),
@@ -512,11 +503,12 @@ class QueryPipeline(QueryComponent):
                 for key, value in intermediates.items()
             }
             return (
-                single_output,
+                self._get_single_result_output(result_outputs, return_values_direct),
                 formatted_intermediates,
             )
         else:
-            return single_output
+            result_outputs = self._run_multi({root_key: kwargs})
+            return self._get_single_result_output(result_outputs, return_values_direct)
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
         root_keys = self._get_root_keys()
@@ -572,9 +564,7 @@ class QueryPipeline(QueryComponent):
 
         return new_queue
 
-    def _run_multi(
-        self, module_input_dict: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
+    def _run_multi(self, module_input_dict: Dict[str, Any]) -> Any:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -617,12 +607,12 @@ class QueryPipeline(QueryComponent):
             queue = self._process_component_output(
                 queue, output_dict, module_key, all_module_inputs, result_outputs
             )
+        if self.show_intermediate_outputs:
+            return result_outputs, intermediate_outputs
+        else:
+            return result_outputs
 
-        return (result_outputs, intermediate_outputs)
-
-    async def _arun_multi(
-        self, module_input_dict: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
+    async def _arun_multi(self, module_input_dict: Dict[str, Any]) -> Any:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -694,7 +684,10 @@ class QueryPipeline(QueryComponent):
                     queue, output_dict, module_key, all_module_inputs, result_outputs
                 )
 
-        return (result_outputs, intermediate_outputs)
+        if self.show_intermediate_outputs:
+            return result_outputs, intermediate_outputs
+        else:
+            return result_outputs
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
