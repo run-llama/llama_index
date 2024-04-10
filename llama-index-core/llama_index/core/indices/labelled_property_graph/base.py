@@ -52,8 +52,10 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
-
-        if embed_triplets and lpg_graph_store.supports_vector_queries:
+        storage_context = storage_context or StorageContext.from_defaults(
+            lpg_graph_store=lpg_graph_store
+        )
+        if embed_triplets and storage_context.lpg_graph_store.supports_vector_queries:
             self._embed_model = (
                 resolve_embed_model(embed_model)
                 if embed_model
@@ -68,9 +70,6 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         ]
         self._use_async = use_async
 
-        storage_context = storage_context or StorageContext.from_defaults(
-            lpg_graph_store=lpg_graph_store
-        )
         super().__init__(
             nodes=nodes,
             callback_manager=callback_manager,
@@ -108,9 +107,9 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             metadata[TRIPLET_SOURCE_KEY] = node.id_
 
             for triplet in node_triplets:
-                subj = Entity(name=triplet[0], properties=metadata)
-                rel = Relation(name=triplet[1], properties=metadata)
-                obj = Entity(name=triplet[2], properties=metadata)
+                subj = Entity(text=triplet[0], properties=metadata)
+                rel = Relation(text=triplet[1], properties=metadata)
+                obj = Entity(text=triplet[2], properties=metadata)
                 triplets.append((subj, rel, obj))
 
         self.lpg_graph_store.upsert_triplets(triplets)

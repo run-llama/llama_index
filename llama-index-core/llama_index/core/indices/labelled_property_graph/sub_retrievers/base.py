@@ -22,21 +22,20 @@ class BaseLPGRetriever(BaseRetriever):
         if not self._include_text:
             return nodes
 
-        result_nodes = []
-        for node in nodes:
-            if self._storage_context.lpg_graph_store.supports_nodes:
-                og_nodes = self._storage_context.lpg_graph_store.get_by_ids(
-                    [node.metadata["id_"]]
-                )
-                if len(og_nodes) > 0:
-                    node.node.set_content(og_nodes[0].get_content(metadata_mode="none"))
-            else:
-                og_node = self._storage_context.docstore.get_document(
-                    node.metadata["id_"]
-                )
-                if og_node:
-                    node.node.set_content(og_node.get_content(metadata_mode="none"))
+        og_nodes = self._storage_context.lpg_graph_store.get_nodes(
+            [x.node.node_id for x in nodes]
+        )
+        node_map = {node.node_id: node for node in og_nodes}
 
-            result_nodes.append(node)
+        result_nodes = []
+        for node_with_score in nodes:
+            node = node_map.get(node_with_score.node.node_id, None)
+            if node:
+                result_nodes.append(
+                    NodeWithScore(
+                        node=node,
+                        score=node_with_score.score,
+                    )
+                )
 
         return result_nodes

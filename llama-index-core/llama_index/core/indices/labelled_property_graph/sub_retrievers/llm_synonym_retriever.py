@@ -4,6 +4,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.core.indices.labelled_property_graph.base import (
     LabelledPropertyGraphIndex,
+    TRIPLET_SOURCE_KEY,
 )
 from llama_index.core.indices.labelled_property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
@@ -61,10 +62,10 @@ class LLMSynonymRetriever(BaseLPGRetriever):
             )
 
             for triplet in sub_results:
-                id_ = triplet[0].properties.get("id_", None)
+                id_ = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
                 assert id_ is not None
 
-                text = f"{triplet[0].name}, {triplet[1].name}, {triplet[2].name}"
+                text = f"{triplet[0].text}, {triplet[1].text}, {triplet[2].text}"
                 results.append(
                     NodeWithScore(node=TextNode(id_=id_, text=text), score=1.0)
                 )
