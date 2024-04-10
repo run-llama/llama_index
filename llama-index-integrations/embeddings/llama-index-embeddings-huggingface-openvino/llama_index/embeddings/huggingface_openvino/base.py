@@ -82,9 +82,8 @@ class OpenVINOEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "OpenVINOEmbedding"
 
-    @classmethod
+    @staticmethod
     def create_and_save_openvino_model(
-        cls,
         model_name_or_path: str,
         output_path: str,
         export_kwargs: Optional[dict] = None,
