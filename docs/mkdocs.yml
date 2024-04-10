@@ -298,6 +298,7 @@ nav:
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/ipex_llm.ipynb
           - ./examples/llm/databricks.ipynb
+          - ./examples/llm/openvino.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -786,6 +787,7 @@ nav:
           - ./api_reference/llms/openai_like.md
           - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
+          - ./api_reference/llms/openvino.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
           - ./api_reference/llms/portkey.md
@@ -1789,6 +1791,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
             - ../llama-index-integrations/llms/llama-index-llms-databricks
             - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
+            - ../llama-index-integrations/llms/llama-index-llms-openvino
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

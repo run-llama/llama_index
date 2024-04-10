@@ -82,9 +82,8 @@ class OpenVINOEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "OpenVINOEmbedding"
 
-    @classmethod
+    @staticmethod
     def create_and_save_openvino_model(
-        cls,
         model_name_or_path: str,
         output_path: str,
         export_kwargs: Optional[dict] = None,
@@ -101,7 +100,7 @@ class OpenVINOEmbedding(BaseEmbedding):
 
         export_kwargs = export_kwargs or {}
         model = OVModelForFeatureExtraction.from_pretrained(
-            model_name_or_path, export=True, **export_kwargs
+            model_name_or_path, export=True, compile=False, **export_kwargs
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
 
