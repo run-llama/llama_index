@@ -208,19 +208,23 @@ class CohereEmbedding(BaseEmbedding):
             CAMN.MULTILINGUAL_V3,
             CAMN.MULTILINGUAL_LIGHT_V3,
         ]:
-            result = await self.cohere_async_client.embed(
-                texts=texts,
-                input_type=self.input_type or input_type,
-                embedding_types=[self.embedding_type],
-                model=self.model_name,
-                truncate=self.truncate,
+            result = (
+                await self.cohere_async_client.embed(
+                    texts=texts,
+                    input_type=self.input_type or input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                )
             ).embeddings
         else:
-            result = await self.cohere_async_client.embed(
-                texts=texts,
-                model=self.model_name,
-                embedding_types=[self.embedding_type],
-                truncate=self.truncate,
+            result = (
+                await self.cohere_async_client.embed(
+                    texts=texts,
+                    model=self.model_name,
+                    embedding_types=[self.embedding_type],
+                    truncate=self.truncate,
+                )
             ).embeddings
         return getattr(result, self.embedding_type, None)
 
