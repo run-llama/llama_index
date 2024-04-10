@@ -148,6 +148,9 @@ class RedisVectorStore(BasePydanticVectorStore):
                 "Failed to connect to Redis. Must provide a valid redis client or url"
             )
 
+        # Create index
+        self.create_index()
+
         super().__init__()
 
     def _flag_old_kwargs(self, **kwargs):
@@ -204,6 +207,16 @@ class RedisVectorStore(BasePydanticVectorStore):
         """
         return self._index.exists()
 
+    def create_index(self, overwrite: Optional[bool] = None) -> None:
+        """Create an index in Redis."""
+        if overwrite is None:
+            overwrite = self._overwrite
+        # Create index honoring overwrite policy
+        if overwrite:
+            self._index.create(overwrite=True, drop=True)
+        else:
+            self._index.create()
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
 
@@ -227,14 +240,9 @@ class RedisVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 f"Attempting to index embeddings of dim {embedding_len} "
                 f"which doesn't match the index schema expectation of {expected_dims}. "
-                "Please review the Redis integration example to learn how to customize schema."
+                "Please review the Redis integration example to learn how to customize schema. "
+                ""
             )
-
-        # Create index honoring overwrite policy
-        if self._overwrite:
-            self._index.create(overwrite=True, drop=True)
-        else:
-            self._index.create()
 
         data: List[Dict[str, Any]] = []
         for node in nodes:
