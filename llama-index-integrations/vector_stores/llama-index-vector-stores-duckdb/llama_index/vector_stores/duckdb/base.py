@@ -84,7 +84,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     database_name: Optional[str]
     table_name: Optional[str]
     # schema_name: Optional[str] # TODO: support schema name
-    embed_dim: int
+    embed_dim: Optional[int]
     # hybrid_search: Optional[bool] # TODO: support hybrid search
     text_search_config: Optional[dict]
     persist_dir: Optional[str]
@@ -95,10 +95,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        embed_dim: int,
         database_name: Optional[str] = ":memory:",
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
+        embed_dim: Optional[int] = 1536,
         # hybrid_search: Optional[bool] = False,
         # https://duckdb.org/docs/extensions/full_text_search
         text_search_config: Optional[dict] = {
@@ -181,10 +181,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_params(
         cls,
-        embed_dim: int,
         database_name: Optional[str] = ":memory:",
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
+        embed_dim: Optional[int] = 1536,
         # hybrid_search: Optional[bool] = False,
         text_search_config: Optional[dict] = {
             "stemmer": "english",
@@ -228,7 +228,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                     CREATE TABLE {self.table_name} (
                         node_id VARCHAR,
                         text TEXT,
-                        embedding FLOAT[{self.embed_dim}],
+                        embedding FLOAT[],
                         metadata_ JSON
                         );
                     """
@@ -240,7 +240,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                         CREATE TABLE {self.table_name} (
                             node_id VARCHAR,
                             text TEXT,
-                            embedding FLOAT[{self.embed_dim}],
+                            embedding FLOAT[],
                             metadata_ JSON
                             );
                         """
@@ -362,7 +362,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             # TODO: results from the metadata filter query
             _filter_string = self._build_metadata_filter_condition(query.filters)
             _ddb_query = f"""
-            SELECT node_id, text, metadata_, score
+            SELECT node_id, text, embedding, metadata_, score
             FROM (
                 SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
                 FROM {self.table_name}
@@ -373,7 +373,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             """
         else:
             _ddb_query = f"""
-            SELECT node_id, text, metadata_, score
+            SELECT node_id, text, embedding, metadata_, score
             FROM (
                 SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
                 FROM {self.table_name}
@@ -392,10 +392,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             node = TextNode(
                 id_=_row[0],
                 text=_row[1],
-                metadata=json.loads(_row[2]),
+                embedding=_row[2],
+                metadata=json.loads(_row[3]),
             )
             nodes.append(node)
-            similarities.append(_row[3])
+            similarities.append(_row[4])
             ids.append(_row[0])
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
