@@ -162,6 +162,9 @@ class QueryPipeline(QueryComponent):
     num_workers: int = Field(
         default=4, description="Number of workers to use (currently async only)."
     )
+    show_intermediate_outputs: bool = Field(
+        default=False, description="Whether to show intermediate outputs."
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -439,8 +442,22 @@ class QueryPipeline(QueryComponent):
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
         # call run_multi with one root key
-        result_outputs = self._run_multi({root_key: kwargs})
-        return self._get_single_result_output(result_outputs, return_values_direct)
+        (result_outputs, intermediate_outputs) = self._run_multi({root_key: kwargs})
+        if self.show_intermediate_outputs:
+            formatted_intermediate_outputs = {}
+            for it in intermediate_outputs:
+                formatted_intermediate_outputs[it] = [
+                    self._get_single_result_output(
+                        intermediate_outputs[it], return_values_direct
+                    ),
+                    intermediate_outputs[it],
+                ]
+            return (
+                self._get_single_result_output(result_outputs, return_values_direct),
+                formatted_intermediate_outputs,
+            )
+        else:
+            return self._get_single_result_output(result_outputs, return_values_direct)
 
     async def _arun(
         self, *args: Any, return_values_direct: bool = True, **kwargs: Any
@@ -454,8 +471,24 @@ class QueryPipeline(QueryComponent):
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
         # call run_multi with one root key
-        result_outputs = await self._arun_multi({root_key: kwargs})
-        return self._get_single_result_output(result_outputs, return_values_direct)
+        (result_outputs, intermediate_outputs) = await self._arun_multi(
+            {root_key: kwargs}
+        )
+        if self.show_intermediate_outputs:
+            formatted_intermediate_outputs = {}
+            for it in intermediate_outputs:
+                formatted_intermediate_outputs[it] = [
+                    self._get_single_result_output(
+                        intermediate_outputs[it], return_values_direct
+                    ),
+                    intermediate_outputs[it],
+                ]
+            return (
+                self._get_single_result_output(result_outputs, return_values_direct),
+                formatted_intermediate_outputs,
+            )
+        else:
+            return self._get_single_result_output(result_outputs, return_values_direct)
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
         root_keys = self._get_root_keys()
@@ -511,7 +544,9 @@ class QueryPipeline(QueryComponent):
 
         return new_queue
 
-    def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_multi(
+        self, module_input_dict: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -529,6 +564,7 @@ class QueryPipeline(QueryComponent):
             module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
+        intermediate_outputs: Dict[str, Dict[str, Any]] = {}
 
         # add root inputs to all_module_inputs
         for module_key, module_input in module_input_dict.items():
@@ -543,14 +579,22 @@ class QueryPipeline(QueryComponent):
                 print_debug_input(module_key, module_input)
             output_dict = module.run_component(**module_input)
 
+            if (
+                self.show_intermediate_outputs
+                and module_key not in intermediate_outputs
+            ):
+                intermediate_outputs[module_key] = output_dict
+
             # get new nodes and is_leaf
             queue = self._process_component_output(
                 queue, output_dict, module_key, all_module_inputs, result_outputs
             )
 
-        return result_outputs
+        return (result_outputs, intermediate_outputs)
 
-    async def _arun_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    async def _arun_multi(
+        self, module_input_dict: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -568,6 +612,7 @@ class QueryPipeline(QueryComponent):
             module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
+        intermediate_outputs: Dict[str, Dict[str, Any]] = {}
 
         # add root inputs to all_module_inputs
         for module_key, module_input in module_input_dict.items():
@@ -597,6 +642,12 @@ class QueryPipeline(QueryComponent):
                     [all_module_inputs[module_key] for module_key in popped_nodes],
                 )
 
+            if (
+                self.show_intermediate_outputs
+                and module_key not in intermediate_outputs
+            ):
+                intermediate_outputs[module_key] = output_dict
+
             # create tasks from popped nodes
             tasks = []
             for module_key in popped_nodes:
@@ -615,7 +666,7 @@ class QueryPipeline(QueryComponent):
                     queue, output_dict, module_key, all_module_inputs, result_outputs
                 )
 
-        return result_outputs
+        return (result_outputs, intermediate_outputs)
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
