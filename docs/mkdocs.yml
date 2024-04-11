@@ -578,6 +578,17 @@ nav:
           - ./module_guides/storing/customization.md
       - Querying:
           - ./module_guides/querying/index.md
+          - Query Engines:
+              - ./module_guides/deploying/query_engine/index.md
+              - ./module_guides/deploying/query_engine/usage_pattern.md
+              - ./module_guides/deploying/query_engine/response_modes.md
+              - ./module_guides/deploying/query_engine/streaming.md
+              - ./module_guides/deploying/query_engine/modules.md
+              - ./module_guides/deploying/query_engine/supporting_modules.md
+          - Chat Engines:
+              - ./module_guides/deploying/chat_engines/index.md
+              - ./module_guides/deploying/chat_engines/usage_pattern.md
+              - ./module_guides/deploying/chat_engines/modules.md
           - Retrieval:
               - ./module_guides/querying/retriever/index.md
               - ./module_guides/querying/retriever/retrievers.md
@@ -599,6 +610,15 @@ nav:
               - ./module_guides/querying/structured_outputs/output_parser.md
               - ./module_guides/querying/structured_outputs/query_engine.md
               - ./module_guides/querying/structured_outputs/pydantic_program.md
+      - Agents:
+          - ./module_guides/deploying/agents/index.md
+          - ./module_guides/deploying/agents/usage_pattern.md
+          - ./module_guides/deploying/agents/agent_runner.md
+          - ./module_guides/deploying/agents/modules.md
+          - Tools:
+              - ./module_guides/deploying/agents/tools/index.md
+              - ./module_guides/deploying/agents/tools/usage_pattern.md
+              - ./module_guides/deploying/agents/tools/llamahub_tools_guide.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -611,27 +631,6 @@ nav:
       - Observability:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
-      - Deploying:
-          - Agents:
-              - ./module_guides/deploying/agents/index.md
-              - ./module_guides/deploying/agents/usage_pattern.md
-              - ./module_guides/deploying/agents/agent_runner.md
-              - ./module_guides/deploying/agents/modules.md
-              - Tools:
-                  - ./module_guides/deploying/agents/tools/index.md
-                  - ./module_guides/deploying/agents/tools/usage_pattern.md
-                  - ./module_guides/deploying/agents/tools/llamahub_tools_guide.md
-          - Chat Engines:
-              - ./module_guides/deploying/chat_engines/index.md
-              - ./module_guides/deploying/chat_engines/usage_pattern.md
-              - ./module_guides/deploying/chat_engines/modules.md
-          - Query Engines:
-              - ./module_guides/deploying/query_engine/index.md
-              - ./module_guides/deploying/query_engine/usage_pattern.md
-              - ./module_guides/deploying/query_engine/response_modes.md
-              - ./module_guides/deploying/query_engine/streaming.md
-              - ./module_guides/deploying/query_engine/modules.md
-              - ./module_guides/deploying/query_engine/supporting_modules.md
       - Settings: ./module_guides/supporting_modules/settings.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
