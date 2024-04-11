@@ -76,6 +76,15 @@ VALID_MODEL_INPUT_TYPES = {
     CAMN.MULTILINGUAL_V2: [None],
 }
 
+# v3 models require an input_type field
+V3_MODELS = [
+    CAMN.ENGLISH_V3,
+    CAMN.ENGLISH_LIGHT_V3,
+    CAMN.MULTILINGUAL_V3,
+    CAMN.MULTILINGUAL_LIGHT_V3,
+]
+
+
 # This list would be used for model name and embedding types validation
 # Embedding type can be float/ int8/ uint8/ binary/ ubinary based on model.
 VALID_MODEL_EMBEDDING_TYPES = {
@@ -178,12 +187,7 @@ class CohereEmbedding(BaseEmbedding):
 
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
-        if self.model_name in [
-            CAMN.ENGLISH_V3,
-            CAMN.ENGLISH_LIGHT_V3,
-            CAMN.MULTILINGUAL_V3,
-            CAMN.MULTILINGUAL_LIGHT_V3,
-        ]:
+        if self.model_name in V3_MODELS:
             result = self.cohere_client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
@@ -202,12 +206,7 @@ class CohereEmbedding(BaseEmbedding):
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
-        if self.model_name in [
-            CAMN.ENGLISH_V3,
-            CAMN.ENGLISH_LIGHT_V3,
-            CAMN.MULTILINGUAL_V3,
-            CAMN.MULTILINGUAL_LIGHT_V3,
-        ]:
+        if self.model_name in V3_MODELS:
             result = (
                 await self.cohere_async_client.embed(
                     texts=texts,
