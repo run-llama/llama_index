@@ -56,7 +56,11 @@ class PredibaseLLM(CustomLLM):
 
     model_name: str = Field(description="The Predibase base model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
-    adapter_id: str = Field(description="The optional Predibase fine-tuned adapter ID to use.")
+    # ALEX
+    # adapter_id: str = Field(description="The optional Predibase fine-tuned adapter ID to use.")
+    # ALEX
+    adapter_id: Optional[str] = None
+    # ALEX
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description="The number of tokens to generate.",
