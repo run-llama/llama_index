@@ -42,7 +42,9 @@ INSTRUCTOR_MODELS = (
 def is_listed_model(model_name: Optional[str], model_list: List[str]) -> bool:
     model_path = Path(model_name)
     if model_path.exists() and model_path.is_dir():
-        return model_path.name in model_list
+        return model_path.name in [
+            bge_repo_id.split("/")[-1] for bge_repo_id in BGE_MODELS
+        ]
     else:
         return model_name in model_list
 
