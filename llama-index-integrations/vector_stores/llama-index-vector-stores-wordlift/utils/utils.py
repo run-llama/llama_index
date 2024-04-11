@@ -36,3 +36,23 @@ class VectorSearchService:
                 vector_search_query_request=vector_search_query_request,
                 _headers={"Authorization": "Key " + key},
             )
+
+
+class WordliftVectorQueryServiceException(Exception):
+    initial_exception: Exception
+    additional_msg: str
+
+    def __init__(self, exception: Exception, msg: str, *args, **kwargs):
+        self.initial_exception = exception
+        self.additional_msg = msg
+        super().__init__(*args)
+
+
+class WordliftVectorStoreException(Exception):
+    initial_exception: Exception
+    additional_msg: str
+
+    def __init__(self, exception: Exception, msg: str, *args, **kwargs):
+        self.initial_exception = exception
+        self.additional_msg = msg
+        super().__init__(*args)

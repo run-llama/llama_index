@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import traceback
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores import VectorStoreQuery, VectorStoreQueryResult
@@ -10,7 +10,12 @@ from llama_index.core.vector_stores.types import (
 )
 
 from manager_client import NodeRequest, VectorSearchQueryRequest
-from llama_index.vector_stores.wordlift.utils import VectorSearchService
+from manager_client.exceptions import ServiceException
+from utils import (
+    VectorSearchService,
+    WordliftVectorStoreException,
+    WordliftVectorQueryServiceException,
+)
 
 log = logging.getLogger("global")
 
@@ -21,20 +26,19 @@ class KeyProvider:
     def __init__(self, key: str):
         self.key = key
 
-    def for_add(self, nodes: List[BaseNode]) -> str:
+    async def for_add(self, nodes: List[BaseNode]) -> str:
         return self.key
 
-    def for_delete(self, ref_doc_id: str) -> str:
+    async def for_delete(self, ref_doc_id: str) -> str:
         return self.key
 
-    def for_query(self, query: VectorStoreQuery) -> str:
+    async def for_query(self, query: VectorStoreQuery) -> str:
         return self.key
 
 
 class WordliftVectorStore(VectorStore):
     stores_text = True
 
-    key: str
     vector_search_service: VectorSearchService
 
     @staticmethod
@@ -53,9 +57,12 @@ class WordliftVectorStore(VectorStore):
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         log.debug("Add node(s)\n")
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         task = loop.create_task(self.async_add(nodes, **add_kwargs))
-        return loop.run_until_complete(task)
+        add = loop.run_until_complete(task)
+        loop.close()
+        return add
 
     async def async_add(
         self,
@@ -66,10 +73,10 @@ class WordliftVectorStore(VectorStore):
         if not nodes:
             return []
 
-        log.debug(f"{len(nodes)} node(s) received\n")
+        log.debug("{0} node(s) received\n".format(len(nodes)))
 
         # Get the key to use for the operation.
-        key = self.key_provider.for_add(nodes)
+        key = await self.key_provider.for_add(nodes)
 
         requests = []
         for node in nodes:
@@ -86,7 +93,7 @@ class WordliftVectorStore(VectorStore):
             )
             requests.append(entry)
 
-        log.debug(f"Inserting data, using key {key}: {requests}")
+        log.debug("Inserting data, using key {0}: {1}".format(key, requests))
 
         try:
             await self.vector_search_service.update_nodes_collection(
@@ -105,32 +112,37 @@ class WordliftVectorStore(VectorStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         log.debug("Running in NON async mode")
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         task = loop.create_task(self.aquery(query, **kwargs))
-        return loop.run_until_complete(task)
+        query = loop.run_until_complete(task)
+        loop.close()
+        return query
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        dataset_id: Union[str, None] = kwargs.get("dataset_id", None)
-        if dataset_id is None:
-            raise ValueError("Missing dataset_id value.")
-
         request = VectorSearchQueryRequest(
             query_embedding=query.query_embedding,
             similarity_top_k=query.similarity_top_k,
         )
 
         # Get the key to use for the operation.
-        key = self.key_provider.for_query(query)
+        key = await self.key_provider.for_query(query)
 
         try:
             page = await self.vector_search_service.query_nodes_collection(
                 vector_search_query_request=request, key=key
             )
-        except Exception:
+        except ServiceException as exception:
+            raise WordliftVectorQueryServiceException(
+                exception=exception, msg=exception.body
+            )
+        except Exception as exception:
             print(traceback.format_exc())
-            raise Exception("Failed to fetch query results")
+            raise WordliftVectorStoreException(
+                exception=exception, msg="Failed to fetch query results"
+            )
 
         nodes: List[TextNode] = []
         similarities: List[float] = []
@@ -147,5 +159,4 @@ class WordliftVectorStore(VectorStore):
             )
             similarities.append(item.score)
             ids.append(item.node_id)
-
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)

@@ -2,20 +2,6 @@
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
 
-[tool.black]
-exclude = '''
-/(
-  | manager_client
-)/
-
-'''
-force-exclude = '''
-/(
-  | manager_client
-)/
-
-'''
-
 [tool.codespell]
 check-filenames = true
 check-hidden = true
