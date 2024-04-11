@@ -186,6 +186,7 @@ nav:
           - ./examples/embeddings/alephalpha.ipynb
           - ./examples/embeddings/itrex.ipynb
           - ./examples/embeddings/cloudflare_workersai.ipynb
+          - ./examples/embeddings/openvino.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -297,6 +298,7 @@ nav:
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/ipex_llm.ipynb
           - ./examples/llm/databricks.ipynb
+          - ./examples/llm/openvino.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -380,6 +382,7 @@ nav:
           - ./examples/pipeline/query_pipeline_sql.ipynb
           - ./examples/pipeline/query_pipeline_async.ipynb
           - ./examples/pipeline/query_pipeline_routing.ipynb
+          - ./examples/pipeline/query_pipeline_memory.ipynb
       - Prompts:
           - ./examples/prompts/advanced_prompts.ipynb
           - ./examples/prompts/emotion_prompt.ipynb
@@ -699,6 +702,7 @@ nav:
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
+          - ./api_reference/embeddings/openvino.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
           - ./api_reference/embeddings/text_embeddings_inference.md
@@ -783,6 +787,7 @@ nav:
           - ./api_reference/llms/openai_like.md
           - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
+          - ./api_reference/llms/openvino.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
           - ./api_reference/llms/portkey.md
@@ -1785,6 +1790,8 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-neptune
             - ../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
             - ../llama-index-integrations/llms/llama-index-llms-databricks
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
+            - ../llama-index-integrations/llms/llama-index-llms-openvino
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

@@ -65,7 +65,7 @@ class MarkdownNodeParser(NodeParser):
         current_section = ""
 
         for line in lines:
-            if line.startswith("```"):
+            if line.lstrip().startswith("```"):
                 code_block = not code_block
             header_match = re.match(r"^(#+)\s(.*)", line)
             if header_match and not code_block:
