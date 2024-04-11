@@ -1,3 +1,6 @@
+# This file is adapted from
+# https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/embeddings/llama-index-embeddings-huggingface/llama_index/embeddings/huggingface/base.py
+
 import logging
 from typing import Any, List, Optional
 
