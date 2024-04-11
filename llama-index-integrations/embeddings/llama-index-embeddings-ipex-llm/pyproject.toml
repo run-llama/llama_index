@@ -35,7 +35,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
-ipex-llm = {allow-prereleases = true, version = "*"}
+ipex-llm = {allow-prereleases = true, version = ">=2.1.0b20240409"}
 py-cpuinfo = "*"
 protobuf = "*"
 intel-openmp = {markers = "platform_machine=='x86_64' or platform_machine == 'AMD64'", version = "*"}
