@@ -1485,13 +1485,13 @@ llama-index-vector-stores-chroma = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.12"
+version = "0.10.24"
 description = "Interface between LLMs and your data"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.12-py3-none-any.whl", hash = "sha256:47663cc3282684e6b7f06e905d98382aa3dbec5191ab72c239b4f19e0b08c041"},
-    {file = "llama_index_core-0.10.12.tar.gz", hash = "sha256:071e3a9ab2071c900657149cabf39199818e7244d16ef5cc096e5c0bff8174f4"},
+    {file = "llama_index_core-0.10.24-py3-none-any.whl", hash = "sha256:c4b979160e813f2f41b6aeaa243293b5297f83aed1c3654d2673aa881551d479"},
+    {file = "llama_index_core-0.10.24.tar.gz", hash = "sha256:0bb28871a44d697a06df8668602828c9132ffe3289b4a598f8928b887ac70901"},
 ]
 
 [package.dependencies]
@@ -1523,7 +1523,7 @@ gradientai = ["gradientai (>=1.4.0)"]
 html = ["beautifulsoup4 (>=4.12.2,<5.0.0)"]
 langchain = ["langchain (>=0.0.303)"]
 local-models = ["optimum[onnxruntime] (>=1.13.2,<2.0.0)", "sentencepiece (>=0.1.99,<0.2.0)", "transformers[torch] (>=4.33.1,<5.0.0)"]
-postgres = ["asyncpg (>=0.28.0,<0.29.0)", "pgvector (>=0.1.0,<0.2.0)", "psycopg2-binary (>=2.9.9,<3.0.0)"]
+postgres = ["asyncpg (>=0.29.0,<0.30.0)", "pgvector (>=0.2.4,<0.3.0)", "psycopg2-binary (>=2.9.9,<3.0.0)"]
 query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "lm-format-enforcer (>=0.4.3,<0.5.0)", "rank-bm25 (>=0.2.2,<0.3.0)", "scikit-learn", "spacy (>=3.7.1,<4.0.0)"]
 
 [[package]]
