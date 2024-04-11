@@ -58,7 +58,7 @@ class PredibaseLLM(CustomLLM):
     predibase_api_key: str = Field(description="The Predibase API key to use.")
     adapter_id: str = Field(
         default=None,
-        description="The optional Predibase fine-tuned adapter ID to use.",
+        description="The optional HuggingFace ID of a fine-tuned adapter to use.",
     )
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
