@@ -254,7 +254,10 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         :rtype: None
         """
         try:
-            self._collection.remove(ref_doc_id)
+            document_field = self._metadata_key + ".ref_doc_id"
+            self._scope.query(
+                f"DELETE FROM `{self._collection_name}` WHERE {document_field} = '{ref_doc_id}'"
+            ).execute()
             logger.debug(f"Deleted document {ref_doc_id}")
         except Exception:
             logger.error(f"Error deleting document {ref_doc_id}")

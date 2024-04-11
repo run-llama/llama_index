@@ -7,16 +7,16 @@ from typing import Any, List
 import pytest
 import time
 
-from llama_index.core.schema import (
-    MetadataMode,
-    TextNode,
-)
+from llama_index.core.schema import MetadataMode, TextNode, Document
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     MetadataFilters,
     MetadataFilter,
 )
 from llama_index.vector_stores.couchbase import CouchbaseVectorStore
+from llama_index.core.storage.storage_context import StorageContext
+from llama_index.core import VectorStoreIndex
 
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")
@@ -27,7 +27,7 @@ USERNAME = os.getenv("COUCHBASE_USERNAME", "")
 PASSWORD = os.getenv("COUCHBASE_PASSWORD", "")
 INDEX_NAME = os.getenv("COUCHBASE_INDEX_NAME", "")
 SLEEP_DURATION = 1
-EMBEDDING_DIMENSION = 10
+EMBEDDING_DIMENSION = 1536
 
 
 def set_all_env_vars() -> bool:
@@ -179,7 +179,7 @@ class TestCouchbaseVectorStore:
         )
         assert result.similarities is not None
 
-    def test_delete_doc(self, node_embeddings: List[TextNode]) -> None:
+    def test_delete_doc(self) -> None:
         """Test delete document from Couchbase vector store."""
         vector_store = CouchbaseVectorStore(
             cluster=self.cluster,
@@ -189,25 +189,44 @@ class TestCouchbaseVectorStore:
             index_name=INDEX_NAME,
         )
 
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
         # Add nodes to the couchbase vector
-        vector_store.add(node_embeddings)
-
-        # Wait for the documents to be indexed
-        time.sleep(SLEEP_DURATION)
-
-        # Delete document
-        vector_store.delete(ref_doc_id="469e9537-7bc5-4669-9ff6-baa0ed086236")
+        VectorStoreIndex.from_documents(
+            [
+                Document(
+                    text="hello",
+                    metadata={"name": "John Doe", "age": 30, "city": "New"},
+                ),
+            ],
+            storage_context=storage_context,
+        )
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
 
         # similarity search
+        search_embedding = OpenAIEmbedding().get_text_embedding("hello")
         q = VectorStoreQuery(
-            query_embedding=text_to_embedding("foo"), similarity_top_k=3
+            query_embedding=search_embedding,
+            similarity_top_k=1,
         )
 
         result = vector_store.query(q)
-        assert result.nodes is not None and len(result.nodes) == 2
+        assert result.nodes is not None and len(result.nodes) == 1
+
+        # Identify the document to delete
+        ref_id_to_delete = result.nodes[0].ref_doc_id
+
+        # Delete the document
+        vector_store.delete(ref_doc_id=ref_id_to_delete)
+
+        # Wait for the documents to be indexed
+        time.sleep(SLEEP_DURATION)
+
+        # Ensure that no results are returned
+        result = vector_store.query(q)
+        assert len(result.nodes) == 0
 
     def test_search_with_filter(self, node_embeddings: List[TextNode]) -> None:
         """Test end to end Couchbase vector search with filter."""
