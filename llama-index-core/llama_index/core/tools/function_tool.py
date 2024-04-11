@@ -47,6 +47,7 @@ class FunctionTool(AsyncBaseTool):
         fn: Callable[..., Any],
         name: Optional[str] = None,
         description: Optional[str] = None,
+        return_direct: bool = False,
         fn_schema: Optional[Type[BaseModel]] = None,
         async_fn: Optional[AsyncCallable] = None,
         tool_metadata: Optional[ToolMetadata] = None,
@@ -60,7 +61,10 @@ class FunctionTool(AsyncBaseTool):
                     f"{name}", fn, additional_fields=None
                 )
             tool_metadata = ToolMetadata(
-                name=name, description=description, fn_schema=fn_schema
+                name=name,
+                description=description,
+                fn_schema=fn_schema,
+                return_direct=return_direct,
             )
         return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn)
 

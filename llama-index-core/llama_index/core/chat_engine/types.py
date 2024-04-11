@@ -50,6 +50,7 @@ class AgentChatResponse:
     response: str = ""
     sources: List[ToolOutput] = field(default_factory=list)
     source_nodes: List[NodeWithScore] = field(default_factory=list)
+    is_dummy_stream: bool = False
 
     def __post_init__(self) -> None:
         if self.sources and not self.source_nodes:
@@ -59,6 +60,31 @@ class AgentChatResponse:
 
     def __str__(self) -> str:
         return self.response
+
+    @property
+    def response_gen(self) -> Generator[str, None, None]:
+        """Used for fake streaming, i.e. with tool outputs."""
+        if not self.is_dummy_stream:
+            raise ValueError(
+                "response_gen is only available for streaming responses. "
+                "Set is_dummy_stream=True if you still want a generator."
+            )
+
+        for token in self.response.split(" "):
+            yield token + " "
+            time.sleep(0.1)
+
+    async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        """Used for fake streaming, i.e. with tool outputs."""
+        if not self.is_dummy_stream:
+            raise ValueError(
+                "response_gen is only available for streaming responses. "
+                "Set is_dummy_stream=True if you still want a generator."
+            )
+
+        for token in self.response.split(" "):
+            yield token + " "
+            await asyncio.sleep(0.1)
 
 
 @dataclass
@@ -72,17 +98,17 @@ class StreamingAgentChatResponse:
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     _unformatted_response: str = ""
     _queue: queue.Queue = field(default_factory=queue.Queue)
-    _aqueue: asyncio.Queue = field(default_factory=asyncio.Queue)
+    _aqueue: Optional[asyncio.Queue] = None
     # flag when chat message is a function call
     _is_function: Optional[bool] = None
     # flag when processing done
     _is_done = False
     # signal when a new item is added to the queue
-    _new_item_event: asyncio.Event = field(default_factory=asyncio.Event)
+    _new_item_event: Optional[asyncio.Event] = None
     # NOTE: async code uses two events rather than one since it yields
     # control when waiting for queue item
     # signal when the OpenAI functions stop executing
-    _is_function_false_event: asyncio.Event = field(default_factory=asyncio.Event)
+    _is_function_false_event: Optional[asyncio.Event] = None
     # signal when an OpenAI function is being executed
     _is_function_not_none_thread_event: Event = field(default_factory=Event)
 
@@ -99,6 +125,14 @@ class StreamingAgentChatResponse:
                 self._unformatted_response += delta
             self.response = self._unformatted_response.strip()
         return self.response
+
+    def _ensure_async_setup(self) -> None:
+        if self._aqueue is None:
+            self._aqueue = asyncio.Queue()
+        if self._new_item_event is None:
+            self._new_item_event = asyncio.Event()
+        if self._is_function_false_event is None:
+            self._is_function_false_event = asyncio.Event()
 
     def put_in_queue(self, delta: Optional[str]) -> None:
         self._queue.put_nowait(delta)
@@ -119,15 +153,20 @@ class StreamingAgentChatResponse:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
+        dispatch_event = dispatcher.get_dispatch_event()
 
         # try/except to prevent hanging on error
-        dispatcher.event(StreamChatStartEvent())
+        dispatch_event(StreamChatStartEvent())
         try:
             final_text = ""
             for chat in self.chat_stream:
                 self._is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    dispatch_event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta,
+                        )
+                    )
                     self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
             if self._is_function is not None:  # if loop has gone through iteration
@@ -136,14 +175,14 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatcher.event(StreamChatErrorEvent())
+            dispatch_event(StreamChatErrorEvent())
             if not raise_error:
                 logger.warning(
                     f"Encountered exception writing response to history: {e}"
                 )
             else:
                 raise
-        dispatcher.event(StreamChatEndEvent())
+        dispatch_event(StreamChatEndEvent())
 
         self._is_done = True
 
@@ -158,6 +197,9 @@ class StreamingAgentChatResponse:
         memory: BaseMemory,
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
+        self._ensure_async_setup()
+        dispatch_event = dispatcher.get_dispatch_event()
+
         if self.achat_stream is None:
             raise ValueError(
                 "achat_stream is None. Cannot asynchronously write to "
@@ -165,13 +207,17 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        dispatcher.event(StreamChatStartEvent())
+        dispatch_event(StreamChatStartEvent())
         try:
             final_text = ""
             async for chat in self.achat_stream:
                 self._is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatcher.event(StreamChatDeltaReceivedEvent(delta=chat.delta))
+                    dispatch_event(
+                        StreamChatDeltaReceivedEvent(
+                            delta=chat.delta,
+                        )
+                    )
                     self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 self._new_item_event.set()
@@ -183,9 +229,9 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatcher.event(StreamChatErrorEvent())
+            dispatch_event(StreamChatErrorEvent())
             logger.warning(f"Encountered exception writing response to history: {e}")
-        dispatcher.event(StreamChatEndEvent())
+        dispatch_event(StreamChatEndEvent())
         self._is_done = True
 
         # These act as is_done events for any consumers waiting
@@ -207,6 +253,7 @@ class StreamingAgentChatResponse:
         self.response = self._unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
+        self._ensure_async_setup()
         while True:
             if not self._aqueue.empty() or not self._is_done:
                 try:
