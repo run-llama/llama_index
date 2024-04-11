@@ -57,9 +57,9 @@ class PredibaseLLM(CustomLLM):
     model_name: str = Field(description="The Predibase base model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
     # ALEX
-    # adapter_id: str = Field(description="The optional Predibase fine-tuned adapter ID to use.")
+    adapter_id: str = Field(description="The optional Predibase fine-tuned adapter ID to use.")
     # ALEX
-    adapter_id: Optional[str] = None
+    # adapter_id: Optional[str] = None
     # ALEX
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -104,7 +104,9 @@ class PredibaseLLM(CustomLLM):
 
         self._client = self.initialize_client(predibase_api_key)
 
-        self.adapter_id = adapter_id
+        #ALEX
+        # self.adapter_id = adapter_id
+        #ALEX
 
         super().__init__(
             model_name=model_name,
