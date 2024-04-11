@@ -101,6 +101,8 @@ class PredibaseLLM(CustomLLM):
         )
         assert predibase_api_key is not None
 
+        self.adapter_id = adapter_id
+
         self._client = self.initialize_client(predibase_api_key)
 
         super().__init__(
@@ -116,8 +118,6 @@ class PredibaseLLM(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
-
-        self.adapter_id = adapter_id
 
     @staticmethod
     def initialize_client(predibase_api_key: str) -> Any:
