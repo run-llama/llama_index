@@ -50,7 +50,65 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceLLM(CustomLLM):
-    """HuggingFace LLM."""
+    r"""HuggingFace LLM.
+
+    Examples:
+        `pip install llama-index-llms-huggingface`
+
+        ```python
+        from llama_index.llms.huggingface import HuggingFaceLLM
+
+        def messages_to_prompt(messages):
+            prompt = ""
+            for message in messages:
+                if message.role == 'system':
+                prompt += f"<|system|>\n{message.content}</s>\n"
+                elif message.role == 'user':
+                prompt += f"<|user|>\n{message.content}</s>\n"
+                elif message.role == 'assistant':
+                prompt += f"<|assistant|>\n{message.content}</s>\n"
+
+            # ensure we start with a system prompt, insert blank if needed
+            if not prompt.startswith("<|system|>\n"):
+                prompt = "<|system|>\n</s>\n" + prompt
+
+            # add final assistant prompt
+            prompt = prompt + "<|assistant|>\n"
+
+            return prompt
+
+        def completion_to_prompt(completion):
+            return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
+
+        import torch
+        from transformers import BitsAndBytesConfig
+        from llama_index.core.prompts import PromptTemplate
+        from llama_index.llms.huggingface import HuggingFaceLLM
+
+        # quantize to save memory
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+        )
+
+        llm = HuggingFaceLLM(
+            model_name="HuggingFaceH4/zephyr-7b-beta",
+            tokenizer_name="HuggingFaceH4/zephyr-7b-beta",
+            context_window=3900,
+            max_new_tokens=256,
+            model_kwargs={"quantization_config": quantization_config},
+            generate_kwargs={"temperature": 0.7, "top_k": 50, "top_p": 0.95},
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            device_map="auto",
+        )
+
+        response = llm.complete("What is the meaning of life?")
+        print(str(response))
+        ```
+    """
 
     model_name: str = Field(
         default=DEFAULT_HUGGINGFACE_MODEL,
@@ -183,9 +241,9 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_name, **tokenizer_kwargs
         )
 
-        if tokenizer_name != model_name:
+        if self._tokenizer.name_or_path != model_name:
             logger.warning(
-                f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
+                f"The model `{model_name}` and tokenizer `{self._tokenizer.name_or_path}` "
                 f"are different, please ensure that they are compatible."
             )
 

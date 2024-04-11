@@ -15,7 +15,7 @@ from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core import VectorStoreIndex
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.llms import LLM
-from llama_index.core.schema import NodeWithScore, QueryType
+from llama_index.core.schema import NodeWithScore, QueryType, QueryBundle
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from .constants import CATEGORIZER_PROMPT, DEFAULT_CATEGORIES
@@ -175,16 +175,16 @@ class KodaRetriever(BaseRetriever):
 
         return await self.retriever.aretrieve(str_or_query_bundle=query)
 
-    def _retrieve(self, query: QueryType) -> List[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """llama-index compatible retrieve method that auto-determines the optimal alpha for a query and then retrieves results for a query."""
         if not self.llm:
             warning = f"LLM is not provided, skipping route categorization. Default alpha of {self.default_alpha} will be used."
             logging.warning(warning)
 
-            results = self.retriever.retrieve(query)
+            results = self.retriever.retrieve(query_bundle)
         else:
-            category = self.categorize(query)  # type: ignore
-            results = self.category_retrieve(category, query)
+            category = self.categorize(query=query_bundle.query_str)  # type: ignore
+            results = self.category_retrieve(category, query_bundle)
             if self.verbose:
                 logging.info(
                     f"Query categorized as {category} with alpha of {self.matrix.get_alpha(category)}"
@@ -193,20 +193,22 @@ class KodaRetriever(BaseRetriever):
         if self.reranker:
             if self.verbose:
                 logging.info("Reranking results")
-            results = self.reranker.postprocess_nodes(nodes=results, query_str=query)
+            results = self.reranker.postprocess_nodes(
+                nodes=results, query_bundle=query_bundle
+            )
 
         return results
 
-    async def _aretrieve(self, query: QueryType) -> List[NodeWithScore]:
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """(async) llama-index compatible retrieve method that auto-determines the optimal alpha for a query and then retrieves results for a query."""
         if not self.llm:
             warning = f"LLM is not provided, skipping route categorization. Default alpha of {self.default_alpha} will be used."
             logging.warning(warning)
 
-            results = await self.retriever.aretrieve(query)
+            results = await self.retriever.aretrieve(query_bundle)
         else:
-            category = await self.a_categorize(query)  # type: ignore
-            results = await self.a_category_retrieve(category, query)
+            category = await self.a_categorize(query_bundle.query_str)  # type: ignore
+            results = await self.a_category_retrieve(category, query_bundle)
             if self.verbose:
                 logging.info(
                     f"Query categorized as {category} with alpha of {self.matrix.get_alpha(category)}"
@@ -215,7 +217,9 @@ class KodaRetriever(BaseRetriever):
         if self.reranker:
             if self.verbose:
                 logging.info("Reranking results")
-            results = self.reranker.postprocess_nodes(nodes=results, query_str=query)
+            results = self.reranker.postprocess_nodes(
+                nodes=results, query_bundle=query_bundle
+            )
 
         return results
 

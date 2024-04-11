@@ -127,6 +127,27 @@ class _BaseGradientLLM(CustomLLM):
 
 
 class GradientBaseModelLLM(_BaseGradientLLM):
+    """Gradient Base Model LLM.
+
+    Examples:
+        `pip install llama-index-llms-gradient`
+
+        ```python
+        import os
+        from llama_index.llms.gradient import GradientBaseModelLLM
+
+        # Set up Gradient access token and workspace ID
+        os.environ["GRADIENT_ACCESS_TOKEN"] = "{GRADIENT_ACCESS_TOKEN}"
+        os.environ["GRADIENT_WORKSPACE_ID"] = "{GRADIENT_WORKSPACE_ID}"
+
+        # Create an instance of GradientBaseModelLLM
+        llm = GradientBaseModelLLM(
+            base_model_slug="llama2-7b-chat",
+            max_tokens=400,
+        )
+        ```
+    """
+
     base_model_slug: str = Field(
         description="The slug of the base model to use.",
     )
@@ -158,6 +179,29 @@ class GradientBaseModelLLM(_BaseGradientLLM):
 
 
 class GradientModelAdapterLLM(_BaseGradientLLM):
+    """Gradient Model Adapter LLM.
+
+    Examples:
+        `pip install llama-index-llms-gradient`
+
+        ```python
+        import os
+
+        os.environ["GRADIENT_ACCESS_TOKEN"] = "{GRADIENT_ACCESS_TOKEN}"
+        os.environ["GRADIENT_WORKSPACE_ID"] = "{GRADIENT_WORKSPACE_ID}"
+
+        from llama_index.llms.gradient import GradientModelAdapterLLM
+
+        llm = GradientModelAdapterLLM(
+            model_adapter_id="{YOUR_MODEL_ADAPTER_ID}",
+            max_tokens=400,
+        )
+
+        result = llm.complete("Can you tell me about large language models?")
+        print(result)
+        ```
+    """
+
     model_adapter_id: str = Field(
         description="The id of the model adapter to use.",
     )

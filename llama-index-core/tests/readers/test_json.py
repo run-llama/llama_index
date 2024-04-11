@@ -70,3 +70,26 @@ def test_jsonl() -> None:
         assert data[1].get_content().index("test2") is not None
         assert isinstance(data[2].get_content(), str)
         assert data[2].get_content().index("test3") is not None
+
+
+def test_clean_json() -> None:
+    """Test JSON reader using the clean_json function."""
+    with TemporaryDirectory() as tmp_dir:
+        file_name = f"{tmp_dir}/test5.json"
+        with open(file_name, "w") as f:
+            f.write('{ "a": { "b": "c" } }')
+
+        # If levels back is set clean_json is ignored
+        reader1 = JSONReader(levels_back=0, clean_json=False)
+        data1 = reader1.load_data(file_name)
+        assert data1[0].get_content() == "a b c"
+
+        # If clean_json is false the full json should be contained in a document
+        reader1 = JSONReader(clean_json=False)
+        data1 = reader1.load_data(file_name)
+        assert data1[0].get_content() == '{"a": {"b": "c"}}'
+
+        # If clean_json is True the full json should be contained in a document
+        reader1 = JSONReader(clean_json=True)
+        data1 = reader1.load_data(file_name)
+        assert data1[0].get_content() == '"a": {\n"b": "c"'

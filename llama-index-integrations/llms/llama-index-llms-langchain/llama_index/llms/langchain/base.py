@@ -25,7 +25,24 @@ from langchain.base_language import BaseLanguageModel
 
 
 class LangChainLLM(LLM):
-    """Adapter for a LangChain LLM."""
+    """Adapter for a LangChain LLM.
+
+    Examples:
+        `pip install llama-index-llms-langchain`
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        from llama_index.llms.langchain import LangChainLLM
+
+        llm = LangChainLLM(llm=ChatOpenAI(...))
+
+        response_gen = llm.stream_complete("What is the meaning of life?")
+
+        for r in response_gen:
+            print(r.delta, end="")
+        ```
+    """
 
     _llm: Any = PrivateAttr()
 

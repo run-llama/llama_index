@@ -58,7 +58,6 @@ def handle_download_llama_dataset(
     download_llama_dataset(
         llama_dataset_class=llama_dataset_class,
         download_dir=download_dir,
-        llama_hub_url=llama_hub_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
         show_progress=True,
