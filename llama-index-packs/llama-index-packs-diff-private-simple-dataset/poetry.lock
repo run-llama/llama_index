@@ -1800,13 +1800,13 @@ files = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.20.post2"
+version = "0.10.24"
 description = "Interface between LLMs and your data"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.20.post2-py3-none-any.whl", hash = "sha256:6d05e53271250dd340ea75f0395d9529eea6788546c1fe9020dc7597fa47907b"},
-    {file = "llama_index_core-0.10.20.post2.tar.gz", hash = "sha256:d7d83a2f89269a3abc64663ef122ab6b132d6fbc1d32b5f0ba2909c4e8c6c55a"},
+    {file = "llama_index_core-0.10.24-py3-none-any.whl", hash = "sha256:c4b979160e813f2f41b6aeaa243293b5297f83aed1c3654d2673aa881551d479"},
+    {file = "llama_index_core-0.10.24.tar.gz", hash = "sha256:0bb28871a44d697a06df8668602828c9132ffe3289b4a598f8928b887ac70901"},
 ]
 
 [package.dependencies]
