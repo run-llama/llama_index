@@ -139,10 +139,10 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
     """
 
     # tools: List[BaseTool] = Field(..., description="List of tools to use.")
-    num_expansions: int = Field(2, description="Number of expansions to do.")
+    num_expansions: int = Field(default=2, description="Number of expansions to do.")
     # llm: LLM = Field(..., description="LLM to use.")
     reflection_prompt: PromptTemplate = Field(..., description="Reflection prompt.")
-    max_depth: int = Field(5, description="Max depth of the tree.")
+    max_depth: int = Field(default=5, description="Max depth of the tree.")
     max_rollouts: int = Field(
         -1,
         description=(

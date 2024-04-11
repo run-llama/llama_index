@@ -120,6 +120,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
             llm=llm,
             callback_manager=callback_manager,
             verbose=verbose,
+            **kwargs
         )
 
     @abstractmethod
