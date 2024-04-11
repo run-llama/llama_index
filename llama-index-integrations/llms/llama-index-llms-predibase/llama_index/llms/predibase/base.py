@@ -173,12 +173,13 @@ class PredibaseLLM(CustomLLM):
                 "max_new_tokens": self.max_new_tokens,
                 "temperature": self.temperature,
             }
-
         )
 
         result: GeneratedResponse
         if self.adapter_id:
-            adapter_model: HuggingFaceLLM = self._client.LLM(uri=f"hf://{self.adapter_id}")
+            adapter_model: HuggingFaceLLM = self._client.LLM(
+                uri=f"hf://{self.adapter_id}"
+            )
             result = base_llm_deployment.with_adapter(model=adapter_model).generate(
                 prompt=prompt,
                 options=options,
