@@ -49,17 +49,13 @@ class NVIDIAEmbedding(BaseEmbedding):
     ):
         api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
 
-        if not api_key:
-            raise ValueError(
-                "The NVIDIA API key must be provided as an environment variable or as a parameter."
-            )
-
         self._client = OpenAI(
             api_key=api_key,
             base_url=BASE_RETRIEVAL_PLAYGROUND_URL,
             timeout=timeout,
             max_retries=max_retries,
         )
+        self._client._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
         self._aclient = AsyncOpenAI(
             api_key=api_key,
@@ -67,6 +63,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             timeout=timeout,
             max_retries=max_retries,
         )
+        self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
         super().__init__(
             model_name=model_name,
@@ -78,6 +75,30 @@ class NVIDIAEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "NVIDIAEmbedding"
+
+    # def mode(
+    #     mode: Optional[("nvidia", "catalog", "nim")] = "catalog",
+    #     base_url: Optional[str] = None,
+    #     model: Optional[str] = "NV-Embed-QA",
+    #     api_key: Optional[str] = None,
+    #     ):
+
+    #     out = self
+
+    #     if api_key is None:
+    #         api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
+
+    #     if mode in ("nvidia", "catalog"):
+    #         if not api_key:
+    #             raise ValueError(
+    #                 "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA AI catalog."
+    #             )
+
+    #     if mode == "nim":
+    #         if base_url is None:
+    #             raise ValueError(
+    #                 "The NIM base URL must be provided to connect to a local NIM"
+    #             )
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
