@@ -251,13 +251,17 @@ class TestCouchbaseVectorStore:
             filters=MetadataFilters(
                 filters=[
                     MetadataFilter(key="genre", value="Thriller", operator="=="),
+                    MetadataFilter(key="pages", value=10, operator=">"),
                 ]
             ),
         )
 
         result = vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
-        assert result.nodes[0].metadata.get("genre") == "Thriller"
+        assert (
+            result.nodes[0].metadata.get("genre") == "Thriller"
+            and result.nodes[0].metadata.get("pages") == 20
+        )
 
     def test_hybrid_search(self, node_embeddings: List[TextNode]) -> None:
         """Test the hybrid search functionality."""

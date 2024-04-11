@@ -22,6 +22,56 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 logger = logging.getLogger(__name__)
 
 
+def _transform_couchbase_filter_condition(condition: str) -> str:
+    """
+    Convert standard metadata filter condition to Couchbase specific condition.
+
+    Args:
+        condition: standard metadata filter condition
+
+    Returns:
+        Couchbase specific condition
+    """
+    if condition == "and":
+        return "conjuncts"
+    elif condition == "or":
+        return "disjuncts"
+    else:
+        raise ValueError(f"Filter condition {condition} not supported")
+
+
+def _transform_couchbase_filter_operator(
+    operator: str, field: str, value: Any
+) -> Dict[str, Any]:
+    """
+    Convert standard metadata filter operator to Couchbase specific filter operation.
+
+    Args:
+        operator: standard metadata filter operator
+        field: metadata field
+        value: value to apply for the filter
+
+    Returns:
+        Dictionary with Couchbase specific search operation.
+    """
+    if operator == "!=":
+        return {"must_not": {"disjuncts": [{"field": field, "match": value}]}}
+    elif operator == "==":
+        return {"field": field, "match": value}
+    elif operator == ">":
+        return {"min": value, "inclusive_min": False, "field": field}
+    elif operator == "<":
+        return {"max": value, "inclusive_max": False, "field": field}
+    elif operator == ">=":
+        return {"min": value, "inclusive_min": True, "field": field}
+    elif operator == "<=":
+        return {"max": value, "inclusive_max": True, "field": field}
+    elif operator == "text_match":
+        return {"match_phrase": value, "field": field}
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
 def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
     """
     Convert standard filters to Couchbase filter.
@@ -30,27 +80,36 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
         standard_filters (str): Standard Llama-index filters.
 
     Returns:
-        Dictionary with Couchbase search filters.
+        Dictionary with Couchbase search query.
     """
-    if len(standard_filters.legacy_filters()) == 1:
-        filter = standard_filters.legacy_filters()[0]
-        return {
-            "query": {
-                "field": f"metadata.{filter.key}",
-                "match": filter.value,
-            }
-        }
-    else:
-        operands = []
-        for filter in standard_filters.legacy_filters():
-            operands.append(
-                {
-                    "field": f"metadata.{filter.key}",
-                    "match": filter.value,
-                }
-            )
-        # Perform an ADD on all the individual filters
-        return {"query": {"must": {"conjuncts": operands}}}
+    filters = {}
+    filters_list = []
+    condition = standard_filters.condition
+    condition = _transform_couchbase_filter_condition(condition)
+
+    if standard_filters.filters:
+        for filter in standard_filters.filters:
+            if filter.operator:
+                transformed_filter = _transform_couchbase_filter_operator(
+                    filter.operator, f"metadata.{filter.key}", filter.value
+                )
+
+                filters_list.append(transformed_filter)
+            else:
+                filters_list.append(
+                    {
+                        "match": {
+                            "field": f"metadata.{filter.key}",
+                            "value": filter.value,
+                        }
+                    }
+                )
+    if len(filters_list) == 1:
+        # If there is only one filter, return it directly
+        return filters_list[0]
+    elif len(filters_list) > 1:
+        filters[condition] = filters_list
+    return {"query": filters}
 
 
 class CouchbaseVectorStore(BasePydanticVectorStore):
@@ -96,11 +155,11 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         Initializes a connection to a Couchbase Vector Store.
 
         Args:
-            cluster (Cluster): couchbase cluster object with active connection.
-            bucket_name (str): name of bucket to store documents in.
-            scope_name (str): name of scope in the bucket to store documents in.
-            collection_name (str): name of collection in the scope to store documents in.
-            index_name (str): name of the Search index.
+            cluster (Cluster): Couchbase cluster object with active connection.
+            bucket_name (str): Name of bucket to store documents in.
+            scope_name (str): Name of scope in the bucket to store documents in.
+            collection_name (str): Name of collection in the scope to store documents in.
+            index_name (str): Name of the Search index.
             text_key (Optional[str], optional): The field for the document text.
                 Defaults to "text".
             embedding_key (Optional[str], optional): The field for the document embedding.
@@ -247,11 +306,11 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         """
         Delete a document by its reference document ID.
 
-        :param ref_doc_id: The reference document ID to be deleted.
-        :param **kwargs: Additional keyword arguments.
-        :type ref_doc_id: str
-        :return: None
-        :rtype: None
+        Args:
+            ref_doc_id: The reference document ID to be deleted.
+
+        Returns:
+            None
         """
         try:
             document_field = self._metadata_key + ".ref_doc_id"
@@ -299,6 +358,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
             raise ValueError("Cannot use both filters and cb_search_options")
         elif query.filters:
             couchbase_options = _to_couchbase_filter(query.filters)
+            logger.debug(f"Filters transformed to Couchbase: {couchbase_options}")
             search_options = couchbase_options
 
         logger.debug(f"Filters: {search_options}")
@@ -375,17 +435,24 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return self._cluster
 
     def _check_bucket_exists(self) -> bool:
-        """Check if the bucket exists in the linked Couchbase cluster."""
+        """Check if the bucket exists in the linked Couchbase cluster.
+
+        Returns:
+            True if the bucket exists
+        """
         bucket_manager = self._cluster.buckets()
         try:
             bucket_manager.get_bucket(self._bucket_name)
             return True
-        except Exception:
+        except Exception as e:
+            logger.debug("Error checking if bucket exists:", e)
             return False
 
     def _check_scope_and_collection_exists(self) -> bool:
         """Check if the scope and collection exists in the linked Couchbase bucket
-        Raises a ValueError if either is not found.
+        Returns:
+            True if the scope and collection exist in the bucket
+            Raises a ValueError if either is not found.
         """
         scope_collection_map: Dict[str, Any] = {}
 
@@ -415,7 +482,9 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
     def _check_index_exists(self) -> bool:
         """Check if the Search index exists in the linked Couchbase cluster
-        Raises a ValueError if the index does not exist.
+        Returns:
+            bool: True if the index exists, False otherwise.
+            Raises a ValueError if the index does not exist.
         """
         if self._scoped_index:
             all_indexes = [
