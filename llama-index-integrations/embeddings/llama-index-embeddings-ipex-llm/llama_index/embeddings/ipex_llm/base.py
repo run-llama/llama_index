@@ -62,7 +62,7 @@ class IpexLLMEmbedding(BaseEmbedding):
         if not is_listed_model(model_name, BGE_MODELS):
             bge_model_list_str = ", ".join(BGE_MODELS)
             logger.warning(
-                "IpexLLMEmbedding currently only provide optimization support for"
+                "IpexLLMEmbedding currently only provides optimization for "
                 f"Hugging Face BGE models, which are: {bge_model_list_str}"
             )
 
