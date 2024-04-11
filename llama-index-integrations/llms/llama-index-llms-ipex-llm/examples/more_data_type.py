@@ -47,7 +47,7 @@ if __name__ == "__main__":
         max_new_tokens=64,
         load_in_low_bit=low_bit,
         completion_to_prompt=completion_to_prompt,
-        generate_kwargs={"temperature": 0.7, "do_sample": False},
+        generate_kwargs={"do_sample": False},
     )
 
     print(

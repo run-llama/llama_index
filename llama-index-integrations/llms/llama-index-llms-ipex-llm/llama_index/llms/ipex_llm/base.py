@@ -1,3 +1,7 @@
+# This file is adapted from
+# https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/
+# llms/llama-index-llms-huggingface/llama_index/llms/huggingface/base.py
+
 import logging
 from threading import Thread
 from typing import Any, Callable, List, Optional, Sequence
@@ -186,52 +190,13 @@ class IpexLLM(CustomLLM):
             None.
         """
         model_kwargs = model_kwargs or {}
-        from ipex_llm.transformers import AutoModelForCausalLM
 
         if model:
             self._model = model
         else:
-            if not low_bit_model:
-                try:
-                    if load_in_low_bit:
-                        self._model = AutoModelForCausalLM.from_pretrained(
-                            model_name,
-                            load_in_low_bit=load_in_low_bit,
-                            use_cache=True,
-                            trust_remote_code=True,
-                            **model_kwargs,
-                        )
-                    else:
-                        self._model = AutoModelForCausalLM.from_pretrained(
-                            model_name,
-                            load_in_4bit=load_in_4bit,
-                            use_cache=True,
-                            trust_remote_code=True,
-                            **model_kwargs,
-                        )
-                except Exception:
-                    from ipex_llm.transformers import AutoModel
-
-                    if load_in_low_bit:
-                        self._model = AutoModel.from_pretrained(
-                            model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
-                        )
-                    else:
-                        self._model = AutoModel.from_pretrained(
-                            model_name, load_in_4bit=load_in_4bit, **model_kwargs
-                        )
-            else:
-                try:
-                    self._model = AutoModelForCausalLM.load_low_bit(
-                        model_name,
-                        use_cache=True,
-                        trust_remote_code=True,
-                        **model_kwargs,
-                    )
-                except Exception:
-                    from ipex_llm.transformers import AutoModel
-
-                    self._model = AutoModel.load_low_bit(model_name, **model_kwargs)
+            self._model = self._load_model(
+                low_bit_model, load_in_4bit, load_in_low_bit, model_name, model_kwargs
+            )
 
         if "xpu" in device_map:
             self._model = self._model.to(device_map)
@@ -268,11 +233,14 @@ class IpexLLM(CustomLLM):
         if tokenizer_name != model_name:
             logger.warning(
                 f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
-                f"are different, please ensure that they are compatible."
+                f"are from different paths, please ensure that they are compatible."
             )
 
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
+
+        if self._tokenizer.pad_token is None:
+            self._tokenizer.pad_token = self._tokenizer.eos_token
 
         class StopOnTokens(StoppingCriteria):
             def __call__(
@@ -340,6 +308,8 @@ class IpexLLM(CustomLLM):
             model_name=model_name,
             load_in_4bit=load_in_4bit,
             load_in_low_bit=load_in_low_bit,
+            model=model,
+            tokenizer=tokenizer,
             device_map=device_map,
             stopping_ids=stopping_ids,
             tokenizer_kwargs=tokenizer_kwargs,
@@ -382,6 +352,8 @@ class IpexLLM(CustomLLM):
             max_new_tokens=max_new_tokens,
             tokenizer_name=tokenizer_name,
             model_name=model_name,
+            model=model,
+            tokenizer=tokenizer,
             device_map=device_map,
             stopping_ids=stopping_ids,
             tokenizer_kwargs=tokenizer_kwargs,
@@ -410,6 +382,61 @@ class IpexLLM(CustomLLM):
             model_name=self.model_name,
             is_chat_model=self.is_chat_model,
         )
+
+    def _load_model(
+        self,
+        low_bit_model: bool,
+        load_in_4bit: bool,
+        load_in_low_bit: str,
+        model_name: str,
+        model_kwargs: Any,
+    ) -> Any:
+        """Attempts to load a model with AutoModelForCausalLM and falls back to AutoModel on failure."""
+        from ipex_llm.transformers import AutoModelForCausalLM, AutoModel
+
+        load_kwargs = {"use_cache": True, "trust_remote_code": True}
+
+        if not low_bit_model:
+            if load_in_low_bit is not None:
+                load_function_name = "from_pretrained"
+                load_kwargs["load_in_low_bit"] = load_in_low_bit
+            else:
+                load_function_name = "from_pretrained"
+                load_kwargs["load_in_4bit"] = load_in_4bit
+        else:
+            load_function_name = "load_low_bit"
+
+        try:
+            # Attempt to load with AutoModelForCausalLM
+            return self._load_model_general(
+                AutoModelForCausalLM,
+                load_function_name,
+                model_name,
+                load_kwargs,
+                model_kwargs,
+            )
+        except Exception:
+            # Fallback to AutoModel if there's an exception
+            return self._load_model_general(
+                AutoModel, load_function_name, model_name, load_kwargs, model_kwargs
+            )
+
+    def _load_model_general(
+        self,
+        model_class: Any,
+        load_function_name: str,
+        model_name: str,
+        load_kwargs,
+        model_kwargs: dict,
+    ) -> Any:
+        """General function to attempt to load a model."""
+        try:
+            load_function = getattr(model_class, load_function_name)
+            return load_function(model_name, **{**load_kwargs, **model_kwargs})
+        except Exception as e:
+            logger.error(
+                f"Failed to load model using {model_class.__name__}.{load_function_name}: {e}"
+            )
 
     def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
         """
@@ -472,6 +499,7 @@ class IpexLLM(CustomLLM):
             **input_ids,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
+            pad_token_id=self._tokenizer.pad_token_id,
             **self.generate_kwargs,
         )
         completion_tokens = tokens[0][input_ids["input_ids"].size(1) :]
@@ -514,6 +542,7 @@ class IpexLLM(CustomLLM):
             streamer=streamer,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
+            pad_token_id=self._tokenizer.pad_token_id,
             **self.generate_kwargs,
         )
         thread = Thread(target=self._model.generate, kwargs=generation_kwargs)
