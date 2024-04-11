@@ -56,11 +56,10 @@ class PredibaseLLM(CustomLLM):
 
     model_name: str = Field(description="The Predibase base model to use.")
     predibase_api_key: str = Field(description="The Predibase API key to use.")
-    # ALEX
-    adapter_id: str = Field(default=None, description="The optional Predibase fine-tuned adapter ID to use.")
-    # ALEX
-    # adapter_id: Optional[str] = None
-    # ALEX
+    adapter_id: str = Field(
+        default=None,
+        description="The optional Predibase fine-tuned adapter ID to use.",
+    )
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description="The number of tokens to generate.",
@@ -103,10 +102,6 @@ class PredibaseLLM(CustomLLM):
         assert predibase_api_key is not None
 
         self._client = self.initialize_client(predibase_api_key)
-
-        #ALEX
-        # self.adapter_id = adapter_id
-        #ALEX
 
         super().__init__(
             model_name=model_name,
