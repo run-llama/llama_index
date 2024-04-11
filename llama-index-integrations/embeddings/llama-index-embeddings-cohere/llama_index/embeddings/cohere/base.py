@@ -105,10 +105,8 @@ class CohereEmbedding(BaseEmbedding):
     """CohereEmbedding uses the Cohere API to generate embeddings for text."""
 
     # Instance variables initialized via Pydantic's mechanism
-    _cohere_client: cohere.Client = Field(description="CohereAI client")
-    _cohere_async_client: cohere.AsyncClient = Field(
-        description="CohereAI Async client"
-    )
+    cohere_client: cohere.Client = Field(description="CohereAI client")
+    cohere_async_client: cohere.AsyncClient = Field(description="CohereAI Async client")
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
     input_type: Optional[str] = Field(
         description="Model Input type. If not provided, search_document and search_query are used when needed."
@@ -160,14 +158,14 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            _cohere_client=cohere.Client(
+            cohere_client=cohere.Client(
                 cohere_api_key,
                 client_name="llama_index",
                 base_url=base_url,
                 timeout=timeout,
                 httpx_client=httpx_client,
             ),
-            _cohere_async_client=cohere.AsyncClient(
+            cohere_async_client=cohere.AsyncClient(
                 cohere_api_key,
                 client_name="llama_index",
                 base_url=base_url,
@@ -190,7 +188,7 @@ class CohereEmbedding(BaseEmbedding):
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
         if self.model_name in V3_MODELS:
-            result = self._cohere_client.embed(
+            result = self.cohere_client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
                 embedding_types=[self.embedding_type],
@@ -198,7 +196,7 @@ class CohereEmbedding(BaseEmbedding):
                 truncate=self.truncate,
             ).embeddings
         else:
-            result = self._cohere_client.embed(
+            result = self.cohere_client.embed(
                 texts=texts,
                 model=self.model_name,
                 embedding_types=[self.embedding_type],
@@ -210,7 +208,7 @@ class CohereEmbedding(BaseEmbedding):
         """Embed sentences using Cohere."""
         if self.model_name in V3_MODELS:
             result = (
-                await self._cohere_async_client.embed(
+                await self.cohere_async_client.embed(
                     texts=texts,
                     input_type=self.input_type or input_type,
                     embedding_types=[self.embedding_type],
@@ -220,7 +218,7 @@ class CohereEmbedding(BaseEmbedding):
             ).embeddings
         else:
             result = (
-                await self._cohere_async_client.embed(
+                await self.cohere_async_client.embed(
                     texts=texts,
                     model=self.model_name,
                     embedding_types=[self.embedding_type],
