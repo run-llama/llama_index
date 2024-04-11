@@ -27,7 +27,7 @@ class DistanceStrategy(Enum):
   DOT_PRODUCT = 2
   EUCLIDEAN_DISTANCE = 3
 
-def handle_exceptions(func):
+def _handle_exceptions(func):
   @functools.wraps(func)
   def wrapper(*args, **kwargs):
     try:
@@ -47,9 +47,7 @@ def handle_exceptions(func):
 
   return wrapper
 
-
-
-def escape_str(value: str) -> str:
+def _escape_str(value: str) -> str:
   BS = "\\"
   must_escape = (BS, "'")
   return (
@@ -61,7 +59,7 @@ column_config: Dict = {
   "doc_id": {"type": "VARCHAR2(64)", "extract_func": lambda x: x.ref_doc_id},
   "text": {
     "type": "CLOB",
-    "extract_func": lambda x: escape_str(
+    "extract_func": lambda x: _escape_str(
       x.get_content(metadata_mode=MetadataMode.NONE) or ""
     ),
   },
@@ -77,16 +75,17 @@ column_config: Dict = {
   },
   "embedding": {
     "type": "VECTOR",
-    "extract_func": lambda x: stringify_list(x.get_embedding()),
+    "extract_func": lambda x: _stringify_list(x.get_embedding()),
   },
 }
 
 
-def stringify_list(lst: List) -> str:
+def _stringify_list(lst: List) -> str:
   return "[" + ",".join(str(item) for item in lst) + "]"
 
 
-def table_exists(client: oracledb.Connection, table_name: str):
+@_handle_exceptions
+def _table_exists(client: oracledb.Connection, table_name: str):
   try:
     with client.cursor() as cursor:
       cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -98,8 +97,8 @@ def table_exists(client: oracledb.Connection, table_name: str):
     raise
 
 
-@handle_exceptions
-def index_exists(client: oracledb.Connection, index_name: str) -> bool:
+@_handle_exceptions
+def _index_exists(client: oracledb.Connection, index_name: str) -> bool:
   # Check if the index exists
   query = "SELECT index_name FROM all_indexes WHERE upper(index_name) = upper(:idx_name)"
 
@@ -112,7 +111,7 @@ def index_exists(client: oracledb.Connection, index_name: str) -> bool:
   return result is not None
 
 
-def get_distance_function(distance_strategy: DistanceStrategy) -> str:
+def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
   if distance_strategy == DistanceStrategy.EUCLIDEAN_DISTANCE:
     distance_function = 'EUCLIDEAN'
   elif distance_strategy == DistanceStrategy.DOT_PRODUCT:
@@ -124,14 +123,14 @@ def get_distance_function(distance_strategy: DistanceStrategy) -> str:
   return distance_function
 
 
-def get_index_name(base_name: str):
+def _get_index_name(base_name: str):
   unique_id = str(uuid.uuid4()).replace('-', '')
   return f"{base_name}_{unique_id}"
 
 
-@handle_exceptions
-def create_table(client: oracledb.Connection, table_name: str) -> None:
-  if not table_exists(client, table_name):
+@_handle_exceptions
+def _create_table(client: oracledb.Connection, table_name: str) -> None:
+  if not _table_exists(client, table_name):
     with client.cursor() as cursor:
       column_definitions = ", ".join([f'{k} {v["type"]}' for k, v in column_config.items()])
 
@@ -144,7 +143,7 @@ def create_table(client: oracledb.Connection, table_name: str) -> None:
     logger.info("Table already exists...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def create_index(client: oracledb.Connection,
                  vector_store: OraLlamaVS,
                  params: Optional[dict[str, Any]] = None) -> None:
@@ -166,7 +165,7 @@ def create_index(client: oracledb.Connection,
                          params)
 
 
-@handle_exceptions
+@_handle_exceptions
 def _create_hnsw_index(client: oracledb.Connection,
                        table_name: str,
                        distance_strategy: DistanceStrategy,
@@ -186,7 +185,7 @@ def _create_hnsw_index(client: oracledb.Connection,
     for compulsory_key in ["idx_name", "parallel"]:
       if compulsory_key not in config:
         if compulsory_key == "idx_name":
-          config[compulsory_key] = get_index_name(defaults[compulsory_key])
+          config[compulsory_key] = _get_index_name(defaults[compulsory_key])
         else:
           config[compulsory_key] = defaults[compulsory_key]
 
@@ -203,7 +202,7 @@ def _create_hnsw_index(client: oracledb.Connection,
 
   # Optional parts depending on parameters
   accuracy_part = " WITH TARGET ACCURACY {accuracy}" if "accuracy" in config else ""
-  distance_part = f" DISTANCE {get_distance_function(distance_strategy)}"
+  distance_part = f" DISTANCE {_get_distance_function(distance_strategy)}"
 
   parameters_part = ""
   if "neighbors" in config and "efConstruction" in config:
@@ -224,7 +223,7 @@ def _create_hnsw_index(client: oracledb.Connection,
   ddl = ddl_assembly.format(**config)
 
   # Check if the index exists
-  if not index_exists(client, config['idx_name']):
+  if not _index_exists(client, config['idx_name']):
     with client.cursor() as cursor:
       cursor.execute(ddl)
       logger.info("Index created successfully...")
@@ -232,7 +231,7 @@ def _create_hnsw_index(client: oracledb.Connection,
     logger.info("Index already exists...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def _create_ivf_index(client: oracledb.Connection,
                       table_name: str,
                       distance_strategy: DistanceStrategy,
@@ -252,7 +251,7 @@ def _create_ivf_index(client: oracledb.Connection,
     for compulsory_key in ["idx_name", "parallel"]:
       if compulsory_key not in config:
         if compulsory_key == "idx_name":
-          config[compulsory_key] = get_index_name(defaults[compulsory_key])
+          config[compulsory_key] = _get_index_name(defaults[compulsory_key])
         else:
           config[compulsory_key] = defaults[compulsory_key]
 
@@ -269,7 +268,7 @@ def _create_ivf_index(client: oracledb.Connection,
 
   # Optional parts depending on parameters
   accuracy_part = " WITH TARGET ACCURACY {accuracy}" if "accuracy" in config else ""
-  distance_part = f" DISTANCE {get_distance_function(distance_strategy)}"
+  distance_part = f" DISTANCE {_get_distance_function(distance_strategy)}"
 
   parameters_part = ""
   if "idx_type" in config and "neighbor_part" in config:
@@ -284,7 +283,7 @@ def _create_ivf_index(client: oracledb.Connection,
   ddl = ddl_assembly.format(**config)
 
   # Check if the index exists
-  if not index_exists(client, config['idx_name']):
+  if not _index_exists(client, config['idx_name']):
     with client.cursor() as cursor:
       cursor.execute(ddl)
     logger.info("Index created successfully...")
@@ -292,9 +291,9 @@ def _create_ivf_index(client: oracledb.Connection,
     logger.info("Index already exists...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def drop_table_purge(client: oracledb.Connection, table_name: str):
-  if table_exists(client, table_name):
+  if _table_exists(client, table_name):
     cursor = client.cursor()
     with cursor:
       ddl = f"DROP TABLE {table_name} PURGE"
@@ -304,9 +303,9 @@ def drop_table_purge(client: oracledb.Connection, table_name: str):
     logger.info("Table not found...")
 
 
-@handle_exceptions
+@_handle_exceptions
 def drop_index_if_exists(client: oracledb.Connection, index_name: str):
-  if index_exists(client, index_name):
+  if _index_exists(client, index_name):
     drop_query = f"DROP INDEX {index_name}"
     with client.cursor() as cursor:
       cursor.execute(drop_query)
@@ -355,7 +354,7 @@ class OraLlamaVS(VectorStore):
       self.batch_size = batch_size
       self.params = params
 
-      create_table(_client, self.table_name)
+      _create_table(_client, self.table_name)
 
     except Exception as ex:
       print("An exception occurred ::", ex)
@@ -433,7 +432,7 @@ class OraLlamaVS(VectorStore):
       f"AS distance2 DESC limit {similarity_top_k}"
     )
 
-  @handle_exceptions
+  @_handle_exceptions
   def add(self, nodes: list[BaseNode], **kwargs: Any) -> list[str]:
     if not nodes:
       return []
@@ -448,14 +447,14 @@ class OraLlamaVS(VectorStore):
 
     return [node.node_id for node in nodes]
 
-  @handle_exceptions
+  @_handle_exceptions
   def delete(self, doc_id: str, **kwargs: Any) -> None:
     with self._client.cursor() as cursor:
       ddl = f"DELETE FROM {self.table_name} WHERE id = :doc_id"
       cursor.execute(ddl, [doc_id])
       self._client.commit()
 
-  @handle_exceptions
+  @_handle_exceptions
   def get_clob_value(self, result: Any) -> str:
     clob_value = ""
     if result:
@@ -467,13 +466,13 @@ class OraLlamaVS(VectorStore):
         raise Exception("Unexpected type:", type(result))
     return  clob_value
 
-  @handle_exceptions
+  @_handle_exceptions
   def query(self,
             query: VectorStoreQuery,
             **kwargs: Any) -> VectorStoreQueryResult:
-    distance_function = get_distance_function(self.distance_strategy)
+    distance_function = _get_distance_function(self.distance_strategy)
     where_str = (
-      f"doc_id in {stringify_list(query.doc_ids)}"
+      f"doc_id in {_stringify_list(query.doc_ids)}"
       if query.doc_ids
       else None
     )
@@ -539,6 +538,7 @@ class OraLlamaVS(VectorStore):
       return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
   @classmethod
+  @_handle_exceptions
   def from_documents(cls: Type[OraLlamaVS],
                      docs: List[TextNode],
                      table_name: str = "langchain",
