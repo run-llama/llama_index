@@ -1,5 +1,5 @@
 # This file is adapted from
-# https://github.com/intel-analytics/llama_index/blob/main/llama-index-integrations/embeddings/llama-index-embeddings-huggingface/llama_index/embeddings/huggingface/utils.py
+# https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/embeddings/llama-index-embeddings-huggingface/llama_index/embeddings/huggingface/utils.py
 
 from typing import Optional, List
 from pathlib import Path
