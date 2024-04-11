@@ -117,6 +117,8 @@ class PredibaseLLM(CustomLLM):
             output_parser=output_parser,
         )
 
+        self.adapter_id = adapter_id
+
     @staticmethod
     def initialize_client(predibase_api_key: str) -> Any:
         try:
