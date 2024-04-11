@@ -103,6 +103,7 @@ class PredibaseLLM(CustomLLM):
 
         super().__init__(
             model_name=model_name,
+            adapter_id=adapter_id,
             predibase_api_key=predibase_api_key,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
@@ -114,8 +115,6 @@ class PredibaseLLM(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
-
-        self.adapter_id = adapter_id
 
         self._client = self.initialize_client(predibase_api_key)
 
