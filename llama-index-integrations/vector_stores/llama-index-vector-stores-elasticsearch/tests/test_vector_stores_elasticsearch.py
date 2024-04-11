@@ -428,6 +428,30 @@ async def test_add_to_es_and_text_query_ranked_hybrid(
 @pytest.mark.skipif(
     elasticsearch_not_available, reason="elasticsearch is not available"
 )
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_es_and_text_query_ranked_hybrid_large_top_k(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    node1 = "f658de3b-8cef-4d1c-8bed-9a263c907251"
+    node2 = "0b31ae71-b797-4e88-8495-031371a7752e"
+
+    query_get_1_first = VectorStoreQuery(
+        query_str="I was",
+        query_embedding=[0.0, 0.0, 0.5],
+        mode=VectorStoreQueryMode.HYBRID,
+        similarity_top_k=100,
+    )
+    await check_top_match(
+        es_store, node_embeddings, use_async, query_get_1_first, node1, node2
+    )
+
+
+@pytest.mark.skipif(
+    elasticsearch_not_available, reason="elasticsearch is not available"
+)
 def test_check_user_agent(
     index_name: str,
     node_embeddings: List[TextNode],

@@ -1880,13 +1880,13 @@ files = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.3"
+version = "0.10.24"
 description = "Interface between LLMs and your data"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.3-py3-none-any.whl", hash = "sha256:711e2766cb1690a394a209dc6155d1b7a05b44fd6b7e08084d6b96c00bef5dd0"},
-    {file = "llama_index_core-0.10.3.tar.gz", hash = "sha256:5cced2c56bd640311835094fe6946ce6498e6d31dffcdb3df7583ff1aa3861b8"},
+    {file = "llama_index_core-0.10.24-py3-none-any.whl", hash = "sha256:c4b979160e813f2f41b6aeaa243293b5297f83aed1c3654d2673aa881551d479"},
+    {file = "llama_index_core-0.10.24.tar.gz", hash = "sha256:0bb28871a44d697a06df8668602828c9132ffe3289b4a598f8928b887ac70901"},
 ]
 
 [package.dependencies]
@@ -1896,6 +1896,7 @@ deprecated = ">=1.2.9.3"
 dirtyjson = ">=1.0.8,<2.0.0"
 fsspec = ">=2023.5.0"
 httpx = "*"
+llamaindex-py-client = ">=0.1.13,<0.2.0"
 nest-asyncio = ">=1.5.8,<2.0.0"
 networkx = ">=3.0"
 nltk = ">=3.8.1,<4.0.0"
@@ -1917,8 +1918,23 @@ gradientai = ["gradientai (>=1.4.0)"]
 html = ["beautifulsoup4 (>=4.12.2,<5.0.0)"]
 langchain = ["langchain (>=0.0.303)"]
 local-models = ["optimum[onnxruntime] (>=1.13.2,<2.0.0)", "sentencepiece (>=0.1.99,<0.2.0)", "transformers[torch] (>=4.33.1,<5.0.0)"]
-postgres = ["asyncpg (>=0.28.0,<0.29.0)", "pgvector (>=0.1.0,<0.2.0)", "psycopg2-binary (>=2.9.9,<3.0.0)"]
+postgres = ["asyncpg (>=0.29.0,<0.30.0)", "pgvector (>=0.2.4,<0.3.0)", "psycopg2-binary (>=2.9.9,<3.0.0)"]
 query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "lm-format-enforcer (>=0.4.3,<0.5.0)", "rank-bm25 (>=0.2.2,<0.3.0)", "scikit-learn", "spacy (>=3.7.1,<4.0.0)"]
+
+[[package]]
+name = "llamaindex-py-client"
+version = "0.1.16"
+description = ""
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "llamaindex_py_client-0.1.16-py3-none-any.whl", hash = "sha256:b34e0a14984468f46ff5eebfe4b2b88598a24ff9459338a5621eee78e58bf0db"},
+    {file = "llamaindex_py_client-0.1.16.tar.gz", hash = "sha256:e99bbc0855e6caaa75eba219cdb3cf6c943ae94fa15ccbb68a3a08d452fd6380"},
+]
+
+[package.dependencies]
+httpx = ">=0.20.0"
+pydantic = ">=1.10"
 
 [[package]]
 name = "lxml"

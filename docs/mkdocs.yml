@@ -298,6 +298,7 @@ nav:
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/ipex_llm.ipynb
           - ./examples/llm/databricks.ipynb
+          - ./examples/llm/openvino.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -577,6 +578,17 @@ nav:
           - ./module_guides/storing/customization.md
       - Querying:
           - ./module_guides/querying/index.md
+          - Query Engines:
+              - ./module_guides/deploying/query_engine/index.md
+              - ./module_guides/deploying/query_engine/usage_pattern.md
+              - ./module_guides/deploying/query_engine/response_modes.md
+              - ./module_guides/deploying/query_engine/streaming.md
+              - ./module_guides/deploying/query_engine/modules.md
+              - ./module_guides/deploying/query_engine/supporting_modules.md
+          - Chat Engines:
+              - ./module_guides/deploying/chat_engines/index.md
+              - ./module_guides/deploying/chat_engines/usage_pattern.md
+              - ./module_guides/deploying/chat_engines/modules.md
           - Retrieval:
               - ./module_guides/querying/retriever/index.md
               - ./module_guides/querying/retriever/retrievers.md
@@ -598,6 +610,15 @@ nav:
               - ./module_guides/querying/structured_outputs/output_parser.md
               - ./module_guides/querying/structured_outputs/query_engine.md
               - ./module_guides/querying/structured_outputs/pydantic_program.md
+      - Agents:
+          - ./module_guides/deploying/agents/index.md
+          - ./module_guides/deploying/agents/usage_pattern.md
+          - ./module_guides/deploying/agents/agent_runner.md
+          - ./module_guides/deploying/agents/modules.md
+          - Tools:
+              - ./module_guides/deploying/agents/tools/index.md
+              - ./module_guides/deploying/agents/tools/usage_pattern.md
+              - ./module_guides/deploying/agents/tools/llamahub_tools_guide.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -610,27 +631,6 @@ nav:
       - Observability:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
-      - Deploying:
-          - Agents:
-              - ./module_guides/deploying/agents/index.md
-              - ./module_guides/deploying/agents/usage_pattern.md
-              - ./module_guides/deploying/agents/agent_runner.md
-              - ./module_guides/deploying/agents/modules.md
-              - Tools:
-                  - ./module_guides/deploying/agents/tools/index.md
-                  - ./module_guides/deploying/agents/tools/usage_pattern.md
-                  - ./module_guides/deploying/agents/tools/llamahub_tools_guide.md
-          - Chat Engines:
-              - ./module_guides/deploying/chat_engines/index.md
-              - ./module_guides/deploying/chat_engines/usage_pattern.md
-              - ./module_guides/deploying/chat_engines/modules.md
-          - Query Engines:
-              - ./module_guides/deploying/query_engine/index.md
-              - ./module_guides/deploying/query_engine/usage_pattern.md
-              - ./module_guides/deploying/query_engine/response_modes.md
-              - ./module_guides/deploying/query_engine/streaming.md
-              - ./module_guides/deploying/query_engine/modules.md
-              - ./module_guides/deploying/query_engine/supporting_modules.md
       - Settings: ./module_guides/supporting_modules/settings.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
@@ -786,6 +786,7 @@ nav:
           - ./api_reference/llms/openai_like.md
           - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
+          - ./api_reference/llms/openvino.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
           - ./api_reference/llms/portkey.md
@@ -1789,6 +1790,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
             - ../llama-index-integrations/llms/llama-index-llms-databricks
             - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
+            - ../llama-index-integrations/llms/llama-index-llms-openvino
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
