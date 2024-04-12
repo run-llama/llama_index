@@ -7,6 +7,8 @@ from astrapy.db import AstraDB
 from llama_index.readers.astra_db import AstraDBReader
 from llama_index.core.schema import Document
 
+COLLECTION_NAME = "li_readers_test"
+
 print(f"astrapy detected: {astrapy.__version__}")
 
 
@@ -15,10 +17,8 @@ ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN", "")
 ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_DB_API_ENDPOINT", "")
 
 
-@pytest.fixture(scope="module")
-def source_collection_name() -> Iterable[str]:
-    COLLECTION_NAME = "li_readers_test"
-
+@pytest.fixture(autouse=True, scope="module")
+def source_collection() -> Iterable[str]:
     database = AstraDB(
         token=ASTRA_DB_APPLICATION_TOKEN,
         api_endpoint=ASTRA_DB_API_ENDPOINT,
@@ -48,7 +48,7 @@ def source_collection_name() -> Iterable[str]:
         ]
     )
 
-    yield COLLECTION_NAME
+    yield collection
 
     database.delete_collection(COLLECTION_NAME)
 
@@ -57,9 +57,9 @@ def source_collection_name() -> Iterable[str]:
     ASTRA_DB_APPLICATION_TOKEN == "" or ASTRA_DB_API_ENDPOINT == "",
     reason="missing Astra DB credentials",
 )
-def test_astra_db_readers_read(source_collection_name: str) -> None:
+def test_astra_db_readers_read() -> None:
     reader = AstraDBReader(
-        collection_name=source_collection_name,
+        collection_name=COLLECTION_NAME,
         token=ASTRA_DB_APPLICATION_TOKEN,
         api_endpoint=ASTRA_DB_API_ENDPOINT,
         embedding_dimension=2,
