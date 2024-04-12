@@ -15,7 +15,9 @@ class PandasIndex:
         raise DeprecationWarning(
             "PandasQueryEngine has been moved to `llama-index-experimental`.\n"
             "`pip install llama-index-experimental`\n"
-            "`from llama_index.experimental.query_engine import PandasQueryEngine`"
+            "`from llama_index.experimental.query_engine import PandasQueryEngine`\n"
+            "Note that the PandasQueryEngine allows for arbitrary code execution, \n"
+            "and should be used in a secure environment."
         )
 
 
