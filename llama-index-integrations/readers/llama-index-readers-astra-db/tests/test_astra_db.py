@@ -18,7 +18,7 @@ ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_DB_API_ENDPOINT", "")
 
 
 @pytest.fixture(autouse=True, scope="module")
-def source_collection() -> Iterable[str]:
+def source_collection() -> Iterable[astrapy.db.AstraDBCollection]:
     database = AstraDB(
         token=ASTRA_DB_APPLICATION_TOKEN,
         api_endpoint=ASTRA_DB_API_ENDPOINT,
