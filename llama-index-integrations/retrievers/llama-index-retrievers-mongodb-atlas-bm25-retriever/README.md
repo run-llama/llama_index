@@ -15,7 +15,6 @@ However, while `MongoDBAtlasVectorSearch` is an VectorStore, `MongoDBAtlasBM25Re
 MongoDBAtlasBM25Retriever Example:
 
 ```python
-
 mongodb_client = pymongo.MongoClient(mongo_uri)
 
 retriever = MongoDBAtlasBM25Retriever(
@@ -25,5 +24,4 @@ retriever = MongoDBAtlasBM25Retriever(
     index_name="index_vector_collection",
 )
 nodes = retriever.retrieve("retrieve_query")
-
 ```
