@@ -27,7 +27,7 @@ However, there is more to querying than initially meets the eye. Querying consis
 - **Response synthesis** is when your query, your most-relevant data and your prompt are combined and sent to your LLM to return a response.
 
 !!! tip
-You can find out about [how to attach metadata to documents](../../module_guides/loading/documents_and_nodes/usage_documents.md) and [nodes](../../module_guides/loading/documents_and_nodes/usage_nodes.md).
+    You can find out about [how to attach metadata to documents](../../module_guides/loading/documents_and_nodes/usage_documents.md) and [nodes](../../module_guides/loading/documents_and_nodes/usage_nodes.md).
 
 ## Customizing the stages of querying
 

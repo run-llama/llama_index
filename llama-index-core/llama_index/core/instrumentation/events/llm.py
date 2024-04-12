@@ -22,6 +22,20 @@ class LLMPredictEndEvent(BaseEvent):
         return "LLMPredictEndEvent"
 
 
+class LLMStructuredPredictStartEvent(BaseEvent):
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "LLMStructuredPredictStartEvent"
+
+
+class LLMStructuredPredictEndEvent(BaseEvent):
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "LLMStructuredPredictEndEvent"
+
+
 class LLMCompletionStartEvent(BaseEvent):
     prompt: str
     additional_kwargs: dict
@@ -52,6 +66,16 @@ class LLMChatStartEvent(BaseEvent):
     def class_name(cls):
         """Class name."""
         return "LLMChatStartEvent"
+
+
+class LLMChatInProgressEvent(BaseEvent):
+    messages: List[ChatMessage]
+    response: ChatResponse
+
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "LLMChatInProgressEvent"
 
 
 class LLMChatEndEvent(BaseEvent):

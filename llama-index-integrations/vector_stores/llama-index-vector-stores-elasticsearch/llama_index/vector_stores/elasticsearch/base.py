@@ -564,7 +564,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             }
 
         if query.mode == VectorStoreQueryMode.HYBRID:
-            es_query["rank"] = {"rrf": {}}
+            es_query["rank"] = {"rrf": {"window_size": query.similarity_top_k}}
 
         if custom_query is not None:
             es_query = custom_query(es_query, query)

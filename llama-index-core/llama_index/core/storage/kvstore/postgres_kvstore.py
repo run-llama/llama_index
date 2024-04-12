@@ -55,11 +55,13 @@ class PostgresKVStore(BaseKVStore):
     """Postgres Key-Value store.
 
     Args:
-        mongo_client (Any): MongoDB client
-        uri (Optional[str]): MongoDB URI
-        host (Optional[str]): MongoDB host
-        port (Optional[int]): MongoDB port
-        db_name (Optional[str]): MongoDB database name
+        connection_string (str): psycopg2 connection string
+        async_connection_string (str): asyncpg connection string
+        table_name (str): table name
+        schema_name (Optional[str]): schema name
+        perform_setup (Optional[bool]): perform table setup
+        debug (Optional[bool]): debug mode
+        use_jsonb (Optional[bool]): use JSONB data type for storage
     """
 
     connection_string: str

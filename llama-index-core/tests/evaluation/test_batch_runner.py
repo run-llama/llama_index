@@ -59,7 +59,12 @@ def get_eval_results(key, eval_results):
 @pytest.mark.asyncio()
 def test_batch_runner() -> None:
     # single evaluator
-    runner = BatchEvalRunner(evaluators={"evaluator1": MockEvaluator()})
+    runner = BatchEvalRunner(
+        evaluators={
+            "evaluator1": MockEvaluator(),
+            "no_kwarg_evaluator": MockEvaluator(),
+        }
+    )
 
     exp_queries = ["query1", "query2"]
     exp_response_strs = ["response1", "response2"]
@@ -86,6 +91,7 @@ def test_batch_runner() -> None:
     runner.evaluators = {
         "evaluator1": MockEvaluator(),
         "evaluator2": MockEvaluator(),
+        "no_kwarg_evaluator": MockEvaluator(),
     }
 
     exp_queries = ["query1", "query2"]

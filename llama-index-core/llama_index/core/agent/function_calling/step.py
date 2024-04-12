@@ -170,14 +170,14 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         memory: BaseMemory,
         sources: List[ToolOutput],
         verbose: bool = False,
-    ) -> None:
+    ) -> bool:
+        tool = get_function_by_name(tools, tool_call.tool_name)
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: get_function_by_name(
-                    tools, tool_call.tool_name
-                ).metadata,
+                EventPayload.TOOL: tool.metadata,
             },
         ) as event:
             tool_output = call_tool_with_selection(tool_call, tools, verbose=verbose)
@@ -194,6 +194,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
+        return tool.metadata.return_direct
+
     async def _acall_function(
         self,
         tools: List[BaseTool],
@@ -201,14 +203,14 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         memory: BaseMemory,
         sources: List[ToolOutput],
         verbose: bool = False,
-    ) -> None:
+    ) -> bool:
+        tool = get_function_by_name(tools, tool_call.tool_name)
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: get_function_by_name(
-                    tools, tool_call.tool_name
-                ).metadata,
+                EventPayload.TOOL: tool.metadata,
             },
         ) as event:
             tool_output = await acall_tool_with_selection(
@@ -226,6 +228,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         )
         sources.append(tool_output)
         memory.put(function_message)
+
+        return tool.metadata.return_direct
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
@@ -248,6 +252,11 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+
+        if self._verbose and response.message.content:
+            print("=== LLM Response ===")
+            print(str(response.message.content))
+
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
                 "Parallel tool calls not supported for synchronous function calling agent"
@@ -264,24 +273,37 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             new_steps = []
         else:
             is_done = False
-            for tool_call in tool_calls:
+            for i, tool_call in enumerate(tool_calls):
                 # TODO: maybe execute this with multi-threading
-                self._call_function(
+                return_direct = self._call_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
                     task.extra_state["sources"],
                     verbose=self._verbose,
                 )
+
                 task.extra_state["n_function_calls"] += 1
+
+                # check if any of the tools return directly -- only works if there is one tool call
+                if i == 0 and return_direct:
+                    is_done = True
+                    response = task.extra_state["sources"][-1].content
+                    break
+
             # put tool output in sources and memory
-            new_steps = [
-                step.get_next_step(
-                    step_id=str(uuid.uuid4()),
-                    # NOTE: input is unused
-                    input=None,
-                )
-            ]
+            new_steps = (
+                [
+                    step.get_next_step(
+                        step_id=str(uuid.uuid4()),
+                        # NOTE: input is unused
+                        input=None,
+                    )
+                ]
+                if not is_done
+                else []
+            )
+
         agent_response = AgentChatResponse(
             response=str(response), sources=task.extra_state["sources"]
         )
@@ -316,6 +338,11 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+
+        if self._verbose and response.message.content:
+            print("=== LLM Response ===")
+            print(str(response.message.content))
+
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
                 "Parallel tool calls not supported for synchronous function calling agent"
@@ -342,16 +369,27 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 )
                 for tool_call in tool_calls
             ]
-            await asyncio.gather(*tasks)
+            return_directs = await asyncio.gather(*tasks)
+
+            # check if any of the tools return directly -- only works if there is one tool call
+            if len(return_directs) == 1 and return_directs[0]:
+                is_done = True
+                response = task.extra_state["sources"][-1].content
+
             task.extra_state["n_function_calls"] += len(tool_calls)
             # put tool output in sources and memory
-            new_steps = [
-                step.get_next_step(
-                    step_id=str(uuid.uuid4()),
-                    # NOTE: input is unused
-                    input=None,
-                )
-            ]
+            new_steps = (
+                [
+                    step.get_next_step(
+                        step_id=str(uuid.uuid4()),
+                        # NOTE: input is unused
+                        input=None,
+                    )
+                ]
+                if not is_done
+                else []
+            )
+
         agent_response = AgentChatResponse(
             response=str(response), sources=task.extra_state["sources"]
         )

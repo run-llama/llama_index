@@ -20,7 +20,13 @@ def convert_tool_to_node(tool: BaseTool) -> TextNode:
     )
     if tool.metadata.fn_schema is not None:
         node_text += f"Tool schema: {tool.metadata.fn_schema.schema()}\n"
+
+    tool_identity = (
+        f"{tool.metadata.name}{tool.metadata.description}{tool.metadata.fn_schema}"
+    )
+
     return TextNode(
+        id_=str(hash(tool_identity)),
         text=node_text,
         metadata={"name": tool.metadata.name},
         excluded_embed_metadata_keys=["name"],

@@ -40,12 +40,15 @@ class QueryEngineTool(AsyncBaseTool):
         query_engine: BaseQueryEngine,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        return_direct: bool = False,
         resolve_input_errors: bool = True,
     ) -> "QueryEngineTool":
         name = name or DEFAULT_NAME
         description = description or DEFAULT_DESCRIPTION
 
-        metadata = ToolMetadata(name=name, description=description)
+        metadata = ToolMetadata(
+            name=name, description=description, return_direct=return_direct
+        )
         return cls(
             query_engine=query_engine,
             metadata=metadata,
