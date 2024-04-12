@@ -117,6 +117,9 @@ class S3Reader(BasePydanticReader):
 
         documents = self.load_s3_files_as_docs()
         for doc in documents:
-            doc.id_ = self.s3_endpoint_url + "_" + doc.id_
+            if self.s3_endpoint_url:
+                doc.id_ = self.s3_endpoint_url + "_" + doc.id_
+            else:
+                doc.id_ = "s3_" + doc.id_
 
         return documents
