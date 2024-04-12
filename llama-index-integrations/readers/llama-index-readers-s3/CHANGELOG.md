@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.1.7] - 2024-04-12
+
+- Fix wrong doc id when using default s3 endpoint
+
 ## [0.1.6] - 2024-04-11
 
 - Use `None` as the default value for `s3_endpoint_url`
