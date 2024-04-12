@@ -254,7 +254,7 @@
   "RetrySourceQueryEngine": "llama_index.core.query_engine",
   "RetryGuidelineQueryEngine": "llama_index.core.query_engine",
   "FLAREInstructQueryEngine": "llama_index.core.query_engine",
-  "PandasQueryEngine": "llama_index.core.query_engine",
+  "PandasQueryEngine": "llama_index.experimental.query_engine",
   "JSONalyzeQueryEngine": "llama_index.core.query_engine",
   "KnowledgeGraphQueryEngine": "llama_index.core.query_engine",
   "BaseQueryEngine": "llama_index.core.query_engine",

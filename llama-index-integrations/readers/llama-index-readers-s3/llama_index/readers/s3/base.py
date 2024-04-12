@@ -59,7 +59,7 @@ class S3Reader(BasePydanticReader):
     aws_access_id: Optional[str] = None
     aws_access_secret: Optional[str] = None
     aws_session_token: Optional[str] = None
-    s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com"
+    s3_endpoint_url: Optional[str] = None
     custom_reader_path: Optional[str] = None
 
     @classmethod
