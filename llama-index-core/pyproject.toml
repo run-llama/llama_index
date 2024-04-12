@@ -62,7 +62,7 @@ numpy = [
 openai = ">=1.1.0"
 pandas = [
   { version = "*", python = "<3.12" },
-  { version = ">= 2.1.1", python = ">=3.12" }
+  { version = ">=2.1.1", python = ">=3.12" }
 ]
 python = ">=3.8.1,<4.0"
 tenacity = ">=8.2.0,<9.0.0"
