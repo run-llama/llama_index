@@ -5,7 +5,8 @@ from typing import Any, List, Optional, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.core.vector_stores.utils import metadata_dict_to_node
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
         collection_name: str = "default_collection",
         index_name: str = "default",
         text_key: str = "text",
+        metadata_key: str = "metadata",
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
         """Initialize the vector store.
@@ -28,6 +30,7 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
             collection_name: A MongoDB collection name.
             index_name: A MongoDB Atlas Vector Search index name.
             text_key: A MongoDB field that will contain the text for each document.
+            metadata_key: A MongoDB field that will contain
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:
@@ -53,6 +56,7 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
         self._collection = self._db[collection_name]
         self._index_name = index_name
         self._text_key = text_key
+        self._metadata_key = metadata_key
         self._similarity_top_k = similarity_top_k
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -80,13 +84,21 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
             node_content = json.loads(
                 doc.get("metadata", {}).get("_node_content", "{}")
             )
-            node = TextNode(
-                text=doc["text"],
-                id_=doc["id"],
-                metadata=doc.get("metadata", {}),
-                start_char_idx=node_content.get("start_char_idx", None),
-                end_char_idx=node_content.get("end_char_idx", None),
-                relationships=node_content.get("relationships", None),
-            )
+            metadata_dict = doc.pop(self._metadata_key)
+            node = None
+
+            try:
+                node = metadata_dict_to_node(metadata_dict)
+                node.set_content(doc["text"])
+            except Exception:
+                node = TextNode(
+                    text=doc["text"],
+                    id_=doc["id"],
+                    metadata=doc.get("metadata", {}),
+                    start_char_idx=node_content.get("start_char_idx", None),
+                    end_char_idx=node_content.get("end_char_idx", None),
+                    relationships=node_content.get("relationships", None),
+                )
+
             node_with_score = NodeWithScore(node=node, score=result["score"])
             retrieve_nodes.append(node_with_score)
