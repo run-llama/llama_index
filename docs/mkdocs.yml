@@ -1345,6 +1345,7 @@ plugins:
             signature_crossrefs: true
           paths:
             - ../llama-index-core
+            - ../llama-index-experimental
             - ../llama-index-packs/llama-index-packs-retry-engine-weaviate
             - ../llama-index-packs/llama-index-packs-llava-completion
             - ../llama-index-packs/llama-index-packs-zephyr-query-engine
