@@ -81,6 +81,7 @@ nav:
           - ./examples/agent/openai_agent_tool_call_parser.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/anthropic_agent.ipynb
+          - ./examples/agent/coa_agent.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -187,6 +188,7 @@ nav:
           - ./examples/embeddings/itrex.ipynb
           - ./examples/embeddings/cloudflare_workersai.ipynb
           - ./examples/embeddings/openvino.ipynb
+          - ./examples/embeddings/ipex_llm.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -360,6 +362,7 @@ nav:
           - ./examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
           - ./examples/node_postprocessor/JinaRerank.ipynb
           - ./examples/node_postprocessor/rankLLM.ipynb
+          - ./examples/node_postprocessor/openvino_rerank.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
@@ -693,6 +696,7 @@ nav:
           - ./api_reference/embeddings/huggingface_optimum_intel.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
+          - ./api_reference/embeddings/ipex_llm.md
           - ./api_reference/embeddings/jinaai.md
           - ./api_reference/embeddings/langchain.md
           - ./api_reference/embeddings/llamafile.md
@@ -805,6 +809,7 @@ nav:
           - ./api_reference/llama_dataset/index.md
       - Llama Packs:
           - ./api_reference/packs/agent_search_retriever.md
+          - ./api_reference/packs/agents_coa.md
           - ./api_reference/packs/agents_llm_compiler.md
           - ./api_reference/packs/amazon_product_extraction.md
           - ./api_reference/packs/arize_phoenix_query_engine.md
@@ -918,6 +923,7 @@ nav:
           - ./api_reference/postprocessor/long_context_reorder.md
           - ./api_reference/postprocessor/longllmlingua.md
           - ./api_reference/postprocessor/metadata_replacement.md
+          - ./api_reference/postprocessor/openvino_rerank.md
           - ./api_reference/postprocessor/presidio.md
           - ./api_reference/postprocessor/prev_next.md
           - ./api_reference/postprocessor/rankgpt_rerank.md
@@ -1339,6 +1345,7 @@ plugins:
             signature_crossrefs: true
           paths:
             - ../llama-index-core
+            - ../llama-index-experimental
             - ../llama-index-packs/llama-index-packs-retry-engine-weaviate
             - ../llama-index-packs/llama-index-packs-llava-completion
             - ../llama-index-packs/llama-index-packs-zephyr-query-engine
@@ -1791,6 +1798,9 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-databricks
             - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
             - ../llama-index-integrations/llms/llama-index-llms-openvino
+            - ../llama-index-packs/llama-index-packs-agents-coa
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-ipex-llm
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-openvino-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
