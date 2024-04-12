@@ -1,10 +1,13 @@
+"""Test CodeHierarchyNodeParser with a special character on the code."""
+
 from typing import List
 
 from llama_index.packs.code_hierarchy import CodeHierarchyNodeParser
 from llama_index.core.schema import TextNode
 
 
-def text_special_character() -> None:
+def test_special_character() -> None:
+    """Test case for code splitting using python and add a special character in the code."""
     code_splitter = CodeHierarchyNodeParser(
         language="python", skeleton=False, chunk_min_characters=0
     )
