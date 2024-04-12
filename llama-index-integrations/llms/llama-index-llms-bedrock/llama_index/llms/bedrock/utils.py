@@ -76,10 +76,12 @@ STREAMING_MODELS = {
 class Provider(ABC):
     @property
     @abstractmethod
-    def max_tokens_key(self) -> str: ...
+    def max_tokens_key(self) -> str:
+        ...
 
     @abstractmethod
-    def get_text_from_response(self, response: dict) -> str: ...
+    def get_text_from_response(self, response: dict) -> str:
+        ...
 
     def get_text_from_stream_response(self, response: dict) -> str:
         return self.get_text_from_response(response)
@@ -147,14 +149,19 @@ class AnthropicProvider(Provider):
             system_message = prompt[0]["content"]
             prompt = prompt[1:]
 
-            if "system" in inference_parameters and inference_parameters["system"] is not None:
+            if (
+                "system" in inference_parameters
+                and inference_parameters["system"] is not None
+            ):
                 inference_parameters["system"] += system_message
             else:
                 inference_parameters["system"] = system_message
 
         return {
             "messages": prompt,
-            "anthropic_version": inference_parameters.get("anthropic_version", "bedrock-2023-05-31"),  # Required by AWS.
+            "anthropic_version": inference_parameters.get(
+                "anthropic_version", "bedrock-2023-05-31"
+            ),  # Required by AWS.
             **inference_parameters,
         }
 
@@ -216,7 +223,10 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
     try:
         import boto3  # noqa
     except ImportError as e:
-        raise ImportError("You must install the `boto3` package to use Bedrock." "Please `pip install boto3`") from e
+        raise ImportError(
+            "You must install the `boto3` package to use Bedrock."
+            "Please `pip install boto3`"
+        ) from e
 
     return retry(
         reraise=True,
@@ -241,7 +251,9 @@ def completion_with_retry(
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            return client.invoke_model_with_response_stream(modelId=model, body=request_body)
+            return client.invoke_model_with_response_stream(
+                modelId=model, body=request_body
+            )
         return client.invoke_model(modelId=model, body=request_body)
 
     return _completion_with_retry(**kwargs)
