@@ -39,8 +39,8 @@ ipex-llm = {allow-prereleases = true, version = ">=2.1.0b20240409"}
 py-cpuinfo = "*"
 protobuf = "*"
 intel-openmp = {markers = "platform_machine=='x86_64' or platform_machine == 'AMD64'", version = "*"}
-mpmath = "1.3.0"
-numpy = "1.26.4"
+mpmath = "<=1.3.0"
+numpy = "<=1.26.4"
 torch = "<2.2.0"
 transformers = ">=4.34.0,<4.39.0"
 sentencepiece = "*"
