@@ -60,10 +60,7 @@ numpy = [
     {python = ">=3.12", version = ">=1.26.0"},
 ]
 openai = ">=1.1.0"
-pandas = [
-    {python = "<3.12", version = "*"},
-    {python = ">=3.12", version = ">=2.1.1"},
-]
+pandas = "*"
 python = ">=3.8.1,<4.0"
 tenacity = ">=8.2.0,<9.0.0"
 tiktoken = ">=0.3.3"
