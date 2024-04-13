@@ -10,6 +10,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -35,7 +36,8 @@ from llama_index.llms.ocigenai.utils import (
     create_client,
     get_provider,
     get_serving_mode,
-    get_request_generator,
+    get_completion_generator,
+    get_chat_generator
 )
 
 class OCIGenAI(LLM):
@@ -100,7 +102,8 @@ class OCIGenAI(LLM):
     _client: Any = PrivateAttr()
     _provider: str = PrivateAttr()
     _serving_mode: str = PrivateAttr()
-    _request_generator: str = PrivateAttr()
+    _completion_generator: str = PrivateAttr()
+    _chat_generator: str = PrivateAttr()
 
     def __init__(
         self,
@@ -159,7 +162,9 @@ class OCIGenAI(LLM):
 
         self._serving_mode = get_serving_mode(model)
 
-        self._request_generator = get_request_generator()
+        self._completion_generator = get_completion_generator()
+
+        self._chat_generator = get_chat_generator() 
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -229,10 +234,10 @@ class OCIGenAI(LLM):
         inference_params["is_stream"] = False
         inference_params["prompt"] = prompt
 
-        request = self._request_generator(
+        request = self._completion_generator(
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
-            inference_request=self._provider.oci_llm_request(**inference_params),
+            inference_request=self._provider.oci_completion_request(**inference_params),
         )
                 
         response = self._client.generate_text(request)
@@ -254,10 +259,10 @@ class OCIGenAI(LLM):
         inference_params["is_stream"] = True
         inference_params["prompt"] = prompt
 
-        request = self._request_generator(
+        request = self._completion_generator(
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
-            inference_request=self._provider.oci_llm_request(**inference_params),
+            inference_request=self._provider.oci_completion_request(**inference_params),
         )       
         
         response = self._client.generate_text(request)
@@ -273,9 +278,27 @@ class OCIGenAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, formatted=True, **kwargs)
-        return completion_response_to_chat_response(completion_response)
+        from oci.generative_ai_inference import models
+
+        provider_messages = self._provider.messages_to_meta_messages(messages)
+        chat_params = self._get_all_kwargs(**kwargs)
+        chat_params["is_stream"] = False
+        chat_params["messages"] = provider_messages
+        chat_params["top_k"] = -1
+        chat_params["api_format"] = models.BaseChatRequest.API_FORMAT_GENERIC
+
+        request = self._chat_generator(
+            compartment_id=self.compartment_id,
+            serving_mode=self._serving_mode,
+            chat_request=self._provider.oci_chat_request(**chat_params),
+        )
+        
+        response = self._client.chat(request)
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=response.data.chat_response.choices[0].message.content[0].text),
+            raw=response.__dict__,
+        )
+        
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any

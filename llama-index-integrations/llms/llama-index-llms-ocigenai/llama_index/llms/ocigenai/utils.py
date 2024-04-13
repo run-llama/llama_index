@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Callable, Optional, Sequence, Dict
+from typing import Any, Callable, Optional, Sequence, Dict, List
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.llms.ocigenai.llama_utils import (
     messages_to_prompt as messages_to_llama_prompt,
@@ -122,7 +122,7 @@ def get_serving_mode(model_id: str) -> Any:
     return serving_mode
 
 
-def get_request_generator() -> Any:
+def get_completion_generator() -> Any:
     try:
         from oci.generative_ai_inference import models
 
@@ -133,6 +133,18 @@ def get_request_generator() -> Any:
         ) from ex
 
     return models.GenerateTextDetails
+
+def get_chat_generator() -> Any:
+    try:
+        from oci.generative_ai_inference import models
+
+    except ImportError as ex:
+        raise ModuleNotFoundError(
+            "Could not import oci python package. "
+            "Please make sure you have the oci package installed."
+        ) from ex
+
+    return models.ChatDetails
 
 
 class Provider(ABC):
@@ -161,7 +173,7 @@ class CohereProvider(Provider):
                 "Please make sure you have the oci package installed."
             ) from ex
 
-        self.oci_llm_request = models.CohereLlmInferenceRequest
+        self.oci_completion_request = models.CohereLlmInferenceRequest
 
     def get_text_from_response(self, response: Any) -> str:
         return response.data.inference_response.generated_texts[0].text
@@ -179,9 +191,21 @@ class MetaProvider(Provider):
                 "Please make sure you have the oci package installed."
             ) from ex
 
-        self.oci_llm_request = models.LlamaLlmInferenceRequest
+        self.oci_completion_request = models.LlamaLlmInferenceRequest
+        self.oci_chat_request = models.GenericChatRequest
         self.messages_to_prompt = messages_to_llama_prompt
         self.completion_to_prompt = completion_to_llama_prompt
+
+    def messages_to_meta_messages(self, messages: Sequence[ChatMessage]) -> List[dict]:
+        from oci.generative_ai_inference import models
+        meta_messages = []
+        for message in messages:
+            meta_message = models.Message()
+            meta_message.role = message.role.value
+            meta_message.content = [models.TextContent(text=message.content)]
+            meta_messages.append(meta_message)
+
+        return meta_messages
 
     def get_text_from_response(self, response: Any) -> str:
         return response.data.inference_response.choices[0].text

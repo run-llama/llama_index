@@ -4,21 +4,22 @@ from llama_index.core.llms import ChatMessage
 
 
 llm = OCIGenAI(
-        model="cohere.command", # "meta.llama-2-70b-chat" or "cohere.command"
+        model="meta.llama-2-70b-chat", # "meta.llama-2-70b-chat" or "cohere.command"
         service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
         compartment_id="ocid1.tenancy.oc1..aaaaaaaasz6cicsgfbqh6tj3xahi4ozoescfz36bjm3kucc7lotk2oqep47q",
-        additional_kwargs={"temperature": 0, "max_tokens": 512, "top_p": 0.7, "frequency_penalty": 1.0}
+        additional_kwargs={"temperature": 0, "max_tokens": 512}
         )
 
 #complete
-resp= llm.complete("Paul Graham is ", temperature=0.7)
-print(resp)
+# resp= llm.complete("Paul Graham is ", temperature=0.7)
+# print(resp)
 
 
 # stream complete
-resp= llm.stream_complete("Paul Graham is ")
-for r in resp:
-    print(r.delta, end="")
+# resp= llm.stream_complete("Paul Graham is ")
+# for r in resp:
+#     print(r.delta, end="")
+
 
 # chat
 messages = [
