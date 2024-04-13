@@ -15,12 +15,12 @@ from redis.cluster import RedisCluster
 
 # Convert a ChatMessage to a json object for Redis
 def _message_to_dict(message: ChatMessage) -> dict:
-    return {"type": message.role, "content": message.content}
+    return message.dict()
 
 
 # Convert the json object in Redis to a ChatMessage
 def _dict_to_message(d: dict) -> ChatMessage:
-    return ChatMessage(role=d["type"], content=d["content"])
+    return ChatMessage.parse_obj(d)
 
 
 class RedisChatStore(BaseChatStore):
