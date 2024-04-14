@@ -68,7 +68,7 @@ def _build_metadata_filter_fn(
                 if metadata_value != filter_.value:
                     filter_matches = False
             filter_matches_list.append(filter_matches)
-        
+
         if filter_condition == FilterCondition.AND:
             return all(filter_matches_list)
         elif filter_condition == FilterCondition.OR:
