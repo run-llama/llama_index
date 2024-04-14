@@ -95,9 +95,9 @@ class Anthropic(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         self._client = anthropic.Anthropic(
-            api_key=api_key, 
-            base_url=base_url, 
-            timeout=timeout, 
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
             max_retries=max_retries,
             default_headers=default_headers,
         )
