@@ -62,8 +62,6 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             deployment_name,
         )
 
-        self.azure_ad_token_provider = azure_ad_token_provider
-
         super().__init__(
             mode=mode,
             model=model,
@@ -73,6 +71,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             api_version=api_version,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
+            azure_ad_token_provider=azure_ad_token_provider,
             max_retries=max_retries,
             reuse_client=reuse_client,
             callback_manager=callback_manager,

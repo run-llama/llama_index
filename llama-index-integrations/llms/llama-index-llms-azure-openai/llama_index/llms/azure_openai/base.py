@@ -119,8 +119,6 @@ class AzureOpenAI(OpenAI):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
-        self.azure_ad_token_provider = azure_ad_token_provider
-
         super().__init__(
             engine=engine,
             model=model,
@@ -133,6 +131,7 @@ class AzureOpenAI(OpenAI):
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
+            azure_ad_token_provider=azure_ad_token_provider,
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
