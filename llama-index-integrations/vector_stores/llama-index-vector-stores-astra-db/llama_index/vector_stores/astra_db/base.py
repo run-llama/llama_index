@@ -243,7 +243,7 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         """
         _logger.debug("Deleting a document from the Astra table")
 
-        self._astra_db_collection.delete(id=ref_doc_id, **delete_kwargs)
+        self._astra_db_collection.delete_one(id=ref_doc_id, **delete_kwargs)
 
     @property
     def client(self) -> Any:

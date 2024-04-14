@@ -41,7 +41,7 @@ class OpenAILike(OpenAI):
         ```python
         from llama_index.llms.openai_like import OpenAILike
 
-        llm = OpenAILike(model="my model" api_base="https://hostname.com/v1", api_key="fake")
+        llm = OpenAILike(model="my model", api_base="https://hostname.com/v1", api_key="fake")
 
         response = llm.complete("Hello World!")
         print(str(response))
