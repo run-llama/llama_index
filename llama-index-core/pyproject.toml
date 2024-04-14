@@ -55,10 +55,7 @@ httpx = "*"
 langchain = {optional = true, version = ">=0.0.303"}
 nest-asyncio = "^1.5.8"
 nltk = "^3.8.1"
-numpy = [
-    {python = "<3.12", version = "*"},
-    {python = ">=3.12", version = ">=1.26.0"},
-]
+numpy = "*"
 openai = ">=1.1.0"
 pandas = "*"
 python = ">=3.8.1,<4.0"
