@@ -99,6 +99,7 @@ def test_save_load_pipeline() -> None:
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 2
 
+
 def test_save_load_pipeline_without_docstore() -> None:
     documents = [
         Document(text="one", doc_id="1"),
@@ -115,7 +116,7 @@ def test_save_load_pipeline_without_docstore() -> None:
     nodes = pipeline.run(documents=documents)
     assert len(nodes) == 3
     assert pipeline.docstore is None
-    
+
     # dedup will not catch the last node if the document store is not set
     nodes = pipeline.run(documents=[documents[-1]])
     assert len(nodes) == 1
@@ -136,6 +137,7 @@ def test_save_load_pipeline_without_docstore() -> None:
     nodes = pipeline.run(documents=[documents[-1]])
     assert len(nodes) == 1
     assert pipeline.docstore is None
+
 
 def test_pipeline_update() -> None:
     document1 = Document.example()
