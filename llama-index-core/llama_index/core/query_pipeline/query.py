@@ -28,6 +28,7 @@ from llama_index.core.base.query_pipeline.query import (
     Link,
     OutputKeys,
     QueryComponent,
+    ComponentIntermediates,
 )
 from llama_index.core.utils import print_text
 
@@ -133,28 +134,6 @@ def clean_graph_attributes_copy(graph: networkx.MultiDiGraph) -> networkx.MultiD
 
 
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
-
-
-class ComponentIntermediates:
-    """Component intermediate inputs and outputs."""
-
-    def __init__(
-        self,
-        inputs: Dict[str, Any],
-        outputs: Dict[str, Any],
-    ) -> None:
-        """Initialize."""
-        self.inputs = inputs
-        self.outputs = outputs
-
-    def __repr__(self) -> str:
-        return (
-            f"ComponentIntermediates(inputs={self.inputs!s}, "
-            f"outputs={self.outputs!s})"
-        )
-
-    def __str__(self) -> str:
-        return self.__repr__()
 
 
 class QueryPipeline(QueryComponent):
