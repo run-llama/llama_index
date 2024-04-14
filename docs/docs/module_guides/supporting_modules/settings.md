@@ -105,7 +105,7 @@ from llama_index.core import Settings
 # maximum input size to the LLM
 Settings.context_window = 4096
 
-# number of tokens reserved for during text generation.
+# number of tokens reserved for text generation.
 Settings.num_output = 256
 ```
 
