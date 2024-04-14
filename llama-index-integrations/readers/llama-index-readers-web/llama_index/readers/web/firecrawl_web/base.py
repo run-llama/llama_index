@@ -1,5 +1,6 @@
 """Firecrawl Web Reader"""
 from typing import List, Optional, Dict, Callable
+from pydantic import BaseModel, Field
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
@@ -23,9 +24,8 @@ class FireCrawlWebReader(BasePydanticReader):
 
     """
 
-    
+    firecrawl: Optional[object] = Field(None)
     api_key: str
-    url: str
     mode: Optional[str]
     params: Optional[dict]
     
@@ -35,11 +35,12 @@ class FireCrawlWebReader(BasePydanticReader):
     def __init__(
         self,
         api_key: str,
-        url: str,
         mode: Optional[str] = "crawl",
         params: Optional[dict] = None,
     ) -> None:
         """Initialize with parameters."""
+        
+        super().__init__(api_key=api_key, mode=mode, params=params)
         try:
             from firecrawl import FirecrawlApp  # noqa: F401
         except ImportError:
@@ -47,15 +48,14 @@ class FireCrawlWebReader(BasePydanticReader):
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
             )
         self.firecrawl = FirecrawlApp(api_key=api_key)
-        self.url = url
-        self.mode = mode
-        self.params = params
+   
+        
 
     @classmethod
     def class_name(cls) -> str:
         return "Firecrawl_reader"
 
-    def load_data(self, urls: List[str]) -> List[Document]:
+    def load_data(self, url: str) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -69,13 +69,13 @@ class FireCrawlWebReader(BasePydanticReader):
         documents = list()
         
         if self.mode == "scrape":
-            firecrawl_docs = self.firecrawl.scrape_url(self.url, params=self.params)
+            firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
             documents.append(Document(
                 page_content=firecrawl_docs.get("markdown", ""),
                 metadata=firecrawl_docs.get("metadata", {}),
             ))
         else:
-            firecrawl_docs = self.firecrawl.crawl_url(self.url, params=self.params)
+            firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
             for doc in firecrawl_docs:
                 documents.append(Document(
                     page_content=doc.get("markdown", ""),

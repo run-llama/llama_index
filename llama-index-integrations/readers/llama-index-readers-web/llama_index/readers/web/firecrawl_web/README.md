@@ -1,67 +1,63 @@
-# Simple Website Loader
+# Firecrawl Web Loader
+## Instructions for Firecrawl Web Loader
 
-```bash
-pip install llama-index-readers-web
-```
+### Setup and Installation
 
-This loader is a simple web scraper that fetches the text from static websites by converting the HTML to text.
+1. **Install Firecrawl Package**: Ensure the `firecrawl-py` package is installed to use the Firecrawl Web Loader. Install it via pip with the following command:
+   ```bash
+   pip install firecrawl-py
+   ```
 
-## Usage
+2. **API Key**: Secure an API key from [Firecrawl.dev](https://www.firecrawl.dev/) to access the Firecrawl services.
 
-To use this loader, you need to pass in an array of URLs.
+### Using Firecrawl Web Loader
 
-```python
-from llama_index.readers.web import SimpleWebPageReader
+- **Initialization**: Initialize the FireCrawlWebReader by providing the API key, the desired mode of operation (`crawl` or `scrape`), and  any optional parameters for the Firecrawl API.
+  
+  
+  ```python
+  from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 
-loader = SimpleWebPageReader()
-documents = loader.load_data(urls=["https://google.com"])
-```
+  firecrawl_reader = FireCrawlWebReader(
+      api_key="your_api_key_here",
+      mode="crawl",  # or "scrape"
+      params={"additional": "parameters"}
+  )
+  ```
 
-## Examples
+- **Loading Data**: To load data, use the `load_data` method with the URL you wish to process.
+  ```python
+  documents = firecrawl_reader.load_data(url="http://example.com")
+  ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+### Example Usage
 
-### LlamaIndex
-
-```python
-from llama_index.core import VectorStoreIndex, download_loader
-
-from llama_index.readers.web import SimpleWebPageReader
-
-loader = SimpleWebPageReader()
-documents = loader.load_data(urls=["https://google.com"])
-index = VectorStoreIndex.from_documents(documents)
-index.query("What language is on this website?")
-```
-
-### LangChain
-
-Note: Make sure you change the description of the `Tool` to match your use-case.
+Here is an example demonstrating how to initialize the FireCrawlWebReader, load documents from a URL, and then create a summary index from those documents for querying.
 
 ```python
-from llama_index.core import VectorStoreIndex, download_loader
-from langchain.agents import initialize_agent, Tool
-from langchain.llms import OpenAI
-from langchain.chains.conversation.memory import ConversationBufferMemory
-
-from llama_index.readers.web import SimpleWebPageReader
-
-loader = SimpleWebPageReader()
-documents = loader.load_data(urls=["https://google.com"])
-index = VectorStoreIndex.from_documents(documents)
-
-tools = [
-    Tool(
-        name="Website Index",
-        func=lambda q: index.query(q),
-        description=f"Useful when you want answer questions about the text on websites.",
-    ),
-]
-llm = OpenAI(temperature=0)
-memory = ConversationBufferMemory(memory_key="chat_history")
-agent_chain = initialize_agent(
-    tools, llm, agent="zero-shot-react-description", memory=memory
+# Initialize the FireCrawlWebReader with your API key and desired mode
+firecrawl_reader = FireCrawlWebReader(
+    api_key="your_api_key_here",  # Replace with your actual API key
+    mode="crawl",  # Choose between "crawl" and "scrape"
+    params={"additional": "parameters"}  # Optional additional parameters
 )
 
-output = agent_chain.run(input="What language is on this website?")
+# Load documents from Paul Graham's essay URL
+documents = firecrawl_reader.load_data(url="http://www.paulgraham.com/")
+
+# Create a summary index from the loaded documents for querying
+index = SummaryIndex.from_documents(documents)
+
+# Convert the summary index into a query engine
+query_engine = index.as_query_engine()
+
+# Perform a query on the index to find insights from Paul Graham's essays
+response = query_engine.query("Insights from Paul Graham's essays")
+
+# Display the query response
+print(response)
+
 ```
+
+
+
