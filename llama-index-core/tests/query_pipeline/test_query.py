@@ -408,3 +408,91 @@ def test_query_pipeline_conditional_edges() -> None:
     output = p.run(inp1=2, inp2=3)
     # should go to b
     assert output == "3:2"
+
+
+def test_query_pipeline_super_conditional() -> None:
+    """This tests that paths are properly pruned and maintained for many conditional edges."""
+
+    def simple_fn(val: int):
+        print("Running simple_fn", flush=True)
+        return val
+
+    def over_twenty_fn(val: int):
+        print("Running over_twenty_fn", flush=True)
+        return val + 100
+
+    def final_fn(x: int, y: int, z: int):
+        print("Running final_fn", flush=True)
+        return {
+            "x": x,
+            "y": y,
+            "z": z,
+        }
+
+    simple_function_component = FnComponent(fn=simple_fn, output_key="output")
+    over_twenty_function_2 = FnComponent(fn=over_twenty_fn, output_key="output")
+    final_fn = FnComponent(fn=final_fn, output_key="output")
+
+    qp = QueryPipeline(
+        modules={
+            "first_decision": simple_function_component,
+            "second_decision": simple_function_component,
+            "under_ten": simple_function_component,
+            "over_twenty": simple_function_component,
+            "over_twenty_2": over_twenty_function_2,
+            "final": final_fn,
+        },
+        verbose=True,
+    )
+
+    qp.add_link(
+        "first_decision",
+        "under_ten",
+        condition_fn=lambda x: x < 10,
+    )
+    qp.add_link("under_ten", "final", dest_key="x")
+    qp.add_link("under_ten", "final", dest_key="y")
+    qp.add_link("under_ten", "final", dest_key="z")
+
+    qp.add_link(
+        "first_decision",
+        "second_decision",
+        condition_fn=lambda x: x >= 10,
+    )
+
+    qp.add_link(
+        "second_decision",
+        "over_twenty",
+        condition_fn=lambda x: x > 20,
+    )
+    qp.add_link(
+        "second_decision",
+        "over_twenty_2",
+        condition_fn=lambda x: x > 20,
+    )
+
+    qp.add_link(
+        "second_decision",
+        "final",
+        dest_key="z",
+        condition_fn=lambda x: x > 20,
+    )
+    qp.add_link(
+        "over_twenty",
+        "final",
+        dest_key="x",
+    )
+    qp.add_link(
+        "over_twenty_2",
+        "final",
+        dest_key="y",
+    )
+
+    response = qp.run(val=9)
+    assert response == {"x": 9, "y": 9, "z": 9}
+
+    response = qp.run(val=11)
+    assert response == 11
+
+    response = qp.run(val=21)
+    assert response == {"x": 21, "y": 121, "z": 21}

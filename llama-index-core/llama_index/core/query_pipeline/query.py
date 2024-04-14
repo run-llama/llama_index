@@ -477,11 +477,16 @@ class QueryPipeline(QueryComponent):
     ) -> List[str]:
         """Process component output."""
         new_queue = queue.copy()
-        # if there's no more edges, add result to output
+
+        nodes_to_keep = set()
+        nodes_to_remove = set()
+
+        # if there's no more edges, clear queue
         if module_key in self._get_leaf_keys():
-            result_outputs[module_key] = output_dict
+            new_queue = []
         else:
             edge_list = list(self.dag.edges(module_key, data=True))
+
             # everything not in conditional_edge_list is regular
             for _, dest, attr in edge_list:
                 output = get_output(attr.get("src_key"), output_dict)
@@ -505,9 +510,56 @@ class QueryPipeline(QueryComponent):
                         self.module_dict[dest],
                         all_module_inputs[dest],
                     )
+                    nodes_to_keep.add(dest)
                 else:
-                    # remove dest from queue
-                    new_queue.remove(dest)
+                    nodes_to_remove.add(dest)
+
+        # remove nodes from the queue, as well as any nodes that depend on dest
+        # be sure to not remove any remaining dependencies of the current path
+        available_paths = []
+        for node in nodes_to_keep:
+            for leaf_node in self._get_leaf_keys():
+                if leaf_node == node:
+                    available_paths.append([node])
+                else:
+                    available_paths.extend(
+                        list(
+                            networkx.all_simple_paths(
+                                self.dag, source=node, target=leaf_node
+                            )
+                        )
+                    )
+
+        # this is a list of all nodes between the current node(s) and the leaf nodes
+        nodes_to_never_remove = set(x for path in available_paths for x in path)  # noqa
+
+        removal_paths = []
+        for node in nodes_to_remove:
+            for leaf_node in self._get_leaf_keys():
+                if leaf_node == node:
+                    removal_paths.append([node])
+                else:
+                    removal_paths.extend(
+                        list(
+                            networkx.all_simple_paths(
+                                self.dag, source=node, target=leaf_node
+                            )
+                        )
+                    )
+
+        # this is a list of all nodes between the current node(s) to remove and the leaf nodes
+        nodes_to_probably_remove = set(  # noqa
+            x for path in removal_paths for x in path
+        )
+
+        # remove nodes that are not in the current path
+        for node in nodes_to_probably_remove:
+            if node not in nodes_to_never_remove:
+                new_queue.remove(node)
+
+        # did we remove all remaining edges? then we have our result
+        if len(new_queue) == 0:
+            result_outputs[module_key] = output_dict
 
         return new_queue
 
