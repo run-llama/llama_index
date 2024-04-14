@@ -7,7 +7,7 @@ from llama_index.core.agent.react.step import ReActAgentWorker
 from llama_index.core.agent.react_multimodal.step import MultimodalReActAgentWorker
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.agent.runner.parallel import ParallelAgentRunner
-from llama_index.core.agent.types import Task, TaskStep, TaskStepOutput
+from llama_index.core.agent.types import Task
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.agent.function_calling.step import FunctionCallingAgentWorker
 
@@ -25,6 +25,5 @@ __all__ = [
     # schema-related
     "AgentChatResponse",
     "Task",
-    "TaskStep"
-    "TaskStepOutput"
+    "TaskStep" "TaskStepOutput",
 ]
