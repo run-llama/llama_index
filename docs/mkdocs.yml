@@ -446,6 +446,7 @@ nav:
           - ./examples/retrievers/reciprocal_rerank_fusion.ipynb
           - ./examples/retrievers/relative_score_dist_fusion.ipynb
           - ./examples/retrievers/videodb_retriever.ipynb
+          - ./examples/retrievers/bedrock_retriever.ipynb
       - Tools:
           - ./examples/tools/OnDemandLoaderTool.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
@@ -529,6 +530,7 @@ nav:
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
           - ./examples/vector_stores/TiDBVector.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
+          - ./examples/vector_stores/CouchbaseVectorStoreDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -1148,10 +1150,12 @@ nav:
           - ./api_reference/response_synthesizers/tree_summarize.md
       - Retrievers:
           - ./api_reference/retrievers/auto_merging.md
+          - ./api_reference/retrievers/bedrock.md
           - ./api_reference/retrievers/bm25.md
           - ./api_reference/retrievers/index.md
           - ./api_reference/retrievers/keyword.md
           - ./api_reference/retrievers/knowledge_graph.md
+          - ./api_reference/retrievers/mongodb_atlas_bm25_retriever.md
           - ./api_reference/retrievers/pathway.md
           - ./api_reference/retrievers/query_fusion.md
           - ./api_reference/retrievers/recursive.md
@@ -1220,6 +1224,7 @@ nav:
               - ./api_reference/storage/vector_store/chatgpt_plugin.md
               - ./api_reference/storage/vector_store/chroma.md
               - ./api_reference/storage/vector_store/clickhouse.md
+              - ./api_reference/storage/vector_store/couchbase.md
               - ./api_reference/storage/vector_store/dashvector.md
               - ./api_reference/storage/vector_store/databricks.md
               - ./api_reference/storage/vector_store/deeplake.md
@@ -1801,6 +1806,9 @@ plugins:
             - ../llama-index-packs/llama-index-packs-agents-coa
             - ../llama-index-integrations/embeddings/llama-index-embeddings-ipex-llm
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-openvino-rerank
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-couchbase
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-bedrock
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-mongodb-atlas-bm25-retriever
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
