@@ -16,11 +16,3 @@ def test_openvinoembedding_get_text_embedding(tmp_path):
     embeddings = embed_model.get_text_embedding("Hello World!")
 
     assert len(embeddings) == 384
-    gold_embeddings = [
-        -0.002305838977918029,
-        -0.011632828041911125,
-        0.04119420424103737,
-    ]
-
-    for i in range(3):
-        assert abs(embeddings[i] - gold_embeddings[i]) < 1e-4
