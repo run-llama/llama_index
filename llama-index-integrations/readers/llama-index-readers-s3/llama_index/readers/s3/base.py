@@ -59,7 +59,7 @@ class S3Reader(BasePydanticReader):
     aws_access_id: Optional[str] = None
     aws_access_secret: Optional[str] = None
     aws_session_token: Optional[str] = None
-    s3_endpoint_url: Optional[str] = "https://s3.amazonaws.com"
+    s3_endpoint_url: Optional[str] = None
     custom_reader_path: Optional[str] = None
 
     @classmethod
@@ -117,6 +117,9 @@ class S3Reader(BasePydanticReader):
 
         documents = self.load_s3_files_as_docs()
         for doc in documents:
-            doc.id_ = self.s3_endpoint_url + "_" + doc.id_
+            if self.s3_endpoint_url:
+                doc.id_ = self.s3_endpoint_url + "_" + doc.id_
+            else:
+                doc.id_ = "s3_" + doc.id_
 
         return documents

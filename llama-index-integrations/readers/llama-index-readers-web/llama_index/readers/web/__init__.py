@@ -5,6 +5,7 @@ from llama_index.readers.web.async_web.base import (
 from llama_index.readers.web.beautiful_soup_web.base import (
     BeautifulSoupWebReader,
 )
+from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 from llama_index.readers.web.knowledge_base.base import (
     KnowledgeBaseWebReader,
 )
@@ -37,9 +38,11 @@ from llama_index.readers.web.whole_site.base import (
     WholeSiteReader,
 )
 
+
 __all__ = [
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",
+    "FireCrawlWebReader",
     "KnowledgeBaseWebReader",
     "MainContentExtractorReader",
     "NewsArticleReader",

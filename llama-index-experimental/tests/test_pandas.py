@@ -9,18 +9,27 @@ import pandas as pd
 import pytest
 from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.query.schema import QueryBundle
-from llama_index.core.indices.service_context import ServiceContext
-from llama_index.core.prompts.default_prompts import DEFAULT_PANDAS_PROMPT
-from llama_index.core.query_engine.pandas.output_parser import (
+from llama_index.core.llms.mock import MockLLM
+from llama_index.experimental.query_engine.pandas.prompts import DEFAULT_PANDAS_PROMPT
+from llama_index.experimental.query_engine.pandas.output_parser import (
     PandasInstructionParser,
 )
-from llama_index.core.query_engine.pandas.pandas_query_engine import (
+from llama_index.experimental.query_engine.pandas.pandas_query_engine import (
     PandasQueryEngine,
 )
 
 
-def test_pandas_query_engine(mock_service_context: ServiceContext) -> None:
+def _mock_predict(*args: Any, **kwargs: Any) -> str:
+    """Mock predict."""
+    query_str = kwargs["query_str"]
+    return f'df["{query_str}"]'
+
+
+def test_pandas_query_engine(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test pandas query engine."""
+    monkeypatch.setattr(MockLLM, "predict", _mock_predict)
+    llm = MockLLM()
+
     # Test on some sample data
     df = pd.DataFrame(
         {
@@ -38,9 +47,7 @@ With its welcoming atmosphere, top-notch education, and multicultural charm, Tor
         }
     )
     # the mock prompt just takes the all items in the given column
-    query_engine = PandasQueryEngine(
-        df, service_context=mock_service_context, verbose=True
-    )
+    query_engine = PandasQueryEngine(df, llm=llm, verbose=True)
     response = query_engine.query(QueryBundle("population"))
     import sys
 
@@ -53,7 +60,7 @@ With its welcoming atmosphere, top-notch education, and multicultural charm, Tor
 
     query_engine = PandasQueryEngine(
         df,
-        service_context=mock_service_context,
+        llm=llm,
         verbose=True,
         output_kwargs={"max_colwidth": 90},
     )

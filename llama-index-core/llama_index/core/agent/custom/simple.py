@@ -94,7 +94,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         super().__init__(
             tools=tools,
             llm=llm,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             tool_retriever=tool_retriever,
             verbose=verbose,
             **kwargs,
@@ -118,9 +118,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
             tools=tools or [],
             tool_retriever=tool_retriever,
             llm=llm,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             verbose=verbose,
-            **kwargs
+            **kwargs,
         )
 
     @abstractmethod

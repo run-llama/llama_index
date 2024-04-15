@@ -100,12 +100,8 @@ class RAFTDatasetPack(BaseLlamaPack):
         messages = [
             ChatMessage(
                 role="system",
-                content="You are a synthetic question-answer pair generator. Given a chunk of context about some topic(s), generate %s example questions a user could ask and would be answered using information from the chunk. For example, if the given context was a Wikipedia paragraph about the United States, an example question could be 'How many states are in the United States?'"
+                content="You are a synthetic question-answer pair generator. Given a chunk of context about some topic(s), generate %s example questions a user could ask and would be answered using information from the chunk. For example, if the given context was a Wikipedia paragraph about the United States, an example question could be 'How many states are in the United States?'. The questions should be able to be answered in a few words or less."
                 % (x),
-            ),
-            ChatMessage(
-                role="system",
-                content="The questions should be able to be answered in a few words or less.",
             ),
             ChatMessage(role="user", content=str(chunk)),
         ]
