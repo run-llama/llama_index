@@ -28,7 +28,9 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         default="", description="The version for Azure OpenAI API."
     )
 
-    azure_ad_token_provider: AzureADTokenProvider = Field(default=None, description="Callback function to provide Azure AD token.")
+    azure_ad_token_provider: AzureADTokenProvider = Field(
+        default=None, description="Callback function to provide Azure AD token."
+    )
 
     _client: AzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
