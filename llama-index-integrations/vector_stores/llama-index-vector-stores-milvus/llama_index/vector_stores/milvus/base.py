@@ -33,6 +33,7 @@ MILVUS_ID_FIELD = "id"
 
 
 def _iter_batch(iterable: Iterable, batch_size: int):
+    """Batch an iterable into lists of at most `batch_size` elements."""
     iterator = iter(iterable)
     for first in iterator:
         yield list(chain([first], islice(iterator, batch_size - 1)))
