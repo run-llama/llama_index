@@ -4,8 +4,9 @@ An index that is built within Milvus.
 
 """
 
+from itertools import chain, islice
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Iterable
 
 import pymilvus  # noqa
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -27,7 +28,14 @@ from pymilvus import Collection, MilvusClient
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_BATCH_SIZE = 100
 MILVUS_ID_FIELD = "id"
+
+
+def _iter_batch(iterable: Iterable, batch_size: int):
+    iterator = iter(iterable)
+    for first in iterator:
+        yield list(chain([first], islice(iterator, batch_size - 1)))
 
 
 def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
@@ -118,6 +126,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
     search_config: Optional[dict]
+    batch_size: int = DEFAULT_BATCH_SIZE
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -137,6 +146,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -151,6 +161,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields or [],
             index_config=index_config if index_config else {},
             search_config=search_config if search_config else {},
+            batch_size=batch_size,
         )
 
         # Select the similarity metric
@@ -225,7 +236,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
             insert_list.append(entry)
 
         # Insert the data into milvus
-        self._collection.insert(insert_list)
+        for insert_batch in _iter_batch(insert_list, self.batch_size):
+            self._collection.insert(insert_batch)
         if add_kwargs.get("force_flush", False):
             self._collection.flush()
         self._create_index_if_required()
