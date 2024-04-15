@@ -1,9 +1,11 @@
 # Firecrawl Web Loader
+
 ## Instructions for Firecrawl Web Loader
 
 ### Setup and Installation
 
 1. **Install Firecrawl Package**: Ensure the `firecrawl-py` package is installed to use the Firecrawl Web Loader. Install it via pip with the following command:
+
    ```bash
    pip install firecrawl-py
    ```
@@ -12,16 +14,15 @@
 
 ### Using Firecrawl Web Loader
 
-- **Initialization**: Initialize the FireCrawlWebReader by providing the API key, the desired mode of operation (`crawl` or `scrape`), and  any optional parameters for the Firecrawl API.
-  
-  
+- **Initialization**: Initialize the FireCrawlWebReader by providing the API key, the desired mode of operation (`crawl` or `scrape`), and any optional parameters for the Firecrawl API.
+
   ```python
   from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 
   firecrawl_reader = FireCrawlWebReader(
       api_key="your_api_key_here",
       mode="crawl",  # or "scrape"
-      params={"additional": "parameters"}
+      params={"additional": "parameters"},
   )
   ```
 
@@ -39,7 +40,7 @@ Here is an example demonstrating how to initialize the FireCrawlWebReader, load 
 firecrawl_reader = FireCrawlWebReader(
     api_key="your_api_key_here",  # Replace with your actual API key
     mode="crawl",  # Choose between "crawl" and "scrape"
-    params={"additional": "parameters"}  # Optional additional parameters
+    params={"additional": "parameters"},  # Optional additional parameters
 )
 
 # Load documents from Paul Graham's essay URL
@@ -56,8 +57,4 @@ response = query_engine.query("Insights from Paul Graham's essays")
 
 # Display the query response
 print(response)
-
 ```
-
-
-

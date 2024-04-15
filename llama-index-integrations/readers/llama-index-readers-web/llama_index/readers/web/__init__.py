@@ -5,9 +5,7 @@ from llama_index.readers.web.async_web.base import (
 from llama_index.readers.web.beautiful_soup_web.base import (
     BeautifulSoupWebReader,
 )
-from llama_index.readers.web.firecrawl_web.base import (
-    FireCrawlWebReader
-)
+from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 from llama_index.readers.web.knowledge_base.base import (
     KnowledgeBaseWebReader,
 )
