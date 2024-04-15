@@ -108,9 +108,7 @@ class WordliftVectorStore(VectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         raise NotImplementedError
 
-    async def query(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> VectorStoreQueryResult:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         log.debug("Running in NON async mode")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
