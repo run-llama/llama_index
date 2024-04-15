@@ -17,7 +17,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Pedro Torruella 5025399+ptorru@users.noreply.github.com"]
+authors = ["Pedro Torruella <5025399+ptorru@users.noreply.github.com>"]
 description = "llama-index embeddings octoai integration"
 license = "MIT"
 name = "llama-index-embeddings-octoai"
@@ -28,6 +28,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
+llama-index-embeddings-openai = "^0.1.7"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

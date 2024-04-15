@@ -1,5 +1,3 @@
-# from llama_index.embeddings.octoai.base import <FILL>
+from llama_index.embeddings.octoai.base import OctoAIEmbedding
 
-
-# __all__ = ["<FILL>"]
-pass
+__all__ = ["OctoAIEmbedding"]
