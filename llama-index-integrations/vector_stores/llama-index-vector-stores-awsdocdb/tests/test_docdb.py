@@ -64,9 +64,8 @@ def node_embeddings() -> list[TextNode]:
     CONNECTION_STRING is None, reason="A DocumentDB instance has not been configured"
 )
 class TestAWSDocDBVectorSearch:
-    def __init__(self) -> None:
-        self.test_client = MongoClient(CONNECTION_STRING)  # type: ignore
-        self.collection = self.test_client[DB_NAME][COLLECTION_NAME]
+    test_client = MongoClient(CONNECTION_STRING)  # type: ignore
+    collection = self.test_client[DB_NAME][COLLECTION_NAME]
 
     @classmethod
     def setup_class(cls) -> None:
