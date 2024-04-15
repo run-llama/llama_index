@@ -698,7 +698,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         if not is_done:
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = self._process_actions(
+            reasoning_steps, is_done = await self._aprocess_actions(
                 task, tools=tools, output=full_response, is_streaming=True
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
