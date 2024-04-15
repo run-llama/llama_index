@@ -193,10 +193,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        res = self._collection.delete_many(
+        self._collection.delete_many(
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
         )
-        return res
 
     @property
     def client(self) -> Any:

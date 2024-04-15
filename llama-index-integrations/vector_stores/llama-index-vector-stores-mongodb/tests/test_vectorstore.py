@@ -24,8 +24,7 @@ def test_nodes(nodes):
 
 
 def test_vectorstore(nodes, vector_store):
-    """Test add, query, delete API of MongoDBAtlasVectorSearch """
-
+    """Test add, query, delete API of MongoDBAtlasVectorSearch."""
     with lock:
         # 0. Clean up the collection
         vector_store._collection.delete_many({})
@@ -33,14 +32,17 @@ def test_vectorstore(nodes, vector_store):
 
         # 1. Test add()
         ids = vector_store.add(nodes)
-        assert set(ids) == set([node.node_id for node in nodes])
+        assert set(ids) == {node.node_id for node in nodes}
 
         # 2. test query()
         query_str = "Who is this author of this essay?"
         n_similar = 2
         query_embedding = OpenAIEmbedding().get_text_embedding(query_str)
-        query = VectorStoreQuery(query_str=query_str, query_embedding=query_embedding,
-                                 similarity_top_k=n_similar)
+        query = VectorStoreQuery(
+            query_str=query_str,
+            query_embedding=query_embedding,
+            similarity_top_k=n_similar,
+        )
         result_found = False
         query_responses = None
         while not result_found:
@@ -51,9 +53,11 @@ def test_vectorstore(nodes, vector_store):
                 sleep(2)
 
         assert len(query_responses.nodes) == n_similar
-        assert all([score > 0.89 for score in query_responses.similarities])
-        assert any(["seem more like rants" in node.text for node in query_responses.nodes])
-        assert all([id_res in ids for id_res in query_responses.ids])
+        assert all(score > 0.89 for score in query_responses.similarities)
+        assert any(
+            "seem more like rants" in node.text for node in query_responses.nodes
+        )
+        assert all(id_res in ids for id_res in query_responses.ids)
 
         # 3. Test delete()
         # Remember, the current API deletes by *ref_doc_id*, not *node_id*.
