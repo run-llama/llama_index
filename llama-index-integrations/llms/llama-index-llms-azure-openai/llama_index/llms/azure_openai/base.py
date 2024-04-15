@@ -70,7 +70,9 @@ class AzureOpenAI(OpenAI):
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
-    azure_ad_token_provider: AzureADTokenProvider = Field(default=None, description="Callback function to provide Azure AD token.")
+    azure_ad_token_provider: AzureADTokenProvider = Field(
+        default=None, description="Callback function to provide Azure AD token."
+    )
 
     _azure_ad_token: Any = PrivateAttr(default=None)
     _client: SyncAzureOpenAI = PrivateAttr()
