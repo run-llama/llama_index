@@ -4,14 +4,14 @@ Contains parsers for docx, pdf files.
 
 """
 
+import io
+import logging
 import struct
 import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fsspec import AbstractFileSystem
-import logging
-import io
 
+from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs, is_default_fs
 from llama_index.core.schema import Document
@@ -98,6 +98,9 @@ class DocxReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import docx2txt
         except ImportError:
@@ -152,6 +155,8 @@ class HWPReader(BaseReader):
                 "from fsspec filesystems. Will load from local filesystem instead."
             )
 
+        if not isinstance(file, Path):
+            file = Path(file)
         load_file = olefile.OleFileIO(file)
         file_dir = load_file.listdir()
         if self.is_valid(file_dir) is False:

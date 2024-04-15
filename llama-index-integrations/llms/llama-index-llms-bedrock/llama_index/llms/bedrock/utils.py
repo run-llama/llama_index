@@ -50,6 +50,7 @@ CHAT_ONLY_MODELS = {
     "meta.llama2-70b-chat-v1": 4096,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
+    "mistral.mistral-large-2402-v1:0": 32000,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -68,6 +69,7 @@ STREAMING_MODELS = {
     "meta.llama2-13b-chat-v1",
     "mistral.mistral-7b-instruct-v0:2",
     "mistral.mixtral-8x7b-instruct-v0:1",
+    "mistral.mistral-large-2402-v1:0",
 }
 
 

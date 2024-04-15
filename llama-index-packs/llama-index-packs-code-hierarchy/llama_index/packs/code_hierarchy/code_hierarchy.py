@@ -339,11 +339,15 @@ class CodeHierarchyNodeParser(NodeParser):
         # Capture any whitespace before parent.start_byte
         # Very important for space sensitive languages like python
         start_byte = parent.start_byte
-        while start_byte > 0 and text[start_byte - 1] in (" ", "\t"):
+        text_bytes = bytes(text, "utf-8")
+        while start_byte > 0 and text_bytes[start_byte - 1 : start_byte] in (
+            b" ",
+            b"\t",
+        ):
             start_byte -= 1
 
         # Create this node
-        current_chunk = text[start_byte : parent.end_byte]
+        current_chunk = text_bytes[start_byte : parent.end_byte].decode()
 
         # Return early if the chunk is too small
         if len(current_chunk) < self.min_characters and not _root:

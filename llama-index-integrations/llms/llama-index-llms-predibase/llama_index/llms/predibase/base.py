@@ -29,9 +29,11 @@ class PredibaseLLM(CustomLLM):
     The `model_name` parameter is the Predibase "serverless" base_model ID
     (see https://docs.predibase.com/user-guide/inference/models for the catalog).
 
-    An optional `adapter_id` parameter is the HuggingFace ID of a fine-tuned LLM
-    adapter, whose base model is the `model` parameter; the fine-tuned adapter
-    must be compatible with its base model; otherwise, an error is raised.
+    An optional `adapter_id` parameter is the Predibase ID or the HuggingFace ID
+    of a fine-tuned LLM adapter, whose base model is the `model` parameter; the
+    fine-tuned adapter must be compatible with its base model; otherwise, an
+    error is raised.  If the fine-tuned adapter is hosted at Predibase,
+    `adapter_version` can be specified (omitting it gives the latest version).
 
     Examples:
         `pip install llama-index-llms-predibase`
@@ -45,7 +47,8 @@ class PredibaseLLM(CustomLLM):
 
         llm = PredibaseLLM(
             model_name="mistral-7b",
-            adapter_id="my-repo/my-adapter",  # optional parameter
+            adapter_id="my-adapter-id",  # optional parameter
+            adapter_version=3,  # optional parameter (applies to Predibase only)
             temperature=0.3,
             max_new_tokens=512,
         )
@@ -58,7 +61,11 @@ class PredibaseLLM(CustomLLM):
     predibase_api_key: str = Field(description="The Predibase API key to use.")
     adapter_id: str = Field(
         default=None,
-        description="The optional HuggingFace ID of a fine-tuned adapter to use.",
+        description="The optional Predibase ID or HuggingFace ID of a fine-tuned adapter to use.",
+    )
+    adapter_version: str = Field(
+        default=None,
+        description="The optional version number of fine-tuned adapter use (applies to Predibase only).",
     )
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -84,6 +91,7 @@ class PredibaseLLM(CustomLLM):
         model_name: str,
         predibase_api_key: Optional[str] = None,
         adapter_id: Optional[str] = None,
+        adapter_version: Optional[int] = None,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         temperature: float = DEFAULT_TEMPERATURE,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -104,6 +112,7 @@ class PredibaseLLM(CustomLLM):
         super().__init__(
             model_name=model_name,
             adapter_id=adapter_id,
+            adapter_version=adapter_version,
             predibase_api_key=predibase_api_key,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
@@ -156,11 +165,13 @@ class PredibaseLLM(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> "CompletionResponse":
+        from predibase.pql.api import ServerResponseError
         from predibase.resource.llm.interface import (
             HuggingFaceLLM,
             LLMDeployment,
         )
         from predibase.resource.llm.response import GeneratedResponse
+        from predibase.resource.model import Model
 
         base_llm_deployment: LLMDeployment = self._client.LLM(
             uri=f"pb://deployments/{self.model_name}"
@@ -176,9 +187,20 @@ class PredibaseLLM(CustomLLM):
 
         result: GeneratedResponse
         if self.adapter_id:
-            adapter_model: HuggingFaceLLM = self._client.LLM(
-                uri=f"hf://{self.adapter_id}"
-            )
+            """
+            Attempt to retrieve the fine-tuned adapter from a Predibase repository.
+            If absent, then load the fine-tuned adapter from a HuggingFace repository.
+            """
+            adapter_model: Union[Model, HuggingFaceLLM]
+            try:
+                adapter_model = self._client.get_model(
+                    name=self.adapter_id,
+                    version=self.adapter_version,
+                    model_id=None,
+                )
+            except ServerResponseError:
+                # Predibase does not recognize the adapter ID (query HuggingFace).
+                adapter_model = self._client.LLM(uri=f"hf://{self.adapter_id}")
             result = base_llm_deployment.with_adapter(model=adapter_model).generate(
                 prompt=prompt,
                 options=options,
