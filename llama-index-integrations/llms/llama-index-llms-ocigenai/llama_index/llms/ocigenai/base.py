@@ -22,10 +22,7 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
+
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
@@ -33,6 +30,7 @@ from llama_index.llms.ocigenai.utils import (
     OCIGENAI_LLMS,
     STREAMING_MODELS,
     CHAT_MODELS,
+    COMPLETION_MODELS,
     create_client,
     get_provider,
     get_serving_mode,
@@ -225,7 +223,9 @@ class OCIGenAI(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-                
+        if self.model in OCIGENAI_LLMS and self.model not in COMPLETION_MODELS:
+            raise ValueError(f"Model {self.model} does not support completion")
+            
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
         inference_params["prompt"] = prompt
@@ -245,6 +245,9 @@ class OCIGenAI(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
+        if self.model in OCIGENAI_LLMS and self.model not in COMPLETION_MODELS:
+            raise ValueError(f"Model {self.model} does not support completion")
+
         if self.model in OCIGENAI_LLMS and self.model not in STREAMING_MODELS:
             raise ValueError(f"Model {self.model} does not support streaming")
 
