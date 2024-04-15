@@ -60,27 +60,32 @@ def node_embeddings() -> list[TextNode]:
     ]
 
 
+try:
+    test_client = MongoClient(CONNECTION_STRING)  # type: ignore
+    collection = test_client[DB_NAME][COLLECTION_NAME]
+except Exception:
+    test_client = None
+    collection = None
+
+
 @pytest.mark.skipif(
     CONNECTION_STRING is None, reason="A DocumentDB instance has not been configured"
 )
 class TestAWSDocDBVectorSearch:
-    test_client = MongoClient(CONNECTION_STRING)  # type: ignore
-    collection = self.test_client[DB_NAME][COLLECTION_NAME]
-
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
-        assert self.collection.count_documents({}) == 0  # type: ignore[index]
+        assert collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:
         # delete all the documents in the collection
-        self.collection.delete_many({})  # type: ignore[index]
+        collection.delete_many({})  # type: ignore[index]
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the documents in the collection
-        self.collection.delete_many({})  # type: ignore[index]
+        collection.delete_many({})  # type: ignore[index]
 
     def test_add_and_delete(self) -> None:
         vector_store = AWSDocDbVectorStore(
@@ -102,14 +107,14 @@ class TestAWSDocDBVectorSearch:
             ]
         )
 
-        assert self.collection.count_documents({}) == 1
+        assert collection.count_documents({}) == 1
         vector_store.delete(x[0])
-        assert self.collection.count_documents({}) == 0
+        assert collection.count_documents({}) == 0
 
     def test_query_default(self, node_embeddings: list[TextNode]) -> None:
         # tests cosine similarity
         vector_store = AWSDocDbVectorStore(
-            docdb_client=self.test_client,  # type: ignore
+            docdb_client=test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
         )
@@ -141,7 +146,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_query_euclidean(self, node_embeddings: list[TextNode]) -> None:
         vector_store = AWSDocDbVectorStore(
-            docdb_client=self.test_client,  # type: ignore
+            docdb_client=test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             similarity_score="euclidean",
@@ -160,7 +165,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_index_cd(self):
         vector_store = AWSDocDbVectorStore(
-            docdb_client=self.test_client,  # type: ignore
+            docdb_client=test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
         )
