@@ -78,7 +78,11 @@ class SimpleMongoReader(BaseReader):
 
         """
         db = self.client[db_name]
-        cursor = db[collection_name].find(filter=query_dict or {}, limit=max_docs)
+        cursor = db[collection_name].find(
+            filter=query_dict or {},
+            limit=max_docs,
+            projection={name: 1 for name in field_names + (metadata_names or [])},
+        )
 
         for item in cursor:
             try:

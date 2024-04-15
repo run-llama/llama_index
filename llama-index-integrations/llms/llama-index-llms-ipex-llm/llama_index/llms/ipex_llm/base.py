@@ -3,7 +3,6 @@ from threading import Thread
 from typing import Any, Callable, List, Optional, Sequence
 
 import torch
-
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -57,6 +56,20 @@ class IpexLLM(CustomLLM):
         description=(
             "The model name to use from HuggingFace. "
             "Unused if `model` is passed in directly."
+        ),
+    )
+    load_in_4bit: bool = Field(
+        default=True,
+        description=(
+            "Whether to load model in 4bit." "Unused if `load_in_low_bit` is not None."
+        ),
+    )
+    load_in_low_bit: str = Field(
+        default=None,
+        description=(
+            "Which low bit precisions to use when loading model. "
+            "Example values: 'sym_int4', 'asym_int4', 'fp4', 'nf4', 'fp8', etc."
+            "Will override `load_in_4bit` if this is specified."
         ),
     )
     context_window: int = Field(
@@ -124,6 +137,8 @@ class IpexLLM(CustomLLM):
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        load_in_4bit: Optional[bool] = True,
+        load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         device_map: Optional[str] = "auto",
@@ -176,19 +191,33 @@ class IpexLLM(CustomLLM):
             self._model = model
         else:
             try:
-                self._model = AutoModelForCausalLM.from_pretrained(
-                    model_name,
-                    load_in_4bit=True,
-                    use_cache=True,
-                    trust_remote_code=True,
-                    **model_kwargs,
-                )
+                if load_in_low_bit:
+                    self._model = AutoModelForCausalLM.from_pretrained(
+                        model_name,
+                        load_in_low_bit=load_in_low_bit,
+                        use_cache=True,
+                        trust_remote_code=True,
+                        **model_kwargs,
+                    )
+                else:
+                    self._model = AutoModelForCausalLM.from_pretrained(
+                        model_name,
+                        load_in_4bit=load_in_4bit,
+                        use_cache=True,
+                        trust_remote_code=True,
+                        **model_kwargs,
+                    )
             except Exception:
                 from ipex_llm.transformers import AutoModel
 
-                self._model = AutoModel.from_pretrained(
-                    model_name, load_in_4bit=True, **model_kwargs
-                )
+                if load_in_low_bit:
+                    self._model = AutoModel.from_pretrained(
+                        model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
+                    )
+                else:
+                    self._model = AutoModel.from_pretrained(
+                        model_name, load_in_4bit=load_in_4bit, **model_kwargs
+                    )
 
         if "xpu" in device_map:
             self._model = self._model.to(device_map)

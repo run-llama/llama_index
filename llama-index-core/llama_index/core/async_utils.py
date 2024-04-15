@@ -1,8 +1,13 @@
 """Async utils."""
 
 import asyncio
+import tqdm
 from itertools import zip_longest
-from typing import Any, Coroutine, Iterable, List, TypeVar
+from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -84,10 +89,12 @@ DEFAULT_NUM_WORKERS = 4
 T = TypeVar("T")
 
 
+@dispatcher.span
 async def run_jobs(
     jobs: List[Coroutine[Any, Any, T]],
     show_progress: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
+    desc: Optional[str] = None,
 ) -> List[T]:
     """Run jobs.
 
@@ -101,13 +108,23 @@ async def run_jobs(
         List[Any]:
             List of results.
     """
-    asyncio_mod = get_asyncio_module(show_progress=show_progress)
+    parent_span_id = dispatcher.current_span_id
     semaphore = asyncio.Semaphore(workers)
 
+    @dispatcher.async_span_with_parent_id(parent_id=parent_span_id)
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job
 
     pool_jobs = [worker(job) for job in jobs]
 
-    return await asyncio_mod.gather(*pool_jobs)
+    if show_progress:
+        results = []
+        for result in tqdm.tqdm(
+            asyncio.as_completed(pool_jobs), total=len(pool_jobs), desc=desc
+        ):
+            results.append(await result)
+    else:
+        results = await asyncio.gather(*pool_jobs)
+
+    return results

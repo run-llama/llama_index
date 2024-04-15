@@ -4,15 +4,16 @@ Contains parsers for docx, pdf files.
 
 """
 
+import io
+import logging
 import struct
 import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fsspec import AbstractFileSystem
-import logging
 
+from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.base import get_default_fs
+from llama_index.core.readers.file.base import get_default_fs, is_default_fs
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,9 @@ class PDFReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import pypdf
         except ImportError:
@@ -42,8 +46,12 @@ class PDFReader(BaseReader):
             )
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as fp:
+            # Load the file in memory if the filesystem is not the default one to avoid
+            # issues with pypdf
+            stream = fp if is_default_fs(fs) else io.BytesIO(fp.read())
+
             # Create a PDF object
-            pdf = pypdf.PdfReader(fp)
+            pdf = pypdf.PdfReader(stream)
 
             # Get the number of pages in the PDF document
             num_pages = len(pdf.pages)
@@ -90,6 +98,9 @@ class DocxReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import docx2txt
         except ImportError:
@@ -144,6 +155,8 @@ class HWPReader(BaseReader):
                 "from fsspec filesystems. Will load from local filesystem instead."
             )
 
+        if not isinstance(file, Path):
+            file = Path(file)
         load_file = olefile.OleFileIO(file)
         file_dir = load_file.listdir()
         if self.is_valid(file_dir) is False:

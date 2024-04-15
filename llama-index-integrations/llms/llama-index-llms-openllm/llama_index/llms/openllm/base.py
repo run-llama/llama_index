@@ -94,7 +94,7 @@ class OpenLLM(LLM):
     trust_remote_code: bool = Field(
         description="Optional flag to trust remote code. This is synonymous to Transformers' `trust_remote_code`. Default to False."
     )
-    _llm: openllm.LLM[Any, Any]
+    _llm: openllm.LLM[Any, Any] = PrivateAttr()
 
     def __init__(
         self,

@@ -82,7 +82,7 @@ def text_node_list() -> List[TextNode]:
 
 @pytest.fixture(scope="module")
 def vector_store() -> DuckDBVectorStore:
-    return DuckDBVectorStore()
+    return DuckDBVectorStore(embed_dim=3)
 
 
 def test_instance_creation_from_memory(
