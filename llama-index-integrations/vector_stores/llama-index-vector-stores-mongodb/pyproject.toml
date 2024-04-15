@@ -21,13 +21,15 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = [
+    {name = "The MongoDB Python Team"},
+]
 description = "llama-index vector_stores mongodb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-mongodb"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
