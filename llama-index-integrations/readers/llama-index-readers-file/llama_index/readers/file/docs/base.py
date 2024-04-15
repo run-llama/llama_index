@@ -11,18 +11,18 @@ import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from tenacity import retry, stop_after_attempt, wait_random_exponential
+from tenacity import retry, stop_after_attempt
 
 from fsspec import AbstractFileSystem
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs, is_default_fs
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
 
-WAIT_MIN_SECONDS = 1
-WAIT_MAX_SECONDS = 10
 RETRY_TIMES = 3
+
 
 class PDFReader(BaseReader):
     """PDF parser."""
@@ -34,7 +34,6 @@ class PDFReader(BaseReader):
         self.return_full_document = return_full_document
 
     @retry(
-        wait=wait_random_exponential(min=WAIT_MIN_SECONDS, max=WAIT_MAX_SECONDS),
         stop=stop_after_attempt(RETRY_TIMES),
     )
     def load_data(
