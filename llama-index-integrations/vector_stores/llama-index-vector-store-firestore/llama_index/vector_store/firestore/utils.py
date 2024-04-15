@@ -6,7 +6,11 @@ from google.cloud.firestore_v1.services.firestore.transports.base import (
     DEFAULT_CLIENT_INFO,
 )
 
-__version__ = version("llama-index-vector-store-firestore")
+try:
+    __version__ = version("llama-index-vector-store-firestore")
+except Exception:
+    __version__ = "unknown"
+
 USER_AGENT = "llama-index-vector-store-firestore-python:vectorstore" + __version__
 
 
