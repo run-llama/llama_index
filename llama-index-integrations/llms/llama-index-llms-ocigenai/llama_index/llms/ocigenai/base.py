@@ -32,7 +32,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.ocigenai.utils import (
     OCIGENAI_LLMS,
     STREAMING_MODELS,
-    CHAT_ONLY_MODELS,
+    CHAT_MODELS,
     create_client,
     get_provider,
     get_serving_mode,
@@ -169,9 +169,7 @@ class OCIGenAI(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
         context_size = context_size or OCIGENAI_LLMS[model]
-        messages_to_prompt = messages_to_prompt or self._provider.messages_to_prompt
-        completion_to_prompt = completion_to_prompt or self._provider.completion_to_prompt
-       
+               
         super().__init__(
             model=model,
             temperature=temperature,
@@ -202,7 +200,7 @@ class OCIGenAI(LLM):
         return LLMMetadata(
             context_window=self.context_size,
             num_output=self.max_tokens,
-            is_chat_model=self.model in CHAT_ONLY_MODELS,
+            is_chat_model=self.model in CHAT_MODELS,
             model_name=self.model,
         )
 
@@ -227,9 +225,7 @@ class OCIGenAI(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if not formatted:
-            prompt = self.completion_to_prompt(prompt)
-        
+                
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
         inference_params["prompt"] = prompt
@@ -242,7 +238,7 @@ class OCIGenAI(LLM):
                 
         response = self._client.generate_text(request)
         return CompletionResponse(
-            text=self._provider.get_text_from_response(response), raw=response.__dict__
+            text=self._provider.completion_response_to_text(response), raw=response.__dict__
         )
 
     @llm_completion_callback()
@@ -251,9 +247,6 @@ class OCIGenAI(LLM):
     ) -> CompletionResponseGen:
         if self.model in OCIGENAI_LLMS and self.model not in STREAMING_MODELS:
             raise ValueError(f"Model {self.model} does not support streaming")
-
-        if not formatted:
-            prompt = self.completion_to_prompt(prompt)
 
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = True
@@ -270,7 +263,7 @@ class OCIGenAI(LLM):
         def gen() -> CompletionResponseGen:
             content = ""
             for event in response.data.events():
-                content_delta = json.loads(event.data)["text"]
+                content_delta = self._provider.completion_stream_to_text(json.loads(event.data))
                 content += content_delta
                 yield CompletionResponse(text=content, delta=content_delta, raw=event.__dict__)
 
@@ -278,15 +271,15 @@ class OCIGenAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        from oci.generative_ai_inference import models
 
-        provider_messages = self._provider.messages_to_meta_messages(messages)
-        chat_params = self._get_all_kwargs(**kwargs)
-        chat_params["is_stream"] = False
-        chat_params["messages"] = provider_messages
-        chat_params["top_k"] = -1
-        chat_params["api_format"] = models.BaseChatRequest.API_FORMAT_GENERIC
-
+        if self.model in OCIGENAI_LLMS and self.model not in CHAT_MODELS:
+            raise ValueError(f"Model {self.model} is not supported for chat")
+        
+        oci_params = self._provider.messages_to_oci_params(messages)
+        oci_params["is_stream"] = False
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        chat_params = {**all_kwargs, **oci_params}
+        
         request = self._chat_generator(
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
@@ -294,8 +287,9 @@ class OCIGenAI(LLM):
         )
         
         response = self._client.chat(request)
+
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=response.data.chat_response.choices[0].message.content[0].text),
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=self._provider.chat_response_to_text(response)),
             raw=response.__dict__,
         )
         
@@ -303,9 +297,37 @@ class OCIGenAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
-        return stream_completion_response_to_chat_response(completion_response)
+        if self.model in OCIGENAI_LLMS and self.model not in CHAT_MODELS:
+            raise ValueError(f"Model {self.model} is not supported for chat")
+
+        if self.model in OCIGENAI_LLMS and self.model not in STREAMING_MODELS:
+            raise ValueError(f"Model {self.model} does not support streaming")
+        
+        oci_params = self._provider.messages_to_oci_params(messages)
+        oci_params["is_stream"] = True
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        chat_params = {**all_kwargs, **oci_params}
+        
+        request = self._chat_generator(
+            compartment_id=self.compartment_id,
+            serving_mode=self._serving_mode,
+            chat_request=self._provider.oci_chat_request(**chat_params),
+        )
+        
+        response = self._client.chat(request)
+        
+        def gen() -> ChatResponseGen:
+            content = ""
+            for event in response.data.events():
+                content_delta = self._provider.chat_stream_to_text(json.loads(event.data))
+                content += content_delta
+                yield ChatResponse(
+                    message=ChatMessage(role=MessageRole.ASSISTANT, content=content), 
+                    delta=content_delta,
+                    raw=event.__dict__,
+                    )
+
+        return gen()
 
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any

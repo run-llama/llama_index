@@ -2,10 +2,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Dict, List
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.llms.ocigenai.llama_utils import (
-    messages_to_prompt as messages_to_llama_prompt,
-    completion_to_prompt as completion_to_llama_prompt,
-)
 
 class OCIAuthType(Enum):
     """OCI authentication types as enumerator."""
@@ -22,13 +18,18 @@ COMPLETION_MODELS = {
     "meta.llama-2-70b-chat": 4096,
 }
 
-CHAT_ONLY_MODELS = {}
+CHAT_MODELS = {
+    "meta.llama-2-70b-chat": 4096,
+    "cohere.command-r": 128000,
+}
   
-OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
+OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
 
 STREAMING_MODELS = {
     "cohere.command",
-    "meta.llama-2-70b-chat"
+    "cohere.command-light",
+    "meta.llama-2-70b-chat",
+    "cohere.command-r"
 }
 
 def create_client(auth_type, auth_profile, service_endpoint):
@@ -134,6 +135,7 @@ def get_completion_generator() -> Any:
 
     return models.GenerateTextDetails
 
+
 def get_chat_generator() -> Any:
     try:
         from oci.generative_ai_inference import models
@@ -154,11 +156,26 @@ class Provider(ABC):
         ...
 
     @abstractmethod
-    def get_text_from_response(self, response: dict) -> str:
+    def completion_response_to_text(self, response: Any) -> str:
         ...
 
-    messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None
-    completion_to_prompt: Optional[Callable[[str], str]] = None
+    @abstractmethod
+    def completion_stream_to_text(self, response: Any) -> str:
+        ...
+
+    @abstractmethod
+    def chat_response_to_text(self, response: Any) -> str:
+        ...
+
+    @abstractmethod
+    def chat_stream_to_text(self, event_data: Dict) -> str:
+        ...
+
+    @abstractmethod
+    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+        ...
+
+    
 
 class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
@@ -174,13 +191,46 @@ class CohereProvider(Provider):
             ) from ex
 
         self.oci_completion_request = models.CohereLlmInferenceRequest
+        self.oci_chat_request = models.CohereChatRequest
+        self.oci_chat_message = models.CohereMessage
+        self.chat_api_format = models.BaseChatRequest.API_FORMAT_COHERE
 
-    def get_text_from_response(self, response: Any) -> str:
+    def completion_response_to_text(self, response: Any) -> str:
         return response.data.inference_response.generated_texts[0].text
+
+    def completion_stream_to_text(self, event_data: Any) -> str:
+        return event_data["text"]
+
+    def chat_response_to_text(self, response: Any) -> str:
+        return response.data.chat_response.text
+
+    def chat_stream_to_text(self, event_data: Dict) -> str:
+        return event_data['text']
+
+    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+
+        role_map = {
+            "user": "USER",
+            "system": "SYSTEM",
+            "chatbot": "CHATBOT",
+            "assistant": "CHATBOT",
+            "model": "SYSTEM",
+            "function": "SYSTEM",
+            "tool": "SYSTEM",
+        }
+        
+        oci_chat_history = [self.oci_chat_message(role=role_map[msg.role.value], message=msg.content) for msg in messages[:-1]]
+        oci_params = {
+            "message": messages[-1].content,
+            "chat_history": oci_chat_history,
+            "api_format": self.chat_api_format
+        }
+    
+        return oci_params
     
 class MetaProvider(Provider):
     stop_sequence_key = "stop"
-
+    
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
@@ -193,22 +243,32 @@ class MetaProvider(Provider):
 
         self.oci_completion_request = models.LlamaLlmInferenceRequest
         self.oci_chat_request = models.GenericChatRequest
-        self.messages_to_prompt = messages_to_llama_prompt
-        self.completion_to_prompt = completion_to_llama_prompt
-
-    def messages_to_meta_messages(self, messages: Sequence[ChatMessage]) -> List[dict]:
-        from oci.generative_ai_inference import models
-        meta_messages = []
-        for message in messages:
-            meta_message = models.Message()
-            meta_message.role = message.role.value
-            meta_message.content = [models.TextContent(text=message.content)]
-            meta_messages.append(meta_message)
-
-        return meta_messages
-
-    def get_text_from_response(self, response: Any) -> str:
+        self.oci_chat_message = models.Message
+        self.oci_chat_message_content = models.TextContent
+        self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
+        
+    def completion_response_to_text(self, response: Any) -> str:
         return response.data.inference_response.choices[0].text
+
+    def completion_stream_to_text(self, event_data: Any) -> str:
+        return event_data["text"]
+
+    def chat_response_to_text(self, response: Any) -> str:
+        return response.data.chat_response.choices[0].message.content[0].text
+
+    def chat_stream_to_text(self, event_data: Dict) -> str:
+        return event_data["message"]['content'][0]['text']
+
+    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+
+        oci_messages = [self.oci_chat_message(role=msg.role.value, content=[self.oci_chat_message_content(text=msg.content)]) for msg in messages]
+        oci_params = {
+            "messages": oci_messages,
+            "api_format": self.chat_api_format,
+            "top_k": -1
+        }
+    
+        return oci_params
         
 
 PROVIDERS = {
