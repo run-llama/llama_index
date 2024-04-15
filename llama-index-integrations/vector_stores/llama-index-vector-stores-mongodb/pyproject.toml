@@ -22,7 +22,7 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = [
-    {name = "The MongoDB Python Team"},
+    "The MongoDB Python Team",
 ]
 description = "llama-index vector_stores mongodb integration"
 exclude = ["**/BUILD"]
@@ -33,12 +33,13 @@ version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index = "^0.10.1"
+llama-index-core = "^0.10.1"
 pymongo = "^4.6.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
 jupyter = "^1.0.0"
+llama-index-embeddings-openai = "^0.1.5"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
