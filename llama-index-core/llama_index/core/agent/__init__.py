@@ -25,5 +25,6 @@ __all__ = [
     # schema-related
     "AgentChatResponse",
     "Task",
-    "TaskStep" "TaskStepOutput",
+    "TaskStep",
+    "TaskStepOutput",
 ]
