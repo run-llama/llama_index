@@ -35,7 +35,7 @@ example1 = LabelledRagDataExample(
         "of contexts used to",
         "generate the reference_answer",
     ],
-    reference_by=CreatedBy(type=CreateByType.HUMAN),
+    reference_by=CreatedBy(type=CreatedByType.HUMAN),
 )
 
 # a sad dataset consisting of one measely example

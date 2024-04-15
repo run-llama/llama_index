@@ -105,12 +105,12 @@ from llama_index.core import Settings
 # maximum input size to the LLM
 Settings.context_window = 4096
 
-# number of tokens to leave room for the LLM to generate
+# number of tokens reserved for text generation.
 Settings.num_output = 256
 ```
 
 !!! tip
-Learn how to configure specific modules: - [LLM](../models/llms/usage_custom.md) - [Embedding Model](../models/embeddings.md) - [Node Parser/Text Splitters](../loading/node_parsers/index.md) - [Callbacks](../observability/callbacks/index.md)
+    Learn how to configure specific modules: - [LLM](../models/llms/usage_custom.md) - [Embedding Model](../models/embeddings.md) - [Node Parser/Text Splitters](../loading/node_parsers/index.md) - [Callbacks](../observability/callbacks/index.md)
 
 ## Setting local configurations
 

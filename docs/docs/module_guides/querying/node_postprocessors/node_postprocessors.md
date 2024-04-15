@@ -76,8 +76,6 @@ postprocessor.postprocess_nodes(nodes)
 
 A full notebook guide can be found [here](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
 
-(cohere_rerank)=
-
 ## CohereRerank
 
 Uses the "Cohere ReRank" functionality to re-order nodes, and returns the top N nodes.
@@ -297,6 +295,19 @@ response = query_engine.query(
 
 Full notebook guide is available [here](../../../examples/node_postprocessor/ColbertRerank.ipynb).
 
+## rankLLM
+
+Uses models from [rankLLM](https://github.com/castorini/rank_llm) to rerank documents. Returns the top N ranked nodes.
+
+```python
+from llama_index.postprocessor import RankLLMRerank
+
+postprocessor = RankLLMRerank(top_n=5, model="zephyr")
+postprocessor.postprocess_nodes(nodes)
+```
+
+A full [notebook example is available](../../../examples/node_postprocessor/rankLLM.ipynb).
+
 ## All Notebooks
 
 - [Sentence Optimizer](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
@@ -313,3 +324,4 @@ Full notebook guide is available [here](../../../examples/node_postprocessor/Col
 - [Colbert Rerank](../../../examples/node_postprocessor/ColbertRerank.ipynb)
 - [JinaAI Rerank](../../../examples/node_postprocessor/JinaRerank.ipynb)
 - [MixedBread Rerank](../../../examples/cookbooks/mixedbread_reranker.ipynb)
+- [RankLLM](../../../examples/node_postprocessor/rankLLM.ipynb)

@@ -34,7 +34,7 @@ By default, we use the OpenAI `gpt-3.5-turbo` model for text generation and `tex
 You can obtain an API key by logging into your OpenAI account and [and creating a new API key](https://platform.openai.com/account/api-keys).
 
 !!! tip
-You can also [use one of many other available LLMs](../module_guides/models/llms/usage_custom.md). You may need additional environment keys + tokens setup depending on the LLM provider.
+    You can also [use one of many other available LLMs](../module_guides/models/llms/usage_custom.md). You may need additional environment keys + tokens setup depending on the LLM provider.
 
 [Check out our OpenAI Starter Example](starter_example.md)
 

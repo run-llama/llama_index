@@ -2,7 +2,7 @@ from llama_index.core.readers.base import BasePydanticReader
 from llama_index.readers.gcs import GCSReader
 
 test_bucket = "test"
-test_service_account_key_json = "test-key"
+test_service_account_key = {"test-key": "test-value"}
 
 
 def test_class():
@@ -13,7 +13,7 @@ def test_class():
 def test_serialize():
     reader = GCSReader(
         bucket=test_bucket,
-        service_account_key_json=test_service_account_key_json,
+        service_account_key=test_service_account_key,
     )
 
     schema = reader.schema()
@@ -25,4 +25,4 @@ def test_serialize():
 
     new_reader = GCSReader.parse_raw(json)
     assert new_reader.bucket == reader.bucket
-    assert new_reader.service_account_key_json == reader.service_account_key_json
+    assert new_reader.service_account_key == reader.service_account_key

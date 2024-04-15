@@ -21,7 +21,7 @@ index = VectorStoreIndex.from_documents(documents)
 ```
 
 !!! tip
-If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
+    If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
 
 When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/index.md), lightweight abstractions over text strings that keep track of metadata and relationships.
 
@@ -30,7 +30,7 @@ For more on how to load documents, see [Understanding Loading](../loading/index.
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
 !!! tip
-By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
+    By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
 
     This is especially helpful when you are inserting into a remotely hosted vector database.
 
@@ -59,7 +59,7 @@ nodes = pipeline.run(documents=[Document.example()])
 ```
 
 !!! tip
-You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/index.md).
+    You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/index.md).
 
 ### Creating and managing nodes directly
 
@@ -116,7 +116,7 @@ index = VectorStoreIndex.from_documents(
 
 For more examples of how to use VectorStoreIndex, see our [vector store index usage examples notebook](./vector_store_guide.ipynb).
 
-For examples of how to use VectorStoreIndex with specific vector stores, check out our [vector stores](../storing/vector_stores.md) section under Loading.
+For examples of how to use VectorStoreIndex with specific vector stores, check out [vector stores](../storing/vector_stores.md) under the Storing section.
 
 ## Composable Retrieval
 
