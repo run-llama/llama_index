@@ -69,7 +69,7 @@ except Exception:
 
 
 @pytest.mark.skipif(
-    CONNECTION_STRING is None, reason="A DocumentDB instance has not been configured"
+    test_client is not None, reason="A DocumentDB instance has not been configured"
 )
 class TestAWSDocDBVectorSearch:
     @classmethod
