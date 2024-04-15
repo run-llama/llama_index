@@ -235,7 +235,7 @@ def test_query_pipeline_multi() -> None:
 
 def test_query_pipeline_multi_intermediate_output() -> None:
     """Test query pipeline showing intermediate outputs."""
-    # try run run_multi_with_intermediate_outputs
+    # try run run_multi_with_intermediates
     # link both qc1_0 and qc1_1 to qc2
     qc1_0 = QueryComponent1()
     qc1_1 = QueryComponent1()
@@ -244,7 +244,7 @@ def test_query_pipeline_multi_intermediate_output() -> None:
     p.add_modules({"qc1_0": qc1_0, "qc1_1": qc1_1, "qc2": qc2})
     p.add_link("qc1_0", "qc2", dest_key="input1")
     p.add_link("qc1_1", "qc2", dest_key="input2")
-    outputs, intermediates = p.run_multi_with_intermediate_outputs(
+    outputs, intermediates = p.run_multi_with_intermediates(
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
 
@@ -406,7 +406,7 @@ def test_query_pipeline_chain_str_intermediate_output() -> None:
         ]
     )
     p.add_chain(["a", "b", "c"])
-    outputs, intermediates = p.run_with_intermediate_outputs(inp1=1, inp2=3)
+    outputs, intermediates = p.run_with_intermediates(inp1=1, inp2=3)
     assert outputs == 11
 
     assert intermediates["input"].inputs == {"inp1": 1, "inp2": 3}

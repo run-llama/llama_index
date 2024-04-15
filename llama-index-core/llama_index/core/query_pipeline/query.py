@@ -320,12 +320,12 @@ class QueryPipeline(QueryComponent):
                 outputs, _ = self._run(
                     *args,
                     return_values_direct=return_values_direct,
-                    show_intermediate_outputs=False,
+                    show_intermediates=False,
                     **kwargs,
                 )
                 return outputs
 
-    def run_with_intermediate_outputs(
+    def run_with_intermediates(
         self,
         *args: Any,
         return_values_direct: bool = True,
@@ -348,7 +348,7 @@ class QueryPipeline(QueryComponent):
                 return self._run(
                     *args,
                     return_values_direct=return_values_direct,
-                    show_intermediate_outputs=True,
+                    show_intermediates=True,
                     **kwargs,
                 )
 
@@ -368,7 +368,7 @@ class QueryPipeline(QueryComponent):
                 outputs, _ = self._run_multi(module_input_dict)
                 return outputs
 
-    def run_multi_with_intermediate_outputs(
+    def run_multi_with_intermediates(
         self,
         module_input_dict: Dict[str, Any],
         callback_manager: Optional[CallbackManager] = None,
@@ -381,9 +381,7 @@ class QueryPipeline(QueryComponent):
                 CBEventType.QUERY,
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
-                return self._run_multi(
-                    module_input_dict, show_intermediate_outputs=True
-                )
+                return self._run_multi(module_input_dict, show_intermediates=True)
 
     async def arun(
         self,
@@ -407,12 +405,12 @@ class QueryPipeline(QueryComponent):
                 outputs, _ = await self._arun(
                     *args,
                     return_values_direct=return_values_direct,
-                    show_intermediate_outputs=False,
+                    show_intermediates=False,
                     **kwargs,
                 )
                 return outputs
 
-    async def arun_with_intermediate_outputs(
+    async def arun_with_intermediates(
         self,
         *args: Any,
         return_values_direct: bool = True,
@@ -434,7 +432,7 @@ class QueryPipeline(QueryComponent):
                 return await self._arun(
                     *args,
                     return_values_direct=return_values_direct,
-                    show_intermediate_outputs=True,
+                    show_intermediates=True,
                     **kwargs,
                 )
 
@@ -454,7 +452,7 @@ class QueryPipeline(QueryComponent):
                 outputs, _ = await self._arun_multi(module_input_dict)
                 return outputs
 
-    async def arun_multi_with_intermediate_outputs(
+    async def arun_multi_with_intermediates(
         self,
         module_input_dict: Dict[str, Any],
         callback_manager: Optional[CallbackManager] = None,
@@ -468,7 +466,7 @@ class QueryPipeline(QueryComponent):
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
                 return await self._arun_multi(
-                    module_input_dict, show_intermediate_outputs=True
+                    module_input_dict, show_intermediates=True
                 )
 
     def _get_root_key_and_kwargs(
@@ -531,7 +529,7 @@ class QueryPipeline(QueryComponent):
         self,
         *args: Any,
         return_values_direct: bool = True,
-        show_intermediate_outputs: bool = False,
+        show_intermediates: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline.
@@ -544,7 +542,7 @@ class QueryPipeline(QueryComponent):
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
 
         result_outputs, intermediates = self._run_multi(
-            {root_key: kwargs}, show_intermediate_outputs=show_intermediate_outputs
+            {root_key: kwargs}, show_intermediates=show_intermediates
         )
 
         return (
@@ -556,7 +554,7 @@ class QueryPipeline(QueryComponent):
         self,
         *args: Any,
         return_values_direct: bool = True,
-        show_intermediate_outputs: bool = False,
+        show_intermediates: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline.
@@ -569,7 +567,7 @@ class QueryPipeline(QueryComponent):
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
 
         result_outputs, intermediates = await self._arun_multi(
-            {root_key: kwargs}, show_intermediate_outputs=show_intermediate_outputs
+            {root_key: kwargs}, show_intermediates=show_intermediates
         )
 
         return (
@@ -684,7 +682,7 @@ class QueryPipeline(QueryComponent):
         return new_queue
 
     def _run_multi(
-        self, module_input_dict: Dict[str, Any], show_intermediate_outputs=False
+        self, module_input_dict: Dict[str, Any], show_intermediates=False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
         """Run the pipeline for multiple roots.
 
@@ -718,7 +716,7 @@ class QueryPipeline(QueryComponent):
                 print_debug_input(module_key, module_input)
             output_dict = module.run_component(**module_input)
 
-            if show_intermediate_outputs and module_key not in intermediate_outputs:
+            if show_intermediates and module_key not in intermediate_outputs:
                 intermediate_outputs[module_key] = ComponentIntermediates(
                     inputs=module_input, outputs=output_dict
                 )
@@ -731,7 +729,7 @@ class QueryPipeline(QueryComponent):
         return result_outputs, intermediate_outputs
 
     async def _arun_multi(
-        self, module_input_dict: Dict[str, Any], show_intermediate_outputs: bool = False
+        self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
         """Run the pipeline for multiple roots.
 
@@ -780,7 +778,7 @@ class QueryPipeline(QueryComponent):
                     [all_module_inputs[module_key] for module_key in popped_nodes],
                 )
 
-            if show_intermediate_outputs and module_key not in intermediate_outputs:
+            if show_intermediates and module_key not in intermediate_outputs:
                 intermediate_outputs[module_key] = ComponentIntermediates(
                     inputs=module_input, outputs=output_dict
                 )
