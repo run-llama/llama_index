@@ -1,30 +1,21 @@
 """Test AWS DocumentDB Vector Store functionality."""
 from __future__ import annotations
 
-import os, sys
+import os
 from time import sleep
 
 import pytest
-
 from pymongo import MongoClient
+
+from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.vector_stores.awsdocdb import AWSDocDbVectorStore
 
 INDEX_NAME = "llamaindex-test-index"
 NAMESPACE = "llamaindex_test_db.llamaindex_test_collection"
 CONNECTION_STRING = os.getenv("DOCUMENTDB_URI", "")
 DB_NAME, COLLECTION_NAME = "mydatabase", "customers"
-test_client = MongoClient(CONNECTION_STRING)  # type: ignore
-collection = test_client[DB_NAME][COLLECTION_NAME]
-pymongo_available = True
-pytestmark = pytest.mark.skipif(
-    CONNECTION_STRING is None, reason="A DocumentDB instance has not been configured"
-)
 
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-import sys
-
-sys.path.append("./llama_index/vector_stores")
-from awsdocdb import AWSDocDbVectorStore
-from llama_index.vector_stores.types import VectorStoreQuery
 
 """
 Test instructions:
@@ -69,21 +60,28 @@ def node_embeddings() -> list[TextNode]:
     ]
 
 
+@pytest.mark.skipif(
+    CONNECTION_STRING is None, reason="A DocumentDB instance has not been configured"
+)
 class TestAWSDocDBVectorSearch:
+    def __init__(self) -> None:
+        self.test_client = MongoClient(CONNECTION_STRING)  # type: ignore
+        self.collection = self.test_client[DB_NAME][COLLECTION_NAME]
+
     @classmethod
     def setup_class(cls) -> None:
         # insure the test collection is empty
-        assert collection.count_documents({}) == 0  # type: ignore[index]
+        assert self.collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:
         # delete all the documents in the collection
-        collection.delete_many({})  # type: ignore[index]
+        self.collection.delete_many({})  # type: ignore[index]
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the documents in the collection
-        collection.delete_many({})  # type: ignore[index]
+        self.collection.delete_many({})  # type: ignore[index]
 
     def test_add_and_delete(self) -> None:
         vector_store = AWSDocDbVectorStore(
@@ -105,14 +103,14 @@ class TestAWSDocDBVectorSearch:
             ]
         )
 
-        assert collection.count_documents({}) == 1
+        assert self.collection.count_documents({}) == 1
         vector_store.delete(x[0])
-        assert collection.count_documents({}) == 0
+        assert self.collection.count_documents({}) == 0
 
     def test_query_default(self, node_embeddings: list[TextNode]) -> None:
         # tests cosine similarity
         vector_store = AWSDocDbVectorStore(
-            docdb_client=test_client,  # type: ignore
+            docdb_client=self.test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
         )
@@ -128,7 +126,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_query_dot(self, node_embeddings: list[TextNode]) -> None:
         vector_store = AWSDocDbVectorStore(
-            docdb_client=test_client,  # type: ignore
+            docdb_client=self.test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             similarity_score="dotProduct",
@@ -144,7 +142,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_query_euclidean(self, node_embeddings: list[TextNode]) -> None:
         vector_store = AWSDocDbVectorStore(
-            docdb_client=test_client,  # type: ignore
+            docdb_client=self.test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             similarity_score="euclidean",
@@ -163,7 +161,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_index_cd(self):
         vector_store = AWSDocDbVectorStore(
-            docdb_client=test_client,  # type: ignore
+            docdb_client=self.test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
         )
