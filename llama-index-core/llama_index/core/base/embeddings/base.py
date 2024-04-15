@@ -19,6 +19,15 @@ from llama_index.core.utils import get_tqdm_iterable
 Embedding = List[float]
 
 
+from llama_index.core.instrumentation.events.embedding import (
+    EmbeddingEndEvent,
+    EmbeddingStartEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
+
+
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
 
@@ -94,6 +103,7 @@ class BaseEmbedding(TransformComponent):
         docstring for more information.
         """
 
+    @dispatcher.span
     def get_query_embedding(self, query: str) -> Embedding:
         """
         Embed the input query.
@@ -104,6 +114,13 @@ class BaseEmbedding(TransformComponent):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -115,10 +132,24 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [query_embedding],
                 },
             )
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[query],
+                embeddings=[query_embedding],
+            )
+        )
         return query_embedding
 
+    @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -130,6 +161,12 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [query_embedding],
                 },
             )
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[query],
+                embeddings=[query_embedding],
+            )
+        )
         return query_embedding
 
     def get_agg_embedding_from_queries(
@@ -191,6 +228,7 @@ class BaseEmbedding(TransformComponent):
             *[self._aget_text_embedding(text) for text in texts]
         )
 
+    @dispatcher.span
     def get_text_embedding(self, text: str) -> Embedding:
         """
         Embed the input text.
@@ -200,6 +238,13 @@ class BaseEmbedding(TransformComponent):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -211,11 +256,24 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[text],
+                embeddings=[text_embedding],
+            )
+        )
         return text_embedding
 
+    @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            EmbeddingStartEvent(
+                model_dict=self.to_dict(),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
@@ -227,9 +285,15 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-
+        dispatch_event(
+            EmbeddingEndEvent(
+                chunks=[text],
+                embeddings=[text_embedding],
+            )
+        )
         return text_embedding
 
+    @dispatcher.span
     def get_text_embedding_batch(
         self,
         texts: List[str],
@@ -237,6 +301,8 @@ class BaseEmbedding(TransformComponent):
         **kwargs: Any,
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
         cur_batch: List[str] = []
         result_embeddings: List[Embedding] = []
 
@@ -248,6 +314,11 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
+                dispatch_event(
+                    EmbeddingStartEvent(
+                        model_dict=self.to_dict(),
+                    )
+                )
                 with self.callback_manager.event(
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: self.to_dict()},
@@ -260,14 +331,23 @@ class BaseEmbedding(TransformComponent):
                             EventPayload.EMBEDDINGS: embeddings,
                         },
                     )
+                dispatch_event(
+                    EmbeddingEndEvent(
+                        chunks=cur_batch,
+                        embeddings=embeddings,
+                    )
+                )
                 cur_batch = []
 
         return result_embeddings
 
+    @dispatcher.span
     async def aget_text_embedding_batch(
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
+        dispatch_event = dispatcher.get_dispatch_event()
+
         cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
         result_embeddings: List[Embedding] = []
@@ -276,6 +356,11 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
+                dispatch_event(
+                    EmbeddingStartEvent(
+                        model_dict=self.to_dict(),
+                    )
+                )
                 event_id = self.callback_manager.on_event_start(
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: self.to_dict()},
@@ -307,6 +392,12 @@ class BaseEmbedding(TransformComponent):
         for (event_id, text_batch), embeddings in zip(
             callback_payloads, nested_embeddings
         ):
+            dispatch_event(
+                EmbeddingEndEvent(
+                    chunks=text_batch,
+                    embeddings=embeddings,
+                )
+            )
             self.callback_manager.on_event_end(
                 CBEventType.EMBEDDING,
                 payload={

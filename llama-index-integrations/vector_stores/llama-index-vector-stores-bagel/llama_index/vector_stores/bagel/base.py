@@ -29,8 +29,27 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
 
 
 class BagelVectorStore(VectorStore):
-    """
-    Vector store for Bagel.
+    """Vector store for Bagel.
+
+    Examples:
+        `pip install llama-index-vector-stores-bagel`
+
+        ```python
+        from llama_index.core import VectorStoreIndex, StorageContext
+        from llama_index.vector_stores.bagel import BagelVectorStore
+
+        import bagel
+        from bagel import Settings
+
+        server_settings = Settings(
+            bagel_api_impl="rest", bagel_server_host="api.bageldb.ai"
+        )
+
+        client = bagel.Client(server_settings)
+
+        collection = client.get_or_create_cluster("testing_embeddings")
+        vector_store = BagelVectorStore(collection=collection)
+        ```
     """
 
     # support for Bagel specific parameters

@@ -4,6 +4,14 @@ from typing import Any, AsyncGenerator, Generator, Optional, Union, List
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
+try:
+    from pydantic import BaseModel as V2BaseModel
+    from pydantic.v1 import BaseModel as V1BaseModel
+except ImportError:
+    from pydantic import BaseModel as V2BaseModel
+
+    V1BaseModel = V2BaseModel
+
 
 class MessageRole(str, Enum):
     """Message role."""
@@ -38,6 +46,32 @@ class ChatMessage(BaseModel):
         if isinstance(role, str):
             role = MessageRole(role)
         return cls(role=role, content=content, **kwargs)
+
+    def _recursive_serialization(self, value: Any) -> Any:
+        if isinstance(value, (V1BaseModel, V2BaseModel)):
+            return value.dict()
+        if isinstance(value, dict):
+            return {
+                key: self._recursive_serialization(value)
+                for key, value in value.items()
+            }
+        if isinstance(value, list):
+            return [self._recursive_serialization(item) for item in value]
+        return value
+
+    def dict(self, **kwargs: Any) -> dict:
+        # ensure all additional_kwargs are serializable
+        msg = super().dict(**kwargs)
+
+        for key, value in msg.get("additional_kwargs", {}).items():
+            value = self._recursive_serialization(value)
+            if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
+                raise ValueError(
+                    f"Failed to serialize additional_kwargs value: {value}"
+                )
+            msg["additional_kwargs"][key] = value
+
+        return msg
 
 
 class LogProb(BaseModel):
@@ -83,6 +117,7 @@ class CompletionResponse(BaseModel):
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
     raw: Optional[dict] = None
+    logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 
     def __str__(self) -> str:

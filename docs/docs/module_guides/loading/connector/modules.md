@@ -1,0 +1,30 @@
+# Module Guides
+
+- [Simple Directory Reader](../../../examples/data_connectors/simple_directory_reader.ipynb)
+- [Psychic Reader](../../../examples/data_connectors/PsychicDemo.ipynb)
+- [Deeplake Reader](../../../examples/data_connectors/DeepLakeReader.ipynb)
+- [Qdrant Reader](../../../examples/data_connectors/QdrantDemo.ipynb)
+- [Discord Reader](../../../examples/data_connectors/DiscordDemo.ipynb)
+- [MongoDB Reader](../../../examples/data_connectors/MongoDemo.ipynb)
+- [Chroma Reader](../../../examples/data_connectors/ChromaDemo.ipynb)
+- [MyScale Reader](../../../examples/data_connectors/MyScaleReaderDemo.ipynb)
+- [FAISS Reader](../../../examples/data_connectors/FaissDemo.ipynb)
+- [Obsidian Reader](../../../examples/data_connectors/ObsidianReaderDemo.ipynb)
+- [Slack Reader](../../../examples/data_connectors/SlackDemo.ipynb)
+- [Webpage Reader](../../../examples/data_connectors/WebPageDemo.ipynb)
+- [Pinecone Reader](../../../examples/data_connectors/PineconeDemo.ipynb)
+- [Pathway Reader](../../../examples/data_connectors/PathwayReaderDemo.ipynb)
+- [MBox Reader](../../../examples/data_connectors/MboxReaderDemo.ipynb)
+- [Milvus Reader](../../../examples/data_connectors/MilvusReaderDemo.ipynb)
+- [Notion Reader](../../../examples/data_connectors/NotionDemo.ipynb)
+- [Github Reader](../../../examples/data_connectors/GithubRepositoryReaderDemo.ipynb)
+- [Google Docs Reader](../../../examples/data_connectors/GoogleDocsDemo.ipynb)
+- [Database Reader](../../../examples/data_connectors/DatabaseReaderDemo.ipynb)
+- [Twitter Reader](../../../examples/data_connectors/TwitterDemo.ipynb)
+- [Weaviate Reader](../../../examples/data_connectors/WeaviateDemo.ipynb)
+- [Make Reader](../../../examples/data_connectors/MakeDemo.ipynb)
+- [Deplot Reader](../../../examples/data_connectors/deplot/DeplotReader.ipynb)
+
+```
+
+```

@@ -28,13 +28,13 @@ logger.setLevel(logging.WARNING)
 
 def from_openai_thread_message(thread_message: Any) -> ChatMessage:
     """From OpenAI thread message."""
-    from openai.types.beta.threads import MessageContentText, ThreadMessage
+    from openai.types.beta.threads import TextContentBlock, Message
 
-    thread_message = cast(ThreadMessage, thread_message)
+    thread_message = cast(Message, thread_message)
 
     # we don't have a way of showing images, just do text for now
     text_contents = [
-        t for t in thread_message.content if isinstance(t, MessageContentText)
+        t for t in thread_message.content if isinstance(t, TextContentBlock)
     ]
     text_content_str = " ".join([t.text.value for t in text_contents])
 
