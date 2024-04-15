@@ -28,6 +28,7 @@ from llama_index.core.base.query_pipeline.query import (
     Link,
     OutputKeys,
     QueryComponent,
+    ComponentIntermediates,
 )
 from llama_index.core.utils import print_text
 
@@ -316,8 +317,39 @@ class QueryPipeline(QueryComponent):
             with self.callback_manager.event(
                 CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
+                outputs, _ = self._run(
+                    *args,
+                    return_values_direct=return_values_direct,
+                    show_intermediates=False,
+                    **kwargs,
+                )
+                return outputs
+
+    def run_with_intermediates(
+        self,
+        *args: Any,
+        return_values_direct: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
+        """Run the pipeline."""
+        # first set callback manager
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        with self.callback_manager.as_trace("query"):
+            # try to get query payload
+            try:
+                query_payload = json.dumps(kwargs)
+            except TypeError:
+                query_payload = json.dumps(str(kwargs))
+            with self.callback_manager.event(
+                CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
+            ) as query_event:
                 return self._run(
-                    *args, return_values_direct=return_values_direct, **kwargs
+                    *args,
+                    return_values_direct=return_values_direct,
+                    show_intermediates=True,
+                    **kwargs,
                 )
 
     def run_multi(
@@ -333,7 +365,23 @@ class QueryPipeline(QueryComponent):
                 CBEventType.QUERY,
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
-                return self._run_multi(module_input_dict)
+                outputs, _ = self._run_multi(module_input_dict)
+                return outputs
+
+    def run_multi_with_intermediates(
+        self,
+        module_input_dict: Dict[str, Any],
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
+        """Run the pipeline for multiple roots."""
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.QUERY,
+                payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
+            ) as query_event:
+                return self._run_multi(module_input_dict, show_intermediates=True)
 
     async def arun(
         self,
@@ -354,8 +402,38 @@ class QueryPipeline(QueryComponent):
             with self.callback_manager.event(
                 CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
+                outputs, _ = await self._arun(
+                    *args,
+                    return_values_direct=return_values_direct,
+                    show_intermediates=False,
+                    **kwargs,
+                )
+                return outputs
+
+    async def arun_with_intermediates(
+        self,
+        *args: Any,
+        return_values_direct: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
+    ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
+        """Run the pipeline."""
+        # first set callback manager
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        with self.callback_manager.as_trace("query"):
+            try:
+                query_payload = json.dumps(kwargs)
+            except TypeError:
+                query_payload = json.dumps(str(kwargs))
+            with self.callback_manager.event(
+                CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
+            ) as query_event:
                 return await self._arun(
-                    *args, return_values_direct=return_values_direct, **kwargs
+                    *args,
+                    return_values_direct=return_values_direct,
+                    show_intermediates=True,
+                    **kwargs,
                 )
 
     async def arun_multi(
@@ -371,7 +449,25 @@ class QueryPipeline(QueryComponent):
                 CBEventType.QUERY,
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
-                return await self._arun_multi(module_input_dict)
+                outputs, _ = await self._arun_multi(module_input_dict)
+                return outputs
+
+    async def arun_multi_with_intermediates(
+        self,
+        module_input_dict: Dict[str, Any],
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> Dict[str, Any]:
+        """Run the pipeline for multiple roots."""
+        callback_manager = callback_manager or self.callback_manager
+        self.set_callback_manager(callback_manager)
+        with self.callback_manager.as_trace("query"):
+            with self.callback_manager.event(
+                CBEventType.QUERY,
+                payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
+            ) as query_event:
+                return await self._arun_multi(
+                    module_input_dict, show_intermediates=True
+                )
 
     def _get_root_key_and_kwargs(
         self, *args: Any, **kwargs: Any
@@ -429,7 +525,13 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
-    def _run(self, *args: Any, return_values_direct: bool = True, **kwargs: Any) -> Any:
+    def _run(
+        self,
+        *args: Any,
+        return_values_direct: bool = True,
+        show_intermediates: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline.
 
         Assume that there is a single root module and a single output module.
@@ -438,13 +540,23 @@ class QueryPipeline(QueryComponent):
 
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
-        # call run_multi with one root key
-        result_outputs = self._run_multi({root_key: kwargs})
-        return self._get_single_result_output(result_outputs, return_values_direct)
+
+        result_outputs, intermediates = self._run_multi(
+            {root_key: kwargs}, show_intermediates=show_intermediates
+        )
+
+        return (
+            self._get_single_result_output(result_outputs, return_values_direct),
+            intermediates,
+        )
 
     async def _arun(
-        self, *args: Any, return_values_direct: bool = True, **kwargs: Any
-    ) -> Any:
+        self,
+        *args: Any,
+        return_values_direct: bool = True,
+        show_intermediates: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline.
 
         Assume that there is a single root module and a single output module.
@@ -453,9 +565,15 @@ class QueryPipeline(QueryComponent):
 
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
-        # call run_multi with one root key
-        result_outputs = await self._arun_multi({root_key: kwargs})
-        return self._get_single_result_output(result_outputs, return_values_direct)
+
+        result_outputs, intermediates = await self._arun_multi(
+            {root_key: kwargs}, show_intermediates=show_intermediates
+        )
+
+        return (
+            self._get_single_result_output(result_outputs, return_values_direct),
+            intermediates,
+        )
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
         root_keys = self._get_root_keys()
@@ -563,7 +681,9 @@ class QueryPipeline(QueryComponent):
 
         return new_queue
 
-    def _run_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_multi(
+        self, module_input_dict: Dict[str, Any], show_intermediates=False
+    ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -581,6 +701,7 @@ class QueryPipeline(QueryComponent):
             module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
+        intermediate_outputs: Dict[str, ComponentIntermediates] = {}
 
         # add root inputs to all_module_inputs
         for module_key, module_input in module_input_dict.items():
@@ -595,14 +716,21 @@ class QueryPipeline(QueryComponent):
                 print_debug_input(module_key, module_input)
             output_dict = module.run_component(**module_input)
 
+            if show_intermediates and module_key not in intermediate_outputs:
+                intermediate_outputs[module_key] = ComponentIntermediates(
+                    inputs=module_input, outputs=output_dict
+                )
+
             # get new nodes and is_leaf
             queue = self._process_component_output(
                 queue, output_dict, module_key, all_module_inputs, result_outputs
             )
 
-        return result_outputs
+        return result_outputs, intermediate_outputs
 
-    async def _arun_multi(self, module_input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    async def _arun_multi(
+        self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
+    ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
         """Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
@@ -620,6 +748,7 @@ class QueryPipeline(QueryComponent):
             module_key: {} for module_key in self.module_dict
         }
         result_outputs: Dict[str, Any] = {}
+        intermediate_outputs: Dict[str, ComponentIntermediates] = {}
 
         # add root inputs to all_module_inputs
         for module_key, module_input in module_input_dict.items():
@@ -649,6 +778,11 @@ class QueryPipeline(QueryComponent):
                     [all_module_inputs[module_key] for module_key in popped_nodes],
                 )
 
+            if show_intermediates and module_key not in intermediate_outputs:
+                intermediate_outputs[module_key] = ComponentIntermediates(
+                    inputs=module_input, outputs=output_dict
+                )
+
             # create tasks from popped nodes
             tasks = []
             for module_key in popped_nodes:
@@ -667,7 +801,7 @@ class QueryPipeline(QueryComponent):
                     queue, output_dict, module_key, all_module_inputs, result_outputs
                 )
 
-        return result_outputs
+        return result_outputs, intermediate_outputs
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
