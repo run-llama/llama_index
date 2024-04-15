@@ -4,13 +4,13 @@ An index that is built within Milvus.
 
 """
 
-from itertools import chain, islice
 import logging
-from typing import Any, Dict, List, Optional, Union, Iterable
+from typing import Any, Dict, List, Optional, Union
 
 import pymilvus  # noqa
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -30,13 +30,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 100
 MILVUS_ID_FIELD = "id"
-
-
-def _iter_batch(iterable: Iterable, batch_size: int):
-    """Batch an iterable into lists of at most `batch_size` elements."""
-    iterator = iter(iterable)
-    for first in iterator:
-        yield list(chain([first], islice(iterator, batch_size - 1)))
 
 
 def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
@@ -237,7 +230,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             insert_list.append(entry)
 
         # Insert the data into milvus
-        for insert_batch in _iter_batch(insert_list, self.batch_size):
+        for insert_batch in iter_batch(insert_list, self.batch_size):
             self._collection.insert(insert_batch)
         if add_kwargs.get("force_flush", False):
             self._collection.flush()
