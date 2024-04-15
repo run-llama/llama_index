@@ -18,6 +18,8 @@ class KuzuGraphStore(GraphStore):
         self.connection = kuzu.Connection(database)
         self.node_table_name = node_table_name
         self.rel_table_name = rel_table_name
+        self.nodes = []
+        self.triplets = []
         self.init_schema()
 
     def init_schema(self) -> None:
@@ -224,3 +226,36 @@ class KuzuGraphStore(GraphStore):
             Graph store.
         """
         return cls(**config_dict)
+    
+    def get_all_nodes(self, refresh: bool) -> List[str]:
+        """
+        Get all nodes in the graph store.
+
+        Parameters:
+        - refresh (bool): If True, refreshes the list of nodes from the graph store.
+
+        Returns:
+        - List[str]: A list of node IDs/names.
+        """
+        if refresh or not self.nodes:
+            query = f"MATCH (n:{self.node_table_name}) RETURN n.ID as node"
+            self.nodes = [record["node"] for record in self.query(query)]
+        return self.nodes
+
+    def get_all_triplets(self, refresh: bool) -> List[str]:
+        """
+        Get all triplets in the graph store.
+
+        Parameters:
+        - refresh (bool): If True, refreshes the list of triplets from the graph store.
+
+        Returns:
+        - List[str]: A list of relationship descriptions in the format (start_node, rel_type, end_node).
+        """
+        if refresh or not self.triplets:
+            query = """
+                MATCH (start)-[rel]->(end)
+                RETURN start.ID AS start_node, rel.predicate AS rel_type, end.ID AS end_node
+            """
+            self.triplets = [(record["start_node"], record["rel_type"].capitalize(), record["end_node"]) for record in self.query(query)]
+        return self.triplets

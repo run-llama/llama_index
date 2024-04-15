@@ -34,7 +34,8 @@ class FalkorDBGraphStore(GraphStore):
         self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
 
         self._database = database
-
+        self.nodes = []
+        self.triplets = []
         self.schema = ""
         self.get_query = f"""
             MATCH (n1:`{self._node_label}`)-[r]->(n2:`{self._node_label}`)
@@ -179,3 +180,36 @@ class FalkorDBGraphStore(GraphStore):
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         result = self._driver.query(query, params=params)
         return result.result_set
+    
+    def get_all_nodes(self, refresh: bool) -> List[str]:
+        """
+        Get all nodes in the graph store.
+
+        Parameters:
+        - refresh (bool): If True, refreshes the list of nodes from the graph store.
+
+        Returns:
+        - List[str]: A list of node IDs/names.
+        """
+        if refresh or not self.nodes:
+            query = f"MATCH (n:{self.node_label}) RETURN n.id as node"
+            self.nodes = [record["node"] for record in self.query(query)]
+        return self.nodes
+
+    def get_all_triplets(self, refresh: bool) -> List[str]:
+        """
+        Get all triplets in the graph store.
+
+        Parameters:
+        - refresh (bool): If True, refreshes the list of triplets from the graph store.
+
+        Returns:
+        - List[str]: A list of relationship descriptions in the format (start_node, rel_type, end_node).
+        """
+        if refresh or not self.triplets:
+            query = """
+                MATCH (start)-[rel]->(end)
+                RETURN start.id AS start_node, type(rel) AS rel_type, end.id AS end_node
+            """
+            self.triplets = [(record["start_node"], ' '.join(record["rel_type"].split('_')).capitalize(), record["end_node"]) for record in self.query(query)]
+        return self.triplets

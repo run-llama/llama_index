@@ -213,12 +213,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
             if self.include_embeddings:
                 triplet_texts = [str(t) for t in triplets]
-
-                embed_outputs = self._embed_model.get_text_embedding_batch(
-                    triplet_texts, show_progress=self._show_progress
-                )
-                for rel_text, rel_embed in zip(triplet_texts, embed_outputs):
-                    index_struct.add_to_embedding_dict(rel_text, rel_embed)
+                self._embed(triplet_texts)
 
         return index_struct
 
@@ -234,15 +229,31 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
                 triplet_str = str(triplet)
                 self.upsert_triplet(triplet)
                 self._index_struct.add_node([subj, obj], n)
-                if (
-                    self.include_embeddings
-                    and triplet_str not in self._index_struct.embedding_dict
-                ):
-                    rel_embedding = self._embed_model.get_text_embedding(triplet_str)
-                    self._index_struct.add_to_embedding_dict(triplet_str, rel_embedding)
+                if self.include_embeddings:
+                    self._embed([triplet_str])
 
         # Update the storage context's index_store
         self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    def _embed(self, triplet_texts: List[str], refresh: bool = False, add_to_index_struct: bool = False, use_graph_store: bool = False) -> None:
+        """Generate embeddings for the index."""
+        if not self.include_embeddings:
+            logger.warning("Embeddings are not included in the index. Enable them first using include_embeddings.")
+            return None
+
+        if use_graph_store:
+            triplet_texts.extend([str(triplet) for triplet in self.graph_store.get_all_triplets(refresh=refresh)])
+
+        filtered_triplet_texts = [text for text in triplet_texts if text not in self._index_struct.embedding_dict]
+        embed_outputs = self._embed_model.get_text_embedding_batch(
+            filtered_triplet_texts, show_progress=self._show_progress
+        )
+        for rel_text, rel_embed in zip(filtered_triplet_texts, embed_outputs):
+            self._index_struct.add_to_embedding_dict(rel_text, rel_embed)
+        
+        # Update the storage context's index_store
+        if add_to_index_struct or use_graph_store:
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def upsert_triplet(
         self, triplet: Tuple[str, str, str], include_embeddings: bool = False
@@ -259,9 +270,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self._graph_store.upsert_triplet(*triplet)
         triplet_str = str(triplet)
         if include_embeddings:
-            set_embedding = self._embed_model.get_text_embedding(triplet_str)
-            self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
-            self._storage_context.index_store.add_index_struct(self._index_struct)
+            self._embed([triplet_str], add_to_index_struct=True)
 
     def add_node(self, keywords: List[str], node: BaseNode) -> None:
         """Add node.
@@ -299,9 +308,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self.add_node([subj, obj], node)
         triplet_str = str(triplet)
         if include_embeddings:
-            set_embedding = self._embed_model.get_text_embedding(triplet_str)
-            self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
-            self._storage_context.index_store.add_index_struct(self._index_struct)
+            self._embed([triplet_str], add_to_index_struct=True)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""

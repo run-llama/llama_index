@@ -202,6 +202,8 @@ class NebulaGraphStore(GraphStore):
         )
 
         self._include_vid = include_vid
+        self.nodes = []
+        self.triplets = []
 
     def init_session_pool(self) -> Any:
         """Return NebulaGraph session pool."""
@@ -665,3 +667,36 @@ class NebulaGraphStore(GraphStore):
             col_list = result.column_values(col_name)
             d[col_name] = [x.cast() for x in col_list]
         return d
+
+    def get_all_nodes(self, refresh: bool) -> List[str]:
+        """
+        Get all nodes in the graph store.
+
+        Parameters:
+        - refresh (bool): If True, refreshes the list of nodes from the graph store.
+
+        Returns:
+        - List[str]: A list of node IDs/names.
+        """
+        if refresh or not self.nodes:
+            query = "MATCH (n) RETURN id(n) as node"
+            self.nodes = [record["node"] for record in self.query(query)]
+        return self.nodes
+
+    def get_all_triplets(self, refresh: bool) -> List[str]:
+        """
+        Get all triplets in the graph store.
+
+        Parameters:
+        - refresh (bool): If True, refreshes the list of triplets from the graph store.
+
+        Returns:
+        - List[str]: A list of relationship descriptions in the format (start_node, rel_type, end_node).
+        """
+        if refresh or not self.triplets:
+            query = """
+                MATCH (start)-[rel]->(end)
+                RETURN id(start) AS start_node, type(rel) AS rel_type, id(end) AS end_node
+            """
+            self.triplets = [(record["start_node"], ' '.join(record["rel_type"].split('_')).capitalize(), record["end_node"]) for record in self.query(query)]
+        return self.triplets
