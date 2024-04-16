@@ -1,7 +1,9 @@
 from inspect import signature
-from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast, Dict
 
-from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
+from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model, Field
+
+import docstring_parser
 
 
 def create_schema_from_function(
@@ -12,23 +14,35 @@ def create_schema_from_function(
     ] = None,
 ) -> Type[BaseModel]:
     """Create schema from function."""
-    fields = {}
+    fields: Dict[str, FieldInfo] = {}
     params = signature(func).parameters
+    doc = docstring_parser.parse(func.__doc__)
+
+    params_doc = {param.arg_name: param for param in doc.params}
     for param_name in params:
         param_type = params[param_name].annotation
         param_default = params[param_name].default
+        param_desc = (
+            params_doc[param_name].description if param_name in params_doc else None
+        )
 
         if param_type is params[param_name].empty:
             param_type = Any
 
         if param_default is params[param_name].empty:
             # Required field
-            fields[param_name] = (param_type, FieldInfo())
+            field_info = Field()
         elif isinstance(param_default, FieldInfo):
-            # Field with pydantic.Field as default value
-            fields[param_name] = (param_type, param_default)
+            # Field with pydantic.FieldInfo as default value
+            field_info = param_default
         else:
-            fields[param_name] = (param_type, FieldInfo(default=param_default))
+            field_info = Field(default=param_default)
+        field_info = cast(FieldInfo, field_info)
+
+        if param_desc:
+            field_info.description = param_desc
+
+        fields[param_name] = (param_type, field_info)
 
     additional_fields = additional_fields or []
     for field_info in additional_fields:

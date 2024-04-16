@@ -1,5 +1,4 @@
 import asyncio
-from inspect import signature
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
 
 if TYPE_CHECKING:
@@ -7,6 +6,7 @@ if TYPE_CHECKING:
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
+import docstring_parser
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
@@ -22,7 +22,8 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
 
 
 class FunctionTool(AsyncBaseTool):
-    """Function Tool.
+    """
+    Function Tool.
 
     A tool that takes in a function.
 
@@ -54,8 +55,9 @@ class FunctionTool(AsyncBaseTool):
     ) -> "FunctionTool":
         if tool_metadata is None:
             name = name or fn.__name__
-            docstring = fn.__doc__
-            description = description or f"{name}{signature(fn)}\n{docstring}"
+            doc = docstring_parser.parse(fn.__doc__)
+            description = doc.description or ""
+
             if fn_schema is None:
                 fn_schema = create_schema_from_function(
                     f"{name}", fn, additional_fields=None

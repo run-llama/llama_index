@@ -85,6 +85,7 @@ pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 llamaindex-py-client = "^0.1.18"
 wrapt = "*"
+docstring-parser = "^0.16"
 
 [tool.poetry.extras]
 gradientai = [
