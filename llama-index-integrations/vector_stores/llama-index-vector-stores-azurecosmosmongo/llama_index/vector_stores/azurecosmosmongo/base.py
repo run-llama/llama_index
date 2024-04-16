@@ -3,14 +3,16 @@
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
 
 import pymongo
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -23,16 +25,47 @@ from llama_index.core.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AzureCosmosDBMongoDBVectorSearch(VectorStore):
+class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
     """Azure CosmosDB MongoDB vCore Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
     - a connection string associated with an Azure Cosmodb MongoDB vCore Cluster
+
+    Examples:
+        `pip install llama-index-vector-stores-azurecosmosmongo`
+
+        ```python
+        import pymongo
+        from llama_index.vector_stores.azurecosmosmongo import AzureCosmosDBMongoDBVectorSearch
+
+        # Set up the connection string with your Azure CosmosDB MongoDB URI
+        connection_string = "YOUR_AZURE_COSMOSDB_MONGODB_URI"
+        mongodb_client = pymongo.MongoClient(connection_string)
+
+        # Create an instance of AzureCosmosDBMongoDBVectorSearch
+        vector_store = AzureCosmosDBMongoDBVectorSearch(
+            mongodb_client=mongodb_client,
+            db_name="demo_vectordb",
+            collection_name="paul_graham_essay",
+        )
+        ```
     """
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _collection: Any = PrivateAttr()
+    _index_name: str = PrivateAttr()
+    _embedding_key: str = PrivateAttr()
+    _id_key: str = PrivateAttr()
+    _text_key: str = PrivateAttr()
+    _metadata_key: str = PrivateAttr()
+    _insert_kwargs: dict = PrivateAttr()
+    _db_name: str = PrivateAttr()
+    _collection_name: str = PrivateAttr()
+    _cosmos_search_kwargs: dict = PrivateAttr()
+    _mongodb_client: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -65,6 +98,8 @@ class AzureCosmosDBMongoDBVectorSearch(VectorStore):
             contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
         """
+        super().__init__()
+
         if mongodb_client is not None:
             self._mongodb_client = cast(pymongo.MongoClient, mongodb_client)
         else:

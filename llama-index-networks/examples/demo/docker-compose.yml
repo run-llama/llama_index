@@ -1,0 +1,46 @@
+version: "3"
+services:
+  contributor_1:
+    image: contributor_1:latest
+    command: uvicorn contributor_1.app:app --host 0.0.0.0 --port 8001 --log-config ./logging.ini --log-level debug --reload
+    env_file:
+      - ./contributor-1/.env.contributor.service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./contributor-1/contributor_1:/app/contributor_1 # load local code change to container without the need of rebuild
+      - ./contributor-1/data:/app/data
+      - ./logging.ini:/app/logging.ini
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./contributor-1/Dockerfile
+  contributor_2:
+    image: contributor_2:latest
+    command: uvicorn contributor_2.app:app --host 0.0.0.0 --port 8002 --log-config ./logging.ini --log-level debug --reload
+    env_file:
+      - ./contributor-2/.env.contributor.service
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./contributor-2/contributor_2:/app/contributor_2 # load local code change to container without the need of rebuild
+      - ./contributor-2/data:/app/data
+      - ./logging.ini:/app/logging.ini
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./contributor-2/Dockerfile
+  contributor_3:
+    image: contributor_3:latest
+    command: uvicorn contributor_3.app:app --host 0.0.0.0 --port 8003 --log-config ./logging.ini --log-level debug --reload
+    env_file:
+      - ./contributor-3/.env.contributor.service
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./contributor-3/contributor_3:/app/contributor_3 # load local code change to container without the need of rebuild
+      - ./logging.ini:/app/logging.ini
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./contributor-3/Dockerfile

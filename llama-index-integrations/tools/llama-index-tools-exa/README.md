@@ -13,9 +13,7 @@ Here's an example usage of the ExaToolSpec.
 
 ```python
 from llama_index.tools.exa import ExaToolSpec
-from llama_index.agent.openai import (
-    OpenAIAgent,
-)  # requires llama-index-agent-openai
+from llama_index.agent.openai import OpenAIAgent
 
 exa_tool = ExaToolSpec(
     api_key="your-key",

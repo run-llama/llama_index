@@ -2,6 +2,7 @@
 dist/
 migration_scripts/
 venv/
+.idea
 .venv/
 .ipynb_checkpoints
 .__pycache__
@@ -9,3 +10,6 @@ __pycache__
 dev_notebooks/
 llamaindex_registry.txt
 packages_to_bump_deduped.txt
+.env
+credentials.json
+token.json

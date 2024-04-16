@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.data_structs.table import StructDatapoint
+from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
@@ -26,7 +27,6 @@ from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
-    prompt_helper_from_settings_or_context,
 )
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from llama_index.core.utils import truncate_text
@@ -67,8 +67,8 @@ class SQLDocumentContextBuilder:
         self._sql_database = sql_database
         self._text_splitter = text_splitter
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._prompt_helper = prompt_helper_from_settings_or_context(
-            Settings, service_context
+        self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
+            self._llm.metadata,
         )
         self._callback_manager = callback_manager_from_settings_or_context(
             Settings, service_context

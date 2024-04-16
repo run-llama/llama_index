@@ -6,13 +6,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import tqdm
-from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.download.utils import (
     get_file_content,
     get_file_content_bytes,
     get_source_files_list,
     initialize_directory,
 )
+
+LLAMA_INDEX_CONTENTS_URL = (
+    f"https://raw.githubusercontent.com/run-llama/llama_index/main"
+)
+LLAMA_DATASETS_PATH = "/llama-datasets"
+LLAMA_DATASETS_URL = LLAMA_INDEX_CONTENTS_URL + LLAMA_DATASETS_PATH
 
 LLAMA_DATASETS_LFS_URL = (
     f"https://media.githubusercontent.com/media/run-llama/llama-datasets/main"
@@ -91,7 +96,8 @@ def get_dataset_info(
         source_files = []
         if dataset_class_name == "LabelledRagDataset":
             source_files = get_source_files_list(
-                str(remote_source_dir_path), f"/{dataset_id}/{source_files_path}"
+                str(remote_source_dir_path),
+                f"/llama_datasets/{dataset_id}/{source_files_path}",
             )
 
         # create cache dir if needed
@@ -141,7 +147,7 @@ def download_dataset_and_source_files(
         base_file_name = _resolve_dataset_file_name(dataset_class_name)
 
         dataset_raw_content, _ = get_file_content(
-            str(remote_lfs_dir_path), f"/{dataset_id}/{base_file_name}"
+            str(remote_lfs_dir_path), f"/llama_datasets/{dataset_id}/{base_file_name}"
         )
 
         with open(f"{module_path}/{base_file_name}", "w") as f:
@@ -158,7 +164,7 @@ def download_dataset_and_source_files(
                 if ".pdf" in source_file:
                     source_file_raw_content_bytes, _ = get_file_content_bytes(
                         str(remote_lfs_dir_path),
-                        f"/{dataset_id}/{source_files_dir_path}/{source_file}",
+                        f"/llama_datasets/{dataset_id}/{source_files_dir_path}/{source_file}",
                     )
                     with open(
                         f"{module_path}/{source_files_dir_path}/{source_file}", "wb"
@@ -167,7 +173,7 @@ def download_dataset_and_source_files(
                 else:
                     source_file_raw_content, _ = get_file_content(
                         str(remote_lfs_dir_path),
-                        f"/{dataset_id}/{source_files_dir_path}/{source_file}",
+                        f"/llama_datasets/{dataset_id}/{source_files_dir_path}/{source_file}",
                     )
                     with open(
                         f"{module_path}/{source_files_dir_path}/{source_file}", "w"
@@ -177,7 +183,7 @@ def download_dataset_and_source_files(
 
 def download_llama_dataset(
     dataset_class: str,
-    llama_hub_url: str = LLAMA_HUB_URL,
+    llama_datasets_url: str = LLAMA_DATASETS_URL,
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     refresh_cache: bool = False,
@@ -218,7 +224,7 @@ def download_llama_dataset(
     # fetch info from library.json file
     dataset_info = get_dataset_info(
         local_dir_path=dirpath,
-        remote_dir_path=llama_hub_url,
+        remote_dir_path=llama_datasets_url,
         remote_source_dir_path=llama_datasets_source_files_tree_url,
         dataset_class=dataset_class,
         refresh_cache=refresh_cache,

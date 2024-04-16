@@ -3,6 +3,7 @@
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -317,8 +318,17 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
-        self._insert(nodes, **insert_kwargs)
-        self._storage_context.index_store.add_index_struct(self._index_struct)
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                try:
+                    node.dict()
+                except ValueError:
+                    self._object_map[node.index_id] = node.obj
+                    node.obj = None
+
+        with self._callback_manager.as_trace("insert_nodes"):
+            self._insert(nodes, **insert_kwargs)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         pass

@@ -1,8 +1,16 @@
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any, AsyncGenerator, Generator, Optional, Union, List
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+
+try:
+    from pydantic import BaseModel as V2BaseModel
+    from pydantic.v1 import BaseModel as V1BaseModel
+except ImportError:
+    from pydantic import BaseModel as V2BaseModel
+
+    V1BaseModel = V2BaseModel
 
 
 class MessageRole(str, Enum):
@@ -14,6 +22,7 @@ class MessageRole(str, Enum):
     FUNCTION = "function"
     TOOL = "tool"
     CHATBOT = "chatbot"
+    MODEL = "model"
 
 
 # ===== Generic Model Input - Chat =====
@@ -27,6 +36,51 @@ class ChatMessage(BaseModel):
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
 
+    @classmethod
+    def from_str(
+        cls,
+        content: str,
+        role: Union[MessageRole, str] = MessageRole.USER,
+        **kwargs: Any,
+    ) -> "ChatMessage":
+        if isinstance(role, str):
+            role = MessageRole(role)
+        return cls(role=role, content=content, **kwargs)
+
+    def _recursive_serialization(self, value: Any) -> Any:
+        if isinstance(value, (V1BaseModel, V2BaseModel)):
+            return value.dict()
+        if isinstance(value, dict):
+            return {
+                key: self._recursive_serialization(value)
+                for key, value in value.items()
+            }
+        if isinstance(value, list):
+            return [self._recursive_serialization(item) for item in value]
+        return value
+
+    def dict(self, **kwargs: Any) -> dict:
+        # ensure all additional_kwargs are serializable
+        msg = super().dict(**kwargs)
+
+        for key, value in msg.get("additional_kwargs", {}).items():
+            value = self._recursive_serialization(value)
+            if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
+                raise ValueError(
+                    f"Failed to serialize additional_kwargs value: {value}"
+                )
+            msg["additional_kwargs"][key] = value
+
+        return msg
+
+
+class LogProb(BaseModel):
+    """LogProb of a token."""
+
+    token: str = Field(default_factory=str)
+    logprob: float = Field(default_factory=float)
+    bytes: List[int] = Field(default_factory=list)
+
 
 # ===== Generic Model Output - Chat =====
 class ChatResponse(BaseModel):
@@ -35,6 +89,7 @@ class ChatResponse(BaseModel):
     message: ChatMessage
     raw: Optional[dict] = None
     delta: Optional[str] = None
+    logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:
@@ -62,6 +117,7 @@ class CompletionResponse(BaseModel):
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
     raw: Optional[dict] = None
+    logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 
     def __str__(self) -> str:

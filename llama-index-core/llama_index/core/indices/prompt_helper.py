@@ -115,6 +115,7 @@ class PromptHelper(BaseComponent):
 
         """
         context_window = llm_metadata.context_window
+
         if llm_metadata.num_output == -1:
             num_output = DEFAULT_NUM_OUTPUTS
         else:

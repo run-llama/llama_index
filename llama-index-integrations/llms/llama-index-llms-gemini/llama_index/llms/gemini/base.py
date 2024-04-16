@@ -1,4 +1,5 @@
 """Google's hosted Gemini API."""
+
 import os
 import typing
 from typing import Any, Dict, Optional, Sequence
@@ -14,17 +15,16 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.core.llms.callbacks import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.llms.gemini.utils import (
+from llama_index.core.utilities.gemini_utils import (
     ROLES_FROM_GEMINI,
+    merge_neighboring_same_role_messages,
+)
+from llama_index.llms.gemini.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
-    merge_neighboring_same_role_messages,
 )
 
 if typing.TYPE_CHECKING:
@@ -38,7 +38,19 @@ GEMINI_MODELS = (
 
 
 class Gemini(CustomLLM):
-    """Gemini."""
+    """Gemini LLM.
+
+    Examples:
+        `pip install llama-index-llms-gemini`
+
+        ```python
+        from llama_index.llms.gemini import Gemini
+
+        llm = Gemini(model_name="models/gemini-ultra", api_key="YOUR_API_KEY")
+        resp = llm.complete("Write a poem about a magic backpack")
+        print(resp)
+        ```
+    """
 
     model_name: str = Field(
         default=GEMINI_MODELS[0], description="The Gemini model to use."

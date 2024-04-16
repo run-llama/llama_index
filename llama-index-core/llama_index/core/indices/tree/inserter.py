@@ -3,6 +3,7 @@
 from typing import Optional, Sequence
 
 from llama_index.core.data_structs.data_structs import IndexGraph
+from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.indices.tree.utils import get_numbered_text_from_nodes
 from llama_index.core.indices.utils import (
     extract_numbers_given_response,
@@ -19,7 +20,6 @@ from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
     llm_from_settings_or_context,
-    prompt_helper_from_settings_or_context,
 )
 from llama_index.core.storage.docstore import BaseDocumentStore
 from llama_index.core.storage.docstore.registry import get_default_docstore
@@ -46,8 +46,8 @@ class TreeIndexInserter:
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._prompt_helper = prompt_helper_from_settings_or_context(
-            Settings, service_context
+        self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
+            self._llm.metadata,
         )
         self._docstore = docstore or get_default_docstore()
 

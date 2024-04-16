@@ -362,26 +362,6 @@ DEFAULT_SIMPLE_INPUT_PROMPT = PromptTemplate(
 
 
 ############################################
-# Pandas
-############################################
-
-DEFAULT_PANDAS_TMPL = (
-    "You are working with a pandas dataframe in Python.\n"
-    "The name of the dataframe is `df`.\n"
-    "This is the result of `print(df.head())`:\n"
-    "{df_str}\n\n"
-    "Follow these instructions:\n"
-    "{instruction_str}\n"
-    "Query: {query_str}\n\n"
-    "Expression:"
-)
-
-DEFAULT_PANDAS_PROMPT = PromptTemplate(
-    DEFAULT_PANDAS_TMPL, prompt_type=PromptType.PANDAS
-)
-
-
-############################################
 # JSON Path
 ############################################
 
@@ -390,8 +370,14 @@ DEFAULT_JSON_PATH_TMPL = (
     "{schema}\n"
     "Given a task, respond with a JSON Path query that "
     "can retrieve data from a JSON value that matches the schema.\n"
+    "Provide the JSON Path query in the following format: 'JSONPath: <JSONPath>'\n"
+    "You must include the value 'JSONPath:' before the provided JSON Path query."
+    "Example Format:\n"
+    "Task: What is John's age?\n"
+    "Response: JSONPath: $.John.age\n"
+    "Let's try this now: \n\n"
     "Task: {query_str}\n"
-    "JSONPath: "
+    "Response: "
 )
 
 DEFAULT_JSON_PATH_PROMPT = PromptTemplate(

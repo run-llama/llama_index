@@ -1,5 +1,9 @@
 # Microsoft SharePoint Reader
 
+```bash
+pip install llama-index-readers-microsoft-sharepoint
+```
+
 The loader loads the files from a folder in sharepoint site.
 
 It also supports traversing recursively through the sub-folders.
@@ -27,9 +31,7 @@ If the files are present in the `Test` folder in SharePoint Site under `root` di
 ![FilePath](file_path_info.png)
 
 ```python
-from llama_index import download_loader
-
-SharePointLoader = download_loader("SharePointReader")
+from llama_index.readers.microsoft_sharepoint import SharePointReader
 
 loader = SharePointLoader(
     client_id="<Client ID of the app>",

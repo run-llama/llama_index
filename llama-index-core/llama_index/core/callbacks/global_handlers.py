@@ -95,6 +95,17 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
                 "Please install it using `pip install llama-index-callbacks-argilla`"
             )
         handler = argilla_callback_handler(**eval_params)
+    elif eval_mode == "langfuse":
+        try:
+            from llama_index.callbacks.langfuse import (
+                langfuse_callback_handler,
+            )  # pants: no-infer-dep
+        except ImportError:
+            raise ImportError(
+                "LangfuseCallbackHandler is not installed. "
+                "Please install it using `pip install llama-index-callbacks-langfuse`"
+            )
+        handler = langfuse_callback_handler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 

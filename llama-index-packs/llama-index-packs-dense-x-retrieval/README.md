@@ -29,7 +29,7 @@ You can then inspect the files at `./dense_pack` and use them as a template for 
 You can download the pack to a the `./dense_pack` directory:
 
 ```python
-from llama_index import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
@@ -41,6 +41,9 @@ documents = SimpleDirectoryReader("./data").load_data()
 
 # uses the LLM to extract propositions from every document/node!
 dense_pack = DenseXRetrievalPack(documents)
+
+# for streaming
+dense_pack = DenseXRetrievalPack(documents, streaming=True)
 ```
 
 The `run()` function is a light wrapper around `query_engine.query()`.
@@ -49,6 +52,16 @@ The `run()` function is a light wrapper around `query_engine.query()`.
 response = dense_pack.run("What can you tell me about LLMs?")
 
 print(response)
+```
+
+for streaming:
+
+The `run()` function is a light wrapper around `query_engine.query()`.
+
+```python
+stream_response = dense_pack.run("What can you tell me about LLMs?")
+
+stream_response.print_response_stream()
 ```
 
 See the [notebook on llama-hub](https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_packs/dense_x_retrieval/dense_x_retrieval.ipynb) for a full example.

@@ -64,7 +64,7 @@ def resolve_llm(
                 "llm must start with str 'local' or of type LLM or BaseLanguageModel"
             )
         try:
-            from llama_index.llms.llama.utils import (
+            from llama_index.llms.llama_cpp.llama_utils import (
                 completion_to_prompt,
                 messages_to_prompt,
             )  # pants: no-infer-dep

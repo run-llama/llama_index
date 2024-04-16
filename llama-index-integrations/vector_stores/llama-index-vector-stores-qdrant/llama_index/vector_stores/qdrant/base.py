@@ -29,6 +29,7 @@ from llama_index.vector_stores.qdrant.utils import (
     SparseEncoderCallable,
     default_sparse_encoder,
     relative_score_fusion,
+    fastembed_sparse_encoder,
 )
 from qdrant_client.http import models as rest
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -48,6 +49,10 @@ logger = logging.getLogger(__name__)
 import_err_msg = (
     "`qdrant-client` package not found, please run `pip install qdrant-client`"
 )
+
+DENSE_VECTOR_NAME = "text-dense"
+SPARSE_VECTOR_NAME_OLD = "text-sparse"
+SPARSE_VECTOR_NAME = "text-sparse-new"
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
@@ -74,6 +79,20 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
+
+    Examples:
+        `pip install llama-index-vector-stores-qdrant`
+
+        ```python
+        import qdrant_client
+        from llama_index.vector_stores.qdrant import QdrantVectorStore
+
+        client = qdrant_client.QdrantClient()
+
+        vector_store = QdrantVectorStore(
+            collection_name="example_collection", client=client
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -149,11 +168,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # setup hybrid search if enabled
         if enable_hybrid:
-            self._sparse_doc_fn = sparse_doc_fn or default_sparse_encoder(
-                "naver/efficient-splade-VI-BT-large-doc"
+            self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
+                collection_name
             )
-            self._sparse_query_fn = sparse_query_fn or default_sparse_encoder(
-                "naver/efficient-splade-VI-BT-large-query"
+            self._sparse_query_fn = (
+                sparse_query_fn
+                or self.get_default_sparse_query_encoder(collection_name)
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
@@ -173,6 +193,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "QdrantVectorStore"
+
+    def set_query_functions(
+        self,
+        sparse_doc_fn: Optional[SparseEncoderCallable] = None,
+        sparse_query_fn: Optional[SparseEncoderCallable] = None,
+        hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
+    ):
+        self._sparse_doc_fn = sparse_doc_fn
+        self._sparse_query_fn = sparse_query_fn
+        self._hybrid_fusion_fn = hybrid_fusion_fn
 
     def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
         ids = []
@@ -204,17 +234,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ):
                         vectors.append(
                             {
-                                "text-sparse": rest.SparseVector(
+                                # Dynamically switch between the old and new sparse vector name
+                                self.sparse_vector_name: rest.SparseVector(
                                     indices=sparse_indices[i],
                                     values=sparse_vectors[i],
                                 ),
-                                "text-dense": node.get_embedding(),
+                                DENSE_VECTOR_NAME: node.get_embedding(),
                             }
                         )
                     else:
                         vectors.append(
                             {
-                                "text-dense": node.get_embedding(),
+                                DENSE_VECTOR_NAME: node.get_embedding(),
                             }
                         )
                 else:
@@ -351,13 +382,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        "text-dense": rest.VectorParams(
+                        DENSE_VECTOR_NAME: rest.VectorParams(
                             size=vector_size,
                             distance=rest.Distance.COSINE,
                         )
                     },
+                    # Newly created collection will have the new sparse vector name
                     sparse_vectors_config={
-                        "text-sparse": rest.SparseVectorParams(
+                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
                             index=rest.SparseIndexParams()
                         )
                     },
@@ -370,7 +402,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
+        except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(
@@ -389,13 +421,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 await self._aclient.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        "text-dense": rest.VectorParams(
+                        DENSE_VECTOR_NAME: rest.VectorParams(
                             size=vector_size,
                             distance=rest.Distance.COSINE,
                         )
                     },
                     sparse_vectors_config={
-                        "text-sparse": rest.SparseVectorParams(
+                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
                             index=rest.SparseIndexParams()
                         )
                     },
@@ -408,7 +440,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         distance=rest.Distance.COSINE,
                     ),
                 )
-        except (ValueError, UnexpectedResponse) as exc:
+        except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
             logger.warning(
@@ -473,7 +505,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -482,7 +514,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -524,7 +557,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -545,7 +579,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -605,7 +639,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -614,7 +648,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -655,7 +690,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -675,7 +711,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -822,5 +858,45 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         match=MatchExcept(**{"except": [subfilter.value]}),
                     )
                 )
+            elif subfilter.operator == "in":
+                # match any of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-any
+                must_conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchAny(any=str(subfilter.value).split(",")),
+                    )
+                )
 
         return Filter(must=must_conditions)
+
+    def use_old_sparse_encoder(self, collection_name: str) -> bool:
+        return (
+            self._collection_exists(collection_name)
+            and SPARSE_VECTOR_NAME_OLD
+            in self.client.get_collection(collection_name).config.params.vectors
+        )
+
+    @property
+    def sparse_vector_name(self) -> str:
+        return (
+            SPARSE_VECTOR_NAME_OLD
+            if self.use_old_sparse_encoder(self.collection_name)
+            else SPARSE_VECTOR_NAME
+        )
+
+    def get_default_sparse_doc_encoder(
+        self, collection_name: str
+    ) -> SparseEncoderCallable:
+        if self.use_old_sparse_encoder(collection_name):
+            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
+
+        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+
+    def get_default_sparse_query_encoder(
+        self, collection_name: str
+    ) -> SparseEncoderCallable:
+        if self.use_old_sparse_encoder(collection_name):
+            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
+
+        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")

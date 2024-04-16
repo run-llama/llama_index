@@ -20,13 +20,34 @@ from llama_index.core.llms.custom import CustomLLM
 DEFAULT_REQUEST_TIMEOUT = 30.0
 
 
-def get_addtional_kwargs(
+def get_additional_kwargs(
     response: Dict[str, Any], exclude: Tuple[str, ...]
 ) -> Dict[str, Any]:
     return {k: v for k, v in response.items() if k not in exclude}
 
 
 class Ollama(CustomLLM):
+    """Ollama LLM.
+
+    Visit https://ollama.com/ to download and install Ollama.
+
+    Run `ollama serve` to start a server.
+
+    Run `ollama pull <name>` to download a model to run.
+
+    Examples:
+        `pip install llama-index-llms-ollama`
+
+        ```python
+        from llama_index.llms.ollama import Ollama
+
+        llm = Ollama(model="llama2", request_timeout=60.0)
+
+        response = llm.complete("What is the capital of France?")
+        print(response)
+        ```
+    """
+
     base_url: str = Field(
         default="http://localhost:11434",
         description="Base url the model is hosted under.",
@@ -109,12 +130,12 @@ class Ollama(CustomLLM):
                 message=ChatMessage(
                     content=message.get("content"),
                     role=MessageRole(message.get("role")),
-                    additional_kwargs=get_addtional_kwargs(
+                    additional_kwargs=get_additional_kwargs(
                         message, ("content", "role")
                     ),
                 ),
                 raw=raw,
-                additional_kwargs=get_addtional_kwargs(raw, ("message",)),
+                additional_kwargs=get_additional_kwargs(raw, ("message",)),
             )
 
     @llm_chat_callback()
@@ -156,13 +177,15 @@ class Ollama(CustomLLM):
                             message=ChatMessage(
                                 content=text,
                                 role=MessageRole(message.get("role")),
-                                additional_kwargs=get_addtional_kwargs(
+                                additional_kwargs=get_additional_kwargs(
                                     message, ("content", "role")
                                 ),
                             ),
                             delta=delta,
                             raw=chunk,
-                            additional_kwargs=get_addtional_kwargs(chunk, ("message",)),
+                            additional_kwargs=get_additional_kwargs(
+                                chunk, ("message",)
+                            ),
                         )
 
     @llm_completion_callback()
@@ -188,7 +211,7 @@ class Ollama(CustomLLM):
             return CompletionResponse(
                 text=text,
                 raw=raw,
-                additional_kwargs=get_addtional_kwargs(raw, ("response",)),
+                additional_kwargs=get_additional_kwargs(raw, ("response",)),
             )
 
     @llm_completion_callback()
@@ -220,7 +243,7 @@ class Ollama(CustomLLM):
                             delta=delta,
                             text=text,
                             raw=chunk,
-                            additional_kwargs=get_addtional_kwargs(
+                            additional_kwargs=get_additional_kwargs(
                                 chunk, ("response",)
                             ),
                         )

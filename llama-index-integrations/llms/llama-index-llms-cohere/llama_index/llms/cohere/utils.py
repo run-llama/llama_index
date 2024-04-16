@@ -11,6 +11,8 @@ from tenacity import (
 )
 
 COMMAND_MODELS = {
+    "command-r": 128000,
+    "command-r-plus": 128000,
     "command": 4096,
     "command-nightly": 4096,
     "command-light": 4096,
@@ -48,7 +50,7 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type(cohere.error.CohereConnectionError)),
+        retry=(retry_if_exception_type(cohere.errors.ServiceUnavailableError)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -61,10 +63,17 @@ def completion_with_retry(
 
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
+        is_stream = kwargs.pop("stream", False)
         if chat:
-            return client.chat(**kwargs)
+            if is_stream:
+                return client.chat_stream(**kwargs)
+            else:
+                return client.chat(**kwargs)
         else:
-            return client.generate(**kwargs)
+            if is_stream:
+                return client.generate_stream(**kwargs)
+            else:
+                return client.generate(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -80,10 +89,17 @@ async def acompletion_with_retry(
 
     @retry_decorator
     async def _completion_with_retry(**kwargs: Any) -> Any:
+        is_stream = kwargs.pop("stream", False)
         if chat:
-            return await aclient.chat(**kwargs)
+            if is_stream:
+                return await aclient.chat_stream(**kwargs)
+            else:
+                return await aclient.chat(**kwargs)
         else:
-            return await aclient.generate(**kwargs)
+            if is_stream:
+                return await aclient.generate_stream(**kwargs)
+            else:
+                return await aclient.generate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -106,6 +122,16 @@ def is_chat_model(model: str) -> bool:
 def messages_to_cohere_history(
     messages: Sequence[ChatMessage],
 ) -> List[Dict[str, Optional[str]]]:
+    role_map = {
+        "user": "USER",
+        "system": "SYSTEM",
+        "chatbot": "CHATBOT",
+        "assistant": "CHATBOT",
+        "model": "SYSTEM",
+        "function": "SYSTEM",
+        "tool": "SYSTEM",
+    }
     return [
-        {"user_name": message.role, "message": message.content} for message in messages
+        {"role": role_map[message.role], "message": message.content}
+        for message in messages
     ]

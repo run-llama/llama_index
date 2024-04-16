@@ -44,7 +44,7 @@ class DocumentGroup(BasePydanticReader):
         return self.documents
 
 
-def build_conifurable_data_source_enum():
+def build_configurable_data_source_enum():
     """
     Build an enum of configurable data sources.
     But conditional on if the corresponding reader is available.
@@ -294,6 +294,102 @@ def build_conifurable_data_source_enum():
     except ImportError:
         pass
 
+    try:
+        from llama_index.readers.s3 import S3Reader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "S3",
+                DataSource(
+                    name="S3",
+                    component_type=S3Reader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.azstorage_blob import (
+            AzStorageBlobReader,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "AZURE_STORAGE_BLOB",
+                DataSource(
+                    name="Azure Storage Blob",
+                    component_type=AzStorageBlobReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.gcs import GCSReader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "GCS",
+                DataSource(
+                    name="GCS",
+                    component_type=GCSReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.google import GoogleDriveReader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "GOOGLE_DRIVE",
+                DataSource(
+                    name="Google Drive",
+                    component_type=GoogleDriveReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.microsoft_onedrive import (
+            OneDriveReader,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "MICROSOFT_ONEDRIVE",
+                DataSource(
+                    name="Microsoft OneDrive",
+                    component_type=OneDriveReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
+    try:
+        from llama_index.readers.microsoft_sharepoint import (
+            SharePointReader,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "MICROSOFT_SHAREPOINT",
+                DataSource(
+                    name="Microsoft Sharepoint",
+                    component_type=SharePointReader,
+                ),
+            )
+        )
+    except ImportError:
+        pass
+
     enum_members.append(
         (
             "READER",
@@ -337,7 +433,7 @@ def build_conifurable_data_source_enum():
     return ConfigurableComponent("ConfigurableDataSources", enum_members)
 
 
-ConfigurableDataSources = build_conifurable_data_source_enum()
+ConfigurableDataSources = build_configurable_data_source_enum()
 
 T = TypeVar("T", bound=BaseComponent)
 

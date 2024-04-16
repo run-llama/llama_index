@@ -12,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterOperator,
     MetadataFilters,
+    MetadataFilter,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -108,6 +109,27 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
+    """Postgres Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-postgres`
+
+        ```python
+        from llama_index.vector_stores.postgres import PGVectorStore
+
+        # Create PGVectorStore instance
+        vector_store = PGVectorStore.from_params(
+            database="vector_db",
+            host="localhost",
+            password="password",
+            port=5432,
+            user="postgres",
+            table_name="paul_graham_essay",
+            embed_dim=1536  # openai embedding dimension
+        )
+        ```
+    """
+
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True
@@ -345,17 +367,51 @@ class PGVectorStore(BasePydanticVectorStore):
         elif operator == FilterOperator.LTE:
             return "<="
         elif operator == FilterOperator.IN:
+            return "IN"
+        elif operator == FilterOperator.NIN:
+            return "NOT IN"
+        elif operator == FilterOperator.CONTAINS:
             return "@>"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
 
-    def _apply_filters_and_limit(
-        self,
-        stmt: Select,
-        limit: int,
-        metadata_filters: Optional[MetadataFilters] = None,
-    ) -> Any:
+    def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+        from sqlalchemy import text
+
+        if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            # Expects a single value in the metadata, and a list to compare
+            return text(
+                f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
+            ).bindparams(values=tuple(filter_.value))
+        elif filter_.operator == FilterOperator.CONTAINS:
+            # Expects a list stored in the metadata, and a single value to compare
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'[\"{filter_.value}\"]'"
+            )
+        else:
+            # Check if value is a number. If so, cast the metadata value to a float
+            # This is necessary because the metadata is stored as a string
+            try:
+                return text(
+                    f"(metadata_->>'{filter_.key}')::float "
+                    f"{self._to_postgres_operator(filter_.operator)} "
+                    f"{float(filter_.value)}"
+                )
+            except ValueError:
+                # If not a number, then treat it as a string
+                return text(
+                    f"metadata_->>'{filter_.key}' "
+                    f"{self._to_postgres_operator(filter_.operator)} "
+                    f"'{filter_.value}'"
+                )
+
+    def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
+        """
+        Returns a sqlalchemy where clause.
+        """
         import sqlalchemy
 
         sqlalchemy_conditions = {
@@ -363,31 +419,32 @@ class PGVectorStore(BasePydanticVectorStore):
             "and": sqlalchemy.sql.and_,
         }
 
+        if filters.condition not in sqlalchemy_conditions:
+            raise ValueError(
+                f"Invalid condition: {filters.condition}. "
+                f"Must be one of {list(sqlalchemy_conditions.keys())}"
+            )
+
+        return sqlalchemy_conditions[filters.condition](
+            *(
+                (
+                    self._build_filter_clause(filter_)
+                    if not isinstance(filter_, MetadataFilters)
+                    else self._recursively_apply_filters(filter_)
+                )
+                for filter_ in filters.filters
+            )
+        )
+
+    def _apply_filters_and_limit(
+        self,
+        stmt: Select,
+        limit: int,
+        metadata_filters: Optional[MetadataFilters] = None,
+    ) -> Any:
         if metadata_filters:
-            if metadata_filters.condition not in sqlalchemy_conditions:
-                raise ValueError(
-                    f"Invalid condition: {metadata_filters.condition}. "
-                    f"Must be one of {list(sqlalchemy_conditions.keys())}"
-                )
             stmt = stmt.where(  # type: ignore
-                sqlalchemy_conditions[metadata_filters.condition](
-                    *(
-                        (
-                            sqlalchemy.text(
-                                f"metadata_::jsonb->'{filter_.key}' "
-                                f"{self._to_postgres_operator(filter_.operator)} "
-                                f"'[\"{filter_.value}\"]'"
-                            )
-                            if filter_.operator == FilterOperator.IN
-                            else sqlalchemy.text(
-                                f"metadata_->>'{filter_.key}' "
-                                f"{self._to_postgres_operator(filter_.operator)} "
-                                f"'{filter_.value}'"
-                            )
-                        )
-                        for filter_ in metadata_filters.filters
-                    )
-                )
+                self._recursively_apply_filters(metadata_filters)
             )
         return stmt.limit(limit)  # type: ignore
 
@@ -490,8 +547,17 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        ts_query = func.plainto_tsquery(
-            type_coerce(self.text_search_config, REGCONFIG), query_str
+        # Replace '&' with '|' to perform an OR search for higher recall
+        ts_query = func.to_tsquery(
+            func.replace(
+                func.text(
+                    func.plainto_tsquery(
+                        type_coerce(self.text_search_config, REGCONFIG), query_str
+                    )
+                ),
+                "&",
+                "|",
+            )
         )
         stmt = (
             select(  # type: ignore

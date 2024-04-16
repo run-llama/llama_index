@@ -1,0 +1,9 @@
+{
+  "num_splits": 3,
+  "t_max": 150,
+  "synthetic_example_starts": 72,
+  "synthetic_example_ends": 70,
+  "llm_empty_responses": 120,
+  "empty_intersections": 236,
+  "critical_threshold": 0.025
+}

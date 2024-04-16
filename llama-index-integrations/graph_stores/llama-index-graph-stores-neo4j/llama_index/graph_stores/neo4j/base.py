@@ -51,7 +51,8 @@ class Neo4jGraphStore(GraphStore):
         self.structured_schema: Dict[str, Any] = {}
         # Verify connection
         try:
-            self._driver.verify_connectivity()
+            with self._driver as driver:
+                driver.verify_connectivity()
         except neo4j.exceptions.ServiceUnavailable:
             raise ValueError(
                 "Could not connect to Neo4j database. "
@@ -127,7 +128,7 @@ class Neo4jGraphStore(GraphStore):
 
         query = (
             f"""MATCH p=(n1:{self.node_label})-[*1..{depth}]->() """
-            f"""{"WHERE n1.id IN $subjs" if subjs else ""} """
+            f"""WHERE toLower(n1.id) IN {[subj.lower() for subj in subjs] if subjs else []}"""
             "UNWIND relationships(p) AS rel "
             "WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet("
             "collect([type(rel), endNode(rel).id]))) AS flattened_rels "

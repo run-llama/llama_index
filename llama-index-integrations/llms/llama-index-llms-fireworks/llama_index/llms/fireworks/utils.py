@@ -63,6 +63,10 @@ def fireworks_modelname_to_contextsize(modelname: str) -> int:
     return context_size
 
 
+def is_function_calling_model(model: str) -> bool:
+    return "function" in model
+
+
 def _message_to_fireworks_prompt(message: ChatMessage) -> Dict[str, Any]:
     if message.role == MessageRole.USER:
         prompt = {"role": "user", "content": message.content}

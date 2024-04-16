@@ -1,18 +1,17 @@
 # Airbyte Salesforce Loader
 
+```bash
+pip install llama-index-readers-airbyte-salesforce
+```
+
 The Airbyte Salesforce Loader allows you to access different Salesforce objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the salesforce source: `pip install airbyte-source-salesforce`
 
 ## Usage
 
 Here's an example usage of the AirbyteSalesforceReader.
 
 ```python
-from llama_hub.airbyte_salesforce import AirbyteSalesforceReader
+from llama_index.readers.airbyte_salesforce import AirbyteSalesforceReader
 
 salesforce_config = {
     # ...

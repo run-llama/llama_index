@@ -25,7 +25,7 @@ built off of its source documents.
 ```python
 from llama_index.core.llama_dataset import download_llama_dataset
 from llama_index.core.llama_pack import download_llama_pack
-from llama_index import VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 
 # download a LabelledRagDataset from llama-hub
 rag_dataset, documents = download_llama_dataset(

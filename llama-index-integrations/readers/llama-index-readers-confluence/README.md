@@ -1,5 +1,9 @@
 # Confluence Loader
 
+```bash
+pip install llama-index-readers-confluence
+```
+
 This loader loads pages from a given Confluence cloud instance. The user needs to specify the base URL for a Confluence
 instance to initialize the ConfluenceReader - base URL needs to end with `/wiki`. The user can optionally specify
 OAuth 2.0 credentials to authenticate with the Confluence instance. If no credentials are specified, the loader will
@@ -42,7 +46,7 @@ Here's an example usage of the ConfluenceReader.
 
 ```python
 # Example that reads the pages with the `page_ids`
-from llama_hub.confluence import ConfluenceReader
+from llama_index.readers.confluence import ConfluenceReader
 
 token = {"access_token": "<access_token>", "token_type": "<token_type>"}
 oauth2_dict = {"client_id": "<client_id>", "token": token}
@@ -65,7 +69,7 @@ documents.extend(
 
 ```python
 # Example that fetches the first 5, then the next 5 pages from a space
-from llama_hub.confluence import ConfluenceReader
+from llama_index.readers.confluence import ConfluenceReader
 
 token = {"access_token": "<access_token>", "token_type": "<token_type>"}
 oauth2_dict = {"client_id": "<client_id>", "token": token}
@@ -95,7 +99,7 @@ documents.extend(
 
 ```python
 # Example that fetches the first 5 results froma cql query, the uses the cursor to pick up on the next element
-from llama_hub.confluence import ConfluenceReader
+from llama_index.readers.confluence import ConfluenceReader
 
 token = {"access_token": "<access_token>", "token_type": "<token_type>"}
 oauth2_dict = {"client_id": "<client_id>", "token": token}

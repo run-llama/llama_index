@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.mock import MockLLM
 
 __all__ = [
     "CustomLLM",
@@ -24,4 +25,5 @@ __all__ = [
     "CompletionResponseGen",
     "LLMMetadata",
     "MessageRole",
+    "MockLLM",
 ]

@@ -1,5 +1,9 @@
 # Hugging Face FS Loader
 
+```bash
+pip install llama-index-readers-huggingface-fs
+```
+
 This loader uses Hugging Face Hub's Filesystem API (> 0.14) to
 load datasets.
 
@@ -12,9 +16,8 @@ To use this loader, you need to pass in a path to a Hugging Face dataset.
 
 ```python
 from pathlib import Path
-from llama_index import download_loader
 
-HuggingFaceFSReader = download_loader("HuggingFaceFSReader")
+from llama_index.readers.huggingface_fs import HuggingFaceFSReader
 
 # load documents
 loader = HuggingFaceFSReader()

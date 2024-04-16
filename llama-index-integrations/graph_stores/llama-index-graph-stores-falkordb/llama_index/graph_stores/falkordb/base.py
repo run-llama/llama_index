@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-import redis
+from falkordb import FalkorDB
 from llama_index.core.graph_stores.types import GraphStore
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class FalkorDBGraphStore(GraphStore):
         """Initialize params."""
         self._node_label = node_label
 
-        self._driver = redis.Redis.from_url(url).graph(database)
+        self._driver = FalkorDB.from_url(url).select_graph(database)
         self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
 
         self._database = database

@@ -10,7 +10,7 @@ Here's an example usage of the PythonFileToolSpec.
 
 ```python
 from llama_index.tools.python_file import PythonFileToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 pyfile = PythonFileToolSpec("./numpy_linalg.py")
 

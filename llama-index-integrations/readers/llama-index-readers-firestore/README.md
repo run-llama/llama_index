@@ -1,5 +1,9 @@
 # Firestore Loader
 
+```bash
+pip install llama-index-readers-firestore
+```
+
 This loader loads from a Firestore collection or a specific document from Firestore. The loader assumes your project already has the google cloud credentials loaded. To find out how to set up credentials, [see here](https://cloud.google.com/docs/authentication/provide-credentials-adc).
 
 ## Usage
@@ -9,9 +13,8 @@ To initialize the loader, provide the project-id of the google cloud project.
 ## Initializing the reader
 
 ```python
-from llama_index import download_loader
+from llama_index.readers.firestore import FirestoreReader
 
-FirestoreReader = download_loader("FirestoreReader")
 reader = FirestoreReader(project_id="<Your Project ID>")
 ```
 

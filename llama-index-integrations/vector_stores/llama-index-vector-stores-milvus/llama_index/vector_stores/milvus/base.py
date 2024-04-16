@@ -3,14 +3,17 @@
 An index that is built within Milvus.
 
 """
+
 import logging
 from typing import Any, Dict, List, Optional, Union
 
 import pymilvus  # noqa
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
     MetadataFilters,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -25,6 +28,7 @@ from pymilvus import Collection, MilvusClient
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_BATCH_SIZE = 100
 MILVUS_ID_FIELD = "id"
 
 
@@ -39,7 +43,7 @@ def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
     return filters
 
 
-class MilvusVectorStore(VectorStore):
+class MilvusVectorStore(BasePydanticVectorStore):
     """The Milvus Vector Store.
 
     In this vector store we store the text, its embedding and
@@ -82,16 +86,50 @@ class MilvusVectorStore(VectorStore):
 
     Returns:
         MilvusVectorstore: Vectorstore that supports add, delete, and query.
+
+    Examples:
+        `pip install llama-index-vector-stores-milvus`
+
+        ```python
+        from llama_index.vector_stores.milvus import MilvusVectorStore
+
+        # Setup MilvusVectorStore
+        vector_store = MilvusVectorStore(
+            dim=1536,
+            collection_name="your_collection_name",
+            uri="http://milvus_address:port",
+            token="your_milvus_token_here",
+            overwrite=True
+        )
+        ```
     """
 
     stores_text: bool = True
     stores_node: bool = True
 
+    uri: str = "http://localhost:19530"
+    token: str = ""
+    collection_name: str = "llamacollection"
+    dim: Optional[int]
+    embedding_field: str = DEFAULT_EMBEDDING_KEY
+    doc_id_field: str = DEFAULT_DOC_ID_KEY
+    similarity_metric: str = "IP"
+    consistency_level: str = "Strong"
+    overwrite: bool = False
+    text_key: Optional[str]
+    output_fields: List[str] = Field(default_factory=list)
+    index_config: Optional[dict]
+    search_config: Optional[dict]
+    batch_size: int = DEFAULT_BATCH_SIZE
+
+    _milvusclient: MilvusClient = PrivateAttr()
+    _collection: Any = PrivateAttr()
+
     def __init__(
         self,
         uri: str = "http://localhost:19530",
         token: str = "",
-        collection_name: str = "llamalection",
+        collection_name: str = "llamacollection",
         dim: Optional[int] = None,
         embedding_field: str = DEFAULT_EMBEDDING_KEY,
         doc_id_field: str = DEFAULT_DOC_ID_KEY,
@@ -99,61 +137,64 @@ class MilvusVectorStore(VectorStore):
         consistency_level: str = "Strong",
         overwrite: bool = False,
         text_key: Optional[str] = None,
+        output_fields: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        self.collection_name = collection_name
-        self.dim = dim
-        self.embedding_field = embedding_field
-        self.doc_id_field = doc_id_field
-        self.consistency_level = consistency_level
-        self.overwrite = overwrite
-        self.text_key = text_key
-        self.index_config: Dict[str, Any] = index_config.copy() if index_config else {}
-        # Note: The search configuration is set at construction to avoid having
-        # to change the API for usage of the vector store (i.e. to pass the
-        # search config along with the rest of the query).
-        self.search_config: Dict[str, Any] = (
-            search_config.copy() if search_config else {}
+        super().__init__(
+            collection_name=collection_name,
+            dim=dim,
+            embedding_field=embedding_field,
+            doc_id_field=doc_id_field,
+            consistency_level=consistency_level,
+            overwrite=overwrite,
+            text_key=text_key,
+            output_fields=output_fields or [],
+            index_config=index_config if index_config else {},
+            search_config=search_config if search_config else {},
+            batch_size=batch_size,
         )
 
         # Select the similarity metric
-        if similarity_metric.lower() in ("ip"):
-            self.similarity_metric = "IP"
-        elif similarity_metric.lower() in ("l2", "euclidean"):
-            self.similarity_metric = "L2"
+        similarity_metrics_map = {
+            "ip": "IP",
+            "l2": "L2",
+            "euclidean": "L2",
+            "cosine": "COSINE",
+        }
+        self.similarity_metric = similarity_metrics_map.get(
+            similarity_metric.lower(), "L2"
+        )
 
         # Connect to Milvus instance
-        self.milvusclient = MilvusClient(
+        self._milvusclient = MilvusClient(
             uri=uri,
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
-
         # Delete previous collection if overwriting
-        if self.overwrite and self.collection_name in self.client.list_collections():
-            self.milvusclient.drop_collection(self.collection_name)
+        if overwrite and collection_name in self.client.list_collections():
+            self._milvusclient.drop_collection(collection_name)
 
         # Create the collection if it does not exist
-        if self.collection_name not in self.client.list_collections():
-            if self.dim is None:
+        if collection_name not in self.client.list_collections():
+            if dim is None:
                 raise ValueError("Dim argument required for collection creation.")
-            self.milvusclient.create_collection(
-                collection_name=self.collection_name,
-                dimension=self.dim,
+            self._milvusclient.create_collection(
+                collection_name=collection_name,
+                dimension=dim,
                 primary_field_name=MILVUS_ID_FIELD,
-                vector_field_name=self.embedding_field,
+                vector_field_name=embedding_field,
                 id_type="string",
                 metric_type=self.similarity_metric,
                 max_length=65_535,
-                consistency_level=self.consistency_level,
+                consistency_level=consistency_level,
             )
 
-        self.collection = Collection(
-            self.collection_name, using=self.milvusclient._using
-        )
+        self._collection = Collection(collection_name, using=self._milvusclient._using)
         self._create_index_if_required()
 
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
@@ -161,7 +202,7 @@ class MilvusVectorStore(VectorStore):
     @property
     def client(self) -> Any:
         """Get client."""
-        return self.milvusclient
+        return self._milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
@@ -189,8 +230,10 @@ class MilvusVectorStore(VectorStore):
             insert_list.append(entry)
 
         # Insert the data into milvus
-        self.collection.insert(insert_list)
-        self.collection.flush()
+        for insert_batch in iter_batch(insert_list, self.batch_size):
+            self._collection.insert(insert_batch)
+        if add_kwargs.get("force_flush", False):
+            self._collection.flush()
         self._create_index_if_required()
         logger.debug(
             f"Successfully inserted embeddings into: {self.collection_name} "
@@ -217,13 +260,13 @@ class MilvusVectorStore(VectorStore):
 
         # Begin by querying for the primary keys to delete
         doc_ids = ['"' + entry + '"' for entry in doc_ids]
-        entries = self.milvusclient.query(
+        entries = self._milvusclient.query(
             collection_name=self.collection_name,
             filter=f"{self.doc_id_field} in [{','.join(doc_ids)}]",
         )
         if len(entries) > 0:
             ids = [entry["id"] for entry in entries]
-            self.milvusclient.delete(collection_name=self.collection_name, pks=ids)
+            self._milvusclient.delete(collection_name=self.collection_name, pks=ids)
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -260,14 +303,16 @@ class MilvusVectorStore(VectorStore):
         # Limit output fields
         if query.output_fields is not None:
             output_fields = query.output_fields
+        elif len(self.output_fields) > 0:
+            output_fields = self.output_fields
 
         # Convert to string expression
         string_expr = ""
         if len(expr) != 0:
-            string_expr = " and ".join(expr)
+            string_expr = f" {query.filters.condition.value} ".join(expr)
 
         # Perform the search
-        res = self.milvusclient.search(
+        res = self._milvusclient.search(
             collection_name=self.collection_name,
             data=[query.query_embedding],
             filter=string_expr,
@@ -302,9 +347,10 @@ class MilvusVectorStore(VectorStore):
                         "The passed in text_key value does not exist "
                         "in the retrieved entity."
                     )
-                node = TextNode(
-                    text=text,
-                )
+
+                metadata = {key: hit["entity"].get(key) for key in self.output_fields}
+                node = TextNode(text=text, metadata=metadata)
+
             nodes.append(node)
             similarities.append(hit["distance"])
             ids.append(hit["id"])
@@ -317,9 +363,9 @@ class MilvusVectorStore(VectorStore):
         # provided to ensure that the index is created in the constructor even
         # if self.overwrite is false. In the `add` method, the index is
         # recreated only if self.overwrite is true.
-        if (self.collection.has_index() and self.overwrite) or force:
-            self.collection.release()
-            self.collection.drop_index()
+        if (self._collection.has_index() and self.overwrite) or force:
+            self._collection.release()
+            self._collection.drop_index()
             base_params: Dict[str, Any] = self.index_config.copy()
             index_type: str = base_params.pop("index_type", "FLAT")
             index_params: Dict[str, Union[str, Dict[str, Any]]] = {
@@ -327,7 +373,7 @@ class MilvusVectorStore(VectorStore):
                 "metric_type": self.similarity_metric,
                 "index_type": index_type,
             }
-            self.collection.create_index(
+            self._collection.create_index(
                 self.embedding_field, index_params=index_params
             )
-            self.collection.load()
+            self._collection.load()
