@@ -668,7 +668,7 @@ class NebulaGraphStore(GraphStore):
             d[col_name] = [x.cast() for x in col_list]
         return d
 
-    def get_all_nodes(self, refresh: bool) -> List[str]:
+    def get_all_nodes(self, refresh: bool = False) -> List[str]:
         """
         Get all nodes in the graph store.
 
@@ -683,7 +683,7 @@ class NebulaGraphStore(GraphStore):
             self.nodes = [record["node"] for record in self.query(query)]
         return self.nodes
 
-    def get_all_triplets(self, refresh: bool) -> List[str]:
+    def get_all_triplets(self, refresh: bool = False) -> List[str]:
         """
         Get all triplets in the graph store.
 
