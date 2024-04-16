@@ -525,16 +525,20 @@ class IngestionPipeline(BaseModel):
             self.cache = IngestionCache.from_persist_path(
                 concat_dirs(persist_dir, cache_name), fs=fs
             )
-            self.docstore = SimpleDocumentStore.from_persist_path(
-                concat_dirs(persist_dir, docstore_name), fs=fs
-            )
+            persist_docstore_path = concat_dirs(persist_dir, docstore_name)
+            if os.path.exists(persist_docstore_path):
+                self.docstore = SimpleDocumentStore.from_persist_path(
+                    concat_dirs(persist_dir, docstore_name), fs=fs
+                )
         else:
             self.cache = IngestionCache.from_persist_path(
                 str(Path(persist_dir) / cache_name)
             )
-            self.docstore = SimpleDocumentStore.from_persist_path(
-                str(Path(persist_dir) / docstore_name)
-            )
+            persist_docstore_path = str(Path(persist_dir) / docstore_name)
+            if os.path.exists(persist_docstore_path):
+                self.docstore = SimpleDocumentStore.from_persist_path(
+                    str(Path(persist_dir) / docstore_name)
+                )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [
