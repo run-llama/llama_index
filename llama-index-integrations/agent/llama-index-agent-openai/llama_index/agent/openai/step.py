@@ -162,6 +162,7 @@ def call_function(
                 tool_name=name,
                 raw_input={"args": arguments_str},
                 raw_output=error_message,
+                is_error=True,
             ),
         )
 
@@ -228,6 +229,7 @@ async def acall_function(
                 tool_name=name,
                 raw_input={"args": arguments_str},
                 raw_output=error_message,
+                is_error=True,
             ),
         )
 
@@ -445,20 +447,20 @@ class OpenAIAgentWorker(BaseAgentWorker):
         tool_call: OpenAIToolCall,
         memory: BaseMemory,
         sources: List[ToolOutput],
-    ) -> None:
+    ) -> bool:
         function_call = tool_call.function
         # validations to get passed mypy
         assert function_call is not None
         assert function_call.name is not None
         assert function_call.arguments is not None
 
+        tool = get_function_by_name(tools, function_call.name)
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
-                ).metadata,
+                EventPayload.TOOL: tool.metadata,
             },
         ) as event:
             function_message, tool_output = call_function(
@@ -471,26 +473,28 @@ class OpenAIAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
+        return tool.metadata.return_direct and not tool_output.is_error
+
     async def _acall_function(
         self,
         tools: List[BaseTool],
         tool_call: OpenAIToolCall,
         memory: BaseMemory,
         sources: List[ToolOutput],
-    ) -> None:
+    ) -> bool:
         function_call = tool_call.function
         # validations to get passed mypy
         assert function_call is not None
         assert function_call.name is not None
         assert function_call.arguments is not None
 
+        tool = get_function_by_name(tools, function_call.name)
+
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: get_function_by_name(
-                    tools, function_call.name
-                ).metadata,
+                EventPayload.TOOL: tool.metadata,
             },
         ) as event:
             function_message, tool_output = await acall_function(
@@ -502,6 +506,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
         memory.put(function_message)
+
+        return tool.metadata.return_direct and not tool_output.is_error
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
@@ -574,7 +580,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
-                self._call_function(
+                return_direct = self._call_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
@@ -585,13 +591,32 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 if tool_choice not in ("auto", "none"):
                     tool_choice = "auto"
                 task.extra_state["n_function_calls"] += 1
-            new_steps = [
-                step.get_next_step(
-                    step_id=str(uuid.uuid4()),
-                    # NOTE: input is unused
-                    input=None,
-                )
-            ]
+
+                if return_direct and len(latest_tool_calls) == 1:
+                    is_done = True
+                    response_str = task.extra_state["sources"][-1].content
+                    chat_response = ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=response_str
+                        )
+                    )
+                    agent_chat_response = self._process_message(task, chat_response)
+                    agent_chat_response.is_dummy_stream = (
+                        mode == ChatResponseMode.STREAM
+                    )
+                    break
+
+            new_steps = (
+                [
+                    step.get_next_step(
+                        step_id=str(uuid.uuid4()),
+                        # NOTE: input is unused
+                        input=None,
+                    )
+                ]
+                if not is_done
+                else []
+            )
 
         # attach next step to task
 
@@ -641,7 +666,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
                 # TODO: maybe execute this with multi-threading
-                await self._acall_function(
+                return_direct = await self._acall_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
@@ -652,6 +677,20 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 if tool_choice not in ("auto", "none"):
                     tool_choice = "auto"
                 task.extra_state["n_function_calls"] += 1
+
+                if return_direct and len(latest_tool_calls) == 1:
+                    is_done = True
+                    response_str = task.extra_state["sources"][-1].content
+                    chat_response = ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=response_str
+                        )
+                    )
+                    agent_chat_response = self._process_message(task, chat_response)
+                    agent_chat_response.is_dummy_stream = (
+                        mode == ChatResponseMode.STREAM
+                    )
+                    break
 
         # generate next step, append to task queue
         new_steps = (

@@ -16,6 +16,7 @@ as the storage backend for `VectorStoreIndex`.
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
+- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -32,7 +33,7 @@ as the storage backend for `VectorStoreIndex`.
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
-- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
+- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).

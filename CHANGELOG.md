@@ -1,5 +1,160 @@
 # ChangeLog
 
+## [2024-04-13]
+
+### `llama-index-core` [0.10.29]
+
+- **BREAKING** Moved `PandasQueryEngine` and `PandasInstruction` parser to `llama-index-experimental` (#12419)
+  - new install: `pip install -U llama-index-experimental`
+  - new import: `from llama_index.experimental.query_engine import PandasQueryEngine`
+- Fixed some core dependencies to make python3.12 work nicely (#12762)
+- update async utils `run_jobs()` to include tqdm description (#12812)
+- Refactor kvdocstore delete methods (#12681)
+
+### `llama-index-llms-bedrock` [0.1.6]
+
+- Support for Mistral Large from Bedrock (#12804)
+
+### `llama-index-llms-openvino` [0.1.0]
+
+- Added OpenVino LLMs (#12639)
+
+### `llama-index-llms-predibase` [0.1.4]
+
+- Update LlamaIndex-Predibase Integration to latest API (#12736)
+- Enable choice of either Predibase-hosted or HuggingFace-hosted fine-tuned adapters in LlamaIndex-Predibase integration (#12789)
+
+### `llama-index-output-parsers-guardrails` [0.1.3]
+
+- Modernize GuardrailsOutputParser (#12676)
+
+### `llama-index-packs-agents-coa` [0.1.0]
+
+- Chain-of-Abstraction Agent Pack (#12757)
+
+### `llama-index-packs-code-hierarchy` [0.1.3]
+
+- Fixed issue with chunking multi-byte characters (#12715)
+
+### `llama-index-packs-raft-dataset` [0.1.4]
+
+- Fix bug in raft dataset generator - multiple system prompts (#12751)
+
+### `llama-index-postprocessor-openvino-rerank` [0.1.2]
+
+- Add openvino rerank support (#12688)
+
+### `llama-index-readers-file` [0.1.18]
+
+- convert to Path in docx reader if input path str (#12807)
+- make pip check work for optional pdf packages (#12758)
+
+### `llama-index-readers-s3` [0.1.7]
+
+- wrong doc id when using default s3 endpoint in S3Reader (#12803)
+
+### `llama-index-retrievers-bedrock` [0.1.0]
+
+- Add Amazon Bedrock knowledge base integration as retriever (#12737)
+
+### `llama-index-retrievers-mongodb-atlas-bm25-retriever` [0.1.3]
+
+- Add mongodb atlas bm25 retriever (#12519)
+
+### `llama-index-storage-chat-store-redis` [0.1.3]
+
+- fix message serialization in redis chat store (#12802)
+
+### `llama-index-vector-stores-astra-db` [0.1.6]
+
+- Relax dependency version to accept astrapy `1.*` (#12792)
+
+### `llama-index-vector-stores-couchbase` [0.1.0]
+
+- Add support for Couchbase as a Vector Store (#12680)
+
+### `llama-index-vector-stores-elasticsearch` [0.1.7]
+
+- Fix elasticsearch hybrid rrf window_size (#12695)
+
+### `llama-index-vector-stores-milvus` [0.1.8]
+
+- Added support to retrieve metadata fields from milvus (#12626)
+
+### `llama-index-vector-stores-redis` [0.2.0]
+
+- Modernize redis vector store, use redisvl (#12386)
+
+### `llama-index-vector-stores-qdrant` [0.2.0]
+
+- refactor: Switch default Qdrant sparse encoder (#12512)
+
+## [2024-04-09]
+
+### `llama-index-core` [0.10.28]
+
+- Support indented code block fences in markdown node parser (#12393)
+- Pass in output parser to guideline evaluator (#12646)
+- Added example of query pipeline + memory (#12654)
+- Add missing node postprocessor in CondensePlusContextChatEngine async mode (#12663)
+- Added `return_direct` option to tools /tool metadata (#12587)
+- Add retry for batch eval runner (#12647)
+- Thread-safe instrumentation (#12638)
+- Coroutine-safe instrumentation Spans #12589
+- Add in-memory loading for non-default filesystems in PDFReader (#12659)
+- Remove redundant tokenizer call in sentence splitter (#12655)
+- Add SynthesizeComponent import to shortcut imports (#12655)
+- Improved truncation in SimpleSummarize (#12655)
+- adding err handling in eval_utils default_parser for correctness (#12624)
+- Add async_postprocess_nodes at RankGPT Postprocessor Nodes (#12620)
+- Fix MarkdownNodeParser ref_doc_id (#12615)
+
+### `llama-index-embeddings-openvino` [0.1.5]
+
+- Added initial support for openvino embeddings (#12643)
+
+### `llama-index-llms-anthropic` [0.1.9]
+
+- add anthropic tool calling (#12591)
+
+### `llama-index-llms-ipex-llm` [0.1.1]
+
+- add ipex-llm integration (#12322)
+- add more data types support to ipex-llm llm integration (#12635)
+
+### `llama-index-llms-openllm` [0.1.4]
+
+- Proper PrivateAttr usage in OpenLLM (#12655)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.4]
+
+- Bumped anthropic dep version (#12655)
+
+### `llama-index-multi-modal-llms-gemini` [0.1.5]
+
+- bump generativeai dep (#12645)
+
+### `llama-index-packs-dense-x-retrieval` [0.1.4]
+
+- Add streaming support for DenseXRetrievalPack (#12607)
+
+### `llama-index-readers-mongodb` [0.1.4]
+
+- Improve efficiency of MongoDB reader (#12664)
+
+### `llama-index-readers-wikipedia` [0.1.4]
+
+- Added multilingual support for the Wikipedia reader (#12616)
+
+### `llama-index-storage-index-store-elasticsearch` [0.1.3]
+
+- remove invalid chars from default collection name (#12672)
+
+### `llama-index-vector-stores-milvus` [0.1.8]
+
+- Added support to retrieve metadata fields from milvus (#12626)
+- Bug fix - Similarity metric is always IP for MilvusVectorStore (#12611)
+
 ## [2024-04-04]
 
 ### `llama-index-agent-openai` [0.2.2]
