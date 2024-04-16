@@ -3,12 +3,12 @@ from typing import List, Optional
 from llama_index.core.llms.llm import LLM
 from llama_index.core.indices.keyword_table.utils import simple_extract_keywords
 from llama_index.core.indices.labelled_property_graph.base import (
-    LabelledPropertyGraphIndex,
     TRIPLET_SOURCE_KEY,
 )
 from llama_index.core.indices.labelled_property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
+from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
 from llama_index.core.settings import Settings
 from llama_index.core.schema import NodeWithScore, TextNode
 
@@ -27,7 +27,7 @@ DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
 class LLMSynonymRetriever(BaseLPGRetriever):
     def __init__(
         self,
-        index: LabelledPropertyGraphIndex,
+        graph_store: LabelledPropertyGraphStore,
         include_text: bool = True,
         synonym_prompt_str: str = DEFAULT_SYNONYM_EXPAND_TEMPLATE,
         max_keywords: int = 10,
@@ -39,7 +39,7 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         self._synonym_prompt_str = synonym_prompt_str
         self._output_parsing_fn = output_parsing_fn
         self._max_keywords = max_keywords
-        super().__init__(index=index, include_text=include_text, **kwargs)
+        super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
 
     def _parse_llm_output(self, output: str) -> List[str]:
         if self._output_parsing_fn:
@@ -54,12 +54,26 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         results = []
         for match in matches:
             sub_results = []
-            sub_results.extend(
-                self._storage_context.lpg_graph_store.get(entity_names=[match])
-            )
-            sub_results.extend(
-                self._storage_context.lpg_graph_store.get(relation_names=[match])
-            )
+            sub_results.extend(self._graph_store.get(entity_names=[match]))
+            sub_results.extend(self._graph_store.get(relation_names=[match]))
+
+            for triplet in sub_results:
+                id_ = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
+                assert id_ is not None
+
+                text = f"{triplet[0].text}, {triplet[1].text}, {triplet[2].text}"
+                results.append(
+                    NodeWithScore(node=TextNode(id_=id_, text=text), score=1.0)
+                )
+
+        return results
+
+    async def _aprepare_matches(self, matches: List[str]) -> List[NodeWithScore]:
+        results = []
+        for match in matches:
+            sub_results = []
+            sub_results.extend(await self._graph_store.aget(entity_names=[match]))
+            sub_results.extend(await self._graph_store.aget(relation_names=[match]))
 
             for triplet in sub_results:
                 id_ = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
@@ -96,6 +110,6 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         )
         matches = self._parse_llm_output(response.text)
 
-        results = self._prepare_matches(matches)
+        results = await self._aprepare_matches(matches)
 
-        return self._parse_results(results)
+        return await self._aparse_results(results)

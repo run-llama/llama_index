@@ -153,7 +153,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
 
         retrievers = [
             LLMSynonymRetriever(
-                index=self,
+                graph_store=self.lpg_graph_store,
                 include_text=include_text,
                 llm=self._llm,
                 show_progress=self._show_progress,
@@ -164,7 +164,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         if self._embed_model and self.lpg_graph_store.supports_vector_queries:
             retrievers.append(
                 LPGVectorRetriever(
-                    index=self,
+                    graph_store=self.lpg_graph_store,
                     include_text=include_text,
                     show_progress=self._show_progress,
                     **kwargs,

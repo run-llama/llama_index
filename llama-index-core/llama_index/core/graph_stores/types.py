@@ -195,23 +195,51 @@ class LabelledPropertyGraphStore(Protocol):
         """Get triplets with matching values."""
         ...
 
+    async def aget(
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
+        node_ids: Optional[List[str]] = None,
+    ) -> List[Triplet]:
+        """Asynchronously get triplets with matching values."""
+        return self.get(entity_names, relation_names, properties, node_ids)
+
     def get_rel_map(
         self, entities: List[Entity], depth: int = 2, limit: int = 30
     ) -> List[Triplet]:
         """Get depth-aware rel map."""
         ...
 
+    async def aget_rel_map(
+        self, entities: List[Entity], depth: int = 2, limit: int = 30
+    ) -> List[Triplet]:
+        """Asynchronously get depth-aware rel map."""
+        return self.get_rel_map(entities, depth, limit)
+
     def get_nodes(self, node_ids: List[str]) -> List[BaseNode]:
         """Get nodes."""
         ...
+
+    async def aget_nodes(self, node_ids: List[str]) -> List[BaseNode]:
+        """Asynchronously get nodes."""
+        return self.get_nodes(node_ids)
 
     def upsert_nodes(self, nodes: List[BaseNode]) -> None:
         """Add nodes."""
         ...
 
+    async def aupsert_nodes(self, nodes: List[BaseNode]) -> None:
+        """Asynchronously add nodes."""
+        return self.upsert_nodes(nodes)
+
     def upsert_triplets(self, triplets: List[Triplet]) -> None:
         """Upsert triplets."""
         ...
+
+    async def aupsert_triplets(self, triplets: List[Triplet]) -> None:
+        """Asynchronously upsert triplets."""
+        return self.upsert_triplets(triplets)
 
     def delete(
         self,
@@ -223,6 +251,16 @@ class LabelledPropertyGraphStore(Protocol):
         """Delete matching data."""
         ...
 
+    async def adelete(
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
+        node_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Asynchronously delete matching data."""
+        return self.delete(entity_names, relation_names, properties, node_ids)
+
     def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
@@ -231,15 +269,35 @@ class LabelledPropertyGraphStore(Protocol):
         """Delete nodes."""
         ...
 
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        ref_doc_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Asynchronously delete nodes."""
+        return self.delete_nodes(node_ids, ref_doc_ids)
+
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = {}
     ) -> List[Entity]:
         """Query the graph store with statement and parameters."""
         ...
 
+    async def astructured_query(
+        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+    ) -> List[Entity]:
+        """Asynchronously query the graph store with statement and parameters."""
+        return self.structured_query(query, param_map)
+
     def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> List[Entity]:
         """Query the graph store with a vector store query."""
         ...
+
+    async def avector_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> List[Entity]:
+        """Asynchronously query the graph store with a vector store query."""
+        return self.vector_query(query, **kwargs)
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
@@ -250,3 +308,7 @@ class LabelledPropertyGraphStore(Protocol):
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
         ...
+
+    async def aget_schema(self, refresh: bool = False) -> str:
+        """Asynchronously get the schema of the graph store."""
+        return self.get_schema(refresh=refresh)
