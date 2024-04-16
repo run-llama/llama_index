@@ -11,6 +11,8 @@
 pip install browserbase
 ```
 
+## Usage
+
 ### Loading documents
 
 You can load webpages into LangChain using `BrowserbaseWebReader`. Optionally, you can set `text_content` parameter to convert the pages to text-only representation.
