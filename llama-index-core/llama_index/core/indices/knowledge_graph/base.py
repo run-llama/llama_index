@@ -235,7 +235,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         # Update the storage context's index_store
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
-    def _embed(self, triplet_texts: List[str], refresh: bool = False, add_to_index_struct: bool = False, use_graph_store: bool = False) -> None:
+    def _embed(self, triplet_texts: List[str] = [], refresh: bool = False, add_to_index_struct: bool = False, use_graph_store: bool = False) -> None:
         """Generate embeddings for the index."""
         if not self.include_embeddings:
             logger.warning("Embeddings are not included in the index. Enable them first using include_embeddings.")
