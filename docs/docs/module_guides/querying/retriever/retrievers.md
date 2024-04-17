@@ -60,6 +60,7 @@ hierarchical retrieval and query decomposition.
 - [Vectara](../../../examples/managed/vectaraDemo.ipynb)
 - [VideoDB](../../../examples/retrievers/videodb_retriever.ipynb)
 - [Zilliz](../../../examples/managed/zcpDemo.ipynb)
+- [Amazon Bedrock](../../../examples/retrievers/bedrock_retriever.ipynb)
 
 ### Other Retrievers
 
