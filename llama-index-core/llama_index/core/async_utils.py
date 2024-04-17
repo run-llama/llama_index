@@ -1,7 +1,6 @@
 """Async utils."""
 
 import asyncio
-import tqdm
 from itertools import zip_longest
 from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
 
@@ -119,11 +118,9 @@ async def run_jobs(
     pool_jobs = [worker(job) for job in jobs]
 
     if show_progress:
-        results = []
-        for result in tqdm.tqdm(
-            asyncio.as_completed(pool_jobs), total=len(pool_jobs), desc=desc
-        ):
-            results.append(await result)
+        from tqdm.asyncio import tqdm_asyncio
+
+        results = await tqdm_asyncio.gather(*pool_jobs, desc=desc)
     else:
         results = await asyncio.gather(*pool_jobs)
 
