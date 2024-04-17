@@ -222,7 +222,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -240,7 +240,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -258,7 +258,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     return ConfigurableComponent("ConfigurableTransformations", enum_members)

@@ -103,7 +103,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -120,7 +120,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -135,7 +135,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -150,7 +150,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -167,7 +167,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -182,7 +182,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -197,7 +197,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -214,7 +214,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -229,7 +229,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -244,7 +244,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -261,7 +261,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -276,7 +276,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -291,7 +291,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -306,7 +306,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -323,7 +323,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -338,7 +338,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -353,7 +353,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -370,7 +370,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -387,7 +387,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     enum_members.append(
