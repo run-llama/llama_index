@@ -7,7 +7,7 @@
 - Get an API key from [browserbase.com](https://browserbase.com) and set it in environment variables (`BROWSERBASE_KEY`).
 - Install the [Browserbase SDK](http://github.com/browserbase/python-sdk):
 
-```python
+```
 pip install browserbase
 ```
 
@@ -15,7 +15,7 @@ pip install browserbase
 
 ### Loading documents
 
-You can load webpages into LangChain using `BrowserbaseWebReader`. Optionally, you can set `text_content` parameter to convert the pages to text-only representation.
+You can load webpages into LlamaIndex using `BrowserbaseWebReader`. Optionally, you can set `text_content` parameter to convert the pages to text-only representation.
 
 ```python
 from llama_index.readers.web import BrowserbaseWebReader
@@ -27,7 +27,7 @@ docs = reader.load_data(
         "https://example.com",
     ],
     # Text mode
-    text_content=False
+    text_content=False,
 )
 ```
 
