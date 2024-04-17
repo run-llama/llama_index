@@ -56,7 +56,7 @@ class FunctionTool(AsyncBaseTool):
         if tool_metadata is None:
             name = name or fn.__name__
             doc = docstring_parser.parse(fn.__doc__)
-            description = doc.description or ""
+            description = description or doc.description or ""
 
             if fn_schema is None:
                 fn_schema = create_schema_from_function(
