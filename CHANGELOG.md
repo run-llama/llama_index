@@ -1,5 +1,66 @@
 # ChangeLog
 
+## [2024-04-17]
+
+### `llama-index-core` [0.10.30]
+
+- Add intermediate outputs to QueryPipeline (#12683)
+- Fix show progress causing results to be out of order (#12897)
+- add OR filter condition support to simple vector store (#12823)
+- improved custom agent init (#12824)
+- fix pipeline load without docstore (#12808)
+- Use async `_aprocess_actions` in `_arun_step_stream` (#12846)
+- provide the exception to the StreamChatErrorEvent (#12879)
+- fix bug in load and search tool spec (#12902)
+
+### `llama-index-embeddings-azure-opena` [0.1.7]
+
+- Expose azure_ad_token_provider argument to support token expiration (#12818)
+
+### `llama-index-embeddings-cohere` [0.1.8]
+
+- Add httpx_async_client option (#12896)
+
+### `llama-index-embeddings-ipex-llm` [0.1.0]
+
+- add ipex-llm embedding integration (#12740)
+
+### `llama-index-embeddings-octoai` [0.1.0]
+
+- add octoai embeddings (#12857)
+
+### `llama-index-llms-azure-openai` [0.1.6]
+
+- Expose azure_ad_token_provider argument to support token expiration (#12818)
+
+### `llama-index-llms-ipex-llm` [0.1.2]
+
+- add support for loading "low-bit format" model to IpexLLM integration (#12785)
+
+### `llama-index-llms-mistralai` [0.1.11]
+
+- support `open-mixtral-8x22b` (#12894)
+
+### `llama-index-packs-agents-lats` [0.1.0]
+
+- added LATS agent pack (#12735)
+
+### `llama-index-readers-smart-pdf-loader` [0.1.4]
+
+- Use passed in metadata for documents (#12844)
+
+### `llama-index-readers-web` [0.1.9]
+
+- added Firecrawl Web Loader (#12825)
+
+### `llama-index-vector-stores-milvus` [0.1.10]
+
+- use batch insertions into Milvus vector store (#12837)
+
+### `llama-index-vector-stores-vearch` [0.1.0]
+
+- add vearch to vector stores (#10972)
+
 ## [2024-04-13]
 
 ### `llama-index-core` [0.10.29]
