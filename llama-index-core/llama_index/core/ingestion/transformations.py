@@ -5,7 +5,12 @@ This module maintains the list of transformations that are supported by the syst
 from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GenericModel,
+    ValidationError,
+)
 from llama_index.core.node_parser import (
     CodeSplitter,
     HTMLNodeParser,

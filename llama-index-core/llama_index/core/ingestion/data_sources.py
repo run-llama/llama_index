@@ -3,7 +3,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GenericModel,
+    ValidationError,
+)
 from llama_index.core.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.core.schema import BaseComponent, Document, TextNode
 
