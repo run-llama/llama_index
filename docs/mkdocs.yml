@@ -189,6 +189,7 @@ nav:
           - ./examples/embeddings/cloudflare_workersai.ipynb
           - ./examples/embeddings/openvino.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
+          - ./examples/embeddings/octoai.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -531,6 +532,7 @@ nav:
           - ./examples/vector_stores/TiDBVector.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/CouchbaseVectorStoreDemo.ipynb
+          - ./examples/vector_stores/VearchDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -705,6 +707,7 @@ nav:
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/nomic.md
+          - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
           - ./api_reference/embeddings/openvino.md
@@ -1263,6 +1266,7 @@ nav:
               - ./api_reference/storage/vector_store/txtai.md
               - ./api_reference/storage/vector_store/typesense.md
               - ./api_reference/storage/vector_store/upstash.md
+              - ./api_reference/storage/vector_store/vearch.md
               - ./api_reference/storage/vector_store/weaviate.md
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
@@ -1809,6 +1813,8 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-couchbase
             - ../llama-index-integrations/retrievers/llama-index-retrievers-bedrock
             - ../llama-index-integrations/retrievers/llama-index-retrievers-mongodb-atlas-bm25-retriever
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vearch
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-octoai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

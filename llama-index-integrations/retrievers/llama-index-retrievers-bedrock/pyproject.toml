@@ -12,7 +12,7 @@ contains_example = true
 import_path = "llama_index.retrievers.bedrock"
 
 [tool.llamahub.class_authors]
-BedrockRetriever = "AmazonBedrock"
+AmazonKnowledgeBasesRetriever = "AmazonBedrock"
 
 [tool.mypy]
 disallow_untyped_defs = true
