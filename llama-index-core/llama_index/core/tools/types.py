@@ -32,17 +32,12 @@ class ToolMetadata:
                 "required": ["input"],
             }
         else:
-            try:
-                # if pydantic is v2, use model_json_schema to get json schema directly
-                return self.fn_schema.model_json_schema()
-            except AttributeError:
-                # if pydantic is v1, use schema method to get json schema
-                parameters = self.fn_schema.schema()
-                parameters = {
-                    k: v
-                    for k, v in parameters.items()
-                    if k in ["type", "properties", "required", "definitions"]
-                }
+            parameters = self.fn_schema.schema()
+            parameters = {
+                k: v
+                for k, v in parameters.items()
+                if k in ["type", "properties", "required", "definitions"]
+            }
         return parameters
 
     @property
