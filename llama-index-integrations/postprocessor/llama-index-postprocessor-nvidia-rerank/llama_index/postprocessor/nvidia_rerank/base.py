@@ -52,7 +52,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         max_retries: int = 5,
         api_key: Optional[str] = None,
         url : str = BASE_PLAYGROUND_URL,
-    ) -> None:
+    ) :
         
         super().__init__(top_n=top_n, model=model, url=url)
         self.model = model 
@@ -63,29 +63,49 @@ class NVIDIARerank(BaseNodePostprocessor):
             self.mode(type_mode=type_mode)
         
 
-    def mode(self, type_mode=type_mode, base_url = url):
+    def mode(self, type_mode=type_mode, base_url = url , model=model , top_n = top_n):
+        if isinstance(self, str):
+            raise ValueError("Please construct the model before calling mode()")
+        out = self
+        if type_mode in ["nvidia", "catalog"]:
+            key_var = "NVIDIA_API_KEY"
+            api_key = os.getenv(key_var)
+            
+            if not api_key.startswith("nvapi-"):
+                raise ValueError(f"No {key_var} in env/fed as api_key. (nvapi-...)")
+        if type_mode in ["openai"]:
+            key_var = "OPENAI_API_KEY"
+            if not api_key or not api_key.startswith("sk-"):
+                api_key = os.getenv(key_var) 
+            if not api_key.startswith("sk-"):
+                raise ValueError(f"No {key_var} in env/fed as api_key. (sk-...)")
+
+        out.type_mode = type_mode
         
-        if type_mode == "nim" :             
-            self.model = DEFAULT_PLAYGROUND_MODEL
-            self.url = base_url + '/ranking'
-            self.type_mode = 'nim'
-            self.top_n = DEFAULT_TOP_N
-        elif type_mode == "catalog" :
-            try:
-                api_key = os.environ["NVIDIA_API_KEY"]
-                self._api_key = api_key
-                self.top_n = DEFAULT_TOP_N
-                self.url = BASE_PLAYGROUND_URL
-                self.model = DEFAULT_PLAYGROUND_MODEL
-                self.type_mode="catalog"                
-            except:
-                raise ValueError(
-                "Did not find NVIDIA_API_KEY, please add an environment variable"   ) 
+
+        if type_mode == "catalog":
+            ## NVIDIA API Catalog Integration: OpenAPI-spec gateway over NVCF endpoints
+            out.top_n = top_n
+            out.url = base_url 
+            ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
+            out.model = model
+            out._api_key = api_key
+            
+
+        elif type_mode == "nim":
+            ## OpenAPI-style specs to connect to NeMo Inference Microservices etc.
+            ## Most generic option, requires specifying base_url            
+            out.top_n = top_n
+            out.url = base_url +'/ranking'
+            ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
+            out.model = model
+
         else:
-            print("currently support only 'nim' backend or NVIDIA API Catalog's 'catalog' as mode !")
+            options = ["catalog", "nim"]
+            raise ValueError(f"Unknown mode: `{type_mode}`. Expected one of {options}.")       
 
-
-
+        return out
+    
     @classmethod
     def class_name(cls) -> str:
         return "NVIDIAReranker"
@@ -101,7 +121,9 @@ class NVIDIARerank(BaseNodePostprocessor):
             raise ValueError("Missing query bundle in extra info. Please do not give empty query!")
         if len(nodes) == 0:
             return []
+        model =self.model.default
         
+        top_n=self.top_n
         session = requests.Session()
 
         with self.callback_manager.event(
@@ -116,27 +138,32 @@ class NVIDIARerank(BaseNodePostprocessor):
             texts = [{"text": node.node.get_content()} for node in nodes]
             
             payloads = {
-                "model": self.model,
+                "model": model,
                 "query": {"text": query_bundle.query_str},
                 "passages":texts,
             }
             if self.type_mode =='nim':
-                response=requests.post(self.url,json=payloads)
+                current_url=self.url
+                print(f"model {model} , url :{current_url}")
+                response=requests.post(current_url,json=payloads)
             elif self.type_mode =='catalog':
+                current_url = self.url[0].default
+                print(f"model {model} , url :{current_url}")
                 headers = {
                 "Authorization": f"Bearer {self._api_key}",
                 "Accept": "application/json",
             }
-                response = session.post(self.url, headers=headers, json=payloads)
+                response = session.post(current_url, headers=headers, json=payloads)
             else:
                 raise ValueError(
                 f"Currently there are only 2 backends supported, default backend is catalog , your current backend is {self.type_mode}"                )    
 
-
+            
             try :
                 assert response.status_code == 200                
                 
                 results = response.json()["rankings"]
+                print("----------> \n", results)
                 new_nodes = []
             
                 for result in results:
