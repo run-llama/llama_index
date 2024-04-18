@@ -6,21 +6,14 @@ from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 import requests
-from openai import OpenAI as SyncOpenAI
-from openai import AsyncOpenAI
-from enum import Enum
-
-
-class ModelType(Enum):
-    NVIDIAAPICatalog = "catalog"
-    NIM = "nim"
-
 
 
 DEFAULT_PLAYGROUND_MODEL = "nv-rerank-qa-mistral-4b:1" 
 BASE_PLAYGROUND_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking"
 
 DEFAULT_TOP_N = 2
+
+model_lookup = {"catalog":[DEFAULT_PLAYGROUND_MODEL], "nim":[DEFAULT_PLAYGROUND_MODEL]}
 
 
 class NVIDIARerank(BaseNodePostprocessor):
@@ -67,7 +60,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         if isinstance(self, str):
             raise ValueError("Please construct the model before calling mode()")
         out = self
-        if type_mode in ["nvidia", "catalog"]:
+        if type_mode in ["catalog"]:
             key_var = "NVIDIA_API_KEY"
             api_key = os.getenv(key_var)
             
@@ -88,7 +81,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             out.top_n = top_n
             out.url = base_url 
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
-            out.model = model
+            out.model = model_lookup[type_mode][0]
             out._api_key = api_key
             
 
@@ -98,7 +91,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             out.top_n = top_n
             out.url = base_url +'/ranking'
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
-            out.model = model
+            out.model = model_lookup[type_mode][0]
 
         else:
             options = ["catalog", "nim"]
@@ -121,7 +114,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             raise ValueError("Missing query bundle in extra info. Please do not give empty query!")
         if len(nodes) == 0:
             return []
-        model =self.model.default
+        model =self.model
         
         top_n=self.top_n
         session = requests.Session()
@@ -144,11 +137,9 @@ class NVIDIARerank(BaseNodePostprocessor):
             }
             if self.type_mode =='nim':
                 current_url=self.url
-                print(f"model {model} , url :{current_url}")
                 response=requests.post(current_url,json=payloads)
             elif self.type_mode =='catalog':
                 current_url = self.url[0].default
-                print(f"model {model} , url :{current_url}")
                 headers = {
                 "Authorization": f"Bearer {self._api_key}",
                 "Accept": "application/json",
@@ -163,7 +154,6 @@ class NVIDIARerank(BaseNodePostprocessor):
                 assert response.status_code == 200                
                 
                 results = response.json()["rankings"]
-                print("----------> \n", results)
                 new_nodes = []
             
                 for result in results:
