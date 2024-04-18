@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import List
+from typing import Iterator, List
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -24,25 +24,19 @@ class BrowserbaseWebReader(BaseReader):
 
         self.browserbase = Browserbase(api_key=api_key)
 
-    def load_data(self, urls: List[str], text_content: bool = False) -> List[Document]:
+    def lazy_load_data(self, urls: List[str], text_content: bool = False) -> Iterator[Document]:
         """Load pages using Browserbase Web Reader"""
-
         pages = self.browserbase.load_urls(urls, text_content)
 
-        documents = []
         for i, page in enumerate(pages):
-            documents.append(
-                Document(
-                    text=page,
-                    metadata={
-                        "url": urls[i],
-                    },
-                )
+            yield Document(
+                text=page,
+                metadata={
+                    "url": urls[i],
+                },
             )
-
-        return documents
 
 
 if __name__ == "__main__":
     reader = BrowserbaseWebReader()
-    logger.info(reader.load_data(urls=["https://example.com"]))
+    logger.warning(reader.load_data(urls=["https://example.com"]))
