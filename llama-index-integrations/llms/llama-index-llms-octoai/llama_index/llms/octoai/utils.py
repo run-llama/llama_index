@@ -38,8 +38,8 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
     Examples:
         .. code-block:: python
 
-            max_tokens = octoai.modelname_to_contextsize(TextModel.CODELLAMA_13B_INSTRUCT_FP16)
-            max_tokens = octoai.modelname_to_contextsize("llama-2-13b-chat-fp16")
+            max_tokens = octoai.modelname_to_contextsize(TextModel.CODELLAMA_13B_INSTRUCT)
+            max_tokens = octoai.modelname_to_contextsize("llama-2-13b-chat")
     """
     if modelname not in ALL_AVAILABLE_MODELS:
         raise ValueError(

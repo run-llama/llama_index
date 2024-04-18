@@ -40,7 +40,7 @@ from llama_index.llms.octoai.utils import (
 from octoai.chat import TextModel
 from octoai.client import Client
 
-DEFAULT_OCTOAI_MODEL = TextModel.MIXTRAL_8X7B_INSTRUCT_FP16
+DEFAULT_OCTOAI_MODEL = TextModel.MIXTRAL_8X7B_INSTRUCT
 
 
 class OctoAI(LLM):
