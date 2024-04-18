@@ -4,7 +4,7 @@ from typing import Any, List
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.indices.labelled_property_graph.sub_retrievers.base import (
+from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle

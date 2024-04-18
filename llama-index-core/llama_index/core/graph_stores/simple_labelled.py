@@ -11,7 +11,7 @@ from llama_index.core.graph_stores.types import (
     DEFUALT_LPG_PERSIST_FNAME,
     TRIPLET_SOURCE_KEY,
 )
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, NodeWithScore
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
 
@@ -27,7 +27,11 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
     supports_structured_queries: bool = False
     supports_vector_queries: bool = False
 
-    def __init__(self, graph: Optional[LabelledPropertyGraph] = None) -> None:
+    def __init__(
+        self,
+        graph: Optional[LabelledPropertyGraph] = None,
+        embedding_dict: Optional[dict] = None,
+    ) -> None:
         self.graph = graph or LabelledPropertyGraph()
 
     def get(
@@ -100,13 +104,18 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         """Get nodes."""
         nodes = []
         for node_id in node_ids:
-            nodes.append(self.graph.get_node(node_id))
+            node = self.graph.get_node(node_id)
+            if node is not None:
+                nodes.append(node)
         return nodes
 
     def upsert_nodes(self, nodes: List[BaseNode]) -> None:
         """Add nodes."""
         for node in nodes:
             self.graph.add_node(node)
+
+            if node.embedding is not None:
+                self.embedding_dict[node.id_] = node.embedding
 
     def upsert_triplets(self, triplets: List[Triplet]) -> None:
         """Add triplets."""
@@ -210,7 +219,9 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
             "Structured query not implemented for SimpleLPGStore."
         )
 
-    def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> List[Entity]:
+    def vector_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> List[NodeWithScore]:
         """Query the graph store with a vector store query."""
         raise NotImplementedError("Vector query not implemented for SimpleLPGStore.")
 

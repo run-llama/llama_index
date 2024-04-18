@@ -7,9 +7,9 @@ from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.indices.base import BaseIndex
-from llama_index.core.indices.labelled_property_graph.transformations import (
-    ExtractTripletsFromText,
-    ExtractTripletsFromNodeRelations,
+from llama_index.core.indices.property_graph.transformations import (
+    SimpleLLMTripletExtractor,
+    ImplicitTripletExtractor,
 )
 from llama_index.core.indices.utils import embed_nodes, async_embed_nodes
 from llama_index.core.ingestion.pipeline import (
@@ -65,8 +65,8 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             self._embed_model = None
 
         self._kg_transformations = kg_transformations or [
-            ExtractTripletsFromNodeRelations(),
-            ExtractTripletsFromText(llm=self._llm),
+            SimpleLLMTripletExtractor(),
+            ImplicitTripletExtractor(llm=self._llm),
         ]
         self._use_async = use_async
 
@@ -86,16 +86,20 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
 
     def _insert_nodes(self, nodes: Sequence[BaseNode]) -> Sequence[BaseNode]:
         """Insert nodes to the index struct."""
+        # run transformations on nodes to extract triplets
         if self._use_async:
             nodes = asyncio.run(
                 arun_transformations(
                     nodes, self._kg_transformations, show_progress=self._show_progress
                 )
             )
+        else:
+            nodes = run_transformations(
+                nodes, self._kg_transformations, show_progress=self._show_progress
+            )
 
-        nodes = run_transformations(
-            nodes, self._kg_transformations, show_progress=self._show_progress
-        )
+        # ensure all nodes have triplets in metadata
+        assert all(node.metadata.get("triplets") is not None for node in nodes)
 
         triplets = []
         for node in nodes:
@@ -138,16 +142,18 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
     def _build_index_from_nodes(self, nodes: Optional[Sequence[BaseNode]]) -> IndexList:
         """Build index from nodes."""
         nodes = self._insert_nodes(nodes or [])
-        return IndexList(nodes=[node.id_ for node in nodes])
+
+        # this isn't really used or needed
+        return IndexList(nodes=[])
 
     def as_retriever(self, include_text: bool = True, **kwargs: Any) -> BaseRetriever:
-        from llama_index.core.indices.labelled_property_graph.retriever import (
+        from llama_index.core.indices.property_graph.retriever import (
             LPGRetriever,
         )
-        from llama_index.core.indices.labelled_property_graph.sub_retrievers.vector_retriever import (
+        from llama_index.core.indices.property_graph.sub_retrievers.vector import (
             LPGVectorRetriever,
         )
-        from llama_index.core.indices.labelled_property_graph.sub_retrievers.llm_synonym_retriever import (
+        from llama_index.core.indices.property_graph.sub_retrievers.llm_synonym import (
             LLMSynonymRetriever,
         )
 

@@ -49,7 +49,7 @@ from llama_index.core.indices.vector_store import (
     VectorStoreIndex,
 )
 
-from llama_index.core.indices.labelled_property_graph.base import (
+from llama_index.core.indices.property_graph.base import (
     LabelledPropertyGraphIndex,
 )
 

@@ -20,12 +20,12 @@ class BaseLPGRetriever(BaseRetriever):
         if not self._include_text:
             return nodes
 
-        og_nodes = self._graph_store.get_nodes([x.node.node_id for x in nodes])
+        og_nodes = self._graph_store.get_nodes([x.node.ref_doc_id for x in nodes])
         node_map = {node.node_id: node for node in og_nodes}
 
         result_nodes = []
         for node_with_score in nodes:
-            node = node_map.get(node_with_score.node.node_id, None)
+            node = node_map.get(node_with_score.node.ref_doc_id, None)
             if node:
                 result_nodes.append(
                     NodeWithScore(
@@ -40,12 +40,14 @@ class BaseLPGRetriever(BaseRetriever):
         if not self._include_text:
             return nodes
 
-        og_nodes = await self._graph_store.aget_nodes([x.node.node_id for x in nodes])
+        og_nodes = await self._graph_store.aget_nodes(
+            [x.node.ref_doc_id for x in nodes]
+        )
         node_map = {node.node_id: node for node in og_nodes}
 
         result_nodes = []
         for node_with_score in nodes:
-            node = node_map.get(node_with_score.node.node_id, None)
+            node = node_map.get(node_with_score.node.ref_doc_id, None)
             if node:
                 result_nodes.append(
                     NodeWithScore(

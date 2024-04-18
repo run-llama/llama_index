@@ -1,0 +1,222 @@
+import asyncio
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypeAlias
+
+from llama_index.core.async_utils import run_jobs
+from llama_index.core.bridge.pydantic import create_model, validator
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.schema import TransformComponent, BaseNode
+from llama_index.core.llms.llm import LLM
+
+
+DEFAULT_ENTITIES = Literal[
+    "PRODUCT", "MARKET", "TECHNOLOGY", "EVENT", "CONCEPT", "ORGANIZATION", "PERSON"
+]
+
+DEFAULT_RELATIONS = Literal[
+    "USED_BY",
+    "USED_FOR",
+    "LOCATED_IN",
+    "PART_OF",
+    "WORKED_ON",
+    "HAS",
+    "IS_A",
+    "BORN_IN",
+    "DIED_IN",
+]
+
+DEFAULT_VALIDATION_SCHEMA: Dict[str, Any] = {
+    "PRODUCT": (
+        "USED_BY",
+        "USED_FOR",
+        "LOCATED_IN",
+        "PART_OF",
+        "WORKED_ON",
+        "HAS",
+        "IS_A",
+    ),
+    "MARKET": ("LOCATED_IN", "PART_OF", "WORKED_ON", "HAS", "IS_A"),
+    "TECHNOLOGY": (
+        "USED_BY",
+        "USED_FOR",
+        "LOCATED_IN",
+        "PART_OF",
+        "WORKED_ON",
+        "HAS",
+        "IS_A",
+    ),
+    "EVENT": ("LOCATED_IN", "PART_OF", "WORKED_ON", "HAS", "IS_A"),
+    "CONCEPT": ("USE_BY", "USED_FOR", "PART_OF", "WORKED_ON", "HAS", "IS_A"),
+    "ORGANIZATION": ("LOCATED_IN", "PART_OF", "HAS", "IS_A"),
+    "PERSON": (
+        "BORN_IN",
+        "DIED_IN",
+        "LOCATED_IN",
+        "PART_OF",
+        "WORKED_ON",
+        "HAS",
+        "IS_A",
+    ),
+}
+
+DEFAULT_SCHEMA_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
+    "Give the following text, extract the knowledge graph according to the provided schema. "
+    "Try to limit to the output {max_triplets_per_chunk} extracted triplets.s\n"
+    "-------\n"
+    "{text}\n"
+    "-------\n"
+)
+
+
+class SchemaLLMTripletExtractor(TransformComponent):
+    """Extract triplets from a graph using a schema."""
+
+    llm: LLM
+    extract_prompt: PromptTemplate
+    kg_schema_cls: Any
+    kg_validation_schema: Dict[str, Any]
+    num_workers: int
+    max_triplets_per_chunk: int
+    show_progress: bool
+
+    def __init__(
+        self,
+        llm: LLM,
+        extract_prompt: PromptTemplate = None,
+        possible_entities: Optional[TypeAlias] = None,
+        possible_relations: Optional[TypeAlias] = None,
+        kg_schema_cls: Any = None,
+        kg_validation_schema: Dict[str, str] = None,
+        max_triplets_per_chunk: int = 10,
+        num_workers: int = 4,
+        show_progress: bool = False,
+    ) -> None:
+        """Init params."""
+        # Build a pydantic model on the fly
+        if kg_schema_cls is None:
+            possible_entities = possible_entities or DEFAULT_ENTITIES
+            entity_cls = create_model(
+                "Entity",
+                type=(possible_entities, ...),
+                value=(str, ...),
+                __doc__="Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
+                + str(possible_entities),
+            )
+
+            possible_relations = possible_relations or DEFAULT_RELATIONS
+            relation_cls = create_model(
+                "Relation",
+                type=(possible_relations, ...),
+                __doc__="Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
+                + str(possible_relations),
+            )
+
+            triplet_cls = create_model(
+                "Triplet",
+                subject=(entity_cls, ...),
+                relation=(relation_cls, ...),
+                object=(entity_cls, ...),
+                __doc__="Triplet in a knowledge graph.",
+            )
+
+            def validate(v: Any, values: Any) -> Any:
+                """Validate triplets."""
+                passing_triplets = []
+                for i, triplet in enumerate(v):
+                    # cleanup
+                    for key in triplet:
+                        triplet[key]["type"] = triplet[key]["type"].replace(" ", "_")
+                        triplet[key]["type"] = triplet[key]["type"].upper()
+
+                    # validate, skip if invalid
+                    try:
+                        _ = triplet_cls(**triplet)
+                        passing_triplets.append(v[i])
+                    except ValueError:
+                        continue
+                return passing_triplets
+
+            root = validator("triplets", pre=True)(validate)
+            kg_schema_cls = create_model(
+                "KGSchema",
+                triplets=(List[triplet_cls], ...),
+                __validators__={"validator1": root},
+                __doc__="Knowledge Graph Schema.",
+            )
+
+        super().__init__(
+            llm=llm,
+            extract_prompt=extract_prompt or DEFAULT_SCHEMA_TRIPLET_EXTRACT_PROMPT,
+            kg_schema_cls=kg_schema_cls,
+            kg_validation_schema=kg_validation_schema or DEFAULT_VALIDATION_SCHEMA,
+            num_workers=num_workers,
+            max_triplets_per_chunk=max_triplets_per_chunk,
+            show_progress=show_progress,
+        )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ExtractTripletsFromText"
+
+    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        """Extract triplets from nodes."""
+        return asyncio.run(self.acall(nodes, **kwargs))
+
+    def _prune_invalid_triplets(self, kg_schema: Any) -> List[Tuple[str, str, str]]:
+        """Prune invalid triplets."""
+        assert isinstance(kg_schema, self.kg_schema_cls)
+
+        valid_triplets = []
+        for triplet in kg_schema.triplets:
+            subject = triplet.subject.value
+            subject_type = triplet.subject.type
+
+            relation = triplet.relation.type
+
+            obj = triplet.object.value
+            obj_type = triplet.object.type
+
+            # check relations
+            if relation not in self.kg_validation_schema[subject_type]:
+                continue
+            if relation not in self.kg_validation_schema[obj_type]:
+                continue
+
+            # remove self-references
+            if subject.lower() == obj.lower():
+                continue
+
+            valid_triplets.append((subject, relation, obj))
+
+        return valid_triplets
+
+    async def _aextract(self, node: BaseNode) -> BaseNode:
+        """Extract triplets from a node."""
+        assert hasattr(node, "text")
+
+        text = node.get_content(metadata_mode="llm")
+        try:
+            kg_schema = await self.llm.astructured_predict(
+                self.kg_schema_cls,
+                self.extract_prompt,
+                text=text,
+                max_triplets_per_chunk=self.max_triplets_per_chunk,
+            )
+            triplets = self._prune_invalid_triplets(kg_schema)
+        except ValueError:
+            triplets = []
+
+        existing_triplets = node.metadata.get("triplets", [])
+        existing_triplets.extend(triplets)
+        node.metadata["triplets"] = existing_triplets
+
+        return node
+
+    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        """Extract triplets from nodes async."""
+        jobs = []
+        for node in nodes:
+            jobs.append(self._aextract(node))
+
+        return await run_jobs(
+            jobs, workers=self.num_workers, show_progress=self.show_progress
+        )

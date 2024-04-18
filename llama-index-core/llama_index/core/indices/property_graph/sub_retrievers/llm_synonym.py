@@ -2,15 +2,20 @@ from typing import List, Optional
 
 from llama_index.core.llms.llm import LLM
 from llama_index.core.indices.keyword_table.utils import simple_extract_keywords
-from llama_index.core.indices.labelled_property_graph.base import (
+from llama_index.core.indices.property_graph.base import (
     TRIPLET_SOURCE_KEY,
 )
-from llama_index.core.indices.labelled_property_graph.sub_retrievers.base import (
+from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
 from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
 from llama_index.core.settings import Settings
-from llama_index.core.schema import NodeWithScore, TextNode
+from llama_index.core.schema import (
+    NodeWithScore,
+    TextNode,
+    NodeRelationship,
+    RelatedNodeInfo,
+)
 
 DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
     "Given some initial keywords, generate synonyms or related keywords up to {max_keywords} in total, "
@@ -58,12 +63,22 @@ class LLMSynonymRetriever(BaseLPGRetriever):
             sub_results.extend(self._graph_store.get(relation_names=[match]))
 
             for triplet in sub_results:
-                id_ = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
-                assert id_ is not None
+                source_id = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
+                assert source_id is not None
 
                 text = f"{triplet[0].text}, {triplet[1].text}, {triplet[2].text}"
                 results.append(
-                    NodeWithScore(node=TextNode(id_=id_, text=text), score=1.0)
+                    NodeWithScore(
+                        node=TextNode(
+                            text=text,
+                            relationships={
+                                NodeRelationship.SOURCE: RelatedNodeInfo(
+                                    node_id=source_id
+                                )
+                            },
+                        ),
+                        score=1.0,
+                    )
                 )
 
         return results
@@ -76,12 +91,22 @@ class LLMSynonymRetriever(BaseLPGRetriever):
             sub_results.extend(await self._graph_store.aget(relation_names=[match]))
 
             for triplet in sub_results:
-                id_ = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
-                assert id_ is not None
+                source_id = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
+                assert source_id is not None
 
                 text = f"{triplet[0].text}, {triplet[1].text}, {triplet[2].text}"
                 results.append(
-                    NodeWithScore(node=TextNode(id_=id_, text=text), score=1.0)
+                    NodeWithScore(
+                        node=TextNode(
+                            text=text,
+                            relationships={
+                                NodeRelationship.SOURCE: RelatedNodeInfo(
+                                    node_id=source_id
+                                )
+                            },
+                        ),
+                        score=1.0,
+                    )
                 )
 
         return results

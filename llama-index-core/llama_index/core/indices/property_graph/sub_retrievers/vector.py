@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.indices.labelled_property_graph.sub_retrievers.base import (
+from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
 from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
