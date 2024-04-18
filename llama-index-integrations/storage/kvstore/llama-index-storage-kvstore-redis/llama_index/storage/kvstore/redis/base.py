@@ -11,7 +11,8 @@ from redis import Redis
 
 
 class RedisKVStore(BaseKVStore):
-    """Redis KV Store.
+    """
+    Redis KV Store.
 
     Args:
         redis_client (Any): Redis client
@@ -48,7 +49,8 @@ class RedisKVStore(BaseKVStore):
             raise ValueError("Either 'redis_client' or redis_url must be provided.")
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -61,7 +63,8 @@ class RedisKVStore(BaseKVStore):
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -69,7 +72,7 @@ class RedisKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        raise NotImplementedError
+        return self.put(key=key, val=val, collection=collection)
 
     def put_all(
         self,
@@ -77,7 +80,8 @@ class RedisKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Put a dictionary of key-value pairs into the store.
+        """
+        Put a dictionary of key-value pairs into the store.
 
         Args:
             kv_pairs (List[Tuple[str, dict]]): key-value pairs
@@ -98,7 +102,8 @@ class RedisKVStore(BaseKVStore):
                 pipe.execute()
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -113,14 +118,15 @@ class RedisKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
 
         """
-        raise NotImplementedError
+        return self.get(key=key, collection=collection)
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
@@ -132,10 +138,11 @@ class RedisKVStore(BaseKVStore):
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
-        raise NotImplementedError
+        return self.get_all(collection=collection)
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -146,14 +153,15 @@ class RedisKVStore(BaseKVStore):
         return bool(deleted_num > 0)
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
 
         """
-        raise NotImplementedError
+        return self.delete(key=key, collection=collection)
 
     @classmethod
     def from_host_and_port(
@@ -161,7 +169,8 @@ class RedisKVStore(BaseKVStore):
         host: str,
         port: int,
     ) -> "RedisKVStore":
-        """Load a RedisKVStore from a Redis host and port.
+        """
+        Load a RedisKVStore from a Redis host and port.
 
         Args:
             host (str): Redis host
@@ -172,7 +181,8 @@ class RedisKVStore(BaseKVStore):
 
     @classmethod
     def from_redis_client(cls, redis_client: Any) -> "RedisKVStore":
-        """Load a RedisKVStore from a Redis Client.
+        """
+        Load a RedisKVStore from a Redis Client.
 
         Args:
             redis_client (Redis): Redis client
