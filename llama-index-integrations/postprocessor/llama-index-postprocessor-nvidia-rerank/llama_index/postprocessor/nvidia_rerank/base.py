@@ -12,7 +12,7 @@ DEFAULT_PLAYGROUND_MODEL = "nv-rerank-qa-mistral-4b:1"
 BASE_PLAYGROUND_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking"
 
 DEFAULT_TOP_N = 2
-
+ 
 model_lookup = {"catalog":[DEFAULT_PLAYGROUND_MODEL], "nim":[DEFAULT_PLAYGROUND_MODEL]}
 
 
@@ -55,6 +55,8 @@ class NVIDIARerank(BaseNodePostprocessor):
         if type_mode=='nim':
             self.mode(type_mode=type_mode)
         
+    def get_available_models():
+        return model_lookup.items()
 
     def mode(self, type_mode=type_mode, base_url = url , model=model , top_n = top_n):
         if isinstance(self, str):
