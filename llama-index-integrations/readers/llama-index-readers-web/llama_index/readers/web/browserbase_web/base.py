@@ -39,4 +39,4 @@ class BrowserbaseWebReader(BaseReader):
 
 if __name__ == "__main__":
     reader = BrowserbaseWebReader()
-    logger.warning(reader.load_data(urls=["https://example.com"]))
+    logger.info(reader.load_data(urls=["https://example.com"]))
