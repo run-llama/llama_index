@@ -871,10 +871,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return Filter(must=must_conditions)
 
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
+        collection_info = self.client.get_collection(collection_name)
         return (
             self._collection_exists(collection_name)
-            and SPARSE_VECTOR_NAME_OLD
-            in self.client.get_collection(collection_name).config.params.vectors
+            and collection_info.config.params.sparse_vectors is not None
+            and SPARSE_VECTOR_NAME_OLD in collection_info.config.params.sparse_vectors
         )
 
     @property
