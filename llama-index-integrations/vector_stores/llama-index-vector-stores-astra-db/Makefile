@@ -11,13 +11,7 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 	poetry run pre-commit install && git ls-files | xargs poetry run pre-commit run --show-diff-on-failure --files
 
 typecheck:
-	if [ -f "llama_index/__init__.py" ]; then exit 1; fi
-	if [ -f "llama_index/vector_stores/__init__.py" ]; then exit 1; fi
-	touch "llama_index/__init__.py"
-	touch "llama_index/vector_stores/__init__.py"
-	poetry run mypy .
-	rm "llama_index/__init__.py"
-	rm "llama_index/vector_stores/__init__.py"
+	poetry run mypy --explicit-package-bases llama_index
 
 test:	## Run tests via pytest.
 	poetry run pytest tests
