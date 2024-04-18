@@ -18,7 +18,7 @@ BASE_RETRIEVAL_PLAYGROUND_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
 class NVIDIAEmbedding(BaseEmbedding):
     """NVIDIA embeddings."""
 
-    model_name: str = Field(
+    model: str = Field(
         default="NV-Embed-QA",
         description="Name of the NVIDIA embedding model to use.\n"
         "Defaults to 'NV-Embed-QA'.",
@@ -39,7 +39,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_name: str = "NV-Embed-QA",
+        model: str = "NV-Embed-QA",
         timeout: float = 120,
         max_retries: int = 5,
         api_key: Optional[str] = None,
@@ -66,7 +66,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
         super().__init__(
-            model_name=model_name,
+            model_name=model,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
@@ -76,35 +76,51 @@ class NVIDIAEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "NVIDIAEmbedding"
 
-    # def mode(
-    #     mode: Optional[("nvidia", "catalog", "nim")] = "catalog",
-    #     base_url: Optional[str] = None,
-    #     model: Optional[str] = "NV-Embed-QA",
-    #     api_key: Optional[str] = None,
-    #     ):
+    def mode(
+        mode: Optional[("catalog", "nim")] = "catalog",
+        base_url: Optional[str] = None,
+        model: Optional[str] = "NV-Embed-QA",
+        api_key: Optional[str] = None,
+    ):
+        out = self
 
-    #     out = self
+        if mode == "catalog":
+            if api_key is None:
+                api_key = get_from_param_or_env(
+                    "api_key", api_key, "NVIDIA_API_KEY", ""
+                )
 
-    #     if api_key is None:
-    #         api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
+            if not api_key:
+                raise ValueError(
+                    "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA AI catalog."
+                )
 
-    #     if mode in ("nvidia", "catalog"):
-    #         if not api_key:
-    #             raise ValueError(
-    #                 "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA AI catalog."
-    #             )
+            out.model_name = model
 
-    #     if mode == "nim":
-    #         if base_url is None:
-    #             raise ValueError(
-    #                 "The NIM base URL must be provided to connect to a local NIM"
-    #             )
+            out._client.base_url = BASE_RETRIEVAL_PLAYGROUND_URL
+            out._aclient.base_url = BASE_RETRIEVAL_PLAYGROUND_URL
+
+            out._client.api_key = api_key
+            out._aclient.api_key = api_key
+
+        elif mode == "nim":
+            if base_url is None:
+                raise ValueError(
+                    "The NIM base URL must be provided to connect to a local NIM"
+                )
+
+            out.model_name = model
+
+            out._client.base_url = base_url
+            out._aclient.base_url = base_url
+
+        return out
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return (
             self._client.embeddings.create(
-                input=[query], model=self.model_name, extra_body={"input_type": "query"}
+                input=[query], model=self.model, extra_body={"input_type": "query"}
             )
             .data[0]
             .embedding
@@ -115,7 +131,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         return (
             self._client.embeddings.create(
                 input=[text],
-                model=self.model_name,
+                model=self.model,
                 extra_body={"input_type": "passage"},
             )
             .data[0]
@@ -127,7 +143,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         assert len(texts) <= 259, "The batch size should not be larger than 299."
 
         data = self._client.embeddings.create(
-            input=texts, model=self.model_name, extra_body={"input_type": "passage"}
+            input=texts, model=self.model, extra_body={"input_type": "passage"}
         ).data
         return [d.embedding for d in data]
 
@@ -137,7 +153,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             (
                 await self._aclient.embeddings.create(
                     input=[query],
-                    model=self.model_name,
+                    model=self.model,
                     extra_body={"input_type": "query"},
                 )
             )
@@ -151,7 +167,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             (
                 await self._aclient.embeddings.create(
                     input=[text],
-                    model=self.model_name,
+                    model=self.model,
                     extra_body={"input_type": "passage"},
                 )
             )
@@ -165,7 +181,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
         data = (
             await self._aclient.embeddings.create(
-                input=texts, model=self.model_name, extra_body={"input_type": "passage"}
+                input=texts, model=self.model, extra_body={"input_type": "passage"}
             )
         ).data
         return [d.embedding for d in data]
