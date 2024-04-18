@@ -61,7 +61,7 @@ def create_retry_decorator(
                     openai.APIError,
                     openai.APIConnectionError,
                     openai.RateLimitError,
-                    openai.APIStatusError,
+                    openai.InternalServerError,
                 )
             )
         ),
