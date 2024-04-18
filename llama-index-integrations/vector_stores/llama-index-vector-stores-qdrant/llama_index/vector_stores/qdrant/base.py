@@ -874,7 +874,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return (
             self._collection_exists(collection_name)
             and SPARSE_VECTOR_NAME_OLD
-            in self.client.get_collection(collection_name).config.params.vectors
+            in self.client.get_collection(collection_name).config.params.sparse_vectors
         )
 
     @property
