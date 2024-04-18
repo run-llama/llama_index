@@ -558,14 +558,14 @@ def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
     )
 
     chunks: List[TextNode] = code_splitter.get_nodes_from_documents([text_node])
-    assert(len(chunks) == 4)
-    assert(
+    assert len(chunks) == 4
+    assert (
         chunks[0].text
         == f"""def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
-    # {CodeHierarchyNodeParser._get_comment_text(chunks[1])}""")
+    # {CodeHierarchyNodeParser._get_comment_text(chunks[1])}"""
+    )
 
-
-    assert(
+    assert (
         chunks[1].text
         == f"""def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
     if np.isscalar(datetime_or_doy):
@@ -581,6 +581,13 @@ def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
                                    epoch_year=epoch_year)
         to_output = tools._array_out
 
-    return to_doy, to_datetimeindex, to_output""")
-    assert(chunks[2].text == """        def to_doy(x): return x                                 # noqa: E306""")
-    assert(chunks[3].text == """        def to_doy(x): return x                                 # noqa: E306""")
+    return to_doy, to_datetimeindex, to_output"""
+    )
+    assert (
+        chunks[2].text
+        == """        def to_doy(x): return x                                 # noqa: E306"""
+    )
+    assert (
+        chunks[3].text
+        == """        def to_doy(x): return x                                 # noqa: E306"""
+    )
