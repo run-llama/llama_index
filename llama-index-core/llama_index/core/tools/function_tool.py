@@ -55,8 +55,19 @@ class FunctionTool(AsyncBaseTool):
     ) -> "FunctionTool":
         if tool_metadata is None:
             name = name or fn.__name__
-            doc = docstring_parser.parse(fn.__doc__)
-            description = description or doc.description or ""
+            if not description:
+                doc = docstring_parser.parse(fn.__doc__)
+                doc.meta = [
+                    i
+                    for i in doc.meta
+                    if not isinstance(i, docstring_parser.common.DocstringParam)
+                ]
+                description = docstring_parser.compose(
+                    doc,
+                    docstring_parser.Style.GOOGLE,
+                    rendering_style=docstring_parser.RenderingStyle.CLEAN,
+                    indent="  ",
+                )
 
             if fn_schema is None:
                 fn_schema = create_schema_from_function(
