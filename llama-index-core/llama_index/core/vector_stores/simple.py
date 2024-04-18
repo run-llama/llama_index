@@ -19,6 +19,7 @@ from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
     MetadataFilters,
+    FilterCondition,
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -49,19 +50,31 @@ def _build_metadata_filter_fn(
     if not filter_list:
         return lambda _: True
 
+    filter_condition = cast(MetadataFilters, metadata_filters.condition)
+
     def filter_fn(node_id: str) -> bool:
         metadata = metadata_lookup_fn(node_id)
+
+        filter_matches_list = []
         for filter_ in filter_list:
+            filter_matches = True
             metadata_value = metadata.get(filter_.key, None)
             if metadata_value is None:
-                return False
+                filter_matches = False
             elif isinstance(metadata_value, list):
                 if filter_.value not in metadata_value:
-                    return False
+                    filter_matches = False
             elif isinstance(metadata_value, (int, float, str, bool)):
                 if metadata_value != filter_.value:
-                    return False
-        return True
+                    filter_matches = False
+            filter_matches_list.append(filter_matches)
+
+        if filter_condition == FilterCondition.AND:
+            return all(filter_matches_list)
+        elif filter_condition == FilterCondition.OR:
+            return any(filter_matches_list)
+        else:
+            raise ValueError(f"Invalid filter condition: {filter_condition}")
 
     return filter_fn
 

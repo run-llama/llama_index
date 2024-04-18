@@ -9,7 +9,7 @@ query_engine = index.as_query_engine()
 ```
 
 !!! tip
-To learn how to build an index, see [Indexing](../../indexing/index.md)
+    To learn how to build an index, see [Indexing](../../indexing/index.md)
 
 Ask a question over your data
 

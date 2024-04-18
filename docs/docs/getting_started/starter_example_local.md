@@ -1,7 +1,7 @@
 # Starter Tutorial (Local Models)
 
 !!! tip
-Make sure you've followed the [custom installation](installation.md) steps first.
+    Make sure you've followed the [custom installation](installation.md) steps first.
 
 This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-small-en-v1.5` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
 
@@ -70,5 +70,6 @@ This creates an engine for Q&A over your index and asks a simple question. You s
 You can view logs, persist/load the index similar to our [starter example](starter_example.md).
 
 !!! tip
-_ learn more about the [high-level concepts](./concepts.md).
-_ tell me how to [customize things](./customization.md). \* curious about a specific module? check out the guides on the left 👈
+    - learn more about the [high-level concepts](./concepts.md).
+    - tell me how to [customize things](./customization.md).
+    - curious about a specific module? check out the [component guides](../module_guides/index.md).

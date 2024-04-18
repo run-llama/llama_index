@@ -12,7 +12,6 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
 
     def span_enter(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -23,7 +22,6 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
 
     def span_exit(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -35,7 +33,6 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
 
     def new_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -47,7 +44,6 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
 
     def prepare_to_exit_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -59,7 +55,6 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
 
     def prepare_to_drop_span(
         self,
-        *args: Any,
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
@@ -67,5 +62,4 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         **kwargs: Any
     ) -> None:
         """Logic for droppping a span."""
-        if err:
-            raise err
+        return

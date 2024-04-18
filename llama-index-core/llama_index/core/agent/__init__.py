@@ -3,6 +3,7 @@ from llama_index.core.agent.custom.pipeline_worker import QueryPipelineAgentWork
 from llama_index.core.agent.custom.simple import CustomSimpleAgentWorker
 from llama_index.core.agent.react.base import ReActAgent
 from llama_index.core.agent.react.formatter import ReActChatFormatter
+from llama_index.core.agent.react.output_parser import ReActOutputParser
 from llama_index.core.agent.react.step import ReActAgentWorker
 from llama_index.core.agent.react_multimodal.step import MultimodalReActAgentWorker
 from llama_index.core.agent.runner.base import AgentRunner
@@ -16,6 +17,7 @@ __all__ = [
     "ParallelAgentRunner",
     "ReActAgentWorker",
     "ReActAgent",
+    "ReActOutputParser",
     "CustomSimpleAgentWorker",
     "QueryPipelineAgentWorker",
     "ReActChatFormatter",
@@ -25,4 +27,6 @@ __all__ = [
     # schema-related
     "AgentChatResponse",
     "Task",
+    "TaskStep",
+    "TaskStepOutput",
 ]

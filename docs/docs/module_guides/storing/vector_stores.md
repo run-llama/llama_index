@@ -49,10 +49,12 @@ We are actively adding more integrations and improving feature coverage for each
 | SingleStore              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Supabase                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Tair                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
+| TiDB                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Timescale                |                         | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Upstash                  | cloud                   |                    |               |        | ✓               |       |
+| Vearch                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](../../community/integrations/vector_stores.md).
@@ -95,9 +97,11 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
 - [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
+- [TiDB](../../examples/vector_stores/TiDBVector.ipynb)
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
 - [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
 - [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
+- [Vearch](../../examples/vector_stores/VearchDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

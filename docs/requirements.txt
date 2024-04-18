@@ -16,7 +16,7 @@ executing==2.0.1
 fastjsonschema==2.19.1
 ghp-import==2.1.0
 griffe==0.42.0
-idna==3.6
+idna==3.7
 ipykernel==6.29.3
 ipython==8.22.2
 jedi==0.19.1

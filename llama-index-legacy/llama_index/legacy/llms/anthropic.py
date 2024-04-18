@@ -74,6 +74,7 @@ class Anthropic(LLM):
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -94,10 +95,18 @@ class Anthropic(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         self._client = anthropic.Anthropic(
-            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            default_headers=default_headers,
         )
         self._aclient = anthropic.AsyncAnthropic(
-            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            default_headers=default_headers,
         )
 
         super().__init__(

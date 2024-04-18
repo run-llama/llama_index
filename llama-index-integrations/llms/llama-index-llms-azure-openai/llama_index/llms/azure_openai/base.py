@@ -13,6 +13,7 @@ from llama_index.llms.azure_openai.utils import (
 from llama_index.llms.openai import OpenAI
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
+from openai.lib.azure import AzureADTokenProvider
 
 
 class AzureOpenAI(OpenAI):
@@ -69,6 +70,10 @@ class AzureOpenAI(OpenAI):
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
+    azure_ad_token_provider: AzureADTokenProvider = Field(
+        default=None, description="Callback function to provide Azure AD token."
+    )
+
     _azure_ad_token: Any = PrivateAttr(default=None)
     _client: SyncAzureOpenAI = PrivateAttr()
     _aclient: AsyncAzureOpenAI = PrivateAttr()
@@ -88,6 +93,7 @@ class AzureOpenAI(OpenAI):
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
+        azure_ad_token_provider: AzureADTokenProvider = None,
         use_azure_ad: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         # aliases for engine
@@ -127,6 +133,7 @@ class AzureOpenAI(OpenAI):
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
+            azure_ad_token_provider=azure_ad_token_provider,
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
@@ -186,6 +193,7 @@ class AzureOpenAI(OpenAI):
             "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
+            "azure_ad_token_provider": self.azure_ad_token_provider,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._http_client,

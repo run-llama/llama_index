@@ -333,6 +333,28 @@ class Link(BaseModel):
         )
 
 
+class ComponentIntermediates:
+    """Component intermediate inputs and outputs."""
+
+    def __init__(
+        self,
+        inputs: Dict[str, Any],
+        outputs: Dict[str, Any],
+    ) -> None:
+        """Initialize."""
+        self.inputs = inputs
+        self.outputs = outputs
+
+    def __repr__(self) -> str:
+        return (
+            f"ComponentIntermediates(inputs={self.inputs!s}, "
+            f"outputs={self.outputs!s})"
+        )
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline
 # ChainableMixin modules will be converted to components via `as_query_component`
 QUERY_COMPONENT_TYPE = Union[QueryComponent, ChainableMixin]

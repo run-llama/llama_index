@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -14,6 +14,10 @@ class RankLLMRerank(BaseNodePostprocessor):
     with_retrieval: bool = Field(
         default=False, description="Perform retrieval before reranking."
     )
+    step_size: int = Field(
+        default=10, description="Step size for moving sliding window."
+    )
+    gpt_model: str = Field(default="gpt-3.5-turbo", description="OpenAI model name.")
     _model: Any = PrivateAttr()
     _result: Any = PrivateAttr()
     _retriever: Any = PrivateAttr()
@@ -22,12 +26,17 @@ class RankLLMRerank(BaseNodePostprocessor):
         self,
         model,
         top_n: int = 10,
-        with_retrieval: bool = False,
+        with_retrieval: Optional[bool] = False,
+        step_size: Optional[int] = 10,
+        gpt_model: Optional[str] = "gpt-3.5-turbo",
     ):
         try:
             model_enum = ModelType(model.lower())
         except ValueError:
-            raise ValueError("Unsupported model type. Please use 'vicuna' or 'zephyr'.")
+            raise ValueError(
+                "Unsupported model type. Please use 'vicuna', 'zephyr', or 'gpt'."
+            )
+
         from rank_llm.result import Result
 
         self._result = Result
@@ -40,16 +49,31 @@ class RankLLMRerank(BaseNodePostprocessor):
             from rank_llm.rerank.zephyr_reranker import ZephyrReranker
 
             self._model = ZephyrReranker()
+        elif model_enum == ModelType.GPT:
+            from rank_llm.rerank.rank_gpt import SafeOpenai
+            from rank_llm.rerank.reranker import Reranker
+            from llama_index.llms.openai import OpenAI
 
+            llm = OpenAI(
+                model=gpt_model,
+                temperature=0.0,
+            )
+
+            llm.metadata
+
+            agent = SafeOpenai(model=gpt_model, context_size=4096, keys=llm.api_key)
+            self._model = Reranker(agent)
         if with_retrieval:
             from rank_llm.retrieve.retriever import Retriever
 
             self._retriever = Retriever
 
         super().__init__(
+            model=model,
             top_n=top_n,
             with_retrieval=with_retrieval,
-            model=model,
+            step_size=step_size,
+            gpt_model=gpt_model,
         )
 
     @classmethod
@@ -98,6 +122,7 @@ class RankLLMRerank(BaseNodePostprocessor):
             retrieved_results=retrieved_results,
             rank_end=len(docs),
             window_size=min(20, len(docs)),
+            step=self.step_size,
         )
 
         new_nodes: List[NodeWithScore] = []
@@ -112,3 +137,4 @@ class RankLLMRerank(BaseNodePostprocessor):
 class ModelType(Enum):
     VICUNA = "vicuna"
     ZEPHYR = "zephyr"
+    GPT = "gpt"

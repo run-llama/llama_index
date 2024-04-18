@@ -74,12 +74,7 @@ set_global_handler("langfuse")
 
 #### Guides
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/callbacks/LangfuseCallbackHandler.ipynb
-```
+- [Langfuse Callback Handler](../../examples/callbacks/LangfuseCallbackHandler.ipynb)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
