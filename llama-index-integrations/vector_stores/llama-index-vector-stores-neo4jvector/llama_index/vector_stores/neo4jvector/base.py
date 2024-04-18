@@ -10,7 +10,7 @@ from llama_index.core.vector_stores.types import (
     FilterOperator,
     MetadataFilters,
     MetadataFilter,
-    FilterCondition
+    FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -19,6 +19,7 @@ from llama_index.core.vector_stores.utils import (
 from neo4j.exceptions import CypherSyntaxError
 
 _logger = logging.getLogger(__name__)
+
 
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
     """Check if variable is not null and raise error accordingly."""
@@ -105,6 +106,7 @@ def remove_lucene_chars(text: Optional[str]) -> Optional[str]:
             text = text.replace(char, " ")
     return text.strip()
 
+
 def _to_neo4j_operator(operator: FilterOperator) -> str:
     if operator == FilterOperator.EQ:
         return "="
@@ -127,7 +129,8 @@ def _to_neo4j_operator(operator: FilterOperator) -> str:
     else:
         _logger.warning(f"Unknown operator: {operator}, fallback to '='")
         return "="
-    
+
+
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
 ) -> Tuple[List[str], Dict[str, Any]]:
@@ -154,21 +157,25 @@ def collect_params(
     # Return the transformed data
     return (query_parts, params)
 
+
 def filter_to_cypher(index: int, filter: MetadataFilter) -> str:
-    return (f"n.`{filter.key}` {_to_neo4j_operator(filter.operator)} $param_{index}", {f"param_{index}": filter.value})
+    return (
+        f"n.`{filter.key}` {_to_neo4j_operator(filter.operator)} $param_{index}",
+        {f"param_{index}": filter.value},
+    )
+
 
 def construct_metadata_filter(filters: MetadataFilters):
     cypher_snippets = []
     for index, filter in enumerate(filters.filters):
         cypher_snippets.append(filter_to_cypher(index, filter))
-    
+
     collected_snippets = collect_params(cypher_snippets)
 
     if filters.condition == FilterCondition.OR:
         return (" OR ".join(collected_snippets[0]), collected_snippets[1])
     else:
         return (" AND ".join(collected_snippets[0]), collected_snippets[1])
-
 
 
 class Neo4jVectorStore(VectorStore):
@@ -280,7 +287,7 @@ class Neo4jVectorStore(VectorStore):
         db_data = self.database_query("CALL dbms.components()")
         version = db_data[0]["versions"][0]
         if "aura" in version:
-            version_tuple = tuple(map(int, version.split("-")[0].split("."))) + (0,)
+            version_tuple = (*tuple(map(int, version.split("-")[0].split("."))), 0)
         else:
             version_tuple = tuple(map(int, version.split(".")))
 
@@ -298,7 +305,7 @@ class Neo4jVectorStore(VectorStore):
         else:
             self.support_metadata_filter = True
         # Flag for enterprise
-        self._is_enterprise = True if db_data[0]["edition"] == "enterprise" else False
+        self._is_enterprise = db_data[0]["edition"] == "enterprise"
 
     def create_new_index(self) -> None:
         """
@@ -449,7 +456,6 @@ class Neo4jVectorStore(VectorStore):
         return ids
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-
         if query.filters:
             # Verify that 5.18 or later is used
             if not self.support_metadata_filter:
@@ -480,9 +486,6 @@ class Neo4jVectorStore(VectorStore):
         else:
             index_query = _get_search_index_query(self.hybrid_search)
             filter_params = {}
-
-
-            
 
         default_retrieval = (
             f"RETURN node.`{self.text_node_property}` AS text, score, "
