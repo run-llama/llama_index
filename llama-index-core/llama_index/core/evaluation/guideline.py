@@ -59,6 +59,7 @@ class GuidelineEvaluator(BaseEvaluator):
         llm: Optional[LLM] = None,
         guidelines: Optional[str] = None,
         eval_template: Optional[Union[str, BasePromptTemplate]] = None,
+        output_parser: Optional[PydanticOutputParser] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
     ) -> None:
@@ -71,7 +72,9 @@ class GuidelineEvaluator(BaseEvaluator):
         else:
             self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
 
-        self._output_parser = PydanticOutputParser(output_cls=EvaluationData)
+        self._output_parser = output_parser or PydanticOutputParser(
+            output_cls=EvaluationData
+        )
         self._eval_template.output_parser = self._output_parser
 
     def _get_prompts(self) -> PromptDictType:

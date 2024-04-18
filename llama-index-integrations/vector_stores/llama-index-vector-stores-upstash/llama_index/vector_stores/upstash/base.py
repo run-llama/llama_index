@@ -87,8 +87,20 @@ def _to_upstash_filters(filters: MetadataFilters) -> str:
 
 
 class UpstashVectorStore(VectorStore):
-    """
-    Upstash Vector Store.
+    """Upstash Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-upstash`
+
+        ```python
+        from llama_index.vector_stores.upstash import UpstashVectorStore
+
+        # Create Upstash vector store
+        upstash_vector_store = UpstashVectorStore(
+            url="your_upstash_vector_url",
+            token="your_upstash_vector_token",
+        )
+        ```
     """
 
     stores_text: bool = True

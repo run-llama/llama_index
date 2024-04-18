@@ -38,6 +38,20 @@ class ZepVectorStore(VectorStore):
             Defaults to None.
         is_auto_embedded (bool, optional): Whether the embeddings are auto-embedded.
             Defaults to False.
+
+    Examples:
+        `pip install llama-index-vector-stores-zep`
+
+        ```python
+        from llama_index.vector_stores.zep import ZepVectorStore
+
+        vector_store = ZepVectorStore(
+            api_url="<api_url>",
+            api_key="<api_key>",
+            collection_name="<unique_collection_name>",  # Can either be an existing collection or a new one
+            embedding_dimensions=1536,  # Optional, required if creating a new collection
+        )
+        ```
     """
 
     stores_text = True

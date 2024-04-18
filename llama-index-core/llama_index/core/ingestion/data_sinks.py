@@ -1,7 +1,12 @@
 from enum import Enum
 from typing import Generic, Type, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GenericModel,
+    ValidationError,
+)
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 
@@ -66,7 +71,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -83,7 +88,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -100,7 +105,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -117,7 +122,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -134,7 +139,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     return ConfigurableComponent("ConfigurableDataSinks", enum_members)

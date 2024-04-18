@@ -443,6 +443,35 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     Args:
         client (OpensearchVectorClient): Vector index client to use
             for data insertion/querying.
+
+    Examples:
+        `pip install llama-index-vector-stores-opensearch`
+
+        ```python
+        from llama_index.vector_stores.opensearch import (
+            OpensearchVectorStore,
+            OpensearchVectorClient,
+        )
+
+        # http endpoint for your cluster (opensearch required for vector index usage)
+        endpoint = "http://localhost:9200"
+        # index to demonstrate the VectorStore impl
+        idx = "gpt-index-demo"
+
+        # OpensearchVectorClient stores text in this field by default
+        text_field = "content"
+        # OpensearchVectorClient stores embeddings in this field by default
+        embedding_field = "embedding"
+
+        # OpensearchVectorClient encapsulates logic for a
+        # single opensearch index with vector search enabled
+        client = OpensearchVectorClient(
+            endpoint, idx, 1536, embedding_field=embedding_field, text_field=text_field
+        )
+
+        # initialize vector store
+        vector_store = OpensearchVectorStore(client)
+        ```
     """
 
     stores_text: bool = True

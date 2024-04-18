@@ -68,7 +68,7 @@ class CohereRerank(BaseNodePostprocessor):
             )
 
             new_nodes = []
-            for result in results:
+            for result in results.results:
                 new_node_with_score = NodeWithScore(
                     node=nodes[result.index].node, score=result.relevance_score
                 )

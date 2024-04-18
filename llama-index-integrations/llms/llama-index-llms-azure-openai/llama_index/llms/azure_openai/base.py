@@ -13,6 +13,7 @@ from llama_index.llms.azure_openai.utils import (
 from llama_index.llms.openai import OpenAI
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
+from openai.lib.azure import AzureADTokenProvider
 
 
 class AzureOpenAI(OpenAI):
@@ -29,7 +30,7 @@ class AzureOpenAI(OpenAI):
         for your deployment when you deployed a model.
 
     You must have the following environment variables set:
-    - `OPENAI_API_VERSION`: set this to `2023-05-15`
+    - `OPENAI_API_VERSION`: set this to `2023-07-01-preview` or newer.
         This may change in the future.
     - `AZURE_OPENAI_ENDPOINT`: your endpoint should look like the following
         https://YOUR_RESOURCE_NAME.openai.azure.com/
@@ -37,6 +38,25 @@ class AzureOpenAI(OpenAI):
 
     More information can be found here:
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
+
+    Examples:
+        `pip install llama-index-llms-azure-openai`
+
+        ```python
+        from llama_index.llms.azure_openai import AzureOpenAI
+
+        aoai_api_key = "YOUR_AZURE_OPENAI_API_KEY"
+        aoai_endpoint = "YOUR_AZURE_OPENAI_ENDPOINT"
+        aoai_api_version = "2023-07-01-preview"
+
+        llm = AzureOpenAI(
+            model="YOUR_AZURE_OPENAI_COMPLETION_MODEL_NAME",
+            deployment_name="YOUR_AZURE_OPENAI_COMPLETION_DEPLOYMENT_NAME",
+            api_key=aoai_api_key,
+            azure_endpoint=aoai_endpoint,
+            api_version=aoai_api_version,
+        )
+        ```
     """
 
     engine: str = Field(description="The name of the deployed azure engine.")
@@ -48,6 +68,10 @@ class AzureOpenAI(OpenAI):
     )
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
+    )
+
+    azure_ad_token_provider: AzureADTokenProvider = Field(
+        default=None, description="Callback function to provide Azure AD token."
     )
 
     _azure_ad_token: Any = PrivateAttr(default=None)
@@ -69,6 +93,7 @@ class AzureOpenAI(OpenAI):
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
+        azure_ad_token_provider: AzureADTokenProvider = None,
         use_azure_ad: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         # aliases for engine
@@ -108,6 +133,7 @@ class AzureOpenAI(OpenAI):
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
+            azure_ad_token_provider=azure_ad_token_provider,
             use_azure_ad=use_azure_ad,
             api_version=api_version,
             callback_manager=callback_manager,
@@ -167,6 +193,7 @@ class AzureOpenAI(OpenAI):
             "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
+            "azure_ad_token_provider": self.azure_ad_token_provider,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._http_client,

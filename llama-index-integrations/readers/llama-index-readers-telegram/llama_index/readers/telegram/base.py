@@ -58,8 +58,8 @@ class TelegramReader(BaseReader):
         entity_name: str,
         post_id: Optional[int] = None,
         limit: Optional[int] = None,
-        start_date: Optional[datetime.date] = None,
-        end_date: Optional[datetime.date] = None,
+        start_date: Optional[datetime.datetime] = None,
+        end_date: Optional[datetime.datetime] = None,
     ) -> List[Document]:
         """Load posts/chat messages/comments from Telegram channels or chats.
 
@@ -73,8 +73,8 @@ class TelegramReader(BaseReader):
                 the comments that reply to this ID will be returned.\
                 Else will get posts/chat messages.
             limit (int): Number of messages to be retrieved.
-            start_date (datetime.date): Start date of the time period.
-            end_date (datetime.date): End date of the time period.
+            start_date (datetime.datetime): Start date of the time period.
+            end_date (datetime.datetime): End date of the time period.
 
         """
         return self.loop.run_until_complete(
@@ -92,8 +92,8 @@ class TelegramReader(BaseReader):
         entity_name: str,
         post_id: Optional[int] = None,
         limit: Optional[int] = None,
-        start_date: Optional[datetime.date] = None,
-        end_date: Optional[datetime.date] = None,
+        start_date: Optional[datetime.datetime] = None,
+        end_date: Optional[datetime.datetime] = None,
     ) -> List[Document]:
         """Load posts/chat messages/comments from Telegram channels or chats.
 
@@ -103,8 +103,8 @@ class TelegramReader(BaseReader):
                 the comments that reply to this ID will be returned.\
                 Else will get posts/chat messages.
             limit (int): Number of messages to be retrieved.
-            start_date (datetime.date): Start date of the time period.
-            end_date (datetime.date): End date of the time period.
+            start_date (datetime.datetime): Start date of the time period.
+            end_date (datetime.datetime): End date of the time period.
 
         """
         import telethon
@@ -121,7 +121,6 @@ class TelegramReader(BaseReader):
                     reply_to=post_id,
                     limit=limit,
                     offset_date=end_date,
-                    reverse=True,
                 ):
                     if message.date < start_date:
                         break
