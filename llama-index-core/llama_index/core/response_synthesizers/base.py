@@ -184,6 +184,9 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 source_nodes=source_nodes,
                 metadata=response_metadata,
             )
+        import pdb
+
+        pdb.set_trace()
         if isinstance(response_str, self._output_cls):
             return PydanticResponse(
                 response_str, source_nodes=source_nodes, metadata=response_metadata
