@@ -22,6 +22,7 @@ We are actively adding more integrations and improving feature coverage for each
 | BaiduVectorDB            | cloud                   | ✓                  | ✓             |        | ✓               |       |
 | ChatGPT Retrieval Plugin | aggregator              |                    |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
+| Couchbase                | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | DashVector               | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Databricks               | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
@@ -68,6 +69,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Baidu](../../examples/vector_stores/BaiduVectorDBIndexDemo.ipynb)
 - [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
 - [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
+- [Couchbase](../../examples/vector_stores/CouchbaseVectorStoreDemo.ipynb)
 - [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
 - [Databricks](../../examples/vector_stores/DatabricksVectorSearchDemo.ipynb)
 - [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
