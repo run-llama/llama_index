@@ -1,6 +1,4 @@
-""" NVIDIA LLM API Catalog Connector"""
-
-from typing import Any, Callable, Dict, Optional, Sequence, cast, Awaitable
+from typing import Any, Callable, Dict, Optional, Sequence, Awaitable
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -48,7 +46,7 @@ DEFAULT_PLAYGROUND_MAX_TOKENS = 512
 
 
 class NVIDIA(LLM):
-    """NVIDIA's API Catalog Connector"""
+    """NVIDIA's API Catalog Connector."""
 
     model: str = Field(
         default=DEFAULT_PLAYGROUND_MODEL,
@@ -96,9 +94,7 @@ class NVIDIA(LLM):
     ) -> None:
         callback_manager = callback_manager or CallbackManager([])
 
-        api_key = get_from_param_or_env(
-            "api_key", api_key, "NVIDIA_API_KEY", ""
-        )
+        api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
 
         if not api_key:
             raise ValueError(
@@ -149,12 +145,11 @@ class NVIDIA(LLM):
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
-        base_kwargs = {
+        return {
             "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        return base_kwargs
 
     # === Helper Methods ===
 
@@ -213,7 +208,9 @@ class NVIDIA(LLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
 
-        response = self._client.chat.completions.create(messages=message_dicts, stream=True, **all_kwargs)
+        response = self._client.chat.completions.create(
+            messages=message_dicts, stream=True, **all_kwargs
+        )
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -255,7 +252,9 @@ class NVIDIA(LLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
 
-        response = await self._aclient.chat.completions.create(messages=message_dicts, stream=True, **all_kwargs)
+        response = await self._aclient.chat.completions.create(
+            messages=message_dicts, stream=True, **all_kwargs
+        )
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
@@ -284,7 +283,7 @@ class NVIDIA(LLM):
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        astream_complete_fn = astream_chat_to_completion_decorator(self._astream_chat)
+        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
 
     async def _achat(
