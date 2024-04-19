@@ -433,7 +433,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
                     "values": [v * (1 - query.alpha) for v in sparse_vector["values"]],
                 }
 
-        query_embedding = None
+        query_embedding = [0.0] * len(query.query_embedding)
         if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID):
             query_embedding = cast(List[float], query.query_embedding)
             if query.alpha is not None:
