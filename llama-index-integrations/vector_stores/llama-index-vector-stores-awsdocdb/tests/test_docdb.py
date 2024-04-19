@@ -1,19 +1,20 @@
 """Test AWS DocumentDB Vector Store functionality."""
 from __future__ import annotations
 
-import os, sys
+import os
 from time import sleep
 
 import pytest
-
 from pymongo import MongoClient
+
+from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.vector_stores.awsdocdb import AWSDocDbVectorStore
 
 INDEX_NAME = "llamaindex-test-index"
 NAMESPACE = "llamaindex_test_db.llamaindex_test_collection"
 CONNECTION_STRING = os.getenv("DOCUMENTDB_URI", "")
 DB_NAME, COLLECTION_NAME = "mydatabase", "customers"
-test_client = MongoClient(CONNECTION_STRING)  # type: ignore
-collection = test_client[DB_NAME][COLLECTION_NAME]
 
 pymongo_available = True
 
@@ -70,7 +71,17 @@ def node_embeddings() -> list[TextNode]:
     ]
 
 
-@pytest.mark.skipif(not pymongo_available, reason="pymongo not available")
+try:
+    test_client = MongoClient(CONNECTION_STRING)  # type: ignore
+    collection = test_client[DB_NAME][COLLECTION_NAME]
+except Exception:
+    test_client = None
+    collection = None
+
+
+@pytest.mark.skipif(
+    test_client is None, reason="A DocumentDB instance has not been configured"
+)
 class TestAWSDocDBVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
@@ -130,7 +141,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_query_dot(self, node_embeddings: list[TextNode]) -> None:
         vector_store = AWSDocDbVectorStore(
-            docdb_client=test_client,  # type: ignore
+            docdb_client=self.test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             similarity_score="dotProduct",
