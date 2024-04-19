@@ -360,12 +360,21 @@ class OpenAI(FunctionCallingLLM):
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
-        with client:
+
+        if self.reuse_client:
             response = client.chat.completions.create(
                 messages=message_dicts,
                 stream=False,
                 **self._get_model_kwargs(**kwargs),
             )
+        else:
+            with client:
+                response = client.chat.completions.create(
+                    messages=message_dicts,
+                    stream=False,
+                    **self._get_model_kwargs(**kwargs),
+                )
+
         openai_message = response.choices[0].message
         message = from_openai_message(openai_message)
         openai_token_logprobs = response.choices[0].logprobs
@@ -439,45 +448,44 @@ class OpenAI(FunctionCallingLLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
-            with client:
-                for response in client.chat.completions.create(
-                    messages=message_dicts,
-                    stream=True,
-                    **self._get_model_kwargs(**kwargs),
-                ):
-                    response = cast(ChatCompletionChunk, response)
-                    if len(response.choices) > 0:
-                        delta = response.choices[0].delta
+            for response in client.chat.completions.create(
+                messages=message_dicts,
+                stream=True,
+                **self._get_model_kwargs(**kwargs),
+            ):
+                response = cast(ChatCompletionChunk, response)
+                if len(response.choices) > 0:
+                    delta = response.choices[0].delta
+                else:
+                    if self._is_azure_client():
+                        continue
                     else:
-                        if self._is_azure_client():
-                            continue
-                        else:
-                            delta = ChoiceDelta()
+                        delta = ChoiceDelta()
 
-                    # check if this chunk is the start of a function call
-                    if delta.tool_calls:
-                        is_function = True
+                # check if this chunk is the start of a function call
+                if delta.tool_calls:
+                    is_function = True
 
-                    # update using deltas
-                    role = delta.role or MessageRole.ASSISTANT
-                    content_delta = delta.content or ""
-                    content += content_delta
+                # update using deltas
+                role = delta.role or MessageRole.ASSISTANT
+                content_delta = delta.content or ""
+                content += content_delta
 
-                    additional_kwargs = {}
-                    if is_function:
-                        tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
-                        additional_kwargs["tool_calls"] = tool_calls
+                additional_kwargs = {}
+                if is_function:
+                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    additional_kwargs["tool_calls"] = tool_calls
 
-                    yield ChatResponse(
-                        message=ChatMessage(
-                            role=role,
-                            content=content,
-                            additional_kwargs=additional_kwargs,
-                        ),
-                        delta=content_delta,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs=additional_kwargs,
+                    ),
+                    delta=content_delta,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
 
         return gen()
 
@@ -487,12 +495,19 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        with client:
+        if self.reuse_client:
             response = client.completions.create(
                 prompt=prompt,
                 stream=False,
                 **all_kwargs,
             )
+        else:
+            with client:
+                response = client.completions.create(
+                    prompt=prompt,
+                    stream=False,
+                    **all_kwargs,
+                )
         text = response.choices[0].text
 
         openai_completion_logprobs = response.choices[0].logprobs
@@ -515,23 +530,22 @@ class OpenAI(FunctionCallingLLM):
 
         def gen() -> CompletionResponseGen:
             text = ""
-            with client:
-                for response in client.completions.create(
-                    prompt=prompt,
-                    stream=True,
-                    **all_kwargs,
-                ):
-                    if len(response.choices) > 0:
-                        delta = response.choices[0].text
-                    else:
-                        delta = ""
-                    text += delta
-                    yield CompletionResponse(
-                        delta=delta,
-                        text=text,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+            for response in client.completions.create(
+                prompt=prompt,
+                stream=True,
+                **all_kwargs,
+            ):
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
+                else:
+                    delta = ""
+                text += delta
+                yield CompletionResponse(
+                    delta=delta,
+                    text=text,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
 
         return gen()
 
@@ -623,10 +637,19 @@ class OpenAI(FunctionCallingLLM):
     ) -> ChatResponse:
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
-        async with aclient:
+
+        if self.reuse_client:
             response = await aclient.chat.completions.create(
                 messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
             )
+        else:
+            async with aclient:
+                response = await aclient.chat.completions.create(
+                    messages=message_dicts,
+                    stream=False,
+                    **self._get_model_kwargs(**kwargs),
+                )
+
         openai_message = response.choices[0].message
         message = from_openai_message(openai_message)
         openai_token_logprobs = response.choices[0].logprobs
@@ -654,55 +677,54 @@ class OpenAI(FunctionCallingLLM):
 
             is_function = False
             first_chat_chunk = True
-            async with aclient:
-                async for response in await aclient.chat.completions.create(
-                    messages=message_dicts,
-                    stream=True,
-                    **self._get_model_kwargs(**kwargs),
-                ):
-                    response = cast(ChatCompletionChunk, response)
-                    if len(response.choices) > 0:
-                        # check if the first chunk has neither content nor tool_calls
-                        # this happens when 1106 models end up calling multiple tools
-                        if (
-                            first_chat_chunk
-                            and response.choices[0].delta.content is None
-                            and response.choices[0].delta.tool_calls is None
-                        ):
-                            first_chat_chunk = False
-                            continue
-                        delta = response.choices[0].delta
+            async for response in await aclient.chat.completions.create(
+                messages=message_dicts,
+                stream=True,
+                **self._get_model_kwargs(**kwargs),
+            ):
+                response = cast(ChatCompletionChunk, response)
+                if len(response.choices) > 0:
+                    # check if the first chunk has neither content nor tool_calls
+                    # this happens when 1106 models end up calling multiple tools
+                    if (
+                        first_chat_chunk
+                        and response.choices[0].delta.content is None
+                        and response.choices[0].delta.tool_calls is None
+                    ):
+                        first_chat_chunk = False
+                        continue
+                    delta = response.choices[0].delta
+                else:
+                    if self._is_azure_client():
+                        continue
                     else:
-                        if self._is_azure_client():
-                            continue
-                        else:
-                            delta = ChoiceDelta()
-                    first_chat_chunk = False
+                        delta = ChoiceDelta()
+                first_chat_chunk = False
 
-                    # check if this chunk is the start of a function call
-                    if delta.tool_calls:
-                        is_function = True
+                # check if this chunk is the start of a function call
+                if delta.tool_calls:
+                    is_function = True
 
-                    # update using deltas
-                    role = delta.role or MessageRole.ASSISTANT
-                    content_delta = delta.content or ""
-                    content += content_delta
+                # update using deltas
+                role = delta.role or MessageRole.ASSISTANT
+                content_delta = delta.content or ""
+                content += content_delta
 
-                    additional_kwargs = {}
-                    if is_function:
-                        tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
-                        additional_kwargs["tool_calls"] = tool_calls
+                additional_kwargs = {}
+                if is_function:
+                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    additional_kwargs["tool_calls"] = tool_calls
 
-                    yield ChatResponse(
-                        message=ChatMessage(
-                            role=role,
-                            content=content,
-                            additional_kwargs=additional_kwargs,
-                        ),
-                        delta=content_delta,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs=additional_kwargs,
+                    ),
+                    delta=content_delta,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
 
         return gen()
 
@@ -712,12 +734,19 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        async with aclient:
+        if self.reuse_client:
             response = await aclient.completions.create(
                 prompt=prompt,
                 stream=False,
                 **all_kwargs,
             )
+        else:
+            async with aclient:
+                response = await aclient.completions.create(
+                    prompt=prompt,
+                    stream=False,
+                    **all_kwargs,
+                )
 
         text = response.choices[0].text
         openai_completion_logprobs = response.choices[0].logprobs
@@ -742,23 +771,22 @@ class OpenAI(FunctionCallingLLM):
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
-            async with aclient:
-                async for response in await aclient.completions.create(
-                    prompt=prompt,
-                    stream=True,
-                    **all_kwargs,
-                ):
-                    if len(response.choices) > 0:
-                        delta = response.choices[0].text
-                    else:
-                        delta = ""
-                    text += delta
-                    yield CompletionResponse(
-                        delta=delta,
-                        text=text,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+            async for response in await aclient.completions.create(
+                prompt=prompt,
+                stream=True,
+                **all_kwargs,
+            ):
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
+                else:
+                    delta = ""
+                text += delta
+                yield CompletionResponse(
+                    delta=delta,
+                    text=text,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
 
         return gen()
 
