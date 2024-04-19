@@ -25,7 +25,6 @@ class BrowserbaseWebReader(BaseReader):
                 "`browserbase` package not found, please run `pip install browserbase`"
             )
 
-        api_key = api_key or os.environ["BROWSERBASE_API_KEY"]
         self.browserbase = Browserbase(api_key=api_key)
 
     def lazy_load_data(self, urls: Sequence[str], text_content: bool = False) -> Iterator[Document]:
@@ -43,4 +42,4 @@ class BrowserbaseWebReader(BaseReader):
 
 if __name__ == "__main__":
     reader = BrowserbaseWebReader()
-    logger.warn(reader.load_data(urls=["https://example.com"]))
+    logger.info(reader.load_data(urls=["https://example.com"]))
