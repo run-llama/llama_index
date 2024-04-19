@@ -91,7 +91,7 @@ class PydanticSingleSelector(BaseSelector):
         # parse output
         return _pydantic_output_to_selector_result(prediction)
 
-    def _aselect(
+    async def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
         # prepare input
