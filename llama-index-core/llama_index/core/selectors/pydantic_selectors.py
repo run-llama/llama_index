@@ -91,12 +91,21 @@ class PydanticSingleSelector(BaseSelector):
         # parse output
         return _pydantic_output_to_selector_result(prediction)
 
-    async def _aselect(
+    def _aselect(
         self, choices: Sequence[ToolMetadata], query: QueryBundle
     ) -> SelectorResult:
-        raise NotImplementedError(
-            "Async selection not supported for Pydantic Selectors."
+        # prepare input
+        choices_text = _build_choices_text(choices)
+
+        # predict
+        prediction = self._selector_program.acall(
+            num_choices=len(choices),
+            context_list=choices_text,
+            query_str=query.query_str,
         )
+
+        # parse output
+        return _pydantic_output_to_selector_result(prediction)
 
 
 class PydanticMultiSelector(BaseSelector):
