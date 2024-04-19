@@ -1,6 +1,6 @@
 """NVIDIA embeddings file."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -22,6 +22,14 @@ class NVIDIAEmbedding(BaseEmbedding):
         default="NV-Embed-QA",
         description="Name of the NVIDIA embedding model to use.\n"
         "Defaults to 'NV-Embed-QA'.",
+    )
+
+    truncate: Literal["NONE", "START", "END"] = Field(
+        default="NONE",
+        description=(
+            "Truncate input text if it exceeds the model's maximum token length. "
+            "Default is 'NONE', which raises an error if an input is too long."
+        ),
     )
 
     timeout: float = Field(
@@ -77,7 +85,8 @@ class NVIDIAEmbedding(BaseEmbedding):
         return "NVIDIAEmbedding"
 
     def mode(
-        mode: Optional[("catalog", "nim")] = "catalog",
+        self,
+        mode: Optional[Literal["catalog", "nim"]] = "catalog",
         base_url: Optional[str] = None,
         model: Optional[str] = "NV-Embed-QA",
         api_key: Optional[str] = None,
@@ -120,7 +129,9 @@ class NVIDIAEmbedding(BaseEmbedding):
         """Get query embedding."""
         return (
             self._client.embeddings.create(
-                input=[query], model=self.model, extra_body={"input_type": "query"}
+                input=[query],
+                model=self.model,
+                extra_body={"input_type": "query", "truncate": self.truncate},
             )
             .data[0]
             .embedding
@@ -132,7 +143,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             self._client.embeddings.create(
                 input=[text],
                 model=self.model,
-                extra_body={"input_type": "passage"},
+                extra_body={"input_type": "passage", "truncate": self.truncate},
             )
             .data[0]
             .embedding
@@ -140,7 +151,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        assert len(texts) <= 259, "The batch size should not be larger than 299."
+        assert len(texts) <= 259, "The batch size should not be larger than 259."
 
         data = self._client.embeddings.create(
             input=texts, model=self.model, extra_body={"input_type": "passage"}
@@ -168,7 +179,7 @@ class NVIDIAEmbedding(BaseEmbedding):
                 await self._aclient.embeddings.create(
                     input=[text],
                     model=self.model,
-                    extra_body={"input_type": "passage"},
+                    extra_body={"input_type": "passage", "truncate": self.truncate},
                 )
             )
             .data[0]
@@ -177,11 +188,13 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        assert len(texts) <= 259, "The batch size should not be larger than 299."
+        assert len(texts) <= 259, "The batch size should not be larger than 259."
 
         data = (
             await self._aclient.embeddings.create(
-                input=texts, model=self.model, extra_body={"input_type": "passage"}
+                input=texts,
+                model=self.model,
+                extra_body={"input_type": "passage", "truncate": self.truncate},
             )
         ).data
         return [d.embedding for d in data]
