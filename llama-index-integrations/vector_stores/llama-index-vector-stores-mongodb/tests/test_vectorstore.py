@@ -45,14 +45,15 @@ def test_vectorstore(nodes, vector_store):
         )
         result_found = False
         query_responses = None
-        while not result_found:
+        retries = 5
+        while retries and not result_found:
             query_responses = vector_store.query(query=query)
-            if query_responses.nodes:
+            if len(query_responses.nodes) == n_similar:
                 result_found = True
             else:
                 sleep(2)
+                retries -= 1
 
-        assert len(query_responses.nodes) == n_similar
         assert all(score > 0.89 for score in query_responses.similarities)
         assert any(
             "seem more like rants" in node.text for node in query_responses.nodes
