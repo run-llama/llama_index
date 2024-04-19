@@ -197,6 +197,8 @@ DEFAULT_TEXT_TO_SQL_TMPL = (
     "Be careful to not query for columns that do not exist. "
     "Pay attention to which column is in which table. "
     "Also, qualify column names with the table name when needed. "
+    "Make sure that database name, table name and column name are inside double quotes "
+    "(if present in the generated query). "
     "You are required to use the following format, each taking one line:\n\n"
     "Question: Question here\n"
     "SQLQuery: SQL Query to run\n"
