@@ -22,5 +22,3 @@ You get 1k free pages a day. If you sign up for the paid plan, you get 7k free p
 
 - [Signup here](https://cloud.llamaindex.ai/)
 - [Launch blog post](https://www.llamaindex.ai/blog/launching-the-first-genai-native-document-parsing-platform)
-
-

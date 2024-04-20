@@ -1334,7 +1334,7 @@ nav:
   - LlamaCloud:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
-     
+
 plugins:
   - search
   - include_dir_to_nav
