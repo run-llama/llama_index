@@ -12,12 +12,15 @@ LLAMA_MODELS = {
     "accounts/fireworks/models/llama-v2-70b-chat": 4096,
     "accounts/fireworks/models/llama-v2-34b-code-instruct": 16384,
     "accounts/fireworks/models/llamaguard-7b": 4096,
+    "accounts/fireworks/models/llama-v3-8b-instruct": 8192,
+    "accounts/fireworks/models/llama-v3-70b-instruct": 8192,
 }
 
 MISTRAL_MODELS = {
     "accounts/fireworks/models/mistral-7b-instruct-4k": 16384,
     "accounts/fireworks/models/mixtral-8x7b-instruct": 32768,
     "accounts/fireworks/models/firefunction-v1": 32768,
+    "accounts/fireworks/models/mixtral-8x22b-instruct": 65536,
 }
 
 ALL_AVAILABLE_MODELS = {
