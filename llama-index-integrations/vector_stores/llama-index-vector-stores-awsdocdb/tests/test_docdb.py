@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from time import sleep
+import sys
 
 import pytest
 from pymongo import MongoClient
@@ -18,11 +19,8 @@ DB_NAME, COLLECTION_NAME = "mydatabase", "customers"
 
 pymongo_available = True
 
-if (CONNECTION_STRING == ""):
+if CONNECTION_STRING == "":
     pymongo_available = False
-
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-import sys
 
 sys.path.append("./llama_index/vector_stores")
 from awsdocdb import AWSDocDbVectorStore
@@ -92,7 +90,7 @@ class TestAWSDocDBVectorSearch:
     def teardown_class(cls) -> None:
         # delete all the documents in the collection
         collection.delete_many({})  # type: ignore[index]
-    
+
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the documents in the collection
