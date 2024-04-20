@@ -5,6 +5,7 @@ LlamaCloud is a managed platform for data parsing and ingestion, allowing you to
 LlamaCloud integrates seamlessly with the open-source library, providing parsing, indexes, and retrievers to build advanced RAG, agents, and more.
 
 LlamaCloud consists of the following main components:
+
 - **LlamaParse**: our self-serve document parsing API
 - **Ingestion and Retrieval API**: Connect to 10+ data sources and sinks. Easily setup a data pipeline that can handle large volumes of data and incremental updates. Get back an endpoint with state-of-the-art indexing/retrieval to solve your complex document needs.
 - **Evaluations and Observability**: Run and track evaluations on your data and model, both in the cloud and locally.

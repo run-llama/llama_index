@@ -5,6 +5,7 @@ LlamaParse is the world's first genAI-native document parsing platform - built w
 Your LLM application performance is only as good as your data. The main goal of LlamaParse is to parse and clean your data, ensuring that it's good quality before passing to any downstream LLM use case such as advanced RAG.
 
 It comes equipped with the following features:
+
 - State-of-the-art table extraction
 - Provide *natural language instructions* to parse the output in the exact format you want it.
 - JSON mode
