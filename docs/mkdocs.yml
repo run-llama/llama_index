@@ -369,6 +369,7 @@ nav:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
           - ./examples/output_parsing/llm_program.ipynb
+          - ./examples/output_parsing/function_program.ipynb
           - ./examples/output_parsing/openai_pydantic_program.ipynb
           - ./examples/output_parsing/df_program.ipynb
           - ./examples/output_parsing/evaporate_program.ipynb
