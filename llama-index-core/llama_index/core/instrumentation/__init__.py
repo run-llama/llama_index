@@ -5,7 +5,7 @@ from llama_index.core.instrumentation.span_handlers import NullSpanHandler
 root_dispatcher: Dispatcher = Dispatcher(
     name="root",
     event_handlers=[NullEventHandler()],
-    span_handler=NullSpanHandler(),
+    span_handlers=[NullSpanHandler()],
     propagate=False,
 )
 
@@ -24,7 +24,10 @@ def get_dispatcher(name: str = "root") -> Dispatcher:
         parent_name = "root"
 
     new_dispatcher = Dispatcher(
-        name=name, root=root_dispatcher, parent_name=parent_name, manager=root_manager
+        name=name,
+        root_name=root_dispatcher.name,
+        parent_name=parent_name,
+        manager=root_manager,
     )
     root_manager.add_dispatcher(new_dispatcher)
     return new_dispatcher

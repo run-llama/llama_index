@@ -100,6 +100,45 @@ def test_save_load_pipeline() -> None:
     assert len(pipeline.docstore.docs) == 2
 
 
+def test_save_load_pipeline_without_docstore() -> None:
+    documents = [
+        Document(text="one", doc_id="1"),
+        Document(text="two", doc_id="2"),
+        Document(text="one", doc_id="1"),
+    ]
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+    )
+
+    nodes = pipeline.run(documents=documents)
+    assert len(nodes) == 3
+    assert pipeline.docstore is None
+
+    # dedup will not catch the last node if the document store is not set
+    nodes = pipeline.run(documents=[documents[-1]])
+    assert len(nodes) == 1
+    assert pipeline.docstore is None
+
+    # test save/load
+    pipeline.persist("./test_pipeline")
+
+    pipeline2 = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+    )
+
+    pipeline2.load("./test_pipeline")
+
+    # dedup will not catch the last node if the document store is not set
+    nodes = pipeline.run(documents=[documents[-1]])
+    assert len(nodes) == 1
+    assert pipeline.docstore is None
+
+
 def test_pipeline_update() -> None:
     document1 = Document.example()
     document1.id_ = "1"

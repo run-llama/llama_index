@@ -3,7 +3,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GenericModel,
+    ValidationError,
+)
 from llama_index.core.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.core.schema import BaseComponent, Document, TextNode
 
@@ -103,7 +108,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -120,7 +125,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -135,7 +140,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -150,7 +155,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -167,7 +172,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -182,7 +187,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -197,7 +202,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -214,7 +219,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -229,7 +234,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -244,7 +249,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -261,7 +266,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -276,7 +281,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -291,7 +296,103 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.readers.s3 import S3Reader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "S3",
+                DataSource(
+                    name="S3",
+                    component_type=S3Reader,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.readers.azstorage_blob import (
+            AzStorageBlobReader,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "AZURE_STORAGE_BLOB",
+                DataSource(
+                    name="Azure Storage Blob",
+                    component_type=AzStorageBlobReader,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.readers.gcs import GCSReader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "GCS",
+                DataSource(
+                    name="GCS",
+                    component_type=GCSReader,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.readers.google import GoogleDriveReader  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "GOOGLE_DRIVE",
+                DataSource(
+                    name="Google Drive",
+                    component_type=GoogleDriveReader,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.readers.microsoft_onedrive import (
+            OneDriveReader,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "MICROSOFT_ONEDRIVE",
+                DataSource(
+                    name="Microsoft OneDrive",
+                    component_type=OneDriveReader,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.readers.microsoft_sharepoint import (
+            SharePointReader,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "MICROSOFT_SHAREPOINT",
+                DataSource(
+                    name="Microsoft Sharepoint",
+                    component_type=SharePointReader,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
         pass
 
     enum_members.append(

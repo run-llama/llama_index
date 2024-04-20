@@ -7,10 +7,13 @@ MISTRALAI_MODELS: Dict[str, int] = {
     "mistral-large": 32000,
     "open-mixtral-8x7b": 32000,
     "open-mistral-7b": 32000,
+    "open-mixtral-8x22b": 64000,
     "mistral-small-latest": 32000,
     "mistral-medium-latest": 32000,
     "mistral-large-latest": 32000,
 }
+
+MISTRALAI_FUNCTION_CALLING_MODELS = ("mistral-large-latest", "open-mixtral-8x22b")
 
 
 def mistralai_modelname_to_contextsize(modelname: str) -> int:
@@ -21,3 +24,7 @@ def mistralai_modelname_to_contextsize(modelname: str) -> int:
         )
 
     return MISTRALAI_MODELS[modelname]
+
+
+def is_mistralai_function_calling_model(modelname: str) -> bool:
+    return modelname in MISTRALAI_FUNCTION_CALLING_MODELS

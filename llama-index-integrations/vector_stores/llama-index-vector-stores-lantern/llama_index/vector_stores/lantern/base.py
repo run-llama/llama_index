@@ -125,6 +125,36 @@ def get_data_model(
 
 
 class LanternVectorStore(BasePydanticVectorStore):
+    """Latern vector store.
+
+    Examples:
+        `pip install llama-index-vector-stores-lantern`
+
+        ```python
+        from llama_index.vector_stores.lantern import LanternVectorStore
+
+        # Set up connection details
+        connection_string = "postgresql://postgres:postgres@localhost:5432"
+        db_name = "postgres"
+        url = make_url(connection_string)
+
+        # Create an instance of LanternVectorStore
+        vector_store = LanternVectorStore.from_params(
+            database=db_name,
+            host=url.host,
+            password=url.password,
+            port=url.port,
+            user=url.username,
+            table_name="your_table_name",
+            embed_dim=1536,  # openai embedding dimension
+            m=16,  # HNSW M parameter
+            ef_construction=128,  # HNSW ef construction parameter
+            ef=64,  # HNSW ef search parameter
+        )
+        ```
+
+    """
+
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True

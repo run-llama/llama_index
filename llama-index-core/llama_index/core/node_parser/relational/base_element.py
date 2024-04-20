@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
@@ -143,22 +144,9 @@ class BaseElementNodeParser(NodeParser):
     def extract_table_summaries(self, elements: List[Element]) -> None:
         """Go through elements, extract out summaries that are tables."""
         from llama_index.core.indices.list.base import SummaryIndex
-        from llama_index.core.service_context import ServiceContext
+        from llama_index.core.settings import Settings
 
-        if self.llm:
-            llm = self.llm
-        else:
-            try:
-                from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
-            except ImportError as e:
-                raise ImportError(
-                    "`llama-index-llms-openai` package not found."
-                    " Please install with `pip install llama-index-llms-openai`."
-                )
-            llm = OpenAI()
-        llm = cast(LLM, llm)
-
-        service_context = ServiceContext.from_defaults(llm=llm, embed_model=None)
+        llm = self.llm or Settings.llm
 
         table_context_list = []
         for idx, element in tqdm(enumerate(elements)):
@@ -178,7 +166,7 @@ class BaseElementNodeParser(NodeParser):
 
         async def _get_table_output(table_context: str, summary_query_str: str) -> Any:
             index = SummaryIndex.from_documents(
-                [Document(text=table_context)], service_context=service_context
+                [Document(text=table_context)],
             )
             query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
@@ -187,7 +175,7 @@ class BaseElementNodeParser(NodeParser):
             except ValidationError:
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
-                query_engine = index.as_query_engine()
+                query_engine = index.as_query_engine(llm=llm)
                 response_txt = await query_engine.aquery(summary_query_str)
                 return TableOutput(summary=str(response_txt), columns=[])
 
@@ -300,8 +288,6 @@ class BaseElementNodeParser(NodeParser):
                 elif element.type == "table_text":
                     # if the table is non-perfect table, we still want to keep the original text of table
                     table_md = str(element.element)
-                table_id = element.id + "_table"
-                table_ref_id = element.id + "_table_ref"
 
                 col_schema = "\n\n".join([str(col) for col in table_output.columns])
 
@@ -316,19 +302,20 @@ class BaseElementNodeParser(NodeParser):
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
 
+                # shared index_id and node_id
+                node_id = str(uuid.uuid4())
                 index_node = IndexNode(
                     text=table_summary,
                     metadata={"col_schema": col_schema},
                     excluded_embed_metadata_keys=["col_schema"],
-                    id_=table_ref_id,
-                    index_id=table_id,
+                    index_id=node_id,
                 )
 
                 table_str = table_summary + "\n" + table_md
 
                 text_node = TextNode(
+                    id_=node_id,
                     text=table_str,
-                    id_=table_id,
                     metadata={
                         # serialize the table as a dictionary string for dataframe of perfect table
                         "table_df": (
@@ -359,3 +346,8 @@ class BaseElementNodeParser(NodeParser):
             if metadata_inherited:
                 node.metadata.update(metadata_inherited)
         return [node for node in nodes if len(node.text) > 0]
+
+    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        nodes = self.get_nodes_from_documents(nodes, **kwargs)
+        nodes, objects = self.get_nodes_and_objects(nodes)
+        return nodes + objects

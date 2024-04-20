@@ -35,9 +35,23 @@ class SupabaseVectorStore(BasePydanticVectorStore):
     Args:
         postgres_connection_string (str):
             postgres connection string
-
         collection_name (str):
             name of the collection to store the embeddings in
+        dimension (int, optional):
+            dimension of the embeddings. Defaults to 1536.
+
+    Examples:
+        `pip install llama-index-vector-stores-supabase`
+
+        ```python
+        from llama_index.vector_stores.supabase import SupabaseVectorStore
+
+        # Set up SupabaseVectorStore
+        vector_store = SupabaseVectorStore(
+            postgres_connection_string="postgresql://<user>:<password>@<host>:<port>/<db_name>",
+            collection_name="base_demo",
+        )
+        ```
 
     """
 

@@ -16,6 +16,8 @@ class StreamChatEndEvent(BaseEvent):
 
 
 class StreamChatErrorEvent(BaseEvent):
+    exception: Exception
+
     @classmethod
     def class_name(cls):
         """Class name."""

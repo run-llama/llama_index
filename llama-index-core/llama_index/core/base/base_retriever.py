@@ -224,8 +224,14 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 a QueryBundle object.
 
         """
+        dispatch_event = dispatcher.get_dispatch_event()
+
         self._check_callback_manager()
-        dispatcher.event(RetrievalStartEvent())
+        dispatch_event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
+            )
+        )
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -240,13 +246,24 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        dispatcher.event(RetrievalEndEvent())
+        dispatch_event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+            )
+        )
         return nodes
 
     @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-        dispatcher.event(RetrievalStartEvent())
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
+            )
+        )
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -263,7 +280,12 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        dispatcher.event(RetrievalEndEvent())
+        dispatch_event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+            )
+        )
         return nodes
 
     @abstractmethod
