@@ -9,5 +9,5 @@ __all__ = [
     "BasePydanticProgram",
     "LLMTextCompletionProgram",
     "MultiModalLLMCompletionProgram",
-    "FunctionCallingProgram"
+    "FunctionCallingProgram",
 ]

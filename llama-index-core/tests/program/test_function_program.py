@@ -1,20 +1,13 @@
 """Test LLM program."""
 
-import json
 from unittest.mock import MagicMock
 import pytest
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
-    ChatResponse,
-    CompletionResponse,
     LLMMetadata,
-    MessageRole,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.output_parsers.pydantic import PydanticOutputParser
-from llama_index.core.program.llm_program import LLMTextCompletionProgram
-from llama_index.core.prompts import ChatPromptTemplate
 from llama_index.core.bridge.pydantic import BaseModel
 from typing import List, Optional, Union, Any
 from llama_index.core.tools.types import BaseTool
@@ -25,7 +18,9 @@ from llama_index.core.program import FunctionCallingProgram
 
 class MockSong(BaseModel):
     """Mock Song class."""
+
     title: str
+
 
 class MockAlbum(BaseModel):
     title: str
@@ -33,33 +28,37 @@ class MockAlbum(BaseModel):
     songs: List[MockSong]
 
 
-
 MOCK_ALBUM = MockAlbum(
     title="hello",
     artist="world",
-    songs=[MockSong(title="song1"), MockSong(title="song2")]
+    songs=[MockSong(title="song1"), MockSong(title="song2")],
 )
 
 MOCK_ALBUM_2 = MockAlbum(
     title="hello2",
     artist="world2",
-    songs=[MockSong(title="song3"), MockSong(title="song4")]
+    songs=[MockSong(title="song3"), MockSong(title="song4")],
 )
 
 
-def _get_mock_album_response(allow_parallel_tool_calls: bool = False) -> AgentChatResponse:
+def _get_mock_album_response(
+    allow_parallel_tool_calls: bool = False,
+) -> AgentChatResponse:
     """Get mock album."""
     if allow_parallel_tool_calls:
         albums = [MOCK_ALBUM, MOCK_ALBUM_2]
     else:
         albums = [MOCK_ALBUM]
 
-    tool_outputs = [ToolOutput(
-        content=str(a),
-        tool_name="tool_output",
-        raw_input={},
-        raw_output=a,
-    ) for a in albums]
+    tool_outputs = [
+        ToolOutput(
+            content=str(a),
+            tool_name="tool_output",
+            raw_input={},
+            raw_output=a,
+        )
+        for a in albums
+    ]
 
     # return tool outputs
     return AgentChatResponse(
@@ -67,8 +66,8 @@ def _get_mock_album_response(allow_parallel_tool_calls: bool = False) -> AgentCh
         sources=tool_outputs,
     )
 
-class MockLLM(MagicMock):
 
+class MockLLM(MagicMock):
     def predict_and_call(
         self,
         tools: List["BaseTool"],

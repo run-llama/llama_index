@@ -5,12 +5,12 @@ from typing import Any, Dict, Optional, Type, cast, Union, List
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.llm import LLM
-from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
-from llama_index.core.types import BaseOutputParser, BasePydanticProgram, Model
+from llama_index.core.types import BasePydanticProgram, Model
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.chat_engine.types import AgentChatResponse
+
 _logger = logging.getLogger(__name__)
 
 
@@ -19,9 +19,7 @@ def _parse_tool_outputs(
     allow_parallel_tool_calls: bool = False,
 ) -> List[BaseModel]:
     """Parse tool outputs."""
-    outputs = [
-        cast(BaseModel, s.raw_output) for s in agent_response.sources
-    ]
+    outputs = [cast(BaseModel, s.raw_output) for s in agent_response.sources]
     if allow_parallel_tool_calls:
         return outputs
     else:
@@ -44,13 +42,14 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
     def model_fn(**kwargs: Any) -> BaseModel:
         """Model function."""
         return output_cls(**kwargs)
-    
+
     return FunctionTool.from_defaults(
         fn=model_fn,
         name=schema["title"],
         description=schema_description,
         fn_schema=output_cls,
     )
+
 
 class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
     """
@@ -155,7 +154,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
     ) -> Union[Model, List[Model]]:
         llm_kwargs = llm_kwargs or {}
         tool = _get_function_tool(self._output_cls)
-        
+
         agent_response = await self._llm.apredict_and_call(
             [tool],
             chat_history=self._prompt.format_messages(llm=self._llm, **kwargs),
