@@ -4,6 +4,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import Response
 from llama_index.core.callbacks import CallbackManager
@@ -537,6 +538,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         sql_database: SQLDatabase,
         table_retriever: ObjectRetriever[SQLTableSchema],
         llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
@@ -552,6 +554,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         self._sql_retriever = NLSQLRetriever(
             sql_database,
             llm=llm,
+            embed_model=embed_model,
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
             table_retriever=table_retriever,
