@@ -64,20 +64,3 @@ class YouTubeMetaDataAndTranscript(BasePydanticReader):
                 "transcript": transcripts,
             }
         return all_details
-
-
-def main():
-    api_key = "AIzaSyCyAQoM3WEzeTCacglRLWBMwleHXK9zbys"  # yclsoutube API Key
-
-    video_ids = ["S_0hBL4ILAg", "a2skIq6hFiY"]  # Example video IDs
-
-    youtube_meta = YouTubeMetaData(api_key=api_key)
-    details = youtube_meta.load_data(video_ids)
-    print(details)
-    youtube_metaandtranscripts = YouTubeMetaDataAndTranscript(api_key=api_key)
-    details = youtube_metaandtranscripts.load_data(video_ids)
-    print(details)
-
-
-if __name__ == "__main__":
-    main()
