@@ -1331,6 +1331,10 @@ nav:
       - Presentations: ./presentations/past_presentations.md
       - Upgrading to v0.10.x: ./getting_started/v0_10_0_migration.md
       - Deprecated Terms: ./changes/deprecated_terms.md
+  - LlamaCloud:
+      - LlamaCloud: ./llama_cloud/index.md
+      - LlamaParse: ./llama_cloud/llama_parse.md
+     
 plugins:
   - search
   - include_dir_to_nav

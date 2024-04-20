@@ -70,9 +70,19 @@ To download or contribute, find LlamaIndex on:
 - [Github](https://github.com/run-llama/llama_index)
 - [PyPi](https://pypi.org/project/llama-index/)
 - npm (Typescript/Javascript):
+
   - [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS)
   - [TypeScript Docs](https://ts.llamaindex.ai/)
   - [LlamaIndex.TS](https://www.npmjs.com/package/llamaindex)
+
+## LlamaCloud
+
+If you're an enterprise developer, check out [**LlamaCloud**](https://www.llamaindex.ai/enterprise). It is a managed platform for data parsing and ingestion, allowing
+you to get production-quality data for your production LLM application.
+
+Check out the following resources:
+- [**LlamaParse**](./llama_cloud/llama_parse.md): our state-of-the-art document parsing solution. Part of LlamaCloud and also available as a self-serve API. [Signup here for API access](https://cloud.llamaindex.ai/).
+- [**LlamaCloud**](./llama_cloud/index.md): our e2e data platform. In private preview with startup and enterprise plans. [Talk to us](https://www.llamaindex.ai/contact) if interested.
 
 ## Community
 
