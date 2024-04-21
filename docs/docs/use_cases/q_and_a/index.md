@@ -9,7 +9,7 @@ There are different subtypes of question-answering.
 ## RAG over Unstructured Documents
 LlamaIndex can pull in unstructured text, PDFs, Notion and Slack documents and more and index the data within them.
 
-The simplest queries involve either semantic search or summarization. 
+The simplest queries involve either semantic search or summarization.
 
 - **Semantic search**: A query about specific information in a document that matches the query terms and/or semantic intent. This is typically executed with simple vector retrieval (top-k). [Example of semantic search](../../understanding/putting_it_all_together/q_and_a.md#semantic-search)
 - **Summarization**: condensing a large amount of data into a short summary relevant to your current question. [Example of summarization](../../understanding/putting_it_all_together/q_and_a.md#summarization)
@@ -20,7 +20,7 @@ The simplest queries involve either semantic search or summarization.
 If your data already exists in a SQL database, CSV file, or other structured format, LlamaIndex can query the data in these sources.
 
   - [Searching Pandas tables](../../examples/query_engine/pandas_query_engine.ipynb)
- 
+
 ## Advanced QA Topics
 
 As you scale to more complex questions / more data, there are many techniques in LlamaIndex to help you with better query understanding, retrieval, and integration of data sources.

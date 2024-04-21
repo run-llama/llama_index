@@ -31,4 +31,3 @@ LlamaIndex has robust abstractions for creating sequential prompt chains, as wel
 These pipelines are integrated with [observability partners](../module_guides/observability/index.md) out of the box.
 
 The central guide for prompt chains and pipelines is through our [Query Pipelines](../module_guides/querying/pipeline/index.md).
-
