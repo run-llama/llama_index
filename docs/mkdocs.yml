@@ -45,11 +45,11 @@ nav:
       - Putting it all Together: ./understanding/putting_it_all_together/
   - Use Cases:
       - ./use_cases/index.md
-      - Agents: ./use_cases/agents.md
+      - Question-Answering (RAG): ./use_cases/q_and_a/index.md
       - Chatbots: ./use_cases/chatbots.md
-      - Multi-Modal Applications: ./use_cases/multimodal.md
       - Structured Data Extraction: ./use_cases/extraction.md
-      - General Q&A: ./use_cases/q_and_a/index.md
+      - Agents: ./use_cases/agents.md
+      - Multi-Modal Applications: ./use_cases/multimodal.md
       - Fine-Tuning: ./use_cases/fine_tuning.md
   - Examples:
       - ./examples/index.md
