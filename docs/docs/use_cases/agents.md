@@ -47,7 +47,7 @@ If you're interested in building custom agents, check out the following resource
 
 **Building with Agentic Ingredients**
 
-LlamaIndex has robust abstractions for every agent sub-ingredient. 
+LlamaIndex has robust abstractions for every agent sub-ingredient.
 
 - **Query Planning**: [Routing](../module_guides/querying/router/index.md), [Sub-Questions](../examples/query_engine/sub_question_query_engine.ipynb), [Query Transformations](../optimizing/advanced_retrieval/query_transformations.md).
 - **Function Calling and Tool Use**: Check out our [OpenAI](../examples/llm/openai.ipynb), [Mistral](../examples/llm/mistralai.ipynb) guides as examples.
