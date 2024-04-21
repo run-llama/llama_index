@@ -40,14 +40,14 @@ if __name__ == "__main__":
     low_bit = args.low_bit
 
     # load the model using low-bit format specified
-    llm = IpexLLM(
+    llm = IpexLLM.from_model_id(
         model_name=model_name,
         tokenizer_name=tokenizer_name,
         context_window=512,
         max_new_tokens=64,
         load_in_low_bit=low_bit,
         completion_to_prompt=completion_to_prompt,
-        generate_kwargs={"temperature": 0.7, "do_sample": False},
+        generate_kwargs={"do_sample": False},
     )
 
     print(

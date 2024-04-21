@@ -1,5 +1,155 @@
 # ChangeLog
 
+## [2024-04-17]
+
+### `llama-index-core` [0.10.30]
+
+- Add intermediate outputs to QueryPipeline (#12683)
+- Fix show progress causing results to be out of order (#12897)
+- add OR filter condition support to simple vector store (#12823)
+- improved custom agent init (#12824)
+- fix pipeline load without docstore (#12808)
+- Use async `_aprocess_actions` in `_arun_step_stream` (#12846)
+- provide the exception to the StreamChatErrorEvent (#12879)
+- fix bug in load and search tool spec (#12902)
+
+### `llama-index-embeddings-azure-opena` [0.1.7]
+
+- Expose azure_ad_token_provider argument to support token expiration (#12818)
+
+### `llama-index-embeddings-cohere` [0.1.8]
+
+- Add httpx_async_client option (#12896)
+
+### `llama-index-embeddings-ipex-llm` [0.1.0]
+
+- add ipex-llm embedding integration (#12740)
+
+### `llama-index-embeddings-octoai` [0.1.0]
+
+- add octoai embeddings (#12857)
+
+### `llama-index-llms-azure-openai` [0.1.6]
+
+- Expose azure_ad_token_provider argument to support token expiration (#12818)
+
+### `llama-index-llms-ipex-llm` [0.1.2]
+
+- add support for loading "low-bit format" model to IpexLLM integration (#12785)
+
+### `llama-index-llms-mistralai` [0.1.11]
+
+- support `open-mixtral-8x22b` (#12894)
+
+### `llama-index-packs-agents-lats` [0.1.0]
+
+- added LATS agent pack (#12735)
+
+### `llama-index-readers-smart-pdf-loader` [0.1.4]
+
+- Use passed in metadata for documents (#12844)
+
+### `llama-index-readers-web` [0.1.9]
+
+- added Firecrawl Web Loader (#12825)
+
+### `llama-index-vector-stores-milvus` [0.1.10]
+
+- use batch insertions into Milvus vector store (#12837)
+
+### `llama-index-vector-stores-vearch` [0.1.0]
+
+- add vearch to vector stores (#10972)
+
+## [2024-04-13]
+
+### `llama-index-core` [0.10.29]
+
+- **BREAKING** Moved `PandasQueryEngine` and `PandasInstruction` parser to `llama-index-experimental` (#12419)
+  - new install: `pip install -U llama-index-experimental`
+  - new import: `from llama_index.experimental.query_engine import PandasQueryEngine`
+- Fixed some core dependencies to make python3.12 work nicely (#12762)
+- update async utils `run_jobs()` to include tqdm description (#12812)
+- Refactor kvdocstore delete methods (#12681)
+
+### `llama-index-llms-bedrock` [0.1.6]
+
+- Support for Mistral Large from Bedrock (#12804)
+
+### `llama-index-llms-openvino` [0.1.0]
+
+- Added OpenVino LLMs (#12639)
+
+### `llama-index-llms-predibase` [0.1.4]
+
+- Update LlamaIndex-Predibase Integration to latest API (#12736)
+- Enable choice of either Predibase-hosted or HuggingFace-hosted fine-tuned adapters in LlamaIndex-Predibase integration (#12789)
+
+### `llama-index-output-parsers-guardrails` [0.1.3]
+
+- Modernize GuardrailsOutputParser (#12676)
+
+### `llama-index-packs-agents-coa` [0.1.0]
+
+- Chain-of-Abstraction Agent Pack (#12757)
+
+### `llama-index-packs-code-hierarchy` [0.1.3]
+
+- Fixed issue with chunking multi-byte characters (#12715)
+
+### `llama-index-packs-raft-dataset` [0.1.4]
+
+- Fix bug in raft dataset generator - multiple system prompts (#12751)
+
+### `llama-index-postprocessor-openvino-rerank` [0.1.2]
+
+- Add openvino rerank support (#12688)
+
+### `llama-index-readers-file` [0.1.18]
+
+- convert to Path in docx reader if input path str (#12807)
+- make pip check work for optional pdf packages (#12758)
+
+### `llama-index-readers-s3` [0.1.7]
+
+- wrong doc id when using default s3 endpoint in S3Reader (#12803)
+
+### `llama-index-retrievers-bedrock` [0.1.0]
+
+- Add Amazon Bedrock knowledge base integration as retriever (#12737)
+
+### `llama-index-retrievers-mongodb-atlas-bm25-retriever` [0.1.3]
+
+- Add mongodb atlas bm25 retriever (#12519)
+
+### `llama-index-storage-chat-store-redis` [0.1.3]
+
+- fix message serialization in redis chat store (#12802)
+
+### `llama-index-vector-stores-astra-db` [0.1.6]
+
+- Relax dependency version to accept astrapy `1.*` (#12792)
+
+### `llama-index-vector-stores-couchbase` [0.1.0]
+
+- Add support for Couchbase as a Vector Store (#12680)
+
+### `llama-index-vector-stores-elasticsearch` [0.1.7]
+
+- Fix elasticsearch hybrid rrf window_size (#12695)
+
+### `llama-index-vector-stores-milvus` [0.1.8]
+
+- Added support to retrieve metadata fields from milvus (#12626)
+
+### `llama-index-vector-stores-redis` [0.2.0]
+
+- Modernize redis vector store, use redisvl (#12386)
+
+### `llama-index-vector-stores-qdrant` [0.2.0]
+
+- refactor: Switch default Qdrant sparse encoder (#12512)
+
 ## [2024-04-09]
 
 ### `llama-index-core` [0.10.28]

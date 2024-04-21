@@ -21,7 +21,7 @@ disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"
+python_version = "3.11"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-llms-ipex-llm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

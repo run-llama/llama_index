@@ -165,11 +165,11 @@ class AsyncStreamingResponse:
     Returned if streaming=True while using async.
 
     Attributes:
-        async_response_gen: The response async generator.
+        _async_response_gen: The response async generator.
 
     """
 
-    async_response_gen: TokenAsyncGen
+    response_gen: TokenAsyncGen
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
@@ -190,9 +190,9 @@ class AsyncStreamingResponse:
     async def _yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""
         async with self._lock:
-            if self.response_txt is None and self.async_response_gen is not None:
+            if self.response_txt is None and self.response_gen is not None:
                 self.response_txt = ""
-                async for text in self.async_response_gen:
+                async for text in self.response_gen:
                     self.response_txt += text
                     yield text
             else:
