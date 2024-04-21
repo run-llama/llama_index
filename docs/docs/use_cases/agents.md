@@ -9,6 +9,7 @@ that query in order to return the correct result. The key agent components can i
 - Storing previously completed tasks in a memory module
 
 LlamaIndex provides a comprehensive framework for building agents. This includes the following components:
+
 - Using agents with tools at a high-level to build agentic RAG and workflow automation use cases
 - Low-level components for building and debugging agents
 - Core agent ingredients that can be used as standalone modules: query planning, tool use, and more.
@@ -30,6 +31,7 @@ The scope of possible use cases for agents is vast and ever-expanding. That said
 ## Resources
 
 **Using Agents with Tools**
+
 The following component guides are the central hubs for getting started in building with agents:
 
 - [Agents](../module_guides/deploying/agents/index.md)
@@ -37,17 +39,19 @@ The following component guides are the central hubs for getting started in build
 
 
 **Building Custom Agents**
+
 If you're interested in building custom agents, check out the following resources.
 
 - [Custom Agent](../examples/agent/custom_agent.ipynb)
 - [Custom Agent with Query Pipelines](../examples/agent/agent_runner/query_pipeline_agent.ipynb)
 
 **Building with Agentic Ingredients**
+
 LlamaIndex has robust abstractions for every agent sub-ingredient. 
 
-- **Query Planning**: TODO 
-- **Function Calling and Tool Use**: TODO 
-- **Memory**: TODO
+- **Query Planning**: [Routing](../module_guides/querying/router/index.md), [Sub-Questions](../examples/query_engine/sub_question_query_engine.ipynb), [Query Transformations](../optimizing/advanced_retrieval/query_transformations.md).
+- **Function Calling and Tool Use**: Check out our [OpenAI](../examples/llm/openai.ipynb), [Mistral](../examples/llm/mistralai.ipynb) guides as examples.
+- **Memory**: [Example guide for adding memory to RAG](../examples/pipeline/query_pipeline_memory/).
 
 ## LlamaHub
 
