@@ -12,45 +12,51 @@ _AGG_FUNC: Dict[str, Callable] = {"mean": np.mean, "median": np.median, "max": n
 
 
 class HitRate(BaseRetrievalMetric):
-    """Hit rate metric."""
+    """Hit rate metric: Compute the proportion of matches between retrieved documents and expected documents."""
 
     metric_name: str = "hit_rate"
 
     def compute(
         self,
-        query: Optional[str] = None,
         expected_ids: Optional[List[str]] = None,
         retrieved_ids: Optional[List[str]] = None,
-        expected_texts: Optional[List[str]] = None,
-        retrieved_texts: Optional[List[str]] = None,
-        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute metric."""
-        if retrieved_ids is None or expected_ids is None:
-            raise ValueError("Retrieved ids and expected ids must be provided")
-        is_hit = any(id in expected_ids for id in retrieved_ids)
-        return RetrievalMetricResult(
-            score=1.0 if is_hit else 0.0,
-        )
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Both retrieved ids and expected ids must be provided")
+
+        expected_set = set(expected_ids)
+        hits = sum(1 for doc_id in retrieved_ids if doc_id in expected_set)
+        score = hits / len(expected_ids) if expected_ids else 0.0
+
+        return RetrievalMetricResult(score=score)
 
 
-class MRR(BaseRetrievalMetric):
-    """MRR metric."""
+class RR(BaseRetrievalMetric):
+    """Reciprocal Rank (RR): Calculates the reciprocal rank of the first, and only the first, relevant retrieved document.
+    returns 0 if no relevant retrieved docs are found.
+    """
 
-    metric_name: str = "mrr"
+    metric_name: str = "rr"
 
     def compute(
         self,
-        query: Optional[str] = None,
         expected_ids: Optional[List[str]] = None,
         retrieved_ids: Optional[List[str]] = None,
-        expected_texts: Optional[List[str]] = None,
-        retrieved_texts: Optional[List[str]] = None,
-        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute metric."""
-        if retrieved_ids is None or expected_ids is None:
-            raise ValueError("Retrieved ids and expected ids must be provided")
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Both retrieved ids and expected ids must be provided")
         for i, id in enumerate(retrieved_ids):
             if id in expected_ids:
                 return RetrievalMetricResult(
@@ -59,6 +65,43 @@ class MRR(BaseRetrievalMetric):
         return RetrievalMetricResult(
             score=0.0,
         )
+
+
+class MRR(BaseRetrievalMetric):
+    """Mean Reciprocal Rank (MRR): Sums up the reciprocal rank score for each relevant retrieved document.
+    Then divides by the count of relevant documents.
+    """
+
+    metric_name: str = "mrr"
+
+    def compute(
+        self,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute the Mean Reciprocal Rank given expected document IDs and retrieved document IDs."""
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Both retrieved ids and expected ids must be provided")
+
+        expected_set = set(expected_ids)
+        reciprocal_rank_sum = 0.0
+        relevant_docs_count = 0
+
+        for index, doc_id in enumerate(retrieved_ids):
+            if doc_id in expected_set:
+                relevant_docs_count += 1
+                reciprocal_rank_sum += 1.0 / (index + 1)
+
+        if relevant_docs_count > 0:
+            mrr_score = reciprocal_rank_sum / relevant_docs_count
+            return RetrievalMetricResult(score=mrr_score)
+        else:
+            return RetrievalMetricResult(score=0.0)
 
 
 class CohereRerankRelevancyMetric(BaseRetrievalMetric):
@@ -129,6 +172,7 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
 
 METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
     "hit_rate": HitRate,
+    "rr": RR,
     "mrr": MRR,
     "cohere_rerank_relevancy": CohereRerankRelevancyMetric,
 }
