@@ -400,7 +400,10 @@ _ANSI_COLORS = {
     "magenta": "35",
     "cyan": "36",
     "pink": "38;5;200",
+    "orange": "38;5;208",
 }
+
+_OTHER_RGB_COLORS = {"orange": "48;2;255;165;0"}
 
 
 def get_color_mapping(
@@ -427,7 +430,7 @@ def get_color_mapping(
     return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 
-def _get_colored_text(text: str, color: str) -> str:
+def _get_colored_text(text: str, color: str, bold_and_italics=True) -> str:
     """
     Get the colored version of the input text.
 
@@ -438,14 +441,20 @@ def _get_colored_text(text: str, color: str) -> str:
     Returns:
         str: Colored version of the input text.
     """
-    all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS}
+    all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS, **_OTHER_RGB_COLORS}
 
     if color not in all_colors:
-        return f"\033[1;3m{text}\033[0m"  # just bolded and italicized
+        if bold_and_italics:
+            return f"\033[1;3m{text}\033[0m"  # just bolded and italicized
+        else:
+            return text
 
     color = all_colors[color]
 
-    return f"\033[1;3;{color}m{text}\033[0m"
+    if bold_and_italics:
+        return f"\033[1;3;{color}m{text}\033[0m"
+    else:
+        return f"\033[{color}m{text}\033[0m"
 
 
 def print_text(
