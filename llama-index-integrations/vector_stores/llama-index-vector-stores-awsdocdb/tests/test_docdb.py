@@ -24,8 +24,8 @@ if (CONNECTION_STRING == ""):
 from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
 import sys
 
-sys.path.append("./llama_index/vector_stores")
-from awsdocdb import AWSDocDbVectorStore
+# sys.path.append("./llama_index/vector_stores")
+# from awsdocdb import AWSDocDbVectorStore
 from llama_index.vector_stores.types import VectorStoreQuery
 
 """
