@@ -311,14 +311,14 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
 
         if self._sql_only:
             sql_only_node = TextNode(
-                text=f"{sql_query_str}"
+                text=f"Here is the SQL string: {sql_query_str}. The user will execute this query for you."
             )
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
             metadata = {
                 "result": sql_query_str,
                 "dialect": self._sql_database.dialect,
                 "schema": table_desc_str,
-                "engine": self._sql_database.engine
+                "engine": self._sql_database.engine,
             }
         else:
             try:
