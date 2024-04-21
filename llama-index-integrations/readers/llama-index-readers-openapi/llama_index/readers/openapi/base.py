@@ -1,4 +1,4 @@
-"""OpenAPI Specification Reader"""
+"""OpenAPI Specification Reader."""
 
 import json
 import re
@@ -16,6 +16,7 @@ class OpenAPIReader(BaseReader):
     Args:
         depth (Optional[int]): Depth to dive before splitting the JSON.
         exclude (Optional[List[str]]): JSON paths to exclude, separated by commas by '.'. For example: 'components.pets' will exclude the component 'pets' from the OpenAPI specification. Useful for removing unwanted information from the OpenAPI specification.
+
     Returns:
         List[Document]: List of documents.
 
@@ -48,7 +49,6 @@ class OpenAPIReader(BaseReader):
         level: int = 0,
     ) -> List[Document]:
         """Build Documents from the attributes of the OAS JSON."""
-
         if not path and self._should_exclude(path):
             return []
 
@@ -71,7 +71,6 @@ class OpenAPIReader(BaseReader):
         self, input_file: str, extra_info: Optional[Dict] = {}
     ) -> List[Document]:
         """Load data from the input file."""
-
         try:
             with open(input_file, encoding="utf-8") as f:
                 data = json.load(f)
