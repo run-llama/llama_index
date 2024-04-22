@@ -137,7 +137,7 @@ class PredibaseLLM(CustomLLM):
         self,
     ) -> Union["PredibaseClient", "Predibase"]:
         try:
-            if PredibaseLLM._is_deprecated_sdk_version():
+            if self._is_deprecated_sdk_version():
                 from predibase import PredibaseClient
                 from predibase.pql import get_session
                 from predibase.pql.api import Session
