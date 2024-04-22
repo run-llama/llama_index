@@ -17,9 +17,10 @@ The simplest queries involve either semantic search or summarization.
 
 
 ## QA over Structured Data
-If your data already exists in a SQL database, CSV file, or other structured format, LlamaIndex can query the data in these sources.
+If your data already exists in a SQL database, CSV file, or other structured format, LlamaIndex can query the data in these sources. This includes **text-to-SQL** (natural language to SQL operations) and also **text-to-Pandas** (natural language to Pandas operations).
 
-  - [Searching Pandas tables](../../examples/query_engine/pandas_query_engine.ipynb)
+  - [Text-to-SQL Guide](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb)
+  - [Text-to-Pandas Guide](../../examples/query_engine/pandas_query_engine.ipynb)
 
 ## Advanced QA Topics
 
