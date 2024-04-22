@@ -452,18 +452,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
         try:
-            self._client.get_collection(collection_name)
+            return self._client.collection_exists(collection_name)
         except (RpcError, UnexpectedResponse, ValueError):
             return False
-        return True
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
         try:
-            await self._aclient.get_collection(collection_name)
+            return await self._aclient.collection_exists(collection_name)
         except (RpcError, UnexpectedResponse, ValueError):
             return False
-        return True
 
     def query(
         self,
