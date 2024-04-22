@@ -4,7 +4,7 @@ These guide provide an overview of how to use our agent classes.
 
 For more detailed guides on how to use specific tools, check out our [tools module guides](tools/index.md).
 
-## OpenAI Agent
+## Agent with OpenAI Models
 
 - [OpneAI Agent](../../../examples/agent/openai_agent.ipynb)
 - [OpenAI Agent with Query Engine Tools](../../../examples/agent/openai_agent_with_query_engine.ipynb)
@@ -23,18 +23,22 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 - [OpenAI Assistant Retrieval Benchmark](../../../examples/agent/openai_retrieval_benchmark.ipynb)
 - [Assistant Query Cookbook](../../../examples/agent/openai_assistant_query_cookbook.ipynb)
 
+## Other Function Calling Agents
+
+- [Mistral Agent](../../../examples/agent/mistral_agent.ipynb)
+
+
 ## ReAct Agent
 
 - [ReAct Agent](../../../examples/agent/react_agent.ipynb)
 - [ReAct Agent with Query Engine Tools](../../../examples/agent/react_agent_with_query_engine.ipynb)
 
-## Function Calling Agents
-
-- [Mistral Agent](../../../examples/agent/mistral_agent.ipynb)
-
 ## Additional Agents (available on LlamaHub)
 
-- [LLMCompiler Agent Cookbook](https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_packs/agents/llm_compiler/llm_compiler.ipynb)
+- [LLMCompiler Agent](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-llm-compiler?from=) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-agents-llm-compiler/examples/llm_compiler.ipynb))
+- [Chain-of-Abstraction Agent](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-coa?from=) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/coa_agent.ipynb))
+- [Language Agent Tree Search Agent](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-lats?from=) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/lats_agent.ipynb))
+
 
 ## Custom Agents
 
