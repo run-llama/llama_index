@@ -83,6 +83,10 @@ class PredibaseLLM(CustomLLM):
         description="The number of context tokens available to the LLM.",
         gt=0,
     )
+    sdk_version: str = Field(
+        default=None,
+        description="The optional version (string) of the Predibase SDK (defaults to the latest if not specified).",
+    )
 
     _client: Any = PrivateAttr()
 
@@ -101,6 +105,7 @@ class PredibaseLLM(CustomLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        predibase_sdk_version: Optional[str] = None,
     ) -> None:
         predibase_api_key = (
             predibase_api_key
@@ -123,18 +128,22 @@ class PredibaseLLM(CustomLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            predibase_sdk_version=predibase_sdk_version,
         )
 
         self._client: Union["PredibaseClient", "Predibase"] = self.initialize_client(
-            predibase_api_key
+            predibase_api_key=predibase_api_key
         )
 
     @staticmethod
     def initialize_client(
         predibase_api_key: str,
+        predibase_sdk_version: Optional[str] = None,
     ) -> Union["PredibaseClient", "Predibase"]:
         try:
-            if PredibaseLLM._is_deprecated_sdk_version():
+            if PredibaseLLM._is_deprecated_sdk_version(
+                predibase_sdk_version=predibase_sdk_version
+            ):
                 from predibase import PredibaseClient
                 from predibase.pql import get_session
                 from predibase.pql.api import Session
@@ -180,7 +189,9 @@ class PredibaseLLM(CustomLLM):
 
         response_text: str
 
-        if PredibaseLLM._is_deprecated_sdk_version():
+        if PredibaseLLM._is_deprecated_sdk_version(
+            predibase_sdk_version=predibase_sdk_version
+        ):
             from predibase.pql.api import ServerResponseError
             from predibase.resource.llm.interface import (
                 HuggingFaceLLM,
@@ -284,11 +295,11 @@ class PredibaseLLM(CustomLLM):
         raise NotImplementedError
 
     @staticmethod
-    def _is_deprecated_sdk_version() -> bool:
+    def _is_deprecated_sdk_version(predibase_sdk_version: Optional[str] = None) -> bool:
         try:
             from predibase.version import is_deprecated_sdk_version
 
-            return is_deprecated_sdk_version()
+            return is_deprecated_sdk_version(set_version=predibase_sdk_version)
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
