@@ -317,6 +317,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
+        user_agent: Optional[str] = "Llamaindex-python",
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -395,7 +396,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
                 # If SearchIndexClient is supplied so must index_name
-                self._index_client = cast(SearchIndexClient, search_or_index_client)
+                self._index_client = SearchIndexClient(
+                    endpoint=search_or_index_client.endpoint,
+                    credential=search_or_index_client.credential,
+                    user_agent=user_agent or search_or_index_client._user_agent
+                )
 
                 if not index_name:
                     raise ValueError(
@@ -408,7 +413,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 )
 
             elif isinstance(search_or_index_client, SearchClient):
-                self._search_client = cast(SearchClient, search_or_index_client)
+                self._search_client = SearchClient(
+                    endpoint=search_or_index_client.endpoint,
+                    index_name=search_or_index_client.index_name,
+                    credential=search_or_index_client.credential,
+                    user_agent=user_agent or search_or_index_client._user_agent
+                )
 
                 # Validate index_name
                 if index_name:
