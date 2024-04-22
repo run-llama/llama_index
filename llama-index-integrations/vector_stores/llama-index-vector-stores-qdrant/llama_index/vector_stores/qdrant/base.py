@@ -748,8 +748,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             try:
                 node = metadata_dict_to_node(payload)
             except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
@@ -871,11 +869,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return Filter(must=must_conditions)
 
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
-        collection_info = self.client.get_collection(collection_name)
         return (
             self._collection_exists(collection_name)
-            and collection_info.config.params.sparse_vectors is not None
-            and SPARSE_VECTOR_NAME_OLD in collection_info.config.params.sparse_vectors
+            and SPARSE_VECTOR_NAME_OLD
+            in self.client.get_collection(collection_name).config.params.vectors
         )
 
     @property
