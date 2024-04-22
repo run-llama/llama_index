@@ -132,7 +132,8 @@ class PredibaseLLM(CustomLLM):
         )
 
         self._client: Union["PredibaseClient", "Predibase"] = self.initialize_client(
-            predibase_api_key=predibase_api_key
+            predibase_api_key=predibase_api_key,
+            predibase_sdk_version=predibase_sdk_version,
         )
 
     @staticmethod
