@@ -5,6 +5,7 @@ import logging
 import mimetypes
 import multiprocessing
 import tempfile
+import magic
 import warnings
 from datetime import datetime
 from functools import reduce
@@ -20,8 +21,6 @@ from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
-import magic
-from io import BytesIO
 
 def _try_loading_file_extension_by_mime_type() -> Dict[str, str]:
     """
