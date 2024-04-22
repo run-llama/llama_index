@@ -211,7 +211,7 @@ class AWSDocDbVectorStore(VectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        if doc_id is None:
+        if ref_doc_id is None:
             raise ValueError("No document id provided to delete.")
         self._collection.delete_one({self._metadata_key + ".ref_doc_id": ref_doc_id})
 

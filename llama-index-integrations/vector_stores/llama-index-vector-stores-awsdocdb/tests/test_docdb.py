@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 from time import sleep
-import sys
 
 import pytest
 from pymongo import MongoClient
@@ -22,12 +21,6 @@ pymongo_available = True
 if CONNECTION_STRING == "":
     pymongo_available = False
 
-from llama_index.schema import NodeRelationship, RelatedNodeInfo, TextNode
-import sys
-
-# sys.path.append("./llama_index/vector_stores")
-# from awsdocdb import AWSDocDbVectorStore
-from llama_index.vector_stores.types import VectorStoreQuery
 
 """
 Test instructions:
@@ -142,7 +135,7 @@ class TestAWSDocDBVectorSearch:
 
     def test_query_dot(self, node_embeddings: list[TextNode]) -> None:
         vector_store = AWSDocDbVectorStore(
-            docdb_client=self.test_client,  # type: ignore
+            docdb_client=test_client,  # type: ignore
             db_name=DB_NAME,
             collection_name=COLLECTION_NAME,
             similarity_score="dotProduct",
