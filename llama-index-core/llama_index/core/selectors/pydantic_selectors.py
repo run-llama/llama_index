@@ -98,7 +98,7 @@ class PydanticSingleSelector(BaseSelector):
         choices_text = _build_choices_text(choices)
 
         # predict
-        prediction = self._selector_program.acall(
+        prediction = await self._selector_program.acall(
             num_choices=len(choices),
             context_list=choices_text,
             query_str=query.query_str,
