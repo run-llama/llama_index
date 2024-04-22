@@ -83,7 +83,7 @@ class PredibaseLLM(CustomLLM):
         description="The number of context tokens available to the LLM.",
         gt=0,
     )
-    sdk_version: str = Field(
+    predibase_sdk_version: str = Field(
         default=None,
         description="The optional version (string) of the Predibase SDK (defaults to the latest if not specified).",
     )
