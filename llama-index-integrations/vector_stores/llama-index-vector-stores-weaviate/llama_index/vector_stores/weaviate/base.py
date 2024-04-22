@@ -31,7 +31,7 @@ from llama_index.vector_stores.weaviate.utils import (
 import weaviate  # noqa
 from weaviate import AuthApiKey, Client
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _transform_weaviate_filter_condition(condition: str) -> str:
@@ -164,7 +164,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
-            logger.warning("class_prefix is deprecated, please use index_name")
+            _logger.warning("class_prefix is deprecated, please use index_name")
             # legacy, kept for backward compatibility
             index_name = f"{class_prefix}_Node"
 
@@ -276,6 +276,24 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         for entry in entries:
             self._client.data_object.delete(entry["_additional"]["id"], self.index_name)
 
+    def delete_index(self) -> None:
+        """Delete the index associated with the client.
+
+        Raises:
+        - Exception: If the deletion fails, for some reason.
+        """
+        if not class_schema_exists(self._client, self.index_name):
+            _logger.warning(
+                f"Index '{self.index_name}' does not exist. No action taken."
+            )
+            return
+        try:
+            self._client.schema.delete_class(self.index_name)
+            _logger.info(f"Successfully deleted index '{self.index_name}'.")
+        except Exception as e:
+            _logger.error(f"Failed to delete index '{self.index_name}': {e}")
+            raise Exception(f"Failed to delete index '{self.index_name}': {e}")
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         all_properties = get_all_properties(self._client, self.index_name)
@@ -311,7 +329,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         vector = query.query_embedding
         similarity_key = "distance"
         if query.mode == VectorStoreQueryMode.DEFAULT:
-            logger.debug("Using vector search")
+            _logger.debug("Using vector search")
             if vector is not None:
                 query_builder = query_builder.with_near_vector(
                     {
@@ -319,7 +337,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                     }
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
-            logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            _logger.debug(f"Using hybrid search with alpha {query.alpha}")
             similarity_key = "score"
             if vector is not None and query.query_str:
                 query_builder = query_builder.with_hybrid(
@@ -335,7 +353,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             query_builder = query_builder.with_where(kwargs["filter"])
 
         query_builder = query_builder.with_limit(query.similarity_top_k)
-        logger.debug(f"Using limit of {query.similarity_top_k}")
+        _logger.debug(f"Using limit of {query.similarity_top_k}")
 
         # execute query
         query_result = query_builder.do()
