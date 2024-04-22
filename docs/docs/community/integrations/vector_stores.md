@@ -13,6 +13,7 @@ as the storage backend for `VectorStoreIndex`.
 - Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
+- AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
