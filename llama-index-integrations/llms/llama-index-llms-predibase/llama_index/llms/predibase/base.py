@@ -291,7 +291,7 @@ class PredibaseLLM(CustomLLM):
             from predibase.version import __version__ as current_version
 
             sdk_semver_deprecated: Version = semantic_version.Version(
-                version_string="2024.4.6"
+                version_string="2024.4.8"
             )
             sdk_semver_current: Version = semantic_version.Version(
                 version_string=current_version
