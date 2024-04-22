@@ -56,6 +56,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                 )
     _api_key: Any = PrivateAttr()
     _mode : Any = PrivateAttr()
+    _headers : Any = PrivateAttr()
 
     def __init__(
         self,
@@ -72,6 +73,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         self._api_key = None
         self.url = url
         self._mode = None
+        self._headers = None
         
         
         
@@ -97,10 +99,14 @@ class NVIDIARerank(BaseNodePostprocessor):
         if mode == "nvidia":
             ## NVIDIA API Catalog Integration: OpenAPI-spec gateway over NVCF endpoints
             out.top_n = top_n
-            out.url = base_url 
+            out.url = base_url[0].default 
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
             out.model = model_lookup[mode][0]
             out._api_key = my_key
+            out._headers = {
+            "Authorization": f"Bearer {my_key}",
+            "Accept": "application/json",
+            }
             
 
         elif mode == "nim":
@@ -112,10 +118,11 @@ class NVIDIARerank(BaseNodePostprocessor):
             out.url = base_url +'/ranking'
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
             out.model = model_lookup[mode][0]
+            out._headers = None
 
         else:
             options = ["nvidia", "nim"]
-            raise ValueError(f"Unknown mode: `{_mode}`. Expected one of {options}.")       
+            raise ValueError(f"Unknown mode: `{mode}`. Expected one of {options}.")       
 
         return out
     
@@ -153,17 +160,10 @@ class NVIDIARerank(BaseNodePostprocessor):
                 "query": {"text": query_bundle.query_str},
                 "passages":[{"text": node.node.get_content()} for node in nodes],
             }
-            if self._mode =='nim':
-                current_url=self.url
-                response=requests.post(current_url,json=payloads)
-            elif self._mode =='nvidia':
-                current_url = self.url[0].default
-                headers = {
-                "Authorization": f"Bearer {self._api_key}",
-                "Accept": "application/json",
-            }
-                response = session.post(current_url, headers=headers, json=payloads)
-                response.raise_for_status()         
+            
+            current_url = self.url            
+            response = session.post(current_url, headers=self._headers, json=payloads)
+            response.raise_for_status()        
 
             
             try :
