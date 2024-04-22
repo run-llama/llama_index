@@ -399,7 +399,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._index_client = SearchIndexClient(
                     endpoint=search_or_index_client.endpoint,
                     credential=search_or_index_client.credential,
-                    user_agent=user_agent or search_or_index_client._user_agent
+                    user_agent=user_agent,
                 )
 
                 if not index_name:
@@ -417,7 +417,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     endpoint=search_or_index_client.endpoint,
                     index_name=search_or_index_client.index_name,
                     credential=search_or_index_client.credential,
-                    user_agent=user_agent or search_or_index_client._user_agent
+                    user_agent=user_agent,
                 )
 
                 # Validate index_name
