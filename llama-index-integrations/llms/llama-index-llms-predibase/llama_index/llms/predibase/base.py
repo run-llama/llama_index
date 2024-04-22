@@ -286,21 +286,9 @@ class PredibaseLLM(CustomLLM):
     @staticmethod
     def _is_deprecated_sdk_version() -> bool:
         try:
-            import semantic_version
-            from semantic_version.base import Version
-            from predibase.version import __version__ as current_version
+            from predibase.version import is_deprecated_sdk_version
 
-            sdk_semver_deprecated: Version = semantic_version.Version(
-                version_string="2024.4.8"
-            )
-            sdk_semver_current: Version = semantic_version.Version(
-                version_string=current_version
-            )
-
-            return not (
-                (sdk_semver_current > sdk_semver_deprecated)
-                or ("+dev" in current_version)
-            )
+            return is_deprecated_sdk_version()
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
