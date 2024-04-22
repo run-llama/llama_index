@@ -19,6 +19,30 @@ from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
+import magic
+from io import BytesIO
+
+mime_to_extension = {
+    'application/pdf': '.pdf',
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'text/plain': '.txt',
+    'text/csv': '.csv',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+    'application/vnd.ms-powerpoint': '.ppt',
+    'application/vnd.ms-powerpoint.presentation.macroenabled.12': '.pptm',
+    'application/vnd.hwp': '.hwp',
+    'application/epub+zip': '.epub',
+    'text/markdown': '.md',
+    'application/mbox': '.mbox',
+    'application/x-ipynb+json': '.ipynb',
+    'audio/mpeg': '.mp3',
+    'video/mp4': '.mp4',
+    'image/jpeg': '.jpeg'
+}
+
+
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
     try:
@@ -642,3 +666,60 @@ class SimpleDirectoryReader(BaseReader):
 
             if len(documents) > 0:
                 yield documents
+
+
+    @staticmethod
+    def load_file_from_binary(
+            binary_data,
+            encoding: str = "utf-8",
+            errors: str = "ignore",
+            raise_on_error: bool = False,
+    ):
+        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
+        default_file_reader_suffix = list(default_file_reader_cls.keys())
+        documents: List[Document] = []
+        metadata: Optional[dict] = None
+
+        # use magic to get MIME type from binary data
+        mime_type = magic.from_buffer(binary_data, mime=True)
+        file_suffix = mime_to_extension.get(mime_type, '.bin')
+
+        # use BytesIO to simulate file operation
+        fake_file = BytesIO(binary_data)
+
+        if file_suffix in default_file_reader_suffix:
+            # use file readers
+            # instantiate file reader if not already
+            reader_cls = default_file_reader_cls[file_suffix]
+            reader = reader_cls()
+
+           # load data -- catch all errors except for ImportError
+            try:
+            # use file readers
+                documents = reader.load_data(fake_file)
+            except ImportError as e:
+                # ensure that ImportError is raised so user knows
+                # about missing dependencies
+                raise ImportError(str(e))
+            except Exception as e:
+                if raise_on_error:
+                    raise Exception("Error loading file") from e
+                # otherwise, just skip the file and report the error
+                print(
+                    f"Failed to load binary data {binary_data} with error: {e}. Skipping...",
+                    flush=True,
+                )
+                return []
+
+        else:
+            # do standard read
+            try:
+                fake_file.seek(0)
+                data = fake_file.read().decode(encoding=encoding, errors=errors)
+                doc = Document(text=data, metadata=metadata or {})
+                documents.append(doc)
+            except Exception as e:
+                print(f"Failed to read or decode file: {e}")
+                return []
+
+        return documents
