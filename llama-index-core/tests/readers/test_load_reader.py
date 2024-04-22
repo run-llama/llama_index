@@ -16,7 +16,7 @@ def test_loading_readers() -> None:
 
     assert loaded_string_iterable.is_remote == string_iterable.is_remote
 
-def test_load_text_file():
+def test_load_binary_data_file():
     # Create a sample text binary data
     text_data = "Hello, this is a test.".encode('utf-8')
     # Mock the MIME type identification to return 'text/plain'
@@ -29,7 +29,7 @@ def test_load_text_file():
     assert documents[0].text == "Hello, this is a test."
     assert len(documents) == 1
 
-def test_load_unsupported_file_type():
+def test_load_unsupported_binary_data_file_type():
     # Create binary data for a non-text type that is not supported
     binary_data = b'\x00\x01\x02\x03\x04'
     # Mock the MIME type identification to return an unsupported type
