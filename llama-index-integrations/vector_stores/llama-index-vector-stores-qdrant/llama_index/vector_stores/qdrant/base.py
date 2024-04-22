@@ -693,7 +693,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=await self.sparse_vector_name(),
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
