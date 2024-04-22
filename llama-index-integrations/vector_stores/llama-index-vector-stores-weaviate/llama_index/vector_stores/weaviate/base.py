@@ -277,14 +277,15 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             self._client.data_object.delete(entry["_additional"]["id"], self.index_name)
 
     def delete_index(self) -> None:
-        """
-        Delete the index associated with the client
+        """Delete the index associated with the client.
 
         Raises:
         - Exception: If the deletion fails, for some reason.
         """
         if not class_schema_exists(self._client, self.index_name):
-            _logger.warning(f"Index '{self.index_name}' does not exist. No action taken.")
+            _logger.warning(
+                f"Index '{self.index_name}' does not exist. No action taken."
+            )
             return
         try:
             self._client.schema.delete_class(self.index_name)
@@ -336,7 +337,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                     }
                 )
         elif query.mode == VectorStoreQueryMode.HYBRID:
-            logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            _logger.debug(f"Using hybrid search with alpha {query.alpha}")
             similarity_key = "score"
             if vector is not None and query.query_str:
                 query_builder = query_builder.with_hybrid(
