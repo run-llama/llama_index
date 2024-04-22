@@ -53,7 +53,7 @@ deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
 httpx = "*"
 langchain = {optional = true, version = ">=0.0.303"}
-magic = "^0.4.22"  # Added Python magic package
+python-magic = "^0.4.22"  # Added Python magic package
 nest-asyncio = "^1.5.8"
 nltk = "^3.8.1"
 numpy = "*"
@@ -86,6 +86,7 @@ pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 llamaindex-py-client = "^0.1.18"
 wrapt = "*"
+reportlab = "*"
 
 [tool.poetry.extras]
 gradientai = [

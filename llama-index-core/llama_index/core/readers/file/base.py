@@ -4,6 +4,7 @@ import os
 import logging
 import mimetypes
 import multiprocessing
+import tempfile
 import warnings
 from datetime import datetime
 from functools import reduce
@@ -22,26 +23,36 @@ from tqdm import tqdm
 import magic
 from io import BytesIO
 
-mime_to_extension = {
-    'application/pdf': '.pdf',
-    'image/jpeg': '.jpg',
-    'image/png': '.png',
-    'text/plain': '.txt',
-    'text/csv': '.csv',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
-    'application/vnd.ms-powerpoint': '.ppt',
-    'application/vnd.ms-powerpoint.presentation.macroenabled.12': '.pptm',
-    'application/vnd.hwp': '.hwp',
-    'application/epub+zip': '.epub',
-    'text/markdown': '.md',
-    'application/mbox': '.mbox',
-    'application/x-ipynb+json': '.ipynb',
-    'audio/mpeg': '.mp3',
-    'video/mp4': '.mp4',
-    'image/jpeg': '.jpeg'
-}
+def _try_loading_file_extension_by_mime_type() -> Dict[str, str]:
+    """
+    Returns a dictionary mapping MIME types to their corresponding file extensions.
+    Attempts to import the 'magic' module, which is used for file type identification.
+    """
+    try:
+        import magic
+    except ImportError:
+        raise ImportError("The 'magic' module is not installed. Please install it to enable MIME type detection.")
 
+    mime_to_extension = {
+        'application/pdf': '.pdf',
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'text/plain': '.txt',
+        'text/csv': '.csv',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+        'application/vnd.ms-powerpoint': '.ppt',
+        'application/vnd.ms-powerpoint.presentation.macroenabled.12': '.pptm',
+        'application/vnd.hwp': '.hwp',
+        'application/epub+zip': '.epub',
+        'text/markdown': '.md',
+        'application/mbox': '.mbox',
+        'application/x-ipynb+json': '.ipynb',
+        'audio/mpeg': '.mp3',
+        'video/mp4': '.mp4',
+        'image/jpeg': '.jpeg'  # This entry will take precedence over the previous '.jpg' entry for 'image/jpeg'
+    }
+    return mime_to_extension
 
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
@@ -196,6 +207,7 @@ class SimpleDirectoryReader(BaseReader):
     """
 
     supported_suffix_fn: Callable = _try_loading_included_file_formats
+    mime_types_fn: Callable = _try_loading_file_extension_by_mime_type
 
     def __init__(
         self,
@@ -675,51 +687,25 @@ class SimpleDirectoryReader(BaseReader):
             errors: str = "ignore",
             raise_on_error: bool = False,
     ):
-        default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
-        default_file_reader_suffix = list(default_file_reader_cls.keys())
+        default_mime_types_map = SimpleDirectoryReader.mime_types_fn()
         documents: List[Document] = []
-        metadata: Optional[dict] = None
 
         # use magic to get MIME type from binary data
         mime_type = magic.from_buffer(binary_data, mime=True)
-        file_suffix = mime_to_extension.get(mime_type, '.bin')
+        file_suffix = default_mime_types_map.get(mime_type, '.bin')
 
-        # use BytesIO to simulate file operation
-        fake_file = BytesIO(binary_data)
+        try:
+            # save a tempfile
+            with tempfile.NamedTemporaryFile(suffix=file_suffix, delete=False) as temp_file:
+                temp_file.write(binary_data)
+                temp_file.flush()
+                temp_filename = temp_file.name
 
-        if file_suffix in default_file_reader_suffix:
-            # use file readers
-            # instantiate file reader if not already
-            reader_cls = default_file_reader_cls[file_suffix]
-            reader = reader_cls()
+            documents = SimpleDirectoryReader.load_file(Path(temp_filename), None, {})
 
-           # load data -- catch all errors except for ImportError
-            try:
-            # use file readers
-                documents = reader.load_data(fake_file)
-            except ImportError as e:
-                # ensure that ImportError is raised so user knows
-                # about missing dependencies
-                raise ImportError(str(e))
-            except Exception as e:
-                if raise_on_error:
-                    raise Exception("Error loading file") from e
-                # otherwise, just skip the file and report the error
-                print(
-                    f"Failed to load binary data {binary_data} with error: {e}. Skipping...",
-                    flush=True,
-                )
-                return []
-
-        else:
-            # do standard read
-            try:
-                fake_file.seek(0)
-                data = fake_file.read().decode(encoding=encoding, errors=errors)
-                doc = Document(text=data, metadata=metadata or {})
-                documents.append(doc)
-            except Exception as e:
-                print(f"Failed to read or decode file: {e}")
-                return []
+        finally:
+            # Ensure the temporary file is deleted
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
 
         return documents

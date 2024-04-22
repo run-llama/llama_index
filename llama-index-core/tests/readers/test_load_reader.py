@@ -1,3 +1,7 @@
+import io
+
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from typing import cast
 
 from llama_index.core import SimpleDirectoryReader
@@ -17,16 +21,33 @@ def test_loading_readers() -> None:
     assert loaded_string_iterable.is_remote == string_iterable.is_remote
 
 def test_load_binary_data_file():
-    # Create a sample text binary data
-    text_data = "Hello, this is a test.".encode('utf-8')
-    # Mock the MIME type identification to return 'text/plain'
-    magic.from_buffer = lambda x, mime: 'text/plain'
+    # Create a BytesIO object to store the PDF data in memory
+    pdf_bytes = io.BytesIO()
 
-    # Call your function
-    documents = SimpleDirectoryReader.load_file_from_binary(text_data)
+    # Create a PDF canvas
+    c = canvas.Canvas(pdf_bytes, pagesize=letter)
+
+    # Add text content to the PDF
+    c.drawString(100, 750, "Hello, this is a PDF file.")
+
+    # Close the PDF canvas
+    c.save()
+
+    # Reset the position pointer of the BytesIO object to the beginning
+    pdf_bytes.seek(0)
+
+    # Read the binary data of the PDF
+    pdf_data = pdf_bytes.read()
+
+
+    # Mock the MIME type identification to return 'application/pdf'
+    magic.from_buffer = lambda x, mime: 'application/pdf'
+
+    # Call the function under test
+    documents = SimpleDirectoryReader.load_file_from_binary(pdf_data)
 
     # Assert that the document contains correct text
-    assert documents[0].text == "Hello, this is a test."
+    assert documents[0].text == "Hello, this is a PDF file.\n"
     assert len(documents) == 1
 
 def test_load_unsupported_binary_data_file_type():
