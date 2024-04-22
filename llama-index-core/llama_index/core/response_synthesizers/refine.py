@@ -20,7 +20,7 @@ from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TEXT_QA_PROMPT_SEL,
 )
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.response.utils import get_response_text
+from llama_index.core.response.utils import get_response_text, aget_response_text
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import (
@@ -389,8 +389,8 @@ class Refine(BaseSynthesizer):
     ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Refine response."""
         # TODO: consolidate with logic in response/schema.py
-        if isinstance(response, Generator):
-            response = get_response_text(response)
+        if isinstance(response, AsyncGenerator):
+            response = await aget_response_text(response)
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
         logger.debug(f"> Refine context: {fmt_text_chunk}")

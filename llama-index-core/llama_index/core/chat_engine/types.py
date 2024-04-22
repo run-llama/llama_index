@@ -175,7 +175,7 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatch_event(StreamChatErrorEvent())
+            dispatch_event(StreamChatErrorEvent(exception=e))
             if not raise_error:
                 logger.warning(
                     f"Encountered exception writing response to history: {e}"
@@ -229,7 +229,7 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatch_event(StreamChatErrorEvent())
+            dispatch_event(StreamChatErrorEvent(exception=e))
             logger.warning(f"Encountered exception writing response to history: {e}")
         dispatch_event(StreamChatEndEvent())
         self._is_done = True

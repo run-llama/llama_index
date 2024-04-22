@@ -748,8 +748,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             try:
                 node = metadata_dict_to_node(payload)
             except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )

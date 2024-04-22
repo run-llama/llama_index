@@ -45,11 +45,12 @@ nav:
       - Putting it all Together: ./understanding/putting_it_all_together/
   - Use Cases:
       - ./use_cases/index.md
-      - Agents: ./use_cases/agents.md
+      - Prompting: ./use_cases/prompting.md
+      - Question-Answering (RAG): ./use_cases/q_and_a/index.md
       - Chatbots: ./use_cases/chatbots.md
-      - Multi-Modal Applications: ./use_cases/multimodal.md
       - Structured Data Extraction: ./use_cases/extraction.md
-      - General Q&A: ./use_cases/q_and_a/index.md
+      - Agents: ./use_cases/agents.md
+      - Multi-Modal Applications: ./use_cases/multimodal.md
       - Fine-Tuning: ./use_cases/fine_tuning.md
   - Examples:
       - ./examples/index.md
@@ -82,6 +83,7 @@ nav:
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/coa_agent.ipynb
+          - ./examples/agent/lats_agent.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -189,6 +191,7 @@ nav:
           - ./examples/embeddings/cloudflare_workersai.ipynb
           - ./examples/embeddings/openvino.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
+          - ./examples/embeddings/octoai.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -367,6 +370,7 @@ nav:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
           - ./examples/output_parsing/llm_program.ipynb
+          - ./examples/output_parsing/function_program.ipynb
           - ./examples/output_parsing/openai_pydantic_program.ipynb
           - ./examples/output_parsing/df_program.ipynb
           - ./examples/output_parsing/evaporate_program.ipynb
@@ -531,6 +535,7 @@ nav:
           - ./examples/vector_stores/TiDBVector.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/CouchbaseVectorStoreDemo.ipynb
+          - ./examples/vector_stores/VearchDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -705,6 +710,7 @@ nav:
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/nomic.md
+          - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
           - ./api_reference/embeddings/openvino.md
@@ -812,6 +818,7 @@ nav:
       - Llama Packs:
           - ./api_reference/packs/agent_search_retriever.md
           - ./api_reference/packs/agents_coa.md
+          - ./api_reference/packs/agents_lats.md
           - ./api_reference/packs/agents_llm_compiler.md
           - ./api_reference/packs/amazon_product_extraction.md
           - ./api_reference/packs/arize_phoenix_query_engine.md
@@ -1263,6 +1270,7 @@ nav:
               - ./api_reference/storage/vector_store/txtai.md
               - ./api_reference/storage/vector_store/typesense.md
               - ./api_reference/storage/vector_store/upstash.md
+              - ./api_reference/storage/vector_store/vearch.md
               - ./api_reference/storage/vector_store/weaviate.md
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
@@ -1325,6 +1333,10 @@ nav:
       - Presentations: ./presentations/past_presentations.md
       - Upgrading to v0.10.x: ./getting_started/v0_10_0_migration.md
       - Deprecated Terms: ./changes/deprecated_terms.md
+  - LlamaCloud:
+      - LlamaCloud: ./llama_cloud/index.md
+      - LlamaParse: ./llama_cloud/llama_parse.md
+
 plugins:
   - search
   - include_dir_to_nav
@@ -1809,6 +1821,9 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-couchbase
             - ../llama-index-integrations/retrievers/llama-index-retrievers-bedrock
             - ../llama-index-integrations/retrievers/llama-index-retrievers-mongodb-atlas-bm25-retriever
+            - ../llama-index-packs/llama-index-packs-agents-lats
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vearch
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-octoai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

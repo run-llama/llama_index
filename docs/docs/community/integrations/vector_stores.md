@@ -204,6 +204,33 @@ client = clickhouse_connect.get_client(
 vector_store = ClickHouseVectorStore(clickhouse_client=client)
 ```
 
+**Couchbase**
+
+```python
+from datetime import timedelta
+
+from couchbase.auth import PasswordAuthenticator
+from couchbase.cluster import Cluster
+from couchbase.options import ClusterOptions
+
+# Create a Couchbase Cluster object
+auth = PasswordAuthenticator("DATABASE_USERNAME", "DATABASE_PASSWORD")
+options = ClusterOptions(auth)
+cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+# Create the Vector Store
+vector_store = CouchbaseVectorStore(
+    cluster=cluster,
+    bucket_name="BUCKET_NAME",
+    scope_name="SCOPE_NAME",
+    collection_name="COLLECTION_NAME",
+    index_name="SEARCH_INDEX_NAME",
+)
+```
+
 **DashVector**
 
 ```python

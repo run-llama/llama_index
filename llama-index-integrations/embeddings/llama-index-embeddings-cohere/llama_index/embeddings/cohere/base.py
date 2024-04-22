@@ -126,7 +126,8 @@ class CohereEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         base_url: Optional[str] = None,
         timeout: Optional[float] = None,
-        httpx_client: Optional[httpx.AsyncClient] = None,
+        httpx_client: Optional[httpx.Client] = None,
+        httpx_async_client: Optional[httpx.AsyncClient] = None,
     ):
         """
         A class representation for generating embeddings using the Cohere API.
@@ -170,7 +171,7 @@ class CohereEmbedding(BaseEmbedding):
                 client_name="llama_index",
                 base_url=base_url,
                 timeout=timeout,
-                httpx_client=httpx_client,
+                httpx_client=httpx_async_client,
             ),
             cohere_api_key=cohere_api_key,
             model_name=model_name,

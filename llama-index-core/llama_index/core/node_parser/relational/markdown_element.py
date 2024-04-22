@@ -36,6 +36,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         source_document = node.source_node or node.as_related_node_info()
         for n in nodes:
             n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
         return nodes
 
     def extract_elements(
