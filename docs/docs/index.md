@@ -19,7 +19,7 @@ You may choose to **fine-tune** a LLM with your data, but:
 - Due to the cost to train, it's **hard to update** a LLM with latest information.
 - **Observability** is lacking. When you ask a LLM a question, it's not obvious how the LLM arrived at its answer.
 
-Instead of fine-tuning, one can a context augmentation pattern called [Retrieval-Augmented Generation (RAG)](./getting_started/concepts.md) to obtain more accurate text generation relevant to your specific data. RAG involves the following high level steps:
+Instead of fine-tuning, one can use a context augmentation pattern called [Retrieval-Augmented Generation (RAG)](./getting_started/concepts.md) to obtain more accurate text generation relevant to your specific data. RAG involves the following high level steps:
 
 1. Retrieve information from your data sources first,
 2. Add it to your question as context, and
@@ -69,10 +69,20 @@ To download or contribute, find LlamaIndex on:
 
 - [Github](https://github.com/run-llama/llama_index)
 - [PyPi](https://pypi.org/project/llama-index/)
-- npm (Typescript/Javascript):
-  - [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS)
-  - [TypeScript Docs](https://ts.llamaindex.ai/)
-  - [LlamaIndex.TS](https://www.npmjs.com/package/llamaindex)
+- LlamaIndex.TS (Typescript/Javascript package):
+    - [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS)
+    - [TypeScript Docs](https://ts.llamaindex.ai/)
+    - [LlamaIndex.TS npm](https://www.npmjs.com/package/llamaindex)
+
+## LlamaCloud
+
+If you're an enterprise developer, check out [**LlamaCloud**](https://www.llamaindex.ai/enterprise). It is a managed platform for data parsing and ingestion, allowing
+you to get production-quality data for your production LLM application.
+
+Check out the following resources:
+
+- [**LlamaParse**](./llama_cloud/llama_parse.md): our state-of-the-art document parsing solution. Part of LlamaCloud and also available as a self-serve API. [Signup here for API access](https://cloud.llamaindex.ai/).
+- [**LlamaCloud**](./llama_cloud/index.md): our e2e data platform. In private preview with startup and enterprise plans. [Talk to us](https://www.llamaindex.ai/contact) if interested.
 
 ## Community
 
@@ -84,5 +94,5 @@ Need help? Have a feature suggestion? Join the LlamaIndex community:
 ## Associated projects
 
 - [🏡 LlamaHub](https://llamahub.ai) | A large (and growing!) collection of custom data connectors
-- [SEC Insights](https://sec-insights.com) | A LlamaIndex-powered application for financial research
+- [SEC Insights](https://secinsights.ai) | A LlamaIndex-powered application for financial research
 - [create-llama](https://www.npmjs.com/package/create-llama) | A CLI tool to quickly scaffold LlamaIndex projects
