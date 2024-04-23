@@ -303,11 +303,9 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
             if len(tool_calls) == 0:
                 continue
             fn_args = kwargs["tool_calls"][0].function.arguments
-            # print(f"args: {fn_args}")
             try:
                 partial_object = parse_partial_json(fn_args)
                 yield self._output_cls.parse_obj(partial_object)
-                # print(f"partial: {self._output_cls.parse_obj(partial_json)}")
             except (ValidationError, ValueError):
                 continue
 
