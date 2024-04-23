@@ -43,7 +43,7 @@ def parse_partial_json(s):
                     stack.pop()
                 else:
                     # Mismatched closing character; the input is malformed.
-                    return None
+                    raise ValueError("Malformed partial JSON encountered.")
 
         # Append the processed character to the new string.
         new_s += char
@@ -60,5 +60,5 @@ def parse_partial_json(s):
     try:
         return json.loads(new_s)
     except json.JSONDecodeError:
-        # If we still can't parse the string as JSON, return None to indicate failure.
-        return None
+        # If we still can't parse the string as JSON, raise error to indicate failure.
+        raise ValueError("Malformed partial JSON encountered.")

@@ -304,11 +304,11 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 continue
             fn_args = kwargs["tool_calls"][0].function.arguments
             # print(f"args: {fn_args}")
-            partial_object = parse_partial_json(fn_args)
             try:
+                partial_object = parse_partial_json(fn_args)
                 yield self._output_cls.parse_obj(partial_object)
                 # print(f"partial: {self._output_cls.parse_obj(partial_json)}")
-            except ValidationError:
+            except (ValidationError, ValueError):
                 continue
 
     def _description_eval(self, **kwargs: Any) -> Optional[str]:
