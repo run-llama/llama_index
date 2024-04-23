@@ -262,7 +262,9 @@ class PredibaseLLM(CustomLLM):
                         )
                     except GenerationError as ge:
                         raise ValueError(
-                            f'An adapter with the ID "{self.adapter_id}" cannot be found in a HuggingFace repository.'
+                            f"""Either an adapter with the ID "{self.adapter_id}" cannot be found in a HuggingFace repository, \
+or it is incompatible with the base model (please make sure that the adapter configuration is consistent).
+"""
                         ) from ge
             else:
                 try:
