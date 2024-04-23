@@ -257,7 +257,7 @@ class NvidiaTriton(LLM):
 
         if self.triton_load_model_call:
             client.load_model(model_params["model_name"])
-	
+
         result_queue = client.request_streaming(
             model_params["model_name"], request_id, **invocation_params
         )

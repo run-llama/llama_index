@@ -186,7 +186,7 @@ class LocalTensorRTLLM(CustomLLM):
                 tp_size = config["builder_config"]["tensor_parallel"]
                 pp_size = 1
                 if "pipeline_parallel" in config["builder_config"]:
-                	pp_size = config["builder_config"]["pipeline_parallel"]
+                    pp_size = config["builder_config"]["pipeline_parallel"]
                 world_size = tp_size * pp_size
                 assert (
                     world_size == tensorrt_llm.mpi_world_size()
@@ -213,7 +213,7 @@ class LocalTensorRTLLM(CustomLLM):
                     gpt_attention_plugin=use_gpt_attention_plugin,
                     paged_kv_cache=paged_kv_cache,
                     remove_input_padding=remove_input_padding,
-                    max_batch_size = config["builder_config"]["max_batch_size"]
+                    max_batch_size=config["builder_config"]["max_batch_size"],
                 )
 
                 assert (

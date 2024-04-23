@@ -51,7 +51,12 @@ class StreamingResponseGenerator(Queue):
     """A Generator that provides the inference results from an LLM."""
 
     def __init__(
-        self, client: "GrpcTritonClient", request_id: str, force_batch: bool, model_name: str, max_tokens: int
+        self,
+        client: "GrpcTritonClient",
+        request_id: str,
+        force_batch: bool,
+        model_name: str,
+        max_tokens: int,
     ) -> None:
         """Instantiate the generator class."""
         super().__init__()
@@ -61,7 +66,6 @@ class StreamingResponseGenerator(Queue):
         self._model_name = model_name
         self._max_tokens = max_tokens
         self._counter = 0
-        
 
     def __iter__(self) -> "StreamingResponseGenerator":
         """Return self as a generator."""
@@ -73,7 +77,7 @@ class StreamingResponseGenerator(Queue):
         if val is None or val in STOP_WORDS or self._counter == self._max_tokens - 1:
             self._stop_stream()
             raise StopIteration
-        self._counter +=1 
+        self._counter += 1
         return val
 
     def _stop_stream(self) -> None:
@@ -350,7 +354,9 @@ class GrpcTritonClient(_BaseTritonClient):
             request_id = str(random.randint(1, 9999999))  # nosec
 
         inputs = self._generate_inputs(stream=not force_batch, **params)
-        result_queue = StreamingResponseGenerator(self, request_id, force_batch, model_name, max_tokens = params['tokens'])
+        result_queue = StreamingResponseGenerator(
+            self, request_id, force_batch, model_name, max_tokens=params["tokens"]
+        )
         outputs = self._generate_outputs()
         self._send_prompt_streaming(
             model_name,
