@@ -262,9 +262,7 @@ class NvidiaTriton(LLM):
             model_params["model_name"], request_id, **invocation_params
         )
         response = ""
-        counter = -1
         for token in result_queue:
-            counter+=1
             if isinstance(token, InferenceServerException):
                 client.stop_stream(model_params["model_name"], request_id)
                 raise token
