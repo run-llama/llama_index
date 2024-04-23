@@ -28,6 +28,7 @@ authors = ["Your Name <you@example.com>"]
 description = "llama-index agent llm compiler integration"
 exclude = ["**/BUILD"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-agent-llm-compiler"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
