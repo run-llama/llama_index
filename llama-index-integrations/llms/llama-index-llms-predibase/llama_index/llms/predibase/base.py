@@ -47,6 +47,7 @@ class PredibaseLLM(CustomLLM):
 
         llm = PredibaseLLM(
             model_name="mistral-7b",
+            predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
             adapter_id="my-adapter-id",  # optional parameter
             adapter_version=3,  # optional parameter (applies to Predibase only)
             temperature=0.3,
