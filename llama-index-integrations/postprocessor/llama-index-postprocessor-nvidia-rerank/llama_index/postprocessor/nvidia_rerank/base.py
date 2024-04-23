@@ -57,6 +57,7 @@ class NVIDIARerank(BaseNodePostprocessor):
     _api_key: Any = PrivateAttr()
     _mode : Any = PrivateAttr()
     _headers : Any = PrivateAttr()
+    _score : Any = PrivateAttr()
 
     def __init__(
         self,
@@ -74,13 +75,14 @@ class NVIDIARerank(BaseNodePostprocessor):
         self.url = url
         self._mode = None
         self._headers = None
+        self._score = None
         
         
         
     def get_available_models():
         return model_lookup.items()
 
-    def mode(self, mode :str = None, base_url :str = url , model :str =model , top_n : int = top_n , api_key :str = None):
+    def mode(self, mode :str = None, base_url :str = url , model :str =model , api_key :str = None):
         if isinstance(self, str):
             raise ValueError("Please construct the model before calling mode()")
         out = self
@@ -98,7 +100,7 @@ class NVIDIARerank(BaseNodePostprocessor):
 
         if mode == "nvidia":
             ## NVIDIA API Catalog Integration: OpenAPI-spec gateway over NVCF endpoints
-            out.top_n = top_n
+            
             out.url = base_url[0].default 
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
             out.model = model_lookup[mode][0]
@@ -107,18 +109,24 @@ class NVIDIARerank(BaseNodePostprocessor):
             "Authorization": f"Bearer {my_key}",
             "Accept": "application/json",
             }
-            
+            out._score = 'logit'
 
         elif mode == "nim":
             ## OpenAPI-style specs to connect to NeMo Inference Microservices etc.
             ## Most generic option, requires specifying base_url            
-            out.top_n = top_n
+            
             if base_url.endswith('/ranking'):
                 raise ValueError(f"Incorrect url format {base_url}, you do not need to extend '/ranking' at the end, as an example, here is a valid url format :http://.../v1/")
             out.url = base_url +'/ranking'
+            out._headers =  {
+                'accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+            out._score = 'score'
+
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
             out.model = model_lookup[mode][0]
-            out._headers = None
+            
 
         else:
             options = ["nvidia", "nim"]
@@ -160,28 +168,23 @@ class NVIDIARerank(BaseNodePostprocessor):
                 "query": {"text": query_bundle.query_str},
                 "passages":[{"text": node.node.get_content()} for node in nodes],
             }
-            
-            current_url = self.url            
+            current_url = self.url
             response = session.post(current_url, headers=self._headers, json=payloads)
-            response.raise_for_status()        
-
+            response.raise_for_status()           
+                                
+            results = response.json()["rankings"]
             
-            try :
-                assert response.status_code == 200                
-                
-                results = response.json()["rankings"]
-                new_nodes = []
+            new_nodes = []
+        
+            for result in results:
+                new_node_with_score = NodeWithScore(
+                    node=nodes[result['index']].node, score=result[self._score]
+                )
+                new_nodes.append(new_node_with_score)
             
-                for result in results:
-                    new_node_with_score = NodeWithScore(
-                        node=nodes[result['index']].node, score=result['logit']
-                    )
-                    new_nodes.append(new_node_with_score)
-                new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
-                    : self.top_n
-                ]
-                event.on_end(payload={EventPayload.NODES: new_nodes})
-            except :
-                print(f"Query unsuccessful {response.status_code}, please visit this page for more info : https://developer.nvidia.com/docs/nemo-microservices/inference/tools.html")
+                new_nodes.append(new_node_with_score)
+            
+            new_nodes = new_nodes[:self.top_n]
+            event.on_end(payload={EventPayload.NODES: new_nodes})
 
         return new_nodes
