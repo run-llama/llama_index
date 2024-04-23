@@ -290,9 +290,22 @@ or it is incompatible with the base model (please make sure that the adapter con
 
     def _is_deprecated_sdk_version(self) -> bool:
         try:
-            from predibase.version import is_deprecated_sdk_version
+            import semantic_version
+            from semantic_version.base import Version
 
-            return is_deprecated_sdk_version(set_version=self.predibase_sdk_version)
+            from predibase.version import __version__ as current_version
+
+            sdk_semver_deprecated: Version = semantic_version.Version(
+                version_string="2024.4.8"
+            )
+            actual_current_version: str = self.predibase_sdk_version or current_version
+            sdk_semver_current: Version = semantic_version.Version(
+                version_string=actual_current_version
+            )
+            return not (
+                (sdk_semver_current > sdk_semver_deprecated)
+                or ("+dev" in actual_current_version)
+            )
         except ImportError as e:
             raise ImportError(
                 "Could not import Predibase Python package. "
