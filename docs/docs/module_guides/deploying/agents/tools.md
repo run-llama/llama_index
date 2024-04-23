@@ -1,7 +1,5 @@
 # Tools
 
-# Tools
-
 ## Concept
 
 Having proper tool abstractions is at the core of building [data agents](../index.md). Defining a set of Tools is similar to defining any API interface, with the exception that these Tools are meant for agent rather than human use. We allow users to define both a **Tool** as well as a **ToolSpec** containing a series of functions under the hood.
@@ -62,7 +60,7 @@ By default, the tool name will be the function name, and the docstring will be t
 tool = FunctionTool.from_defaults(get_weather, name="...", description="...")
 ```
 
-## Query EngineTool
+## QueryEngineTool
 
 Any query engine can be turned into a tool, using `QueryEngineTool`:
 
@@ -153,7 +151,7 @@ agent = OpenAIAgent.from_tools(
 
 ### Return Direct
 
-You'll notice the option `return_direct` in the tool class constructor. If this is set to `True`, the response from the query engine is returned directly, without being interpreted and rewritten by the agent. This can be helpful for decreasing runtime, or designing/specifying tools that will end the agent reasoning loop.
+You'll notice the option `return_direct` in the tool class constructor. If this is set to `True`, the response from an agent is returned directly, without being interpreted and rewritten by the agent. This can be helpful for decreasing runtime, or designing/specifying tools that will end the agent reasoning loop.
 
 For example, say you specify a tool:
 

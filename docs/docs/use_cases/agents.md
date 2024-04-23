@@ -27,7 +27,7 @@ If you've built a RAG pipeline already and want to extend it with agentic behavi
 If you want to check out our standalone documentation hubs on agents and tools, check out the following module guides:
 
 - [Agents](../module_guides/deploying/agents/index.md)
-- [Tools](../module_guides/deploying/agents/tools/index.md)
+- [Tools](../module_guides/deploying/agents/tools.md)
 
 ## LlamaHub
 

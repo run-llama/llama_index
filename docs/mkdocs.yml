@@ -623,10 +623,7 @@ nav:
           - ./module_guides/deploying/agents/usage_pattern.md
           - ./module_guides/deploying/agents/agent_runner.md
           - ./module_guides/deploying/agents/modules.md
-          - Tools:
-              - ./module_guides/deploying/agents/tools/index.md
-              - ./module_guides/deploying/agents/tools/usage_pattern.md
-              - ./module_guides/deploying/agents/tools/llamahub_tools_guide.md
+          - ./module_guides/deploying/agents/tools.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -1845,7 +1842,7 @@ plugins:
         ./community/integrations/vector_stores.html: https://docs.llamaindex.ai/en/stable/community/integrations/vector_stores/
         ./community/llama_packs/root.html: community/llama_packs/index.md
         ./core_modules/agent_modules/agents/root.html: module_guides/deploying/agents/index.md
-        ./core_modules/agent_modules/tools/root.html: module_guides/deploying/agents/tools/index.md
+        ./core_modules/agent_modules/tools/root.html: module_guides/deploying/agents/tools.md
         ./core_modules/data_modules/connector.html: module_guides/loading/connector/index.md
         ./core_modules/data_modules/documents_and_nodes/root.html: module_guides/loading/documents_and_nodes/index.md
         ./core_modules/data_modules/index/root.html: module_guides/indexing/index.md
@@ -2315,9 +2312,10 @@ plugins:
         ./module_guides/deploying/agents/agent_runner.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/agent_runner/
         ./module_guides/deploying/agents/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/modules/
         ./module_guides/deploying/agents/root.html: module_guides/deploying/agents/index.md
-        ./module_guides/deploying/agents/tools/llamahub_tools_guide.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/llamahub_tools_guide/
-        ./module_guides/deploying/agents/tools/root.html: module_guides/deploying/agents/tools/index.md
-        ./module_guides/deploying/agents/tools/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/usage_pattern/
+        ./module_guides/deploying/agents/tools/llamahub_tools_guide.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
+        ./module_guides/deploying/agents/tools/root.html: module_guides/deploying/agents/tools.md
+        ./module_guides/deploying/agents/tools/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
+        ./module_guides/deploying/agents/tools/usage_pattern/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
         ./module_guides/deploying/agents/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/usage_pattern/
         ./module_guides/deploying/chat_engines/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/chat_engines/modules/
         ./module_guides/deploying/chat_engines/root.html: module_guides/deploying/chat_engines/index.md
