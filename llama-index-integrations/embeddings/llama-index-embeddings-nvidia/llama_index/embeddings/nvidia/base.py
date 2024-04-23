@@ -78,7 +78,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
         super().__init__(
-            model_name=model,
+            model=model,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
