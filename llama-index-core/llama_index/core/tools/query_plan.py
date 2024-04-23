@@ -177,7 +177,7 @@ class QueryPlanTool(BaseTool):
                 raw_input={"query": node.query_str},
                 raw_output=response_obj,
             )
-            
+
             if node.tool_name in self._query_tools_dict:
                 tool = self._query_tools_dict[node.tool_name]
                 print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
