@@ -829,7 +829,15 @@ class CodeHierarchyNodeParser(NodeParser):
 
         # Now do the replacement
         replacement_text = cls._get_replacement_text(child_node=child_node)
-        parent_node.text = parent_node.text.replace(child_node.text, replacement_text)
+
+        index = parent_node.text.find(child_node.text)
+        # If the text is found, replace only the first occurrence
+        if index != -1:
+            parent_node.text = (
+                parent_node.text[:index]
+                + replacement_text
+                + parent_node.text[index + len(child_node.text) :]
+            )
 
     @classmethod
     def _skeletonize_list(cls, nodes: List[TextNode]) -> None:

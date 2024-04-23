@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.schema import NodeWithScore, TextNode
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.utilities.aws_utils import get_aws_service_client
 
 
@@ -71,7 +71,9 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
         self.retrieval_config = retrieval_config
         super().__init__(callback_manager)
 
-    def _retrieve(self, query: str) -> List[NodeWithScore]:
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        query = query_bundle.query_str
+
         response = self._client.retrieve(
             retrievalQuery={"text": query.strip()},
             knowledgeBaseId=self.knowledge_base_id,
