@@ -9,11 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.agent.openai"
+import_path = "llama_index.vector_stores.awsdocdb"
 
 [tool.llamahub.class_authors]
-OpenAIAgent = "llama-index"
-OpenAIAssistantAgent = "llama-index"
+AWSDocDbVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,19 +21,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index agent openai integration"
+authors = ["Prajwal Saokar <prajwal.saokar@gmail.com>", "Vidur Modgil", "vmod2005@gmail.com"]
+description = "llama-index vector_stores awsdocdb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-agent-openai"
+name = "llama-index-vector-stores-awsdocdb"
 readme = "README.md"
-version = "0.2.3"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.30"
-llama-index-llms-openai = "^0.1.5"
-openai = ">=1.14.0"
+llama-index-core = "^0.10.1"
+pymongo = "^4.6.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -45,7 +43,7 @@ pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
-tree-sitter-languages = "~1.9.0"
+tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"

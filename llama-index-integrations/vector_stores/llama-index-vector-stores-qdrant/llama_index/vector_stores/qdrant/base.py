@@ -204,7 +204,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_query_fn = sparse_query_fn
         self._hybrid_fusion_fn = hybrid_fusion_fn
 
-    def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
+    def _build_points(
+        self, nodes: List[BaseNode], sparse_vector_name: str
+    ) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
         for node_batch in iter_batch(nodes, self.batch_size):
@@ -235,7 +237,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         vectors.append(
                             {
                                 # Dynamically switch between the old and new sparse vector name
-                                self.sparse_vector_name: rest.SparseVector(
+                                sparse_vector_name: rest.SparseVector(
                                     indices=sparse_indices[i],
                                     values=sparse_vectors[i],
                                 ),
@@ -282,7 +284,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes)
+        sparse_vector_name = self.sparse_vector_name()
+        points, ids = self._build_points(nodes, sparse_vector_name)
 
         self._client.upload_points(
             collection_name=self.collection_name,
@@ -316,7 +319,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes)
+        sparse_vector_name = await self.asparse_vector_name()
+        points, ids = self._build_points(nodes, sparse_vector_name)
 
         await self._aclient.upload_points(
             collection_name=self.collection_name,
@@ -452,18 +456,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
         try:
-            self._client.get_collection(collection_name)
+            return self._client.collection_exists(collection_name)
         except (RpcError, UnexpectedResponse, ValueError):
             return False
-        return True
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
         try:
-            await self._aclient.get_collection(collection_name)
+            return await self._aclient.collection_exists(collection_name)
         except (RpcError, UnexpectedResponse, ValueError):
             return False
-        return True
 
     def query(
         self,
@@ -515,7 +517,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=self.sparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -558,7 +560,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=self.sparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -649,7 +651,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -691,7 +693,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -748,8 +750,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             try:
                 node = metadata_dict_to_node(payload)
             except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
@@ -871,18 +871,32 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return Filter(must=must_conditions)
 
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
-        collection_info = self.client.get_collection(collection_name)
         return (
             self._collection_exists(collection_name)
-            and collection_info.config.params.sparse_vectors is not None
-            and SPARSE_VECTOR_NAME_OLD in collection_info.config.params.sparse_vectors
+            and SPARSE_VECTOR_NAME_OLD
+            in self.client.get_collection(collection_name).config.params.vectors
         )
 
-    @property
     def sparse_vector_name(self) -> str:
         return (
             SPARSE_VECTOR_NAME_OLD
             if self.use_old_sparse_encoder(self.collection_name)
+            else SPARSE_VECTOR_NAME
+        )
+
+    async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
+        return (
+            await self._acollection_exists(collection_name)
+            and SPARSE_VECTOR_NAME_OLD
+            in (
+                await self._aclient.get_collection(collection_name)
+            ).config.params.vectors
+        )
+
+    async def asparse_vector_name(self) -> str:
+        return (
+            SPARSE_VECTOR_NAME_OLD
+            if await self.ause_old_sparse_encoder(self.collection_name)
             else SPARSE_VECTOR_NAME
         )
 
