@@ -148,9 +148,9 @@ def test_chat_model_streaming(MockSyncUpstage: MagicMock) -> None:
         prompt = "test prompt"
         message = ChatMessage(role="user", content="test message")
 
-        # response_gen = llm.stream_complete(prompt)
-        # responses = list(response_gen)
-        # assert responses[-1].text == "\n\n2"
+        response_gen = llm.stream_complete(prompt)
+        responses = list(response_gen)
+        assert responses[-1].text == "\n\n2"
 
         mock_instance.chat.completions.create.return_value = (
             mock_chat_completion_stream()
