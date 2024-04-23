@@ -1,4 +1,4 @@
-# High-Level Concepts
+# High-Level Concepts (RAG)
 
 This is a quick guide to the high-level concepts you'll encounter frequently when building LLM applications.
 
