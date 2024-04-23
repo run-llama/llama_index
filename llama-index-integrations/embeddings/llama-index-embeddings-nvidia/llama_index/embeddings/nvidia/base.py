@@ -12,7 +12,7 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
 
-BASE_RETRIEVAL_PLAYGROUND_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
+BASE_RETRIEVAL_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
 
 
 class NVIDIAEmbedding(BaseEmbedding):
@@ -48,18 +48,22 @@ class NVIDIAEmbedding(BaseEmbedding):
     def __init__(
         self,
         model: str = "NV-Embed-QA",
-        timeout: float = 120,
-        max_retries: int = 5,
+        truncate: Optional[str] = "NONE",
+        timeout: Optional[float] = 120,
+        max_retries: Optional[int] = 5,
         api_key: Optional[str] = None,
-        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,  # This could default to 50
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
+        if embed_batch_size > 259:
+            raise ValueError("The batch size should not be larger than 259.")
+
         api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
 
         self._client = OpenAI(
             api_key=api_key,
-            base_url=BASE_RETRIEVAL_PLAYGROUND_URL,
+            base_url=BASE_RETRIEVAL_URL,
             timeout=timeout,
             max_retries=max_retries,
         )
@@ -67,7 +71,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
         self._aclient = AsyncOpenAI(
             api_key=api_key,
-            base_url=BASE_RETRIEVAL_PLAYGROUND_URL,
+            base_url=BASE_RETRIEVAL_URL,
             timeout=timeout,
             max_retries=max_retries,
         )
@@ -86,14 +90,14 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def mode(
         self,
-        mode: Optional[Literal["catalog", "nim"]] = "catalog",
+        mode: Optional[Literal["nvidia", "nim"]] = "nvidia",
         base_url: Optional[str] = None,
         model: Optional[str] = "NV-Embed-QA",
         api_key: Optional[str] = None,
     ):
         out = self
 
-        if mode == "catalog":
+        if mode == "nvidia":
             if api_key is None:
                 api_key = get_from_param_or_env(
                     "api_key", api_key, "NVIDIA_API_KEY", ""
@@ -101,13 +105,13 @@ class NVIDIAEmbedding(BaseEmbedding):
 
             if not api_key:
                 raise ValueError(
-                    "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA AI catalog."
+                    "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA API catalog."
                 )
 
             out.model_name = model
 
-            out._client.base_url = BASE_RETRIEVAL_PLAYGROUND_URL
-            out._aclient.base_url = BASE_RETRIEVAL_PLAYGROUND_URL
+            out._client.base_url = BASE_RETRIEVAL_URL
+            out._aclient.base_url = BASE_RETRIEVAL_URL
 
             out._client.api_key = api_key
             out._aclient.api_key = api_key
