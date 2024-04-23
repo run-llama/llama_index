@@ -11,10 +11,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.agent.lats"
+import_path = "llama_index.agent.coa"
 
 [tool.llamahub.class_authors]
-LATSAgentWorker = "llama-index"
+CoAAgentWorker = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,11 +24,12 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index agent lats integration"
+authors = ["Logan Markewich <logan@runllama.ai>"]
+description = "llama-index agent coa integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-agent-lats"
+maintainers = ["jerryjliu"]
+name = "llama-index-agent-coa"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
