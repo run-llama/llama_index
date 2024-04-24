@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, LLMMetadata
 from llama_index.llms.nvidia import NVIDIA
 
 from openai.types.chat.chat_completion import (
@@ -228,3 +228,7 @@ def test_chat_completion(chat_model: str, mode: dict) -> None:
     assert isinstance(response, ChatResponse)
     assert isinstance(response.message, ChatMessage)
     assert isinstance(response.message.content, str)
+
+
+def test_metadata(chat_model: str, mode: dict) -> None:
+    assert isinstance(NVIDIA(model=chat_model).mode(**mode).metadata, LLMMetadata)
