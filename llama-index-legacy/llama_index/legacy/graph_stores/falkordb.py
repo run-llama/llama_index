@@ -35,7 +35,11 @@ class FalkorDBGraphStore(GraphStore):
         self._node_label = node_label
 
         self._driver = redis.Redis.from_url(url).graph(database)
-        self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+
+        try:
+            self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+        except Exception as e:
+            logger.warning("Create index failed: %s", str(e))
 
         self._database = database
 
