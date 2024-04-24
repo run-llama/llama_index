@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse
 from llama_index.llms.nvidia import NVIDIA
 
 from openai.types.chat.chat_completion import (
@@ -219,3 +219,12 @@ def test_validates_api_key_is_present() -> None:
         os.environ["NVIDIA_API_KEY"] = ""
 
         assert NVIDIA(api_key="nvai-" + "x" * 9 + "-" + "x" * 54)
+
+
+@pytest.mark.integration()
+def test_chat_completion(chat_model: str) -> None:
+    message = ChatMessage(content="Hello")
+    response = NVIDIA(model=chat_model).chat([message])
+    assert isinstance(response, ChatResponse)
+    assert isinstance(response.message, ChatMessage)
+    assert isinstance(response.message.content, str)
