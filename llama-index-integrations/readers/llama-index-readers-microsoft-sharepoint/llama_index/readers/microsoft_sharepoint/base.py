@@ -31,6 +31,8 @@ class SharePointReader(BasePydanticReader):
         sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
+        attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
+                                           only supports flat metadata (i.e. no nested fields or lists), or to avoid the additional API calls.
     """
 
     client_id: str = None
@@ -42,6 +44,7 @@ class SharePointReader(BasePydanticReader):
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
+    attach_permission_metadata: bool = True
 
     _authorization_headers = PrivateAttr()
     _site_id_with_host_name = PrivateAttr()
@@ -347,7 +350,11 @@ class SharePointReader(BasePydanticReader):
         - Dict[str, str]: A dictionary containing the extracted metadata.
         """
         # Extract the required metadata for file.
-        metadata = self._get_permissions_info(item)
+        if self.attach_permission_metadata:
+            metadata = self._get_permissions_info(item)
+        else:
+            metadata = {}
+
         metadata.update(
             {
                 "file_id": item.get("id"),
