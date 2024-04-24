@@ -222,9 +222,9 @@ def test_validates_api_key_is_present() -> None:
 
 
 @pytest.mark.integration()
-def test_chat_completion(chat_model: str) -> None:
+def test_chat_completion(chat_model: str, mode: dict) -> None:
     message = ChatMessage(content="Hello")
-    response = NVIDIA(model=chat_model).chat([message])
+    response = NVIDIA(model=chat_model).mode(**mode).chat([message])
     assert isinstance(response, ChatResponse)
     assert isinstance(response.message, ChatMessage)
     assert isinstance(response.message.content, str)

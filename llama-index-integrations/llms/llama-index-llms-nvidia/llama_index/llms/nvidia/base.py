@@ -1,4 +1,13 @@
-from typing import Any, Callable, Dict, Optional, Sequence, Awaitable, List
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Awaitable,
+    List,
+    Literal,
+)
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -81,6 +90,7 @@ class NVIDIA(LLM):
 
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
+    _mode: str = PrivateAttr("nvidia")
 
     def __init__(
         self,
@@ -138,7 +148,10 @@ class NVIDIA(LLM):
 
     @property
     def available_models(self) -> List[Model]:
-        return [Model(id=name) for name, _ in API_CATALOG_MODELS.items()]
+        ids = API_CATALOG_MODELS.keys()
+        if self._mode == "nim":
+            ids = [model.id for model in self._client.models.list()]
+        return [Model(id=name) for name in ids]
 
     @classmethod
     def class_name(cls) -> str:
@@ -160,6 +173,51 @@ class NVIDIA(LLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+
+    def mode(
+        self,
+        mode: Optional[Literal["nvidia", "nim"]] = "nvidia",
+        *,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ) -> "NVIDIA":
+        """
+        Change the mode.
+
+        There are two modes, "nvidia" and "nim". The "nvidia" mode is the default
+        mode and is used to interact with hosted NIMs. The "nim" mode is used to
+        interact with NVIDIA NIM endpoints, which are typically hosted on-premises.
+
+        For the "nvidia" mode, the "api_key" parameter is available to specify
+        your API key. If not specified, the NVIDIA_API_KEY environment variable
+        will be used.
+
+        For the "nim" mode, the "base_url" parameter is required and the "model"
+        parameter may be necessary. Set base_url to the url of your local NIM
+        endpoint. For instance, "https://localhost:9999/v1". Additionally, the
+        "model" parameter must be set to the name of the model inside the NIM.
+        """
+        if mode == "nvidia":
+            if not api_key:
+                raise ValueError("api_key is required for nvidia mode")
+        if mode == "nim":
+            if not base_url:
+                raise ValueError("base_url is required for nim mode")
+
+        self._mode = mode
+        if base_url:
+            self._client.base_url = base_url
+            self._aclient.base_url = base_url
+        if model:
+            self.model = model
+            self._client.model = model
+            self._aclient.model = model
+        if api_key:
+            self._client.api_key = api_key
+            self._aclient.api_key = api_key
+
+        return self
 
     # === Helper Methods ===
 

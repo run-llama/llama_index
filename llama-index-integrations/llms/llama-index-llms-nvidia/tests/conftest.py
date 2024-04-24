@@ -1,17 +1,19 @@
 import pytest
 import os
 
+from llama_index.llms.nvidia import NVIDIA
 from llama_index.llms.nvidia.base import DEFAULT_PLAYGROUND_MODEL
-from llama_index.llms.nvidia.utils import API_CATALOG_MODELS
 
 
 def pytest_collection_modifyitems(config, items):
     if "NVIDIA_API_KEY" not in os.environ:
         skip_marker = pytest.mark.skip(
-            reason="requires NVIDIA_API_KEY environment variable"
+            reason="requires NVIDIA_API_KEY environment variable or --nim-endpoint option"
         )
         for item in items:
-            if "integration" in item.keywords:
+            if "integration" in item.keywords and not config.getoption(
+                "--nim-endpoint"
+            ):
                 item.add_marker(skip_marker)
 
 
@@ -26,13 +28,32 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         help="Run tests for a specific chat model",
     )
+    parser.addoption(
+        "--nim-endpoint",
+        type=str,
+        help="Run tests using NIM mode",
+    )
+
+
+def get_mode(config: pytest.Config) -> dict:
+    nim_endpoint = config.getoption("--nim-endpoint")
+    if nim_endpoint:
+        return {"mode": "nim", "base_url": nim_endpoint}
+    return {}
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    mode = get_mode(metafunc.config)
+
     if "chat_model" in metafunc.fixturenames:
         models = [DEFAULT_PLAYGROUND_MODEL]
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
         elif metafunc.config.getoption("--all-models"):
-            models = list(API_CATALOG_MODELS.keys())
+            models = [model.id for model in NVIDIA().mode(**mode).available_models]
         metafunc.parametrize("chat_model", models, ids=models)
+
+
+@pytest.fixture()
+def mode(request: pytest.FixtureRequest) -> dict:
+    return get_mode(request.config)
