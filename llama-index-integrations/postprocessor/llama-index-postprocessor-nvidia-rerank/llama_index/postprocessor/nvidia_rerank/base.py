@@ -1,20 +1,23 @@
 import os
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Iterable
+from itertools import islice
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 import requests
+from llama_index.core import Document
+from _statics import MODEL_SPECS, Model
 
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1" 
 BASE_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking"
 
 DEFAULT_TOP_N = 2
+DEFAULT_BATCH_SIZE = 32
  
 model_lookup = {"nvidia":[DEFAULT_MODEL], "nim":[DEFAULT_MODEL]}
-
 
 def get_from_param_or_env(
     key: str,
@@ -46,6 +49,10 @@ class NVIDIARerank(BaseNodePostprocessor):
                     default=2,
                     description="The default value for top_n is 2",
                 )
+    max_batch_size: Optional[int] = Field(
+                    default=32,
+                    description="The default value for batch_size is 2",
+                )
     url: Optional[str] =Field(
                     default=BASE_URL,
                     description="The default API Catalog reranker's url",
@@ -65,6 +72,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         model: str = DEFAULT_MODEL,
         top_n: int = DEFAULT_TOP_N,      
         url : str = BASE_URL,
+        max_batch_size : int = DEFAULT_BATCH_SIZE ,
         _api_key: Optional[str] = None,
     ) : 
         
@@ -78,10 +86,10 @@ class NVIDIARerank(BaseNodePostprocessor):
         self._score = None
         
         
-        
     def get_available_models():
         return model_lookup.items()
-
+    
+    
     def mode(self, mode :str = None, base_url :str = url , model :str =model , api_key :str = None):
         if isinstance(self, str):
             raise ValueError("Please construct the model before calling mode()")
@@ -138,6 +146,14 @@ class NVIDIARerank(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "NVIDIAReranker"
 
+    
+    def batch(self, iterable: Iterable, size: int):
+        """Batch an iterable into chunks of a given size."""
+        iterator = iter(iterable)
+        for first in iterator:
+            yield list(islice(iterator, size))
+
+
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -162,28 +178,29 @@ class NVIDIARerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            
-            payloads = {
-                "model": model,
-                "query": {"text": query_bundle.query_str},
-                "passages":[{"text": node.node.get_content()} for node in nodes],
-            }
             current_url = self.url
-            response = session.post(current_url, headers=self._headers, json=payloads)
-            response.raise_for_status()           
-                                
-            results = response.json()["rankings"]
+            new_nodes =[]
+            results =[]
             
-            new_nodes = []
-        
-            for result in results:
-                new_node_with_score = NodeWithScore(
-                    node=nodes[result['index']].node, score=result[self._score]
-                )
-                new_nodes.append(new_node_with_score)
-            
-                new_nodes.append(new_node_with_score)
-            
+            for batch_nodes in self.batch( nodes , self.max_batch_size):
+                
+                payloads = {
+                    "model": model,
+                    "query": {"text": query_bundle.query_str},
+                    "passages":[{"text": n.get_content()} for n in batch_nodes] ,
+                }
+                response = session.post(current_url, headers=self._headers, json=payloads)
+                
+                response.raise_for_status() 
+                results=response.json()["rankings"]
+                for result in results:
+                
+                    new_node_with_score = NodeWithScore(
+                        node=nodes[result['index']], score=result[self._score]
+                    )
+                    new_nodes.append(new_node_with_score)
+            if len(nodes) > self.max_batch_size:
+                new_nodes = sorted(new_nodes, key=lambda x: -x.score if x.score else 0)
             new_nodes = new_nodes[:self.top_n]
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
