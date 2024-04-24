@@ -1,0 +1,6 @@
+dirtyjson==1.0.8
+jsonschema==4.21.1
+langchain_core==0.1.45
+llama_index==0.10.30
+pyseccomp==0.1.2
+tldextract==5.1.2
