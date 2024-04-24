@@ -1,8 +1,9 @@
+import pytest
+import inspect
+
 from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler, CBEventType
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
-import inspect
-import pytest
 
 from openai import AuthenticationError
 
