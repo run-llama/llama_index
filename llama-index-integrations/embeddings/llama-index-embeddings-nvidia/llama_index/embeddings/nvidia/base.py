@@ -1,5 +1,6 @@
 """NVIDIA embeddings file."""
 
+from copy import deepcopy
 from typing import Any, List, Literal, Optional
 
 from llama_index.core.base.embeddings.base import (
@@ -48,7 +49,6 @@ class NVIDIAEmbedding(BaseEmbedding):
     def __init__(
         self,
         model: str = "NV-Embed-QA",
-        truncate: Optional[str] = "NONE",
         timeout: Optional[float] = 120,
         max_retries: Optional[int] = 5,
         api_key: Optional[str] = None,
@@ -59,7 +59,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         if embed_batch_size > 259:
             raise ValueError("The batch size should not be larger than 259.")
 
-        api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
+        api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "none")
 
         self._client = OpenAI(
             api_key=api_key,
@@ -94,8 +94,9 @@ class NVIDIAEmbedding(BaseEmbedding):
         base_url: Optional[str] = None,
         model: Optional[str] = "NV-Embed-QA",
         api_key: Optional[str] = None,
+        force_clone: bool = True,
     ):
-        out = self
+        out = self if not force_clone else deepcopy(self)
 
         if mode == "nvidia":
             if api_key is None:
@@ -108,7 +109,7 @@ class NVIDIAEmbedding(BaseEmbedding):
                     "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA API catalog."
                 )
 
-            out.model_name = model
+            out.model = model
 
             out._client.base_url = BASE_RETRIEVAL_URL
             out._aclient.base_url = BASE_RETRIEVAL_URL
@@ -122,7 +123,7 @@ class NVIDIAEmbedding(BaseEmbedding):
                     "The NIM base URL must be provided to connect to a local NIM"
                 )
 
-            out.model_name = model
+            out.model = model
 
             out._client.base_url = base_url
             out._aclient.base_url = base_url
