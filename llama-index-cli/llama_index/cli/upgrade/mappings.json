@@ -422,6 +422,7 @@
   "ChatGPTRetrievalPluginClient": "llama_index.vector_stores.chatgpt_plugin",
   "TairVectorStore": "llama_index.vector_stores.tair",
   "RedisVectorStore": "llama_index.vector_stores.redis",
+  "RelytVectorStore": "llama_index.vector_stores.relyt",
   "set_google_config": "llama_index.vector_stores.google",
   "GoogleVectorStore": "llama_index.vector_stores.google",
   "MetalVectorStore": "llama_index.vector_stores.metal",
