@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Sequence, Awaitable
+from typing import Any, Callable, Dict, Optional, Sequence, Awaitable, List
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -11,7 +11,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import (
@@ -30,6 +30,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 from llama_index.llms.nvidia.utils import (
     playground_modelname_to_contextsize,
+    API_CATALOG_MODELS,
 )
 
 from llama_index.llms.openai.utils import (
@@ -43,6 +44,10 @@ from openai import AsyncOpenAI
 DEFAULT_PLAYGROUND_MODEL = "mistralai/mistral-7b-instruct-v0.2"
 BASE_PLAYGROUND_URL = "https://integrate.api.nvidia.com/v1/"
 DEFAULT_PLAYGROUND_MAX_TOKENS = 512
+
+
+class Model(BaseModel):
+    id: str
 
 
 class NVIDIA(LLM):
@@ -130,6 +135,10 @@ class NVIDIA(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+    @property
+    def available_models(self) -> List[Model]:
+        return [Model(id=name) for name, _ in API_CATALOG_MODELS.items()]
 
     @classmethod
     def class_name(cls) -> str:
