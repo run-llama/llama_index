@@ -84,6 +84,7 @@ class NVIDIA(LLM):
         max_tokens: int = DEFAULT_PLAYGROUND_MAX_TOKENS,
         timeout: float = 120,
         max_retries: int = 5,
+        nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -94,12 +95,12 @@ class NVIDIA(LLM):
     ) -> None:
         callback_manager = callback_manager or CallbackManager([])
 
-        api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
-
-        if not api_key:
-            raise ValueError(
-                "The NVIDIA API key must be provided as an environment variable or as a parameter."
-            )
+        api_key = get_from_param_or_env(
+            "api_key",
+            nvidia_api_key or api_key,
+            "NVIDIA_API_KEY",
+            "NO_API_KEY_PROVIDED",
+        )
 
         self._client = SyncOpenAI(
             api_key=api_key,
