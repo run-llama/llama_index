@@ -8,7 +8,7 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 import requests
 from llama_index.core import Document
-from _statics import MODEL_SPECS, Model
+#from _statics import MODEL_SPECS, Model
 
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1" 
