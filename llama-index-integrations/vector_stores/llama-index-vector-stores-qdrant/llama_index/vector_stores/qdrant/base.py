@@ -871,11 +871,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return Filter(must=must_conditions)
 
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
-        return (
-            self._collection_exists(collection_name)
-            and SPARSE_VECTOR_NAME_OLD
-            in self.client.get_collection(collection_name).config.params.sparse_vectors
-        )
+        collection_exists = self._collection_exists(collection_name)
+        if collection_exists:
+            cur_collection = self.client.get_collection(collection_name)
+            return SPARSE_VECTOR_NAME_OLD in (
+                cur_collection.config.params.sparse_vectors or {}
+            )
+
+        return False
 
     def sparse_vector_name(self) -> str:
         return (
@@ -885,13 +888,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
     async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
-        return (
-            await self._acollection_exists(collection_name)
-            and SPARSE_VECTOR_NAME_OLD
-            in (
-                await self._aclient.get_collection(collection_name)
-            ).config.params.sparse_vectors
-        )
+        collection_exists = await self._acollection_exists(collection_name)
+        if collection_exists:
+            cur_collection = await self._aclient.get_collection(collection_name)
+            return SPARSE_VECTOR_NAME_OLD in (
+                cur_collection.config.params.sparse_vectors or {}
+            )
+
+        return False
 
     async def asparse_vector_name(self) -> str:
         return (
