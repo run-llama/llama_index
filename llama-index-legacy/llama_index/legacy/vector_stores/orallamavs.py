@@ -10,7 +10,7 @@ import os
 import traceback
 import uuid
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast
 
 import oracledb
 
@@ -45,9 +45,13 @@ class DistanceStrategy(Enum):
     EUCLIDEAN_SQUARED = 6
 
 
-def _handle_exceptions(func):
+# Define a type variable that can be any kind of function
+T = TypeVar("T", bound=Callable[..., Any])
+
+
+def _handle_exceptions(func: T) -> T:
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except RuntimeError as db_err:
@@ -60,10 +64,10 @@ def _handle_exceptions(func):
             raise ValueError(f"Validation failed: {val_err}") from val_err
         except Exception as e:
             # Generic handler for all other exceptions
-            logger.exception(f"An unexpected error occurred: {e!s}")
-            raise RuntimeError(f"Unexpected error: {e!s}") from e
+            logger.exception(f"An unexpected error occurred: {e}")
+            raise RuntimeError(f"Unexpected error: {e}") from e
 
-    return wrapper
+    return cast(T, wrapper)
 
 
 def _escape_str(value: str) -> str:
