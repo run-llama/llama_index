@@ -1,8 +1,9 @@
 import asyncio
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypeAlias
+from typing import Any, Dict, List, Literal, Optional, TypeAlias
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, validator
+from llama_index.core.graph_stores.types import EntityNode, Relation, Triplet
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import TransformComponent, BaseNode
 from llama_index.core.llms.llm import LLM
@@ -123,16 +124,19 @@ class SchemaLLMTripletExtractor(TransformComponent):
                 passing_triplets = []
                 for i, triplet in enumerate(v):
                     # cleanup
-                    for key in triplet:
-                        triplet[key]["type"] = triplet[key]["type"].replace(" ", "_")
-                        triplet[key]["type"] = triplet[key]["type"].upper()
-
-                    # validate, skip if invalid
                     try:
+                        for key in triplet:
+                            triplet[key]["type"] = triplet[key]["type"].replace(
+                                " ", "_"
+                            )
+                            triplet[key]["type"] = triplet[key]["type"].upper()
+
+                        # validate, skip if invalid
                         _ = triplet_cls(**triplet)
                         passing_triplets.append(v[i])
-                    except ValueError:
+                    except (KeyError, ValueError):
                         continue
+
                 return passing_triplets
 
             root = validator("triplets", pre=True)(validate)
@@ -161,7 +165,7 @@ class SchemaLLMTripletExtractor(TransformComponent):
         """Extract triplets from nodes."""
         return asyncio.run(self.acall(nodes, **kwargs))
 
-    def _prune_invalid_triplets(self, kg_schema: Any) -> List[Tuple[str, str, str]]:
+    def _prune_invalid_triplets(self, kg_schema: Any) -> List[Triplet]:
         """Prune invalid triplets."""
         assert isinstance(kg_schema, self.kg_schema_cls)
 
@@ -185,7 +189,12 @@ class SchemaLLMTripletExtractor(TransformComponent):
             if subject.lower() == obj.lower():
                 continue
 
-            valid_triplets.append((subject, relation, obj))
+            subj_node = EntityNode(label=subject_type, name=subject)
+            obj_node = EntityNode(label=obj_type, name=obj)
+            rel_node = Relation(
+                label=relation, source_id=subj_node.id, target_id=obj_node.id
+            )
+            valid_triplets.append((subj_node, rel_node, obj_node))
 
         return valid_triplets
 
@@ -205,9 +214,21 @@ class SchemaLLMTripletExtractor(TransformComponent):
         except ValueError:
             triplets = []
 
-        existing_triplets = node.metadata.get("triplets", [])
-        existing_triplets.extend(triplets)
-        node.metadata["triplets"] = existing_triplets
+        existing_nodes = node.metadata.pop("nodes", [])
+        existing_relations = node.metadata.pop("relations", [])
+
+        metadata = node.metadata.copy()
+        for subj, rel, obj in triplets:
+            subj.properties = metadata
+            obj.properties = metadata
+            rel.properties = metadata
+
+            existing_relations.append(rel)
+            existing_nodes.append(subj)
+            existing_nodes.append(obj)
+
+        node.metadata["nodes"] = existing_nodes
+        node.metadata["relations"] = existing_relations
 
         return node
 

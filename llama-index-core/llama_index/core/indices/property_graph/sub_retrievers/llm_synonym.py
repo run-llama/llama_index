@@ -59,23 +59,23 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         results = []
         for match in matches:
             sub_results = []
-            sub_results.extend(self._graph_store.get(entity_names=[match]))
-            sub_results.extend(self._graph_store.get(relation_names=[match]))
+            sub_results.extend(self._graph_store.get_triplets(entity_names=[match]))
+            sub_results.extend(self._graph_store.get_triplets(relation_names=[match]))
 
             for triplet in sub_results:
                 source_id = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
-                assert source_id is not None
+                relationships = {}
+                if source_id is not None:
+                    relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+                        node_id=source_id
+                    )
 
-                text = f"{triplet[0].text}, {triplet[1].text}, {triplet[2].text}"
+                text = f"{triplet[0]!s} -> {triplet[1]!s} -> {triplet[2]!s}"
                 results.append(
                     NodeWithScore(
                         node=TextNode(
                             text=text,
-                            relationships={
-                                NodeRelationship.SOURCE: RelatedNodeInfo(
-                                    node_id=source_id
-                                )
-                            },
+                            relationships=relationships,
                         ),
                         score=1.0,
                     )
@@ -87,23 +87,27 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         results = []
         for match in matches:
             sub_results = []
-            sub_results.extend(await self._graph_store.aget(entity_names=[match]))
-            sub_results.extend(await self._graph_store.aget(relation_names=[match]))
+            sub_results.extend(
+                await self._graph_store.aget_triplets(entity_names=[match])
+            )
+            sub_results.extend(
+                await self._graph_store.aget_triplets(relation_names=[match])
+            )
 
             for triplet in sub_results:
                 source_id = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
-                assert source_id is not None
+                relationships = {}
+                if source_id is not None:
+                    relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+                        node_id=source_id
+                    )
 
-                text = f"{triplet[0].text}, {triplet[1].text}, {triplet[2].text}"
+                text = f"{triplet[0]!s} -> {triplet[1]!s} -> {triplet[2]!s}"
                 results.append(
                     NodeWithScore(
                         node=TextNode(
                             text=text,
-                            relationships={
-                                NodeRelationship.SOURCE: RelatedNodeInfo(
-                                    node_id=source_id
-                                )
-                            },
+                            relationships=relationships,
                         ),
                         score=1.0,
                     )

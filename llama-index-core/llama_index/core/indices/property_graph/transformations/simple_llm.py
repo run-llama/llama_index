@@ -5,6 +5,7 @@ from llama_index.core.async_utils import run_jobs
 from llama_index.core.indices.property_graph.utils import (
     default_parse_triplets_fn,
 )
+from llama_index.core.graph_stores.types import EntityNode, Relation
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
@@ -65,9 +66,25 @@ class SimpleLLMTripletExtractor(TransformComponent):
         except ValueError:
             triplets = []
 
-        existing_triplets = node.metadata.get("triplets", [])
-        existing_triplets.extend(triplets)
-        node.metadata["triplets"] = existing_triplets
+        existing_nodes = node.metadata.pop("nodes", [])
+        existing_relations = node.metadata.pop("relations", [])
+
+        metadata = node.metadata.copy()
+        for subj, rel, obj in triplets:
+            subj_node = EntityNode(name=subj, properties=metadata)
+            obj_node = EntityNode(name=obj, properties=metadata)
+            rel_node = Relation(
+                label=rel,
+                source_id=subj_node.id,
+                target_id=obj_node.id,
+                properties=metadata,
+            )
+
+            existing_nodes.extend([subj_node, obj_node])
+            existing_relations.append(rel_node)
+
+        node.metadata["nodes"] = existing_nodes
+        node.metadata["relations"] = existing_relations
 
         return node
 

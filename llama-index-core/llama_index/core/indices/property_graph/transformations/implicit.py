@@ -1,42 +1,75 @@
 from typing import Any, List
 
 from llama_index.core.schema import TransformComponent, BaseNode, NodeRelationship
+from llama_index.core.graph_stores.types import Relation
 
 
-class ImplicitTripletExtractor(TransformComponent):
+def get_node_rel_string(relationship: NodeRelationship) -> str:
+    return str(relationship).split(".")[-1]
+
+
+class ImplicitEdgeExtractor(TransformComponent):
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        """Extract triplets from node relationships."""
+        """Extract edges from node relationships."""
         for node in nodes:
-            triplets = []
+            existing_relations = node.metadata.pop("relations", [])
+            edges = []
+            metadata = node.metadata.copy()
 
             if node.source_node:
-                triplets.append(
-                    (node.id_, str(NodeRelationship.SOURCE), node.source_node.node_id)
+                edges.append(
+                    Edge(
+                        source_node_id=node.source_node.node_id,
+                        target_node_id=node.node_id,
+                        relation=Relation(
+                            label=get_node_rel_string(NodeRelationship.SOURCE),
+                            properties=metadata,
+                        ),
+                    )
                 )
 
             if node.parent_node:
-                triplets.append(
-                    (node.id_, str(NodeRelationship.PARENT), node.parent_node.node_id)
+                edges.append(
+                    Relation(
+                        source_node_id=node.parent_node.node_id,
+                        target_node_id=node.node_id,
+                        label=get_node_rel_string(NodeRelationship.PARENT),
+                        properties=metadata,
+                    )
                 )
 
             if node.prev_node:
-                triplets.append(
-                    (node.id_, str(NodeRelationship.PREVIOUS), node.prev_node.node_id)
+                edges.append(
+                    Relation(
+                        source_node_id=node.prev_node.node_id,
+                        target_node_id=node.node_id,
+                        label=get_node_rel_string(NodeRelationship.PREVIOUS),
+                        properties=metadata,
+                    )
                 )
 
             if node.next_node:
-                triplets.append(
-                    (node.id_, str(NodeRelationship.NEXT), node.next_node.node_id)
+                edges.append(
+                    Relation(
+                        source_node_id=node.node_id,
+                        target_node_id=node.next_node.node_id,
+                        label=get_node_rel_string(NodeRelationship.NEXT),
+                        properties=metadata,
+                    )
                 )
 
             if node.child_nodes:
                 for child_node in node.child_nodes:
-                    triplets.append(
-                        (node.id_, str(NodeRelationship.CHILD), child_node.node_id)
+                    edges.append(
+                        Relation(
+                            source_node_id=node.node_id,
+                            target_node_id=child_node.node_id,
+                            label=get_node_rel_string(NodeRelationship.CHILD),
+                            properties=metadata,
+                        )
                     )
 
-            existing_triplets = node.metadata.get("triplets", [])
-            existing_triplets.extend(triplets)
-            node.metadata["triplets"] = existing_triplets
+            existing_relations.extend(edges)
+            node.metadata["relations"] = existing_relations
 
         return nodes

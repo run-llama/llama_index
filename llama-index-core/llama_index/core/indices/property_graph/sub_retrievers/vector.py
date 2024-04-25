@@ -40,15 +40,15 @@ class LPGVectorRetriever(BaseLPGRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         vector_store_query = self._get_vector_store_query(query_bundle)
 
-        # TODO: this is not the proper return type yet
-        nodes = self._graph_store.vector_query(vector_store_query)
+        # TODO: Transform these into proper return types
+        kg_nodes, scores = self._graph_store.vector_query(vector_store_query)
 
-        return self._parse_results(nodes)
+        return []
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         vector_store_query = self._get_vector_store_query(query_bundle)
 
-        # TODO: this is not the proper return type yet
-        nodes = await self._graph_store.avector_query(vector_store_query)
+        # TODO: Transform these into proper return types
+        kg_nodes, scores = await self._graph_store.avector_query(vector_store_query)
 
-        return await self._aparse_results(nodes)
+        return []

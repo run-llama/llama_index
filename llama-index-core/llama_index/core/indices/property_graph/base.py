@@ -9,22 +9,21 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMTripletExtractor,
-    ImplicitTripletExtractor,
+    ImplicitEdgeExtractor,
 )
-from llama_index.core.indices.utils import embed_nodes, async_embed_nodes
 from llama_index.core.ingestion.pipeline import (
     run_transformations,
     arun_transformations,
 )
 from llama_index.core.graph_stores.types import (
-    Entity,
+    LabelledNode,
     Relation,
     LabelledPropertyGraphStore,
     TRIPLET_SOURCE_KEY,
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
-from llama_index.core.schema import BaseNode, TransformComponent
+from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.settings import Settings
 
 
@@ -51,7 +50,6 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        self._llm = llm or Settings.llm
         storage_context = storage_context or StorageContext.from_defaults(
             lpg_graph_store=lpg_graph_store
         )
@@ -65,10 +63,11 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             self._embed_model = None
 
         self._kg_transformations = kg_transformations or [
-            SimpleLLMTripletExtractor(),
-            ImplicitTripletExtractor(llm=self._llm),
+            SimpleLLMTripletExtractor(llm=llm or Settings.llm),
+            ImplicitEdgeExtractor(),
         ]
         self._use_async = use_async
+        self._llm = llm
 
         super().__init__(
             nodes=nodes,
@@ -98,44 +97,67 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
                 nodes, self._kg_transformations, show_progress=self._show_progress
             )
 
-        # ensure all nodes have triplets in metadata
-        assert all(node.metadata.get("triplets") is not None for node in nodes)
+        # ensure all nodes have nodes and/or relations in metadata
+        assert all(
+            node.metadata.get("nodes") is not None
+            or node.metadata.get("relations") is not None
+            for node in nodes
+        )
 
-        triplets = []
+        kg_nodes_to_insert: List[LabelledNode] = []
+        kg_rels_to_insert: List[Relation] = []
         for node in nodes:
-            # remove triplets from metadata and store them separately
-            node_triplets = node.metadata.pop("triplets", [])
+            # remove nodes and relations from metadata
+            kg_nodes = node.metadata.pop("nodes", [])
+            kg_rels = node.metadata.pop("relations", [])
 
-            # add node to graph store, with id_ in metadata
-            metadata = node.metadata.copy()
-            metadata[TRIPLET_SOURCE_KEY] = node.id_
+            # add source id to properties
+            for kg_node in kg_nodes:
+                kg_node.properties[TRIPLET_SOURCE_KEY] = node.id_
+            for kg_rel in kg_rels:
+                kg_rel.properties[TRIPLET_SOURCE_KEY] = node.id_
 
-            for triplet in node_triplets:
-                subj = Entity(text=triplet[0], properties=metadata)
-                rel = Relation(text=triplet[1], properties=metadata)
-                obj = Entity(text=triplet[2], properties=metadata)
-                triplets.append((subj, rel, obj))
+            # add nodes and relations to insert lists
+            kg_nodes_to_insert.extend(kg_nodes)
+            kg_rels_to_insert.extend(kg_rels)
 
-        self.lpg_graph_store.upsert_triplets(triplets)
-
-        # add nodes to graph store -- with embeddings if needed
+        # embed nodes (if needed)
         if self._embed_model and self.lpg_graph_store.supports_vector_queries:
-            nodes_by_id = {node.id_: node for node in nodes}
+            # embed llama-index nodes
+            node_texts = [
+                node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
+            ]
+
             if self._use_async:
-                embed_map = asyncio.run(
-                    async_embed_nodes(
-                        nodes, self._embed_model, show_progress=self._show_progress
-                    )
+                embeddings = asyncio.run(
+                    self._embed_model.aget_text_embedding_batch(node_texts)
                 )
             else:
-                embed_map = embed_nodes(
-                    nodes, self._embed_model, show_progress=self._show_progress
+                embeddings = self._embed_model.get_text_embedding_batch(node_texts)
+
+            for node, embedding in zip(nodes, embeddings):
+                node.embedding = embedding
+
+            # embed kg nodes
+            kg_node_texts = [str(kg_node) for kg_node in kg_nodes_to_insert]
+
+            if self._use_async:
+                kg_embeddings = asyncio.run(
+                    self._embed_model.aget_text_embedding_batch(kg_node_texts)
+                )
+            else:
+                kg_embeddings = self._embed_model.get_text_embedding_batch(
+                    kg_node_texts
                 )
 
-            for node_id, embedding in embed_map.items():
-                nodes_by_id[node_id].embedding = embedding
+            for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):
+                kg_node.embedding = embedding
 
-        self.lpg_graph_store.upsert_nodes(nodes)
+        self.lpg_graph_store.upsert_llama_nodes(nodes)
+        self.lpg_graph_store.upsert_nodes(kg_nodes_to_insert)
+
+        # important: upsert relations after nodes
+        self.lpg_graph_store.upsert_relations(kg_rels_to_insert)
 
         return nodes
 

@@ -1,17 +1,16 @@
 import fsspec
 import os
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict, Tuple, Optional
 
 from llama_index.core.graph_stores.types import (
     LabelledPropertyGraphStore,
     Triplet,
-    Entity,
+    LabelledNode,
     LabelledPropertyGraph,
+    Relation,
     DEFAULT_PERSIST_DIR,
     DEFUALT_LPG_PERSIST_FNAME,
-    TRIPLET_SOURCE_KEY,
 )
-from llama_index.core.schema import BaseNode, NodeWithScore
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
 
@@ -30,31 +29,47 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
     def __init__(
         self,
         graph: Optional[LabelledPropertyGraph] = None,
-        embedding_dict: Optional[dict] = None,
     ) -> None:
         self.graph = graph or LabelledPropertyGraph()
 
     def get(
         self,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[LabelledNode]:
+        """Get nodes."""
+        nodes = list(self.graph.nodes.values())
+        if properties:
+            nodes = [
+                n
+                for n in nodes
+                if any(n.properties.get(k) == v for k, v in properties.items())
+            ]
+
+        # Filter by node_ids
+        if ids:
+            nodes = [n for n in nodes if n.id in ids]
+
+        return nodes
+
+    def get_triplets(
+        self,
         entity_names: Optional[List[str]] = None,
         relation_names: Optional[List[str]] = None,
         properties: Optional[dict] = None,
-        node_ids: Optional[List[str]] = None,
+        ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get triplets."""
-        if entity_names is None and relation_names is None and properties is None:
-            return self.graph.get_triplets()
-
         triplets = self.graph.get_triplets()
         if entity_names:
             triplets = [
                 t
                 for t in triplets
-                if t[0].text in entity_names or t[2].text in entity_names
+                if t[0].id in entity_names or t[2].id in entity_names
             ]
 
         if relation_names:
-            triplets = [t for t in triplets if t[1].text in relation_names]
+            triplets = [t for t in triplets if t[1].id in relation_names]
 
         if properties:
             triplets = [
@@ -68,54 +83,41 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
                 )
             ]
 
-        # Filter by node_ids and ref_doc_ids
-        if node_ids:
+        # Filter by node_ids
+        if ids:
             triplets = [
-                t
-                for t in triplets
-                if any(
-                    t[0].properties.get(TRIPLET_SOURCE_KEY) == i
-                    or t[2].properties.get(TRIPLET_SOURCE_KEY) == i
-                    for i in node_ids
-                )
+                t for t in triplets if any(t[0].id == i or t[2].id == i for i in ids)
             ]
 
         return triplets
 
     def get_rel_map(
-        self, entities: List[Entity], depth: int = 2, limit: int = 30
+        self, graph_nodes: List[LabelledNode], depth: int = 2, limit: int = 30
     ) -> List[Triplet]:
         """Get depth-aware rel map."""
         triplets = []
 
-        # depth = 0
-        entity_triplets = self.get(entity_names=[entity.text for entity in entities])
+        cur_depth = 0
+        graph_triplets = self.get_triplets(ids=[gn.id for gn in graph_nodes])
 
-        for _ in range(depth):
-            for triplet in entity_triplets:
-                triplets.append(triplet)
-                entity_triplets = self.get(entity_names=[triplet[2].text])
-                if len(entity_triplets) == 0:
-                    break
+        while len(graph_triplets) > 0 or cur_depth < depth:
+            triplets.extend(graph_triplets)
+
+            # get next depth
+            graph_triplets = self.get(ids=[t[2].id for t in graph_triplets])
+            depth += 1
 
         return triplets[:limit]
 
-    def get_nodes(self, node_ids: List[str]) -> List[BaseNode]:
-        """Get nodes."""
-        nodes = []
-        for node_id in node_ids:
-            node = self.graph.get_node(node_id)
-            if node is not None:
-                nodes.append(node)
-        return nodes
-
-    def upsert_nodes(self, nodes: List[BaseNode]) -> None:
+    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         """Add nodes."""
         for node in nodes:
             self.graph.add_node(node)
 
-            if node.embedding is not None:
-                self.embedding_dict[node.id_] = node.embedding
+    def upsert_relations(self, relations: List[Relation]) -> None:
+        """Add relations."""
+        for relation in relations:
+            self.graph.add_relation(relation)
 
     def upsert_triplets(self, triplets: List[Triplet]) -> None:
         """Add triplets."""
@@ -127,51 +129,21 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         entity_names: Optional[List[str]] = None,
         relation_names: Optional[List[str]] = None,
         properties: Optional[dict] = None,
-        node_ids: Optional[List[str]] = None,
+        ids: Optional[List[str]] = None,
     ) -> None:
         """Delete matching data."""
-        triplets = self.get(
+        triplets = self.get_triplets(
             entity_names=entity_names,
             relation_names=relation_names,
             properties=properties,
-            node_ids=node_ids,
+            ids=ids,
         )
         for triplet in triplets:
             self.graph.delete_triplet(triplet)
 
-    def delete_nodes(
-        self,
-        node_ids: Optional[List[str]] = None,
-        ref_doc_ids: Optional[List[str]] = None,
-    ) -> None:
-        """Delete nodes."""
-        node_ids = node_ids or []
-        ref_doc_ids = ref_doc_ids or []
-
-        # delete by node_id
-        for node_id in node_ids:
-            if node_id in self.graph.entities:
-                del self.graph.entities[node_id]
-
-            triplets = self.get(node_ids=[node_id])
-            for triplet in triplets:
-                self.graph.delete_triplet(triplet)
-
-        # delete by ref_doc_id, which is a property of the entity
-        for ref_doc_id in ref_doc_ids:
-            existing_entities = list(self.graph.entities.values())
-            for entity in existing_entities:
-                if ref_doc_id == entity.properties.get("ref_doc_id", None):
-                    del self.graph.entities[entity.text]
-                    triplets = self.get(node_ids=[entity.properties.get("id_", "na")])
-                    for triplet in triplets:
-                        self.graph.delete_triplet(triplet)
-
-                if ref_doc_id == entity.properties.get("id_", None):
-                    del self.graph.entities[entity.text]
-                    triplets = self.get(node_ids=[entity.properties.get("id_", "na")])
-                    for triplet in triplets:
-                        self.graph.delete_triplet(triplet)
+        nodes = self.get(properties=properties, ids=ids)
+        for node in nodes:
+            self.graph.delete_node(node)
 
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
@@ -213,7 +185,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = {}
-    ) -> List[Entity]:
+    ) -> List[LabelledNode]:
         """Query the graph store with statement and parameters."""
         raise NotImplementedError(
             "Structured query not implemented for SimpleLPGStore."
@@ -221,7 +193,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> List[NodeWithScore]:
+    ) -> List[Tuple[LabelledNode, float]]:
         """Query the graph store with a vector store query."""
         raise NotImplementedError("Vector query not implemented for SimpleLPGStore.")
 
