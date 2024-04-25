@@ -7,7 +7,7 @@ from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
@@ -15,6 +15,10 @@ from openai import OpenAI, AsyncOpenAI
 
 BASE_RETRIEVAL_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
 DEFAULT_MODEL = "NV-Embed-QA"
+
+
+class Model(BaseModel):
+    id: str
 
 
 class NVIDIAEmbedding(BaseEmbedding):
@@ -87,6 +91,12 @@ class NVIDIAEmbedding(BaseEmbedding):
             callback_manager=callback_manager,
             **kwargs,
         )
+
+    @property
+    def available_models(self) -> List[Model]:
+        """Get available models."""
+        ids = [DEFAULT_MODEL]
+        return [Model(id=id) for id in ids]
 
     @classmethod
     def class_name(cls) -> str:
