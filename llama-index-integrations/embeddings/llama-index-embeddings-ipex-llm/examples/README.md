@@ -16,7 +16,7 @@ Please refer to [here](https://docs.llamaindex.ai/en/stable/examples/embeddings/
 
 ### Basic Usage Example
 
-The example [basic.py](./basic.py) shows how to run `IpexLLMEmbedding` on Intel CPU or GPU and conduct embedding task such as text and query embedding. Run the example as following:
+The example [basic.py](./basic.py) shows how to run `IpexLLMEmbedding` on Intel CPU or GPU and conduct embedding tasks such as text and query embedding. Run the example as following:
 
 ```bash
 python basic.py -m <path_to_model> -d <cpu_or_xpu> -t <text_to_embed> -q <query_to_embed>

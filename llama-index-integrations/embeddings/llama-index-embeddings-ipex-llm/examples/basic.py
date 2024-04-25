@@ -2,7 +2,7 @@ import argparse
 from llama_index.embeddings.ipex_llm import IpexLLMEmbedding
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="IpexLLMEmbedding GPU Example")
+    parser = argparse.ArgumentParser(description="IpexLLMEmbedding Basic Usage Example")
     parser.add_argument(
         "--model-name",
         "-m",
