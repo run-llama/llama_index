@@ -53,10 +53,6 @@ class NVIDIARerank(BaseNodePostprocessor):
                     default=32,
                     description="The default value for batch_size is 2",
                 )
-    url: Optional[str] =Field(
-                    default=BASE_URL,
-                    description="The default API Catalog reranker's url",
-                ),
     _mode : Optional[str] = Field(
                     default="nvidia" ,
                     description="Default to NVIDIA API Catalog reranker to use, support mode switching",
@@ -65,22 +61,23 @@ class NVIDIARerank(BaseNodePostprocessor):
     _mode : Any = PrivateAttr()
     _headers : Any = PrivateAttr()
     _score : Any = PrivateAttr()
+    _url: Any = PrivateAttr()
+    
 
     def __init__(
         self,
         _mode : Optional[str]=None ,
         model: str = DEFAULT_MODEL,
-        top_n: int = DEFAULT_TOP_N,      
-        url : str = BASE_URL,
+        top_n: int = DEFAULT_TOP_N,    
         max_batch_size : int = DEFAULT_BATCH_SIZE ,
         _api_key: Optional[str] = None,
     ) : 
         
-        super().__init__(top_n=top_n, model=model, url=url)
+        super().__init__(top_n=top_n, model=model)
         self.model = model 
         self.top_n = top_n
         self._api_key = None
-        self.url = url
+        self._url = None
         self._mode = None
         self._headers = None
         self._score = None
@@ -90,7 +87,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         return model_lookup.items()
     
     
-    def mode(self, mode :str = None, base_url :str = url , model :str =model , api_key :str = None):
+    def mode(self, mode :str = None, base_url :str = BASE_URL , model :str =model , api_key :str = None):
         if isinstance(self, str):
             raise ValueError("Please construct the model before calling mode()")
         out = self
@@ -109,7 +106,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         if mode == "nvidia":
             ## NVIDIA API Catalog Integration: OpenAPI-spec gateway over NVCF endpoints
             
-            out.url = base_url[0].default 
+            out._url = BASE_URL 
             ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
             out.model = model_lookup[mode][0]
             out._api_key = my_key
@@ -125,7 +122,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             
             if base_url.endswith('/ranking'):
                 raise ValueError(f"Incorrect url format {base_url}, you do not need to extend '/ranking' at the end, as an example, here is a valid url format :http://.../v1/")
-            out.url = base_url +'/ranking'
+            out._url = base_url +'/ranking'
             out._headers =  {
                 'accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -178,7 +175,8 @@ class NVIDIARerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            current_url = self.url
+            current_url = self._url
+            
             new_nodes =[]
             results =[]
             
