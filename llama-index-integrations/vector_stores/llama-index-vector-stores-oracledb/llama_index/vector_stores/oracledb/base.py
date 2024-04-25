@@ -584,7 +584,7 @@ class OraLlamaVS(VectorStore):
     def from_documents(
         cls: Type[OraLlamaVS],
         docs: List[TextNode],
-        table_name: str = "langchain",
+        table_name: str = "llama_index",
         **kwargs: Any,
     ) -> OraLlamaVS:
         """Return VectorStore initialized from texts and embeddings."""
