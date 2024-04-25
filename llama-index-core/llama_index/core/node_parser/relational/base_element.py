@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
@@ -287,8 +288,6 @@ class BaseElementNodeParser(NodeParser):
                 elif element.type == "table_text":
                     # if the table is non-perfect table, we still want to keep the original text of table
                     table_md = str(element.element)
-                table_id = element.id + "_table"
-                table_ref_id = element.id + "_table_ref"
 
                 col_schema = "\n\n".join([str(col) for col in table_output.columns])
 
@@ -303,19 +302,20 @@ class BaseElementNodeParser(NodeParser):
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
 
+                # shared index_id and node_id
+                node_id = str(uuid.uuid4())
                 index_node = IndexNode(
                     text=table_summary,
                     metadata={"col_schema": col_schema},
                     excluded_embed_metadata_keys=["col_schema"],
-                    id_=table_ref_id,
-                    index_id=table_id,
+                    index_id=node_id,
                 )
 
                 table_str = table_summary + "\n" + table_md
 
                 text_node = TextNode(
+                    id_=node_id,
                     text=table_str,
-                    id_=table_id,
                     metadata={
                         # serialize the table as a dictionary string for dataframe of perfect table
                         "table_df": (

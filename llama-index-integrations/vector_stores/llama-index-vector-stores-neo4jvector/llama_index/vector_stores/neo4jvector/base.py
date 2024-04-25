@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+import logging
 
 import neo4j
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -6,12 +7,18 @@ from llama_index.core.vector_stores.types import (
     VectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    FilterOperator,
+    MetadataFilters,
+    MetadataFilter,
+    FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
 from neo4j.exceptions import CypherSyntaxError
+
+_logger = logging.getLogger(__name__)
 
 
 def check_if_not_null(props: List[str], values: List[Any]) -> None:
@@ -98,6 +105,77 @@ def remove_lucene_chars(text: Optional[str]) -> Optional[str]:
         if char in text:
             text = text.replace(char, " ")
     return text.strip()
+
+
+def _to_neo4j_operator(operator: FilterOperator) -> str:
+    if operator == FilterOperator.EQ:
+        return "="
+    elif operator == FilterOperator.GT:
+        return ">"
+    elif operator == FilterOperator.LT:
+        return "<"
+    elif operator == FilterOperator.NE:
+        return "<>"
+    elif operator == FilterOperator.GTE:
+        return ">="
+    elif operator == FilterOperator.LTE:
+        return "<="
+    elif operator == FilterOperator.IN:
+        return "IN"
+    elif operator == FilterOperator.NIN:
+        return "NOT IN"
+    elif operator == FilterOperator.CONTAINS:
+        return "CONTAINS"
+    else:
+        _logger.warning(f"Unknown operator: {operator}, fallback to '='")
+        return "="
+
+
+def collect_params(
+    input_data: List[Tuple[str, Dict[str, str]]],
+) -> Tuple[List[str], Dict[str, Any]]:
+    """Transform the input data into the desired format.
+
+    Args:
+    - input_data (list of tuples): Input data to transform.
+      Each tuple contains a string and a dictionary.
+
+    Returns:
+    - tuple: A tuple containing a list of strings and a dictionary.
+    """
+    # Initialize variables to hold the output parts
+    query_parts = []
+    params = {}
+
+    # Loop through each item in the input data
+    for query_part, param in input_data:
+        # Append the query part to the list
+        query_parts.append(query_part)
+        # Update the params dictionary with the param dictionary
+        params.update(param)
+
+    # Return the transformed data
+    return (query_parts, params)
+
+
+def filter_to_cypher(index: int, filter: MetadataFilter) -> str:
+    return (
+        f"n.`{filter.key}` {_to_neo4j_operator(filter.operator)} $param_{index}",
+        {f"param_{index}": filter.value},
+    )
+
+
+def construct_metadata_filter(filters: MetadataFilters):
+    cypher_snippets = []
+    for index, filter in enumerate(filters.filters):
+        cypher_snippets.append(filter_to_cypher(index, filter))
+
+    collected_snippets = collect_params(cypher_snippets)
+
+    if filters.condition == FilterCondition.OR:
+        return (" OR ".join(collected_snippets[0]), collected_snippets[1])
+    else:
+        return (" AND ".join(collected_snippets[0]), collected_snippets[1])
 
 
 class Neo4jVectorStore(VectorStore):
@@ -206,7 +284,8 @@ class Neo4jVectorStore(VectorStore):
         indexing. Raises a ValueError if the connected Neo4j version is
         not supported.
         """
-        version = self.database_query("CALL dbms.components()")[0]["versions"][0]
+        db_data = self.database_query("CALL dbms.components()")
+        version = db_data[0]["versions"][0]
         if "aura" in version:
             version_tuple = (*tuple(map(int, version.split("-")[0].split("."))), 0)
         else:
@@ -218,6 +297,15 @@ class Neo4jVectorStore(VectorStore):
             raise ValueError(
                 "Version index is only supported in Neo4j version 5.11 or greater"
             )
+
+        # Flag for metadata filtering
+        metadata_target_version = (5, 18, 0)
+        if version_tuple < metadata_target_version:
+            self.support_metadata_filter = False
+        else:
+            self.support_metadata_filter = True
+        # Flag for enterprise
+        self._is_enterprise = db_data[0]["edition"] == "enterprise"
 
     def create_new_index(self) -> None:
         """
@@ -368,6 +456,41 @@ class Neo4jVectorStore(VectorStore):
         return ids
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        if query.filters:
+            # Verify that 5.18 or later is used
+            if not self.support_metadata_filter:
+                raise ValueError(
+                    "Metadata filtering is only supported in "
+                    "Neo4j version 5.18 or greater"
+                )
+            # Metadata filtering and hybrid doesn't work
+            if self.hybrid_search:
+                raise ValueError(
+                    "Metadata filtering can't be use in combination with "
+                    "a hybrid search approach"
+                )
+            parallel_query = (
+                "CYPHER runtime = parallel parallelRuntimeSupport=all "
+                if self._is_enterprise
+                else ""
+            )
+            base_index_query = parallel_query + (
+                f"MATCH (n:`{self.node_label}`) WHERE "
+                f"n.`{self.embedding_node_property}` IS NOT NULL AND "
+                f"size(n.`{self.embedding_node_property}`) = "
+                f"toInteger({self.embedding_dimension}) AND "
+            )
+            base_cosine_query = (
+                " WITH n as node, vector.similarity.cosine("
+                f"n.`{self.embedding_node_property}`, "
+                "$embedding) AS score ORDER BY score DESC LIMIT toInteger($k) "
+            )
+            filter_snippets, filter_params = construct_metadata_filter(query.filters)
+            index_query = base_index_query + filter_snippets + base_cosine_query
+        else:
+            index_query = _get_search_index_query(self.hybrid_search)
+            filter_params = {}
+
         default_retrieval = (
             f"RETURN node.`{self.text_node_property}` AS text, score, "
             "node.id AS id, "
@@ -376,7 +499,7 @@ class Neo4jVectorStore(VectorStore):
         )
 
         retrieval_query = self.retrieval_query or default_retrieval
-        read_query = _get_search_index_query(self.hybrid_search) + retrieval_query
+        read_query = index_query + retrieval_query
 
         parameters = {
             "index": self.index_name,
@@ -384,6 +507,7 @@ class Neo4jVectorStore(VectorStore):
             "embedding": query.query_embedding,
             "keyword_index": self.keyword_index_name,
             "query": remove_lucene_chars(query.query_str),
+            **filter_params,
         }
 
         results = self.database_query(read_query, params=parameters)

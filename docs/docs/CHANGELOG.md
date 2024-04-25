@@ -1,5 +1,97 @@
 # ChangeLog
 
+## [2024-04-23]
+
+### `llama-index-core` [0.10.31]
+
+- fix async streaming response from query engine (#12953)
+- enforce uuid in element node parsers (#12951)
+- add function calling LLM program (#12980)
+- make the PydanticSingleSelector work with async api (#12964)
+- fix query pipeline's arun_with_intermediates (#13002)
+
+### `llama-index-agent-coa` [0.1.0]
+
+- Add COA Agent integration (#13043)
+
+### `llama-index-agent-lats` [0.1.0]
+
+- Official LATs agent integration (#13031)
+
+### `llama-index-agent-llm-compiler` [0.1.0]
+
+- Add LLMCompiler Agent Integration (#13044)
+
+### `llama-index-llms-anthropic` [0.1.10]
+
+- Add the ability to pass custom headers to Anthropic LLM requests (#12819)
+
+### `llama-index-llms-bedrock` [0.1.7]
+
+- Adding claude 3 opus to BedRock integration (#13033)
+
+### `llama-index-llms-fireworks` [0.1.5]
+
+- Add new Llama 3 and Mixtral 8x22b model into Llama Index for Fireworks (#12970)
+
+### `llama-index-llms-openai` [0.1.16]
+
+- Fix AsyncOpenAI "RuntimeError: Event loop is closed bug" when instances of AsyncOpenAI are rapidly created & destroyed (#12946)
+- Don't retry on all OpenAI APIStatusError exceptions - just InternalServerError (#12947)
+
+### `llama-index-llms-watsonx` [0.1.7]
+
+- Updated IBM watsonx foundation models (#12973)
+
+### `llama-index-packs-code-hierarchy` [0.1.6]
+
+- Return the parent node if the query node is not present (#12983)
+- fixed bug when function is defined twice (#12941)
+
+### `llama-index-program-openai` [0.1.6]
+
+- dding support for streaming partial instances of Pydantic output class in OpenAIPydanticProgram (#13021)
+
+### `llama-index-readers-openapi` [0.1.0]
+
+- add reader for openapi files (#12998)
+
+### `llama-index-readers-slack` [0.1.4]
+
+- Avoid infinite loop when not handled exception is raised (#12963)
+
+### `llama-index-readers-web` [0.1.10]
+
+- Improve whole site reader to remove duplicate links (#12977)
+
+### `llama-index-retrievers-bedrock` [0.1.1]
+
+- Fix Bedrock KB retriever to use query bundle (#12910)
+
+### `llama-index-vector-stores-awsdocdb` [0.1.0]
+
+- Integrating AWS DocumentDB as a vector storage method (#12217)
+
+### `llama-index-vector-stores-databricks` [0.1.2]
+
+- Fix databricks vector search metadata (#12999)
+
+### `llama-index-vector-stores-neo4j` [0.1.4]
+
+- Neo4j metadata filtering support (#12923)
+
+### `llama-index-vector-stores-pinecone` [0.1.5]
+
+- Fix error querying PineconeVectorStore using sparse query mode (#12967)
+
+### `llama-index-vector-stores-qdrant` [0.2.5]
+
+- Many fixes for async and checking if collection exists (#12916)
+
+### `llama-index-vector-stores-weaviate` [0.1.5]
+
+- Adds the index deletion functionality to the WeviateVectoreStore (#12993)
+
 ## [2024-04-17]
 
 ### `llama-index-core` [0.10.30]

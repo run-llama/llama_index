@@ -31,6 +31,8 @@ class SharePointReader(BasePydanticReader):
         sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
+        attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
+                                           only supports flat metadata (i.e. no nested fields or lists), or to avoid the additional API calls.
     """
 
     client_id: str = None
@@ -42,6 +44,7 @@ class SharePointReader(BasePydanticReader):
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
+    attach_permission_metadata: bool = True
 
     _authorization_headers = PrivateAttr()
     _site_id_with_host_name = PrivateAttr()
@@ -203,6 +206,7 @@ class SharePointReader(BasePydanticReader):
         self,
         folder_id: str,
         download_dir: str,
+        current_folder_path: str,
         include_subfolders: bool = False,
     ) -> Dict[str, str]:
         """
@@ -237,13 +241,18 @@ class SharePointReader(BasePydanticReader):
                     subfolder_metadata = self._download_files_and_extract_metadata(
                         folder_id=item["id"],
                         download_dir=sub_folder_download_dir,
+                        current_folder_path=os.path.join(
+                            current_folder_path, item["name"]
+                        ),
                         include_subfolders=include_subfolders,
                     )
 
                     metadata.update(subfolder_metadata)
 
                 elif "file" in item:
-                    file_metadata = self._download_file(item, download_dir)
+                    file_metadata = self._download_file(
+                        item, download_dir, current_folder_path
+                    )
                     metadata.update(file_metadata)
             return metadata
         else:
@@ -276,6 +285,60 @@ class SharePointReader(BasePydanticReader):
 
         return file_path
 
+    def _get_permissions_info(self, item: Dict[str, Any]) -> Dict[str, str]:
+        """
+        Extracts the permissions information for the file. For more information, see:
+        https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0.
+
+        Args:
+            item (Dict[str, Any]): Dictionary containing file metadata.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the extracted permissions information.
+        """
+        item_id = item.get("id")
+        permissions_info_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/items/{item_id}/permissions"
+        )
+        response = requests.get(
+            url=permissions_info_endpoint,
+            headers=self._authorization_headers,
+        )
+        permissions = response.json()
+
+        identity_sets = []
+        for permission in permissions["value"]:
+            # user type permissions
+            granted_to = permission.get("grantedToV2", None)
+            if granted_to:
+                identity_sets.append(granted_to)
+
+            # link type permissions
+            granted_to_identities = permission.get("grantedToIdentitiesV2", [])
+            for identity in granted_to_identities:
+                identity_sets.append(identity)
+
+        # Extract the identity information from each identity set
+        # they can be 'application', 'device', 'user', 'group', 'siteUser' or 'siteGroup'
+        # 'siteUser' and 'siteGroup' are site-specific, 'group' is for Microsoft 365 groups
+        permissions_dict = {}
+        for identity_set in identity_sets:
+            for identity, identity_info in identity_set.items():
+                id = identity_info.get("id")
+                display_name = identity_info.get("displayName")
+                ids_key = f"allowed_{identity}_ids"
+                display_names_key = f"allowed_{identity}_display_names"
+
+                if ids_key not in permissions_dict:
+                    permissions_dict[ids_key] = []
+                if display_names_key not in permissions_dict:
+                    permissions_dict[display_names_key] = []
+
+                permissions_dict[ids_key].append(id)
+                permissions_dict[display_names_key].append(display_name)
+
+        return permissions_dict
+
     def _extract_metadata_for_file(self, item: Dict[str, Any]) -> Dict[str, str]:
         """
         Extracts metadata related to the file.
@@ -287,21 +350,32 @@ class SharePointReader(BasePydanticReader):
         - Dict[str, str]: A dictionary containing the extracted metadata.
         """
         # Extract the required metadata for file.
+        if self.attach_permission_metadata:
+            metadata = self._get_permissions_info(item)
+        else:
+            metadata = {}
 
-        return {
-            "file_id": item.get("id"),
-            "file_name": item.get("name"),
-            "url": item.get("webUrl"),
-        }
+        metadata.update(
+            {
+                "file_id": item.get("id"),
+                "file_name": item.get("name"),
+                "url": item.get("webUrl"),
+                "file_path": item.get("file_path"),
+            }
+        )
+
+        return metadata
 
     def _download_file(
         self,
         item: Dict[str, Any],
         download_dir: str,
+        sharepoint_folder_path: str,
     ):
         metadata = {}
 
         file_path = self._download_file_by_url(item, download_dir)
+        item["file_path"] = os.path.join(sharepoint_folder_path, item["name"])
 
         metadata[file_path] = self._extract_metadata_for_file(item)
         return metadata
@@ -341,7 +415,10 @@ class SharePointReader(BasePydanticReader):
             )
 
         return self._download_files_and_extract_metadata(
-            sharepoint_folder_id, download_dir, recursive
+            sharepoint_folder_id,
+            download_dir,
+            os.path.join(sharepoint_site_name, sharepoint_folder_path),
+            recursive,
         )
 
     def _load_documents_with_metadata(
