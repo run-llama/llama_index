@@ -146,7 +146,7 @@ class OracleDocReader:
                 metadata = {}
             else:
                 doc_data = str(mdata.getvalue())
-                if doc_data.startswith("<!DOCTYPE html", "<HTML>"):
+                if doc_data.startswith(("<!DOCTYPE html", "<HTML>")):
                     p = ParseOracleDocMetadata()
                     p.feed(doc_data)
                     metadata = p.get_metadata()
@@ -303,7 +303,7 @@ class OracleReader(BaseReader):
                         else:
                             if row[0] is not None:
                                 data = str(row[0])
-                                if data.startswith("<!DOCTYPE html", "<HTML>"):
+                                if data.startswith(("<!DOCTYPE html", "<HTML>")):
                                     p = ParseOracleDocMetadata()
                                     p.feed(data)
                                     metadata = p.get_metadata()
@@ -441,14 +441,14 @@ loader_params = {"owner": "ut", "tablename": "demo_tab", "colname": "data"}
 splitter_params = {"by": "words", "max": "100"}
 
 # instances
-loader = OracleDocLoader(conn=conn, params=loader_params)
+loader = OracleReader(conn=conn, params=loader_params)
 splitter = OracleTextSplitter(conn=conn, params=splitter_params)
 
 print("Processing the documents...")
 docs = loader.load()
 for id, doc in enumerate(docs, start=1):
     print(f"Document#{id}, Metadata: {doc.metadata}")
-    chunks = splitter.split_text(doc.page_content)
+    chunks = splitter.split_text(doc.text)
     print(f"Document#{id}, Num of Chunk: {len(chunks)}\n")
 
 conn.close()
