@@ -1,4 +1,4 @@
-from llama_index.embeddings.oracleai.base import <FILL>
+from llama_index.embeddings.oracleai.base import OracleEmbeddings
 
 
-__all__ = ["<FILL>"]
+__all__ = ["OracleEmbeddings"]
