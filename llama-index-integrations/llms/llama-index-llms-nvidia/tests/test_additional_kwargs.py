@@ -5,7 +5,7 @@ import pytest
 from llama_index.llms.nvidia import NVIDIA
 
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Generator
 
 
 @contextmanager
@@ -26,7 +26,7 @@ def test_additional_kwargs_success(chat_model: str, mode: dict, param: str) -> N
     with no_env_var("NVIDIA_API_KEY"):
         client = NVIDIA(chat_model, **{param: api_key}).mode(**mode)
         assert client.complete(
-            "Hello, world!", 
+            "Hello, world!",
             stop=["cat", "Cats"],
             seed=42,
             frequency_penalty=0.5,
@@ -42,7 +42,7 @@ def test_additional_kwargs_wrong_dtype(chat_model: str, mode: dict, param: str) 
         client = NVIDIA(chat_model, **{param: api_key}).mode(**mode)
         with pytest.raises(Exception) as exc_info:
             client.complete(
-                "Hello, world!", 
+                "Hello, world!",
                 frequency_penalty="fish",
             ).text
         message = str(exc_info.value)
@@ -57,7 +57,7 @@ def test_additional_kwargs_wrong_dtype(chat_model: str, mode: dict, param: str) 
         client = NVIDIA(chat_model, **{param: api_key}).mode(**mode)
         with pytest.raises(Exception) as exc_info:
             client.complete(
-                "Hello, world!", 
+                "Hello, world!",
                 cats="cats",
             ).text
         message = str(exc_info.value)
