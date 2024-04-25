@@ -144,7 +144,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         return "NVIDIAReranker"
 
     
-    def batch(self, iterable: Iterable, size: int):
+    def _batch(self, iterable: Iterable, size: int):
         """Batch an iterable into chunks of a given size."""
         iterator = iter(iterable)
         for first in iterator:
@@ -180,7 +180,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             new_nodes =[]
             results =[]
             
-            for batch_nodes in self.batch( nodes , self.max_batch_size):
+            for batch_nodes in self._batch( nodes , self.max_batch_size):
                 
                 payloads = {
                     "model": model,
