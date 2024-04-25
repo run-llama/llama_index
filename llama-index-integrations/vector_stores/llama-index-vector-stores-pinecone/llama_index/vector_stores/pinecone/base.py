@@ -134,7 +134,11 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     condition = _transform_pinecone_filter_condition(condition)
     if standard_filters.filters:
         for filter in standard_filters.filters:
-            if filter.operator:
+            if isinstance(filter, MetadataFilters):
+                sub_filter = _to_pinecone_filter(filter)
+                if sub_filter:
+                    filters_list.append(sub_filter)
+            elif filter.operator:
                 filters_list.append(
                     {
                         filter.key: {
