@@ -89,6 +89,7 @@ class QueryFusionRetriever(BaseRetriever):
         response = self._llm.complete(prompt_str)
 
         # assume LLM proper put each query on a newline
+        # strip and regrex each query with bullet point to avoid empty query
         raw_queries = response.text.split("\n")
         queries = []
         for query in raw_queries:
