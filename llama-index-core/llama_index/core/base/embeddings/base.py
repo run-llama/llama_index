@@ -14,6 +14,7 @@ from llama_index.core.constants import (
 )
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
+from llama_index.core.async_utils import run_jobs
 
 # TODO: change to numpy array
 Embedding = List[float]
@@ -72,6 +73,10 @@ class BaseEmbedding(TransformComponent):
     )
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
+    )
+    num_workers: Optional[int] = Field(
+        default=None,
+        description="The number of workers to use for async embedding calls.",
     )
 
     class Config:
@@ -347,6 +352,7 @@ class BaseEmbedding(TransformComponent):
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
         dispatch_event = dispatcher.get_dispatch_event()
+        num_workers = self.num_workers
 
         cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
@@ -371,19 +377,28 @@ class BaseEmbedding(TransformComponent):
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
-        if show_progress:
-            try:
-                from tqdm.asyncio import tqdm_asyncio
 
-                nested_embeddings = await tqdm_asyncio.gather(
-                    *embeddings_coroutines,
-                    total=len(embeddings_coroutines),
-                    desc="Generating embeddings",
-                )
-            except ImportError:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+        if num_workers and num_workers > 1:
+            nested_embeddings = await run_jobs(
+                embeddings_coroutines,
+                show_progress=show_progress,
+                workers=self.num_workers,
+                desc="Generating embeddings",
+            )
         else:
-            nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+            if show_progress:
+                try:
+                    from tqdm.asyncio import tqdm_asyncio
+
+                    nested_embeddings = await tqdm_asyncio.gather(
+                        *embeddings_coroutines,
+                        total=len(embeddings_coroutines),
+                        desc="Generating embeddings",
+                    )
+                except ImportError:
+                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+            else:
+                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings

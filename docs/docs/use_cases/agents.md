@@ -35,7 +35,7 @@ The scope of possible use cases for agents is vast and ever-expanding. That said
 The following component guides are the central hubs for getting started in building with agents:
 
 - [Agents](../module_guides/deploying/agents/index.md)
-- [Tools](../module_guides/deploying/agents/tools/index.md)
+- [Tools](../module_guides/deploying/agents/tools.md)
 
 
 **Building Custom Agents**
