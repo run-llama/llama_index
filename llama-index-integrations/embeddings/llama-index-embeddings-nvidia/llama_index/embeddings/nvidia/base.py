@@ -52,6 +52,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         model: str = DEFAULT_MODEL,
         timeout: Optional[float] = 120,
         max_retries: Optional[int] = 5,
+        nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,  # This could default to 50
         callback_manager: Optional[CallbackManager] = None,
@@ -60,7 +61,9 @@ class NVIDIAEmbedding(BaseEmbedding):
         if embed_batch_size > 259:
             raise ValueError("The batch size should not be larger than 259.")
 
-        api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "none")
+        api_key = get_from_param_or_env(
+            "api_key", nvidia_api_key or api_key, "NVIDIA_API_KEY", "none"
+        )
 
         self._client = OpenAI(
             api_key=api_key,
