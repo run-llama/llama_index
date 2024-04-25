@@ -53,3 +53,8 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: mark test as an integration test",
+]

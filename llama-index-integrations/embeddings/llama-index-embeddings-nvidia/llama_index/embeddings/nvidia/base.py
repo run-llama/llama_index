@@ -14,13 +14,14 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from openai import OpenAI, AsyncOpenAI
 
 BASE_RETRIEVAL_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
+DEFAULT_MODEL = "NV-Embed-QA"
 
 
 class NVIDIAEmbedding(BaseEmbedding):
     """NVIDIA embeddings."""
 
     model: str = Field(
-        default="NV-Embed-QA",
+        default=DEFAULT_MODEL,
         description="Name of the NVIDIA embedding model to use.\n"
         "Defaults to 'NV-Embed-QA'.",
     )
@@ -48,7 +49,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: str = "NV-Embed-QA",
+        model: str = DEFAULT_MODEL,
         timeout: Optional[float] = 120,
         max_retries: Optional[int] = 5,
         api_key: Optional[str] = None,
@@ -92,7 +93,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         self,
         mode: Optional[Literal["nvidia", "nim"]] = "nvidia",
         base_url: Optional[str] = None,
-        model: Optional[str] = "NV-Embed-QA",
+        model: Optional[str] = DEFAULT_MODEL,
         api_key: Optional[str] = None,
         force_clone: bool = True,
     ):
