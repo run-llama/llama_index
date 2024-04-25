@@ -99,11 +99,17 @@ class NodeParser(TransformComponent, ABC):
                         )
 
                 if self.include_prev_next_rel:
-                    if i > 0:
+                    if (
+                        i > 0
+                        and nodes[i - 1].source_node.node_id == node.source_node.node_id
+                    ):
                         node.relationships[NodeRelationship.PREVIOUS] = nodes[
                             i - 1
                         ].as_related_node_info()
-                    if i < len(nodes) - 1:
+                    if (
+                        i < len(nodes) - 1
+                        and nodes[i + 1].source_node.node_id == node.source_node.node_id
+                    ):
                         node.relationships[NodeRelationship.NEXT] = nodes[
                             i + 1
                         ].as_related_node_info()
