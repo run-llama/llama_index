@@ -49,7 +49,7 @@ def get_mode(config: pytest.Config) -> dict:
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     mode = get_mode(metafunc.config)
 
-    if "chat_model" in metafunc.fixturenames:
+    if "model" in metafunc.fixturenames:
         models = [DEFAULT_MODEL]
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
@@ -57,7 +57,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
             models = [
                 model.id for model in NVIDIAEmbedding().mode(**mode).available_models
             ]
-        metafunc.parametrize("chat_model", models, ids=models)
+        metafunc.parametrize("model", models, ids=models)
 
 
 @pytest.fixture()

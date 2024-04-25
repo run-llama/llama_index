@@ -57,8 +57,8 @@ def test_bogus_api_key_error() -> None:
 
 @pytest.mark.integration()
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_api_key(param: str) -> None:
+def test_api_key(param: str, model: str, mode: dict) -> None:
     api_key = os.environ.get("NVIDIA_API_KEY")
     with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIAEmbedding(**{param: api_key})
+        client = NVIDIAEmbedding(**{"model": model, param: api_key}).mode(**mode)
         assert client.get_query_embedding("Hello, world!")
