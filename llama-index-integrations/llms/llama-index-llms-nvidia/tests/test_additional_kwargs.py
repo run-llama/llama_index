@@ -21,10 +21,10 @@ def no_env_var(var: str) -> Generator[None, None, None]:
 
 @pytest.mark.integration()
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_additional_kwargs_success(param: str) -> None:
+def test_additional_kwargs_success(chat_model: str, mode: dict, param: str) -> None:
     api_key = os.environ.get("NVIDIA_API_KEY")
     with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIA(**{param: api_key})
+        client = NVIDIA(chat_model, **{param: api_key}).mode(**mode)
         assert client.complete(
             "Hello, world!", 
             stop=["cat", "Cats"],
@@ -36,10 +36,10 @@ def test_additional_kwargs_success(param: str) -> None:
 
 @pytest.mark.integration()
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_additional_kwargs_wrong_dtype(param: str) -> None:
+def test_additional_kwargs_wrong_dtype(chat_model: str, mode: dict, param: str) -> None:
     api_key = os.environ.get("NVIDIA_API_KEY")
     with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIA(**{param: api_key})
+        client = NVIDIA(chat_model, **{param: api_key}).mode(**mode)
         with pytest.raises(Exception) as exc_info:
             client.complete(
                 "Hello, world!", 
@@ -51,10 +51,10 @@ def test_additional_kwargs_wrong_dtype(param: str) -> None:
 
 @pytest.mark.integration()
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_additional_kwargs_wrong_dtype(param: str) -> None:
+def test_additional_kwargs_wrong_dtype(chat_model: str, mode: dict, param: str) -> None:
     api_key = os.environ.get("NVIDIA_API_KEY")
     with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIA(**{param: api_key})
+        client = NVIDIA(chat_model, **{param: api_key}).mode(**mode)
         with pytest.raises(Exception) as exc_info:
             client.complete(
                 "Hello, world!", 
