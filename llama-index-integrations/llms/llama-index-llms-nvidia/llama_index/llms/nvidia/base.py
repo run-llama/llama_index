@@ -50,7 +50,7 @@ from llama_index.llms.openai.utils import (
 from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
 
-DEFAULT_CATALOG_MODEL = "mistralai/mistral-7b-instruct-v0.2"
+DEFAULT_CATALOG_MODEL = "meta/llama3-8b-instruct"
 BASE_CATALOG_URL = "https://integrate.api.nvidia.com/v1/"
 DEFAULT_CATALOG_MAX_TOKENS = 512
 

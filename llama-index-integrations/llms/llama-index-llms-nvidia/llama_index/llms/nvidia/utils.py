@@ -10,8 +10,8 @@ API_CATALOG_MODELS: Dict[str, int] = {
     "google/codegemma-7b": 4096,
     "meta/llama2-70b": 1024,
     "meta/codellama-70b": 1024,
-    "meta/llama3-8b": 6000,
-    "meta/llama3-70b": 6000,
+    "meta/llama3-8b-instruct": 6000,
+    "meta/llama3-70b-instruct": 6000,
 }
 
 
