@@ -49,6 +49,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
+    _mode: str = PrivateAttr("nvidia")
 
     def __init__(
         self,
@@ -95,6 +96,8 @@ class NVIDIAEmbedding(BaseEmbedding):
     def available_models(self) -> List[Model]:
         """Get available models."""
         ids = [DEFAULT_MODEL]
+        if self._mode == "nim":
+            ids = [model.id for model in self._client.models.list()]
         return [Model(id=id) for id in ids]
 
     @classmethod
@@ -115,6 +118,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         if not base_url:
             base_url = BASE_RETRIEVAL_URL
 
+        self._mode = mode
         if base_url:
             self._client.base_url = base_url
             self._aclient.base_url = base_url
