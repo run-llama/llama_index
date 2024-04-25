@@ -1,4 +1,5 @@
 import asyncio
+import re
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, cast
 
@@ -88,7 +89,11 @@ class QueryFusionRetriever(BaseRetriever):
         response = self._llm.complete(prompt_str)
 
         # assume LLM proper put each query on a newline
-        queries = response.text.split("\n")
+        raw_queries = response.text.split("\n")
+        queries = []
+        for query in raw_queries:
+            query = [q.strip() for q in re.split(r"\d+\.", query) if q.strip()]
+            queries.extend(query)
         if self._verbose:
             queries_str = "\n".join(queries)
             print(f"Generated queries:\n{queries_str}")
@@ -99,7 +104,8 @@ class QueryFusionRetriever(BaseRetriever):
     def _reciprocal_rerank_fusion(
         self, results: Dict[Tuple[str, int], List[NodeWithScore]]
     ) -> List[NodeWithScore]:
-        """Apply reciprocal rank fusion.
+        """
+        Apply reciprocal rank fusion.
 
         The original paper uses k=60 for best results:
         https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
