@@ -108,31 +108,6 @@ query_engine_tools = [
 outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
-### Return Direct
-
-You'll notice the option `return_direct` in the tool class constructor. If this is set to `True`, the response from the query engine is returned directly, without being interpreted and rewritten by the agent. This can be helpful for decreasing runtime, or designing/specifying tools that will end the agent reasoning loop.
-
-For example, say you specify a tool:
-
-```python
-tool = QueryEngineTool.from_defaults(
-    query_engine,
-    name="<name>",
-    description="<description>",
-    return_direct=True,
-)
-
-agent = OpenAIAgent.from_tools([tool])
-
-response = agent.chat("<question that invokes tool>")
-```
-
-In the above example, the query engine tool would be invoked, and the response from that tool would be directly returned as the response, and the execution loop would end.
-
-If `return_direct=False` was used, then the agent would rewrite the response using the context of the chat history, or even make another tool call.
-
-We have also provided an [example notebook](../../../examples/agent/return_direct_agent.ipynb) of using `return_direct`.
-
 ## Lower-Level API
 
 The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.

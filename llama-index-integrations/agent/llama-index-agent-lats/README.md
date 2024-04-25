@@ -1,13 +1,15 @@
-# LlamaIndex Agent Integration: Lats
+# Language Agent Tree Search (LATS) Agent
 
-This integration implements the Language Agent Tree search method introduced
-in the paper entitled "Language Agent Tree Search Unifies Reasoning Acting and Planning in Language Models" by Zhou et al. 2023.
+This agent integration implements the Language Agent Tree Search method introduced
+in the paper titled "Language Agent Tree Search Unifies Reasoning Acting and Planning in Language Models" by Zhou et al. 2023.
 
-Source: https://arxiv.org/pdf/2310.04406.pdf
+We have a full cookbook on using the LATS agent here: https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/lats_agent.ipynb.
+
+Check out the source paper: https://arxiv.org/pdf/2310.04406.pdf
 
 ## Usage
 
-LATs is implemented as a `BaseAgentWorker` and as such is used with an `AgentRunner`.
+LATS is implemented as a `BaseAgentWorker` and as such is used with an `AgentRunner`.
 
 ```python
 from llama_index.agent.lats import LATSAgentWorker
