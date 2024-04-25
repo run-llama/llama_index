@@ -36,40 +36,6 @@ def test_nvidia_embedding_throws_on_batches_larger_than_259():
         NVIDIAEmbedding(embed_batch_size=300)
 
 
-def test_nvidia_embedding_mode_switch_throws_without_key():
-    emb = NVIDIAEmbedding()
-    with pytest.raises(ValueError):
-        emb.mode("nvidia")
-
-
-def test_nvidia_embedding_mode_switch_throws_without_url():
-    emb = NVIDIAEmbedding()
-    with pytest.raises(ValueError):
-        emb.mode("nim")
-
-
-def test_nvidia_embedding_mode_switch_param_setting():
-    emb = NVIDIAEmbedding()
-
-    nim_emb = emb.mode("nim", base_url="https://test_url/v1/", model="dummy")
-    assert nim_emb.model == "dummy"
-    assert str(nim_emb._client.base_url) == "https://test_url/v1/"
-    assert str(nim_emb._aclient.base_url) == "https://test_url/v1/"
-
-    cat_emb = nim_emb.mode("nvidia", api_key="test", model="dummy-2")
-    assert cat_emb.model == "dummy-2"
-    assert (
-        str(cat_emb._client.base_url)
-        == "https://ai.api.nvidia.com/v1/retrieval/nvidia/"
-    )
-    assert (
-        str(cat_emb._aclient.base_url)
-        == "https://ai.api.nvidia.com/v1/retrieval/nvidia/"
-    )
-    assert cat_emb._client.api_key == "test"
-    assert cat_emb._aclient.api_key == "test"
-
-
 def test_nvidia_embedding_async():
     emb = NVIDIAEmbedding()
 

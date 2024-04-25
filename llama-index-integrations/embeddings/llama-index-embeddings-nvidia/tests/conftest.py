@@ -4,6 +4,10 @@ import os
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
 from llama_index.embeddings.nvidia.base import DEFAULT_MODEL
 
+from typing import Generator
+
+from contextlib import contextmanager
+
 
 def pytest_collection_modifyitems(config, items):
     if "NVIDIA_API_KEY" not in os.environ:
@@ -59,3 +63,14 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 @pytest.fixture()
 def mode(request: pytest.FixtureRequest) -> dict:
     return get_mode(request.config)
+
+
+@contextmanager
+def no_env_var(var: str) -> Generator[None, None, None]:
+    try:
+        if val := os.environ.get(var, None):
+            del os.environ[var]
+        yield
+    finally:
+        if val:
+            os.environ[var] = val

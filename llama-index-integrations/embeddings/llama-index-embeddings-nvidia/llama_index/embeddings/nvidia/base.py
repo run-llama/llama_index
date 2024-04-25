@@ -1,6 +1,5 @@
 """NVIDIA embeddings file."""
 
-from copy import deepcopy
 from typing import Any, List, Literal, Optional
 
 from llama_index.core.base.embeddings.base import (
@@ -105,44 +104,29 @@ class NVIDIAEmbedding(BaseEmbedding):
     def mode(
         self,
         mode: Optional[Literal["nvidia", "nim"]] = "nvidia",
+        *,
         base_url: Optional[str] = None,
-        model: Optional[str] = DEFAULT_MODEL,
+        model: Optional[str] = None,
         api_key: Optional[str] = None,
-        force_clone: bool = True,
-    ):
-        out = self if not force_clone else deepcopy(self)
+    ) -> "NVIDIAEmbedding":
+        if mode == "nim":
+            if not base_url:
+                raise ValueError("base_url is required for nim mode")
+        if not base_url:
+            base_url = BASE_RETRIEVAL_URL
 
-        if mode == "nvidia":
-            if api_key is None:
-                api_key = get_from_param_or_env(
-                    "api_key", api_key, "NVIDIA_API_KEY", ""
-                )
+        if base_url:
+            self._client.base_url = base_url
+            self._aclient.base_url = base_url
+        if model:
+            self.model = model
+            self._client.model = model
+            self._aclient.model = model
+        if api_key:
+            self._client.api_key = api_key
+            self._aclient.api_key = api_key
 
-            if not api_key:
-                raise ValueError(
-                    "The NVIDIA API key must be provided as an environment variable or as a parameter to use the NVIDIA API catalog."
-                )
-
-            out.model = model
-
-            out._client.base_url = BASE_RETRIEVAL_URL
-            out._aclient.base_url = BASE_RETRIEVAL_URL
-
-            out._client.api_key = api_key
-            out._aclient.api_key = api_key
-
-        elif mode == "nim":
-            if base_url is None:
-                raise ValueError(
-                    "The NIM base URL must be provided to connect to a local NIM"
-                )
-
-            out.model = model
-
-            out._client.base_url = base_url
-            out._aclient.base_url = base_url
-
-        return out
+        return self
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""

@@ -4,19 +4,8 @@ import pytest
 
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
 
-from contextlib import contextmanager
-from typing import Any, Generator
-
-
-@contextmanager
-def no_env_var(var: str) -> Generator[None, None, None]:
-    try:
-        if val := os.environ.get(var, None):
-            del os.environ[var]
-        yield
-    finally:
-        if val:
-            os.environ[var] = val
+from typing import Any
+from .conftest import no_env_var
 
 
 def get_api_key(instance: Any) -> str:
