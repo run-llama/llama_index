@@ -38,7 +38,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 from llama_index.llms.nvidia.utils import (
-    playground_modelname_to_contextsize,
+    catalog_modelname_to_contextsize,
     API_CATALOG_MODELS,
 )
 
@@ -50,9 +50,9 @@ from llama_index.llms.openai.utils import (
 from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
 
-DEFAULT_PLAYGROUND_MODEL = "mistralai/mistral-7b-instruct-v0.2"
-BASE_PLAYGROUND_URL = "https://integrate.api.nvidia.com/v1/"
-DEFAULT_PLAYGROUND_MAX_TOKENS = 512
+DEFAULT_CATALOG_MODEL = "mistralai/mistral-7b-instruct-v0.2"
+BASE_CATALOG_URL = "https://integrate.api.nvidia.com/v1/"
+DEFAULT_CATALOG_MAX_TOKENS = 512
 
 
 class Model(BaseModel):
@@ -63,7 +63,7 @@ class NVIDIA(LLM):
     """NVIDIA's API Catalog Connector."""
 
     model: str = Field(
-        default=DEFAULT_PLAYGROUND_MODEL,
+        default=DEFAULT_CATALOG_MODEL,
         description="The NVIDIA API Catalog model to use.",
     )
     temperature: float = Field(
@@ -73,7 +73,7 @@ class NVIDIA(LLM):
         lte=1.0,
     )
     max_tokens: int = Field(
-        default=DEFAULT_PLAYGROUND_MAX_TOKENS,
+        default=DEFAULT_CATALOG_MAX_TOKENS,
         description="The maximum number of tokens to generate.",
         gte=0,
     )
@@ -94,9 +94,9 @@ class NVIDIA(LLM):
 
     def __init__(
         self,
-        model: str = DEFAULT_PLAYGROUND_MODEL,
+        model: str = DEFAULT_CATALOG_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: int = DEFAULT_PLAYGROUND_MAX_TOKENS,
+        max_tokens: int = DEFAULT_CATALOG_MAX_TOKENS,
         timeout: float = 120,
         max_retries: int = 5,
         nvidia_api_key: Optional[str] = None,
@@ -119,14 +119,14 @@ class NVIDIA(LLM):
 
         self._client = SyncOpenAI(
             api_key=api_key,
-            base_url=BASE_PLAYGROUND_URL,
+            base_url=BASE_CATALOG_URL,
             timeout=timeout,
             max_retries=max_retries,
         )
         self._client._custom_headers = {"User-Agent": "llama-index-llms-nvidia"}
         self._aclient = AsyncOpenAI(
             api_key=api_key,
-            base_url=BASE_PLAYGROUND_URL,
+            base_url=BASE_CATALOG_URL,
             timeout=timeout,
             max_retries=max_retries,
         )
@@ -164,7 +164,7 @@ class NVIDIA(LLM):
             "is_chat_model": True,
             "model_name": self.model,
         }
-        if context_window := playground_modelname_to_contextsize(self.model):
+        if context_window := catalog_modelname_to_contextsize(self.model):
             params["context_window"] = context_window
         return LLMMetadata(**params)
 
@@ -258,8 +258,8 @@ class NVIDIA(LLM):
             stream=False,
             **self._get_all_kwargs(**kwargs),
         )
-        playground_openai_message = response.choices[0].message
-        message = from_openai_message(playground_openai_message)
+        CATALOG_openai_message = response.choices[0].message
+        message = from_openai_message(CATALOG_openai_message)
 
         return ChatResponse(
             message=message,
