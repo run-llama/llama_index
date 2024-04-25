@@ -2,7 +2,7 @@ import pytest
 import os
 
 from llama_index.llms.nvidia import NVIDIA
-from llama_index.llms.nvidia.base import DEFAULT_PLAYGROUND_MODEL
+from llama_index.llms.nvidia.base import DEFAULT_CATALOG_MODEL
 
 
 def pytest_collection_modifyitems(config, items):
@@ -46,7 +46,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     mode = get_mode(metafunc.config)
 
     if "chat_model" in metafunc.fixturenames:
-        models = [DEFAULT_PLAYGROUND_MODEL]
+        models = [DEFAULT_CATALOG_MODEL]
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
         elif metafunc.config.getoption("--all-models"):
