@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.mistral_rs"
 
 [tool.llamahub.class_authors]
-CLASS = "EricLBuehler"
+MistralRs = "EricLBuehler"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,7 +26,9 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["EricLBuehler"]
 description = "llama-index llms mistral-rs integration"
+exclude = ["**/BUILD"]
 license = "MIT"
+maintainers = ["jerryjliu"]
 name = "llama-index-llms-mistral-rs"
 packages = [{include = "llama_index/"}]
 readme = "README.md"

@@ -102,12 +102,8 @@ class MistralRS(CustomLLM):
         ```
     """
 
-    model_url: Optional[str] = Field(
-        description="The URL llama-cpp model to download and use."
-    )
-    model_path: Optional[str] = Field(
-        description="The path to the llama-cpp model to use."
-    )
+    model_url: Optional[str] = Field(description="local")
+    model_path: Optional[str] = Field(description="local")
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
@@ -159,6 +155,7 @@ class MistralRS(CustomLLM):
                 "top_k": top_k,
                 "top_p": top_p,
                 "top_logprobs": top_logprobs,
+                "logprobs": top_logprobs is not None,
             }
         )
 
@@ -191,7 +188,7 @@ class MistralRS(CustomLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "MistralRS_llm"
+        return "MistralRS"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -214,7 +211,6 @@ class MistralRS(CustomLLM):
             messages=messages,
             model="",
             logit_bias=None,
-            logprobs=False,
             **self.generate_kwargs,
         )
 
@@ -235,7 +231,6 @@ class MistralRS(CustomLLM):
             messages=messages,
             model="",
             logit_bias=None,
-            logprobs=False,
             **self.generate_kwargs,
         )
 
