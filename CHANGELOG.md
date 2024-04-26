@@ -1,5 +1,36 @@
 # ChangeLog
 
+## [2024-04-25]
+
+### `llama-index-core` [0.10.32]
+
+- Corrected wrong output type for `OutputKeys.from_keys()` (#13086)
+- add run_jobs to aws base embedding (#13096)
+- allow user to customize the keyword extractor prompt template (#13083)
+- (CondenseQuestionChatEngine) Do not condense the question if there's no conversation history (#13069)
+- QueryPlanTool: Execute tool calls in subsequent (dependent) nodes in the query plan (#13047)
+- Fix for fusion retriever sometime return Nonetype query(s) before similarity search (#13112)
+
+### `llama-index-embeddings-ipex-llm` [0.1.1]
+
+- Support llama-index-embeddings-ipex-llm for Intel GPUs (#13097)
+
+### `llama-index-packs-raft-dataset` [0.1.4]
+
+- Fix bug in raft dataset generator - multiple system prompts (#12751)
+
+### `llama-index-readers-microsoft-sharepoint` [0.2.1]
+
+- Add access control related metadata to SharePoint reader (#13067)
+
+### `llama-index-vector-stores-pinecone` [0.1.6]
+
+- Nested metadata filter support (#13113)
+
+### `llama-index-vector-stores-qdrant` [0.2.8]
+
+- Nested metadata filter support (#13113)
+
 ## [2024-04-23]
 
 ### `llama-index-core` [0.10.31]
