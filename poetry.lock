@@ -1505,13 +1505,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.31"
+version = "0.10.32"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.31-py3-none-any.whl", hash = "sha256:b894680fa320a94de56d9a933ac7edb646cabf15fe67ae1cf8fa53ac52ab4542"},
-    {file = "llama_index_core-0.10.31.tar.gz", hash = "sha256:66d39d6f253e20311a21e0b98ea386089f099be12f2d23dbe11379a6d908ddf1"},
+    {file = "llama_index_core-0.10.32-py3-none-any.whl", hash = "sha256:215f7389dadb78f2df13c20312a3e1e03c41f23e3063907469c4bae67bfd458c"},
+    {file = "llama_index_core-0.10.32.tar.gz", hash = "sha256:0078c06d9143390e14c86a40e69716c88c7828533341559edd15e52249ede65a"},
 ]
 
 [package.dependencies]
@@ -1713,13 +1713,13 @@ llama-parse = ">=0.4.0,<0.5.0"
 
 [[package]]
 name = "llama-parse"
-version = "0.4.1"
+version = "0.4.2"
 description = "Parse files into RAG-Optimized formats."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_parse-0.4.1-py3-none-any.whl", hash = "sha256:2c08962b66791c61fc360ae2042f953729c7b8decc3590d01fea5a98ca1f6676"},
-    {file = "llama_parse-0.4.1.tar.gz", hash = "sha256:d723af84d6a1fc99eb431915d21865d20b76d8a246dbaa124d1f96c956a644f7"},
+    {file = "llama_parse-0.4.2-py3-none-any.whl", hash = "sha256:5ce0390141f216dcd88c1123fea7f2a4f561d177f791a97217a3db3509dec4ff"},
+    {file = "llama_parse-0.4.2.tar.gz", hash = "sha256:fa04c09730b102155f6505de9cf91998c86d334581f0f12597c5eb47ca5db859"},
 ]
 
 [package.dependencies]
@@ -2297,13 +2297,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.23.2"
+version = "1.23.6"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.23.2-py3-none-any.whl", hash = "sha256:293a36effde29946eb221040c89c46a4850f2f2e30b37ef09ff6d75226d71b42"},
-    {file = "openai-1.23.2.tar.gz", hash = "sha256:b84aa3005357ceb38f22a269e0e22ee58ce103897f447032d021906f18178a8e"},
+    {file = "openai-1.23.6-py3-none-any.whl", hash = "sha256:f406c76ba279d16b9aca5a89cee0d968488e39f671f4dc6f0d690ac3c6f6fca1"},
+    {file = "openai-1.23.6.tar.gz", hash = "sha256:612de2d54cf580920a1156273f84aada6b3dca26d048f62eb5364a4314d7f449"},
 ]
 
 [package.dependencies]
@@ -2982,13 +2982,13 @@ cffi = {version = "*", markers = "implementation_name == \"pypy\""}
 
 [[package]]
 name = "referencing"
-version = "0.34.0"
+version = "0.35.0"
 description = "JSON Referencing + Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "referencing-0.34.0-py3-none-any.whl", hash = "sha256:d53ae300ceddd3169f1ffa9caf2cb7b769e92657e4fafb23d34b93679116dfd4"},
-    {file = "referencing-0.34.0.tar.gz", hash = "sha256:5773bd84ef41799a5a8ca72dc34590c041eb01bf9aa02632b4a973fb0181a844"},
+    {file = "referencing-0.35.0-py3-none-any.whl", hash = "sha256:8080727b30e364e5783152903672df9b6b091c926a146a759080b62ca3126cd6"},
+    {file = "referencing-0.35.0.tar.gz", hash = "sha256:191e936b0c696d0af17ad7430a3dc68e88bc11be6514f4757dc890f04ab05889"},
 ]
 
 [package.dependencies]
@@ -3888,13 +3888,13 @@ files = [
 
 [[package]]
 name = "types-pyopenssl"
-version = "24.0.0.20240417"
+version = "24.1.0.20240425"
 description = "Typing stubs for pyOpenSSL"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-pyOpenSSL-24.0.0.20240417.tar.gz", hash = "sha256:38e75fb828d2717be173770bbae8c22811fdec68e2bc3f5833954113eb84237d"},
-    {file = "types_pyOpenSSL-24.0.0.20240417-py3-none-any.whl", hash = "sha256:4ce41ddaf383815168b6e21d542fd92135f10a5e82adb3e593a6b79638b0b511"},
+    {file = "types-pyOpenSSL-24.1.0.20240425.tar.gz", hash = "sha256:0a7e82626c1983dc8dc59292bf20654a51c3c3881bcbb9b337c1da6e32f0204e"},
+    {file = "types_pyOpenSSL-24.1.0.20240425-py3-none-any.whl", hash = "sha256:f51a156835555dd2a1f025621e8c4fbe7493470331afeef96884d1d29bf3a473"},
 ]
 
 [package.dependencies]
@@ -4251,4 +4251,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b7d7a3802f13f4d244350c67f8d460efaaddef611c9ca90af9fda52c3ab6e4cc"
+content-hash = "951237c9abb49f4530632028c8185b2a3d539fda4b0670eb8513478a72bfadad"
