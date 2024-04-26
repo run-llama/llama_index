@@ -83,9 +83,7 @@ class KuzuGraphStore(GraphStore):
         query = f"{match_clause} {where_clause} {return_clause}"
         prepared_statement = self.connection.prepare(query)
         if subjs is not None:
-            query_result = self.connection.execute(
-                prepared_statement, {k: v for k, v in params}
-            )
+            query_result = self.connection.execute(prepared_statement, dict(params))
         else:
             query_result = self.connection.execute(prepared_statement)
         retval: Dict[str, List[List[str]]] = {}
