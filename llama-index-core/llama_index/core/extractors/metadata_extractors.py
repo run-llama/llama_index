@@ -149,6 +149,11 @@ class TitleExtractor(BaseExtractor):
         )
 
 
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE = """\
+{context_str}. Give {keywords} unique keywords for this \
+document. Format as comma separated. Keywords: """
+
+
 class KeywordExtractor(BaseExtractor):
     """Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
@@ -156,11 +161,17 @@ class KeywordExtractor(BaseExtractor):
     Args:
         llm (Optional[LLM]): LLM
         keywords (int): number of keywords to extract
+        prompt_template (str): template for keyword extraction
     """
 
     llm: LLMPredictorType = Field(description="The LLM to use for generation.")
     keywords: int = Field(
         default=5, description="The number of keywords to extract.", gt=0
+    )
+
+    prompt_template: str = Field(
+        default=DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        description="Prompt template to use when generating keywords.",
     )
 
     def __init__(
@@ -169,6 +180,7 @@ class KeywordExtractor(BaseExtractor):
         # TODO: llm_predictor arg is deprecated
         llm_predictor: Optional[LLMPredictorType] = None,
         keywords: int = 5,
+        prompt_template: str = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ) -> None:
@@ -179,6 +191,7 @@ class KeywordExtractor(BaseExtractor):
         super().__init__(
             llm=llm or llm_predictor or Settings.llm,
             keywords=keywords,
+            prompt_template=prompt_template,
             num_workers=num_workers,
             **kwargs,
         )
@@ -192,14 +205,10 @@ class KeywordExtractor(BaseExtractor):
         if self.is_text_node_only and not isinstance(node, TextNode):
             return {}
 
-        # TODO: figure out a good way to allow users to customize keyword template
         context_str = node.get_content(metadata_mode=self.metadata_mode)
         keywords = await self.llm.apredict(
-            PromptTemplate(
-                template=f"""\
-{{context_str}}. Give {self.keywords} unique keywords for this \
-document. Format as comma separated. Keywords: """
-            ),
+            PromptTemplate(template=self.prompt_template),
+            keywords=self.keywords,
             context_str=context_str,
         )
 

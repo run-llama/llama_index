@@ -89,6 +89,7 @@ class QueryFusionRetriever(BaseRetriever):
 
         # assume LLM proper put each query on a newline
         queries = response.text.split("\n")
+        queries = [q.strip() for q in queries if q.strip()]
         if self._verbose:
             queries_str = "\n".join(queries)
             print(f"Generated queries:\n{queries_str}")
@@ -99,7 +100,8 @@ class QueryFusionRetriever(BaseRetriever):
     def _reciprocal_rerank_fusion(
         self, results: Dict[Tuple[str, int], List[NodeWithScore]]
     ) -> List[NodeWithScore]:
-        """Apply reciprocal rank fusion.
+        """
+        Apply reciprocal rank fusion.
 
         The original paper uses k=60 for best results:
         https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf

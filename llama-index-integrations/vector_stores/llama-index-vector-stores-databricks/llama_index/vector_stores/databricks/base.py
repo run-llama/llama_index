@@ -223,7 +223,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             metadata_columns = self.columns or []
 
             # explicitly record doc_id as metadata (for delete)
-            metadata_columns.append("doc_id")
+            if "doc_id" not in metadata_columns:
+                metadata_columns.append("doc_id")
 
             entry = {
                 self._primary_key: node_id,
