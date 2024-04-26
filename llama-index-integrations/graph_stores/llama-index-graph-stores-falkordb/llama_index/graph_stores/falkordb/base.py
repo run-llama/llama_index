@@ -34,7 +34,19 @@ class FalkorDBGraphStore(GraphStore):
         self._driver = FalkorDB.from_url(url).select_graph(database)
 
         try:
-            self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+            result_set = self._driver.query(
+                f"""
+                CYPHER lbl='{self._node_label}' prop='id'
+                CALL db.indexes() YIELD label, properties
+                WHERE label = $lbl AND $prop in properties
+                RETURN 1 AS index_exists
+                """
+            ).result_set
+            # TODO: this check may cause a race issue due to these two queries are not atomic.
+            if not (len(result_set) > 0 and result_set[0][0] == 1):
+                self._driver.query(
+                    f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)"
+                )
         except redis.ResponseError as e:
             # TODO: to find an appropriate way to handle this issue.
             logger.warning("Create index failed: %s", e)
