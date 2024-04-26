@@ -778,11 +778,6 @@ class QueryPipeline(QueryComponent):
                     [all_module_inputs[module_key] for module_key in popped_nodes],
                 )
 
-            if show_intermediates and module_key not in intermediate_outputs:
-                intermediate_outputs[module_key] = ComponentIntermediates(
-                    inputs=module_input, outputs=output_dict
-                )
-
             # create tasks from popped nodes
             tasks = []
             for module_key in popped_nodes:
@@ -800,6 +795,11 @@ class QueryPipeline(QueryComponent):
                 queue = self._process_component_output(
                     queue, output_dict, module_key, all_module_inputs, result_outputs
                 )
+
+                if show_intermediates and module_key not in intermediate_outputs:
+                    intermediate_outputs[module_key] = ComponentIntermediates(
+                        inputs=all_module_inputs[module_key], outputs=output_dict
+                    )
 
         return result_outputs, intermediate_outputs
 

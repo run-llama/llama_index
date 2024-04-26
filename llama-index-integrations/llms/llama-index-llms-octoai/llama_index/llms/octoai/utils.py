@@ -1,17 +1,23 @@
 import logging
 from typing import Dict, Sequence
 from llama_index.core.base.llms.types import ChatMessage
-from octoai.chat import TextModel
 
 TEXT_MODELS: Dict[str, int] = {
-    TextModel.CODELLAMA_13B_INSTRUCT: 16384,
-    TextModel.CODELLAMA_34B_INSTRUCT: 16384,
-    TextModel.CODELLAMA_70B_INSTRUCT: 16384,
-    TextModel.CODELLAMA_7B_INSTRUCT: 4096,
-    TextModel.LLAMA_2_13B_CHAT: 4096,
-    TextModel.LLAMA_2_70B_CHAT: 4096,
-    TextModel.MISTRAL_7B_INSTRUCT: 32768,
-    TextModel.MIXTRAL_8X7B_INSTRUCT: 32768,
+    "codellama-13b-instruct": 16384,
+    "codellama-34b-instruct": 16384,
+    "codellama-7b-instruct": 4096,
+    "meta-llama-3-8b-instruct": 8192,
+    "meta-llama-3-70b-instruct": 8192,
+    "llama-2-13b-chat": 4096,
+    "llama-2-70b-chat": 4096,
+    "mistral-7b-instruct": 32768,
+    "mixtral-8x7b-instruct": 32768,
+    "mixtral-8x22b-instruct": 65536,
+    "mixtral-8x22b-finetuned": 65536,
+    "nous-hermes-2-mixtral-8x7b-dpo": 32768,
+    "hermes-2-pro-mistral-7b": 32768,
+    "llamaguard-7b": 4096,
+    "qwen1.5-32b-chat": 32768,
 }
 
 ALL_AVAILABLE_MODELS = {**TEXT_MODELS}
@@ -42,11 +48,10 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
             max_tokens = octoai.modelname_to_contextsize("llama-2-13b-chat")
     """
     if modelname not in ALL_AVAILABLE_MODELS:
-        raise ValueError(
-            f"Unknown model {modelname!r}. Please provide a supported model name as \
-            a string or using the TextModel enum from the OctoAI SDK:"
-            f" {', '.join(ALL_AVAILABLE_MODELS.keys())}"
+        print(
+            "WARNING: Model not found in octoai.utils.py, returning a generous default value."
         )
+        return 8192
     return ALL_AVAILABLE_MODELS[modelname]
 
 
