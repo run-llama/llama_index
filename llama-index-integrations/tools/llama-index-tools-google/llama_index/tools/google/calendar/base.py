@@ -166,12 +166,12 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         for attendee in attendees:
             attendees_list.append({"email": attendee})
         start_time = (
-            datetime.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S")
+            datetime.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
             .astimezone()
             .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )
         end_time = (
-            datetime.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S")
+            datetime.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
             .astimezone()
             .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )
