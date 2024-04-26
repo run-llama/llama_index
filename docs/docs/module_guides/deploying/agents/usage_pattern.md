@@ -140,6 +140,10 @@ class MyAgentWorker(CustomSimpleAgentWorker):
 
     # define class here
     pass
+
+
+# Wrap the worker into an AgentRunner
+agent = MyAgentWorker(...).as_agent()
 ```
 
 Check out our [Custom Agent Notebook Guide](../../../examples/agent/custom_agent.ipynb) for more details.
