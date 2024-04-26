@@ -335,7 +335,6 @@ class MistralRS(CustomLLM):
                 yield CompletionResponse(
                     delta=delta,
                     text=text,
-                    logprobs=None,
                     logprobs=extract_logprobs_stream(response),
                 )
 
