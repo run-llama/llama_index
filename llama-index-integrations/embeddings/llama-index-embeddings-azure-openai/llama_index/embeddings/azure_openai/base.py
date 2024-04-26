@@ -51,6 +51,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         max_retries: int = 10,
         reuse_client: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        num_workers: Optional[int] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
@@ -78,6 +79,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             reuse_client=reuse_client,
             callback_manager=callback_manager,
             http_client=http_client,
+            num_workers=num_workers,
             **kwargs,
         )
 
