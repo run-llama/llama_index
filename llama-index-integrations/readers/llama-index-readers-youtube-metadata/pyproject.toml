@@ -28,10 +28,12 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
+youtube-transcript-api = "^0.6.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
+flake8 = "^7.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
