@@ -9,12 +9,12 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
-# [tool.llamahub]
-# contains_example = false
-# import_path = "<import-path>"
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.packs.llama_tonic"
 
 [tool.llamahub.class_authors]
-CLASS = ["Josephrp", "Tonic-AI" , "TeamTonic"]
+Llama_Tonic = ["Josephrp", "Tonic-AI" , "TeamTonic"]
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -27,7 +27,7 @@ python_version = "3.8"
 name = "llama-index-packs-llama-tonic"
 version = "0.0.1"
 description = "Llama Tonic Are Useful Tools For Accessible & Enterprise Applications. Includes Transcription & Text To Speech + Memory Pipelines (currently)"
-authors = ["Josephrp <tonic@tonic-ai.com>", "TeamTonic <team@tonic-ai.com"]
+authors = ["Josephrp <tonic@tonic-ai.com>", "TeamTonic <team@tonic-ai.com", "Tonic-AI <contact@tonic-ai.com"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "llama_index/"}]

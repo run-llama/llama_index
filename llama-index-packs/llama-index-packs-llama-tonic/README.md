@@ -14,5 +14,9 @@ pip install llama-index-pack-llama-tonic
 ```
 
 ```bash
-pip install llama-index-pack-llama-tonic[whisper]
+pip install llama-index-pack-llama-tonic-transcription
+```
+
+```bash
+pip install llama-index-pack-llama-tonic-memory
 ```
