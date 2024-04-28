@@ -136,12 +136,16 @@ class MyMagicAI(LLM):
 
     async def _submit_question(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
         timeout_config = httpx.Timeout(600.0, connect=60.0)
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
 
         async with httpx.AsyncClient(timeout=timeout_config) as client:
             resp = await client.post(
                 self.completion_url,
                 json=question_data,
-                headers={"Authorization": f"Bearer {self.api_key}"},
+                headers=headers,
             )
             resp.raise_for_status()
             return resp.json()
