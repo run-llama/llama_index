@@ -12,6 +12,7 @@ from llama_index.embeddings.openai import (
 )
 from llama_index.llms.azure_openai.utils import resolve_from_aliases
 from openai import AsyncAzureOpenAI, AzureOpenAI
+from openai.lib.azure import AzureADTokenProvider
 
 
 class AzureOpenAIEmbedding(OpenAIEmbedding):
@@ -25,6 +26,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
     api_base: str = Field(default="", description="The base URL for Azure deployment.")
     api_version: str = Field(
         default="", description="The version for Azure OpenAI API."
+    )
+
+    azure_ad_token_provider: AzureADTokenProvider = Field(
+        default=None, description="Callback function to provide Azure AD token."
     )
 
     _client: AzureOpenAI = PrivateAttr()
@@ -41,10 +46,12 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
+        azure_ad_token_provider: AzureADTokenProvider = None,
         deployment_name: Optional[str] = None,
         max_retries: int = 10,
         reuse_client: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        num_workers: Optional[int] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
@@ -67,10 +74,12 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             api_version=api_version,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
+            azure_ad_token_provider=azure_ad_token_provider,
             max_retries=max_retries,
             reuse_client=reuse_client,
             callback_manager=callback_manager,
             http_client=http_client,
+            num_workers=num_workers,
             **kwargs,
         )
 
@@ -109,6 +118,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
     def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
+            "azure_ad_token_provider": self.azure_ad_token_provider,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,

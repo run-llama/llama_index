@@ -42,6 +42,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
+    "gpt-4-turbo-2024-04-09": 128000,
+    "gpt-4-turbo": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,
@@ -163,7 +165,7 @@ def create_retry_decorator(
                     openai.APIError,
                     openai.APIConnectionError,
                     openai.RateLimitError,
-                    openai.APIStatusError,
+                    openai.InternalServerError,
                 )
             )
         ),

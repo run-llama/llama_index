@@ -18,6 +18,9 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    MetadataFilters,
+    FilterOperator,
+    FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -29,6 +32,7 @@ from llama_index.vector_stores.qdrant.utils import (
     SparseEncoderCallable,
     default_sparse_encoder,
     relative_score_fusion,
+    fastembed_sparse_encoder,
 )
 from qdrant_client.http import models as rest
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -48,6 +52,10 @@ logger = logging.getLogger(__name__)
 import_err_msg = (
     "`qdrant-client` package not found, please run `pip install qdrant-client`"
 )
+
+DENSE_VECTOR_NAME = "text-dense"
+SPARSE_VECTOR_NAME_OLD = "text-sparse"
+SPARSE_VECTOR_NAME = "text-sparse-new"
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
@@ -163,11 +171,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # setup hybrid search if enabled
         if enable_hybrid:
-            self._sparse_doc_fn = sparse_doc_fn or default_sparse_encoder(
-                "naver/efficient-splade-VI-BT-large-doc"
+            self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
+                collection_name
             )
-            self._sparse_query_fn = sparse_query_fn or default_sparse_encoder(
-                "naver/efficient-splade-VI-BT-large-query"
+            self._sparse_query_fn = (
+                sparse_query_fn
+                or self.get_default_sparse_query_encoder(collection_name)
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
@@ -188,7 +197,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "QdrantVectorStore"
 
-    def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
+    def set_query_functions(
+        self,
+        sparse_doc_fn: Optional[SparseEncoderCallable] = None,
+        sparse_query_fn: Optional[SparseEncoderCallable] = None,
+        hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
+    ):
+        self._sparse_doc_fn = sparse_doc_fn
+        self._sparse_query_fn = sparse_query_fn
+        self._hybrid_fusion_fn = hybrid_fusion_fn
+
+    def _build_points(
+        self, nodes: List[BaseNode], sparse_vector_name: str
+    ) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
         for node_batch in iter_batch(nodes, self.batch_size):
@@ -218,17 +239,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ):
                         vectors.append(
                             {
-                                "text-sparse": rest.SparseVector(
+                                # Dynamically switch between the old and new sparse vector name
+                                sparse_vector_name: rest.SparseVector(
                                     indices=sparse_indices[i],
                                     values=sparse_vectors[i],
                                 ),
-                                "text-dense": node.get_embedding(),
+                                DENSE_VECTOR_NAME: node.get_embedding(),
                             }
                         )
                     else:
                         vectors.append(
                             {
-                                "text-dense": node.get_embedding(),
+                                DENSE_VECTOR_NAME: node.get_embedding(),
                             }
                         )
                 else:
@@ -265,7 +287,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes)
+        sparse_vector_name = self.sparse_vector_name()
+        points, ids = self._build_points(nodes, sparse_vector_name)
 
         self._client.upload_points(
             collection_name=self.collection_name,
@@ -299,7 +322,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes)
+        sparse_vector_name = await self.asparse_vector_name()
+        points, ids = self._build_points(nodes, sparse_vector_name)
 
         await self._aclient.upload_points(
             collection_name=self.collection_name,
@@ -365,13 +389,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        "text-dense": rest.VectorParams(
+                        DENSE_VECTOR_NAME: rest.VectorParams(
                             size=vector_size,
                             distance=rest.Distance.COSINE,
                         )
                     },
+                    # Newly created collection will have the new sparse vector name
                     sparse_vectors_config={
-                        "text-sparse": rest.SparseVectorParams(
+                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
                             index=rest.SparseIndexParams()
                         )
                     },
@@ -403,13 +428,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 await self._aclient.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        "text-dense": rest.VectorParams(
+                        DENSE_VECTOR_NAME: rest.VectorParams(
                             size=vector_size,
                             distance=rest.Distance.COSINE,
                         )
                     },
                     sparse_vectors_config={
-                        "text-sparse": rest.SparseVectorParams(
+                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
                             index=rest.SparseIndexParams()
                         )
                     },
@@ -434,18 +459,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
         try:
-            self._client.get_collection(collection_name)
+            return self._client.collection_exists(collection_name)
         except (RpcError, UnexpectedResponse, ValueError):
             return False
-        return True
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
         try:
-            await self._aclient.get_collection(collection_name)
+            return await self._aclient.collection_exists(collection_name)
         except (RpcError, UnexpectedResponse, ValueError):
             return False
-        return True
 
     def query(
         self,
@@ -487,7 +510,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -496,7 +519,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=self.sparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -538,7 +562,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=self.sparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -559,7 +584,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -619,7 +644,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -628,7 +653,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -669,7 +695,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            name="text-sparse",
+                            # Dynamically switch between the old and new sparse vector name
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -689,7 +716,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name="text-dense",
+                            name=DENSE_VECTOR_NAME,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -726,8 +753,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             try:
                 node = metadata_dict_to_node(payload)
             except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
@@ -745,6 +770,94 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ids.append(str(point.id))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _build_subfilter(self, filters: MetadataFilters) -> Filter:
+        conditions = []
+        for subfilter in filters.filters:
+            # only for exact match
+            if isinstance(subfilter, MetadataFilters) and len(subfilter.filters) > 0:
+                conditions.append(self._build_subfilter(subfilter))
+            elif not subfilter.operator or subfilter.operator == FilterOperator.EQ:
+                if isinstance(subfilter.value, float):
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            range=Range(
+                                gte=subfilter.value,
+                                lte=subfilter.value,
+                            ),
+                        )
+                    )
+                else:
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchValue(value=subfilter.value),
+                        )
+                    )
+            elif subfilter.operator == FilterOperator.LT:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(lt=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.GT:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(gt=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.GTE:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(gte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.LTE:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(lte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.TEXT_MATCH:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchText(text=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.NE:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": [subfilter.value]}),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.IN:
+                # match any of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-any
+                if isinstance(subfilter.value, List):
+                    values = [str(val) for val in subfilter.value]
+                else:
+                    values = str(subfilter.value).split(",")
+
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchAny(any=values),
+                    )
+                )
+
+        filter = Filter()
+        if filters.condition == FilterCondition.AND:
+            filter.must = conditions
+        elif filters.condition == FilterCondition.OR:
+            filter.should = conditions
+        return filter
 
     def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
         if not query.doc_ids and not query.query_str:
@@ -771,79 +884,57 @@ class QdrantVectorStore(BasePydanticVectorStore):
         # filtering cannot handle longer queries and can effectively filter our all the
         # nodes. See: https://github.com/jerryjliu/llama_index/pull/1181
 
-        if query.filters is None:
-            return Filter(must=must_conditions)
-
-        for subfilter in query.filters.filters:
-            # only for exact match
-            if not subfilter.operator or subfilter.operator == "==":
-                if isinstance(subfilter.value, float):
-                    must_conditions.append(
-                        FieldCondition(
-                            key=subfilter.key,
-                            range=Range(
-                                gte=subfilter.value,
-                                lte=subfilter.value,
-                            ),
-                        )
-                    )
-                else:
-                    must_conditions.append(
-                        FieldCondition(
-                            key=subfilter.key,
-                            match=MatchValue(value=subfilter.value),
-                        )
-                    )
-            elif subfilter.operator == "<":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(lt=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == ">":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(gt=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == ">=":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(gte=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == "<=":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(lte=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == "text_match":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchText(text=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == "!=":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchExcept(**{"except": [subfilter.value]}),
-                    )
-                )
-            elif subfilter.operator == "in":
-                # match any of the values
-                # https://qdrant.tech/documentation/concepts/filtering/#match-any
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchAny(any=str(subfilter.value).split(",")),
-                    )
-                )
+        if query.filters and query.filters.filters:
+            must_conditions.append(self._build_subfilter(query.filters))
 
         return Filter(must=must_conditions)
+
+    def use_old_sparse_encoder(self, collection_name: str) -> bool:
+        collection_exists = self._collection_exists(collection_name)
+        if collection_exists:
+            cur_collection = self.client.get_collection(collection_name)
+            return SPARSE_VECTOR_NAME_OLD in (
+                cur_collection.config.params.sparse_vectors or {}
+            )
+
+        return False
+
+    def sparse_vector_name(self) -> str:
+        return (
+            SPARSE_VECTOR_NAME_OLD
+            if self.use_old_sparse_encoder(self.collection_name)
+            else SPARSE_VECTOR_NAME
+        )
+
+    async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
+        collection_exists = await self._acollection_exists(collection_name)
+        if collection_exists:
+            cur_collection = await self._aclient.get_collection(collection_name)
+            return SPARSE_VECTOR_NAME_OLD in (
+                cur_collection.config.params.sparse_vectors or {}
+            )
+
+        return False
+
+    async def asparse_vector_name(self) -> str:
+        return (
+            SPARSE_VECTOR_NAME_OLD
+            if await self.ause_old_sparse_encoder(self.collection_name)
+            else SPARSE_VECTOR_NAME
+        )
+
+    def get_default_sparse_doc_encoder(
+        self, collection_name: str
+    ) -> SparseEncoderCallable:
+        if self.use_old_sparse_encoder(collection_name):
+            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
+
+        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+
+    def get_default_sparse_query_encoder(
+        self, collection_name: str
+    ) -> SparseEncoderCallable:
+        if self.use_old_sparse_encoder(collection_name):
+            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
+
+        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")

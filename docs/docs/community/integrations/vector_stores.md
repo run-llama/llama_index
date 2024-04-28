@@ -10,11 +10,14 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
+- AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
+- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -31,9 +34,9 @@ as the storage backend for `VectorStoreIndex`.
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
-- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
+- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
-- TiDB (`TiDBVectorStore`). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
+- TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
@@ -93,6 +96,19 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Amazon Neptune - Neptune Analytics**
+
+```python
+from llama_index.vector_stores.neptune import NeptuneAnalyticsVectorStore
+
+graph_identifier = ""
+embed_dim = 1536
+
+neptune_vector_store = NeptuneAnalyticsVectorStore(
+    graph_identifier=graph_identifier, embedding_dimension=1536
+)
+```
 
 **Apache Cassandra®**
 
@@ -187,6 +203,33 @@ client = clickhouse_connect.get_client(
 
 # construct vector store
 vector_store = ClickHouseVectorStore(clickhouse_client=client)
+```
+
+**Couchbase**
+
+```python
+from datetime import timedelta
+
+from couchbase.auth import PasswordAuthenticator
+from couchbase.cluster import Cluster
+from couchbase.options import ClusterOptions
+
+# Create a Couchbase Cluster object
+auth = PasswordAuthenticator("DATABASE_USERNAME", "DATABASE_PASSWORD")
+options = ClusterOptions(auth)
+cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+# Create the Vector Store
+vector_store = CouchbaseVectorStore(
+    cluster=cluster,
+    bucket_name="BUCKET_NAME",
+    scope_name="SCOPE_NAME",
+    collection_name="COLLECTION_NAME",
+    index_name="SEARCH_INDEX_NAME",
+)
 ```
 
 **DashVector**
@@ -787,6 +830,7 @@ documents = reader.load_data(
 
 ## Vector Store Examples
 
+- [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
 - [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)

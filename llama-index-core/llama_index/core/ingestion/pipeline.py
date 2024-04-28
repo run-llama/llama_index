@@ -192,15 +192,16 @@ def arun_transformations_wrapper(
 
 
 class DocstoreStrategy(str, Enum):
-    """Document de-duplication strategy.
+    """Document de-duplication de-deduplication strategies work by comparing the hashes or ids stored in the document store.
+       They require a document store to be set which must be persisted across pipeline runs.
 
     Attributes:
         UPSERTS:
-            ('upserts') Use upserts to handle duplicates.
+            ('upserts') Use upserts to handle duplicates. Checks if the a document is already in the doc store based on its id. If it is not, or if the hash of the document is updated, it will update the document in the doc store and run the transformations.
         DUPLICATES_ONLY:
-            ('duplicates_only') Only handle duplicates.
+            ('duplicates_only') Only handle duplicates. Checks if the hash of a document is already in the doc store. Only then it will add the document to the doc store and run the transformations
         UPSERTS_AND_DELETE:
-            ('upserts_and_delete') Use upserts and delete to handle duplicates.
+            ('upserts_and_delete') Use upserts and delete to handle duplicates. Like the upsert strategy but it will also delete non-existing documents from the doc store
     """
 
     UPSERTS = "upserts"
@@ -524,16 +525,20 @@ class IngestionPipeline(BaseModel):
             self.cache = IngestionCache.from_persist_path(
                 concat_dirs(persist_dir, cache_name), fs=fs
             )
-            self.docstore = SimpleDocumentStore.from_persist_path(
-                concat_dirs(persist_dir, docstore_name), fs=fs
-            )
+            persist_docstore_path = concat_dirs(persist_dir, docstore_name)
+            if os.path.exists(persist_docstore_path):
+                self.docstore = SimpleDocumentStore.from_persist_path(
+                    concat_dirs(persist_dir, docstore_name), fs=fs
+                )
         else:
             self.cache = IngestionCache.from_persist_path(
                 str(Path(persist_dir) / cache_name)
             )
-            self.docstore = SimpleDocumentStore.from_persist_path(
-                str(Path(persist_dir) / docstore_name)
-            )
+            persist_docstore_path = str(Path(persist_dir) / docstore_name)
+            if os.path.exists(persist_docstore_path):
+                self.docstore = SimpleDocumentStore.from_persist_path(
+                    str(Path(persist_dir) / docstore_name)
+                )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [

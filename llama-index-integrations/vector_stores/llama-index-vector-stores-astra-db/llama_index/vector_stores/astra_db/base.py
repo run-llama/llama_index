@@ -243,7 +243,7 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         """
         _logger.debug("Deleting a document from the Astra table")
 
-        self._astra_db_collection.delete(id=ref_doc_id, **delete_kwargs)
+        self._astra_db_collection.delete_one(id=ref_doc_id, **delete_kwargs)
 
     @property
     def client(self) -> Any:
@@ -263,7 +263,8 @@ class AstraDBVectorStore(BasePydanticVectorStore):
             raise NotImplementedError(
                 "Only filters with operator=FilterOperator.EQ are supported"
             )
-        return {f"metadata.{f.key}": f.value for f in query_filters.filters}
+        # nested filters, i.e. f being of type MetadataFilters, is excluded above:
+        return {f"metadata.{f.key}": f.value for f in query_filters.filters}  # type: ignore[union-attr]
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
@@ -293,6 +294,8 @@ class AstraDBVectorStore(BasePydanticVectorStore):
                 vector=query_embedding,
                 limit=query.similarity_top_k,
                 filter=query_metadata,
+                fields=["*"],
+                include_similarity=True,
             )
 
             # Get the scores associated with each
@@ -318,11 +321,12 @@ class AstraDBVectorStore(BasePydanticVectorStore):
             # Get the most we can possibly need to fetch
             prefetch_k = max(prefetch_k0, query.similarity_top_k)
 
-            # Call AstraPy to fetch them
+            # Call AstraPy to fetch them (similarity from DB not needed here)
             prefetch_matches = self._astra_db_collection.vector_find(
                 vector=query_embedding,
                 limit=prefetch_k,
                 filter=query_metadata,
+                fields=["*"],
             )
 
             # Get the MMR threshold

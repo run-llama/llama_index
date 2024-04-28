@@ -46,7 +46,11 @@ class ArgPackComponent(QueryComponent):
         for v in kwargs.values():
             if self.convert_fn is not None:
                 v = self.convert_fn(v)
-            output.append(v)
+
+            if isinstance(v, list):
+                output.extend(v)
+            else:
+                output.append(v)
         return {"output": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
