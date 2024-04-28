@@ -1,6 +1,6 @@
 """Init file of LlamaIndex."""
 
-__version__ = "0.10.32"
+__version__ = "0.10.33"
 
 import logging
 from logging import NullHandler
