@@ -55,15 +55,10 @@ class MyMagicAI(LLM):
     status_url: str = f"{base_url_template}/get_result"
 
     api_key: str = None
-    model: str = Field(default="mixtral8x7", description="The MyMagicAI model to use.")
-    max_tokens: int = Field(
-        default=10, description="The maximum number of tokens to generate."
-    )
     list_inputs: Optional[List[str]] = Field(
         None,
         description="If user chooses to provide list of inputs to the model instead of specifying in a storage bucket.",
     )
-    question = Field(default="", description="The user question.")
     storage_provider: str = Field(
         default=None, description="The storage provider to use."
     )
@@ -78,39 +73,45 @@ class MyMagicAI(LLM):
     role_arn: Optional[str] = Field(
         None, description="ARN for role assumption in AWS S3."
     )
-    system_prompt: str = Field(
+    system_prompt: Optional[str] = Field(
         default="Answer the question based only on the given content. Do not give explanations or examples. Do not continue generating more text after the answer.",
         description="The system prompt to use.",
-    )
-    question_data: Dict[str, Any] = Field(
-        default_factory=dict, description="The data to send to the MyMagicAI API."
     )
     region: Optional[str] = Field(
         "eu-west-2", description="The region the bucket is in. Only used for AWS S3."
     )
-    return_output: Optional[bool] = Field(
-        False, description="Whether MyMagic API should return the output json"
-    )
+
     input_json_file: Optional[str] = Field(
         None, description="Should the input be read from a single json file?"
     )
     structured_output: Optional[Dict[str, Any]] = Field(
         None, description="User-defined structure for the response output"
     )
+    model: str = Field(default="mixtral8x7", description="The MyMagicAI model to use.")
+    max_tokens: int = Field(
+        default=10, description="The maximum number of tokens to generate."
+    )
+    question = Field(default="", description="The user question.")
+    question_data: Dict[str, Any] = Field(
+        default_factory=dict, description="The data to send to the MyMagicAI API."
+    )
+    return_output: Optional[bool] = Field(
+        False, description="Whether MyMagic API should return the output json"
+    )
 
     def __init__(
         self,
         api_key: str,
-        storage_provider: str,
-        system_prompt: Optional[str],
-        list_inputs: Optional[List[str]] = None,
-        bucket_name: Optional[str] = None,
-        session: Optional[str] = None,
-        role_arn: Optional[str] = None,
-        region: Optional[str] = None,
-        return_output: Optional[bool] = False,
+        storage_provider: Optional[str] = None,
         input_json_file: Optional[str] = None,
         structured_output: Optional[Dict[str, Any]] = None,
+        return_output: Optional[bool] = False,
+        list_inputs: Optional[List[str]] = None,
+        role_arn: Optional[str] = None,
+        region: Optional[str] = "eu-west-2",
+        session: str = None,
+        bucket_name: Optional[str] = None,
+        system_prompt: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -122,7 +123,6 @@ class MyMagicAI(LLM):
             "storage_provider": storage_provider,
             "bucket_name": bucket_name,
             "session": session,
-            "max_tokens": self.max_tokens,
             "role_arn": role_arn,
             "system_prompt": system_prompt,
             "region": region,
@@ -167,11 +167,10 @@ class MyMagicAI(LLM):
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
         self.question_data["question"] = question
-        self.model = self.question_data["model"] = model or self.model
+        self.question_data["model"] = model or self.model
         self.max_tokens = self.question_data["max_tokens"] = (
             max_tokens or self.max_tokens
         )
-
         task_response = await self._submit_question(self.question_data)
 
         if self.return_output:
@@ -213,11 +212,10 @@ class MyMagicAI(LLM):
         poll_interval: float = 1.0,
     ) -> CompletionResponse:
         self.question_data["question"] = question
-        self.model = self.question_data["model"] = model or self.model
+        self.question_data["model"] = model or self.model
         self.max_tokens = self.question_data["max_tokens"] = (
             max_tokens or self.max_tokens
         )
-
         task_response = self._submit_question_sync(self.question_data)
         if self.return_output:
             return task_response
