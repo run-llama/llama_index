@@ -13,12 +13,14 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
 
 DEFAULT_REQUEST_TIMEOUT = 30.0
 
+# DEFAULT_CONTEXT_WINDOW value to align with Ollama CLI's default of 2048
+DEFAULT_CONTEXT_WINDOW  = 2048
 
 def get_additional_kwargs(
     response: Dict[str, Any], exclude: Tuple[str, ...]
