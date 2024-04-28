@@ -47,8 +47,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.base.llms.generic_utils import (
     completion_to_chat_decorator,
-    stream_completion_to_chat_decorator
-
+    stream_completion_to_chat_decorator,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.llms.nvidia_triton.utils import GrpcTritonClient
@@ -237,7 +236,7 @@ class NvidiaTriton(LLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         chat_fn = completion_to_chat_decorator(self.complete)
         return chat_fn(messages, **kwargs)
-        
+
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
