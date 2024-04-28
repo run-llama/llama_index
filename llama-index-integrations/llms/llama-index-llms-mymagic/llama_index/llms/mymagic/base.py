@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 import httpx
 import asyncio
 import requests
-import logging
 from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
@@ -136,7 +135,6 @@ class MyMagicAI(LLM):
         return "MyMagicAI"
 
     async def _submit_question(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
-        logging.debug(f"Submitting question: {question_data}")
         timeout_config = httpx.Timeout(600.0, connect=60.0)
 
         async with httpx.AsyncClient(timeout=timeout_config) as client:
@@ -146,17 +144,14 @@ class MyMagicAI(LLM):
                 headers={"Authorization": f"Bearer {self.api_key}"},
             )
             resp.raise_for_status()
-            logging.debug(f"Response received: {resp.json()}")
             return resp.json()
 
     async def _get_result(self, task_id: str) -> Dict[str, Any]:
         url = f"{self.status_url}/{task_id}"
-        logging.debug(f"Fetching result for task ID: {task_id} from {url}")
         timeout_config = httpx.Timeout(600.0, connect=60.0)
         async with httpx.AsyncClient(timeout=timeout_config) as client:
             resp = await client.get(url)
             resp.raise_for_status()
-            logging.debug(f"Result response: {resp.json()}")
             return resp.json()
 
     async def acomplete(
