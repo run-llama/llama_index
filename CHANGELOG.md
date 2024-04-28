@@ -1,5 +1,43 @@
 # ChangeLog
 
+## [2024-04-27]
+
+### `llama-index-core` [0.10.33]
+
+- add agent_worker.as_agent() (#13061)
+
+### `llama-index-embeddings-bedrock` [0.1.5]
+
+- Use Bedrock cohere character limit (#13126)
+
+### `llama-index-tools-google` [0.1.5]
+
+- Change default value for attendees to empty list (#13134)
+
+### `llama-index-graph-stores-falkordb` [0.1.4]
+
+- Skip index creation error when index already exists (#13085)
+
+### `llama-index-tools-google` [0.1.4]
+
+- Fix datetime for google calendar create_event api (#13132)
+
+### `llama-index-llms-anthropic` [0.1.11]
+
+- Merge multiple prompts into one (#13131)
+
+### `llama-index-indices-managed-llama-cloud` [0.1.6]
+
+- Use MetadataFilters in LlamaCloud Retriever (#13117)
+
+### `llama-index-graph-stores-kuzu` [0.1.3]
+
+- Fix kuzu integration .execute() calls (#13100)
+
+### `llama-index-vector-stores-lantern` [0.1.3]
+
+- Maintenance update to keep up to date with lantern builds (#13116)
+
 ## [2024-04-25]
 
 ### `llama-index-core` [0.10.32]
