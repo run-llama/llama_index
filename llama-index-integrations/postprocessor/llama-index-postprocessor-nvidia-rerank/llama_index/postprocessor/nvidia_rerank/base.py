@@ -1,154 +1,129 @@
-import os
-from typing import Any, List, Optional, Iterable
-from itertools import islice
+from typing import Any, List, Optional, Literal, Generator
 
+from urllib.parse import urlparse
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 import requests
 
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+
 # from _statics import MODEL_SPECS, Model
 
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
-BASE_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking"
-
-DEFAULT_TOP_N = 2
-DEFAULT_BATCH_SIZE = 32
+DEFAULT_BASE_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
 
 model_lookup = {"nvidia": [DEFAULT_MODEL], "nim": [DEFAULT_MODEL]}
 
 
-def get_from_param_or_env(
-    key: str,
-    param: Optional[str] = None,
-    env_key: Optional[str] = None,
-    default: Optional[str] = None,
-) -> str:
-    """Get a value from a param or an environment variable."""
-    if param is not None:
-        return param
-    elif env_key and env_key in os.environ and os.environ[env_key]:
-        return os.environ[env_key]
-    elif default is not None:
-        return default
-    else:
-        raise ValueError(
-            f"Did not find {key}, please add an environment variable"
-            f" `{env_key}` which contains it, or pass"
-            f"  `{key}` as a named parameter."
-        )
-
-
 class NVIDIARerank(BaseNodePostprocessor):
     """NVIDIA's API Catalog Reranker Connector."""
+
+    class Config:
+        validate_assignment = True
 
     model: Optional[str] = Field(
         default=DEFAULT_MODEL,
         description="The NVIDIA API Catalog reranker to use.",
     )
     top_n: Optional[int] = Field(
-        default=2,
-        description="The default value for top_n is 2",
+        default=5,
+        ge=0,
+        description="The number of nodes to return.",
     )
     max_batch_size: Optional[int] = Field(
-        default=32,
-        description="The default value for batch_size is 2",
+        default=64,
+        ge=1,
+        description="The maximum batch size supported by the inference server.",
     )
-    _api_key: Any = PrivateAttr()
+    _api_key: str = PrivateAttr("API_KEY_NOT_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
-    _headers: Any = PrivateAttr()
-    _score: Any = PrivateAttr()
-    _url: Any = PrivateAttr()
+    _base_url: str = PrivateAttr(DEFAULT_BASE_URL)
+
+    def _set_api_key(self, nvidia_api_key: str = None, api_key: str = None) -> None:
+        self._api_key = get_from_param_or_env(
+            "api_key",
+            nvidia_api_key or api_key,
+            "NVIDIA_API_KEY",
+            "API_KEY_NOT_PROVIDED",
+        )
 
     def __init__(
         self,
-        _mode: Optional[str] = None,
-        model: str = DEFAULT_MODEL,
-        top_n: int = DEFAULT_TOP_N,
-        max_batch_size: int = DEFAULT_BATCH_SIZE,
-        _api_key: Optional[str] = None,
+        nvidia_api_key: Optional[str] = None,
+        api_key: Optional[str] = None,
+        **kwargs: Any,
     ):
-        super().__init__(top_n=top_n, model=model)
-        self.model = model
-        self.top_n = top_n
-        self._api_key = None
-        self._url = None
-        self._mode = None
-        self._headers = None
-        self._score = None
+        super().__init__(**kwargs)
+
+        self._set_api_key(nvidia_api_key, api_key)
 
     def get_available_models():
         return model_lookup.items()
 
     def mode(
         self,
-        mode: str = None,
-        base_url: str = BASE_URL,
-        model: str = model,
-        api_key: str = None,
-    ):
+        mode: Literal["nvidia", "nim"] = "nvidia",
+        *,
+        base_url: Optional[str] = None,
+        model: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ) -> "NVIDIARerank":
+        """
+        Change the mode.
+
+        There are two modes, "nvidia" and "nim". The "nvidia" mode is the default mode
+        and is used to interact with hosted NVIDIA NIMs. The "nim" mode is
+        used to interact with local NVIDIA NIM endpoints, which are typically hosted
+        on-premises.
+
+        For the "nvidia" mode, the "api_key" parameter is available to specify your
+        API key. If not specified, the NVIDIA_API_KEY environment variable will be used.
+
+        For the "nim" mode, the "base_url" is required and "model" is recommended. Set
+        base_url to the url of your NVIDIA NIM endpoint. For instance,
+        "https://localhost:1976/v1", it should end in "/v1". Additionally, the "model"
+        parameter must be set to the name of the model inside the NIM.
+        """
         if isinstance(self, str):
             raise ValueError("Please construct the model before calling mode()")
-        out = self
-        if mode in ["nvidia"]:
-            key_var = "NVIDIA_API_KEY"
-            my_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY", "")
 
-            # api_key = os.getenv(key_var)
+        if mode == "nim":
+            if not base_url:
+                raise ValueError("base_url is required for nim mode")
+        if not base_url:
+            base_url = DEFAULT_BASE_URL
 
-            if not api_key.startswith("nvapi-"):
-                raise ValueError(f"No {key_var} in env/fed as api_key. (nvapi-...)")
-
-        out._mode = mode
-
-        if mode == "nvidia":
-            ## NVIDIA API Catalog Integration: OpenAPI-spec gateway over NVCF endpoints
-
-            out._url = BASE_URL
-            ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
-            out.model = model_lookup[mode][0]
-            out._api_key = my_key
-            out._headers = {
-                "Authorization": f"Bearer {my_key}",
-                "Accept": "application/json",
-            }
-            out._score = "logit"
-
-        elif mode == "nim":
-            ## OpenAPI-style specs to connect to NeMo Inference Microservices etc.
-            ## Most generic option, requires specifying base_url
-
-            if base_url.endswith("/ranking"):
+        self._mode = mode
+        if base_url:
+            # TODO: change this to not require /v1 at the end. the current
+            #       implementation is for consistency, but really this code
+            #       should dictate which version it works with
+            components = urlparse(base_url)
+            if not components.scheme or not components.netloc:
                 raise ValueError(
-                    f"Incorrect url format {base_url}, you do not need to extend '/ranking' at the end, as an example, here is a valid url format :http://.../v1/"
+                    f"Incorrect url format, use https://host:port/v1, given '{base_url}'"
                 )
-            out._url = base_url + "/ranking"
-            out._headers = {
-                "accept": "application/json",
-                "Content-Type": "application/json",
-            }
-            out._score = "score"
+            last_nonempty_path_component = [x for x in components.path.split("/") if x][
+                -1
+            ]
+            if base_url != DEFAULT_BASE_URL and last_nonempty_path_component != "v1":
+                raise ValueError(
+                    f"Incorrect url format, use https://host:post/v1 ending with /v1, given '{base_url}'"
+                )
+            self._base_url = base_url
+        if model:
+            self.model = model
+        if api_key:
+            self._set_api_key(api_key)
 
-            ## API Catalog is early, so no models list yet. Undercut to nvcf for now.
-            out.model = model_lookup[mode][0]
-
-        else:
-            options = ["nvidia", "nim"]
-            raise ValueError(f"Unknown mode: `{mode}`. Expected one of {options}.")
-
-        return out
+        return self
 
     @classmethod
     def class_name(cls) -> str:
-        return "NVIDIAReranker"
-
-    def _batch(self, iterable: Iterable, size: int):
-        """Batch an iterable into chunks of a given size."""
-        iterator = iter(iterable)
-        for first in iterator:
-            yield list(islice(iterator, size))
+        return "NVIDIARerank"
 
     def _postprocess_nodes(
         self,
@@ -161,10 +136,18 @@ class NVIDIARerank(BaseNodePostprocessor):
             )
         if len(nodes) == 0:
             return []
-        model = self.model
 
-        top_n = self.top_n
         session = requests.Session()
+
+        _headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Accept": "application/json",
+        }
+
+        # TODO: replace with itertools.batched in python 3.12
+        def batched(ls: list, size: int) -> Generator[List[NodeWithScore], None, None]:
+            for i in range(0, len(ls), size):
+                yield ls[i : i + size]
 
         with self.callback_manager.event(
             CBEventType.RERANKING,
@@ -175,31 +158,49 @@ class NVIDIARerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            current_url = self._url
-
-            new_nodes = []
             results = []
-
-            for batch_nodes in self._batch(nodes, self.max_batch_size):
+            for batch in batched(nodes, self.max_batch_size):
                 payloads = {
-                    "model": model,
+                    "model": self.model,
                     "query": {"text": query_bundle.query_str},
-                    "passages": [{"text": n.get_content()} for n in batch_nodes],
+                    "passages": [{"text": n.get_content()} for n in batch],
                 }
                 response = session.post(
-                    current_url, headers=self._headers, json=payloads
+                    self._base_url + "/reranking", headers=_headers, json=payloads
                 )
-
                 response.raise_for_status()
-                results = response.json()["rankings"]
-                for result in results:
-                    new_node_with_score = NodeWithScore(
-                        node=nodes[result["index"]], score=result[self._score]
+                # expected response format:
+                # {
+                #     "rankings": [
+                #         {
+                #             "index": 0,
+                #             "logit": 0.0
+                #         },
+                #         ...
+                #     ]
+                # }
+                assert (
+                    "rankings" in response.json()
+                ), "Response does not contain expected 'rankings' key"
+                assert isinstance(
+                    response.json()["rankings"], list
+                ), "Response 'rankings' is not a list"
+                assert all(
+                    isinstance(result, dict) for result in response.json()["rankings"]
+                ), "Response 'rankings' is not a list of dictionaries"
+                assert all(
+                    "index" in result and "logit" in result
+                    for result in response.json()["rankings"]
+                ), "Response 'rankings' is not a list of dictionaries with 'index' and 'logit' keys"
+                for result in response.json()["rankings"][: self.top_n]:
+                    results.append(
+                        NodeWithScore(
+                            node=batch[result["index"]].node, score=result["logit"]
+                        )
                     )
-                    new_nodes.append(new_node_with_score)
             if len(nodes) > self.max_batch_size:
-                new_nodes = sorted(new_nodes, key=lambda x: -x.score if x.score else 0)
-            new_nodes = new_nodes[: self.top_n]
-            event.on_end(payload={EventPayload.NODES: new_nodes})
+                results.sort(key=lambda x: x.score, reverse=True)
+            results = results[: self.top_n]
+            event.on_end(payload={EventPayload.NODES: results})
 
-        return new_nodes
+        return results

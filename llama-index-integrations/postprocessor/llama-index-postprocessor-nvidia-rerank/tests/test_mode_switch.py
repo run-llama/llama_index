@@ -1,6 +1,7 @@
 import pytest
 
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
+from llama_index.postprocessor.nvidia_rerank.base import DEFAULT_BASE_URL
 
 from .conftest import no_env_var
 
@@ -24,7 +25,7 @@ def test_mode_switch_nim_throws_without_url():
 
 
 def test_mode_switch_nim_with_url():
-    NVIDIARerank().mode("nim", base_url="test")
+    NVIDIARerank().mode("nim", base_url="http://host/test/v1")
 
 
 def test_mode_switch_param_setting():
@@ -32,18 +33,9 @@ def test_mode_switch_param_setting():
 
     isntance1 = instance0.mode("nim", base_url="https://test_url/v1/")
     assert isntance1.model == "dummy"
-    assert str(isntance1._client.base_url) == "https://test_url/v1/"
-    assert str(isntance1._aclient.base_url) == "https://test_url/v1/"
+    assert str(isntance1._base_url) == "https://test_url/v1/"
 
     instance2 = isntance1.mode("nvidia", api_key="test", model="dummy-2")
     assert instance2.model == "dummy-2"
-    assert (
-        str(instance2._client.base_url)
-        == "https://ai.api.nvidia.com/v1/retrieval/nvidia/"
-    )
-    assert (
-        str(instance2._aclient.base_url)
-        == "https://ai.api.nvidia.com/v1/retrieval/nvidia/"
-    )
-    assert instance2._client.api_key == "test"
-    assert instance2._aclient.api_key == "test"
+    assert str(instance2._base_url) == DEFAULT_BASE_URL
+    assert instance2._api_key == "test"
