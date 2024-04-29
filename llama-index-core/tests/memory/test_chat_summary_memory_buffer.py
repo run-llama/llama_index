@@ -115,7 +115,7 @@ def test_put_get_summarize_long_message(summarizer_llm) -> None:
     # When I get the chat history from the memory
     history = memory.get()
 
-    # Then the history should contain the full message
+    # Then the history should contain the summarized message
     assert len(history) == 1
     assert history[0].content == FIRST_SUMMARY_RESPONSE
 
@@ -137,7 +137,7 @@ def test_put_get_summarize_part_of_conversation(summarizer_llm) -> None:
     # When I get the chat history from the memory
     history = memory.get()
 
-    # Then the history should contain the full message for the first two and
+    # Then the history should contain the full message for the latest two and
     # a summary for the older messages
     assert len(history) == 3
     assert history[0].content == FIRST_SUMMARY_RESPONSE
