@@ -14,15 +14,21 @@ DEFAULT_TOKEN_LIMIT_FULL_TEXT = 2000
 SUMMARIZE_PROMPT = "The following is a conversation between the user and assistant. Write a concise summary about the contents of this conversation."
 
 
+# TODO: Add option for last N user/assistant history interactions instead of token limit
 class ChatSummaryMemoryBuffer(BaseMemory):
     """Buffer for storing chat history that uses the full text for the latest
-    {interaction_limit_full_text} chat interactions or {token_limit_full_text} tokens.
+    {token_limit_full_text}.
 
     All older messages are iteratively summarized using the {summarizer_llm} provided, with
-    the max number of tokens defined by the {summarizer_llm}
+    the max number of tokens defined by the {summarizer_llm}.
 
-    This approach is useful to retain long chat history, while limiting the token count
-    and latency of each request to the LLM.
+    User can specify whether initial tokens (usually a system prompt)
+    should be counted as part of the {token_limit_full_text}
+    using the parameter {count_initial_tokens}.
+
+    This buffer is useful to retain the most important information from a
+    long chat history, while limiting the token count and latency
+    of each request to the LLM.
     """
 
     token_limit_full_text: int
@@ -42,6 +48,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     @root_validator(pre=True)
     def validate_memory(cls, values: dict) -> dict:
+        """Validate the memory."""
         # Validate token limits
         token_limit_full_text = values.get("token_limit_full_text", -1)
         if token_limit_full_text < 1:
