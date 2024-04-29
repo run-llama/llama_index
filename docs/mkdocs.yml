@@ -85,6 +85,7 @@ nav:
           - ./examples/agent/coa_agent.ipynb
           - ./examples/agent/lats_agent.ipynb
           - ./examples/agent/llm_compiler.ipynb
+          - ./examples/agent/structured_planner.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
