@@ -22,6 +22,7 @@ def query() -> str:
 
 @pytest.fixture()
 def documents(text: str) -> List[Document]:
+    # TODO: remove workaround ([:456]) for server-side truncation bug
     return [Document(text=text[:456]) for text in SentenceSplitter().split_text(text)]
 
 
