@@ -45,7 +45,7 @@ class OCIGenAI(LLM):
     https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
 
     The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE
+    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
 
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service.
@@ -83,7 +83,7 @@ class OCIGenAI(LLM):
     )
 
     auth_type: Optional[str] = Field(
-        description="Authentication type, can be: API_KEY, SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE. If not specified, API_KEY will be used",
+        description="Authentication type, can be: API_KEY, SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used",
         default="API_KEY"
     )
 
@@ -142,7 +142,7 @@ class OCIGenAI(LLM):
 
             compartment_id (str): OCID of the compartment.
 
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
                                     If not specified, API_KEY will be used
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used

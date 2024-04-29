@@ -33,7 +33,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
     https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
 
     The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE
+    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
 
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service. If a specific config profile is used,
@@ -77,7 +77,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
     )
 
     auth_type: Optional[str] = Field(
-        description="Authentication type, can be: API_KEY, SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE. If not specified, API_KEY will be used",
+        description="Authentication type, can be: API_KEY, SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used",
         default="API_KEY",
     )
 
@@ -118,7 +118,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
             compartment_id (str): OCID of the compartment.
 
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE.
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
                                     If not specified, API_KEY will be used
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
@@ -185,7 +185,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 raise ValueError(
                     """Could not authenticate with OCI client. 
                     Please check if ~/.oci/config exists. 
-                    If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, 
+                    If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, 
                     Please check the specified 
                     auth_profile and auth_type are valid.""",
                     e
