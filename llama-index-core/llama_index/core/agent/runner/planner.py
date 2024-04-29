@@ -110,7 +110,7 @@ class PlannerAgentState(AgentState):
 DEFAULT_INITIAL_PLAN_PROMPT = """\
 Think step-by-step. Given a task and a set of tools, create a comprehesive, end-to-end plan to accomplish the task.
 Keep in mind not every task needs to be decomposed into multiple sub-tasks if it is simple enough.
-The plan should end with a sub-task that satisfies the overall task.
+The plan should end with a sub-task that can achieve the overall task.
 
 The tools available are:
 {tools_str}
@@ -120,20 +120,20 @@ Overall Task: {task}
 
 DEFAULT_PLAN_REFINE_PROMPT = """\
 Think step-by-step. Given an overall task, a set of tools, and completed sub-tasks, update (if needed) the remaining sub-tasks so that the overall task can still be completed.
-The plan should end with a sub-task that satisfies the overall task.
-If the remaining sub-tasks are sufficient, you can skip this step.
+The plan should end with a sub-task that can achieve and satisfy the overall task.
+If you do update the plan, only create new sub-tasks that will replace the remaining sub-tasks, do NOT repeat tasks that are already completed.
+If the remaining sub-tasks are enough to achieve the overall task, it is ok to skip this step, and instead explain why the plan is complete.
 
 The tools available are:
 {tools_str}
-
-Overall Task:
-{task}
 
 Completed Sub-Tasks + Outputs:
 {completed_outputs}
 
 Remaining Sub-Tasks:
 {remaining_sub_tasks}
+
+Overall Task: {task}
 """
 
 
@@ -301,16 +301,22 @@ class StructuredPlannerAgent(AgentRunner):
     ) -> str:
         """Get the refine plan prompt."""
         # gather completed sub-tasks and response pairs
-        completed_pairs_str = []
+        completed_outputs_str = ""
         for sub_task, response in completed_sub_task_pairs:
-            completed_pairs_str.append(f"{sub_task.name} -> {response!s}")
-        completed_outputs_str = "\n".join(completed_pairs_str)
+            task_str = f"{sub_task.name}:\n" f"\t{response!s}\n"
+            completed_outputs_str += task_str
 
         # get a string for the remaining sub-tasks
         remaining_sub_tasks = self.state.get_remaining_subtasks(plan_id)
-        remaining_sub_tasks_str = "\n".join(
-            [str(sub_task) for sub_task in remaining_sub_tasks]
-        )
+        remaining_sub_tasks_str = "" if len(remaining_sub_tasks) != 0 else "None"
+        for sub_task in remaining_sub_tasks:
+            task_str = (
+                f"SubTask(name='{sub_task.name}', "
+                f"input='{sub_task.input}', "
+                f"expected_output='{sub_task.expected_output}', "
+                f"dependencies='{sub_task.dependencies}')\n"
+            )
+            remaining_sub_tasks_str += task_str
 
         # get the tools string
         tools = self.get_tools(remaining_sub_tasks_str)
@@ -320,10 +326,10 @@ class StructuredPlannerAgent(AgentRunner):
 
         # predict a refined plan
         return self.plan_refine_prompt.format(
-            tools_str=tools_str,
-            task=task,
-            completed_outputs=completed_outputs_str,
-            remaining_sub_tasks=remaining_sub_tasks_str,
+            tools_str=tools_str.strip(),
+            task=task.strip(),
+            completed_outputs=completed_outputs_str.strip(),
+            remaining_sub_tasks=remaining_sub_tasks_str.strip(),
         )
 
     def refine_plan(
@@ -484,9 +490,9 @@ class StructuredPlannerAgent(AgentRunner):
 
             # EXIT CONDITION: check if all sub-tasks are completed now
             # LLMs have a tendency to add more tasks, so we end if there are no more tasks
-            next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
-            if len(next_sub_tasks) == 0:
-                break
+            # next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
+            # if len(next_sub_tasks) == 0:
+            #    break
 
             # refine the plan
             self.refine_plan(plan_id, message, completed_pairs)
@@ -533,9 +539,9 @@ class StructuredPlannerAgent(AgentRunner):
 
             # EXIT CONDITION: check if all sub-tasks are completed now
             # LLMs have a tendency to add more tasks, so we end if there are no more tasks
-            next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
-            if len(next_sub_tasks) == 0:
-                break
+            # next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
+            # if len(next_sub_tasks) == 0:
+            #    break
 
             # refine the plan
             await self.arefine_plan(plan_id, message, completed_pairs)
