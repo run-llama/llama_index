@@ -66,7 +66,7 @@ class SimpleFileNodeParser(NodeParser):
         )
 
         for document in documents_with_progress:
-            ext = document.metadata["extension"]
+            ext = document.metadata.get("extension", "None")
             if ext in FILE_NODE_PARSERS:
                 parser = FILE_NODE_PARSERS[ext](
                     include_metadata=self.include_metadata,
