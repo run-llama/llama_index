@@ -11,7 +11,7 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
-DEFAULT_BASE_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
+DEFAULT_BASE_URL = "https://ai.api.nvidia.com/v1"
 
 
 class Model(BaseModel):
@@ -113,7 +113,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             last_nonempty_path_component = [x for x in components.path.split("/") if x][
                 -1
             ]
-            if base_url != DEFAULT_BASE_URL and last_nonempty_path_component != "v1":
+            if last_nonempty_path_component != "v1":
                 raise ValueError(
                     f"Incorrect url format, use https://host:post/v1 ending with /v1, given '{base_url}'"
                 )
@@ -172,7 +172,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                 # the hosted NIM path is different from the local NIM path
                 url = self._base_url
                 if self._mode == "nvidia":
-                    url += "/reranking"
+                    url += "/retrieval/nvidia/reranking"
                 else:
                     url += "/ranking"
                 response = session.post(url, headers=_headers, json=payloads)
