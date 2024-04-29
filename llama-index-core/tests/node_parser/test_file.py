@@ -1,8 +1,8 @@
-from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.core.schema import Document
 from llama_index.core.node_parser import (
     SimpleFileNodeParser,
 )
+
 
 def test_unsupported_extension() -> None:
     simple_file_node_parser = SimpleFileNodeParser()
@@ -11,7 +11,7 @@ def test_unsupported_extension() -> None:
         [
             Document(
                 text="""def evenOdd(n):
- 
+
   # if n&1 == 0, then num is even
   if n & 1:
     return False
@@ -23,4 +23,7 @@ def test_unsupported_extension() -> None:
     )
     assert len(nodes) == 1
     assert nodes[0].metadata == {"Header_1": "Main Header"}
-    assert nodes[0].text == "def evenOdd(n):\n \n  # if n&1 == 0, then num is even\n  if n & 1:\n    return False\n  # if n&1 == 1, then num is odd\n  else:\n    return True"
+    assert (
+        nodes[0].text
+        == "def evenOdd(n):\n\n  # if n&1 == 0, then num is even\n  if n & 1:\n    return False\n  # if n&1 == 1, then num is odd\n  else:\n    return True"
+    )

@@ -9,7 +9,6 @@ from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.schema import TextNode
 
 FILE_NODE_PARSERS: Dict[str, Type[NodeParser]] = {
     ".md": MarkdownNodeParser,
@@ -82,11 +81,9 @@ class SimpleFileNodeParser(NodeParser):
                 all_nodes.extend(
                     # build node from document
                     build_nodes_from_splits(
-                        [
-                            document.get_content(metadata_mode=MetadataMode.NONE)
-                        ],
+                        [document.get_content(metadata_mode=MetadataMode.NONE)],
                         document,
-                        id_func=self.id_func
+                        id_func=self.id_func,
                     )
                 )
 
