@@ -1,3 +1,7 @@
+"""
+The spoke output parsers can take the output of the spoke LLM and transform it into a more suitable format. Particularly, it can make the spoke aware that collaboration is needed based on the output of LLM so that the spoke can initiate inter-spoke communication. We implement a SpokeParser class here.
+"""
+
 import re
 from typing import Tuple
 
@@ -67,15 +71,15 @@ def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
 
 
 class SpokeOutputParser(BaseOutputParser):
-    
     """ReAct Output parser."""
-    def __init__(self, functionality_list, spoke_operator, *args, **kwargs):
+
+    def __init__(self, functionality_list, spoke_operator, *args, **kwargs) -> None:
         # Initialize the base class
         super().__init__(*args, **kwargs)
         self.functionality_list = functionality_list
         self.spoke_operator = spoke_operator
         self.called_functionalities = {}
-    
+
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
         """Parse output from ReAct agent.
 
@@ -109,28 +113,55 @@ class SpokeOutputParser(BaseOutputParser):
             thought, action, action_input = extract_tool_use(output)
             if action in self.functionality_list:
                 if action not in self.called_functionalities:
-                    message_type, function_schema = self.spoke_operator.probe_functionality(action)
-                    
-                    if message_type != "function_probe_response" or function_schema is None:
+                    (
+                        message_type,
+                        function_schema,
+                    ) = self.spoke_operator.probe_functionality(action)
+
+                    if (
+                        message_type != "function_probe_response"
+                        or function_schema is None
+                    ):
                         message = f"Could not probe {action} functionality. YOU MUST NOT PROBE {action} AGAIN!"
 
-                        return ActionReasoningStep(thought="Use message_spoke to deliver instructions.", action="message_spoke", action_input={"message": message})  
+                        return ActionReasoningStep(
+                            thought="Use message_spoke to deliver instructions.",
+                            action="message_spoke",
+                            action_input={"message": message},
+                        )
                     self.called_functionalities[action] = {}
-                    self.called_functionalities[action]["function_schema"] = function_schema
+                    self.called_functionalities[action][
+                        "function_schema"
+                    ] = function_schema
                 else:
-                    function_schema = self.called_functionalities[action]["function_schema"]    
-                    message  = f'Use the tool "{action}" with the formatted input strictly following the tool parameter dictionary: "{str(function_schema)}"'
-                    return ActionReasoningStep(thought="", action="message_spoke", action_input={"message": message}) 
-                
-                message_type, response = self.spoke_operator.make_request(action, action_input) 
+                    function_schema = self.called_functionalities[action][
+                        "function_schema"
+                    ]
+                    message = f'Use the tool "{action}" with the formatted input strictly following the tool parameter dictionary: "{function_schema!s}"'
+                    return ActionReasoningStep(
+                        thought="",
+                        action="message_spoke",
+                        action_input={"message": message},
+                    )
+
+                message_type, response = self.spoke_operator.make_request(
+                    action, action_input
+                )
                 if message_type != "app_response":
                     message = f"Could not make request to {action}. YOU MUST NOT REQUEST {action} AGAIN!"
-                    return ActionReasoningStep(thought="", action="message_spoke", action_input={"message": message})  
+                    return ActionReasoningStep(
+                        thought="",
+                        action="message_spoke",
+                        action_input={"message": message},
+                    )
                     # Use message_spoke to deliver instructions.
-                message = f"Response from {action}: {str(response)}"
-                return ActionReasoningStep(thought="", action="message_spoke", action_input={"message": message}) 
+                message = f"Response from {action}: {response!s}"
+                return ActionReasoningStep(
+                    thought="",
+                    action="message_spoke",
+                    action_input={"message": message},
+                )
 
-                
             else:
                 return parse_action_reasoning_step(output)
 

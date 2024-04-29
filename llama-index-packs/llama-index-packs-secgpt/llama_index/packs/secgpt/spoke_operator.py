@@ -1,34 +1,38 @@
-from jsonschema import validate 
+"""
+The spoke operator is a rule-based module characterized by a clearly defined execution flow that handles communication between the spoke and the hub. To implement this functionality, we have developed a SpokeOperator class.
+"""
+
+from jsonschema import validate
 import ast
 
 from .message import Message
 
 
 class SpokeOperator:
-    def __init__(self, functionality_list):
+    def __init__(self, functionality_list) -> None:
         self.functionality_list = functionality_list
         self.spoke_id = None
         self.child_sock = None
 
     def parse_request(self, request):
         try:
-            if request.startswith('{'):
+            if request.startswith("{"):
                 request = ast.literal_eval(request)
-                functionality = request['functionality_request']
-                request_body = request['request_body']
+                functionality = request["functionality_request"]
+                request_body = request["request_body"]
                 request = f"{functionality}({request_body})"
             return request
-            
+
         except Exception as e:
             print(e)
             return str(request)
-    
+
     # Format and send the probe message to the hub
-    def probe_functionality(self, functionality:str):
+    def probe_functionality(self, functionality: str):
         # check whether the functionality is in the functionality list
         if functionality not in self.functionality_list:
-            return
-        
+            return None
+
         # format the functionality probe message
         probe_message = Message().function_probe_request(self.spoke_id, functionality)
 
@@ -36,30 +40,31 @@ class SpokeOperator:
         self.child_sock.send(probe_message)
         response = self.child_sock.recv()
 
-        if response['message_type'] == 'function_probe_response':
-            function_schema = response['functionality_offered']
+        if response["message_type"] == "function_probe_response":
+            function_schema = response["functionality_offered"]
         else:
             function_schema = None
 
-        return response['message_type'], function_schema
+        return response["message_type"], function_schema
 
     # Format and send the app request message to the hub
     def make_request(self, functionality: str, request: dict):
         # format the app request message
-        app_request_message = Message().app_request(self.spoke_id, functionality, request)
+        app_request_message = Message().app_request(
+            self.spoke_id, functionality, request
+        )
         self.child_sock.send(app_request_message)
         response = self.child_sock.recv()
-        
-        return response['message_type'], response['response']
+
+        return response["message_type"], response["response"]
 
     def check_format(self, format, instance_dict):
         try:
             validate(instance=instance_dict, schema=format)
             return True
-        except:
+        except Exception:
             return False
 
-    def return_response(self,  results):
+    def return_response(self, results):
         response = Message().final_response(self.spoke_id, results)
         self.child_sock.send(response)
-            

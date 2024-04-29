@@ -1,4 +1,7 @@
-import sys
+"""
+Each spoke runs in an isolated process. We leverage the seccomp and setrlimit system utilities to restrict access to system calls and set limits on the resources a process can consume. To implement them, we define several helper functions here, which can be configured to meet specific security or system requirements for different use scenarios or apps.
+"""
+
 import resource
 import tldextract
 import platform
@@ -8,20 +11,19 @@ TIMEOUT = 180
 
 # Set the memory, cpu and write limits
 # These are app-specific and can be be adjusted as needed
-MEMORY_LIMIT = resource.getrlimit(resource.RLIMIT_AS)[1] #10240 * 1024 * 1024  
-CPU_TIME_LIMIT = resource.getrlimit(resource.RLIMIT_CPU)[1] #2 * 60  
-WRITE_LIMIT = resource.getrlimit(resource.RLIMIT_FSIZE)[1] #10240 * 1024 * 1024  
+MEMORY_LIMIT = resource.getrlimit(resource.RLIMIT_AS)[1]  # 10240 * 1024 * 1024
+CPU_TIME_LIMIT = resource.getrlimit(resource.RLIMIT_CPU)[1]  # 2 * 60
+WRITE_LIMIT = resource.getrlimit(resource.RLIMIT_FSIZE)[1]  # 10240 * 1024 * 1024
 
 # Set the allowed root domains
-# This is a list of root domains (eTLD+1) that the app is allowed to access 
-allowed_domains = [
-    "localhost"
-]
+# This is a list of root domains (eTLD+1) that the app is allowed to access
+allowed_domains = ["localhost"]
+
 
 def get_root_domain(url):
     extracted = tldextract.extract(url)
-    root_domain = "{}.{}".format(extracted.domain, extracted.suffix)
-    return root_domain
+    return f"{extracted.domain}.{extracted.suffix}"
+
 
 def is_request_allowed(url):
     root_domain = get_root_domain(url)
@@ -37,9 +39,11 @@ def set_mem_limit():
     # write limit i.e. don't allow an infinite stream to stdout/stderr
     resource.setrlimit(resource.RLIMIT_FSIZE, (WRITE_LIMIT, WRITE_LIMIT))
 
+
 # seccomp only works for Linux
 if platform.system() == "Linux":
     import pyseccomp as seccomp
+
     # Set restrictions on system calls
     # The restrictions can be adjusted as needed based on the app's specifications
     def drop_perms():
