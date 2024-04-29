@@ -46,7 +46,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
     Example:
         .. code-block:: python
 
-            from llama_index.embeddings.ocigenai import OCIGenAIEmbeddings
+            from llama_index.embeddings.oci_genai import OCIGenAIEmbeddings
 
             embeddings = OCIGenAIEmbeddings(
                 model="MY_EMBEDDING_MODEL",

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest import MonkeyPatch
 
-from llama_index.embeddings.ocigenai import OCIGenAIEmbeddings
+from llama_index.embeddings.oci_genai import OCIGenAIEmbeddings
 
 
 class MockResponseDict(dict):
