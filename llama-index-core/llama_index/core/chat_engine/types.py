@@ -147,7 +147,6 @@ class StreamingAgentChatResponse:
         self,
         memory: BaseMemory,
         on_stream_end_fn: Optional[callable] = None,
-        raise_error: bool = False,
     ) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -176,12 +175,7 @@ class StreamingAgentChatResponse:
                 memory.put(chat.message)
         except Exception as e:
             dispatch_event(StreamChatErrorEvent(exception=e))
-            if not raise_error:
-                logger.warning(
-                    f"Encountered exception writing response to history: {e}"
-                )
-            else:
-                raise
+            raise
         dispatch_event(StreamChatEndEvent())
 
         self._is_done = True
@@ -230,7 +224,7 @@ class StreamingAgentChatResponse:
                 memory.put(chat.message)
         except Exception as e:
             dispatch_event(StreamChatErrorEvent(exception=e))
-            logger.warning(f"Encountered exception writing response to history: {e}")
+            raise
         dispatch_event(StreamChatEndEvent())
         self._is_done = True
 
