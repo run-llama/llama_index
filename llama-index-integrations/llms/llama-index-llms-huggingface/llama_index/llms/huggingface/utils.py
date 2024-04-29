@@ -14,13 +14,13 @@ def resolve_tgi_function_call(url: str) -> bool:
     url = f"{url}/info"
     model_info = dict(requests.get(url).json())
     tgi_version = model_info.get("version", None)
-    if version.parse(tgi_version) >= version.parse("1.4.3"):
+    if version.parse(tgi_version) >= version.parse("2.0.1"):
         return True
     else:
         raise ValueError(
             "'text-generation-inference' version ",
             f"incompatible with function call: {tgi_version}. ",
-            "Function call support was added in v1.4.3",
+            "Function call support was added in v2.0.1",
         )
 
 
