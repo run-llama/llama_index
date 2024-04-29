@@ -125,6 +125,8 @@ worker = FunctionCallingAgentWorker.from_tools(tools, llm=llm)
 agent = StructuredPlannerAgent(worker)
 ```
 
+In general, this agent may take longer to respond compared to the basic `AgentRunner` class, but the outputs will often be more complete. Another tradeoff to consider is that planning often requires a very capable LLM (for context, `gpt-3.5-turbo` is sometimes flakey for planning, while `gpt-4-turbo` does much better.)
+
 See more in the [complete guide](../../../examples/agent/structured_planner.ipynb)
 
 ## Lower-Level API
