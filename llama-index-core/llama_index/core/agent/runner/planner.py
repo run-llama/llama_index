@@ -60,6 +60,9 @@ class PlannerAgentState(AgentState):
         default_factory=dict, description="A list of completed sub-tasks for each plan."
     )
 
+    def get_completed_sub_tasks(self, plan_id: str) -> List[SubTask]:
+        return self.completed_sub_tasks.get(plan_id, [])
+
     def add_completed_sub_task(self, plan_id: str, sub_task: SubTask) -> None:
         if plan_id not in self.completed_sub_tasks:
             self.completed_sub_tasks[plan_id] = []
@@ -163,8 +166,8 @@ class StructuredPlannerAgent(AgentRunner):
         state: Optional[PlannerAgentState] = None,
         memory: Optional[BaseMemory] = None,
         llm: Optional[LLM] = None,
-        initial_plan_prompt: str = DEFAULT_INITIAL_PLAN_PROMPT,
-        plan_refine_prompt: str = DEFAULT_PLAN_REFINE_PROMPT,
+        initial_plan_prompt: Union[str, PromptTemplate] = DEFAULT_INITIAL_PLAN_PROMPT,
+        plan_refine_prompt: Union[str, PromptTemplate] = DEFAULT_PLAN_REFINE_PROMPT,
         callback_manager: Optional[CallbackManager] = None,
         init_task_state_kwargs: Optional[dict] = None,
         delete_task_on_finish: bool = False,
@@ -178,7 +181,13 @@ class StructuredPlannerAgent(AgentRunner):
         self.tools = tools
         self.tool_retriever = tool_retriever
         self.llm = llm or Settings.llm
+
+        if isinstance(initial_plan_prompt, str):
+            initial_plan_prompt = PromptTemplate(initial_plan_prompt)
         self.initial_plan_prompt = initial_plan_prompt
+
+        if isinstance(plan_refine_prompt, str):
+            plan_refine_prompt = PromptTemplate(plan_refine_prompt)
         self.plan_refine_prompt = plan_refine_prompt
 
         # get and set callback manager
@@ -216,12 +225,12 @@ class StructuredPlannerAgent(AgentRunner):
         for tool in tools:
             tools_str += tool.metadata.name + ": " + tool.metadata.description + "\n"
 
-        prompt = self.initial_plan_prompt.format(tools_str=tools_str, task=input)
-
         try:
             plan = self.llm.structured_predict(
                 Plan,
-                PromptTemplate(prompt),
+                self.initial_plan_prompt,
+                tools_str=tools_str,
+                task=input,
             )
         except (ValueError, ValidationError):
             # likely no complex plan predicted
@@ -258,12 +267,12 @@ class StructuredPlannerAgent(AgentRunner):
         for tool in tools:
             tools_str += tool.metadata.name + ": " + tool.metadata.description + "\n"
 
-        prompt = self.initial_plan_prompt.format(tools_str=tools_str, task=input)
-
         try:
             plan = await self.llm.astructured_predict(
                 Plan,
-                PromptTemplate(prompt),
+                self.initial_plan_prompt,
+                tools_str=tools_str,
+                task=input,
             )
         except (ValueError, ValidationError):
             # likely no complex plan predicted
@@ -293,12 +302,12 @@ class StructuredPlannerAgent(AgentRunner):
 
         return plan_id
 
-    def get_refine_plan_prompt(
+    def get_refine_plan_prompt_kwargs(
         self,
         plan_id: str,
         task: str,
         completed_sub_task_pairs: List[Tuple[SubTask, AGENT_CHAT_RESPONSE_TYPE]],
-    ) -> str:
+    ) -> dict:
         """Get the refine plan prompt."""
         # gather completed sub-tasks and response pairs
         completed_outputs_str = ""
@@ -324,13 +333,13 @@ class StructuredPlannerAgent(AgentRunner):
         for tool in tools:
             tools_str += tool.metadata.name + ": " + tool.metadata.description + "\n"
 
-        # predict a refined plan
-        return self.plan_refine_prompt.format(
-            tools_str=tools_str.strip(),
-            task=task.strip(),
-            completed_outputs=completed_outputs_str.strip(),
-            remaining_sub_tasks=remaining_sub_tasks_str.strip(),
-        )
+        # return the kwargs
+        return {
+            "tools_str": tools_str.strip(),
+            "task": task.strip(),
+            "completed_outputs": completed_outputs_str.strip(),
+            "remaining_sub_tasks": remaining_sub_tasks_str.strip(),
+        }
 
     def refine_plan(
         self,
@@ -339,12 +348,14 @@ class StructuredPlannerAgent(AgentRunner):
         completed_sub_task_pairs: List[Tuple[SubTask, AGENT_CHAT_RESPONSE_TYPE]],
     ) -> None:
         """Refine a plan."""
-        refine_str = self.get_refine_plan_prompt(
+        prompt_kwargs = self.get_refine_plan_prompt_kwargs(
             plan_id, task, completed_sub_task_pairs
         )
 
         try:
-            new_plan = self.llm.structured_predict(Plan, PromptTemplate(refine_str))
+            new_plan = self.llm.structured_predict(
+                Plan, self.plan_refine_prompt, **prompt_kwargs
+            )
 
             # delete any tasks from the previous plan
             for sub_task in self.state.plan_dict[plan_id].sub_tasks:
@@ -372,13 +383,13 @@ class StructuredPlannerAgent(AgentRunner):
         completed_sub_task_pairs: List[Tuple[SubTask, AGENT_CHAT_RESPONSE_TYPE]],
     ) -> None:
         """Refine a plan."""
-        refine_str = self.get_refine_plan_prompt(
+        prompt_args = self.get_refine_plan_prompt_kwargs(
             plan_id, task, completed_sub_task_pairs
         )
 
         try:
             new_plan = await self.llm.astructured_predict(
-                Plan, PromptTemplate(refine_str)
+                Plan, self.plan_refine_prompt, **prompt_args
             )
 
             # delete any tasks from the previous plan
