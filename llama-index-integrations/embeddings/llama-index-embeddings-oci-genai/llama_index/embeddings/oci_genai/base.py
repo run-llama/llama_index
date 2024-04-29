@@ -183,11 +183,12 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 ) from ex
             except Exception as e:
                 raise ValueError(
-                    "Could not authenticate with OCI client. "
-                    "Please check if ~/.oci/config exists. "
-                    "If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, "
-                    "Please check the specified "
-                    "auth_profile and auth_type are valid."
+                    """Could not authenticate with OCI client. 
+                    Please check if ~/.oci/config exists. 
+                    If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, 
+                    Please check the specified 
+                    auth_profile and auth_type are valid.""",
+                    e
                 ) from e
 
         super().__init__(
