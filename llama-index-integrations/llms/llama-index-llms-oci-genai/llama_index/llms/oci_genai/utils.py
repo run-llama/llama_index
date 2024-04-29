@@ -81,12 +81,12 @@ def create_client(auth_type, auth_profile, service_endpoint):
             client_kwargs[
                 "signer"
             ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-        elif "auth_type" == OCIAuthType(4).name:
+        elif auth_type == OCIAuthType(4).name:
             client_kwargs[
                 "signer"
             ] = oci.auth.signers.get_resource_principals_signer()
         else:
-            raise ValueError("Please provide valid value to auth_type")
+            raise ValueError(f"Please provide valid value to auth_type, {auth_type} is not valid.")
   
         return oci.generative_ai_inference.GenerativeAiInferenceClient(**client_kwargs)
             
@@ -97,10 +97,8 @@ def create_client(auth_type, auth_profile, service_endpoint):
         ) from ex
     except Exception as e:
         raise ValueError(
-            """Could not authenticate with OCI client.
-            Please check if ~/.oci/config exists. 
-            If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, 
-            Please check the specified 
+            """Could not authenticate with OCI client. Please check if ~/.oci/config exists. 
+            If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified 
             auth_profile and auth_type are valid.""",
             e
         ) from e
