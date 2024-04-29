@@ -108,6 +108,25 @@ query_engine_tools = [
 outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
+## Agent With Planning
+
+Breaking down an initial task into easier-to-digest sub-tasks is a powerful pattern.
+
+LlamaIndex provides an agent planning module that does just this:
+
+```python
+from llama_index.agent.openai import OpenAIAgentWorker
+from llama_index.core.agent import (
+    StructuredPlannerAgent,
+    FunctionCallingAgentWorker,
+)
+
+worker = FunctionCallingAgentWorker.from_tools(tools, llm=llm)
+agent = StructuredPlannerAgent(worker)
+```
+
+See more in the [complete guide](../../../examples/agent/structured_planner.ipynb)
+
 ## Lower-Level API
 
 The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.
