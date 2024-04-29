@@ -11,7 +11,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.ocigenai"
+import_path = "llama_index.llms.oci_genai"
 
 [tool.llamahub.class_authors]
 OCIGenAI = "llama-index"
@@ -24,10 +24,10 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-llms-ocigenai"
+name = "llama-index-llms-oci-genai"
 version = "0.1.0"
-description = "llama-index llms ocigenai integration"
-authors = ["Your Name <you@example.com>"]
+description = "llama-index llms OCI GenAI integration"
+authors = ["Rave Harpaz <rave.harpaz@oracle.com>", "Arthur Cheng <arthur.cheng@oracle.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "llama_index/"}]
@@ -35,6 +35,7 @@ packages = [{include = "llama_index/"}]
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
+oci = ">=2.125.3"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

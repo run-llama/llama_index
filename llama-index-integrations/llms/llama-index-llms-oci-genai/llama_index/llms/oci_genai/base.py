@@ -26,7 +26,7 @@ from llama_index.core.llms.callbacks import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
-from llama_index.llms.ocigenai.utils import (
+from llama_index.llms.oci_genai.utils import (
     OCIGENAI_LLMS,
     STREAMING_MODELS,
     CHAT_MODELS,
@@ -59,7 +59,7 @@ class OCIGenAI(LLM):
     Example:
         .. code-block:: python
 
-            from llama_index.llms.ocigenai import OCIGenAI
+            from llama_index.llms.oci_genai import OCIGenAI
 
             llm = OCIGenAI(
                     model="MY_MODEL_ID",

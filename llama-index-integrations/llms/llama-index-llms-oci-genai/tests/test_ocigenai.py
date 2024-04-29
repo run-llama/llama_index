@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest import MonkeyPatch
 
-from llama_index.llms.ocigenai import OCIGenAI
+from llama_index.llms.oci_genai import OCIGenAI
 from llama_index.core.llms import ChatMessage
 
 
