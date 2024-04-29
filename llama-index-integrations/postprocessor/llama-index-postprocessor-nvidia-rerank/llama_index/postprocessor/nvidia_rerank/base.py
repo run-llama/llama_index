@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Literal, Generator
 
 from urllib.parse import urlparse
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
@@ -9,13 +9,13 @@ import requests
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
-# from _statics import MODEL_SPECS, Model
-
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
 DEFAULT_BASE_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia"
 
-model_lookup = {"nvidia": [DEFAULT_MODEL], "nim": [DEFAULT_MODEL]}
+
+class Model(BaseModel):
+    id: str
 
 
 class NVIDIARerank(BaseNodePostprocessor):
@@ -60,8 +60,12 @@ class NVIDIARerank(BaseNodePostprocessor):
 
         self._set_api_key(nvidia_api_key, api_key)
 
-    def get_available_models():
-        return model_lookup.items()
+    @property
+    def available_models(self) -> List[Model]:
+        """Get available models."""
+        # there is one model on ai.nvidia.com and available as a local NIM
+        ids = [DEFAULT_MODEL]
+        return [Model(id=id) for id in ids]
 
     def mode(
         self,
@@ -165,9 +169,13 @@ class NVIDIARerank(BaseNodePostprocessor):
                     "query": {"text": query_bundle.query_str},
                     "passages": [{"text": n.get_content()} for n in batch],
                 }
-                response = session.post(
-                    self._base_url + "/reranking", headers=_headers, json=payloads
-                )
+                # the hosted NIM path is different from the local NIM path
+                url = self._base_url
+                if self._mode == "nvidia":
+                    url += "/reranking"
+                else:
+                    url += "/ranking"
+                response = session.post(url, headers=_headers, json=payloads)
                 response.raise_for_status()
                 # expected response format:
                 # {

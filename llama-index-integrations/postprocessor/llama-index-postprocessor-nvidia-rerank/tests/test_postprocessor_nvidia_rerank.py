@@ -31,11 +31,15 @@ def nodes(documents: List[Document]) -> List[NodeWithScore]:
 
 
 @pytest.mark.integration()
-def test_basic() -> None:
+def test_basic(model: str, mode: dict) -> None:
     text = "Testing leads to failure, and failure leads to understanding."
-    result = NVIDIARerank().postprocess_nodes(
-        [NodeWithScore(node=Document(text=text))],
-        query_str=text,
+    result = (
+        NVIDIARerank(model=model)
+        .mode(**mode)
+        .postprocess_nodes(
+            [NodeWithScore(node=Document(text=text))],
+            query_str=text,
+        )
     )
     assert result
     assert isinstance(result, list)
@@ -47,12 +51,16 @@ def test_basic() -> None:
 
 
 @pytest.mark.integration()
-def test_accuracy() -> None:
+def test_accuracy(model: str, mode: dict) -> None:
     texts = ["first", "last"]
     query = "last"
-    result = NVIDIARerank().postprocess_nodes(
-        [NodeWithScore(node=Document(text=text)) for text in texts],
-        query_str=query,
+    result = (
+        NVIDIARerank(model=model)
+        .mode(**mode)
+        .postprocess_nodes(
+            [NodeWithScore(node=Document(text=text)) for text in texts],
+            query_str=query,
+        )
     )
     assert result
     assert isinstance(result, list)
