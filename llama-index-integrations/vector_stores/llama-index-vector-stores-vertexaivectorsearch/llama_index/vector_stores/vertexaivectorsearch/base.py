@@ -1,4 +1,4 @@
-"""Weaviate Vector store index.
+"""Vertex AI Vector store index.
 
 An index that is built on top of an existing vector store.
 
