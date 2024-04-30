@@ -15,10 +15,6 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
     Splits a json format document from DashScope Parse into Text Nodes and Index Nodes
     corresponding to embedded objects (e.g. tables).
     """
-    service_url: str = Field(
-        default="https://int-dashscope.aliyuncs.com/api/v1/indeces/component/configed_transformations/spliter",
-        description="URL of the service endpoint."
-    )
     try_count_limit: int = Field(
         default=10,
         description="Maximum number of retry attempts."
@@ -86,8 +82,11 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
             "Accept-Encoding": "utf-8",
             'Authorization': 'Bearer ' + DASHSCOPE_API_KEY,
         }
+        service_url = os.getenv('DASHSCOPE_BASE_URL', "https://dashscope.aliyuncs.com") + "/api/v1/indices/component/configed_transformations/spliter"
+        response = requests.post(service_url, data=json.dumps(my_input), headers=headers)
+        response_text = response.json()
         try:
-            response = requests.post(self.service_url, data=json.dumps(my_input), headers=headers)
+            response = requests.post(service_url, data=json.dumps(my_input), headers=headers)
             response_text = response.json()
             if 'chunkService' in response_text:
                 return response_text['chunkService']['chunkResult']
