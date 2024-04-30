@@ -1,11 +1,7 @@
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatPromptTemplate,
-    MessageRole,
-)
+from llama_index.core.prompts import ChatPromptTemplate, ChatMessage, MessageRole
 from llama_index.core.prompts.chat_prompts import TEXT_QA_SYSTEM_PROMPT
 from tenacity import (
     before_sleep_log,
@@ -40,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: decide later where this should be moved
 class DocumentMessage(ChatMessage):
-    role: MessageRole = MessageRole.USER
+    role: MessageRole = MessageRole.SYSTEM
 
 
 COHERE_QA_TEMPLATE = ChatPromptTemplate(
@@ -87,12 +83,6 @@ def completion_with_retry(
             if is_stream:
                 return client.chat_stream(**kwargs)
             else:
-                print("$" * 33)
-                print("MESSAGE")
-                print(kwargs.get("message", None))
-                print("DOCUMENTS")
-                print(kwargs.get("documents", None))
-                print("$" * 33)
                 return client.chat(**kwargs)
         else:
             if is_stream:
@@ -144,6 +134,26 @@ def is_chat_model(model: str) -> bool:
     return model in COMMAND_MODELS
 
 
+def remove_documents_from_messages(
+    messages: Sequence[ChatMessage],
+) -> Tuple[Sequence[ChatMessage], List[Dict[str, str]]]:
+    """
+    Splits messages into two lists: `remaining` and `documents`.
+    `messages` contains all messages that aren't of type DocumentMessage (e.g. history, query).
+    `documents` contains the retrieved documents, formatted as expected by Cohere RAG inference calls.
+
+    NOTE: this will mix turns for multi-turn RAG
+    """
+    documents = []
+    remaining = []
+    for msg in messages:
+        if isinstance(msg, DocumentMessage):
+            documents.append(msg)
+        else:
+            remaining.append(msg)
+    return remaining, messages_to_cohere_documents(documents)
+
+
 def messages_to_cohere_history(
     messages: Sequence[ChatMessage],
 ) -> List[Dict[str, Optional[str]]]:
@@ -162,10 +172,21 @@ def messages_to_cohere_history(
     ]
 
 
-def message_to_cohere_documents(message: DocumentMessage) -> List[str]:
+def messages_to_cohere_documents(
+    messages: List[DocumentMessage],
+) -> List[Dict[str, str]]:
     """
-    Splits out individual documents from `message` in the format expected by Cohere.chat's
-    `document` argument.
+    Splits out individual documents from `messages` in the format expected by Cohere.chat's `documents`.
+    """
+    documents = []
+    for msg in messages:
+        documents.extend(_message_to_cohere_documents(msg))
+    return documents
+
+
+def _message_to_cohere_documents(message: DocumentMessage) -> List[Dict[str, str]]:
+    """
+    Splits out individual documents from a single `message` in the format expected by Cohere.chat's `documents`.
 
     NOTE: current implementation is brittle and depends on the formatting of specific retriever.
     I don't yet understand how to control that retriever logic.
@@ -173,7 +194,6 @@ def message_to_cohere_documents(message: DocumentMessage) -> List[str]:
     TODO: make document-splitting logic robust to different retrievers
     TODO: handle additional_kwargs from DocumentMessage
     """
-    # TODO: move try/except outside
     # TODO: better: look for pattern of k: v values, then parse anew
     try:
         documents = []
@@ -188,5 +208,4 @@ def message_to_cohere_documents(message: DocumentMessage) -> List[str]:
     except Exception:
         # Parsing failed. This is likely because 'message' was built from a different retriever
         # Return a default formatting to avoid breaking pipeline
-        # TODO: raise warning?
-        return [{"text": message.content}]
+        return [message.content]
