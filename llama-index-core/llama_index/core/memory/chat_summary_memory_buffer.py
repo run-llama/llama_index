@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
@@ -116,10 +116,10 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         return self.dict()
 
     @classmethod
-    def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
+    def from_string(cls, json_str: str, **kwargs: Any) -> "ChatSummaryMemoryBuffer":
         """Create a chat memory buffer from a string."""
         dict_obj = json.loads(json_str)
-        return cls.from_dict(dict_obj)
+        return cls.from_dict(dict_obj, **kwargs)
 
     @classmethod
     def from_dict(
@@ -137,14 +137,11 @@ class ChatSummaryMemoryBuffer(BaseMemory):
             chat_store = load_chat_store(chat_store)
             data["chat_store"] = chat_store
 
-        # NOTE: The llm will have to be set manually.
+        # NOTE: The llm will have to be set manually in kwargs
         if "llm" in data:
-            logger.warning(
-                f"The llm has not been loaded. It will have to be set manually."
-            )
             data.pop("llm")
 
-        return cls(**data)
+        return cls(**data, **kwargs)
 
     def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
@@ -209,7 +206,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     def _split_messages_summary_or_full_text(
         self, chat_history: List[ChatMessage]
-    ) -> (List[ChatMessage], List[ChatMessage]):
+    ) -> Tuple[List[ChatMessage], List[ChatMessage]]:
         """Determine which messages will be included as full text,
         and which will have to be summarized by the llm.
         """
@@ -274,7 +271,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         self,
         chat_history_full_text: List[ChatMessage],
         chat_history_to_be_summarized: List[ChatMessage],
-    ) -> (List[ChatMessage], List[ChatMessage]):
+    ) -> Tuple[List[ChatMessage], List[ChatMessage]]:
         """To avoid breaking API's, we need to ensure the following.
 
         - the first message cannot be ASSISTANT
