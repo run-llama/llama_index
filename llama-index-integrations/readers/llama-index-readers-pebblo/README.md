@@ -27,7 +27,15 @@ documents = reader.load_data(file=Path('data/corp_sens_data.csv'))
 print(documents)
 ```
 
-The Pebblo SafeReader can be enabled with few lines of code change to the above snippet.
+The Pebblo SafeReader can be installed and enabled with few lines of code change to the above snippet.
+
+##### Install PebbloSafeReader
+
+```
+pip install llama-index-readers-pebblo
+```
+
+##### Use PebbloSafeReader
 
 ```
 from pathlib import Path
