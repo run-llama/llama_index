@@ -84,6 +84,7 @@ nav:
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/coa_agent.ipynb
           - ./examples/agent/lats_agent.ipynb
+          - ./examples/agent/llm_compiler.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -109,6 +110,7 @@ nav:
           - ./examples/cookbooks/mixedbread_reranker.ipynb
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
+          - ./examples/cookbooks/llama3_cookbook.ipynb
       - Customization:
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
@@ -304,6 +306,7 @@ nav:
           - ./examples/llm/ipex_llm.ipynb
           - ./examples/llm/databricks.ipynb
           - ./examples/llm/openvino.ipynb
+          - ./examples/llm/octoai.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -536,6 +539,8 @@ nav:
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/CouchbaseVectorStoreDemo.ipynb
           - ./examples/vector_stores/VearchDemo.ipynb
+          - ./examples/vector_stores/neo4j_metadata_filter.ipynb
+          - ./examples/vector_stores/AWSDocDBDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -625,10 +630,7 @@ nav:
           - ./module_guides/deploying/agents/usage_pattern.md
           - ./module_guides/deploying/agents/agent_runner.md
           - ./module_guides/deploying/agents/modules.md
-          - Tools:
-              - ./module_guides/deploying/agents/tools/index.md
-              - ./module_guides/deploying/agents/tools/usage_pattern.md
-              - ./module_guides/deploying/agents/tools/llamahub_tools_guide.md
+          - ./module_guides/deploying/agents/tools.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -656,7 +658,10 @@ nav:
   - API Reference:
       - ./api_reference/index.md
       - Agents:
+          - ./api_reference/agent/coa.md
           - ./api_reference/agent/index.md
+          - ./api_reference/agent/lats.md
+          - ./api_reference/agent/llm_compiler.md
           - ./api_reference/agent/openai.md
           - ./api_reference/agent/openai_legacy.md
           - ./api_reference/agent/react.md
@@ -793,6 +798,7 @@ nav:
           - ./api_reference/llms/neutrino.md
           - ./api_reference/llms/nvidia_tensorrt.md
           - ./api_reference/llms/nvidia_triton.md
+          - ./api_reference/llms/octoai.md
           - ./api_reference/llms/ollama.md
           - ./api_reference/llms/openai.md
           - ./api_reference/llms/openai_like.md
@@ -1098,6 +1104,7 @@ nav:
           - ./api_reference/readers/nougat_ocr.md
           - ./api_reference/readers/obsidian.md
           - ./api_reference/readers/openalex.md
+          - ./api_reference/readers/openapi.md
           - ./api_reference/readers/opendal.md
           - ./api_reference/readers/opensearch.md
           - ./api_reference/readers/pandas_ai.md
@@ -1223,6 +1230,7 @@ nav:
               - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
+              - ./api_reference/storage/vector_store/awsdocdb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
               - ./api_reference/storage/vector_store/azurecosmosmongo.md
               - ./api_reference/storage/vector_store/bagel.md
@@ -1336,7 +1344,6 @@ nav:
   - LlamaCloud:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
-
 plugins:
   - search
   - include_dir_to_nav
@@ -1824,6 +1831,12 @@ plugins:
             - ../llama-index-packs/llama-index-packs-agents-lats
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vearch
             - ../llama-index-integrations/embeddings/llama-index-embeddings-octoai
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-awsdocdb
+            - ../llama-index-integrations/agent/llama-index-agent-llm-compiler
+            - ../llama-index-integrations/agent/llama-index-agent-lats
+            - ../llama-index-integrations/agent/llama-index-agent-coa
+            - ../llama-index-integrations/readers/llama-index-readers-openapi
+            - ../llama-index-integrations/llms/llama-index-llms-octoai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -1851,7 +1864,7 @@ plugins:
         ./community/integrations/vector_stores.html: https://docs.llamaindex.ai/en/stable/community/integrations/vector_stores/
         ./community/llama_packs/root.html: community/llama_packs/index.md
         ./core_modules/agent_modules/agents/root.html: module_guides/deploying/agents/index.md
-        ./core_modules/agent_modules/tools/root.html: module_guides/deploying/agents/tools/index.md
+        ./core_modules/agent_modules/tools/root.html: module_guides/deploying/agents/tools.md
         ./core_modules/data_modules/connector.html: module_guides/loading/connector/index.md
         ./core_modules/data_modules/documents_and_nodes/root.html: module_guides/loading/documents_and_nodes/index.md
         ./core_modules/data_modules/index/root.html: module_guides/indexing/index.md
@@ -2321,9 +2334,10 @@ plugins:
         ./module_guides/deploying/agents/agent_runner.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/agent_runner/
         ./module_guides/deploying/agents/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/modules/
         ./module_guides/deploying/agents/root.html: module_guides/deploying/agents/index.md
-        ./module_guides/deploying/agents/tools/llamahub_tools_guide.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/llamahub_tools_guide/
-        ./module_guides/deploying/agents/tools/root.html: module_guides/deploying/agents/tools/index.md
-        ./module_guides/deploying/agents/tools/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/usage_pattern/
+        ./module_guides/deploying/agents/tools/llamahub_tools_guide.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
+        ./module_guides/deploying/agents/tools/root.html: module_guides/deploying/agents/tools.md
+        ./module_guides/deploying/agents/tools/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
+        ./module_guides/deploying/agents/tools/usage_pattern/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
         ./module_guides/deploying/agents/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/usage_pattern/
         ./module_guides/deploying/chat_engines/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/chat_engines/modules/
         ./module_guides/deploying/chat_engines/root.html: module_guides/deploying/chat_engines/index.md

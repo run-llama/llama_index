@@ -3,6 +3,7 @@
 
 import logging
 from typing import Any, List, Optional
+from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -83,11 +84,10 @@ class IpexLLMEmbedding(BaseEmbedding):
             **model_kwargs,
         )
 
-        from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
-
         if self._device == "cpu":
             self._model = _optimize_pre(self._model)
             self._model = _optimize_post(self._model)
+        # TODO: optimize using ipex-llm optimize_model
         elif self._device == "xpu":
             self._model = _optimize_pre(self._model)
             self._model = _optimize_post(self._model)
