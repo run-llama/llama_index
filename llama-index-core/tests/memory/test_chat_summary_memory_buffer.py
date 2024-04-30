@@ -2,8 +2,8 @@ from typing import List, Sequence, Any
 import pickle
 
 import pytest
-from pydantic.fields import PrivateAttr
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import ChatMessage, MessageRole, MockLLM
 from llama_index.core.memory.chat_summary_memory_buffer import (
@@ -40,16 +40,13 @@ LONG_USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(LONG_USER_CHAT_MESSAGE.content
 class MockSummarizerLLM(MockLLM):
     _i: int = PrivateAttr()
     _responses: List[ChatMessage] = PrivateAttr()
-    _max_tokens: int = PrivateAttr()
     _role_counts: dict = PrivateAttr()
 
     def __init__(self, responses: List[ChatMessage], max_tokens: int = 512) -> None:
+        super().__init__(max_tokens=max_tokens)
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
-        self._max_tokens = max_tokens  # Max tokens for summary
         self._role_counts: dict = {role: 0 for role in MessageRole}
-
-        super().__init__()
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # Count how many messages are going to be summarized for each role
@@ -58,8 +55,8 @@ class MockSummarizerLLM(MockLLM):
         del messages
 
         # For this mockLLM, we assume tokens are separated by spaces
-        max_tokens = self._max_tokens
-        if self._max_tokens > len(self._responses[self._i].content):
+        max_tokens = self.max_tokens
+        if self.max_tokens > len(self._responses[self._i].content):
             max_tokens = len(self._responses[self._i].content)
         response_tokens = " ".join(
             self._responses[self._i].content.split(" ")[0:max_tokens]
@@ -72,7 +69,7 @@ class MockSummarizerLLM(MockLLM):
         return response
 
     def set_max_tokens(self, max_tokens):
-        self._max_tokens = max_tokens
+        self.max_tokens = max_tokens
 
     def get_role_count(self, role: MessageRole):
         return self._role_counts[role]
