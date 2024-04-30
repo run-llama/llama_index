@@ -219,7 +219,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         message_count = len(chat_history)
         while (
             message_count > 0
-            and self._token_count + self._token_count_for_messages([chat_history[-1]])
+            and self.get_token_count()
+            + self._token_count_for_messages([chat_history[-1]])
             <= self.token_limit
         ):
             # traverse the history in reverse order, when token limit is about to be
