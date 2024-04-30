@@ -2,7 +2,7 @@
 
 import uuid
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage
@@ -16,6 +16,9 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle
+
+if TYPE_CHECKING:
+    from llama_index.core.agent.runner.base import AgentRunner
 
 
 class BaseAgent(BaseChatEngine, BaseQueryEngine):
@@ -237,3 +240,9 @@ class BaseAgentWorker(PromptMixin):
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
         # TODO: make this abstractmethod (right now will break some agent impls)
+
+    def as_agent(self, **kwargs: Any) -> "AgentRunner":
+        """Return as an agent runner."""
+        from llama_index.core.agent.runner.base import AgentRunner
+
+        return AgentRunner(self, **kwargs)
