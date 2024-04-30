@@ -324,26 +324,48 @@ def test_assistant_tool_pairs(summarizer_llm) -> None:
     assert memory_results[2].role == MessageRole.ASSISTANT
 
 
-def test_sting_save_load() -> None:
+def test_string_save_load(summarizer_llm) -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        chat_history=[USER_CHAT_MESSAGE], token_limit=5
+        llm=summarizer_llm,
+        chat_history=[USER_CHAT_MESSAGE],
+        token_limit=5,
+        summarize_prompt="Mock summary",
+        count_initial_tokens=True,
     )
 
     json_str = memory.to_string()
 
-    with pytest.raises(NotImplementedError):
-        ChatSummaryMemoryBuffer.from_string(json_str)
+    new_memory = ChatSummaryMemoryBuffer.from_string(json_str)
+
+    assert len(new_memory.get()) == 1
+    assert new_memory.token_limit == 5
+    assert new_memory.summarize_prompt == "Mock summary"
+    assert new_memory.count_initial_tokens
+    # The user needs to set the llm manually when loading (and it needs to match the tokenizer_fn)
+    assert new_memory.llm is None
+    new_memory.llm = summarizer_llm
 
 
-def test_dict_save_load() -> None:
+def test_dict_save_load(summarizer_llm) -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        chat_history=[USER_CHAT_MESSAGE], token_limit=5
+        llm=summarizer_llm,
+        chat_history=[USER_CHAT_MESSAGE],
+        token_limit=5,
+        summarize_prompt="Mock summary",
+        count_initial_tokens=True,
     )
 
     json_dict = memory.to_dict()
 
-    with pytest.raises(NotImplementedError):
-        ChatSummaryMemoryBuffer.from_dict(json_dict)
+    new_memory = ChatSummaryMemoryBuffer.from_dict(json_dict)
+
+    assert len(new_memory.get()) == 1
+    assert new_memory.token_limit == 5
+    assert new_memory.summarize_prompt == "Mock summary"
+    assert new_memory.count_initial_tokens
+    # The user needs to set the llm manually when loading (and it needs to match the tokenizer_fn)
+    assert new_memory.llm is None
+    new_memory.llm = summarizer_llm
 
 
 def test_pickle() -> None:

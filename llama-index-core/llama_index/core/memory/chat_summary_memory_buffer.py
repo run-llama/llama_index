@@ -1,3 +1,5 @@
+import json
+import logging
 from typing import Any, Callable, Dict, List, Optional
 
 from pydantic.fields import PrivateAttr
@@ -12,6 +14,8 @@ from llama_index.core.utils import get_tokenizer
 DEFAULT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 2000
 SUMMARIZE_PROMPT = "The following is a conversation between the user and assistant. Write a concise summary about the contents of this conversation."
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Add option for last N user/assistant history interactions instead of token limit
@@ -115,13 +119,34 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     @classmethod
     def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
-        raise NotImplementedError("This is not yet supported.")
+        """Create a chat memory buffer from a string."""
+        dict_obj = json.loads(json_str)
+        return cls.from_dict(dict_obj)
 
     @classmethod
     def from_dict(
         cls, data: Dict[str, Any], **kwargs: Any
     ) -> "ChatSummaryMemoryBuffer":
-        raise NotImplementedError("This is not yet supported.")
+        from llama_index.core.storage.chat_store.loading import load_chat_store
+
+        # NOTE: this handles backwards compatibility with the old chat history
+        if "chat_history" in data:
+            chat_history = data.pop("chat_history")
+            chat_store = SimpleChatStore(store={DEFAULT_CHAT_STORE_KEY: chat_history})
+            data["chat_store"] = chat_store
+        elif "chat_store" in data:
+            chat_store = data.pop("chat_store")
+            chat_store = load_chat_store(chat_store)
+            data["chat_store"] = chat_store
+
+        # NOTE: The llm will have to be set manually.
+        if "llm" in data:
+            logger.warning(
+                f"The llm has not been loaded. It will have to be set manually."
+            )
+            data.pop("llm")
+
+        return cls(**data)
 
     def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
