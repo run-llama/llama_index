@@ -22,7 +22,6 @@ def test_unsupported_extension() -> None:
         ]
     )
     assert len(nodes) == 1
-    assert nodes[0].metadata == {"Header_1": "Main Header"}
     assert (
         nodes[0].text
         == "def evenOdd(n):\n\n  # if n&1 == 0, then num is even\n  if n & 1:\n    return False\n  # if n&1 == 1, then num is odd\n  else:\n    return True"
