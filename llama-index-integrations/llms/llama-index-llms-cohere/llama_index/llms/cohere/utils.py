@@ -1,7 +1,12 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatPromptTemplate,
+    MessageRole,
+)
+from llama_index.core.prompts.chat_prompts import TEXT_QA_SYSTEM_PROMPT
 from tenacity import (
     before_sleep_log,
     retry,
@@ -36,6 +41,15 @@ logger = logging.getLogger(__name__)
 # TODO: decide later where this should be moved
 class DocumentMessage(ChatMessage):
     role: MessageRole = MessageRole.USER
+
+
+COHERE_QA_TEMPLATE = ChatPromptTemplate(
+    message_templates=[
+        TEXT_QA_SYSTEM_PROMPT,
+        DocumentMessage(content="{context_str}"),
+        ChatMessage(content="{query_str}", role=MessageRole.USER),
+    ]
+)
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -159,6 +173,8 @@ def message_to_cohere_documents(message: DocumentMessage) -> List[str]:
     TODO: make document-splitting logic robust to different retrievers
     TODO: handle additional_kwargs from DocumentMessage
     """
+    # TODO: move try/except outside
+    # TODO: better: look for pattern of k: v values, then parse anew
     try:
         documents = []
         docs = message.content.split("file_path:")

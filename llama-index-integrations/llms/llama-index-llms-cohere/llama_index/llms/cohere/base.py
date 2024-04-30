@@ -138,6 +138,11 @@ class Cohere(LLM):
         # - last message has query
         # - everything else is history
 
+        # 1. How do we want to structure messages?
+        # 1b. How we make sure everyone else uses the right structure?
+        #   - ideally: LI would enable LLMs to provide default templates
+        # 2.
+
         # preamble = ...
         prompt = messages[-1].content
         if len(messages) > 1 and isinstance(messages[-2], DocumentMessage):
