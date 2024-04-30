@@ -5,7 +5,7 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_UPSTAGE_API_BASE = "https://api.upstage.ai/v1/solar"
 CHAT_MODELS = {
-    "solar-1-mini-chat": 16384,
+    "solar-1-mini-chat": 32768,
 }
 
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
