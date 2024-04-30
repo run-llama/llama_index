@@ -1,7 +1,8 @@
 import json
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Callable
+
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -20,6 +21,8 @@ class ToolMetadata:
     description: str
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
+    callback: Optional[Callable] = None
+    kwargs: Optional[Dict[str, Any]] = None
 
     def get_parameters_dict(self) -> dict:
         if self.fn_schema is None:

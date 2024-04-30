@@ -250,13 +250,18 @@ class ReActAgentWorker(BaseAgentWorker):
                 EventPayload.TOOL: tool.metadata,
             },
         ) as event:
+            # Pass the tool metadata back
+            if tool.metadata.callback:
+                tool.metadata.callback(kwargs=tool.metadata.kwargs)
+
+            # Call the tool
             tool_output = tool.call(**reasoning_step.action_input)
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         task.extra_state["sources"].append(tool_output)
-
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
+
         if self._verbose:
             print_text(
                 f"{observation_step.get_content()}\n",
@@ -298,7 +303,11 @@ class ReActAgentWorker(BaseAgentWorker):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue",  response_hook=self.response_hook)
+            print_text(
+                f"{observation_step.get_content()}\n",
+                color="blue",
+                response_hook=self.response_hook,
+            )
         return current_reasoning, False
 
     def _get_response(

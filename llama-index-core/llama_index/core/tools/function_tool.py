@@ -21,6 +21,15 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     return _async_wrapped_fn
 
 
+def create_tool_metadata(fn, name, description, fn_schema=None):
+    name = name or fn.__name__
+    docstring = fn.__doc__
+    description = description or f"{name}{signature(fn)}\n{docstring}"
+    if fn_schema is None:
+        fn_schema = create_schema_from_function(f"{name}", fn, additional_fields=None)
+    return ToolMetadata(name=name, description=description, fn_schema=fn_schema)
+
+
 class FunctionTool(AsyncBaseTool):
     """Function Tool.
 
@@ -52,15 +61,8 @@ class FunctionTool(AsyncBaseTool):
         tool_metadata: Optional[ToolMetadata] = None,
     ) -> "FunctionTool":
         if tool_metadata is None:
-            name = name or fn.__name__
-            docstring = fn.__doc__
-            description = description or f"{name}{signature(fn)}\n{docstring}"
-            if fn_schema is None:
-                fn_schema = create_schema_from_function(
-                    f"{name}", fn, additional_fields=None
-                )
-            tool_metadata = ToolMetadata(
-                name=name, description=description, fn_schema=fn_schema
+            tool_metadata = create_tool_metadata(
+                fn=fn, description=description, name=name, fn_schema=fn_schema
             )
         return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn)
 
