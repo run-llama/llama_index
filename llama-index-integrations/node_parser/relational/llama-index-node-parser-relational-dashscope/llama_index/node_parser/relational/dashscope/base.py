@@ -5,7 +5,10 @@ import os
 import json
 
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.node_parser.relational.base_element import BaseElementNodeParser, Element
+from llama_index.core.node_parser.relational.base_element import (
+    BaseElementNodeParser,
+    Element,
+)
 from llama_index.core.schema import BaseNode, TextNode
 
 
@@ -15,30 +18,20 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
     Splits a json format document from DashScope Parse into Text Nodes and Index Nodes
     corresponding to embedded objects (e.g. tables).
     """
+
     try_count_limit: int = Field(
-        default=10,
-        description="Maximum number of retry attempts."
+        default=10, description="Maximum number of retry attempts."
     )
-    chunk_size: int = Field(
-        default=500,
-        description="Size of each chunk to process."
-    )
+    chunk_size: int = Field(default=500, description="Size of each chunk to process.")
     overlap_size: int = Field(
-        default=100,
-        description="Overlap size between consecutive chunks."
+        default=100, description="Overlap size between consecutive chunks."
     )
     separator: str = Field(
-        default=" |,|，|。|？|！|\n|\?|\!",
-        description="Separator characters for splitting texts."
+        default=" |,|，|。|？|！|\n|\\?|\\!",
+        description="Separator characters for splitting texts.",
     )
-    pip: bool = Field(
-        default=False,
-        description="Flag to enable or disable PIP."
-    )
-    input_type: str = Field(
-        default="idp",
-        description="parse format type."
-    )
+    pip: bool = Field(default=False, description="Flag to enable or disable PIP.")
+    input_type: str = Field(default="idp", description="parse format type.")
 
     @classmethod
     def class_name(cls) -> str:
@@ -46,21 +39,26 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
 
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
-        ftype = node.metadata.get('parse_fmt_type', self.input_type)
-        assert ftype in ['DASHCOPE_DOCMIND', 'idp'], f"Unexpected parse_fmt_type: {node.metadata.get('parse_fmt_type', '')}"
+        ftype = node.metadata.get("parse_fmt_type", self.input_type)
+        assert ftype in [
+            "DASHCOPE_DOCMIND",
+            "idp",
+        ], f"Unexpected parse_fmt_type: {node.metadata.get('parse_fmt_type', '')}"
 
         ftype_map = {
             "DASHCOPE_DOCMIND": "idp",
         }
-        my_input = dict()
-        my_input["text"] = node.get_content()
-        my_input["file_type"] = ftype_map.get(ftype, ftype)
-        my_input["chunk_size"] = self.chunk_size
-        my_input["overlap_size"] = self.overlap_size
-        my_input["language"] = "cn"
-        my_input["separator"] = self.separator
-        my_input["pip"] = self.pip
-        
+
+        my_input = {
+            "text": node.get_content(),
+            "file_type": ftype_map.get(ftype, ftype),
+            "chunk_size": self.chunk_size,
+            "overlap_size": self.overlap_size,
+            "language": "cn",
+            "separator": self.separator,
+            "pip": self.pip,
+        }
+
         try_count = 0
         response_text = self.post_service(my_input)
         while response_text is None and try_count < self.try_count_limit:
@@ -69,7 +67,7 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         if response_text is None:
             logging.error("DashScopeJsonNodeParser Failed to get response from service")
             return []
-            
+
         return self.parse_result(response_text, node)
 
     def post_service(self, my_input):
@@ -80,16 +78,23 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         headers = {
             "Content-Type": "application/json",
             "Accept-Encoding": "utf-8",
-            'Authorization': 'Bearer ' + DASHSCOPE_API_KEY,
+            "Authorization": "Bearer " + DASHSCOPE_API_KEY,
         }
-        service_url = os.getenv('DASHSCOPE_BASE_URL', "https://dashscope.aliyuncs.com") + "/api/v1/indices/component/configed_transformations/spliter"
-        response = requests.post(service_url, data=json.dumps(my_input), headers=headers)
+        service_url = (
+            os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com")
+            + "/api/v1/indices/component/configed_transformations/spliter"
+        )
+        response = requests.post(
+            service_url, data=json.dumps(my_input), headers=headers
+        )
         response_text = response.json()
         try:
-            response = requests.post(service_url, data=json.dumps(my_input), headers=headers)
+            response = requests.post(
+                service_url, data=json.dumps(my_input), headers=headers
+            )
             response_text = response.json()
-            if 'chunkService' in response_text:
-                return response_text['chunkService']['chunkResult']
+            if "chunkService" in response_text:
+                return response_text["chunkService"]["chunkResult"]
             else:
                 logging.error(f"{response_text}, try again.")
                 return None
@@ -100,9 +105,17 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
     def parse_result(self, content_json, document):
         nodes = []
         for data in content_json:
-            text = '\n'.join([data['title'], data.get('hier_title', ''), data['content']])
-            nodes.append(TextNode(metadata=document.metadata, text=text, excluded_embed_metadata_keys=document.excluded_embed_metadata_keys, \
-                excluded_llm_metadata_keys=document.excluded_llm_metadata_keys))
+            text = "\n".join(
+                [data["title"], data.get("hier_title", ""), data["content"]]
+            )
+            nodes.append(
+                TextNode(
+                    metadata=document.metadata,
+                    text=text,
+                    excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                    excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                )
+            )
         return nodes
 
     def extract_elements(
