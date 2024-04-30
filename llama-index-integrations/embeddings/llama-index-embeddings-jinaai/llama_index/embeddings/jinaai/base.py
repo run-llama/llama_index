@@ -3,6 +3,7 @@
 from typing import Any, List, Optional
 
 import requests
+import numpy as np
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
@@ -34,6 +35,8 @@ class JinaEmbedding(BaseEmbedding):
     )
 
     _session: Any = PrivateAttr()
+    _encoding_queries: str = PrivateAttr()
+    _encoding_documents: str = PrivateAttr()
 
     def __init__(
         self,
@@ -117,7 +120,20 @@ class JinaEmbedding(BaseEmbedding):
         sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
 
         # Return just the embeddings
-        return [result["embedding"] for result in sorted_embeddings]
+        if encoding_type == 'float':
+            return [result["embedding"] for result in sorted_embeddings]
+        elif encoding_type == 'ubinary':
+            return [
+                np.unpackbits(np.array(result["embedding"], dtype='uint8')).tolist()
+                for result in sorted_embeddings
+            ]
+        elif encoding_type == 'binary':
+            return [
+                np.unpackbits(
+                    (np.array(result["embedding"]) + 128).astype('uint8')
+                ).tolist()
+                for result in sorted_embeddings
+            ]
 
     async def _aget_text_embeddings(
         self, texts: List[str], encoding_type: str = 'float'
@@ -147,4 +163,19 @@ class JinaEmbedding(BaseEmbedding):
                 sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
 
                 # Return just the embeddings
-                return [result["embedding"] for result in sorted_embeddings]
+                if encoding_type == 'float':
+                    return [result["embedding"] for result in sorted_embeddings]
+                elif encoding_type == 'ubinary':
+                    return [
+                        np.unpackbits(
+                            np.array(result["embedding"], dtype='uint8')
+                        ).tolist()
+                        for result in sorted_embeddings
+                    ]
+                elif encoding_type == 'binary':
+                    return [
+                        np.unpackbits(
+                            (np.array(result["embedding"]) + 128).astype('uint8')
+                        ).tolist()
+                        for result in sorted_embeddings
+                    ]
