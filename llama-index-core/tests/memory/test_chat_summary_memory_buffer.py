@@ -21,6 +21,8 @@ def _get_role_alternating_order(i: int):
 
 
 USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
+ASSISTANT_CHAT_MESSAGE = ChatMessage(role=MessageRole.ASSISTANT, content="first answer")
+TOOL_CHAT_MESSAGE = ChatMessage(role=MessageRole.TOOL, content="first tool")
 USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(USER_CHAT_MESSAGE.content)))
 LONG_USER_CHAT_MESSAGE = ChatMessage(
     role=MessageRole.USER,
@@ -30,7 +32,7 @@ LONG_USER_CHAT_MESSAGE = ChatMessage(
 )
 LONG_RUNNING_CONVERSATION = [
     ChatMessage(role=_get_role_alternating_order(i), content=f"Message {i}")
-    for i in range(5)
+    for i in range(6)
 ]
 LONG_USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(LONG_USER_CHAT_MESSAGE.content)))
 
@@ -39,16 +41,21 @@ class MockSummarizerLLM(MockLLM):
     _i: int = PrivateAttr()
     _responses: List[ChatMessage] = PrivateAttr()
     _max_tokens: int = PrivateAttr()
+    _role_counts: dict = PrivateAttr()
 
     def __init__(self, responses: List[ChatMessage], max_tokens: int = 512) -> None:
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
         self._max_tokens = max_tokens  # Max tokens for summary
+        self._role_counts: dict = {role: 0 for role in MessageRole}
 
         super().__init__()
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        del messages  # unused
+        # Count how many messages are going to be summarized for each role
+        for role in MessageRole:
+            self._role_counts[role] = messages[0].content.count(role + ": ")
+        del messages
 
         # For this mockLLM, we assume tokens are separated by spaces
         max_tokens = self._max_tokens
@@ -66,6 +73,9 @@ class MockSummarizerLLM(MockLLM):
 
     def set_max_tokens(self, max_tokens):
         self._max_tokens = max_tokens
+
+    def get_role_count(self, role: MessageRole):
+        return self._role_counts[role]
 
 
 FIRST_SUMMARY_RESPONSE = "First, the user asked what an LLM was, and the assistant explained the basic ideas."
@@ -91,9 +101,9 @@ def summarizer_llm():
 
 
 def test_put_get(summarizer_llm) -> None:
-    # Given one message with fewer tokens than token_limit_full_text
+    # Given one message with fewer tokens than token_limit
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        chat_history=[USER_CHAT_MESSAGE], summarizer_llm=summarizer_llm
+        chat_history=[USER_CHAT_MESSAGE], llm=summarizer_llm
     )
 
     # When I get the chat history from the memory
@@ -105,11 +115,11 @@ def test_put_get(summarizer_llm) -> None:
 
 
 def test_put_get_summarize_long_message(summarizer_llm) -> None:
-    # Given one message with more tokens than token_limit_full_text
+    # Given one message with more tokens than token_limit
     memory = ChatSummaryMemoryBuffer.from_defaults(
         chat_history=[LONG_USER_CHAT_MESSAGE],
-        token_limit_full_text=2,
-        summarizer_llm=summarizer_llm,
+        token_limit=2,
+        llm=summarizer_llm,
     )
 
     # When I get the chat history from the memory
@@ -121,7 +131,7 @@ def test_put_get_summarize_long_message(summarizer_llm) -> None:
 
 
 def test_put_get_summarize_part_of_conversation(summarizer_llm) -> None:
-    # Given a chat history where only 2 responses fit in the token_limit_full_text
+    # Given a chat history where only 2 responses fit in the token_limit
     tokens_most_recent_messages = sum(
         [
             len(tokenizer(str(LONG_RUNNING_CONVERSATION[-i].content)))
@@ -130,8 +140,8 @@ def test_put_get_summarize_part_of_conversation(summarizer_llm) -> None:
     )
     memory = ChatSummaryMemoryBuffer.from_defaults(
         chat_history=LONG_RUNNING_CONVERSATION.copy(),
-        token_limit_full_text=tokens_most_recent_messages,
-        summarizer_llm=summarizer_llm,
+        token_limit=tokens_most_recent_messages,
+        llm=summarizer_llm,
     )
 
     # When I get the chat history from the memory
@@ -142,19 +152,20 @@ def test_put_get_summarize_part_of_conversation(summarizer_llm) -> None:
     assert len(history) == 3
     assert history[0].content == FIRST_SUMMARY_RESPONSE
     assert history[0].role == MessageRole.SYSTEM
-    assert history[1].content == "Message 3"
-    assert history[2].content == "Message 4"
+    assert history[1].content == "Message 4"
+    assert history[2].content == "Message 5"
 
-    # When I add a new message to the history
-    memory.put(ChatMessage(role=MessageRole.USER, content="Message 5"))
+    # When I add new messages to the history
+    memory.put(ChatMessage(role=MessageRole.USER, content="Message 6"))
+    memory.put(ChatMessage(role=MessageRole.ASSISTANT, content="Message 7"))
 
     # Then the history should re-summarize
     history = memory.get()
     assert len(history) == 3
     assert history[0].content == SECOND_SUMMARY_RESPONSE
     assert history[0].role == MessageRole.SYSTEM
-    assert history[1].content == "Message 4"
-    assert history[2].content == "Message 5"
+    assert history[1].content == "Message 6"
+    assert history[2].content == "Message 7"
 
 
 def test_get_when_initial_tokens_less_than_limit_returns_history() -> None:
@@ -163,7 +174,7 @@ def test_get_when_initial_tokens_less_than_limit_returns_history() -> None:
 
     # Given a user message
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        token_limit_full_text=1000, chat_history=[USER_CHAT_MESSAGE]
+        token_limit=1000, chat_history=[USER_CHAT_MESSAGE]
     )
 
     # When I get the chat history from the memory
@@ -179,7 +190,7 @@ def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
     initial_tokens = 50
     memory = ChatSummaryMemoryBuffer.from_defaults(
         chat_history=[USER_CHAT_MESSAGE],
-        token_limit_full_text=initial_tokens - 1,
+        token_limit=initial_tokens - 1,
         count_initial_tokens=True,
     )
 
@@ -204,7 +215,7 @@ def test_set() -> None:
 
 def test_max_tokens_without_summarizer() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        chat_history=[USER_CHAT_MESSAGE], token_limit_full_text=5
+        chat_history=[USER_CHAT_MESSAGE], token_limit=5
     )
 
     memory.put(USER_CHAT_MESSAGE)
@@ -228,9 +239,9 @@ def test_max_tokens_with_summarizer(summarizer_llm) -> None:
     max_tokens = 1
     summarizer_llm.set_max_tokens(max_tokens)
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        summarizer_llm=summarizer_llm,
+        llm=summarizer_llm,
         chat_history=[USER_CHAT_MESSAGE],
-        token_limit_full_text=5,
+        token_limit=5,
     )
 
     # do we limit properly
@@ -258,9 +269,64 @@ def test_max_tokens_with_summarizer(summarizer_llm) -> None:
     )
 
 
+def test_assistant_never_first_message(summarizer_llm) -> None:
+    chat_history = [
+        USER_CHAT_MESSAGE,
+        ASSISTANT_CHAT_MESSAGE,
+        USER_CHAT_MESSAGE,
+        ASSISTANT_CHAT_MESSAGE,
+    ]
+    tokens_last_3_messages = sum(
+        [len(tokenizer(str(chat_history[-i].content))) for i in range(1, 4)]
+    )
+
+    # When exactly 3 messages fit the buffer, with first being assistant
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=chat_history,
+        llm=summarizer_llm,
+        token_limit=tokens_last_3_messages,
+        count_initial_tokens=False,
+    )
+
+    memory_results = memory.get()
+    # the assistant message should be summarized instead of full text
+    assert len(memory_results) == 3
+    assert summarizer_llm.get_role_count(MessageRole.ASSISTANT) == 1
+    assert memory_results[1].role == MessageRole.USER
+    assert memory_results[2].role == MessageRole.ASSISTANT
+
+
+def test_assistant_tool_pairs(summarizer_llm) -> None:
+    chat_history = [
+        USER_CHAT_MESSAGE,
+        ASSISTANT_CHAT_MESSAGE,
+        TOOL_CHAT_MESSAGE,
+        USER_CHAT_MESSAGE,
+        ASSISTANT_CHAT_MESSAGE,
+    ]
+    tokens_last_3_messages = sum(
+        [len(tokenizer(str(chat_history[-i].content))) for i in range(1, 4)]
+    )
+
+    # When exactly 3 messages fit the buffer, with first being assistant
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=chat_history,
+        llm=summarizer_llm,
+        token_limit=tokens_last_3_messages,
+        count_initial_tokens=False,
+    )
+
+    memory_results = memory.get()
+    # the tool message should be summarized along with the assistant message
+    assert len(memory_results) == 3
+    assert summarizer_llm.get_role_count(MessageRole.TOOL) == 1
+    assert memory_results[1].role == MessageRole.USER
+    assert memory_results[2].role == MessageRole.ASSISTANT
+
+
 def test_sting_save_load() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        chat_history=[USER_CHAT_MESSAGE], token_limit_full_text=5
+        chat_history=[USER_CHAT_MESSAGE], token_limit=5
     )
 
     json_str = memory.to_string()
@@ -271,7 +337,7 @@ def test_sting_save_load() -> None:
 
 def test_dict_save_load() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
-        chat_history=[USER_CHAT_MESSAGE], token_limit_full_text=5
+        chat_history=[USER_CHAT_MESSAGE], token_limit=5
     )
 
     json_dict = memory.to_dict()
