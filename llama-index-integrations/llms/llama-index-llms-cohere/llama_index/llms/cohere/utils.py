@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from tenacity import (
     before_sleep_log,
     retry,
@@ -31,6 +31,11 @@ ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_
 CHAT_MODELS = {**COMMAND_MODELS}
 
 logger = logging.getLogger(__name__)
+
+
+# TODO: decide later where this should be moved
+class DocumentMessage(ChatMessage):
+    role: MessageRole = MessageRole.USER
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -68,6 +73,12 @@ def completion_with_retry(
             if is_stream:
                 return client.chat_stream(**kwargs)
             else:
+                print("$" * 33)
+                print("MESSAGE")
+                print(kwargs.get("message", None))
+                print("DOCUMENTS")
+                print(kwargs.get("documents", None))
+                print("$" * 33)
                 return client.chat(**kwargs)
         else:
             if is_stream:
@@ -135,3 +146,31 @@ def messages_to_cohere_history(
         {"role": role_map[message.role], "message": message.content}
         for message in messages
     ]
+
+
+def message_to_cohere_documents(message: DocumentMessage) -> List[str]:
+    """
+    Splits out individual documents from `message` in the format expected by Cohere.chat's
+    `document` argument.
+
+    NOTE: current implementation is brittle and depends on the formatting of specific retriever.
+    I don't yet understand how to control that retriever logic.
+
+    TODO: make document-splitting logic robust to different retrievers
+    TODO: handle additional_kwargs from DocumentMessage
+    """
+    try:
+        documents = []
+        docs = message.content.split("file_path:")
+        for doc in docs:
+            if doc:
+                split_by_separator = doc.split("\n\n")
+                source = split_by_separator[0].strip()
+                text = "\n\n".join(split_by_separator[1:]).strip()
+                documents.append({"source": source, "text": text})
+        return documents
+    except Exception:
+        # Parsing failed. This is likely because 'message' was built from a different retriever
+        # Return a default formatting to avoid breaking pipeline
+        # TODO: raise warning?
+        return [{"text": message.content}]

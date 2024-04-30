@@ -22,10 +22,12 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.cohere.utils import (
     CHAT_MODELS,
+    DocumentMessage,
     acompletion_with_retry,
     cohere_modelname_to_contextsize,
     completion_with_retry,
     messages_to_cohere_history,
+    message_to_cohere_documents,
 )
 
 import cohere
@@ -130,8 +132,21 @@ class Cohere(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        history = messages_to_cohere_history(messages[:-1])
+        # By convention:
+        # - (TODO) 1st message is preamble if it's SYSTEM (otherwise it's history)
+        # - 2nd-to-last message has documents if it's type DocumentMessage (otherwise it's history)
+        # - last message has query
+        # - everything else is history
+
+        # preamble = ...
         prompt = messages[-1].content
+        if len(messages) > 1 and isinstance(messages[-2], DocumentMessage):
+            documents = message_to_cohere_documents(messages[-2])
+            history = messages_to_cohere_history(messages[:-2])
+        else:
+            documents = None
+            history = messages_to_cohere_history(messages[:-1])
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         if all_kwargs["model"] not in CHAT_MODELS:
             raise ValueError(f"{all_kwargs['model']} not supported for chat")
@@ -147,6 +162,7 @@ class Cohere(LLM):
             chat=True,
             message=prompt,
             chat_history=history,
+            documents=documents,
             **all_kwargs,
         )
         return ChatResponse(
