@@ -61,9 +61,9 @@ class Cohere(LLM):
 
     def __init__(
         self,
-        model: str = "command",
-        temperature: float = 0.5,
-        max_tokens: int = 512,
+        model: str = "command-r",
+        temperature: float = 0.3,
+        max_tokens: int = 4096,
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
