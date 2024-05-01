@@ -248,9 +248,6 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
-        # if reached max iters
-        if state["count"] >= self.max_iterations:
-            return AgentChatResponse(response=current_response), True
 
         # critique
         input_str = current_response.replace(
@@ -299,7 +296,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         return TaskStepOutput(
             output=agent_response,
             task_step=step,
-            is_last=is_done | self.max_iterations == state["count"],
+            is_last=is_done | (self.max_iterations == state["count"]),
             next_steps=new_steps,
         )
 
@@ -389,7 +386,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         return TaskStepOutput(
             output=agent_response,
             task_step=step,
-            is_last=is_done,
+            is_last=is_done | (self.max_iterations == state["count"]),
             next_steps=new_steps,
         )
 
