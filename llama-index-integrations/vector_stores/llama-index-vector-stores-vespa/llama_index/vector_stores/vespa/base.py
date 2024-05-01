@@ -15,6 +15,8 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
 )
 
+from llama_index.vector_stores.vespa.templates import hybrid_template
+
 import asyncio
 import logging
 import json
@@ -28,9 +30,6 @@ except ImportError:
     raise ModuleNotFoundError(
         "pyvespa not installed. Please install it via `pip install pyvespa`"
     )
-
-from .vespa_templates import hybrid_template
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
