@@ -305,7 +305,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             )
 
         agent_response = AgentChatResponse(
-            response=str(response), sources=task.extra_state["sources"]
+            response=response.message.content, sources=task.extra_state["sources"]
         )
 
         return TaskStepOutput(

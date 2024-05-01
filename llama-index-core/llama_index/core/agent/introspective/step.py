@@ -3,7 +3,6 @@
 import logging
 import uuid
 from typing import Any, List, Optional, cast
-import asyncio
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
@@ -52,9 +51,8 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         self,
         tools: List[BaseTool],
         llm: FunctionCallingLLM,
-        main_agent_worker: BaseAgentWorker,
         reflective_agent_worker: BaseAgentWorker,
-        prefix_messages: List[ChatMessage],
+        main_agent_worker: Optional[BaseAgentWorker] = None,
         verbose: bool = False,
         max_function_calls: int = 5,
         callback_manager: Optional[CallbackManager] = None,
@@ -71,7 +69,6 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         self._max_function_calls = max_function_calls
         self._main_agent_worker = main_agent_worker
         self._reflective_agent_worker = reflective_agent_worker
-        self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
         self.allow_parallel_tool_calls = allow_parallel_tool_calls
 
@@ -89,8 +86,8 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
     @classmethod
     def from_args(
         cls,
-        main_agent_worker: BaseAgentWorker,
         reflective_agent_worker: BaseAgentWorker,
+        main_agent_worker: Optional[BaseAgentWorker] = None,
         tools: Optional[List[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         llm: Optional[FunctionCallingLLM] = None,
@@ -98,7 +95,6 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "IntrospectiveAgentWorker":
         """Create an IntrospectiveAgentWorker from a list of tools.
@@ -121,15 +117,12 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
                 )
             prefix_messages = [ChatMessage(content=system_prompt, role="system")]
 
-        prefix_messages = prefix_messages or []
-
         return cls(
             tools=tools,
             tool_retriever=tool_retriever,
             main_agent_worker=main_agent_worker,
             reflective_agent_worker=reflective_agent_worker,
             llm=llm,
-            prefix_messages=prefix_messages,
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
@@ -141,6 +134,11 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         # temporary memory for new messages
         main_memory = ChatMemoryBuffer.from_defaults()
         reflective_memory = ChatMemoryBuffer.from_defaults()
+
+        # put current history in new memory
+        messages = task.memory.get()
+        for message in messages:
+            main_memory.put(message)
 
         # initialize task state
         task_state = {
@@ -174,20 +172,36 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
         # run main agent
-        main_agent = self._main_agent_worker.as_agent()
-        main_agent_response = main_agent.chat(
-            task.input
-        )  # or should i use step.input here?
-        task.extra_state["main"]["sources"] = main_agent_response.sources
-        task.extra_state["main"]["memory"] = main_agent.memory
-        print(f"MAIN AGENT MEMORY: {main_agent.memory}", flush=True)
+        if self._main_agent_worker is not None:
+            main_agent_messages = task.extra_state["main"]["memory"].get()
+            main_agent = self._main_agent_worker.as_agent(
+                chat_history=main_agent_messages
+            )
+            main_agent_response = main_agent.chat(
+                task.input, parent_task_id=task.task_id
+            )
+            original_response = main_agent_response.response
+            task.extra_state["main"]["sources"] = main_agent_response.sources
+            task.extra_state["main"]["memory"] = main_agent.memory
+        else:
+            add_user_step_to_memory(
+                step, task.extra_state["main"]["memory"], verbose=self._verbose
+            )
+            original_response = step.input
+            task.extra_state["main"]["memory"].put(
+                ChatMessage(content=original_response, role="assistant")
+            )
 
         # run reflective agent
-        reflective_agent = self._reflective_agent_worker.as_agent()
-        reflective_agent_response = reflective_agent.chat(main_agent_response.response)
+        reflective_agent_messages = task.extra_state["main"]["memory"].get()
+        reflective_agent = self._reflective_agent_worker.as_agent(
+            chat_history=reflective_agent_messages
+        )
+        reflective_agent_response = reflective_agent.chat(
+            original_response, parent_task_id=task.task_id
+        )
         task.extra_state["reflection"]["sources"] = reflective_agent_response.sources
         task.extra_state["reflection"]["memory"] = reflective_agent.memory
-        print(f"REFLECTIVE AGENT MEMORY: {reflective_agent.memory}", flush=True)
 
         agent_response = AgentChatResponse(
             response=str(reflective_agent_response.response),
@@ -207,86 +221,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        if step.input is not None:
-            add_user_step_to_memory(
-                step, task.extra_state["new_memory"], verbose=self._verbose
-            )
-        # TODO: see if we want to do step-based inputs
-        tools = self.get_tools(task.input)
-
-        # get response and tool call (if exists)
-        response = await self._llm.achat_with_tools(
-            tools=tools,
-            user_msg=None,
-            chat_history=self.get_all_messages(task),
-            verbose=self._verbose,
-            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
-        )
-        tool_calls = self._llm.get_tool_calls_from_response(
-            response, error_on_no_tool_call=False
-        )
-
-        if self._verbose and response.message.content:
-            print("=== LLM Response ===")
-            print(str(response.message.content))
-
-        if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
-            raise ValueError(
-                "Parallel tool calls not supported for synchronous function calling agent"
-            )
-
-        # call all tools, gather responses
-        task.extra_state["new_memory"].put(response.message)
-        if (
-            len(tool_calls) == 0
-            or task.extra_state["n_function_calls"] >= self._max_function_calls
-        ):
-            # we are done
-            is_done = True
-            new_steps = []
-        else:
-            is_done = False
-            tasks = [
-                self._acall_function(
-                    tools,
-                    tool_call,
-                    task.extra_state["new_memory"],
-                    task.extra_state["sources"],
-                    verbose=self._verbose,
-                )
-                for tool_call in tool_calls
-            ]
-            return_directs = await asyncio.gather(*tasks)
-
-            # check if any of the tools return directly -- only works if there is one tool call
-            if len(return_directs) == 1 and return_directs[0]:
-                is_done = True
-                response = task.extra_state["sources"][-1].content
-
-            task.extra_state["n_function_calls"] += len(tool_calls)
-            # put tool output in sources and memory
-            new_steps = (
-                [
-                    step.get_next_step(
-                        step_id=str(uuid.uuid4()),
-                        # NOTE: input is unused
-                        input=None,
-                    )
-                ]
-                if not is_done
-                else []
-            )
-
-        agent_response = AgentChatResponse(
-            response=str(response), sources=task.extra_state["sources"]
-        )
-
-        return TaskStepOutput(
-            output=agent_response,
-            task_step=step,
-            is_last=is_done,
-            next_steps=new_steps,
-        )
+        ...
 
     @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
@@ -303,10 +238,6 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(
-            task.memory.get_all()
-            + task.extra_state["main"]["memory"].get_all()
-            + task.extra_state["reflection"]["memory"].get_all()
-        )
+        task.memory.set(task.extra_state["reflection"]["memory"].get_all())
         # reset new memory
         task.extra_state["main"]["memory"].reset()

@@ -161,6 +161,7 @@ class Task(BaseModel):
         default_factory=lambda: str(uuid.uuid4()), type=str, description="Task ID"
     )
     input: str = Field(..., type=str, description="User input")
+    parent_task_id: Optional[str] = Field(default=None, description="Parent Task ID")
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
     memory: BaseMemory = Field(
