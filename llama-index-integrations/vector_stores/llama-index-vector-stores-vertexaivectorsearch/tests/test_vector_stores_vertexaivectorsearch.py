@@ -332,17 +332,6 @@ class TestVertexAIVectorStore:
             storage_context=storage_context,
         )
 
-        # VectorStoreIndex(
-        #     [
-        #         TextNode(id_=create_uuid(page_content),
-        #                     text=page_content,
-        #                     embedding=embed_model.get_text_embedding(page_content),
-        #                     metadata={"color": "multicolor", "price": 55.00, "season": ["summer"]}
-        #         ),
-        #     ],
-        #     storage_context=storage_context
-        # )
-
         # similarity search
         query = "swimsuit with a bold geometric pattern"
         query_embedding = embed_model.get_query_embedding(query)

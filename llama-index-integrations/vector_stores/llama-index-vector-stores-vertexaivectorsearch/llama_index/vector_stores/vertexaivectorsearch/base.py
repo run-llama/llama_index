@@ -17,19 +17,10 @@ from llama_index.core.vector_stores.types import (
 )
 
 from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY, node_to_metadata_dict
-
 from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
-from llama_index.vector_stores.vertexaivectorsearch.utils import (
-    find_neighbors,
-    stream_update_index,
-    batch_update_index,
-    to_vectorsearch_filter,
-    to_data_points,
-    to_node,
-)
-
+from llama_index.vector_stores.vertexaivectorsearch import utils
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
     MatchingEngineIndexEndpoint,
@@ -208,18 +199,18 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             embeddings.append(embedding)
             metadatas.append(metadata)
 
-        data_points = to_data_points(ids, embeddings, metadatas)
+        data_points = utils.to_data_points(ids, embeddings, metadatas)
         # self._document_storage.add_documents(list(zip(ids, nodes)))
 
         if self._stream_update:
-            stream_update_index(index=self._index, data_points=data_points)
+            utils.stream_update_index(index=self._index, data_points=data_points)
         else:
             if self._staging_bucket is None:
                 raise ValueError(
                     "To update a Vector Search index a staging bucket must"
                     " be defined."
                 )
-            batch_update_index(
+            utils.batch_update_index(
                 index=self._index,
                 data_points=data_points,
                 staging_bucket=self._staging_bucket,
@@ -250,17 +241,18 @@ class VertexAIVectorStore(BasePydanticVectorStore):
                     "Use kwargs only for Vertex AI Vector Search specific items that are "
                     "not supported via the generic query interface such as numeric filters."
                 )
-            filter = to_vectorsearch_filter(query.filters)
+            filter, num_filter = utils.to_vectorsearch_filter(query.filters)
         else:
-            filter = kwargs.pop("filter", {})
+            filter = None
+            num_filter = None
 
-        matches = find_neighbors(
+        matches = utils.find_neighbors(
             index=self._index,
             endpoint=self._endpoint,
             embeddings=query_embedding,
             top_k=query.similarity_top_k,
             filter_=filter,
-            numeric_filter=None,
+            numeric_filter=num_filter,
         )
 
         top_k_nodes = []
@@ -268,7 +260,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         top_k_scores = []
 
         for match in matches:
-            node = to_node(match, self.text_key)
+            node = utils.to_node(match, self.text_key)
             top_k_ids.append(match.id)
             top_k_scores.append(match.distance)
             top_k_nodes.append(node)

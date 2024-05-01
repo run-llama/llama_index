@@ -19,7 +19,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
 )
 
-from llama_index.core.vector_stores.types import MetadataFilters
+from llama_index.core.vector_stores.types import MetadataFilters, FilterOperator
 
 from google.api_core.gapic_v1.client_info import ClientInfo
 
@@ -41,6 +41,15 @@ from google.cloud.aiplatform.compat.types import (  # type: ignore[attr-defined,
 from google.cloud.storage import Bucket  # type: ignore[import-untyped, unused-ignore]
 
 _logger = logging.getLogger(__name__)
+
+FILTER_MAP = {
+    FilterOperator.EQ: "EQUAL",
+    FilterOperator.LT: "LESS",
+    FilterOperator.LTE: "LESS_EQUAL",
+    FilterOperator.GT: "GREATER",
+    FilterOperator.GTE: "GREATER_EQUAL",
+    FilterOperator.NE: "NOT_EQUAL",
+}
 
 
 def _import_vertexai(minimum_expected_version: str = "1.44.0") -> Any:
@@ -344,12 +353,73 @@ def _get_deployed_index_id(
     )
 
 
-def to_vectorsearch_filter(filters: MetadataFilters) -> List[Namespace]:
+def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
     if filters:
-        return [
-            Namespace(name=filter.key, allow_tokens=[filter.value])
-            for filter in filters.filters
-        ]
+        # return [
+        #     Namespace(name=filter.key, allow_tokens=[filter.value])
+        #     for filter in filters.filters
+        # ]
+
+        num_filters = []
+        txt_filters = []
+        for filter in filters.filters:
+            num_filter = None
+            txt_filter = None
+            if filter.operator not in FILTER_MAP:
+                raise ValueError(
+                    "Invalid operator for filters. "
+                    f"Supported operators are: {FILTER_MAP.keys()}"
+                )
+            op = FILTER_MAP[filter.operator]
+            if isinstance(filter.value, int):
+                num_filter = NumericNamespace(
+                    name=filter.key, value_int=filter.value, op=op
+                )
+            elif isinstance(filter.value, float):
+                num_filter = NumericNamespace(
+                    name=filter.key, value_float=filter.value, op=op
+                )
+            else:
+                txt_filter = Namespace(name=filter.key, allow_tokens=[filter.value])
+
+            # return filters
+            if txt_filter:
+                txt_filters.append(txt_filter)
+            if num_filter:
+                num_filters.append(num_filter)
+
+        return txt_filters, num_filters
+
+    else:
+        return None
+
+
+def to_vectorsearch_numeric_filter(filters: MetadataFilters) -> List[NumericNamespace]:
+    if filters:
+        num_filters = []
+        for filter in filters.filters:
+            if filter.operator not in FILTER_MAP.keys:
+                raise ValueError(
+                    "Invalid operator for numeric filters. "
+                    f"Supported operators are: {FILTER_MAP.keys()}"
+                )
+            op = FILTER_MAP[filter.operator]
+            if isinstance(filter.value, int):
+                num_filter = NumericNamespace(
+                    name=filter.key, value_int=filter.value, op=op
+                )
+            elif isinstance(filter.value, float):
+                num_filter = NumericNamespace(
+                    name=filter.key, value_float=filter.value, op=op
+                )
+            else:
+                raise ValueError(
+                    "Invalid data type of value for numeric filters. "
+                    "Only integer, float or double are supported. "
+                    "For strings, use filters instead of numeric_filters"
+                )
+            num_filters.append(num_filter)
+        return num_filters
     else:
         return None
 
