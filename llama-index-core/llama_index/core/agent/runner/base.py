@@ -171,9 +171,6 @@ class AgentState(BaseModel):
         default_factory=dict, description="Task dictionary."
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-
     def get_task(self, task_id: str) -> Task:
         """Get task state."""
         return self.task_dict[task_id].task
@@ -297,9 +294,7 @@ class AgentRunner(BaseAgentRunner):
         self.memory.reset()
         self.state.reset()
 
-    def create_task(
-        self, input: str, parent_task_id: Optional[str] = None, **kwargs: Any
-    ) -> Task:
+    def create_task(self, input: str, **kwargs: Any) -> Task:
         """Create task."""
         if not self.init_task_state_kwargs:
             extra_state = kwargs.pop("extra_state", {})
@@ -314,7 +309,6 @@ class AgentRunner(BaseAgentRunner):
         callback_manager = kwargs.pop("callback_manager", self.callback_manager)
         task = Task(
             input=input,
-            parent_task_id=parent_task_id,
             memory=self.memory,
             extra_state=extra_state,
             callback_manager=callback_manager,
@@ -538,14 +532,13 @@ class AgentRunner(BaseAgentRunner):
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
-        parent_task_id: Optional[str] = None,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         dispatch_event = dispatcher.get_dispatch_event()
 
         if chat_history is not None:
             self.memory.set(chat_history)
-        task = self.create_task(message, parent_task_id)
+        task = self.create_task(message)
 
         result_output = None
         dispatch_event(AgentChatWithStepStartEvent())
@@ -576,24 +569,20 @@ class AgentRunner(BaseAgentRunner):
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
-        parent_task_id: Optional[str] = None,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         dispatch_event = dispatcher.get_dispatch_event()
 
         if chat_history is not None:
             self.memory.set(chat_history)
-        task = self.create_task(message, parent_task_id)
+        task = self.create_task(message)
 
         result_output = None
         dispatch_event(AgentChatWithStepStartEvent())
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
-                task.task_id,
-                mode=mode,
-                tool_choice=tool_choice,
-                parent_task_id=parent_task_id,
+                task.task_id, mode=mode, tool_choice=tool_choice
             )
 
             if cur_step_output.is_last:
@@ -617,7 +606,6 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
-        parent_task_id: Optional[str] = None,
     ) -> AgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -631,7 +619,6 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
-                parent_task_id=parent_task_id,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -644,7 +631,6 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
-        parent_task_id: Optional[str] = None,
     ) -> AgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -658,7 +644,6 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
-                parent_task_id=parent_task_id,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})

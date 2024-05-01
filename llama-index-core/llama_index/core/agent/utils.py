@@ -13,13 +13,3 @@ def add_user_step_to_memory(
     memory.put(user_message)
     if verbose:
         print(f"Added user message to memory: {step.input}")
-
-
-def add_assistant_step_to_memory(
-    step: TaskStep, memory: BaseMemory, verbose: bool = False
-) -> None:
-    """Add user step to memory."""
-    asst_message = ChatMessage(content=step.input, role=MessageRole.ASSISTANT)
-    memory.put(asst_message)
-    if verbose:
-        print(f"Added assistant message to memory: {step.input}")
