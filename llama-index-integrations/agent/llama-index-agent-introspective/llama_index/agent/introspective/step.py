@@ -177,9 +177,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
             main_agent = self._main_agent_worker.as_agent(
                 chat_history=main_agent_messages
             )
-            main_agent_response = main_agent.chat(
-                task.input, parent_task_id=task.task_id
-            )
+            main_agent_response = main_agent.chat(task.input)
             original_response = main_agent_response.response
             task.extra_state["main"]["sources"] = main_agent_response.sources
             task.extra_state["main"]["memory"] = main_agent.memory
@@ -197,9 +195,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         reflective_agent = self._reflective_agent_worker.as_agent(
             chat_history=reflective_agent_messages
         )
-        reflective_agent_response = reflective_agent.chat(
-            original_response, parent_task_id=task.task_id
-        )
+        reflective_agent_response = reflective_agent.chat(original_response)
         task.extra_state["reflection"]["sources"] = reflective_agent_response.sources
         task.extra_state["reflection"]["memory"] = reflective_agent.memory
 
