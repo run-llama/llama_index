@@ -222,7 +222,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     @dispatcher.span
     def _critique(self, input_str: str) -> AgentChatResponse:
-        agent = self._critique_agent_worker.as_agent(verbose=True)
+        agent = self._critique_agent_worker.as_agent(verbose=self._verbose)
         critique = agent.chat(self._critique_template.format(input_str=input_str))
         if self._verbose:
             print(f"Critique: {critique.response}", flush=True)
@@ -301,7 +301,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
     # Async Methods
     @dispatcher.span
     async def _acritique(self, input_str: str) -> AgentChatResponse:
-        agent = self._critique_agent_worker.as_agent(verbose=True)
+        agent = self._critique_agent_worker.as_agent(verbose=self._verbose)
         critique = await agent.achat(
             self._critique_template.format(input_str=input_str)
         )

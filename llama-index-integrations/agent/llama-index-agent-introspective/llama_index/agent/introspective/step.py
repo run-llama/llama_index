@@ -222,7 +222,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         if self._main_agent_worker is not None:
             main_agent_messages = task.extra_state["main"]["memory"].get()
             main_agent = self._main_agent_worker.as_agent(
-                chat_history=main_agent_messages
+                chat_history=main_agent_messages, verbose=self._verbose
             )
             main_agent_response = await main_agent.achat(task.input)
             original_response = main_agent_response.response
@@ -240,7 +240,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         # run reflective agent
         reflective_agent_messages = task.extra_state["main"]["memory"].get()
         reflective_agent = self._reflective_agent_worker.as_agent(
-            chat_history=reflective_agent_messages
+            chat_history=reflective_agent_messages, verbose=self._verbose
         )
         reflective_agent_response = await reflective_agent.achat(original_response)
         task.extra_state["reflection"]["sources"] = reflective_agent_response.sources
