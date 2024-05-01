@@ -33,7 +33,7 @@ class SpiderWebReader(BasePydanticReader):
     ) -> None:
         super().__init__(api_key=api_key, mode=mode, params=params)
         try:
-            from spider import Spider  # Ensure this import matches the actual package
+            from spider import Spider
         except ImportError:
             raise ImportError(
                 "`spider-client` package not found, please run `pip install spider-client`"
@@ -52,7 +52,6 @@ class SpiderWebReader(BasePydanticReader):
         if "metadata" not in params:
             params["metadata"] = True
 
-        # Use the environment variable if the API key isn't provided
         api_key = api_key
         self.spider = Spider(api_key=api_key)
         self.mode = mode
@@ -80,7 +79,7 @@ class SpiderWebReader(BasePydanticReader):
                 metadata="",
             )
 
-        if isinstance(spider_docs, list):  # Expected in 'crawl' mode
+        if isinstance(spider_docs, list):
             for doc in spider_docs:
                 text = doc.get("content", "")
                 if text is not None:
