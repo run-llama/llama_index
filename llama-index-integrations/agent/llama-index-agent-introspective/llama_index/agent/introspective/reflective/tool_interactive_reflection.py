@@ -31,9 +31,6 @@ from llama_index.core.tools.types import AsyncBaseTool
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
-DEFAULT_MAX_FUNCTION_CALLS = 5
-
-
 CORRECT_PROMPT_TEMPLATE = """
 You are responsible for correcting an input based on a provided critique.
 
@@ -251,6 +248,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
                     step_id=str(uuid.uuid4()),
                     # NOTE: input is unused
                     input=None,
+                    step_state=state,
                 )
             ]
 
