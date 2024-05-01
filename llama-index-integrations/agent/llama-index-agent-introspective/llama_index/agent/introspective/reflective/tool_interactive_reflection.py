@@ -261,24 +261,102 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             next_steps=new_steps,
         )
 
+    # Async Methods
+    async def _acritique(self, input_str: str) -> AgentChatResponse:
+        agent = self._critique_agent_worker.as_agent(verbose=True)
+        critique = await agent.achat(
+            self._critique_template.format(input_str=input_str)
+        )
+        if self._verbose:
+            print(f"Critique: {critique.response}", flush=True)
+        return critique
+
+    async def _acorrect(self, input_str: str, critique: str) -> ChatMessage:
+        correction = await self._correction_program.acall(
+            input_str=input_str, critique=critique
+        )
+
+        correct_response_str = CORRECT_RESPONSE_FSTRING.format(
+            correction=correction.correction
+        )
+        if self._verbose:
+            print(f"Correction: {correction.correction}", flush=True)
+        return ChatMessage.from_str(correct_response_str, role="assistant")
+
     @trace_method("run_step")
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        ...
+        state = step.step_state
+        messages = task.extra_state["new_memory"].get()
+        current_response = messages[-1].content
+        # if reached max iters
+        if state["count"] >= self._max_iterations:
+            return AgentChatResponse(response=current_response), True
+
+        # critique
+        input_str = current_response.replace(
+            "Here is a corrected version of the input.\n", ""
+        )
+        critique_response = await self._acritique(input_str=input_str)
+        task.extra_state["sources"].extend(critique_response.sources)
+
+        _, toxicity_score = critique_response.sources[0].raw_output
+        is_done = toxicity_score < self._toxicity_threshold
+
+        critique_msg = ChatMessage(
+            role=MessageRole.USER, content=critique_response.response
+        )
+        task.extra_state["new_memory"].put(critique_msg)
+
+        # correct
+        if is_done:
+            agent_response = AgentChatResponse(
+                response=current_response, sources=task.extra_state["sources"]
+            )
+            new_steps = []
+        else:
+            correct_msg = await self._acorrect(
+                input_str=input_str, critique=critique_response.response
+            )
+            agent_response = (
+                AgentChatResponse(
+                    response=str(correct_msg), sources=critique_response.sources
+                ),
+            )
+            task.extra_state["new_memory"].put(correct_msg)
+            state["count"] += 1
+            new_steps = [
+                step.get_next_step(
+                    step_id=str(uuid.uuid4()),
+                    # NOTE: input is unused
+                    input=None,
+                )
+            ]
+
+        return TaskStepOutput(
+            output=agent_response,
+            task_step=step,
+            is_last=is_done,
+            next_steps=new_steps,
+        )
 
     @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
-        raise NotImplementedError("Stream not supported for function calling agent")
+        raise NotImplementedError(
+            "Stream not supported for tool-interactive reflection agent"
+        )
 
     @trace_method("run_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
-        raise NotImplementedError("Stream not supported for function calling agent")
+        raise NotImplementedError(
+            "Stream not supported for tool-interactive reflection agent"
+        )
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""

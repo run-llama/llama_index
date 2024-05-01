@@ -217,19 +217,59 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        ...
+        # run main agent if one is supplied otherwise assume input str
+        # is the original response to be reflected on and subsequently corrected
+        if self._main_agent_worker is not None:
+            main_agent_messages = task.extra_state["main"]["memory"].get()
+            main_agent = self._main_agent_worker.as_agent(
+                chat_history=main_agent_messages
+            )
+            main_agent_response = await main_agent.achat(task.input)
+            original_response = main_agent_response.response
+            task.extra_state["main"]["sources"] = main_agent_response.sources
+            task.extra_state["main"]["memory"] = main_agent.memory
+        else:
+            add_user_step_to_memory(
+                step, task.extra_state["main"]["memory"], verbose=self._verbose
+            )
+            original_response = step.input
+            task.extra_state["main"]["memory"].put(
+                ChatMessage(content=original_response, role="assistant")
+            )
+
+        # run reflective agent
+        reflective_agent_messages = task.extra_state["main"]["memory"].get()
+        reflective_agent = self._reflective_agent_worker.as_agent(
+            chat_history=reflective_agent_messages
+        )
+        reflective_agent_response = await reflective_agent.achat(original_response)
+        task.extra_state["reflection"]["sources"] = reflective_agent_response.sources
+        task.extra_state["reflection"]["memory"] = reflective_agent.memory
+
+        agent_response = AgentChatResponse(
+            response=str(reflective_agent_response.response),
+            sources=task.extra_state["main"]["sources"]
+            + task.extra_state["reflection"]["sources"],
+        )
+
+        return TaskStepOutput(
+            output=agent_response,
+            task_step=step,
+            is_last=True,
+            next_steps=[],
+        )
 
     @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
-        raise NotImplementedError("Stream not supported for function calling agent")
+        raise NotImplementedError("Stream not supported for introspective agent")
 
     @trace_method("run_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
-        raise NotImplementedError("Stream not supported for function calling agent")
+        raise NotImplementedError("Stream not supported for introspective agent")
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
