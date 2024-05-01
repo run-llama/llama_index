@@ -61,13 +61,15 @@ class VespaVectorStore(VectorStore):
         `pip install llama-index-vector-stores-vespa`
 
         ```python
-        from vespa.application import Vespa
+        from llama_index.core import VectorStoreIndex
+        from llama_index.vector_stores.vespa import VespaVectorStore
 
-        app = Vespa(url="https://api.cord19.vespa.ai")
+        vector_store = VespaVectorStore()
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        index = VectorStoreIndex(nodes, storage_context=storage_context)
+        retriever = index.as_retriever()
+        retriever.retrieve("Who directed inception?")
 
-        vector_store = VespaVectorStore(
-            vespa_application=app,
-        )
         ```
     """
 
@@ -392,9 +394,9 @@ class VespaVectorStore(VectorStore):
         The part after "select * from {sources_str} where" in the query.
         """
         if mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
-            return f"rank({targetHits:{vector_top_k}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}"
+            return f"rank({{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}"
         elif mode == VectorStoreQueryMode.HYBRID:
-            return f'title contains "vegetable" and rank({targetHits:{vector_top_k}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}'
+            return f'title contains "vegetable" and rank({{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}'
         else:
             raise ValueError(f"Query mode {mode} not supported.")
 
