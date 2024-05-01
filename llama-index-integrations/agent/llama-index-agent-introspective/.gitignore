@@ -151,3 +151,8 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
+
+# data
+data/
+
+.DS_Store
