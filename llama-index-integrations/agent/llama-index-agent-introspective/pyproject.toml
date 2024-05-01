@@ -14,7 +14,9 @@ contains_example = false
 import_path = "llama_index.agent.introspective"
 
 [tool.llamahub.class_authors]
-CriticAgentWorker = "nerdai"
+IntrospectiveAgentWorker = "nerdai"
+SelfReflectionAgentWorker = "jerryjliu"
+ToolInteractiveReflectionAgentWorker = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,7 +26,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Andrei Fajardo <andrei@runllama.ai>"]
+authors = ["Andrei Fajardo <andrei@runllama.ai>", "Jerry Liu <jerry@runllama.ai>"]
 description = "llama-index agent introspective integration"
 exclude = ["**/BUILD"]
 license = "MIT"
