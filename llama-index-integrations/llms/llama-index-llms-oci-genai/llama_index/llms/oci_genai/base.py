@@ -38,6 +38,15 @@ from llama_index.llms.oci_genai.utils import (
     get_chat_generator
 )
 
+# TODO: 
+# (1) stop sequences. works for meta (llama2/3), still need to check for command-r (resolve oci sdk issue)
+# (2) remove manual LLM checks. done (all our models support streaming but not all support chat)
+# (3) command-r extra params. documents param works, need to check other
+# (4) is stream, verify override in complete and chat
+# (5) remove stop token attribute (not used) from provider class. Done
+# (6) async. decide what we want to do. e.g., raise notImplemented
+# (7) role mapping for chat. confirm, test. (for meta "Conversation roles must alternate user/assistant/user/assistant/" but it does accept system?)
+# (8) test R-plus
 class OCIGenAI(LLM):
     """OCI large language models.
 
@@ -223,9 +232,7 @@ class OCIGenAI(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if self.model in OCIGENAI_LLMS and self.model not in COMPLETION_MODELS:
-            raise ValueError(f"Model {self.model} does not support completion")
-            
+                    
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
         inference_params["prompt"] = prompt
@@ -245,12 +252,7 @@ class OCIGenAI(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        if self.model in OCIGENAI_LLMS and self.model not in COMPLETION_MODELS:
-            raise ValueError(f"Model {self.model} does not support completion")
-
-        if self.model in OCIGENAI_LLMS and self.model not in STREAMING_MODELS:
-            raise ValueError(f"Model {self.model} does not support streaming")
-
+        
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = True
         inference_params["prompt"] = prompt
@@ -274,9 +276,6 @@ class OCIGenAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-
-        if self.model in OCIGENAI_LLMS and self.model not in CHAT_MODELS:
-            raise ValueError(f"Model {self.model} is not supported for chat")
         
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = False
@@ -300,12 +299,7 @@ class OCIGenAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        if self.model in OCIGENAI_LLMS and self.model not in CHAT_MODELS:
-            raise ValueError(f"Model {self.model} is not supported for chat")
-
-        if self.model in OCIGENAI_LLMS and self.model not in STREAMING_MODELS:
-            raise ValueError(f"Model {self.model} does not support streaming")
-        
+                
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
         all_kwargs = self._get_all_kwargs(**kwargs)

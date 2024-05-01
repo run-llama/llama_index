@@ -21,6 +21,7 @@ COMPLETION_MODELS = {
 CHAT_MODELS = {
     "meta.llama-2-70b-chat": 4096,
     "cohere.command-r": 128000,
+    "cohere.command-r-plus": 128000,
 }
   
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -29,7 +30,8 @@ STREAMING_MODELS = {
     "cohere.command",
     "cohere.command-light",
     "meta.llama-2-70b-chat",
-    "cohere.command-r"
+    "cohere.command-r",
+    "cohere.command-r-plus"
 }
 
 def create_client(auth_type, auth_profile, service_endpoint):
@@ -107,6 +109,7 @@ def create_client(auth_type, auth_profile, service_endpoint):
 def get_serving_mode(model_id: str) -> Any:
     try:
         from oci.generative_ai_inference import models
+        #from generative_ai_service_bmc_python_client import models
 
     except ImportError as ex:
         raise ModuleNotFoundError(
@@ -125,6 +128,7 @@ def get_serving_mode(model_id: str) -> Any:
 def get_completion_generator() -> Any:
     try:
         from oci.generative_ai_inference import models
+        #from generative_ai_service_bmc_python_client import models
 
     except ImportError as ex:
         raise ModuleNotFoundError(
@@ -138,6 +142,7 @@ def get_completion_generator() -> Any:
 def get_chat_generator() -> Any:
     try:
         from oci.generative_ai_inference import models
+        #from generative_ai_service_bmc_python_client import models
 
     except ImportError as ex:
         raise ModuleNotFoundError(
@@ -149,11 +154,7 @@ def get_chat_generator() -> Any:
 
 
 class Provider(ABC):
-    @property
-    @abstractmethod
-    def stop_sequence_key(self) -> str:
-        ...
-
+    
     @abstractmethod
     def completion_response_to_text(self, response: Any) -> str:
         ...
@@ -176,11 +177,11 @@ class Provider(ABC):
 
 
 class CohereProvider(Provider):
-    stop_sequence_key = "stop_sequences"
-
+    
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
+            #from generative_ai_service_bmc_python_client import models
             
         except ImportError as ex:
             raise ModuleNotFoundError(
@@ -203,18 +204,18 @@ class CohereProvider(Provider):
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        return event_data['text']
+        if 'text' in event_data:
+            return event_data['text']
+        else:
+            return ""
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
 
         role_map = {
             "user": "USER",
-            "system": "SYSTEM",
+            "system": "USER",
             "chatbot": "CHATBOT",
             "assistant": "CHATBOT",
-            "model": "SYSTEM",
-            "function": "SYSTEM",
-            "tool": "SYSTEM",
         }
         
         oci_chat_history = [self.oci_chat_message(role=role_map[msg.role.value], message=msg.content) for msg in messages[:-1]]
@@ -227,11 +228,11 @@ class CohereProvider(Provider):
         return oci_params
     
 class MetaProvider(Provider):
-    stop_sequence_key = "stop"
-    
+        
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
+            #from generative_ai_service_bmc_python_client import models
             
         except ImportError as ex:
             raise ModuleNotFoundError(
@@ -255,11 +256,21 @@ class MetaProvider(Provider):
         return response.data.chat_response.choices[0].message.content[0].text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        return event_data["message"]['content'][0]['text']
+        if "message" in event_data:
+            return event_data["message"]["content"][0]["text"]
+        else:
+            return ""
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
 
-        oci_messages = [self.oci_chat_message(role=msg.role.value, content=[self.oci_chat_message_content(text=msg.content)]) for msg in messages]
+        role_map = {
+            "user": "user",
+            "system": "system",
+            "chatbot": "assistant",
+            "assistant": "assistant",
+        }
+        
+        oci_messages = [self.oci_chat_message(role=role_map[msg.role.value], content=[self.oci_chat_message_content(text=msg.content)]) for msg in messages]
         oci_params = {
             "messages": oci_messages,
             "api_format": self.chat_api_format,
