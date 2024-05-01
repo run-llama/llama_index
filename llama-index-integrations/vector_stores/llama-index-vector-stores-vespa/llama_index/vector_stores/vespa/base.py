@@ -419,7 +419,7 @@ class VespaVectorStore(VectorStore):
             create_embedding=not self.embeddings_outside_vespa,
             vector_top_k=vector_top_k,
         )
-        logger.debug(f"Query body:\n {body}")
+        logger.info(f"Vespa Query body:\n {body}")
         with self.app.syncio() as session:
             response = session.query(
                 body=body,
