@@ -274,10 +274,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             correct_msg = self._correct(
                 input_str=input_str, critique=critique_response.response
             )
-            agent_response = (
-                AgentChatResponse(
-                    response=str(correct_msg), sources=critique_response.sources
-                ),
+            agent_response = AgentChatResponse(
+                response=str(correct_msg), sources=critique_response.sources
             )
             task.extra_state["new_memory"].put(correct_msg)
 
@@ -335,9 +333,6 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
-        # if reached max iters
-        if state["count"] >= self.max_iterations:
-            return AgentChatResponse(response=current_response), True
 
         # critique
         input_str = current_response.replace(
@@ -364,10 +359,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             correct_msg = await self._acorrect(
                 input_str=input_str, critique=critique_response.response
             )
-            agent_response = (
-                AgentChatResponse(
-                    response=str(correct_msg), sources=critique_response.sources
-                ),
+            agent_response = AgentChatResponse(
+                response=str(correct_msg), sources=critique_response.sources
             )
             task.extra_state["new_memory"].put(correct_msg)
 

@@ -239,7 +239,6 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         """Run step."""
         state = step.step_state
         state["count"] += 1
-        print(f"ITER {state['count']}")
 
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
@@ -264,7 +263,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
             correct_msg = self._correct(
                 input_str=input_str, critique=reflection_msg.content
             )
-            agent_response = (AgentChatResponse(response=str(correct_msg)),)
+            agent_response = AgentChatResponse(response=str(correct_msg))
             task.extra_state["new_memory"].put(correct_msg)
 
             if self.max_iterations == state["count"]:
@@ -288,12 +287,93 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     # Async methods
     @dispatcher.span
+    async def _areflect(
+        self, chat_history: List[ChatMessage]
+    ) -> Tuple[Reflection, ChatMessage]:
+        """Reflect on the trajectory."""
+        reflection = await self._reflection_program.acall(
+            chat_history=messages_to_prompt(chat_history)
+        )
+
+        if self._verbose:
+            print(f"> Reflection: {reflection.dict()}")
+
+        # end state: return user message
+        reflection_output_str = (
+            f"Is Done: {reflection.is_done}\nCritique: {reflection.feedback}"
+        )
+        critique = REFLECTION_RESPONSE_TEMPLATE.format(
+            reflection_output=reflection_output_str
+        )
+
+        return reflection, ChatMessage.from_str(critique, role="user")
+
+    @dispatcher.span
+    async def _acorrect(self, input_str: str, critique: str) -> ChatMessage:
+        correction = await self._correction_program.acall(
+            input_str=input_str, feedback=critique
+        )
+
+        correct_response_str = CORRECT_RESPONSE_FSTRING.format(
+            correction=correction.correction
+        )
+        if self._verbose:
+            print(f"Correction: {correction.correction}", flush=True)
+        return ChatMessage.from_str(correct_response_str, role="assistant")
+
+    @dispatcher.span
     @trace_method("run_step")
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        ...
+        state = step.step_state
+        state["count"] += 1
+
+        messages = task.extra_state["new_memory"].get()
+        current_response = messages[-1].content
+
+        # reflect
+        reflection, reflection_msg = await self._areflect(chat_history=messages)
+        is_done = reflection.is_done
+
+        critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
+        task.extra_state["new_memory"].put(critique_msg)
+
+        # correct
+        if is_done:
+            agent_response = AgentChatResponse(
+                response=current_response, sources=task.extra_state["sources"]
+            )
+            new_steps = []
+        else:
+            input_str = current_response.replace(
+                "Here is a corrected version of the input.\n", ""
+            )
+            correct_msg = await self._acorrect(
+                input_str=input_str, critique=reflection_msg.content
+            )
+            agent_response = AgentChatResponse(response=str(correct_msg))
+            task.extra_state["new_memory"].put(correct_msg)
+
+            if self.max_iterations == state["count"]:
+                new_steps = []
+            else:
+                new_steps = [
+                    step.get_next_step(
+                        step_id=str(uuid.uuid4()),
+                        # NOTE: input is unused
+                        input=None,
+                        step_state=state,
+                    )
+                ]
+
+        return TaskStepOutput(
+            output=agent_response,
+            task_step=step,
+            is_last=is_done | (self.max_iterations == state["count"]),
+            next_steps=new_steps,
+        )
 
     # Stream methods
     @dispatcher.span
