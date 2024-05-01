@@ -405,10 +405,8 @@ class VespaVectorStore(VectorStore):
         Build query filter for Vespa query.
         The part after "select * from {sources_str} where" in the query.
         """
-        if mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+        if mode in [VectorStoreQueryMode.SEMANTIC_HYBRID, VectorStoreQueryMode.HYBRID]:
             return f"rank({{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}"
-        elif mode == VectorStoreQueryMode.HYBRID:
-            return f'title contains "vegetable" and rank({{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}'
         else:
             raise ValueError(f"Query mode {mode} not supported.")
 
