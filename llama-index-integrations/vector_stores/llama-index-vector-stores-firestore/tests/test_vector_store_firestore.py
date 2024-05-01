@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from llama_index.vector_store.firestore import FirestoreVectorStore
+from llama_index.vector_stores.firestore import FirestoreVectorStore
 
 
 @patch("importlib.metadata.version", return_value="0.1.0", autospec=True)

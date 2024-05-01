@@ -28,7 +28,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from llama_index.vector_store.firestore.utils import client_with_user_agent
+from llama_index.vector_stores.firestore.utils import client_with_user_agent
 from llama_index.core.base.embeddings.base import similarity, SimilarityMode
 
 DEFAULT_BATCH_SIZE = 500

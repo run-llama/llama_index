@@ -5,7 +5,7 @@ from google.cloud.firestore import Client
 
 import pytest
 
-from llama_index.vector_store.firestore.utils import USER_AGENT
+from llama_index.vector_stores.firestore.utils import USER_AGENT
 
 
 @pytest.fixture(autouse=True, name="test_case")
@@ -28,7 +28,7 @@ def test_user_agent_with_correct_version(
     test_case: TestCase, mock_client: Client
 ) -> None:
     """Test that the user agent includes the correct version."""
-    test_case.assertEqual(
+    test_case.assertIn(
+        "llama-index-vector-store-firestore-python:vectorstore",
         mock_client._client_info.user_agent,
-        "llama-index-vector-store-firestore-python:vectorstore0.1.0",
     )

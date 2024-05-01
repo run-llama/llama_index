@@ -18,8 +18,8 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 
-from llama_index.vector_store.firestore import FirestoreVectorStore
-from llama_index.vector_store.firestore.utils import USER_AGENT
+from llama_index.vector_stores.firestore import FirestoreVectorStore
+from llama_index.vector_stores.firestore.utils import USER_AGENT
 
 TEST_COLLECTION = "mock_collection"
 TEST_EMBEDDING = [1.0, 2.0, 3.0]
