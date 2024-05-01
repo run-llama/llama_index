@@ -16,6 +16,7 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 - [Multi Document Agents](../../../examples/agent/multi_document_agents.ipynb)
 - [Agent Builder](../../../examples/agent/agent_builder.ipynb)
 - [Parallel Function Calling](../../../examples/agent/openai_agent_parallel_function_calling.ipynb)
+- [Agent with Planning](../../../examples/agent/structured_planner.ipynb)
 
 ## [Beta] OpenAI Assistant Agent
 
@@ -49,4 +50,5 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 
 - [Agent Runner](../../../examples/agent/agent_runner/agent_runner.ipynb)
 - [Agent Runner RAG](../../../examples/agent/agent_runner/agent_runner_rag.ipynb)
+- [Agent with Planning](../../../examples/agent/structured_planner.ipynb)
 - [Controllable Agent Runner](../../../examples/agent/agent_runner/agent_runner_rag_controllable.ipynb)
