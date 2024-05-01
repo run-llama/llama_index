@@ -288,7 +288,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema_name"
             )
             result = session.execute(
-                check_schema_statement, {"schema_name", self.schema_name}
+                check_schema_statement, {"schema_name": self.schema_name}
             ).fetchone()
 
             # If the schema does not exist, then create it
