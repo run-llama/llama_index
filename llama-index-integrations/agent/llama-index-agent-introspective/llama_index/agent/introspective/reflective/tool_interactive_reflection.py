@@ -50,6 +50,8 @@ Use the provided information to generate a corrected version of input.
 
 CORRECT_RESPONSE_FSTRING = "Here is a corrected version of the input.\n{correction}"
 
+DEFAULT_MAX_ITERATIONS = 5
+
 
 class Correction(BaseModel):
     """Data class for holding the corrected input."""
@@ -58,13 +60,13 @@ class Correction(BaseModel):
 
 
 class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
-    """Introspective Agent Worker.
+    """Tool-Interactive Reflection Agent Worker.
 
-    This agent worker implements the Reflectiong AI agentic pattern.
+    This agent worker implements the CRITIC reflection framework.
     """
 
     callback_manager: CallbackManager = Field(default=CallbackManager([]))
-    _max_iterations: int = PrivateAttr(default=5)
+    max_iterations: int = Field(default=DEFAULT_MAX_ITERATIONS)
     _toxicity_threshold: float = PrivateAttr(default=3.0)
     _critique_agent_worker: FunctionCallingAgentWorker = PrivateAttr()
     _critique_template: str = PrivateAttr()
@@ -81,6 +83,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_agent_worker: FunctionCallingAgentWorker,
         critique_template: str,
         tools: Sequence[BaseTool],
+        max_iterations: int = DEFAULT_MAX_ITERATIONS,
         correction_llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -117,7 +120,11 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             # no tools
             self._get_tools = lambda _: []
 
-        super().__init__(callback_manager=callback_manager, **kwargs)
+        super().__init__(
+            callback_manager=callback_manager,
+            max_iterations=max_iterations,
+            **kwargs,
+        )
 
     @classmethod
     def from_args(
@@ -125,6 +132,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_agent_worker: FunctionCallingAgentWorker,
         critique_template: str,
         correction_llm: Optional[LLM] = None,
+        max_iterations: int = DEFAULT_MAX_ITERATIONS,
         tools: Optional[Sequence[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -147,6 +155,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             correction_llm=correction_llm,
             tools=tools or [],
             tool_retriever=tool_retriever,
+            max_iterations=max_iterations,
             callback_manager=callback_manager or CallbackManager([]),
             verbose=verbose,
             **kwargs,
@@ -207,7 +216,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
         # if reached max iters
-        if state["count"] >= self._max_iterations:
+        if state["count"] >= self.max_iterations:
             return AgentChatResponse(response=current_response), True
 
         # critique
@@ -292,7 +301,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
         # if reached max iters
-        if state["count"] >= self._max_iterations:
+        if state["count"] >= self.max_iterations:
             return AgentChatResponse(response=current_response), True
 
         # critique
