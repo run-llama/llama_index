@@ -139,7 +139,7 @@ def remove_documents_from_messages(
 ) -> Tuple[Sequence[ChatMessage], List[Dict[str, str]]]:
     """
     Splits messages into two lists: `remaining` and `documents`.
-    `messages` contains all messages that aren't of type DocumentMessage (e.g. history, query).
+    `remaining` contains all messages that aren't of type DocumentMessage (e.g. history, query).
     `documents` contains the retrieved documents, formatted as expected by Cohere RAG inference calls.
 
     NOTE: this will mix turns for multi-turn RAG
