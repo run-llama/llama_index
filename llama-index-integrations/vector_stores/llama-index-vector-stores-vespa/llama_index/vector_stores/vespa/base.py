@@ -81,8 +81,9 @@ class VespaVectorStore(VectorStore):
         namespace: str = "default",
         default_schema_name: str = "doc",
         deployment_target: str = "local",  # "local" or "cloud"
-        local_port: int = 8080,
-        embeddings_outside_vespa: bool = True,
+        port: int = 8080,
+        embeddings_outside_vespa: bool = False,
+        url: Optional[str] = None,
         groupname: Optional[str] = None,
         tenant: Optional[str] = None,
         application: Optional[str] = None,
@@ -97,10 +98,11 @@ class VespaVectorStore(VectorStore):
         Args:
             application_package (ApplicationPackage): Application package
             deployment_target (str): Deployment target, either `local` or `cloud`
-            local_port (int): Port that Vespa application will run on. Only applicable if deployment_target is `local`
+            port (int): Port that Vespa application will run on. Only applicable if deployment_target is `local`
             default_schema_name (str): Schema name in Vespa application
             namespace (str): Namespace in Vespa application
             embeddings_outside_vespa (bool): Whether embeddings are created outside Vespa, or not.
+            url (Optional[str]): URL of deployed Vespa application.
             groupname (Optional[str]): Group name in Vespa application, only applicable in `streaming` mode, see https://pyvespa.readthedocs.io/en/latest/examples/scaling-personal-ai-assistants-with-streaming-mode-cloud.html#A-summary-of-Vespa-streaming-mode
             tenant (Optional[str]): Tenant for Vespa application. Applicable only if deployment_target is `cloud`
             key_location (Optional[str]): Location of the control plane key used for signing HTTP requests to the Vespa Cloud.
@@ -114,24 +116,43 @@ class VespaVectorStore(VectorStore):
             raise ValueError(
                 "application_package must be an instance of vespa.package.ApplicationPackage"
             )
+        if application_package == hybrid_template:
+            logger.info(
+                "Using default hybrid template. Please make sure that the Vespa application is set up with the correct schema and rank profile."
+            )
         # Initialize all parameters
         self.application_package = application_package
         self.deployment_target = deployment_target
         self.default_schema_name = default_schema_name
         self.namespace = namespace
         self.embeddings_outside_vespa = embeddings_outside_vespa
+        self.port = port
+        self.url = url
         self.groupname = groupname
         self.tenant = tenant
         self.key_location = key_location
         self.key_content = key_content
         self.auth_client_token_id = auth_client_token_id
         self.kwargs = kwargs
-        self.app = self._deploy()
+        if self.url is None:
+            self.app = self._deploy()
+        else:
+            self.app = self._try_get_running_app()
 
     @property
     def client(self) -> Vespa:
         """Get client."""
         return self.app
+
+    def _try_get_running_app(self) -> Vespa:
+        app = Vespa(url=f"{self.url}:{self.port}")
+        status = app.get_application_status()
+        if status.status_code == 200:
+            return app
+        else:
+            raise ConnectionError(
+                f"Vespa application not running on url {self.url} and port {self.port}. Please start Vespa application first."
+            )
 
     def _deploy(self) -> Vespa:
         if self.deployment_target == "cloud":
@@ -304,7 +325,7 @@ class VespaVectorStore(VectorStore):
         Returns:
             dict: Query parameters
         """
-        logging.info(f"Query: {query}")
+        logger.info(f"Query: {query}")
         if query.filters:
             logger.warning("Filter support not implemented yet. Will be ignored.")
         if query.alpha:
@@ -313,9 +334,6 @@ class VespaVectorStore(VectorStore):
                 "See for example https://pyvespa.readthedocs.io/en/latest/examples/evaluating-with-snowflake-arctic-embed.html"
             )
 
-        input_embedding = (
-            f"embed({query.query_str})" if create_embedding else query.query_embedding
-        )
         # if input_embedding is None and not create_embedding:
         #     raise ValueError(
         #         "Input embedding must be provided if embeddings are not created outside Vespa"
@@ -323,7 +341,8 @@ class VespaVectorStore(VectorStore):
 
         base_params = {
             "hits": query.similarity_top_k,
-            "ranking.profile": rank_profile or self._default_rank_profile(query.mode),
+            "ranking.profile": rank_profile
+            or self._get_default_rank_profile(query.mode),
             "query": query.query_str,
             "tracelevel": 9,
         }
@@ -343,8 +362,12 @@ class VespaVectorStore(VectorStore):
                     f"Embedding field not provided. Using default embedding field {embedding_field}"
                 )
             query_params = {
-                "yql": f"select * from {sources_str} where {self._build_query_filter(query.mode, vector_top_k)}",
-                "input.query(q)": input_embedding,
+                "yql": f"select * from {sources_str} where {self._build_query_filter(query.mode, embedding_field, vector_top_k, query.similarity_top_k)}",
+                "input.query(q)": (
+                    f"embed({query.query_str})"
+                    if create_embedding
+                    else query.query_embedding
+                ),
             }
         else:
             raise NotImplementedError(
@@ -353,18 +376,27 @@ class VespaVectorStore(VectorStore):
 
         return {**base_params, **query_params}
 
-    def _default_rank_profile(self, mode):
+    def _get_default_rank_profile(self, mode):
         return {
             VectorStoreQueryMode.TEXT_SEARCH: "bm25",
-            VectorStoreQueryMode.SEMANTIC_HYBRID: "semantic_hybrid",
-            VectorStoreQueryMode.HYBRID: "hybrid",
+            VectorStoreQueryMode.SEMANTIC_HYBRID: "fusion",
+            VectorStoreQueryMode.HYBRID: "fusion",
             VectorStoreQueryMode.DEFAULT: "bm25",
         }.get(mode)
 
-    def _build_query_filter(self, mode, embedding_field, vector_top_k):
-        if mode == VectorStoreQueryMode.HYBRID:
-            return f"{{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q) or userQuery()"
-        return f"{{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q)"
+    def _build_query_filter(
+        self, mode, embedding_field, vector_top_k, similarity_top_k
+    ):
+        """
+        Build query filter for Vespa query.
+        The part after "select * from {sources_str} where" in the query.
+        """
+        if mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+            return f"rank({targetHits:{vector_top_k}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}"
+        elif mode == VectorStoreQueryMode.HYBRID:
+            return f'title contains "vegetable" and rank({targetHits:{vector_top_k}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}'
+        else:
+            raise ValueError(f"Query mode {mode} not supported.")
 
     def query(
         self,
@@ -375,7 +407,7 @@ class VespaVectorStore(VectorStore):
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query vector store."""
-        logger.info(f"Query: {query}")
+        logger.debug(f"Query: {query}")
         sources_str = ",".join(sources) if sources else "sources *"
         mode = query.mode
         body = self._create_query_body(
@@ -385,8 +417,7 @@ class VespaVectorStore(VectorStore):
             create_embedding=not self.embeddings_outside_vespa,
             vector_top_k=vector_top_k,
         )
-        logger.info(f"Query body:\n {body}")
-        logger.debug(body)
+        logger.debug(f"Query body:\n {body}")
         with self.app.syncio() as session:
             response = session.query(
                 body=body,
@@ -408,7 +439,7 @@ class VespaVectorStore(VectorStore):
             response_fields: dict = hit.get("fields", {})
             metadata = response_fields.get("metadata", {})
             metadata = json.loads(metadata)
-            logger.info(f"Metadata: {metadata}")
+            logger.debug(f"Metadata: {metadata}")
             node = metadata_dict_to_node(metadata)
             text = response_fields.get("body", "")
             node.set_content(text)
