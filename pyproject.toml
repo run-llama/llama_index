@@ -64,7 +64,6 @@ llama-index-cli = "^0.1.2"
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
-ipykernel = "^6.29.4"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
