@@ -2,7 +2,7 @@
 
 import logging
 import uuid
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
@@ -19,18 +19,13 @@ from llama_index.core.chat_engine.types import (
     AgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
-from llama_index.core.settings import Settings
-from llama_index.core.tools import BaseTool, adapt_to_async_tool
-from llama_index.core.tools import BaseTool, adapt_to_async_tool
-from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.tools import BaseTool
+from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
-
-DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
@@ -44,87 +39,64 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 class IntrospectiveAgentWorker(BaseAgentWorker):
     """Introspective Agent Worker.
 
-    This agent worker implements the Reflectiong AI agentic pattern.
+    This agent worker implements the Reflectiong AI agentic pattern. It does
+    so by merely delegating the work to two other agents in a purely
+    deterministic fashion.
+
+    The task this agent performs (again via delegation) is to generate a response
+    to a query and perform reflection and correction on the response. This
+    agent delegates the task to (optionally) first a `main_agent_worker` that
+    generates the initial response to the query. This initial response is then
+    passed to the `reflective_agent_worker` to perform the reflection and
+    correction of the initial response. Optionally, the `main_agent_worker`
+    can be skipped if none is provided. In this case, the users input query
+    will be assumed to contain the original response that needs to go thru
+    reflection and correction.
+
+    Attributes:
+        reflective_agent_worker (BaseAgentWorker): Reflective agent responsible for
+            performing reflection and correction of the initial response.
+        main_agent_worker (Optional[BaseAgentWorker], optional): Main agent responsible
+            for generating an initial response to the user query. Defaults to None.
+            If None, the user input is assumed as the initial response.
+        verbose (bool, optional): Whether execution should be verbose. Defaults to False.
+        callback_manager (Optional[CallbackManager], optional): Callback manager. Defaults to None.
     """
 
     def __init__(
         self,
-        tools: List[BaseTool],
-        llm: FunctionCallingLLM,
         reflective_agent_worker: BaseAgentWorker,
         main_agent_worker: Optional[BaseAgentWorker] = None,
         verbose: bool = False,
-        max_function_calls: int = 5,
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         allow_parallel_tool_calls: bool = True,
     ) -> None:
         """Init params."""
-        if not llm.metadata.is_function_calling_model:
-            raise ValueError(
-                f"Model name {llm.model} does not support function calling API. "
-            )
-        self._llm = llm
         self._verbose = verbose
-        self._max_function_calls = max_function_calls
         self._main_agent_worker = main_agent_worker
         self._reflective_agent_worker = reflective_agent_worker
-        self.callback_manager = callback_manager or self._llm.callback_manager
-        self.allow_parallel_tool_calls = allow_parallel_tool_calls
-
-        if len(tools) > 0 and tool_retriever is not None:
-            raise ValueError("Cannot specify both tools and tool_retriever")
-        elif len(tools) > 0:
-            self._get_tools = lambda _: tools
-        elif tool_retriever is not None:
-            tool_retriever_c = cast(ObjectRetriever[BaseTool], tool_retriever)
-            self._get_tools = lambda message: tool_retriever_c.retrieve(message)
-        else:
-            # no tools
-            self._get_tools = lambda _: []
+        self.callback_manager = callback_manager or CallbackManager([])
 
     @classmethod
-    def from_args(
+    def from_defaults(
         cls,
         reflective_agent_worker: BaseAgentWorker,
         main_agent_worker: Optional[BaseAgentWorker] = None,
-        tools: Optional[List[BaseTool]] = None,
-        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        llm: Optional[FunctionCallingLLM] = None,
         verbose: bool = False,
-        max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         callback_manager: Optional[CallbackManager] = None,
-        system_prompt: Optional[str] = None,
         **kwargs: Any,
     ) -> "IntrospectiveAgentWorker":
-        """Create an IntrospectiveAgentWorker from a list of tools.
+        """Create an IntrospectiveAgentWorker from args.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,
         if they are not specified.
-
         """
-        tools = tools or []
-
-        llm = llm or Settings.llm
-        if callback_manager is not None:
-            llm.callback_manager = callback_manager
-
-        if system_prompt is not None:
-            if prefix_messages is not None:
-                raise ValueError(
-                    "Cannot specify both system_prompt and prefix_messages"
-                )
-            prefix_messages = [ChatMessage(content=system_prompt, role="system")]
-
         return cls(
-            tools=tools,
-            tool_retriever=tool_retriever,
             main_agent_worker=main_agent_worker,
             reflective_agent_worker=reflective_agent_worker,
-            llm=llm,
             verbose=verbose,
-            max_function_calls=max_function_calls,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -155,10 +127,6 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
             step_id=str(uuid.uuid4()),
             input=task.input,
         )
-
-    def get_tools(self, input: str) -> List[AsyncBaseTool]:
-        """Get tools."""
-        return [adapt_to_async_tool(t) for t in self._get_tools(input)]
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
@@ -217,7 +185,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        # run main agent if one is supplied otherwise assume input str
+        # run main agent if one is supplied otherwise assume user input
         # is the original response to be reflected on and subsequently corrected
         if self._main_agent_worker is not None:
             main_agent_messages = task.extra_state["main"]["memory"].get()

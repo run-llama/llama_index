@@ -1,1 +1,1 @@
-# LlamaIndex Agent Integration: Critic
+# LlamaIndex Agent Integration: Introspective Agent
