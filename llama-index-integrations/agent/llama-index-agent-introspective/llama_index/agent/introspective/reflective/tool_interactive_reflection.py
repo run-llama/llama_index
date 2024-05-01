@@ -21,9 +21,9 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.llm import LLM
+from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
-from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, adapt_to_async_tool
 from llama_index.core.tools import BaseTool, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
@@ -32,6 +32,23 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
+
+
+CORRECT_PROMPT_TEMPLATE = """
+You are responsible for correcting an input based on a provided critique.
+
+Input:
+
+{input_str}
+
+Critique:
+
+{critique}
+
+Use the provided information to generate a corrected version of input.
+"""
+
+CORRECT_RESPONSE_FSTRING = "Here is a corrected version of the input.\n{correction}"
 
 
 class Correction(BaseModel):
@@ -46,19 +63,25 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
     This agent worker implements the Reflectiong AI agentic pattern.
     """
 
+    callback_manager: CallbackManager = Field(default=CallbackManager([]))
     _max_iterations: int = PrivateAttr(default=5)
     _toxicity_threshold: float = PrivateAttr(default=3.0)
     _critique_agent_worker: FunctionCallingAgentWorker = PrivateAttr()
     _critique_template: str = PrivateAttr()
+    _correction_llm: LLM = PrivateAttr()
+    _correction_program: BaseLLMFunctionProgram = PrivateAttr()
     _verbose: bool = PrivateAttr()
     _get_tools: Callable = PrivateAttr()
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def __init__(
         self,
         critique_agent_worker: FunctionCallingAgentWorker,
         critique_template: str,
         tools: Sequence[BaseTool],
-        llm: LLM,
+        correction_llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
@@ -67,6 +90,22 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         self._critique_agent_worker = critique_agent_worker
         self._critique_template = critique_template
         self._verbose = verbose
+        self._correction_llm = correction_llm
+
+        # define _correction_program
+        try:
+            from llama_index.program.openai import OpenAIPydanticProgram
+        except ImportError:
+            raise ImportError(
+                "Missing OpenAIPydanticProgram. Please run `pip install llama-index-program-openai`."
+            )
+        self._correction_program = OpenAIPydanticProgram.from_defaults(
+            Correction,
+            prompt_template_str=CORRECT_PROMPT_TEMPLATE,
+            llm=self._correction_llm,
+        )
+
+        # define _get_tools
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
         elif len(tools) > 0:
@@ -77,36 +116,37 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         else:
             # no tools
             self._get_tools = lambda _: []
-        super().__init__(
-            tools=tools,
-            llm=llm,
-            callback_manager=callback_manager or CallbackManager([]),
-            tool_retriever=tool_retriever,
-            **kwargs,
-        )
+
+        super().__init__(callback_manager=callback_manager, **kwargs)
 
     @classmethod
     def from_args(
         cls,
         critique_agent_worker: FunctionCallingAgentWorker,
         critique_template: str,
+        correction_llm: Optional[LLM] = None,
         tools: Optional[Sequence[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ToolInteractiveReflectionAgentWorker":
         """Convenience constructor method from set of of BaseTools (Optional)."""
-        llm = llm or Settings.llm
-        if callback_manager is not None:
-            llm.callback_manager = callback_manager
+        if correction_llm is None:
+            try:
+                from llama_index.llms.openai import OpenAI
+            except ImportError:
+                raise ImportError(
+                    "Missing OpenAI LLMs. Please run `pip install llama-index-llms-openai`."
+                )
+            correction_llm = OpenAI(model="gpt-4-turbo-preview", temperature=0)
+
         return cls(
             critique_agent_worker=critique_agent_worker,
             critique_template=critique_template,
+            correction_llm=correction_llm,
             tools=tools or [],
             tool_retriever=tool_retriever,
-            llm=llm,
             callback_manager=callback_manager or CallbackManager([]),
             verbose=verbose,
             **kwargs,
@@ -144,34 +184,9 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         return critique
 
     def _correct(self, input_str: str, critique: str) -> ChatMessage:
-        from llama_index.llms.openai import OpenAI
-        from llama_index.program.openai import OpenAIPydanticProgram
+        correction = self._correction_program(input_str=input_str, critique=critique)
 
-        correct_prompt_tmpl = """
-        You are responsible for correcting an input based on a provided critique.
-
-        Input:
-
-        {input_str}
-
-        Critique:
-
-        {critique}
-
-        Use the provided information to generate a corrected version of input.
-        """
-
-        correct_response_tmpl = (
-            "Here is a corrected version of the input.\n{correction}"
-        )
-
-        correction_llm = OpenAI(model="gpt-4-turbo-preview", temperature=0)
-        program = OpenAIPydanticProgram.from_defaults(
-            Correction, prompt_template_str=correct_prompt_tmpl, llm=correction_llm
-        )
-        correction = program(input_str=input_str, critique=critique)
-
-        correct_response_str = correct_response_tmpl.format(
+        correct_response_str = CORRECT_RESPONSE_FSTRING.format(
             correction=correction.correction
         )
         if self._verbose:
