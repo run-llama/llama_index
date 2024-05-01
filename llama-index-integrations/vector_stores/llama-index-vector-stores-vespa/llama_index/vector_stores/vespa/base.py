@@ -44,7 +44,8 @@ def callback(response: VespaResponse, id: str):
 
 
 class VespaVectorStore(VectorStore):
-    """Vespa vector store.
+    """
+    Vespa vector store.
 
     In this vector store, embeddings and docs are stored in a Vespa application.
 
@@ -52,10 +53,22 @@ class VespaVectorStore(VectorStore):
 
     During query time, the index queries the Vespa application to get the top k most relevant hits.
 
+    Initialize Vespa vector store.
+
     Args:
-        vespa_application (vespa.application.Vespa): Vespa
-            instance from `pyvespa` package
-        schema_name (Optional[str]): Schema name in Vespa application
+            application_package (ApplicationPackage): Application package
+            deployment_target (str): Deployment target, either `local` or `cloud`
+            port (int): Port that Vespa application will run on. Only applicable if deployment_target is `local`
+            default_schema_name (str): Schema name in Vespa application
+            namespace (str): Namespace in Vespa application
+            embeddings_outside_vespa (bool): Whether embeddings are created outside Vespa, or not.
+            url (Optional[str]): URL of deployed Vespa application.
+            groupname (Optional[str]): Group name in Vespa application, only applicable in `streaming` mode, see https://pyvespa.readthedocs.io/en/latest/examples/scaling-personal-ai-assistants-with-streaming-mode-cloud.html#A-summary-of-Vespa-streaming-mode
+            tenant (Optional[str]): Tenant for Vespa application. Applicable only if deployment_target is `cloud`
+            key_location (Optional[str]): Location of the control plane key used for signing HTTP requests to the Vespa Cloud.
+            key_content (Optional[str]): Content of the control plane key used for signing HTTP requests to the Vespa Cloud. Use only when key file is not available.
+            auth_client_token_id (Optional[str]): Use token based data plane authentication. This is the token name configured in the Vespa Cloud Console. This is used to configure Vespa services.xml. The token is given read and write permissions.
+            kwargs (Any): Additional kwargs for Vespa application
 
     Examples:
         `pip install llama-index-vector-stores-vespa`
@@ -94,25 +107,6 @@ class VespaVectorStore(VectorStore):
         auth_client_token_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Initialize Vespa vector store.
-
-        Args:
-            application_package (ApplicationPackage): Application package
-            deployment_target (str): Deployment target, either `local` or `cloud`
-            port (int): Port that Vespa application will run on. Only applicable if deployment_target is `local`
-            default_schema_name (str): Schema name in Vespa application
-            namespace (str): Namespace in Vespa application
-            embeddings_outside_vespa (bool): Whether embeddings are created outside Vespa, or not.
-            url (Optional[str]): URL of deployed Vespa application.
-            groupname (Optional[str]): Group name in Vespa application, only applicable in `streaming` mode, see https://pyvespa.readthedocs.io/en/latest/examples/scaling-personal-ai-assistants-with-streaming-mode-cloud.html#A-summary-of-Vespa-streaming-mode
-            tenant (Optional[str]): Tenant for Vespa application. Applicable only if deployment_target is `cloud`
-            key_location (Optional[str]): Location of the control plane key used for signing HTTP requests to the Vespa Cloud.
-            key_content (Optional[str]): Content of the control plane key used for signing HTTP requests to the Vespa Cloud. Use only when key file is not available.
-            auth_client_token_id (Optional[str]): Use token based data plane authentication. This is the token name configured in the Vespa Cloud Console. This is used to configure Vespa services.xml. The token is given read and write permissions.
-            kwargs (Any): Additional kwargs for Vespa application
-
-        """
         # Verify that application_package is an instance of ApplicationPackage
         if not isinstance(application_package, ApplicationPackage):
             raise ValueError(
@@ -206,11 +200,12 @@ class VespaVectorStore(VectorStore):
                 "id": node.node_id,
                 "fields": {
                     "id": node.node_id,
-                    # TODO: Only if outside. "embedding": node.get_embedding(),
                     "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
                     "metadata": json.dumps(metadata),
                 },
             }
+            if self.embeddings_outside_vespa:
+                entry["fields"]["embedding"] = node.get_embedding()
             data_to_insert.append(entry)
             ids.append(node.node_id)
 
@@ -251,15 +246,17 @@ class VespaVectorStore(VectorStore):
             metadata = node_to_metadata_dict(
                 node, remove_text=False, flat_metadata=self.flat_metadata
             )
-
+            logger.debug(f"Metadata: {metadata}")
             entry = {
                 "id": node.node_id,
                 "fields": {
-                    "embedding": node.get_embedding(),
-                    "body": node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                    **metadata,
+                    "id": node.node_id,
+                    "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                    "metadata": json.dumps(metadata),
                 },
             }
+            if self.embeddings_outside_vespa:
+                entry["fields"]["embedding"] = node.get_embedding()
             data_to_insert.append(entry)
             ids.append(node.node_id)
 
@@ -423,8 +420,6 @@ class VespaVectorStore(VectorStore):
         with self.app.syncio() as session:
             response = session.query(
                 body=body,
-                # schema=self.default_schema_name,
-                # namespace=self.namespace,
             )
         if not response.is_successful():
             raise ValueError(
