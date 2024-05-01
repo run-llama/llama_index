@@ -300,12 +300,16 @@ class VespaVectorStore(VectorStore):
         """
         Delete nodes using with ref_doc_id.
         """
-        self.app.delete_data(
+        response: VespaResponse = self.app.delete_data(
             schema=self.default_schema_name,
             namespace=namespace or self.namespace,
             data_id=ref_doc_id,
             kwargs=delete_kwargs,
         )
+        if not response.is_successful():
+            raise ValueError(
+                f"Delete request failed: {response.status_code}, response payload: {response.json}"
+            )
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -345,10 +349,10 @@ class VespaVectorStore(VectorStore):
                 "See for example https://pyvespa.readthedocs.io/en/latest/examples/evaluating-with-snowflake-arctic-embed.html"
             )
 
-        # if input_embedding is None and not create_embedding:
-        #     raise ValueError(
-        #         "Input embedding must be provided if embeddings are not created outside Vespa"
-        #     )
+        if input_embedding is None and not create_embedding:
+            raise ValueError(
+                "Input embedding must be provided if embeddings are not created outside Vespa"
+            )
 
         base_params = {
             "hits": query.similarity_top_k,
