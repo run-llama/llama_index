@@ -302,6 +302,7 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        batch: bool = False,
         **kwargs: Any,
     ) -> Any:
         """Run the pipeline."""
@@ -317,12 +318,21 @@ class QueryPipeline(QueryComponent):
             with self.callback_manager.event(
                 CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
-                outputs, _ = self._run(
-                    *args,
-                    return_values_direct=return_values_direct,
-                    show_intermediates=False,
-                    **kwargs,
-                )
+                if batch:
+                    outputs, _ = self._run(
+                        *args,
+                        return_values_direct=return_values_direct,
+                        show_intermediates=False,
+                        batch=True,
+                        **kwargs,
+                    )
+                else:
+                    outputs, _ = self._run(
+                        *args,
+                        return_values_direct=return_values_direct,
+                        show_intermediates=False,
+                        **kwargs,
+                    )
                 return outputs
 
     def run_with_intermediates(
@@ -330,6 +340,7 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline."""
@@ -352,10 +363,27 @@ class QueryPipeline(QueryComponent):
                     **kwargs,
                 )
 
+    def merge_dicts(self, d1, d2):
+        """Merge two dictionaries recursively, combining values of the same key into a list."""
+        merged = {}
+        for key in set(d1).union(d2):
+            if key in d1 and key in d2:
+                if isinstance(d1[key], dict) and isinstance(d2[key], dict):
+                    merged[key] = self.merge_dicts(d1[key], d2[key])
+                else:
+                    merged[key] = (
+                        [d1[key]] if not isinstance(d1[key], list) else d1[key]
+                    )
+                    merged[key].append(d2[key])
+            else:
+                merged[key] = d1.get(key, d2.get(key))
+        return merged
+
     def run_multi(
         self,
         module_input_dict: Dict[str, Any],
         callback_manager: Optional[CallbackManager] = None,
+        batch: bool = False,
     ) -> Dict[str, Any]:
         """Run the pipeline for multiple roots."""
         callback_manager = callback_manager or self.callback_manager
@@ -365,8 +393,36 @@ class QueryPipeline(QueryComponent):
                 CBEventType.QUERY,
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
-                outputs, _ = self._run_multi(module_input_dict)
-                return outputs
+                if batch:
+                    outputs = {}
+
+                    batch_size = min(
+                        len(values)
+                        for subdict in module_input_dict.values()
+                        for values in subdict.values()
+                    )
+
+                    # List individual outputs from batch multi input.
+                    inputs = [
+                        {
+                            key: {
+                                inner_key: inner_val[i]
+                                for inner_key, inner_val in value.items()
+                            }
+                            for key, value in module_input_dict.items()
+                        }
+                        for i in range(batch_size)
+                    ]
+                    for input in inputs:
+                        output, _ = self._run_multi(input)
+                        outputs = self.merge_dicts(outputs, output)
+                    return outputs
+                else:
+                    outputs, _ = self._run_multi(module_input_dict)
+                    return outputs
+
+    # {"qc1_0": {"input1": [1,5], "input2": [2,1]}, "qc1_1": {"input1": [3,7], "input2": [4,2]}}
+    # for kwarg in [dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())]:
 
     def run_multi_with_intermediates(
         self,
@@ -388,6 +444,7 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        batch: bool = False,
         **kwargs: Any,
     ) -> Any:
         """Run the pipeline."""
@@ -402,12 +459,21 @@ class QueryPipeline(QueryComponent):
             with self.callback_manager.event(
                 CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
-                outputs, _ = await self._arun(
-                    *args,
-                    return_values_direct=return_values_direct,
-                    show_intermediates=False,
-                    **kwargs,
-                )
+                if batch:
+                    outputs, _ = await self._arun(
+                        *args,
+                        return_values_direct=return_values_direct,
+                        show_intermediates=False,
+                        batch=True,
+                        **kwargs,
+                    )
+                else:
+                    outputs, _ = await self._arun(
+                        *args,
+                        return_values_direct=return_values_direct,
+                        show_intermediates=False,
+                        **kwargs,
+                    )
                 return outputs
 
     async def arun_with_intermediates(
@@ -415,6 +481,7 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline."""
@@ -440,6 +507,7 @@ class QueryPipeline(QueryComponent):
         self,
         module_input_dict: Dict[str, Any],
         callback_manager: Optional[CallbackManager] = None,
+        batch: bool = False,
     ) -> Dict[str, Any]:
         """Run the pipeline for multiple roots."""
         callback_manager = callback_manager or self.callback_manager
@@ -449,8 +517,33 @@ class QueryPipeline(QueryComponent):
                 CBEventType.QUERY,
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
-                outputs, _ = await self._arun_multi(module_input_dict)
-                return outputs
+                if batch:
+                    outputs = {}
+
+                    batch_size = min(
+                        len(values)
+                        for subdict in module_input_dict.values()
+                        for values in subdict.values()
+                    )
+
+                    # List individual outputs from batch multi input.
+                    inputs = [
+                        {
+                            key: {
+                                inner_key: inner_val[i]
+                                for inner_key, inner_val in value.items()
+                            }
+                            for key, value in module_input_dict.items()
+                        }
+                        for i in range(batch_size)
+                    ]
+                    for input in inputs:
+                        output, _ = self._arun_multi(input)
+                        outputs = self.merge_dicts(outputs, output)
+                    return outputs
+                else:
+                    outputs, _ = await self._arun_multi(module_input_dict)
+                    return outputs
 
     async def arun_multi_with_intermediates(
         self,
@@ -530,6 +623,7 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         show_intermediates: bool = False,
+        batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline.
@@ -541,20 +635,40 @@ class QueryPipeline(QueryComponent):
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
 
-        result_outputs, intermediates = self._run_multi(
-            {root_key: kwargs}, show_intermediates=show_intermediates
-        )
+        if batch:
+            result_outputs = []
+            intermediates = []
 
-        return (
-            self._get_single_result_output(result_outputs, return_values_direct),
-            intermediates,
-        )
+            # List of individual inputs from batch input
+            kwargs = [
+                dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())
+            ]
+            for kwarg in kwargs:
+                result_output, intermediate = self._run_multi(
+                    {root_key: kwarg}, show_intermediates=show_intermediates
+                )
+                result_outputs.append(
+                    self._get_single_result_output(result_output, return_values_direct)
+                )
+                intermediates.append(intermediate)
+
+            return result_outputs, intermediates
+        else:
+            result_outputs, intermediates = self._run_multi(
+                {root_key: kwargs}, show_intermediates=show_intermediates
+            )
+
+            return (
+                self._get_single_result_output(result_outputs, return_values_direct),
+                intermediates,
+            )
 
     async def _arun(
         self,
         *args: Any,
         return_values_direct: bool = True,
         show_intermediates: bool = False,
+        batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline.
@@ -566,14 +680,33 @@ class QueryPipeline(QueryComponent):
         """
         root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
 
-        result_outputs, intermediates = await self._arun_multi(
-            {root_key: kwargs}, show_intermediates=show_intermediates
-        )
+        if batch:
+            result_outputs = []
+            intermediates = []
 
-        return (
-            self._get_single_result_output(result_outputs, return_values_direct),
-            intermediates,
-        )
+            # List of individual inputs from batch input
+            kwargs = [
+                dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())
+            ]
+            for kwarg in kwargs:
+                result_output, intermediate = await self._arun_multi(
+                    {root_key: kwarg}, show_intermediates=show_intermediates
+                )
+                result_outputs.append(
+                    self._get_single_result_output(result_output, return_values_direct)
+                )
+                intermediates.append(intermediate)
+
+            return result_outputs, intermediates
+        else:
+            result_outputs, intermediates = await self._arun_multi(
+                {root_key: kwargs}, show_intermediates=show_intermediates
+            )
+
+            return (
+                self._get_single_result_output(result_outputs, return_values_direct),
+                intermediates,
+            )
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
         root_keys = self._get_root_keys()
