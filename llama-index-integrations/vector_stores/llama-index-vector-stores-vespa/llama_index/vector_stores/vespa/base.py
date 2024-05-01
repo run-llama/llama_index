@@ -348,7 +348,7 @@ class VespaVectorStore(VectorStore):
                 "See for example https://pyvespa.readthedocs.io/en/latest/examples/evaluating-with-snowflake-arctic-embed.html"
             )
 
-        if input_embedding is None and not create_embedding:
+        if query.query_embedding is None and not create_embedding:
             raise ValueError(
                 "Input embedding must be provided if embeddings are not created outside Vespa"
             )
