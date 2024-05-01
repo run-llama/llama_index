@@ -1,6 +1,7 @@
 # LlamaIndex Readers Integration: SteamshipFile
 
 ## Overview
+
 The SteamshipFile Reader allows you to load documents from persistent Steamship Files. Steamship is a platform for storing and managing files with advanced tagging capabilities.
 
 For more detailed information about the SteamshipFile Reader, visit [SteamShip](steamship.com).
@@ -13,7 +14,7 @@ You can install the SteamshipFile Reader via pip:
 pip install llama-index-readers-steamship
 ```
 
-This reader requires steamship API key, which can be aquired from [SteamShip](steamship.com).
+This reader requires steamship API key, which can be acquired from [SteamShip](steamship.com).
 
 ### Usage
 
@@ -27,10 +28,9 @@ reader = SteamshipFileReader(api_key="<Steamship API Key>")
 documents = reader.load_data(
     workspace="<Steamship Workspace>",
     query="<Steamship Tag Query>",
-    file_handles=["smooth-valley-9kbdr"
-],
+    file_handles=["smooth-valley-9kbdr"],
     collapse_blocks=True,
-    join_str="\n\n"
+    join_str="\n\n",
 )
 ```
 

@@ -22,10 +22,9 @@ reader = NotionPageReader(integration_token="<Integration Token>")
 
 # Load data from Notion
 documents = reader.load_data(
-    page_ids=["<Page ID 1>", "<Page ID 2>"],    # List of page IDs to load
-    database_id="<Database ID>"                 # Database ID from which to load page IDs
+    page_ids=["<Page ID 1>", "<Page ID 2>"],  # List of page IDs to load
+    database_id="<Database ID>",  # Database ID from which to load page IDs
 )
-
 ```
 
 Implementation for Notion reader can be found [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/NotionDemo/)

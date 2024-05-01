@@ -1,6 +1,7 @@
 # LlamaIndex Readers Integration: Weaviate
 
 ## Overview
+
 The Weaviate Reader retrieves documents from Weaviate through vector lookup. It allows you to specify a class name and properties to retrieve from documents, or to provide a custom GraphQL query. You can choose to receive separate Document objects per document or concatenate retrieved documents into one Document.
 
 ### Installation
@@ -18,14 +19,12 @@ from llama_index.readers.weaviate import WeaviateReader
 
 # Initialize WeaviateReader with host and optional authentication
 reader = WeaviateReader(
-    host="<Weaviate Host>",
-    auth_client_secret="<Authentication Client Secret>"
+    host="<Weaviate Host>", auth_client_secret="<Authentication Client Secret>"
 )
 
 # Load data from Weaviate
 documents = reader.load_data(
-    class_name="<Class Name>",
-    properties=["property 1", "property 2"]
+    class_name="<Class Name>", properties=["property 1", "property 2"]
 )
 ```
 

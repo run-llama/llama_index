@@ -12,7 +12,7 @@ You can install Metal Reader via pip:
 pip install llama-index-readers-metal
 ```
 
-To use Metal Reader, you must have a vector store first. Follow this to create a metal vector store,  [Setup Metal Vector Store](https://docs.llamaindex.ai/en/stable/examples/vector_stores/MetalIndexDemo/)
+To use Metal Reader, you must have a vector store first. Follow this to create a metal vector store, [Setup Metal Vector Store](https://docs.llamaindex.ai/en/stable/examples/vector_stores/MetalIndexDemo/)
 
 ### Usage
 
@@ -23,17 +23,16 @@ from llama_index.readers.metal import MetalReader
 reader = MetalReader(
     api_key="<Metal API Key>",
     client_id="<Metal Client ID>",
-    index_id="<Metal Index ID>"
+    index_id="<Metal Index ID>",
 )
 
 # Load data from Metal
 documents = reader.load_data(
-    limit=10,                                   # Number of results to return
-    query_embedding=[0.1, 0.2, 0.3],            # Query embedding for search
-    filters={"field": "value"},                 # Filters to apply to the search
-    separate_documents=True                     # Whether to return separate documents
+    limit=10,  # Number of results to return
+    query_embedding=[0.1, 0.2, 0.3],  # Query embedding for search
+    filters={"field": "value"},  # Filters to apply to the search
+    separate_documents=True,  # Whether to return separate documents
 )
-
 ```
 
 This loader is designed to be used as a way to load data into

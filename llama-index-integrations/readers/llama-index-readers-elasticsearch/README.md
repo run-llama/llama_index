@@ -22,14 +22,16 @@ from llama_index.readers.elasticsearch import ElasticsearchReader
 reader = ElasticsearchReader(
     endpoint="<Your Elasticsearch/Opensearch Endpoint>",
     index="<Index Name>",
-    httpx_client_args={"timeout": 10}  # Optional additional arguments for the httpx.Client
+    httpx_client_args={
+        "timeout": 10
+    },  # Optional additional arguments for the httpx.Client
 )
 
 # Load data from Elasticsearch
 documents = reader.load_data(
-    field="<Field Name>",               # Field in the document to retrieve text from
-    query={"query": {"match_all": {}}}, # Elasticsearch JSON query DSL object
-    embedding_field="<Embedding Field>"  # Field for embeddings (optional)
+    field="<Field Name>",  # Field in the document to retrieve text from
+    query={"query": {"match_all": {}}},  # Elasticsearch JSON query DSL object
+    embedding_field="<Embedding Field>",  # Field for embeddings (optional)
 )
 ```
 

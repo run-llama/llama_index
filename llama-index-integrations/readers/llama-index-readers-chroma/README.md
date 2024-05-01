@@ -22,19 +22,19 @@ from llama_index.readers.chroma import ChromaReader
 reader = ChromaReader(
     collection_name="<Your Collection Name>",
     persist_directory="<Directory Path>",  # Optional: Directory where the collection is persisted
-    chroma_api_impl="rest",                 # Optional: Chroma API implementation (default: "rest")
-    chroma_db_impl=None,                    # Optional: Chroma DB implementation (default: None)
-    host="localhost",                       # Optional: Host for Chroma DB (default: "localhost")
-    port=8000                               # Optional: Port for Chroma DB (default: 8000)
+    chroma_api_impl="rest",  # Optional: Chroma API implementation (default: "rest")
+    chroma_db_impl=None,  # Optional: Chroma DB implementation (default: None)
+    host="localhost",  # Optional: Host for Chroma DB (default: "localhost")
+    port=8000,  # Optional: Port for Chroma DB (default: 8000)
 )
 
 # Load data from Chroma collection
 documents = reader.load_data(
     query_embedding=None,  # Provide query embedding if searching by embeddings
-    limit=10,               # Number of results to retrieve
-    where=None,             # Filter condition for metadata
-    where_document=None,    # Filter condition for document
-    query=["search term"]   # Provide query text if searching by text
+    limit=10,  # Number of results to retrieve
+    where=None,  # Filter condition for metadata
+    where_document=None,  # Filter condition for document
+    query=["search term"],  # Provide query text if searching by text
 )
 ```
 

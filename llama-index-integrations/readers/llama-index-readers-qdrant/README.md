@@ -1,6 +1,7 @@
 # LlamaIndex Readers Integration: Qdrant
 
 ## Overview
+
 The Qdrant Reader allows you to retrieve documents from existing Qdrant collections. Qdrant is a similarity search engine that helps you efficiently search and retrieve similar items from large datasets based on vector embeddings.
 
 For more detailed information about Qdrant, visit [Qdrant](qdrant.io)
@@ -22,14 +23,14 @@ from llama_index.readers.qdrant import QdrantReader
 reader = QdrantReader(
     location="<Qdrant Location>",
     url="<Qdrant URL>",
-    port=<Port>,
-    grpc_port=<gRPC Port>,
-    prefer_grpc=<Prefer gRPC>,
-    https=<Use HTTPS>,
+    port="<Port>",
+    grpc_port="<gRPC Port>",
+    prefer_grpc="<Prefer gRPC>",
+    https="<Use HTTPS>",
     api_key="<API Key>",
     prefix="<URL Prefix>",
-    timeout=<Timeout>,
-    host="<Host>"
+    timeout="<Timeout>",
+    host="<Host>",
 )
 
 # Load data from Qdrant
@@ -40,7 +41,7 @@ documents = reader.load_data(
     must_search_mapping={"text_field": "text"},
     must_not_search_mapping={"text_field": "text"},
     rang_search_mapping={"text_field": {"gte": 0.1, "lte": 0.2}},
-    limit=10
+    limit=10,
 )
 ```
 

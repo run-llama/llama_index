@@ -1,6 +1,7 @@
 # LlamaIndex Readers Integration: StringIterable
 
 ## Overview
+
 The StringIterable Reader converts an iterable of strings into a list of documents. It's a simple utility to quickly create documents from a list of text strings.
 
 ### Installation
@@ -21,10 +22,7 @@ reader = StringIterableReader()
 
 # Load data from an iterable of strings
 documents = reader.load_data(
-    texts=[
-        "I went to the store",
-        "I bought an apple"
-    ]
+    texts=["I went to the store", "I bought an apple"]
 )
 ```
 

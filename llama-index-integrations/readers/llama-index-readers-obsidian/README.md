@@ -14,7 +14,6 @@ reader = ObsidianReader(input_dir="<Path to Obsidian Vault>")
 
 # Load data from the Obsidian vault
 documents = reader.load_data()
-
 ```
 
 Implementation for Obsidian reader can be found [here](https://docs.llamaindex.ai/en/stable/examples/data_connectors/ObsidianReaderDemo/)

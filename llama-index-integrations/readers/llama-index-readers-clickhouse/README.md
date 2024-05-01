@@ -23,22 +23,22 @@ reader = ClickHouseReader(
     clickhouse_host="<ClickHouse Host>",
     username="<Username>",
     password="<Password>",
-    clickhouse_port=8123,        # Optional: Default port is 8123
+    clickhouse_port=8123,  # Optional: Default port is 8123
     database="<Database Name>",
-    engine="MergeTree",          # Optional: Default engine is "MergeTree"
+    engine="MergeTree",  # Optional: Default engine is "MergeTree"
     table="<Table Name>",
-    index_type="NONE",           # Optional: Default index type is "NONE"
-    metric="cosine",             # Optional: Default metric is "cosine"
-    batch_size=1000,             # Optional: Default batch size is 1000
-    index_params=None,           # Optional: Index parameters
-    search_params=None           # Optional: Search parameters
+    index_type="NONE",  # Optional: Default index type is "NONE"
+    metric="cosine",  # Optional: Default metric is "cosine"
+    batch_size=1000,  # Optional: Default batch size is 1000
+    index_params=None,  # Optional: Index parameters
+    search_params=None,  # Optional: Search parameters
 )
 
 # Load data from ClickHouse
 documents = reader.load_data(
-    query_vector=[0.1, 0.2, 0.3],   # Query vector
-    where_str=None,                 # Optional: Where condition string
-    limit=10                        # Optional: Number of results to return
+    query_vector=[0.1, 0.2, 0.3],  # Query vector
+    where_str=None,  # Optional: Where condition string
+    limit=10,  # Optional: Number of results to return
 )
 ```
 

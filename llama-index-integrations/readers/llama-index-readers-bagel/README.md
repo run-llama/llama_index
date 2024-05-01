@@ -6,7 +6,6 @@ pip install llama-index-readers-bagel
 
 ## Bagel Loader
 
-
 ## Usage
 
 ```python
@@ -23,7 +22,7 @@ documents = reader.load_data(
     limit=10,
     where=None,
     where_document=None,
-    include=["documents", "embeddings"]
+    include=["documents", "embeddings"],
 )
 ```
 
@@ -32,7 +31,6 @@ documents = reader.load_data(
 - Retrieve documents, embeddings, and metadata efficiently.
 - Filter results based on specified conditions.
 - Specify what data to include in the retrieved results.
-
 
 This loader is designed to be used as a way to load data into
 [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently

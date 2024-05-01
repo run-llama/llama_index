@@ -25,15 +25,13 @@ reader = DeepLakeReader(token="<Your DeepLake Token>")
 
 # Load data from DeepLake
 documents = reader.load_data(
-    query_vector=[0.1, 0.2, 0.3],        # Query vector
-    dataset_path="<Path to Dataset>",   # Path to the DeepLake dataset
-    limit=4,                            # Number of results to return
-    distance_metric="l2"                # Distance metric
+    query_vector=[0.1, 0.2, 0.3],  # Query vector
+    dataset_path="<Path to Dataset>",  # Path to the DeepLake dataset
+    limit=4,  # Number of results to return
+    distance_metric="l2",  # Distance metric
 )
-
 ```
 
 This loader is designed to be used as a way to load data into
 [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently
 used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
-

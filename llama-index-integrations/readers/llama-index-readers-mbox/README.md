@@ -22,7 +22,6 @@ reader = MboxReader()
 
 # Load data from mbox files in the input directory
 documents = reader.load_data(input_dir="<Input Directory>")
-
 ```
 
 This loader is designed to be used as a way to load data into

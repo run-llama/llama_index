@@ -1,6 +1,7 @@
 # LlamaIndex Readers Integration: TwitterTweet
 
 ## Overview
+
 The TwitterTweet Reader allows you to read tweets of a specified Twitter handle. It retrieves tweets from Twitter using the Twitter API.
 
 ### Installation
@@ -20,17 +21,11 @@ from llama_index.readers.twitter_tweet import TwitterTweetReader
 
 # Initialize TwitterTweetReader
 reader = TwitterTweetReader(
-    bearer_token="<Twitter Bearer Token>",
-    num_tweets=100
+    bearer_token="<Twitter Bearer Token>", num_tweets=100
 )
 
 # Load tweets of user twitter handles
-documents = reader.load_data(
-    twitterhandles=[
-        "user1",
-        "user2"
-    ]
-)
+documents = reader.load_data(twitterhandles=["user1", "user2"])
 ```
 
 This loader is designed to be used as a way to load data into
