@@ -50,7 +50,7 @@ class CriticAgentWorker(BaseModel, BaseAgentWorker):
     _toxicity_threshold: float = PrivateAttr(default=3.0)
     _critique_agent_worker: FunctionCallingAgentWorker = PrivateAttr()
     _critique_template: str = PrivateAttr()
-    _verbose: bool = PrivateAttr(default=False)
+    _verbose: bool = PrivateAttr()
     _get_tools: Callable = PrivateAttr()
 
     def __init__(
@@ -139,7 +139,8 @@ class CriticAgentWorker(BaseModel, BaseAgentWorker):
     def _critique(self, input_str: str) -> AgentChatResponse:
         agent = self._critique_agent_worker.as_agent(verbose=True)
         critique = agent.chat(self._critique_template.format(input_str=input_str))
-        print(f"Critique: {critique.response}", flush=True)
+        if self._verbose:
+            print(f"Critique: {critique.response}", flush=True)
         return critique
 
     def _correct(self, input_str: str, critique: str) -> ChatMessage:
@@ -173,6 +174,8 @@ class CriticAgentWorker(BaseModel, BaseAgentWorker):
         correct_response_str = correct_response_tmpl.format(
             correction=correction.correction
         )
+        if self._verbose:
+            print(f"Correction: {correction.correction}", flush=True)
         return ChatMessage.from_str(correct_response_str, role="assistant")
 
     def get_tools(self, input: str) -> List[AsyncBaseTool]:
