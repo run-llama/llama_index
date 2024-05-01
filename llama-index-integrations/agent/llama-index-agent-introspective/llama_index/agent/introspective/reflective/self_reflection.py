@@ -101,7 +101,31 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
     """Self Reflection Agent Worker.
 
     This agent performs a reflection without any tools on a given response
-    and subsequently performs correction.
+    and subsequently performs correction. It should be noted that this reflection
+    implementation has been inspired by two works:
+
+    1. Reflexion: Language Agents with Verbal Reinforcement Learning, by Shinn et al. (2023)
+        (https://arxiv.org/pdf/2303.11366.pdf)
+    2. CRITIC: Large Language Models Can Self-Correct with Tool-Interactive Critiquing, by Gou et al. (2024)
+       (https://arxiv.org/pdf/2305.11738.pdf)
+
+    This agent performs cycles of reflection and correction on an initial response
+    until a satisfactory correction has been generated or a max number of cycles
+    has been reached. To perform reflection, this agent utilizes a user-specified
+    LLM along with a PydanticProgram to generate a structured output that contains
+    an LLM generated reflection of the current response. After reflection, the
+    same user-specified LLM is used again but this time with another PydanticProgram
+    to generate a structured output that contains an LLM generated corrected
+    version of the current response against the priorly generated reflection.
+
+    Attr:
+        max_iterations (int, optional): The max number of reflection & correction.
+            Defaults to DEFAULT_MAX_ITERATIONS.
+        callback_manager (Optional[CallbackManager], optional): Callback manager.
+            Defaults to None.
+        llm (Optional[LLM], optional): The LLM used to perform reflection and correction.
+            Must be an OpenAI LLM at this time. Defaults to None.
+        verbose (bool, optional): Whether execution should be verbose. Defaults to False.
     """
 
     callback_manager: CallbackManager = Field(default=CallbackManager([]))
@@ -122,6 +146,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
+        """__init__."""
         self._llm = llm
         self._verbose = verbose
 
@@ -150,7 +175,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
 
     @classmethod
-    def from_args(
+    def from_defaults(
         cls,
         llm: Optional[LLM] = None,
         max_iterations: int = DEFAULT_MAX_ITERATIONS,
