@@ -47,8 +47,9 @@ By contributing cool features to `Llama-Tonic`, you become a part of `Team Tonic
 ## Packs
 
 - [ ] Agentic Memory
+- [ ] Optional Enhancements to Improve Performance of Indexing
 - [x] Transcription
-  - [ ] Improve Results With Student-Teacher Mode
+  - [ ] Optionally Improve Results With Student-Teacher Mode
 
 ## Installation
 
@@ -63,7 +64,7 @@ pip install llama-index-pack-llama-tonic
 ### Why it's Cool😎: 
 
 - **Deployable:** runs on CPU & GPU
-- **Extremely Quick:** much faster than APIs
+- **Extremely Quick:** 8x Faster than Open AI Whisper
 - **Precise:** <1% error rate
 - **Super Easy Useage** with `llama-index`: file in , text out , the rest is handled accordingly.
 
