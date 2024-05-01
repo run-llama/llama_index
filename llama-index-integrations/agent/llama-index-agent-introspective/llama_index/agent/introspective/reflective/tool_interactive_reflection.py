@@ -27,6 +27,9 @@ from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.tools import BaseTool, adapt_to_async_tool
 from llama_index.core.tools import BaseTool, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -149,6 +152,10 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             **kwargs,
         )
 
+    def get_tools(self, input: str) -> List[AsyncBaseTool]:
+        """Get tools."""
+        return [adapt_to_async_tool(t) for t in self._get_tools(input)]
+
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
         # temporary memory for new messages
@@ -173,6 +180,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             step_state={"count": 0},
         )
 
+    @dispatcher.span
     def _critique(self, input_str: str) -> AgentChatResponse:
         agent = self._critique_agent_worker.as_agent(verbose=True)
         critique = agent.chat(self._critique_template.format(input_str=input_str))
@@ -180,6 +188,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             print(f"Critique: {critique.response}", flush=True)
         return critique
 
+    @dispatcher.span
     def _correct(self, input_str: str, critique: str) -> ChatMessage:
         correction = self._correction_program(input_str=input_str, critique=critique)
 
@@ -190,17 +199,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             print(f"Correction: {correction.correction}", flush=True)
         return ChatMessage.from_str(correct_response_str, role="assistant")
 
-    def get_tools(self, input: str) -> List[AsyncBaseTool]:
-        """Get tools."""
-        return [adapt_to_async_tool(t) for t in self._get_tools(input)]
-
-    def get_all_messages(self, task: Task) -> List[ChatMessage]:
-        return (
-            self.prefix_messages
-            + task.memory.get()
-            + task.extra_state["new_memory"].get_all()
-        )
-
+    @dispatcher.span
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
@@ -260,6 +259,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
 
     # Async Methods
+    @dispatcher.span
     async def _acritique(self, input_str: str) -> AgentChatResponse:
         agent = self._critique_agent_worker.as_agent(verbose=True)
         critique = await agent.achat(
@@ -269,6 +269,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             print(f"Critique: {critique.response}", flush=True)
         return critique
 
+    @dispatcher.span
     async def _acorrect(self, input_str: str, critique: str) -> ChatMessage:
         correction = await self._correction_program.acall(
             input_str=input_str, critique=critique
@@ -281,6 +282,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             print(f"Correction: {correction.correction}", flush=True)
         return ChatMessage.from_str(correct_response_str, role="assistant")
 
+    @dispatcher.span
     @trace_method("run_step")
     async def arun_step(
         self, step: TaskStep, task: Task, **kwargs: Any
@@ -340,6 +342,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             next_steps=new_steps,
         )
 
+    # Steam methods
+    @dispatcher.span
     @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
@@ -347,6 +351,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             "Stream not supported for tool-interactive reflection agent"
         )
 
+    @dispatcher.span
     @trace_method("run_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
@@ -354,6 +359,13 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         """Run step (async stream)."""
         raise NotImplementedError(
             "Stream not supported for tool-interactive reflection agent"
+        )
+
+    def get_all_messages(self, task: Task) -> List[ChatMessage]:
+        return (
+            self.prefix_messages
+            + task.memory.get()
+            + task.extra_state["new_memory"].get_all()
         )
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
