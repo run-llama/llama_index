@@ -29,7 +29,10 @@ class SpiderWebReader(BasePydanticReader):
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {"return_format": "markdown"},
+        params: Optional[dict] = {
+            "return_format": "markdown",
+            "metadata": True,
+        },  # Using the metadata param slightly slows down the output
     ) -> None:
         super().__init__(api_key=api_key, mode=mode, params=params)
         try:
@@ -47,10 +50,6 @@ class SpiderWebReader(BasePydanticReader):
         # If `params` is `None`, initialize it as an empty dictionary
         if params is None:
             params = {}
-
-        # Add a default value for 'metadata' if it's not already present
-        if "metadata" not in params:
-            params["metadata"] = True
 
         api_key = api_key
         self.spider = Spider(api_key=api_key)
