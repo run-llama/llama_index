@@ -1,4 +1,4 @@
-"""Introspective agent worker."""
+"""Tool-Interactive Reflection Agent Worker."""
 
 import logging
 import uuid
@@ -40,7 +40,7 @@ class Correction(BaseModel):
     correction: str = Field(default_factory=str, description="Corrected input")
 
 
-class CriticAgentWorker(BaseModel, BaseAgentWorker):
+class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
     """Introspective Agent Worker.
 
     This agent worker implements the Reflectiong AI agentic pattern.
@@ -96,7 +96,7 @@ class CriticAgentWorker(BaseModel, BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> "CriticAgentWorker":
+    ) -> "ToolInteractiveReflectionAgentWorker":
         """Convenience constructor method from set of of BaseTools (Optional)."""
         llm = llm or Settings.llm
         if callback_manager is not None:
