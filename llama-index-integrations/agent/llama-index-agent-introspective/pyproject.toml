@@ -11,7 +11,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.agent.critic"
+import_path = "llama_index.agent.introspective"
 
 [tool.llamahub.class_authors]
 CriticAgentWorker = "nerdai"
@@ -25,11 +25,11 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Andrei Fajardo <andrei@runllama.ai>"]
-description = "llama-index agent critic integration"
+description = "llama-index agent introspective integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["jerryjliu"]
-name = "llama-index-agent-critic"
+name = "llama-index-agent-introspective"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
