@@ -285,16 +285,20 @@ class PGVectorStore(BasePydanticVectorStore):
 
             # Check if the specified schema exists with "CREATE" statement
             check_schema_statement = text(
-                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
+                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema_name"
             )
-            result = session.execute(check_schema_statement).fetchone()
+            result = session.execute(
+                check_schema_statement, {"schema_name", self.schema_name}
+            ).fetchone()
 
             # If the schema does not exist, then create it
             if not result:
                 create_schema_statement = text(
-                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
+                    f"CREATE SCHEMA IF NOT EXISTS :schema_name"
                 )
-                session.execute(create_schema_statement)
+                session.execute(
+                    create_schema_statement, {"schema_name": self.schema_name}
+                )
 
             session.commit()
 
@@ -478,12 +482,16 @@ class PGVectorStore(BasePydanticVectorStore):
             from sqlalchemy import text
 
             if kwargs.get("ivfflat_probes"):
+                ivfflat_probes = kwargs.get("ivfflat_probes")
                 session.execute(
-                    text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}")
+                    text(f"SET ivfflat.probes = :ivfflat_probes"),
+                    {"ivfflat_probes": ivfflat_probes},
                 )
             if kwargs.get("hnsw_ef_search"):
+                hnsw_ef_search = kwargs.get("hnsw_ef_search")
                 session.execute(
-                    text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}")
+                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
+                    {"hnsw_ef_search": hnsw_ef_search},
                 )
 
             res = session.execute(
@@ -511,12 +519,16 @@ class PGVectorStore(BasePydanticVectorStore):
             from sqlalchemy import text
 
             if kwargs.get("hnsw_ef_search"):
+                hnsw_ef_search = kwargs.get("hnsw_ef_search")
                 await async_session.execute(
-                    text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}")
+                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
+                    {"hnsw_ef_search": hnsw_ef_search},
                 )
             if kwargs.get("ivfflat_probes"):
+                ivfflat_probes = kwargs.get("ivfflat_probes")
                 await async_session.execute(
-                    text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}")
+                    text(f"SET ivfflat.probes = :ivfflat_probes"),
+                    {"ivfflat_probes": ivfflat_probes},
                 )
 
             res = await async_session.execute(stmt)
@@ -744,10 +756,10 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             stmt = sqlalchemy.text(
                 f"DELETE FROM {self.schema_name}.data_{self.table_name} where "
-                f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
+                f"(metadata_->>'doc_id')::text = :ref_doc_id"
             )
 
-            session.execute(stmt)
+            session.execute(stmt, {"ref_doc_id": ref_doc_id})
             session.commit()
 
 
