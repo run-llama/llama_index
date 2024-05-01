@@ -1,8 +1,8 @@
-from llama_index.core.evaluation.retrieval.metrics import HitRate, MRR
 import pytest
+from llama_index.core.evaluation.retrieval.metrics import HitRate, MRR
 
 
-# Test cases for the updated HitRate class
+# Test cases for the updated HitRate class using instance attribute
 @pytest.mark.parametrize(
     ("expected_ids", "retrieved_ids", "use_granular", "expected_result"),
     [
@@ -14,15 +14,12 @@ import pytest
 )
 def test_hit_rate(expected_ids, retrieved_ids, use_granular, expected_result):
     hr = HitRate()
-    result = hr.compute(
-        expected_ids=expected_ids,
-        retrieved_ids=retrieved_ids,
-        use_granular_hit_rate=use_granular,
-    )
+    hr.use_granular_hit_rate = use_granular
+    result = hr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
     assert result.score == pytest.approx(expected_result)
 
 
-# Test cases for the updated MRR class
+# Test cases for the updated MRR class using instance attribute
 @pytest.mark.parametrize(
     ("expected_ids", "retrieved_ids", "use_granular", "expected_result"),
     [
@@ -47,11 +44,8 @@ def test_hit_rate(expected_ids, retrieved_ids, use_granular, expected_result):
 )
 def test_mrr(expected_ids, retrieved_ids, use_granular, expected_result):
     mrr = MRR()
-    result = mrr.compute(
-        expected_ids=expected_ids,
-        retrieved_ids=retrieved_ids,
-        use_granular_mrr=use_granular,
-    )
+    mrr.use_granular_mrr = use_granular
+    result = mrr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
     assert result.score == pytest.approx(expected_result)
 
 
@@ -75,14 +69,9 @@ def test_mrr(expected_ids, retrieved_ids, use_granular, expected_result):
 def test_exceptions(expected_ids, retrieved_ids, use_granular):
     with pytest.raises(ValueError):
         hr = HitRate()
-        hr.compute(
-            expected_ids=expected_ids,
-            retrieved_ids=retrieved_ids,
-            use_granular_hit_rate=use_granular,
-        )
+        hr.use_granular_hit_rate = use_granular
+        hr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
         mrr = MRR()
-        mrr.compute(
-            expected_ids=expected_ids,
-            retrieved_ids=retrieved_ids,
-            use_granular_mrr=use_granular,
-        )
+        mrr.use_granular_mrr = use_granular
+        mrr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
