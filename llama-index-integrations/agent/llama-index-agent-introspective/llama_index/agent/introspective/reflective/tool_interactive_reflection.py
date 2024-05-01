@@ -2,7 +2,16 @@
 
 import logging
 import uuid
-from typing import Any, Callable, List, Optional, cast, Sequence
+from typing import (
+    Any,
+    Callable,
+    List,
+    Optional,
+    cast,
+    Sequence,
+    Protocol,
+    runtime_checkable,
+)
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
@@ -53,10 +62,25 @@ CORRECT_RESPONSE_FSTRING = "Here is a corrected version of the input.\n{correcti
 DEFAULT_MAX_ITERATIONS = 5
 
 
+class Critique(BaseModel):
+    """Data class for holding the critique response."""
+
+    critique: str = Field(description="Provided critique.")
+    is_sufficient: bool = Field(
+        description="Whether or not the critique shows that the response is sufficient."
+    )
+
+
 class Correction(BaseModel):
     """Data class for holding the corrected input."""
 
     correction: str = Field(default_factory=str, description="Corrected input")
+
+
+@runtime_checkable
+class StoppingCallable(Protocol):
+    def __call__(self, critique_str: str) -> bool:
+        ...
 
 
 class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
@@ -67,7 +91,10 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     callback_manager: CallbackManager = Field(default=CallbackManager([]))
     max_iterations: int = Field(default=DEFAULT_MAX_ITERATIONS)
-    _toxicity_threshold: float = PrivateAttr(default=3.0)
+    stopping_callable: Optional[StoppingCallable] = Field(
+        default=None,
+        description="Optional function that operates on critique string to see if no more corrections are needed.",
+    )
     _critique_agent_worker: FunctionCallingAgentWorker = PrivateAttr()
     _critique_template: str = PrivateAttr()
     _correction_llm: LLM = PrivateAttr()
@@ -84,6 +111,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_template: str,
         tools: Sequence[BaseTool],
         max_iterations: int = DEFAULT_MAX_ITERATIONS,
+        stopping_callable: Optional[StoppingCallable] = None,
         correction_llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -123,6 +151,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         super().__init__(
             callback_manager=callback_manager,
             max_iterations=max_iterations,
+            stopping_callable=stopping_callable,
             **kwargs,
         )
 
@@ -133,6 +162,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_template: str,
         correction_llm: Optional[LLM] = None,
         max_iterations: int = DEFAULT_MAX_ITERATIONS,
+        stopping_callable: Optional[StoppingCallable] = None,
         tools: Optional[Sequence[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -156,6 +186,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             tools=tools or [],
             tool_retriever=tool_retriever,
             max_iterations=max_iterations,
+            stopping_callable=stopping_callable,
             callback_manager=callback_manager or CallbackManager([]),
             verbose=verbose,
             **kwargs,
@@ -213,6 +244,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
         state = step.step_state
+        state["count"] += 1
+
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
         # if reached max iters
@@ -226,8 +259,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_response = self._critique(input_str=input_str)
         task.extra_state["sources"].extend(critique_response.sources)
 
-        _, toxicity_score = critique_response.sources[0].raw_output
-        is_done = toxicity_score < self._toxicity_threshold
+        if self.stopping_callable:
+            is_done = self.stopping_callable(critique_str=critique_response.response)
 
         critique_msg = ChatMessage(
             role=MessageRole.USER, content=critique_response.response
@@ -250,20 +283,23 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
                 ),
             )
             task.extra_state["new_memory"].put(correct_msg)
-            state["count"] += 1
-            new_steps = [
-                step.get_next_step(
-                    step_id=str(uuid.uuid4()),
-                    # NOTE: input is unused
-                    input=None,
-                    step_state=state,
-                )
-            ]
+
+            if self.max_iterations == state["count"]:
+                new_steps = []
+            else:
+                new_steps = [
+                    step.get_next_step(
+                        step_id=str(uuid.uuid4()),
+                        # NOTE: input is unused
+                        input=None,
+                        step_state=state,
+                    )
+                ]
 
         return TaskStepOutput(
             output=agent_response,
             task_step=step,
-            is_last=is_done,
+            is_last=is_done | self.max_iterations == state["count"],
             next_steps=new_steps,
         )
 
@@ -298,6 +334,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step (async)."""
         state = step.step_state
+        state["count"] += 1
+
         messages = task.extra_state["new_memory"].get()
         current_response = messages[-1].content
         # if reached max iters
@@ -311,8 +349,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_response = await self._acritique(input_str=input_str)
         task.extra_state["sources"].extend(critique_response.sources)
 
-        _, toxicity_score = critique_response.sources[0].raw_output
-        is_done = toxicity_score < self._toxicity_threshold
+        if self.stopping_callable:
+            is_done = self.stopping_callable(critique_str=critique_response.response)
 
         critique_msg = ChatMessage(
             role=MessageRole.USER, content=critique_response.response
@@ -335,14 +373,18 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
                 ),
             )
             task.extra_state["new_memory"].put(correct_msg)
-            state["count"] += 1
-            new_steps = [
-                step.get_next_step(
-                    step_id=str(uuid.uuid4()),
-                    # NOTE: input is unused
-                    input=None,
-                )
-            ]
+
+            if self.max_iterations == state["count"]:
+                new_steps = []
+            else:
+                new_steps = [
+                    step.get_next_step(
+                        step_id=str(uuid.uuid4()),
+                        # NOTE: input is unused
+                        input=None,
+                        step_state=state,
+                    )
+                ]
 
         return TaskStepOutput(
             output=agent_response,
