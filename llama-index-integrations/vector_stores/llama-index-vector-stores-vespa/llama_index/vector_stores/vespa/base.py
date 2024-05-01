@@ -47,13 +47,25 @@ class VespaVectorStore(VectorStore):
     """
     Vespa vector store.
 
-    In this vector store, embeddings and docs are stored in a Vespa application.
+    Can be initialized in several ways:
+    1. (Default) Initialize Vespa vector store with default hybrid template and local (docker) deployment.
+    2. Initialize by providing an application package created in pyvespa (can be deployed locally or to Vespa cloud).
+    3. Initialize from previously deployed Vespa application by providing URL. (Local or cloud deployment).
 
-    The application must be set up with an embedding field and a doc field.
+    The application must be set up with the following fields:
+    - id: Document id
+    - text: Text field
+    - embedding: Field to store embedding vectors.
+    - metadata: Metadata field (all metadata will be stored here)
 
+    The application must be set up with the following rank profiles:
+    - bm25: For text search
+    - semantic: For semantic search
+    - fusion: For semantic hybrid search
+
+    When creating a VectorStoreIndex from VespaVectorStore, the index will add documents to the Vespa application.
+    Be ware that the Vespa container will be reused if not deleted between deployments, to avoid data duplication.
     During query time, the index queries the Vespa application to get the top k most relevant hits.
-
-    Initialize Vespa vector store.
 
     Args:
             application_package (ApplicationPackage): Application package
