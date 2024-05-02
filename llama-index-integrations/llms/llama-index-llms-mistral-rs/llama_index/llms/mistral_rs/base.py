@@ -25,8 +25,6 @@ from mistralrs import (
     ChatCompletionRequest,
     Runner,
     Which,
-    Message,
-    Role,
 )
 
 DEFAULT_TOPK = 32
@@ -36,18 +34,20 @@ DEFAULT_MAX_SEQS = 16
 DEFAULT_PREFIX_CACHE_N = 16
 
 
-def llama_index_to_mistralrs_messages(messages: Sequence[ChatMessage]) -> list[Message]:
+def llama_index_to_mistralrs_messages(
+    messages: Sequence[ChatMessage],
+) -> list[dict[str, str]]:
     """
     Convert llamaindex to mistralrs messages. Raises an exception if the role is not user or assistant.
     """
     messages_new = []
     for message in messages:
         if message.role == "user":
-            messages_new.append(Message(Role.User, message.content))
+            messages_new.append({"role": "user", "content": message.content})
         elif message.role == "assistant":
-            messages_new.append(Message(Role.Assistant, message.content))
+            messages_new.append({"role": "assistant", "content": message.content})
         elif message.role == "system":
-            messages_new.append(Message(Role.System, message.content))
+            messages_new.append({"role": "system", "content": message.content})
         else:
             raise ValueError(
                 f"Unsupported chat role `{message.role}` for `mistralrs` automatic chat templating: supported are `user`, `assistant`, `system`. Please specify `messages_to_prompt`."
@@ -94,7 +94,7 @@ class MistralRS(CustomLLM):
 
     Examples:
         Install `mistralrs` following instructions:
-        https://github.com/EricLBuehler/mistral.rs/blob/master/mistralrs-pyo3/README.md#installation
+        https://github.com/EricLBuehler/mistral.rs/blob/master/mistralrs-pyo3/README.md#installation-from-pypi
 
         Then `pip install llama-index-llms-mistral-rs`
 
