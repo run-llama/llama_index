@@ -31,8 +31,7 @@ version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
-llama-index-readers-file = "^0.1.0"
+llama-index-core = "^0.10.1"
 pyvespa = "^0.40.0"
 
 
