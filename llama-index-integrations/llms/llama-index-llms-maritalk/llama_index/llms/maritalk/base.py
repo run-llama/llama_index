@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Sequence, Any, Dict, List, Union
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -127,7 +127,7 @@ class Maritalk(LLM):
         " the probability mass considered for sampling.",
     )
 
-    _endpoint: str = PrivateAttr("https://chat.maritaca.ai/api/chat/inference")
+    _endpoint: str = PrivateAttr("https://chat-dev.maritaca.ai/api/chat/inference")
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -144,6 +144,33 @@ class Maritalk(LLM):
     def class_name(cls) -> str:
         return "Maritalk"
 
+    def parse_messages_for_model(
+        self, messages: Sequence[ChatMessage]
+    ) -> List[Dict[str, Union[str, List[Union[str, Dict[Any, Any]]]]]]:
+        """
+        Parses messages from LlamaIndex's format to the format expected by
+        the MariTalk API.
+
+        Parameters:
+            messages (Sequence[ChatMessage]): A list of messages in LlamaIndex
+            format to be parsed.
+
+        Returns:
+            A list of messages formatted for the MariTalk API.
+        """
+        formatted_messages = []
+
+        for message in messages:
+            if message.role.value == MessageRole.USER:
+                role = "user"
+            elif message.role.value == MessageRole.ASSISTANT:
+                role = "assistant"
+            elif message.role.value == MessageRole.SYSTEM:
+                role = "system"
+
+            formatted_messages.append({"role": role, "content": message.content})
+        return formatted_messages
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
@@ -155,21 +182,7 @@ class Maritalk(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # Prepare the data payload for the Maritalk API
-        formatted_messages = []
-        for msg in messages:
-            if msg.role == MessageRole.SYSTEM:
-                # Add system message as a user message
-                formatted_messages.append({"role": "user", "content": msg.content})
-                # Follow it by an assistant message acknowledging it, to maintain conversation flow
-                formatted_messages.append({"role": "assistant", "content": "ok"})
-            else:
-                # Format user and assistant messages as before
-                formatted_messages.append(
-                    {
-                        "role": "user" if msg.role == MessageRole.USER else "assistant",
-                        "content": msg.content,
-                    }
-                )
+        formatted_messages = self.parse_messages_for_model(messages)
 
         data = {
             "model": self.model,
@@ -205,24 +218,11 @@ class Maritalk(LLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        # Prepare the data payload for the Maritalk API
-        formatted_messages = []
-        for msg in messages:
-            if msg.role == MessageRole.SYSTEM:
-                # Add system message as a user message
-                formatted_messages.append({"role": "user", "content": msg.content})
-                # Follow it by an assistant message acknowledging it, to maintain conversation flow
-                formatted_messages.append({"role": "assistant", "content": "ok"})
-            else:
-                # Format user and assistant messages as before
-                formatted_messages.append(
-                    {
-                        "role": "user" if msg.role == MessageRole.USER else "assistant",
-                        "content": msg.content,
-                    }
-                )
         try:
             import httpx
+
+            # Prepare the data payload for the Maritalk API
+            formatted_messages = self.parse_messages_for_model(messages)
 
             data = {
                 "model": self.model,
@@ -268,21 +268,7 @@ class Maritalk(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         # Prepare the data payload for the Maritalk API
-        formatted_messages = []
-        for msg in messages:
-            if msg.role == MessageRole.SYSTEM:
-                # Add system message as a user message
-                formatted_messages.append({"role": "user", "content": msg.content})
-                # Follow it by an assistant message acknowledging it, to maintain conversation flow
-                formatted_messages.append({"role": "assistant", "content": "ok"})
-            else:
-                # Format user and assistant messages as before
-                formatted_messages.append(
-                    {
-                        "role": "user" if msg.role == MessageRole.USER else "assistant",
-                        "content": msg.content,
-                    }
-                )
+        formatted_messages = self.parse_messages_for_model(messages)
 
         data = {
             "model": self.model,
@@ -334,24 +320,11 @@ class Maritalk(LLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        # Prepare the data payload for the Maritalk API
-        formatted_messages = []
-        for msg in messages:
-            if msg.role == MessageRole.SYSTEM:
-                # Add system message as a user message
-                formatted_messages.append({"role": "user", "content": msg.content})
-                # Follow it by an assistant message acknowledging it, to maintain conversation flow
-                formatted_messages.append({"role": "assistant", "content": "ok"})
-            else:
-                # Format user and assistant messages as before
-                formatted_messages.append(
-                    {
-                        "role": "user" if msg.role == MessageRole.USER else "assistant",
-                        "content": msg.content,
-                    }
-                )
         try:
             import httpx
+
+            # Prepare the data payload for the Maritalk API
+            formatted_messages = self.parse_messages_for_model(messages)
 
             data = {
                 "model": self.model,
