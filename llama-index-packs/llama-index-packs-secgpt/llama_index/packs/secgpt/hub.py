@@ -17,12 +17,14 @@ from llama_index.core.tools import BaseTool, ToolOutput
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.llms import ChatMessage, MessageRole
 
+from llama_index.core.llama_pack.base import BaseLlamaPack
+
 from .planner import HubPlanner
 from .tool_importer import ToolImporter
 from .hub_operator import HubOperator
 
 
-class Hub:
+class Hub(BaseLlamaPack):
     """SecGPT Hub."""
 
     def __init__(
