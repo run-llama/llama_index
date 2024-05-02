@@ -25,8 +25,8 @@ reader = JaguarReader(
     store="<Store Name>",
     vector_index="<Vector Index Name>",
     vector_type="<Vector Type>",
-    vector_dimension=<Vector Dimension>,
-    url="<Endpoint URL>"
+    vector_dimension="<Vector Dimension>",
+    url="<Endpoint URL>",
 )
 
 # Login to Jaguar server
@@ -34,10 +34,10 @@ reader.login(jaguar_api_key="<Jaguar API Key>")
 
 # Load data from Jaguar
 documents = reader.load_data(
-    embedding=<Embedding Vector>,
+    embedding="<Embedding Vector>",
     k=10,
     metadata_fields=["<Metadata Field 1>", "<Metadata Field 2>"],
-    where="<Query Condition>"
+    where="<Query Condition>",
 )
 
 # Logout from Jaguar server
@@ -45,5 +45,4 @@ reader.logout()
 ```
 
 This loader is designed to be used as a way to load data into
-[LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently
-used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+[LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index).
