@@ -57,7 +57,7 @@ AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
     # 0125 (2024) model (JSON mode)
-    "gpt-35-turbo-0125": 16385,
+    "gpt-35-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-35-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -67,15 +67,13 @@ AZURE_TURBO_MODELS: Dict[str, int] = {
 
 TURBO_MODELS: Dict[str, int] = {
     # stable model names:
-    #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
-    #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
-    #   resolves to gpt-3.5-turbo-1106 after
-    "gpt-3.5-turbo": 4096,
+    #   resolves to gpt-3.5-turbo-0125 as of 2024-04-29.
+    "gpt-3.5-turbo": 16384,
     # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
     # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
     # 0125 (2024) model (JSON mode)
-    "gpt-3.5-turbo-0125": 16385,
+    "gpt-3.5-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):

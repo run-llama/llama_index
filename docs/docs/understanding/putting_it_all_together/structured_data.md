@@ -6,6 +6,11 @@ A lot of modern data systems depend on structured data, such as a Postgres DB or
 LlamaIndex provides a lot of advanced features, powered by LLM's, to both create structured data from
 unstructured data, as well as analyze this structured data through augmented text-to-SQL capabilities.
 
+**NOTE:** Any Text-to-SQL application should be aware that executing
+arbitrary SQL queries can be a security risk. It is recommended to
+take precautions as needed, such as using restricted roles, read-only
+databases, sandboxing, etc.
+
 This guide helps walk through each of these capabilities. Specifically, we cover the following topics:
 
 - **Setup**: Defining up our example SQL Table.
