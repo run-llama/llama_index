@@ -39,11 +39,55 @@ class DocumentMessage(ChatMessage):
     role: MessageRole = MessageRole.SYSTEM
 
 
+# Define new templates with DocumentMessage's to leverage Cohere's `documents` argument
+# Text QA
 COHERE_QA_TEMPLATE = ChatPromptTemplate(
     message_templates=[
         TEXT_QA_SYSTEM_PROMPT,
         DocumentMessage(content="{context_str}"),
         ChatMessage(content="{query_str}", role=MessageRole.USER),
+    ]
+)
+# Refine (based on llama_index.core.chat_prompts::CHAT_REFINE_PROMPT)
+REFINE_SYSTEM_PROMPT = ChatMessage(
+    content=(
+        "You are an expert Q&A system that strictly operates in two modes "
+        "when refining existing answers:\n"
+        "1. **Rewrite** an original answer using the new context.\n"
+        "2. **Repeat** the original answer if the new context isn't useful.\n"
+        "Never reference the original answer or context directly in your answer.\n"
+        "When in doubt, just repeat the original answer.\n"
+    ),
+    role=MessageRole.USER,
+)
+COHERE_REFINE_TEMPLATE = ChatPromptTemplate(
+    message_templates=[
+        REFINE_SYSTEM_PROMPT,
+        DocumentMessage(content="{context_msg}"),
+        ChatMessage(
+            content=(
+                "Query: {query_str}\n"
+                "Original Answer: {existing_answer}\n"
+                "New Answer: "
+            ),
+            role=MessageRole.USER,
+        ),
+    ]
+)
+# Tree summarize (based on llama_index.core.chat_prompts::CHAT_TREE_SUMMARIZE_PROMPT)
+COHERE_TREE_SUMMARIZE_TEMPLATE = ChatPromptTemplate(
+    message_templates=[
+        TEXT_QA_SYSTEM_PROMPT,
+        DocumentMessage(content="{context_str}"),
+        ChatMessage(
+            content=(
+                "Given the information from multiple sources and not prior knowledge, "
+                "answer the query.\n"
+                "Query: {query_str}\n"
+                "Answer: "
+            ),
+            role=MessageRole.USER,
+        ),
     ]
 )
 
