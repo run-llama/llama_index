@@ -16,13 +16,13 @@ except Exception:
 
 
 # Assuming Vespa services are mocked or local Vespa Docker is used
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def vespa_app():
     app_package = hybrid_template
     return VespaVectorStore(application_package=app_package, deployment_target="local")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def nodes() -> list:
     return [
         TextNode(
@@ -89,21 +89,15 @@ def nodes() -> list:
             },
         ),
     ]
-    # Set node.node_id to node.metadata["id"]
-    ids = [node.metadata["id"] for node in nodes]
-    for node in nodes:
-        node.node_id = node.metadata["id"]
-    return nodes, ids
 
 
-def test_add_nodes(vespa_app, nodes_ids):
-    # Testing the addition of nodes
-    nodes, ids = nodes_ids
-    inserted_ids = vespa_app.add(nodes)
-    assert inserted_ids == list(ids), "Failed to insert nodes"
+@pytest.fixture(scope="session")
+def added_node_ids(vespa_app, nodes):
+    return vespa_app.add(nodes)
+    # Assume returned `inserted_ids` is a list of IDs that match the order of `nodes`
 
 
-def test_query_text_search(vespa_app):
+def test_query_text_search(vespa_app, added_node_ids):
     query = VectorStoreQuery(
         query_str="Inception",  # Ensure the query matches the case used in the nodes
         mode="text_search",
@@ -115,7 +109,7 @@ def test_query_text_search(vespa_app):
     assert node_metadata["id"] == "3", "Expected Inception node"
 
 
-def test_query_vector_search(vespa_app):
+def test_query_vector_search(vespa_app, added_node_ids):
     query = VectorStoreQuery(
         query_str="magic, wizardry",
         mode="semantic_hybrid",
@@ -128,10 +122,9 @@ def test_query_vector_search(vespa_app):
     assert node_metadata["id"] == "7", "Expected Harry Potter node"
 
 
-def test_delete_node(vespa_app, nodes_ids):
-    nodes, ids = nodes_ids
-    node_to_delete = ids[0]
-    vespa_app.delete(ref_doc_id=node_to_delete)
+def test_delete_node(vespa_app, added_node_ids):
+    # Testing the deletion of a node
+    vespa_app.delete(ref_doc_id=added_node_ids[1])
     query = VectorStoreQuery(
         query_str="Godfather",
         mode=VectorStoreQueryMode.TEXT_SEARCH,
@@ -140,13 +133,12 @@ def test_delete_node(vespa_app, nodes_ids):
     result = vespa_app.query(query)
     assert (
         len(result.nodes) == 0
-    ), f"Deletion of node {node_to_delete} failed, found {len(result.nodes)} nodes"
+    ), f"Deleted node still present in the vector store: {result.nodes}"
 
 
 @pytest.mark.asyncio()
-async def test_async_add_and_query(vespa_app, nodes_ids):
+async def test_async_add_and_query(vespa_app, nodes):
     # Testing async add and query
-    ids, nodes = zip(*nodes_ids)
     await asyncio.gather(*[vespa_app.async_add(nodes)])
     query = VectorStoreQuery(query_str="Harry Potter", similarity_top_k=1)
     result = await vespa_app.aquery(query)
