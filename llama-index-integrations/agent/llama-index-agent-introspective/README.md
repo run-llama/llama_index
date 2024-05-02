@@ -128,6 +128,7 @@ tool_interactive_reflection_agent_worker = (
     )
 )
 
+
 introspective_worker_agent = IntrospectiveAgentWorker.from_defaults(
     reflective_agent_worker=tool_interactive_reflection_agent_worker,
     main_agent_worker=None,  # if None, then its assumed user input is initial response
