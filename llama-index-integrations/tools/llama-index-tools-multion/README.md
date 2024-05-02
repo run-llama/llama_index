@@ -30,4 +30,4 @@ agent.chat("What's the next thing on my google calendar?")
 
 `browse`: The core function that takes natural language instructions to pass to the web browser to execute
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.
