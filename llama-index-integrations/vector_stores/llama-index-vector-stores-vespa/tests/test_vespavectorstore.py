@@ -97,6 +97,7 @@ def added_node_ids(vespa_app, nodes):
     # Assume returned `inserted_ids` is a list of IDs that match the order of `nodes`
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 def test_query_text_search(vespa_app, added_node_ids):
     query = VectorStoreQuery(
         query_str="Inception",  # Ensure the query matches the case used in the nodes
@@ -109,6 +110,7 @@ def test_query_text_search(vespa_app, added_node_ids):
     assert node_metadata["id"] == "3", "Expected Inception node"
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 def test_query_vector_search(vespa_app, added_node_ids):
     query = VectorStoreQuery(
         query_str="magic, wizardry",
@@ -122,6 +124,7 @@ def test_query_vector_search(vespa_app, added_node_ids):
     assert node_metadata["id"] == "7", "Expected Harry Potter node"
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 def test_delete_node(vespa_app, added_node_ids):
     # Testing the deletion of a node
     vespa_app.delete(ref_doc_id=added_node_ids[1])
@@ -136,6 +139,7 @@ def test_delete_node(vespa_app, added_node_ids):
     ), f"Deleted node still present in the vector store: {result.nodes}"
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 @pytest.mark.asyncio()
 async def test_async_add_and_query(vespa_app, nodes):
     # Testing async add and query
