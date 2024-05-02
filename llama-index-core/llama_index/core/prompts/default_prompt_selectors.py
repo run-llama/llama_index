@@ -22,7 +22,7 @@ try:
         COHERE_TREE_SUMMARIZE_TEMPLATE,
         COHERE_REFINE_TABLE_CONTEXT_PROMPT,
     )
-except ImportError as e:
+except ImportError:
     COHERE_QA_TEMPLATE = None
     COHERE_REFINE_TEMPLATE = None
     COHERE_TREE_SUMMARIZE_TEMPLATE = None
