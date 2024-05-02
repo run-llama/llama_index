@@ -1,11 +1,11 @@
 import logging
-from typing import Any, List, NamedTuple, Optional, Type
+from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import asyncpg  # noqa
 import pgvector  # noqa
 import psycopg2  # noqa
 import sqlalchemy
-import sqlalchemy.ext.asyncio  # noqa
+import sqlalchemy.ext.asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -135,8 +135,8 @@ class PGVectorStore(BasePydanticVectorStore):
     stores_text = True
     flat_metadata = False
 
-    connection_string: str
-    async_connection_string: str
+    connection_string: Union[str, sqlalchemy.URL]
+    async_connection_string: Union[str, sqlalchemy.URL]
     table_name: str
     schema_name: str
     embed_dim: int
@@ -157,8 +157,8 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        connection_string: str,
-        async_connection_string: str,
+        connection_string: Union[str, sqlalchemy.URL],
+        async_connection_string: Union[str, sqlalchemy.URL],
         table_name: str,
         schema_name: str,
         hybrid_search: bool = False,
@@ -230,8 +230,8 @@ class PGVectorStore(BasePydanticVectorStore):
         password: Optional[str] = None,
         table_name: str = "llamaindex",
         schema_name: str = "public",
-        connection_string: Optional[str] = None,
-        async_connection_string: Optional[str] = None,
+        connection_string: Optional[Union[str, sqlalchemy.URL]] = None,
+        async_connection_string: Optional[Union[str, sqlalchemy.URL]] = None,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
