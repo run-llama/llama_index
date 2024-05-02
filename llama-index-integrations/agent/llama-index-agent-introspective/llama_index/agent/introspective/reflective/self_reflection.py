@@ -19,7 +19,7 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.llms.generic_utils import messages_to_prompt
 from llama_index.core.llms.llm import LLM
-from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
+from llama_index.core.prompts import PromptTemplate
 
 import llama_index.core.instrumentation as instrument
 
@@ -112,9 +112,9 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
     This agent performs cycles of reflection and correction on an initial response
     until a satisfactory correction has been generated or a max number of cycles
     has been reached. To perform reflection, this agent utilizes a user-specified
-    LLM along with a PydanticProgram to generate a structured output that contains
-    an LLM generated reflection of the current response. After reflection, the
-    same user-specified LLM is used again but this time with another PydanticProgram
+    LLM along with a PydanticProgram (thru structured_predict) to generate a structured
+    output that contains an LLM generated reflection of the current response. After reflection,
+    the same user-specified LLM is used again but this time with another PydanticProgram
     to generate a structured output that contains an LLM generated corrected
     version of the current response against the priorly generated reflection.
 
@@ -131,8 +131,6 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
     callback_manager: CallbackManager = Field(default=CallbackManager([]))
     max_iterations: int = Field(default=DEFAULT_MAX_ITERATIONS)
     _llm: LLM = PrivateAttr()
-    _reflection_program: BaseLLMFunctionProgram = PrivateAttr()
-    _correction_program: BaseLLMFunctionProgram = PrivateAttr()
     _verbose: bool = PrivateAttr()
 
     class Config:
@@ -149,24 +147,6 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         """__init__."""
         self._llm = llm
         self._verbose = verbose
-
-        # define _reflection and _correction programs
-        try:
-            from llama_index.program.openai import OpenAIPydanticProgram
-        except ImportError:
-            raise ImportError(
-                "Missing OpenAIPydanticProgram. Please run `pip install llama-index-program-openai`."
-            )
-        self._reflection_program = OpenAIPydanticProgram.from_defaults(
-            Reflection,
-            prompt_template_str=REFLECTION_PROMPT_TEMPLATE,
-            llm=self._llm,
-        )
-        self._correction_program = OpenAIPydanticProgram.from_defaults(
-            Correction,
-            prompt_template_str=CORRECT_PROMPT_TEMPLATE,
-            llm=self._llm,
-        )
 
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
@@ -230,8 +210,10 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         self, chat_history: List[ChatMessage]
     ) -> Tuple[Reflection, ChatMessage]:
         """Reflect on the trajectory."""
-        reflection = self._reflection_program(
-            chat_history=messages_to_prompt(chat_history)
+        reflection = self._llm.structured_predict(
+            Reflection,
+            PromptTemplate(REFLECTION_PROMPT_TEMPLATE),
+            chat_history=messages_to_prompt(chat_history),
         )
 
         if self._verbose:
@@ -249,7 +231,12 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     @dispatcher.span
     def _correct(self, input_str: str, critique: str) -> ChatMessage:
-        correction = self._correction_program(input_str=input_str, feedback=critique)
+        correction = self._llm.structured_predict(
+            Correction,
+            PromptTemplate(CORRECT_PROMPT_TEMPLATE),
+            input_str=input_str,
+            feedback=critique,
+        )
 
         correct_response_str = CORRECT_RESPONSE_FSTRING.format(
             correction=correction.correction
@@ -316,8 +303,10 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         self, chat_history: List[ChatMessage]
     ) -> Tuple[Reflection, ChatMessage]:
         """Reflect on the trajectory."""
-        reflection = await self._reflection_program.acall(
-            chat_history=messages_to_prompt(chat_history)
+        reflection = await self._llm.astructured_predict(
+            Reflection,
+            PromptTemplate(REFLECTION_PROMPT_TEMPLATE),
+            chat_history=messages_to_prompt(chat_history),
         )
 
         if self._verbose:
@@ -335,8 +324,11 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     @dispatcher.span
     async def _acorrect(self, input_str: str, critique: str) -> ChatMessage:
-        correction = await self._correction_program.acall(
-            input_str=input_str, feedback=critique
+        correction = await self._llm.astructured_predict(
+            Correction,
+            PromptTemplate(CORRECT_PROMPT_TEMPLATE),
+            input_str=input_str,
+            feedback=critique,
         )
 
         correct_response_str = CORRECT_RESPONSE_FSTRING.format(
