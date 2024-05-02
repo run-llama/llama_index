@@ -70,9 +70,74 @@ where we construct an `IntrospectiveAgentWorker` and wrap it with an `AgentRunne
 (Note this can be done convienently with the `.as_agent()` method of any `AgentWorker`
 class.)
 
+#### `IntrospectiveAgent` using `SelfReflectionAgentWorker`
+
 ```python
 from llama_index.agent.introspective import IntrospectiveAgentWorker
+from llama_index.agent.introspective import SelfReflectionAgentWorker
+from llama_index.llms.openai import OpenAI
+from llama_index.agent.openai import OpenAIAgentWorker
+
+verbose = True
+self_reflection_agent_worker = SelfReflectionAgentWorker.from_defaults(
+    llm=OpenAI("gpt-4-turbo-preview"),
+    verbose=verbose,
+)
+main_agent_worker = OpenAIAgentWorker.from_tools(
+    tools=[], llm=OpenAI("gpt-4-turbo-preview"), verbose=verbose
+)
+
+introspective_worker_agent = IntrospectiveAgentWorker.from_defaults(
+    reflective_agent_worker=self_reflection_agent_worker,
+    main_agent_worker=main_agent_worker,
+    verbose=True,
+)
+
+introspective_agent = introspective_worker_agent.as_agent(verbose=verbose)
+introspective_agent.chat("...")
+```
+
+#### `IntrospectiveAgent` using `ToolInteractiveReflectionAgentWorker`
+
+Unlike with self reflection, here we need to define another agent worker,
+namely the `CritiqueAgentWorker` that performs the reflection (or critique)
+using a specified set of tools.
+
+```python
+from llama_index.llms.openai import OpenAI
+from llama_index.agent.openai import OpenAIAgentWorker
 from llama_index.agent.introspective import (
     ToolInteractiveReflectionAgentWorker,
 )
+from llama_index.core.agent import FunctionCallingAgentWorker
+
+verbose = True
+critique_tools = []
+critique_agent_worker = FunctionCallingAgentWorker.from_tools(
+    tools=[critique_tools], llm=OpenAI("gpt-3.5-turbo"), verbose=verbose
+)
+
+correction_llm = OpenAI("gpt-4-turbo-preview")
+tool_interactive_reflection_agent_worker = (
+    ToolInteractiveReflectionAgentWorker.from_defaults(
+        critique_agent_worker=critique_agent_worker,
+        critique_template=(
+            "..."
+        ),  # template containing instructions for performing critique
+        correction_llm=correction_llm,
+        verbose=verbose,
+    )
+)
+
+introspective_worker_agent = IntrospectiveAgentWorker.from_defaults(
+    reflective_agent_worker=tool_interactive_reflection_agent_worker,
+    main_agent_worker=None,  # if None, then its assumed user input is initial response
+    verbose=verbose,
+)
+introspective_agent = introspective_worker_agent.as_agent(verbose=verbose)
+introspective_agent.chat("...")
 ```
+
+### Examples
+
+- [Toxicity Reduction Example](https://github.com/runllama/llama_index/blob/main/llama-index-integrations/agent/llama-index-agent-introspective/examples/toxicity_reduction.ipynb) (Warning: this notebook contains (LLMs generated) content that may be considered offensive or sensitive to some.)
