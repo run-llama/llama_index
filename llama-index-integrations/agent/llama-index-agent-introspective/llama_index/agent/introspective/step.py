@@ -39,7 +39,7 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 class IntrospectiveAgentWorker(BaseAgentWorker):
     """Introspective Agent Worker.
 
-    This agent worker implements the Reflectiong AI agentic pattern. It does
+    This agent worker implements the Reflection AI agentic pattern. It does
     so by merely delegating the work to two other agents in a purely
     deterministic fashion.
 
