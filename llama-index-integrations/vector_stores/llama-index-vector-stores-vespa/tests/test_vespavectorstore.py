@@ -19,15 +19,10 @@ except Exception:
 @pytest.fixture(scope="module")
 def vespa_app():
     app_package = hybrid_template
-    vespa_app = VespaVectorStore(
-        application_package=app_package, deployment_target="local"
-    )
-    yield vespa_app
-    vespa_app.client.container.stop()
-    vespa_app.client.container.remove()
+    return VespaVectorStore(application_package=app_package, deployment_target="local")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def nodes() -> list:
     return [
         TextNode(
