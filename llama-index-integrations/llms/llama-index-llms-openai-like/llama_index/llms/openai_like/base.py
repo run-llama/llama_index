@@ -44,7 +44,7 @@ class OpenAILike(OpenAI):
         description=LLMMetadata.__fields__["is_chat_model"].field_info.description,
     )
     is_function_calling_model: bool = Field(
-        default=False,
+        default=True,
         description=LLMMetadata.__fields__[
             "is_function_calling_model"
         ].field_info.description,
