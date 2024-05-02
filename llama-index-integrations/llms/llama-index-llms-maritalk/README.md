@@ -16,4 +16,4 @@ You will need and API key that can be obtained from chat.maritaca.ai (\"Chaves d
 
 ## Examples
 
-Examples of usage are presented in the `maritalk.ipynb` file within this project.
+Examples of usage are presented at [llamahub.ai](https://docs.llamaindex.ai/en/stable/examples/llm/maritalk/).
