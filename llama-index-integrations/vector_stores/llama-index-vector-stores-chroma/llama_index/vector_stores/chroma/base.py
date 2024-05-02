@@ -48,6 +48,8 @@ def _transform_chroma_filter_operator(operator: str) -> str:
         return "$gte"
     elif operator == "<=":
         return "$lte"
+    elif operator == "IN":
+        return "$in"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
