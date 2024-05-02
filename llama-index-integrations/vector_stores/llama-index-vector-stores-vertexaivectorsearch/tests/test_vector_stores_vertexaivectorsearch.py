@@ -22,7 +22,7 @@ from llama_index.vector_stores.vertexaivectorsearch._sdk_manager import (
     VectorSearchSDKManager,
 )
 
-from llama_index.vector_stores.vertexaivectorsearch.utils import get_datapoint
+from llama_index.vector_stores.vertexaivectorsearch import utils
 
 from google.cloud.aiplatform.matching_engine import (
     MatchingEngineIndex,
@@ -342,16 +342,16 @@ class TestVertexAIVectorStore:
         assert result.nodes is not None and len(result.nodes) == 1
 
         # Identify the document to delete
-        ref_id_to_delete = result.nodes[0].id_
+        ref_id_to_delete = result.nodes[0].ref_doc_id
 
         # Delete the document
         vector_store.delete(ref_doc_id=ref_id_to_delete)
 
         # Ensure that no results are returned
-        result = get_datapoint(
+        result = utils.get_datapoints_by_filter(
             index=vector_store.index,
             endpoint=vector_store.endpoint,
-            datapoint_id=ref_id_to_delete,
+            metadata={"ref_doc_id": ref_id_to_delete},
         )
         assert len(result) == 0
 

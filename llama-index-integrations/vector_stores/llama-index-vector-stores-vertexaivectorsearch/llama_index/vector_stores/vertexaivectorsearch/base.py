@@ -234,9 +234,14 @@ class VertexAIVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
-
         """
-        self._index.remove_datapoints(datapoint_ids=[ref_doc_id])
+        # get datapoint ids by filter
+        filter = {"ref_doc_id": ref_doc_id}
+        ids = utils.get_datapoints_by_filter(
+            index=self.index, endpoint=self.endpoint, metadata=filter
+        )
+        # remove datapoints
+        self._index.remove_datapoints(datapoint_ids=ids)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
@@ -261,7 +266,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
             endpoint=self._endpoint,
             embeddings=query_embedding,
             top_k=query.similarity_top_k,
-            filter_=filter,
+            filter=filter,
             numeric_filter=num_filter,
         )
 

@@ -33,7 +33,6 @@ from google.cloud.aiplatform.matching_engine.matching_engine_index_endpoint impo
     NumericNamespace,
 )
 
-from google.cloud import aiplatform_v1 as aip
 
 from google.cloud.aiplatform.compat.types import (  # type: ignore[attr-defined, unused-ignore]
     matching_engine_index as meidx_types,
@@ -50,6 +49,8 @@ FILTER_MAP = {
     FilterOperator.GTE: "GREATER_EQUAL",
     FilterOperator.NE: "NOT_EQUAL",
 }
+
+MAX_DATA_POINTS = 10000
 
 
 def _import_vertexai(minimum_expected_version: str = "1.44.0") -> Any:
@@ -304,8 +305,9 @@ def find_neighbors(
     endpoint: MatchingEngineIndexEndpoint,
     embeddings: List[List[float]],
     top_k: int = 4,
-    filter_: Union[List[Namespace], None] = None,
+    filter: Union[List[Namespace], None] = None,
     numeric_filter: Union[List[NumericNamespace], None] = None,
+    return_full_datapoint: bool = True,
 ) -> List[MatchNeighbor]:
     """Finds the k closes neighbors of each instance of embeddings.
 
@@ -323,7 +325,7 @@ def find_neighbors(
         deployed_index_id=_get_deployed_index_id(index, endpoint),
         queries=embeddings,
         num_neighbors=top_k,
-        filter=filter_,
+        filter=filter,
         numeric_filter=numeric_filter,
         return_full_datapoint=True,
     )
@@ -395,36 +397,37 @@ def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
         return None
 
 
-def get_datapoint(
-    index: MatchingEngineIndex, endpoint: MatchingEngineIndexEndpoint, datapoint_id: str
-):
-    # Set variables for the current deployed index.
-    if endpoint.private_service_access_network:
-        api_endpoint = endpoint.private_service_access_network
-    elif endpoint.public_endpoint_domain_name:
-        api_endpoint = endpoint.public_endpoint_domain_name
-    else:
-        api_endpoint = None
+def get_datapoints_by_filter(
+    index: MatchingEngineIndex,
+    endpoint: MatchingEngineIndexEndpoint,
+    metadata: dict = {},
+    max_datapoints: int = MAX_DATA_POINTS,
+) -> List[str]:
+    """Gets all the datapoints matching the metadata filters (text only)
+    on the specified deployed index.
+    """
+    # configure filter based on metadata
+    index_config = index.to_dict()["metadata"]["config"]
+    embeddings = [[0.0] * int(index_config.get("dimensions", 1))]
+    filter = None
+    if metadata:
+        filter = [
+            Namespace(name=key, allow_tokens=[value]) for key, value in metadata.items()
+        ]
 
-    # Configure Vector Search client
-    client_options = {"api_endpoint": api_endpoint}
-    vector_search_client = aip.MatchServiceClient(client_options=client_options)
-
-    # Build FindNeighborsRequest object
-    datapoint = aip.IndexDatapoint(datapoint_id=datapoint_id)
-    query = aip.FindNeighborsRequest.Query(datapoint=datapoint, neighbor_count=1)
-    request = aip.FindNeighborsRequest(
-        index_endpoint=endpoint.resource_name,
-        deployed_index_id=_get_deployed_index_id(index, endpoint),
-        queries=[query],
-        return_full_datapoint=False,
-    )
-
-    # Execute the request and return the result
+    # Find datapoints matching the filter expression and return datapoint ids
     try:
-        result = vector_search_client.find_neighbors(request)
+        neighbors = endpoint.find_neighbors(
+            deployed_index_id=_get_deployed_index_id(index, endpoint),
+            queries=embeddings,
+            num_neighbors=max_datapoints,
+            filter=filter,
+            return_full_datapoint=False,
+        )
+
+        data_points = [neighbor.id for neighbor in neighbors[0]]
     except Exception as e:
         _logger.error("Failed to query datapoint due to error: %s", e)
-        result = []
+        data_points = []
 
-    return result
+    return data_points
