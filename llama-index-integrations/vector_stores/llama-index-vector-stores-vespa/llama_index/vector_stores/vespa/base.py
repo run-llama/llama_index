@@ -309,6 +309,7 @@ class VespaVectorStore(VectorStore):
             raise ValueError(
                 f"Delete request failed: {response.status_code}, response payload: {response.json}"
             )
+        logger.info(f"Deleted node with id {ref_doc_id}")
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
