@@ -6,8 +6,6 @@ LlamaParse directly integrates with [LlamaIndex](https://github.com/run-llama/ll
 
 Currently available for **free**. Try it out today!
 
-**NOTE:** Currently, only PDF files are supported.
-
 ## Getting Started
 
 First, login and get an api-key from `https://cloud.llamaindex.ai`.
@@ -86,6 +84,7 @@ Several end-to-end indexing examples can be found in the examples folder
 - [Getting Started](https://github.com/run-llama/llama_parse/blob/main/examples/demo_basic.ipynb)
 - [Advanced RAG Example](https://github.com/run-llama/llama_parse/blob/main/examples/demo_advanced.ipynb)
 - [Raw API Usage](https://github.com/run-llama/llama_parse/blob/main/examples/demo_api.ipynb)
+- [JSON MODE](https://github.com/run-llama/llama_parse/blob/main/examples/demo_json.ipynb)
 
 ## Terms of Service
 
