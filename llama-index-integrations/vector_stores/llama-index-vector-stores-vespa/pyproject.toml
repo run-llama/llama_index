@@ -8,11 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-contains_example = false
+contains_example = true
 import_path = "llama_index.vector_stores.vespa"
 
 [tool.llamahub.class_authors]
-VespaVectorStore = "llama-index"
+VespaVectorStore = "thomasht86"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -43,6 +43,7 @@ pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-asyncio = "0.23.6"
 pytest-mock = "3.11.1"
+pyvespa = "0.40.0"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
