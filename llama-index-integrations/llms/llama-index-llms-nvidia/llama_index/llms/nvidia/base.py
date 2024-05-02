@@ -200,12 +200,6 @@ class NVIDIA(LLM):
         endpoint. For instance, "https://localhost:9999/v1". Additionally, the
         "model" parameter must be set to the name of the model inside the NIM.
         """
-        # if mode == "nvidia":
-        #     if not api_key:
-        #         warnings.warn(
-        #             "'nvidia' mode without an api_key may result in an error",
-        #             UserWarning,
-        #         )
         if mode == "nim":
             if not base_url:
                 raise ValueError("base_url is required for nim mode")
