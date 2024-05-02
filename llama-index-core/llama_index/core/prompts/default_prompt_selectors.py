@@ -15,7 +15,7 @@ from llama_index.core.prompts.default_prompts import (
 from llama_index.core.prompts.utils import is_chat_model
 
 try:
-    from llama_index.llms.cohere.utils import (
+    from llama_index.llms.cohere import (
         is_cohere_model,
         COHERE_QA_TEMPLATE,
         COHERE_REFINE_TEMPLATE,
