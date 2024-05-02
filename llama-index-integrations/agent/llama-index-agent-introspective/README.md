@@ -11,8 +11,7 @@ This agent integration package includes three main agent classes:
 These classes are used together in order to build an "Introspective" Agent which
 performs tasks while applying the reflection agentic pattern. In other words, an
 introspective agent produces an initial response to a task and then performs
-reflection and subsequently correction to produce an improved (upon the initial one)
-response to the task.
+reflection and subsequently correction to produce an improved response to the task.
 
 ### The `IntrospectiveAgentWorker`
 
