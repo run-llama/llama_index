@@ -20,6 +20,7 @@ from llama_index.vector_stores.vespa.templates import hybrid_template
 import asyncio
 import logging
 import json
+import sys
 
 try:
     from vespa.application import Vespa
@@ -32,6 +33,8 @@ except ImportError:
     )
 
 logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stream=sys.stdout)
+logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 
