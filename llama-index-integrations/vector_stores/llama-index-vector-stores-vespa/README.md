@@ -43,7 +43,9 @@ hybrid_template = ApplicationPackage(
             document=Document(
                 fields=[
                     Field(name="id", type="string", indexing=["summary"]),
-                    Field(name="metadata", type="string", indexing=["summary"]),
+                    Field(
+                        name="metadata", type="string", indexing=["summary"]
+                    ),
                     Field(
                         name="text",
                         type="string",
@@ -70,7 +72,9 @@ hybrid_template = ApplicationPackage(
                 RankProfile(
                     name="bm25",
                     inputs=[("query(q)", "tensor<float>(x[384])")],
-                    functions=[Function(name="bm25sum", expression="bm25(text)")],
+                    functions=[
+                        Function(name="bm25sum", expression="bm25(text)")
+                    ],
                     first_phase="bm25sum",
                 ),
                 RankProfile(
