@@ -1,7 +1,9 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.prompts import ChatPromptTemplate, ChatMessage, MessageRole
+
 from llama_index.core.prompts.chat_prompts import TEXT_QA_SYSTEM_PROMPT
 from tenacity import (
     before_sleep_log,
@@ -31,10 +33,14 @@ REPRESENTATION_MODELS = {
 ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_MODELS}
 CHAT_MODELS = {**COMMAND_MODELS}
 
+
+def is_cohere_model(llm: BaseLLM) -> bool:
+    return llm.model in CHAT_MODELS
+
+
 logger = logging.getLogger(__name__)
 
 
-# TODO: decide later where this should be moved
 class DocumentMessage(ChatMessage):
     role: MessageRole = MessageRole.SYSTEM
 
@@ -85,6 +91,28 @@ COHERE_TREE_SUMMARIZE_TEMPLATE = ChatPromptTemplate(
                 "answer the query.\n"
                 "Query: {query_str}\n"
                 "Answer: "
+            ),
+            role=MessageRole.USER,
+        ),
+    ]
+)
+# Table context refine (based on llama_index.core.chat_prompts::CHAT_REFINE_TABLE_CONTEXT_PROMPT)
+COHERE_REFINE_TABLE_CONTEXT_PROMPT = ChatPromptTemplate(
+    message_templates=[
+        ChatMessage(content="{query_str}", role=MessageRole.USER),
+        ChatMessage(content="{existing_answer}", role=MessageRole.ASSISTANT),
+        DocumentMessage(content="{context_msg}"),
+        ChatMessage(
+            content=(
+                "We have provided a table schema below. "
+                "---------------------\n"
+                "{schema}\n"
+                "---------------------\n"
+                "We have also provided some context information. "
+                "Given the context information and the table schema, "
+                "refine the original answer to better "
+                "answer the question. "
+                "If the context isn't useful, return the original answer."
             ),
             role=MessageRole.USER,
         ),

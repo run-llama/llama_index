@@ -48,7 +48,9 @@ class Cohere(LLM):
     """
 
     model: str = Field(description="The cohere model to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    temperature: float = Field(
+        description="The temperature to use for sampling.", default=None
+    )
     max_retries: int = Field(
         default=10, description="The maximum number of API retries."
     )
@@ -64,7 +66,7 @@ class Cohere(LLM):
         self,
         model: str = "command-r",
         temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = 8192,
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
