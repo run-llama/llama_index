@@ -17,7 +17,7 @@ MAX_BATCH_SIZE = 2048
 API_URL = "https://api.jina.ai/v1/embeddings"
 
 
-VALID_ENCODING = ['float', 'ubinary', 'binary']
+VALID_ENCODING = ["float", "ubinary", "binary"]
 
 
 class JinaEmbedding(BaseEmbedding):
@@ -55,15 +55,15 @@ class JinaEmbedding(BaseEmbedding):
             api_key=api_key,
             **kwargs,
         )
-        self._encoding_queries = encoding_queries or 'float'
-        self._encoding_documents = encoding_documents or 'float'
+        self._encoding_queries = encoding_queries or "float"
+        self._encoding_documents = encoding_documents or "float"
 
         assert (
             self._encoding_documents in VALID_ENCODING
-        ), f'Encoding Documents parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}'
+        ), f"Encoding Documents parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
         assert (
             self._encoding_queries in VALID_ENCODING
-        ), f'Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}'
+        ), f"Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
 
         self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
         self.model = model
@@ -103,7 +103,7 @@ class JinaEmbedding(BaseEmbedding):
         return result[0]
 
     def _get_text_embeddings(
-        self, texts: List[str], encoding_type: str = 'float'
+        self, texts: List[str], encoding_type: str = "float"
     ) -> List[List[float]]:
         """Get text embeddings."""
         # Call Jina AI Embedding API
@@ -120,23 +120,22 @@ class JinaEmbedding(BaseEmbedding):
         sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
 
         # Return just the embeddings
-        if encoding_type == 'float':
-            return [result["embedding"] for result in sorted_embeddings]
-        elif encoding_type == 'ubinary':
+        if encoding_type == "ubinary":
             return [
-                np.unpackbits(np.array(result["embedding"], dtype='uint8')).tolist()
+                np.unpackbits(np.array(result["embedding"], dtype="uint8")).tolist()
                 for result in sorted_embeddings
             ]
-        elif encoding_type == 'binary':
+        elif encoding_type == "binary":
             return [
                 np.unpackbits(
-                    (np.array(result["embedding"]) + 128).astype('uint8')
+                    (np.array(result["embedding"]) + 128).astype("uint8")
                 ).tolist()
                 for result in sorted_embeddings
             ]
+        return [result["embedding"] for result in sorted_embeddings]
 
     async def _aget_text_embeddings(
-        self, texts: List[str], encoding_type: str = 'float'
+        self, texts: List[str], encoding_type: str = "float"
     ) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         import aiohttp
@@ -163,19 +162,18 @@ class JinaEmbedding(BaseEmbedding):
                 sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
 
                 # Return just the embeddings
-                if encoding_type == 'float':
-                    return [result["embedding"] for result in sorted_embeddings]
-                elif encoding_type == 'ubinary':
+                if encoding_type == "ubinary":
                     return [
                         np.unpackbits(
-                            np.array(result["embedding"], dtype='uint8')
+                            np.array(result["embedding"], dtype="uint8")
                         ).tolist()
                         for result in sorted_embeddings
                     ]
-                elif encoding_type == 'binary':
+                elif encoding_type == "binary":
                     return [
                         np.unpackbits(
-                            (np.array(result["embedding"]) + 128).astype('uint8')
+                            (np.array(result["embedding"]) + 128).astype("uint8")
                         ).tolist()
                         for result in sorted_embeddings
                     ]
+                return [result["embedding"] for result in sorted_embeddings]
