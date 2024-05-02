@@ -127,7 +127,7 @@ class Maritalk(LLM):
         " the probability mass considered for sampling.",
     )
 
-    _endpoint: str = PrivateAttr("https://chat-dev.maritaca.ai/api/chat/inference")
+    _endpoint: str = PrivateAttr("https://chat.maritaca.ai/api/chat/inference")
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
