@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, List
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -36,7 +36,7 @@ DEFAULT_PREFIX_CACHE_N = 16
 
 def llama_index_to_mistralrs_messages(
     messages: Sequence[ChatMessage],
-) -> list[dict[str, str]]:
+) -> List[Dict[str, str]]:
     """
     Convert llamaindex to mistralrs messages. Raises an exception if the role is not user or assistant.
     """
@@ -55,7 +55,7 @@ def llama_index_to_mistralrs_messages(
     return messages_new
 
 
-def extract_logprobs_choice(choice) -> Optional[list[LogProb]]:
+def extract_logprobs_choice(choice) -> Optional[List[LogProb]]:
     if choice.logprobs is not None:
         logprobs = []
         for logprob in choice.logprobs.content:
@@ -71,7 +71,7 @@ def extract_logprobs_choice(choice) -> Optional[list[LogProb]]:
     return logprobs
 
 
-def extract_logprobs(response) -> Optional[list[list[LogProb]]]:
+def extract_logprobs(response) -> Optional[List[List[LogProb]]]:
     if response.choices[0].logprobs is not None:
         choice_logprobs = []
         for choice in response.choices:
@@ -81,7 +81,7 @@ def extract_logprobs(response) -> Optional[list[list[LogProb]]]:
     return choice_logprobs
 
 
-def extract_logprobs_stream(response) -> Optional[list[list[LogProb]]]:
+def extract_logprobs_stream(response) -> Optional[List[List[LogProb]]]:
     if response.choices[0].logprobs is not None:
         logprobs = [extract_logprobs_choice(response.choices[0])]
     else:
