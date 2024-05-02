@@ -25,7 +25,7 @@ import sys
 try:
     from vespa.application import Vespa
     from vespa.package import ApplicationPackage
-    from vespa.io import VespaResponse, VespaQueryResponse
+    from vespa.io import VespaResponse
     from vespa.deployment import VespaCloud, VespaDocker
 except ImportError:
     raise ModuleNotFoundError(
