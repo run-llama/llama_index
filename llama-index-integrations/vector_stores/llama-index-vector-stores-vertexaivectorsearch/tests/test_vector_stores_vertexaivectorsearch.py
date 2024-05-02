@@ -39,7 +39,7 @@ GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "")
 
 def set_all_env_vars() -> bool:
     """Check if all required environment variables are set."""
-    return all([PROJECT_ID, REGION, INDEX_ID, ENDPOINT_ID, GCS_BUCKET_NAME])
+    return all([PROJECT_ID, REGION, INDEX_ID, ENDPOINT_ID])
 
 
 def create_uuid(text: str):
@@ -238,11 +238,12 @@ class TestVertexAIVectorStore:
 
     def test_vector_search_sdk_manager(self):
         sdk_manager = self.sdk_manager()
-        gcs_client = sdk_manager.get_gcs_client()
-        assert isinstance(gcs_client, storage.Client)
 
-        gcs_bucket = sdk_manager.get_gcs_bucket(GCS_BUCKET_NAME)
-        assert isinstance(gcs_bucket, storage.Bucket)
+        if GCS_BUCKET_NAME:
+            gcs_client = sdk_manager.get_gcs_client()
+            assert isinstance(gcs_client, storage.Client)
+            gcs_bucket = sdk_manager.get_gcs_bucket(GCS_BUCKET_NAME)
+            assert isinstance(gcs_bucket, storage.Bucket)
 
         index = sdk_manager.get_index(index_id=INDEX_ID)
         assert isinstance(index, MatchingEngineIndex)

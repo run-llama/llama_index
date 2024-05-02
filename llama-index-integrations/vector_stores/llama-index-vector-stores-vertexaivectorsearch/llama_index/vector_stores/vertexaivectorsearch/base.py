@@ -79,7 +79,7 @@ class VertexAIVectorStore(BasePydanticVectorStore):
     region: str
     index_id: str
     endpoint_id: str
-    gcs_bucket_name: str
+    gcs_bucket_name: Optional[str] = None
     credentials_path: Optional[str] = None
 
     _index: MatchingEngineIndex = PrivateAttr()
@@ -116,14 +116,24 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         _sdk_manager = VectorSearchSDKManager(
             project_id=project_id, region=region, credentials_path=credentials_path
         )
+
+        # get index and endpoint resource names including metadata
         self._index = _sdk_manager.get_index(index_id=index_id)
         self._endpoint = _sdk_manager.get_endpoint(endpoint_id=endpoint_id)
         self._index_metadata = self._index.to_dict()
+
+        # get index update method from index metadata
         self._stream_update = False
         if self._index_metadata["indexUpdateMethod"] == "STREAM_UPDATE":
             self._stream_update = True
-        self._staging_bucket = _sdk_manager.get_gcs_bucket(bucket_name=gcs_bucket_name)
-        # self._document_storage = GCSDocumentStorage(bucket=self._staging_bucket)
+
+        # get bucket object when available
+        if self.gcs_bucket_name:
+            self._staging_bucket = _sdk_manager.get_gcs_bucket(
+                bucket_name=gcs_bucket_name
+            )
+        else:
+            self._staging_bucket = None
 
     @classmethod
     def from_params(
