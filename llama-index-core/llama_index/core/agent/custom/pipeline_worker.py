@@ -188,7 +188,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.memory.get() + task.extra_state["memory"].get_all())
+        task.memory.set(task.memory.get(input=task.input) + task.extra_state["memory"].get_all())
         # reset new memory
         task.extra_state["memory"].reset()
 

@@ -120,7 +120,7 @@ class CoAAgentWorker(BaseAgentWorker):
         new_memory = ChatMemoryBuffer.from_defaults()
 
         # put current history in new memory
-        messages = task.memory.get()
+        messages = task.memory.get(input=task.input)
         for message in messages:
             new_memory.put(message)
 

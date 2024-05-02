@@ -71,7 +71,7 @@ class VectorMemory(BaseMemory):
 
         # retrieve from index
         retriever = self.vector_index.get_retriever(**self.retriever_kwargs)
-        nodes = retriever.retrieve(input)
+        nodes = retriever.retrieve(input or "")
         messages = [ChatMessage.from_node(node) for node in nodes]
 
         # add system message
@@ -91,7 +91,9 @@ class VectorMemory(BaseMemory):
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
         # TODO: 
-        raise ValueError("Vector memory does not support get_all method, can only retrieve based on input.")
+        raise ValueError(
+            "Vector memory does not support get_all method, can only retrieve based on input."
+        )
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
@@ -109,5 +111,9 @@ class VectorMemory(BaseMemory):
 
     def reset(self) -> None:
         """Reset chat history."""
-        # TODO:
-        raise NotImplementedError
+        raise NotImplementedError(
+            "As of right now, our vector store abstractions do not support "
+            "dropping an entire collection. If you are using this vector memory "
+            "module, please use the relevant vector store SDK to drop "
+            "the collection whenever `memory.reset()` or `agent.reset()` is called. "
+        )

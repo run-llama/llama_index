@@ -531,7 +531,7 @@ class ReActAgentWorker(BaseAgentWorker):
         tools = self.get_tools(task.input)
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input) + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -570,7 +570,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input) + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
@@ -608,7 +608,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input) + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -679,7 +679,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input) + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
