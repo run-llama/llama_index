@@ -11,6 +11,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -798,7 +799,7 @@ class BasePlanningAgentRunner(AgentRunner):
                 self.arun_task(sub_task_id, mode=mode, tool_choice=tool_choice)
                 for sub_task_id in next_task_ids
             ]
-            results = asyncio.run(asyncio.gather(*jobs))
+            results = asyncio.run(run_jobs(jobs, workers=len(jobs)))
 
             for sub_task_id in next_task_ids:
                 self.mark_task_complete(plan_id, sub_task_id)
@@ -844,7 +845,7 @@ class BasePlanningAgentRunner(AgentRunner):
                 self.arun_task(sub_task_id, mode=mode, tool_choice=tool_choice)
                 for sub_task_id in next_task_ids
             ]
-            results = await asyncio.gather(*jobs)
+            results = await run_jobs(jobs, workers=len(jobs))
 
             for sub_task_id in next_task_ids:
                 self.mark_task_complete(plan_id, sub_task_id)
