@@ -41,6 +41,14 @@ def is_cohere_model(llm: BaseLLM) -> bool:
 logger = logging.getLogger(__name__)
 
 
+# Cohere models accept a special argument `documents` for RAG calls. To pass on retrieved documents to the `documents` argument
+# as intended by the Cohere team, we define:
+# 1. A new ChatMessage class, called DocumentMessage
+# 2. Specialised prompt templates for Text QA, Refine, Tree Summarize, and Refine Table that leverage DocumentMessage
+# These templates are applied by default when a retriever is called with a Cohere LLM via custom logic inside default_prompt_selectors.py.
+# See Cohere.chat for details on how the templates are unpackaged.
+
+
 class DocumentMessage(ChatMessage):
     role: MessageRole = MessageRole.SYSTEM
 
