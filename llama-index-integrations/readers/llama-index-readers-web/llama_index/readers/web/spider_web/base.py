@@ -1,14 +1,7 @@
-from enum import Enum
-from pydantic import Extra
-from typing import Optional, List, Literal
+from typing import List, Optional, Literal
 
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
-
-
-class Mode(str, Enum):
-    SCRAPE = "scrape"
-    CRAWL = "crawl"
 
 
 class SpiderWebReader(BasePydanticReader):
@@ -20,21 +13,25 @@ class SpiderWebReader(BasePydanticReader):
 
     Args:
         api_key (str): The Spider API key, get one at https://spider.cloud
-        mode (str): "Scrape" the url (default) or "crawl" the url following all subpages.
-        params (Dict[str, Any]): Additional parameters to pass to the Spider API.
+        mode (Mode): "Scrape" the url (default) or "crawl" the url following all subpages.
+        params (dict): Additional parameters to pass to the Spider API.
     """
+
+    class Config:
+        use_enum_values = True
+        extra = "allow"
 
     def __init__(
         self,
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {
-            "return_format": "markdown",
-            "metadata": True,
-        },  # Using the metadata param slightly slows down the output
+        params: Optional[dict] = None,
     ) -> None:
         super().__init__(api_key=api_key, mode=mode, params=params)
+
+        if params is None:
+            params = {"return_format": "markdown", "metadata": True}
         try:
             from spider import Spider
         except ImportError:
@@ -42,49 +39,30 @@ class SpiderWebReader(BasePydanticReader):
                 "`spider-client` package not found, please run `pip install spider-client`"
             )
         self.spider = Spider(api_key=api_key)
-
-        if mode not in ("scrape", "crawl"):
-            raise ValueError(
-                f"Unrecognized mode '{mode}'. Expected one of 'scrape', 'crawl'."
-            )
-        # If `params` is `None`, initialize it as an empty dictionary
-        if params is None:
-            params = {}
-
-        api_key = api_key
-        self.spider = Spider(api_key=api_key)
         self.mode = mode
         self.params = params
-
-    class Config:
-        use_enum_values = True
-        extra = Extra.allow
 
     def load_data(self, url: str) -> List[Document]:
         if self.mode != "scrape" and self.mode != "crawl":
             raise ValueError(
                 "Unknown mode in `mode` parameter, `scrape` or `crawl` is the allowed modes"
             )
-
-        documents = []
         action = (
             self.spider.scrape_url if self.mode == "scrape" else self.spider.crawl_url
         )
         spider_docs = action(url=url, params=self.params)
 
         if not spider_docs:
-            return Document(
-                page_content="",
-                metadata="",
-            )
+            return [Document(page_content="", metadata={})]
 
+        documents = []
         if isinstance(spider_docs, list):
             for doc in spider_docs:
                 text = doc.get("content", "")
                 if text is not None:
                     documents.append(
                         Document(
-                            text=doc.get("content", ""),
+                            text=text,
                             metadata=doc.get("metadata", {}),
                         )
                     )
