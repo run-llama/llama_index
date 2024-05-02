@@ -5,7 +5,7 @@ import asyncpg  # noqa
 import pgvector  # noqa
 import psycopg2  # noqa
 import sqlalchemy
-import sqlalchemy.ext.asyncio  # noqa
+import sqlalchemy.ext.asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
