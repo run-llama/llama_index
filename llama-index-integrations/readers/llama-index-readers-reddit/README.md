@@ -74,4 +74,4 @@ output = agent_chain.run(input="What are the pain points of PyTorch users?")
 print(output)
 ```
 
-This loader is designed to be used as a way to load data into [GPT Index](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+This loader is designed to be used as a way to load data into [GPT Index](https://github.com/run-llama/llama_index/).
