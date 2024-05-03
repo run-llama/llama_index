@@ -38,4 +38,4 @@ print(agent.chat("Convert 100 euros to CAD"))
 
 In addition to the above method, this tool makes all of the tools available from the OpenAPI Tool Spec and Requests Tool Spec available to the agent. The plugin OpenAPI definition is loaded into the OpenAPI tool spec, and authentication headers are passed in to the Requests tool spec
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

@@ -37,4 +37,4 @@ documents = reader.load_data(
 
 A demo notebook is available [here](https://colab.research.google.com/github/arangodb/interactive_tutorials/blob/master/notebooks/example_output/Langchain_Full_output.ipynb).
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

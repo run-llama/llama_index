@@ -193,7 +193,7 @@ def test_max_tokens() -> None:
     assert len(memory.get()) == 2
 
 
-def test_sting_save_load() -> None:
+def test_string_save_load() -> None:
     memory = ChatMemoryBuffer.from_defaults(
         chat_history=[USER_CHAT_MESSAGE], token_limit=5
     )

@@ -25,4 +25,4 @@ print(
 `text_to_speech`: Takes an input string and synthesizes audio to play on the users computer
 `speech_to_text`: Takes a .wav file and transcribes it into text
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

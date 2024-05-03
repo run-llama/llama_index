@@ -32,4 +32,4 @@ documents[0]
 # >>> Document(text='2023-02-20 00:00:00 ur mom: Hi 😊', doc_id='e0a7c508-4ba0-48e1-a2ba-9af133225636', embedding=None, extra_info={'source': 'WhatsApp Chat with ur mom', 'author': 'ur mom', 'date': '2023-02-20 00:00:00'})
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

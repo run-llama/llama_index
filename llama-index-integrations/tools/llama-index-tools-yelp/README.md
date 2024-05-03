@@ -23,4 +23,4 @@ agent.chat("what are the details of lao lao bar")
 `business_search`: Use a natural language query to search for businesses
 `business_reviews`: Use a business id to fetch reviews
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.
