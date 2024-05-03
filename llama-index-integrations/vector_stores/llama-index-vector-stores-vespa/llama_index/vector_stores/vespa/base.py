@@ -463,14 +463,26 @@ class VespaVectorStore(VectorStore):
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
     async def aquery(
-        self, query: VectorStoreQuery, **kwargs: Any
+        self,
+        query: VectorStoreQuery,
+        sources: Optional[List[str]] = None,
+        rank_profile: Optional[str] = None,
+        vector_top_k: int = 10,
+        **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
         Asynchronously query vector store.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call query synchronously.
         """
-        return self.query(query, **kwargs)
+        logger.info("Async query not implemented. Will call query synchronously.")
+        return self.query(
+            query=query,
+            sources=sources,
+            rank_profile=rank_profile,
+            vector_top_k=vector_top_k,
+            **kwargs,
+        )
 
     def persist(
         self,
