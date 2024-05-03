@@ -50,7 +50,8 @@ Critique:
 Use the provided information to generate a corrected version of input.
 """
 
-CORRECT_RESPONSE_FSTRING = "Here is a corrected version of the input.\n{correction}"
+CORRECT_RESPONSE_PREFIX = "Here is a corrected version of the input.\n"
+CORRECT_RESPONSE_FSTRING = CORRECT_RESPONSE_PREFIX + "{correction}"
 
 DEFAULT_MAX_ITERATIONS = 5
 
@@ -209,7 +210,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     def _remove_correction_str_prefix(self, correct_msg: str) -> str:
         """Helper function to format correction message for final response."""
-        return correct_msg.replace("Here is a corrected version of the input.\n", "")
+        return correct_msg.replace(CORRECT_RESPONSE_PREFIX, "")
 
     @dispatcher.span
     def _critique(self, input_str: str) -> AgentChatResponse:
