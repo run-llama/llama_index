@@ -21,6 +21,8 @@ To load in a Mistral-7B model just do `ollama pull mistral`
 
 **NOTE**: You will need a machine with at least 32GB of RAM.
 
+To import `llama_index.llms.ollama`, you should run `pip install llama-index-llms-ollama`. More integrations are all listed on https://llamahub.ai.
+
 ## Load data and build an index
 
 In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
