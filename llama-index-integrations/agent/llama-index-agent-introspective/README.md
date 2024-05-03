@@ -140,4 +140,4 @@ introspective_agent.chat("...")
 
 ### Examples
 
-- [Toxicity Reduction Example](https://github.com/runllama/llama_index/blob/main/llama-index-integrations/agent/llama-index-agent-introspective/examples/toxicity_reduction.ipynb) (WARNING: this notebook contains content that may be considered offensive or sensitive to some.)
+- [Toxicity Reduction Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/introspective_agent_toxicity_reduction.ipynb) (WARNING: this notebook contains content that may be considered offensive or sensitive to some.)
