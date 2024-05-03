@@ -61,7 +61,7 @@ def test_planner_agent() -> None:
     agent = StructuredPlannerAgent(worker, tools=[dummy_tool], llm=dummy_llm)
 
     # create a plan
-    plan_id = agent.create_tasks("CREATE A PLAN")
+    plan_id = agent.create_plan("CREATE A PLAN")
     plan = agent.state.plan_dict[plan_id]
     assert plan is not None
     assert len(plan.sub_tasks) == 3
@@ -71,10 +71,8 @@ def test_planner_agent() -> None:
 
     next_tasks = agent.state.get_next_sub_tasks(plan_id)
 
-    completed_pairs = []
     for task in next_tasks:
         response = agent.run_task(task.name)
-        completed_pairs.append((task, response))
         agent.state.add_completed_sub_task(plan_id, task)
 
     assert len(agent.state.get_completed_sub_tasks(plan_id)) == 2
@@ -83,7 +81,7 @@ def test_planner_agent() -> None:
     assert len(next_tasks) == 1
 
     # will insert the original dummy plan again
-    agent.refine_plan(plan_id, "CREATE A PLAN", completed_pairs)
+    agent.refine_plan("CREATE A PLAN", plan_id)
 
     assert len(plan.sub_tasks) == 3
     assert len(agent.state.get_completed_sub_tasks(plan_id)) == 2
