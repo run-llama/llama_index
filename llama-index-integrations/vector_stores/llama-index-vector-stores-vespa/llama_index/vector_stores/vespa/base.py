@@ -74,7 +74,7 @@ class VespaVectorStore(VectorStore):
             deployment_target (str): Deployment target, either `local` or `cloud`
             port (int): Port that Vespa application will run on. Only applicable if deployment_target is `local`
             default_schema_name (str): Schema name in Vespa application
-            namespace (str): Namespace in Vespa application
+            namespace (str): Namespace in Vespa application. See https://docs.vespa.ai/en/documents.html#namespace. Defaults to `default`.
             embeddings_outside_vespa (bool): Whether embeddings are created outside Vespa, or not.
             url (Optional[str]): URL of deployed Vespa application.
             groupname (Optional[str]): Group name in Vespa application, only applicable in `streaming` mode, see https://pyvespa.readthedocs.io/en/latest/examples/scaling-personal-ai-assistants-with-streaming-mode-cloud.html#A-summary-of-Vespa-streaming-mode
@@ -115,7 +115,7 @@ class VespaVectorStore(VectorStore):
         url: Optional[str] = None,
         groupname: Optional[str] = None,
         tenant: Optional[str] = None,
-        application: Optional[str] = None,
+        application: Optional[str] = "hybridsearch",
         key_location: Optional[str] = None,
         key_content: Optional[str] = None,
         auth_client_token_id: Optional[str] = None,
@@ -140,6 +140,7 @@ class VespaVectorStore(VectorStore):
         self.url = url
         self.groupname = groupname
         self.tenant = tenant
+        self.application = application
         self.key_location = key_location
         self.key_content = key_content
         self.auth_client_token_id = auth_client_token_id
@@ -176,12 +177,14 @@ class VespaVectorStore(VectorStore):
         return app
 
     def _deploy_app_local(self) -> Vespa:
+        logger.info(f"Deploying Vespa application {self.application} to Vespa Docker.")
         return VespaDocker(port=8080).deploy(self.application_package)
 
     def _deploy_app_cloud(self) -> Vespa:
+        logger.info(f"Deploying Vespa application {self.application} to Vespa Cloud.")
         return VespaCloud(
             tenant=self.tenant,
-            application="hybridsearch",
+            application=self.application,
             application_package=self.application_package,
             key_location=self.key_location,
             key_content=self.key_content,
