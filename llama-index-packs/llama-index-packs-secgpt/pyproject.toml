@@ -39,7 +39,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = "Yuhao-W"
+authors = ["Yuhao-W"]
 description = "llama-index packs secgpt pack"
 license = "MIT"
 name = "llama-index-packs-secgpt"
@@ -49,7 +49,13 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
+dirtyjson = "^1.0.8"
+jsonschema = "^4.21.1"
+llama-index-core = "^0.10.30"
+llama-index-llms-openai = "^0.1.10"
+langchain_core = "^0.1.45"
+pyseccomp = "^0.1.2"
+tldextract = "^5.1.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
