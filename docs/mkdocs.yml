@@ -310,6 +310,7 @@ nav:
           - ./examples/llm/databricks.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/octoai.ipynb
+          - ./examples/llm/mistral_rs.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -665,6 +666,7 @@ nav:
       - Agents:
           - ./api_reference/agent/coa.md
           - ./api_reference/agent/index.md
+          - ./api_reference/agent/introspective.md
           - ./api_reference/agent/lats.md
           - ./api_reference/agent/llm_compiler.md
           - ./api_reference/agent/openai.md
@@ -1847,6 +1849,7 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-firestore
             - ../llama-index-integrations/readers/llama-index-readers-youtube-metadata
             - ../llama-index-integrations/llms/llama-index-llms-mistral-rs
+            - ../llama-index-integrations/agent/llama-index-agent-introspective
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
