@@ -19,7 +19,7 @@ def test_message_to_cohere_documents():
     assert (
         len(res) == 1
         and res[0]["source"] == "nyc_text.txt"
-        and res[0]["content"] == content
+        and res[0]["text"] == content
     )
 
     # Message with multiple documents
