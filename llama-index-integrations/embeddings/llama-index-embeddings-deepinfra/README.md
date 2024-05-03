@@ -1,1 +1,1 @@
-# LlamaIndex Embeddings Integration: DeepInfra
+# LlamaIndex Embeddings Integration: Deepinfra
