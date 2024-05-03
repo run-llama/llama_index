@@ -1,5 +1,7 @@
+from collections import Counter
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+import re
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.prompts import ChatPromptTemplate, ChatMessage, MessageRole
@@ -218,7 +220,7 @@ def is_chat_model(model: str) -> bool:
 
 def remove_documents_from_messages(
     messages: Sequence[ChatMessage],
-) -> Tuple[Sequence[ChatMessage], List[Dict[str, str]]]:
+) -> Tuple[Sequence[ChatMessage], Optional[List[Dict[str, str]]]]:
     """
     Splits messages into two lists: `remaining` and `documents`.
     `remaining` contains all messages that aren't of type DocumentMessage (e.g. history, query).
@@ -256,38 +258,55 @@ def messages_to_cohere_history(
 
 def messages_to_cohere_documents(
     messages: List[DocumentMessage],
-) -> List[Dict[str, str]]:
+) -> Optional[List[Dict[str, str]]]:
     """
     Splits out individual documents from `messages` in the format expected by Cohere.chat's `documents`.
+    Returns None if `messages` is an empty list for compatibility with co.chat (where `documents` is None by default).
     """
+    if messages == []:
+        return None
     documents = []
     for msg in messages:
-        documents.extend(_message_to_cohere_documents(msg))
+        documents.extend(document_message_to_cohere_document(msg))
     return documents
 
 
-def _message_to_cohere_documents(message: DocumentMessage) -> List[Dict[str, str]]:
-    """
-    Splits out individual documents from a single `message` in the format expected by Cohere.chat's `documents`.
+def document_message_to_cohere_document(message: DocumentMessage) -> Dict:
+    # By construction, single DocumentMessage contains all retrieved documents
+    documents: List[Dict[str, str]] = []
+    # Capture all key: value pairs. They will be unpacked in separate documents, Cohere-style.
+    re_special_fields = re.compile(r"(file_path|custom_field): (.+)\n+")
+    # Find most frequent field. We assume that the most frequent field denotes the boundary
+    # between consecutive documents, and break ties by taking whichever field appears first.
+    special_fields = re.findall(re_special_fields, message.content)
+    if len(special_fields) == 0:
+        # Document doesn't contain expected special fields. Return default formatting.
+        return [{"text": message.content}]
 
-    NOTE: current implementation is brittle and depends on the formatting of specific retriever.
-    I don't yet understand how to control that retriever logic.
+    fields_counts = Counter([key for key, _ in special_fields])
+    most_frequent = fields_counts.most_common()[0][0]
 
-    TODO: make document-splitting logic robust to different retrievers
-    TODO: handle additional_kwargs from DocumentMessage
-    """
-    # TODO: better: look for pattern of k: v values, then parse anew
-    try:
-        documents = []
-        docs = message.content.split("file_path:")
-        for doc in docs:
-            if doc:
-                split_by_separator = doc.split("\n\n")
-                source = split_by_separator[0].strip()
-                text = "\n\n".join(split_by_separator[1:]).strip()
-                documents.append({"source": source, "text": text})
-        return documents
-    except Exception:
-        # Parsing failed. This is likely because 'message' was built from a different retriever
-        # Return a default formatting to avoid breaking pipeline
-        return [message.content]
+    # Initialise
+    document = None
+    remaining_text = message.content
+    for key, value in special_fields:
+        if key == most_frequent:
+            # Save current document after extracting text, then reinit `document` to move to next document
+            if document:  # skip first iteration, where document is None
+                # Extract text up until the most_frequent remaining text, then skip to next document
+                index = remaining_text.find(key)
+                document["text"] = remaining_text[:index].strip()
+                documents.append(document)
+            document = {}
+
+        # Catch all special fields. Convert them to key: value pairs.
+        document[key] = value
+        # Store remaining text, behind the (first instance of) current `value`
+        remaining_text = remaining_text[
+            remaining_text.find(value) + len(value) :
+        ].strip()
+
+    # Append last document that's in construction
+    document["text"] = remaining_text.strip()
+    documents.append(document)
+    return documents
