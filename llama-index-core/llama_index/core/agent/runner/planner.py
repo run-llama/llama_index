@@ -1,8 +1,7 @@
-import asyncio
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from llama_index.core.agent.runner.base import AgentRunner, AgentState
+from llama_index.core.agent.runner.base import BasePlanningAgentRunner, AgentState
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     TaskStepOutput,
@@ -10,7 +9,6 @@ from llama_index.core.agent.types import (
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.chat_engine.types import (
-    AGENT_CHAT_RESPONSE_TYPE,
     ChatResponseMode,
 )
 from llama_index.core.base.llms.types import ChatMessage
@@ -21,10 +19,6 @@ from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.tools.types import BaseTool
-from llama_index.core.instrumentation.events.agent import (
-    AgentChatWithStepStartEvent,
-    AgentChatWithStepEndEvent,
-)
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -140,7 +134,7 @@ Overall Task: {task}
 """
 
 
-class StructuredPlannerAgent(AgentRunner):
+class StructuredPlannerAgent(BasePlanningAgentRunner):
     """Structured Planner Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
@@ -218,8 +212,21 @@ class StructuredPlannerAgent(AgentRunner):
             return self.tool_retriever.retrieve(input)
         raise ValueError("No tools provided or retriever set.")
 
-    def create_tasks(self, input: str, **kwargs: Any) -> str:
-        """Create a plan to execute a set of tasks."""
+    def get_next_tasks(self, plan_id: str, **kwargs: Any) -> List[str]:
+        """Get next task ids for a given plan."""
+        upcoming_sub_tasks = self.state.get_next_sub_tasks(plan_id)
+        return [sub_task.name for sub_task in upcoming_sub_tasks]
+
+    def mark_task_complete(self, plan_id: str, task_id: str, **kwargs: Any) -> None:
+        """Mark task complete for a given plan."""
+        sub_tasks_by_id = {
+            sub_task.name: sub_task
+            for sub_task in self.state.plan_dict[plan_id].sub_tasks
+        }
+        self.state.add_completed_sub_task(plan_id, sub_tasks_by_id[task_id])
+
+    def create_plan(self, input: str, **kwargs: Any) -> str:
+        """Create plan. Returns the plan_id."""
         tools = self.get_tools(input)
         tools_str = ""
         for tool in tools:
@@ -261,7 +268,7 @@ class StructuredPlannerAgent(AgentRunner):
         return plan_id
 
     async def acreate_tasks(self, input: str, **kwargs: Any) -> str:
-        """Create a plan to execute a set of tasks."""
+        """Create plan (async). Returns the plan_id."""
         tools = self.get_tools(input)
         tools_str = ""
         for tool in tools:
@@ -306,13 +313,13 @@ class StructuredPlannerAgent(AgentRunner):
         self,
         plan_id: str,
         task: str,
-        completed_sub_task_pairs: List[Tuple[SubTask, AGENT_CHAT_RESPONSE_TYPE]],
+        completed_sub_task_pairs: List[Tuple[SubTask, TaskStepOutput]],
     ) -> dict:
         """Get the refine plan prompt."""
         # gather completed sub-tasks and response pairs
         completed_outputs_str = ""
-        for sub_task, response in completed_sub_task_pairs:
-            task_str = f"{sub_task.name}:\n" f"\t{response!s}\n"
+        for sub_task, task_output in completed_sub_task_pairs:
+            task_str = f"{sub_task.name}:\n" f"\t{task_output.output!s}\n"
             completed_outputs_str += task_str
 
         # get a string for the remaining sub-tasks
@@ -341,15 +348,38 @@ class StructuredPlannerAgent(AgentRunner):
             "remaining_sub_tasks": remaining_sub_tasks_str.strip(),
         }
 
+    def _update_plan(self, plan_id: str, new_plan: Plan) -> None:
+        """Update the plan."""
+        # update state with new plan
+        self.state.plan_dict[plan_id] = new_plan
+        for sub_task in new_plan.sub_tasks:
+            # insert new tasks
+            if sub_task.name in self.state.task_dict:
+                continue
+            self.create_task(sub_task.input, task_id=sub_task.name)
+
+        if self.verbose:
+            print(f"=== Refined plan ===")
+            for sub_task in new_plan.sub_tasks:
+                print(
+                    f"{sub_task.name}:\n{sub_task.input} -> {sub_task.expected_output}\ndeps: {sub_task.dependencies}\n\n"
+                )
+
     def refine_plan(
         self,
+        input: str,
         plan_id: str,
-        task: str,
-        completed_sub_task_pairs: List[Tuple[SubTask, AGENT_CHAT_RESPONSE_TYPE]],
+        **kwargs: Any,
     ) -> None:
         """Refine a plan."""
+        completed_sub_tasks = self.state.get_completed_sub_tasks(plan_id)
+        completed_sub_task_pairs = [
+            (sub_task, self.get_task_output(sub_task.name))
+            for sub_task in completed_sub_tasks
+        ]
+
         prompt_kwargs = self.get_refine_plan_prompt_kwargs(
-            plan_id, task, completed_sub_task_pairs
+            plan_id, input, completed_sub_task_pairs
         )
 
         try:
@@ -357,34 +387,26 @@ class StructuredPlannerAgent(AgentRunner):
                 Plan, self.plan_refine_prompt, **prompt_kwargs
             )
 
-            # delete any tasks from the previous plan
-            for sub_task in self.state.plan_dict[plan_id].sub_tasks:
-                self.delete_task(sub_task.name)
-
-            # update state with new plan
-            self.state.plan_dict[plan_id] = new_plan
-            for sub_task in new_plan.sub_tasks:
-                self.create_task(sub_task.input, task_id=sub_task.name)
-
-            if self.verbose:
-                print(f"=== Refined plan ===")
-                for sub_task in new_plan.sub_tasks:
-                    print(
-                        f"{sub_task.name}:\n{sub_task.input} -> {sub_task.expected_output}\ndeps: {sub_task.dependencies}\n\n"
-                    )
+            self._update_plan(plan_id, new_plan)
         except (ValueError, ValidationError):
             # likely no new plan predicted
             return
 
     async def arefine_plan(
         self,
+        input: str,
         plan_id: str,
-        task: str,
-        completed_sub_task_pairs: List[Tuple[SubTask, AGENT_CHAT_RESPONSE_TYPE]],
+        **kwargs: Any,
     ) -> None:
         """Refine a plan."""
+        completed_sub_tasks = self.state.get_completed_sub_tasks(plan_id)
+        completed_sub_task_pairs = [
+            (sub_task, self.get_task_output(sub_task.name))
+            for sub_task in completed_sub_tasks
+        ]
+
         prompt_args = self.get_refine_plan_prompt_kwargs(
-            plan_id, task, completed_sub_task_pairs
+            plan_id, input, completed_sub_task_pairs
         )
 
         try:
@@ -392,22 +414,7 @@ class StructuredPlannerAgent(AgentRunner):
                 Plan, self.plan_refine_prompt, **prompt_args
             )
 
-            # delete any tasks from the previous plan
-            for sub_task in self.state.plan_dict[plan_id].sub_tasks:
-                self.delete_task(sub_task.name)
-
-            # update state with new plan
-            self.state.plan_dict[plan_id] = new_plan
-            for sub_task in new_plan.sub_tasks:
-                self.create_task(sub_task.input, task_id=sub_task.name)
-
-            if self.verbose:
-                print(f"=== Refined plan ===")
-                for sub_task in new_plan.sub_tasks:
-                    print(
-                        f"{sub_task.name}:\n{sub_task.input} -> {sub_task.expected_output}\ndeps: {sub_task.dependencies}\n\n"
-                    )
-
+            self._update_plan(plan_id, new_plan)
         except (ValueError, ValidationError):
             # likely no new plan predicted
             return
@@ -461,101 +468,3 @@ class StructuredPlannerAgent(AgentRunner):
             task_id,
             result_output,
         )
-
-    @dispatcher.span
-    def _chat(
-        self,
-        message: str,
-        chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
-        mode: ChatResponseMode = ChatResponseMode.WAIT,
-    ) -> AGENT_CHAT_RESPONSE_TYPE:
-        """Chat with step executor."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        if chat_history is not None:
-            self.memory.set(chat_history)
-
-        # create initial set of tasks
-        plan_id = self.create_tasks(message)
-
-        results = []
-        completed_pairs = []
-        dispatch_event(AgentChatWithStepStartEvent())
-        while True:
-            # EXIT CONDITION: check if all sub-tasks are completed
-            next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
-            if len(next_sub_tasks) == 0:
-                break
-
-            jobs = [
-                self.arun_task(sub_task.name, mode=mode, tool_choice=tool_choice)
-                for sub_task in next_sub_tasks
-            ]
-            results = asyncio.run(asyncio.gather(*jobs))
-
-            # gather completed sub-tasks and response pairs
-            for sub_task, response in zip(next_sub_tasks, results):
-                completed_pairs.append((sub_task, response))
-                self.state.add_completed_sub_task(plan_id, sub_task)
-
-            # EXIT CONDITION: check if all sub-tasks are completed now
-            # LLMs have a tendency to add more tasks, so we end if there are no more tasks
-            # next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
-            # if len(next_sub_tasks) == 0:
-            #    break
-
-            # refine the plan
-            self.refine_plan(plan_id, message, completed_pairs)
-
-        dispatch_event(AgentChatWithStepEndEvent())
-        return results[-1]
-
-    @dispatcher.span
-    async def _achat(
-        self,
-        message: str,
-        chat_history: Optional[List[ChatMessage]] = None,
-        tool_choice: Union[str, dict] = "auto",
-        mode: ChatResponseMode = ChatResponseMode.WAIT,
-    ) -> AGENT_CHAT_RESPONSE_TYPE:
-        """Chat with step executor."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        if chat_history is not None:
-            self.memory.set(chat_history)
-
-        # create initial set of tasks
-        plan_id = self.create_tasks(message)
-
-        results = []
-        completed_pairs = []
-        dispatch_event(AgentChatWithStepStartEvent())
-        while True:
-            # EXIT CONDITION: check if all sub-tasks are completed
-            next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
-            if len(next_sub_tasks) == 0:
-                break
-
-            jobs = [
-                self.arun_task(sub_task.name, mode=mode, tool_choice=tool_choice)
-                for sub_task in next_sub_tasks
-            ]
-            results = await asyncio.gather(*jobs)
-
-            # gather completed sub-tasks and response pairs
-            for sub_task, response in zip(next_sub_tasks, results):
-                completed_pairs.append((sub_task, response))
-                self.state.add_completed_sub_task(plan_id, sub_task)
-
-            # EXIT CONDITION: check if all sub-tasks are completed now
-            # LLMs have a tendency to add more tasks, so we end if there are no more tasks
-            # next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
-            # if len(next_sub_tasks) == 0:
-            #    break
-
-            # refine the plan
-            await self.arefine_plan(plan_id, message, completed_pairs)
-
-        dispatch_event(AgentChatWithStepEndEvent())
-        return results[-1]
