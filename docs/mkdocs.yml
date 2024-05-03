@@ -1692,7 +1692,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-openalex
             - ../llama-index-integrations/readers/llama-index-readers-txtai
             - ../llama-index-integrations/readers/llama-index-readers-azcognitive-search
-            - ../llama-index-integrations/readers/llama-index-readers-pinecone
             - ../llama-index-integrations/readers/llama-index-readers-pandas-ai
             - ../llama-index-integrations/readers/llama-index-readers-airtable
             - ../llama-index-integrations/readers/llama-index-readers-string-iterable
