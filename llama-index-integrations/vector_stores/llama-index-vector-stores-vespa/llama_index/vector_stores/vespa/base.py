@@ -317,12 +317,15 @@ class VespaVectorStore(VectorStore):
             )
         logger.info(f"Deleted node with id {ref_doc_id}")
 
-    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    async def adelete(
+        self, ref_doc_id: str, namespace: Optional[str] = None, **delete_kwargs: Any
+    ) -> None:
         """
         Delete nodes using with ref_doc_id.
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call delete synchronously.
         """
+        logger.info("Async delete not implemented. Will call delete synchronously.")
         self.delete(ref_doc_id, **delete_kwargs)
 
     def _create_query_body(
