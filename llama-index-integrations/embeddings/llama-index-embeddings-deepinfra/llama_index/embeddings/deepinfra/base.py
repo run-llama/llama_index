@@ -10,9 +10,13 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
 
+"""DeepInfra Inference API URL."""
 INFERENCE_URL = "https://api.deepinfra.com/v1/inference"
+"""Environment variable name of DeepInfra API token."""
 ENV_VARIABLE = "DEEPINFRA_API_TOKEN"
+"""Default model ID for DeepInfra embeddings."""
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
+"""Maximum batch size for embedding requests."""
 MAX_BATCH_SIZE = 1024
 
 
