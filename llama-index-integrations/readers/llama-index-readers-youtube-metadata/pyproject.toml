@@ -13,6 +13,9 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 contains_example = false
 import_path = "llama_index.readers.youtube_metadata"
 
+[tool.llamahub.class_authors]
+YoutubeTranscriptReader = "Troy Lowry"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
