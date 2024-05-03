@@ -207,6 +207,10 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             step_state={"count": 0},
         )
 
+    def _remove_correction_str_prefix(self, correct_msg: str) -> str:
+        """Helper function to format correction message for final response."""
+        return correct_msg.replace("Here is a corrected version of the input.\n", "")
+
     @dispatcher.span
     def _critique(self, input_str: str) -> AgentChatResponse:
         agent = self._critique_agent_worker.as_agent(verbose=self._verbose)
@@ -239,13 +243,13 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         state["count"] += 1
 
         messages = task.extra_state["new_memory"].get()
-        current_response = messages[-1].content
-
-        # critique
-        input_str = current_response.replace(
-            "Here is a corrected version of the input.\n", ""
+        prev_correct_str = messages[-1].content
+        prev_correct_str_without_prefix = self._remove_correction_str_prefix(
+            prev_correct_str
         )
-        critique_response = self._critique(input_str=input_str)
+
+        # critique phase
+        critique_response = self._critique(input_str=prev_correct_str_without_prefix)
         task.extra_state["sources"].extend(critique_response.sources)
 
         if self.stopping_callable:
@@ -256,24 +260,44 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
         task.extra_state["new_memory"].put(critique_msg)
 
-        # correct
+        # correction phase
         if is_done:
+            # no correction to be made prev correction is sufficient
             agent_response = AgentChatResponse(
-                response=current_response, sources=task.extra_state["sources"]
+                response=prev_correct_str_without_prefix,
+                sources=task.extra_state["sources"],
+            )
+            task.extra_state["new_memory"].put(
+                ChatMessage(
+                    role=MessageRole.ASSISTANT, content=prev_correct_str_without_prefix
+                )
             )
             new_steps = []
         else:
+            # generate a new correction
             correct_msg = self._correct(
-                input_str=input_str, critique=critique_response.response
+                input_str=prev_correct_str_without_prefix,
+                critique=critique_response.response,
             )
-            agent_response = AgentChatResponse(
-                response=str(correct_msg), sources=critique_response.sources
+            correct_str_without_prefix = self._remove_correction_str_prefix(
+                correct_msg.content
             )
-            task.extra_state["new_memory"].put(correct_msg)
 
+            # reached max iterations, no further reflection/correction cycles
             if self.max_iterations == state["count"]:
+                task.extra_state["new_memory"].put(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content=correct_str_without_prefix
+                    )
+                )
+                agent_response = AgentChatResponse(response=correct_str_without_prefix)
                 new_steps = []
             else:
+                # another round of reflection/correction will take place
+                task.extra_state["new_memory"].put(correct_msg)
+                agent_response = AgentChatResponse(
+                    response=str(correct_msg), sources=critique_response.sources
+                )
                 new_steps = [
                     step.get_next_step(
                         step_id=str(uuid.uuid4()),
@@ -327,13 +351,15 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         state["count"] += 1
 
         messages = task.extra_state["new_memory"].get()
-        current_response = messages[-1].content
-
-        # critique
-        input_str = current_response.replace(
-            "Here is a corrected version of the input.\n", ""
+        prev_correct_str = messages[-1].content
+        prev_correct_str_without_prefix = self._remove_correction_str_prefix(
+            prev_correct_str
         )
-        critique_response = await self._acritique(input_str=input_str)
+
+        # critique phase
+        critique_response = await self._acritique(
+            input_str=prev_correct_str_without_prefix
+        )
         task.extra_state["sources"].extend(critique_response.sources)
 
         if self.stopping_callable:
@@ -344,24 +370,44 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
         task.extra_state["new_memory"].put(critique_msg)
 
-        # correct
+        # correction phase
         if is_done:
+            # no correction to be made prev correction is sufficient
             agent_response = AgentChatResponse(
-                response=current_response, sources=task.extra_state["sources"]
+                response=prev_correct_str_without_prefix,
+                sources=task.extra_state["sources"],
+            )
+            task.extra_state["new_memory"].put(
+                ChatMessage(
+                    role=MessageRole.ASSISTANT, content=prev_correct_str_without_prefix
+                )
             )
             new_steps = []
         else:
+            # generate a new correction
             correct_msg = await self._acorrect(
-                input_str=input_str, critique=critique_response.response
+                input_str=prev_correct_str_without_prefix,
+                critique=critique_response.response,
             )
-            agent_response = AgentChatResponse(
-                response=str(correct_msg), sources=critique_response.sources
+            correct_str_without_prefix = self._remove_correction_str_prefix(
+                correct_msg.content
             )
-            task.extra_state["new_memory"].put(correct_msg)
 
+            # reached max iterations, no further reflection/correction cycles
             if self.max_iterations == state["count"]:
+                task.extra_state["new_memory"].put(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content=correct_str_without_prefix
+                    )
+                )
+                agent_response = AgentChatResponse(response=correct_str_without_prefix)
                 new_steps = []
             else:
+                # another round of reflection/correction will take place
+                task.extra_state["new_memory"].put(correct_msg)
+                agent_response = AgentChatResponse(
+                    response=str(correct_msg), sources=critique_response.sources
+                )
                 new_steps = [
                     step.get_next_step(
                         step_id=str(uuid.uuid4()),

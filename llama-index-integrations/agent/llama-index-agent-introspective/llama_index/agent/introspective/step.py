@@ -20,7 +20,6 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.tools import BaseTool
 from llama_index.core.tools import BaseTool
 
@@ -69,8 +68,6 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         main_agent_worker: Optional[BaseAgentWorker] = None,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        allow_parallel_tool_calls: bool = True,
     ) -> None:
         """Init params."""
         self._verbose = verbose
@@ -130,8 +127,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
-            self.prefix_messages
-            + task.memory.get()
+            +task.memory.get()
             + task.extra_state["main"]["memory"].get_all()
             + task.extra_state["reflection"]["memory"].get_all()
         )
@@ -201,6 +197,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
                 step, task.extra_state["main"]["memory"], verbose=self._verbose
             )
             original_response = step.input
+            # fictitious agent's initial response (to get reflection/correction cycle started)
             task.extra_state["main"]["memory"].put(
                 ChatMessage(content=original_response, role="assistant")
             )
@@ -242,6 +239,10 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.extra_state["reflection"]["memory"].get_all())
-        # reset new memory
-        task.extra_state["main"]["memory"].reset()
+        main_memory = task.extra_state["main"][
+            "memory"
+        ].get_all()  # contains initial response as final message
+        final_corrected_message = task.extra_state["reflection"]["memory"].get_all()[-1]
+        # swap main workers response with the reflected/corrected one
+        finalized_task_memory = main_memory[:-1] + [final_corrected_message]
+        task.memory.set(finalized_task_memory)

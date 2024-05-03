@@ -205,6 +205,10 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
             step_state={"count": 0},
         )
 
+    def _remove_correction_str_prefix(self, correct_msg: str) -> str:
+        """Helper function to format correction message for final response."""
+        return correct_msg.replace("Here is a corrected version of the input.\n", "")
+
     @dispatcher.span
     def _reflect(
         self, chat_history: List[ChatMessage]
@@ -253,34 +257,56 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         state["count"] += 1
 
         messages = task.extra_state["new_memory"].get()
-        current_response = messages[-1].content
+        prev_correct_str = messages[-1].content
+        prev_correct_str_without_prefix = self._remove_correction_str_prefix(
+            prev_correct_str
+        )
 
-        # reflect
+        # reflect phase
         reflection, reflection_msg = self._reflect(chat_history=messages)
         is_done = reflection.is_done
 
         critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
         task.extra_state["new_memory"].put(critique_msg)
 
-        # correct
+        # correction phase
         if is_done:
+            # no correction to be made prev correction is sufficient
             agent_response = AgentChatResponse(
-                response=current_response, sources=task.extra_state["sources"]
+                response=prev_correct_str_without_prefix,
+                sources=task.extra_state["sources"],
+            )
+            task.extra_state["new_memory"].put(
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=prev_correct_str_without_prefix,
+                )
             )
             new_steps = []
         else:
-            input_str = current_response.replace(
-                "Here is a corrected version of the input.\n", ""
-            )
+            # generate a new correction
             correct_msg = self._correct(
-                input_str=input_str, critique=reflection_msg.content
+                input_str=prev_correct_str_without_prefix,
+                critique=reflection_msg.content,
             )
-            agent_response = AgentChatResponse(response=str(correct_msg))
-            task.extra_state["new_memory"].put(correct_msg)
+            correct_str_without_prefix = self._remove_correction_str_prefix(
+                correct_msg.content
+            )
 
             if self.max_iterations == state["count"]:
+                # this will be the last iteration
+                task.extra_state["new_memory"].put(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=correct_str_without_prefix,
+                    )
+                )
+                agent_response = AgentChatResponse(response=correct_str_without_prefix)
                 new_steps = []
             else:
+                # another round of reflection/correction will take place
+                task.extra_state["new_memory"].put(correct_msg)
+                agent_response = AgentChatResponse(response=str(correct_msg))
                 new_steps = [
                     step.get_next_step(
                         step_id=str(uuid.uuid4()),
@@ -348,7 +374,10 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         state["count"] += 1
 
         messages = task.extra_state["new_memory"].get()
-        current_response = messages[-1].content
+        prev_correct_str = messages[-1].content
+        prev_correct_str_without_prefix = self._remove_correction_str_prefix(
+            prev_correct_str
+        )
 
         # reflect
         reflection, reflection_msg = await self._areflect(chat_history=messages)
@@ -357,25 +386,44 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
         task.extra_state["new_memory"].put(critique_msg)
 
-        # correct
+        # correction phase
         if is_done:
+            # no correction to be made prev correction is sufficient
             agent_response = AgentChatResponse(
-                response=current_response, sources=task.extra_state["sources"]
+                response=prev_correct_str_without_prefix,
+                sources=task.extra_state["sources"],
+            )
+            task.extra_state["new_memory"].put(
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=prev_correct_str_without_prefix,
+                )
             )
             new_steps = []
         else:
-            input_str = current_response.replace(
-                "Here is a corrected version of the input.\n", ""
-            )
+            # generate a new correction
             correct_msg = await self._acorrect(
-                input_str=input_str, critique=reflection_msg.content
+                input_str=prev_correct_str_without_prefix,
+                critique=reflection_msg.content,
             )
-            agent_response = AgentChatResponse(response=str(correct_msg))
-            task.extra_state["new_memory"].put(correct_msg)
+            correct_str_without_prefix = self._remove_correction_str_prefix(
+                correct_msg.content
+            )
 
             if self.max_iterations == state["count"]:
+                # this will be the last iteration
+                task.extra_state["new_memory"].put(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=correct_str_without_prefix,
+                    )
+                )
+                agent_response = AgentChatResponse(response=correct_str_without_prefix)
                 new_steps = []
             else:
+                # another round of reflection/correction will take place
+                task.extra_state["new_memory"].put(correct_msg)
+                agent_response = AgentChatResponse(response=str(correct_msg))
                 new_steps = [
                     step.get_next_step(
                         step_id=str(uuid.uuid4()),
