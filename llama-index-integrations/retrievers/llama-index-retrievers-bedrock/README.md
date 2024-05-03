@@ -10,10 +10,19 @@
 
 > Knowledge base can be configured through [AWS Console](https://aws.amazon.com/console/) or by using [AWS SDKs](https://aws.amazon.com/developer/tools/).
 
-### Notebook
+## Installation
+
+```
+pip install llama-index-retrievers-bedrock
+```
+
+## Usage
+
+```
+from llama_index.retrievers.bedrock import AmazonKnowledgeBasesRetriever
+```
+
+## Notebook
 
 Explore the retriever using Notebook present at:
-
-```
-docs/docs/examples/retrievers/bedrock_retriever.ipynb
-```
+https://docs.llamaindex.ai/en/latest/examples/retrievers/bedrock_retriever/
