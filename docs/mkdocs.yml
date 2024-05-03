@@ -86,6 +86,7 @@ nav:
           - ./examples/agent/lats_agent.ipynb
           - ./examples/agent/llm_compiler.ipynb
           - ./examples/agent/structured_planner.ipynb
+          - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -195,6 +196,7 @@ nav:
           - ./examples/embeddings/openvino.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
           - ./examples/embeddings/octoai.ipynb
+          - ./examples/embeddings/ipex_llm_gpu.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -542,6 +544,8 @@ nav:
           - ./examples/vector_stores/VearchDemo.ipynb
           - ./examples/vector_stores/neo4j_metadata_filter.ipynb
           - ./examples/vector_stores/AWSDocDBDemo.ipynb
+          - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
+          - ./examples/vector_stores/FirestoreVectorStore.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -792,6 +796,7 @@ nav:
           - ./api_reference/llms/llamafile.md
           - ./api_reference/llms/localai.md
           - ./api_reference/llms/maritalk.md
+          - ./api_reference/llms/mistral_rs.md
           - ./api_reference/llms/mistralai.md
           - ./api_reference/llms/modelscope.md
           - ./api_reference/llms/monsterapi.md
@@ -1149,6 +1154,7 @@ nav:
           - ./api_reference/readers/wikipedia.md
           - ./api_reference/readers/wordlift.md
           - ./api_reference/readers/wordpress.md
+          - ./api_reference/readers/youtube_metadata.md
           - ./api_reference/readers/youtube_transcript.md
           - ./api_reference/readers/zendesk.md
           - ./api_reference/readers/zep.md
@@ -1250,6 +1256,7 @@ nav:
               - ./api_reference/storage/vector_store/elasticsearch.md
               - ./api_reference/storage/vector_store/epsilla.md
               - ./api_reference/storage/vector_store/faiss.md
+              - ./api_reference/storage/vector_store/firestore.md
               - ./api_reference/storage/vector_store/google.md
               - ./api_reference/storage/vector_store/index.md
               - ./api_reference/storage/vector_store/jaguar.md
@@ -1686,7 +1693,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-openalex
             - ../llama-index-integrations/readers/llama-index-readers-txtai
             - ../llama-index-integrations/readers/llama-index-readers-azcognitive-search
-            - ../llama-index-integrations/readers/llama-index-readers-pinecone
             - ../llama-index-integrations/readers/llama-index-readers-pandas-ai
             - ../llama-index-integrations/readers/llama-index-readers-airtable
             - ../llama-index-integrations/readers/llama-index-readers-string-iterable
@@ -1838,6 +1844,9 @@ plugins:
             - ../llama-index-integrations/agent/llama-index-agent-coa
             - ../llama-index-integrations/readers/llama-index-readers-openapi
             - ../llama-index-integrations/llms/llama-index-llms-octoai
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-firestore
+            - ../llama-index-integrations/readers/llama-index-readers-youtube-metadata
+            - ../llama-index-integrations/llms/llama-index-llms-mistral-rs
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

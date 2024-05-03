@@ -11,10 +11,12 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.youtube_metadata"
+import_path = "llama_index.agent.introspective"
 
 [tool.llamahub.class_authors]
-YoutubeTranscriptReader = "Troy Lowry"
+IntrospectiveAgentWorker = "nerdai"
+SelfReflectionAgentWorker = "jerryjliu"
+ToolInteractiveReflectionAgentWorker = "nerdai"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,10 +26,12 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Troy Lowry <troy@lowry.net>"]
-description = "llama-index readers youtube-metadata integration"
+authors = ["Andrei Fajardo <andrei@runllama.ai>", "Jerry Liu <jerry@runllama.ai>"]
+description = "llama-index agent introspective integration"
+exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-readers-youtube-metadata"
+maintainers = ["jerryjliu"]
+name = "llama-index-agent-introspective"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
@@ -35,12 +39,10 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
-youtube-transcript-api = "^0.6.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
-flake8 = "^7.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

@@ -39,7 +39,7 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 - [LLMCompiler Agent](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-llm-compiler?from=) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-agents-llm-compiler/examples/llm_compiler.ipynb))
 - [Chain-of-Abstraction Agent](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-coa?from=) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/coa_agent.ipynb))
 - [Language Agent Tree Search Agent](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-lats?from=) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/lats_agent.ipynb))
-
+- [Instrospective Agent](https://llamahub.ai/l/agent/llama-index-agent-introspective?from=agent) ([Cookbook](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/introspective_agent_toxicity_reduction.ipynb))
 
 ## Custom Agents
 
