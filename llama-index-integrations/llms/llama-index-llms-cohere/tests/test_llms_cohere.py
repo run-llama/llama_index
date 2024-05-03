@@ -81,7 +81,7 @@ def test_chat(
 ):
     # Mock the API client.
     with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
-        llm = Cohere(api_key="dummy")
+        llm = Cohere(api_key="dummy", temperature=0.3)
     # Mock the API response.
     llm._client.chat.return_value = NonStreamedChatResponse(text="Placeholder reply")
     expected = ChatResponse(
