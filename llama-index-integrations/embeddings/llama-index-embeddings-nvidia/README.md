@@ -7,6 +7,14 @@ With this connector, you'll be able to connect to and generate from compatible m
 _First_, get a free API key. Go to https://build.nvidia.com, select a model, click "Get API Key".
 Store this key in your environment as `NVIDIA_API_KEY`.
 
+## Installation
+
+```bash
+pip install llama-index-embeddings-nvidia
+```
+
+## Usage
+
 ```python
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
 
