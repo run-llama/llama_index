@@ -275,21 +275,23 @@ def document_message_to_cohere_document(message: DocumentMessage) -> Dict:
     # By construction, single DocumentMessage contains all retrieved documents
     documents: List[Dict[str, str]] = []
     # Capture all key: value pairs. They will be unpacked in separate documents, Cohere-style.
-    re_special_fields = re.compile(r"(file_path|custom_field): (.+)\n+")
+    re_known_keywords = re.compile(
+        r"(file_path|file_name|file_type|file_size|creation_date|last_modified_data|last_accessed_date): (.+)\n+"
+    )
     # Find most frequent field. We assume that the most frequent field denotes the boundary
     # between consecutive documents, and break ties by taking whichever field appears first.
-    special_fields = re.findall(re_special_fields, message.content)
-    if len(special_fields) == 0:
+    known_keywords = re.findall(re_known_keywords, message.content)
+    if len(known_keywords) == 0:
         # Document doesn't contain expected special fields. Return default formatting.
         return [{"text": message.content}]
 
-    fields_counts = Counter([key for key, _ in special_fields])
+    fields_counts = Counter([key for key, _ in known_keywords])
     most_frequent = fields_counts.most_common()[0][0]
 
     # Initialise
     document = None
     remaining_text = message.content
-    for key, value in special_fields:
+    for key, value in known_keywords:
         if key == most_frequent:
             # Save current document after extracting text, then reinit `document` to move to next document
             if document:  # skip first iteration, where document is None

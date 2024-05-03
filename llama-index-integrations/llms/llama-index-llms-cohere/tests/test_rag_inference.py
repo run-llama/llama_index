@@ -31,14 +31,14 @@ texts = [text1, text2, text3, text4, text5]
                 role=MessageRole.USER,
                 content="\n\n".join(
                     [
-                        f"file_path: nina.txt\n\ncustom_field: greatest-hits\n\n{text}"
+                        f"file_path: nina.txt\n\nfile_name: greatest-hits\n\n{text}"
                         for text in texts
                     ]
                 ),
                 additional_kwargs={},
             ),
             [
-                {"file_path": "nina.txt", "custom_field": "greatest-hits", "text": text}
+                {"file_path": "nina.txt", "file_name": "greatest-hits", "text": text}
                 for text in texts
             ],
             id="multiple fields (same count), multiple documents",
@@ -56,4 +56,5 @@ texts = [text1, text2, text3, text4, text5]
 )
 def test_document_message_to_cohere_document(message, expected):
     res = document_message_to_cohere_document(message)
+    print(res)
     assert res == expected
