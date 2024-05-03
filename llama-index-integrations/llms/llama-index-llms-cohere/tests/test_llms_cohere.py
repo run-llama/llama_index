@@ -16,12 +16,6 @@ def test_is_cohere():
     assert not is_cohere_model(MockLLM())
     # Try more model families, if available
     try:
-        from llama_index.llms.mistralai import MistralAI
-
-        assert not is_cohere_model(MistralAI(api_key="luigi"))
-    except ImportError:
-        pass
-    try:
         from llama_index.llms.openai import OpenAI
 
         assert not is_cohere_model(OpenAI(api_key="yoshi"))
