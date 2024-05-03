@@ -121,7 +121,7 @@ entry_docs = loader.load_data(
 
 For a more elaborate example, see: [llamaindex_kaltura_esearch_reader_example.py](https://gist.github.com/zoharbabin/07febcfe52b64116c9e3ba1a392b59a0)
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
 
 ## About Kaltura
 
