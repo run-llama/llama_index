@@ -56,15 +56,6 @@ CORRECT_RESPONSE_FSTRING = CORRECT_RESPONSE_PREFIX + "{correction}"
 DEFAULT_MAX_ITERATIONS = 5
 
 
-class Critique(BaseModel):
-    """Data class for holding the critique response."""
-
-    critique: str = Field(description="Provided critique.")
-    is_sufficient: bool = Field(
-        description="Whether or not the critique shows that the response is sufficient."
-    )
-
-
 class Correction(BaseModel):
     """Data class for holding the corrected input."""
 
@@ -253,6 +244,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_response = self._critique(input_str=prev_correct_str_without_prefix)
         task.extra_state["sources"].extend(critique_response.sources)
 
+        is_done = False
         if self.stopping_callable:
             is_done = self.stopping_callable(critique_str=critique_response.response)
 
@@ -363,6 +355,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
         task.extra_state["sources"].extend(critique_response.sources)
 
+        is_done = False
         if self.stopping_callable:
             is_done = self.stopping_callable(critique_str=critique_response.response)
 
