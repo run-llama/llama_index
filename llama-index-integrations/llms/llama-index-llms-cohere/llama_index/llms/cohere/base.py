@@ -188,8 +188,10 @@ class Cohere(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        history = messages_to_cohere_history(messages[:-1])
         prompt = messages[-1].content
+        remaining, documents = remove_documents_from_messages(messages[:-1])
+        history = messages_to_cohere_history(remaining)
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         all_kwargs["stream"] = True
         if all_kwargs["model"] not in CHAT_MODELS:
@@ -200,6 +202,7 @@ class Cohere(LLM):
             chat=True,
             message=prompt,
             chat_history=history,
+            documents=documents,
             **all_kwargs,
         )
 
