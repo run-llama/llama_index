@@ -1,5 +1,5 @@
 from llama_index.core.prompts import MessageRole
-from llama_index.llms.cohere.base import DocumentMessage
+from llama_index.llms.cohere import DocumentMessage
 from llama_index.llms.cohere.utils import _message_to_cohere_documents
 
 

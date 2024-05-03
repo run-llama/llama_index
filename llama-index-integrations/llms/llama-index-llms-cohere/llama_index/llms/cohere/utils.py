@@ -35,7 +35,9 @@ CHAT_MODELS = {**COMMAND_MODELS}
 
 
 def is_cohere_model(llm: BaseLLM) -> bool:
-    return llm.model in CHAT_MODELS
+    from llama_index.llms.cohere import Cohere
+
+    return isinstance(llm, Cohere)
 
 
 logger = logging.getLogger(__name__)
