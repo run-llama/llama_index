@@ -50,18 +50,10 @@ Critique:
 Use the provided information to generate a corrected version of input.
 """
 
-CORRECT_RESPONSE_FSTRING = "Here is a corrected version of the input.\n{correction}"
+CORRECT_RESPONSE_PREFIX = "Here is a corrected version of the input.\n"
+CORRECT_RESPONSE_FSTRING = CORRECT_RESPONSE_PREFIX + "{correction}"
 
 DEFAULT_MAX_ITERATIONS = 5
-
-
-class Critique(BaseModel):
-    """Data class for holding the critique response."""
-
-    critique: str = Field(description="Provided critique.")
-    is_sufficient: bool = Field(
-        description="Whether or not the critique shows that the response is sufficient."
-    )
 
 
 class Correction(BaseModel):
@@ -209,7 +201,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
 
     def _remove_correction_str_prefix(self, correct_msg: str) -> str:
         """Helper function to format correction message for final response."""
-        return correct_msg.replace("Here is a corrected version of the input.\n", "")
+        return correct_msg.replace(CORRECT_RESPONSE_PREFIX, "")
 
     @dispatcher.span
     def _critique(self, input_str: str) -> AgentChatResponse:
@@ -252,6 +244,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         critique_response = self._critique(input_str=prev_correct_str_without_prefix)
         task.extra_state["sources"].extend(critique_response.sources)
 
+        is_done = False
         if self.stopping_callable:
             is_done = self.stopping_callable(critique_str=critique_response.response)
 
@@ -362,6 +355,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
         task.extra_state["sources"].extend(critique_response.sources)
 
+        is_done = False
         if self.stopping_callable:
             is_done = self.stopping_callable(critique_str=critique_response.response)
 
