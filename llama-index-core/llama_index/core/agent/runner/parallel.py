@@ -136,6 +136,23 @@ class ParallelAgentRunner(BaseAgentRunner):
         """
         self.state.task_dict.pop(task_id)
 
+    def get_completed_tasks(self, **kwargs: Any) -> List[Task]:
+        """Get completed tasks."""
+        task_states = list(self.state.task_dict.values())
+        return [
+            task_state.task
+            for task_state in task_states
+            if len(task_state.completed_steps) > 0
+            and task_state.completed_steps[-1].is_last
+        ]
+
+    def get_task_output(self, task_id: str) -> TaskStepOutput:
+        """Get task output."""
+        task_state = self.state.task_dict[task_id]
+        if len(task_state.completed_steps) == 0:
+            raise ValueError(f"No completed steps for task_id: {task_id}")
+        return task_state.completed_steps[-1]
+
     def list_tasks(self, **kwargs: Any) -> List[Task]:
         """List tasks."""
         task_states = list(self.state.task_dict.values())
