@@ -24,10 +24,12 @@ Then:
 
 ```python
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import VectorStoreIndex
 from llama_index.core import Settings
 
+embed_model = OpenAIEmbedding()
 # global
-Settings.embed_model = OpenAIEmbedding()
+Settings.embed_model = embed_model
 
 # per-index
 index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
