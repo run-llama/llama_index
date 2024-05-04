@@ -13,7 +13,7 @@ Below we show a few examples of LLM customization. This includes
 
 Note: Some examples below rely on having the data directory present containing the documents to load.
 You can download the example Paul Graham essay from [link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt)
-and store it in the `data` directory under current working directory.
+and store it in the `data` directory under the current working directory.
 
 ## Example: Changing the underlying LLM
 
