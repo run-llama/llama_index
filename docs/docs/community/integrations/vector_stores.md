@@ -39,6 +39,7 @@ as the storage backend for `VectorStoreIndex`.
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
+- Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
@@ -654,6 +655,19 @@ vector_store = TimescaleVectorStore.from_params(
 from llama_index.vector_stores.upstash import UpstashVectorStore
 
 vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
+```
+
+**Vertex AI Vector Search**
+
+```python
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
+vector_store = VertexAIVectorStore(
+    project_id="[your-google-cloud-project-id]",
+    region="[your-google-cloud-region]",
+    index_id="[your-index-resource-name]",
+    endpoint_id="[your-index-endpoint-name]",
+)
 ```
 
 **Weaviate**
