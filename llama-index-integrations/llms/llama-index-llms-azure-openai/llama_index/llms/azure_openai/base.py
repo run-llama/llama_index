@@ -189,7 +189,7 @@ class AzureOpenAI(OpenAI):
         else:
             import os
 
-            self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
+            self.api_key = self.api_key or os.getenv("AZURE_OPENAI_API_KEY")
 
         return {
             "api_key": self.api_key,
