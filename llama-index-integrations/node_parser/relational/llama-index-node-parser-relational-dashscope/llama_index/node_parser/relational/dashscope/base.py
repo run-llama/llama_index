@@ -30,8 +30,11 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         default=" |,|，|。|？|！|\n|\\?|\\!",
         description="Separator characters for splitting texts.",
     )
-    pip: bool = Field(default=False, description="Flag to enable or disable PIP.")
     input_type: str = Field(default="idp", description="parse format type.")
+    language: str = Field(
+        default="cn",
+        description="language of tokenizor, accept cn, en, any. Notice that <any> mode will be slow.",
+    )
 
     @classmethod
     def class_name(cls) -> str:
@@ -41,12 +44,12 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         """Get nodes from node."""
         ftype = node.metadata.get("parse_fmt_type", self.input_type)
         assert ftype in [
-            "DASHCOPE_DOCMIND",
+            "DASHSCOPE_DOCMIND",
             "idp",
         ], f"Unexpected parse_fmt_type: {node.metadata.get('parse_fmt_type', '')}"
 
         ftype_map = {
-            "DASHCOPE_DOCMIND": "idp",
+            "DASHSCOPE_DOCMIND": "idp",
         }
 
         my_input = {
@@ -56,7 +59,6 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
             "overlap_size": self.overlap_size,
             "language": "cn",
             "separator": self.separator,
-            "pip": self.pip,
         }
 
         try_count = 0
