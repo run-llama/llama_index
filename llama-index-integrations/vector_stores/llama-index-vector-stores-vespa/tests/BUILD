@@ -1,3 +1,1 @@
-python_tests(
-    module_mapping={"pyvespa": ["vespa"]}
-)
+python_tests()
