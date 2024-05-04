@@ -20,6 +20,23 @@ pip install llama-index-retrievers-bedrock
 
 ```
 from llama_index.retrievers.bedrock import AmazonKnowledgeBasesRetriever
+
+retriever = AmazonKnowledgeBasesRetriever(
+    knowledge_base_id="<knowledge-base-id>",
+    retrieval_config={
+        "vectorSearchConfiguration": {
+            "numberOfResults": 4,
+            "overrideSearchType": "HYBRID",
+            "filter": {"equals": {"key": "tag", "value": "space"}},
+        }
+    },
+)
+
+query = "How big is Milky Way as compared to the entire universe?"
+retrieved_results = retriever.retrieve(query)
+
+# Prints the first retrieved result
+print(retrieved_results[0].get_content())
 ```
 
 ## Notebook
