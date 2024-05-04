@@ -6,6 +6,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
+from vespa.application import ApplicationPackage
 from llama_index.vector_stores.vespa import VespaVectorStore, hybrid_template
 
 try:
@@ -21,7 +22,7 @@ except Exception:
 # Assuming Vespa services are mocked or local Vespa Docker is used
 @pytest.fixture(scope="session")
 def vespa_app():
-    app_package = hybrid_template
+    app_package: ApplicationPackage = hybrid_template
     return VespaVectorStore(application_package=app_package, deployment_target="local")
 
 

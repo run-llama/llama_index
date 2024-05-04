@@ -1,16 +1,21 @@
-from vespa.package import (
-    ApplicationPackage,
-    Field,
-    Schema,
-    Document,
-    HNSW,
-    RankProfile,
-    Component,
-    Parameter,
-    FieldSet,
-    GlobalPhaseRanking,
-    Function,
-)
+try:
+    from vespa.package import (
+        ApplicationPackage,
+        Field,
+        Schema,
+        Document,
+        HNSW,
+        RankProfile,
+        Component,
+        Parameter,
+        FieldSet,
+        GlobalPhaseRanking,
+        Function,
+    )
+except ImportError:
+    raise ModuleNotFoundError(
+        "pyvespa not installed. Please install it via `pip install pyvespa`"
+    )
 
 hybrid_template = ApplicationPackage(
     name="hybridsearch",
