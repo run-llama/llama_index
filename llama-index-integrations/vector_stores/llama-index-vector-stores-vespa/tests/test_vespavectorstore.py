@@ -2,7 +2,10 @@ import asyncio
 import pytest
 
 from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+)
 from llama_index.vector_stores.vespa import VespaVectorStore, hybrid_template
 
 try:

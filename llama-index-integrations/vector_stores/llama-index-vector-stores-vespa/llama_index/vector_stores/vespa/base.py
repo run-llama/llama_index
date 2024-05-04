@@ -300,7 +300,10 @@ class VespaVectorStore(VectorStore):
         return ids
 
     def delete(
-        self, ref_doc_id: str, namespace: Optional[str] = None, **delete_kwargs: Any
+        self,
+        ref_doc_id: str,
+        namespace: Optional[str] = None,
+        **delete_kwargs: Any,
     ) -> None:
         """
         Delete nodes using with ref_doc_id.
@@ -318,7 +321,10 @@ class VespaVectorStore(VectorStore):
         logger.info(f"Deleted node with id {ref_doc_id}")
 
     async def adelete(
-        self, ref_doc_id: str, namespace: Optional[str] = None, **delete_kwargs: Any
+        self,
+        ref_doc_id: str,
+        namespace: Optional[str] = None,
+        **delete_kwargs: Any,
     ) -> None:
         """
         Delete nodes using with ref_doc_id.
@@ -415,7 +421,10 @@ class VespaVectorStore(VectorStore):
         Build query filter for Vespa query.
         The part after "select * from {sources_str} where" in the query.
         """
-        if mode in [VectorStoreQueryMode.SEMANTIC_HYBRID, VectorStoreQueryMode.HYBRID]:
+        if mode in [
+            VectorStoreQueryMode.SEMANTIC_HYBRID,
+            VectorStoreQueryMode.HYBRID,
+        ]:
             return f"rank({{targetHits:{vector_top_k}}}nearestNeighbor({embedding_field},q), userQuery()) limit {similarity_top_k}"
         else:
             raise ValueError(f"Query mode {mode} not supported.")
