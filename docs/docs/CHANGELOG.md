@@ -1,5 +1,123 @@
 # ChangeLog
 
+## [2024-05-02]
+
+### `llama-index-core` [0.10.34]
+
+- remove error ignoring during chat engine streaming (#13160)
+- add structured planning agent (#13149)
+- update base class for planner agent (#13228)
+- Fix: Error when parse file using SimpleFileNodeParser and file's extension doesn't in FILE_NODE_PARSERS (#13156)
+- add matching `source_node.node_id` verification to node parsers (#13109)
+- Retrieval Metrics: Updating HitRate and MRR for Evaluation@K documents retrieved. Also adding RR as a separate metric (#12997)
+- Add chat summary memory buffer (#13155)
+
+### `llama-index-indices-managed-zilliz` [0.1.3]
+
+- ZillizCloudPipelineIndex accepts flexible params to create pipelines (#10134, #10112)
+
+### `llama-index-llms-huggingface` [0.1.7]
+
+- Add tool usage support with text-generation-inference integration from Hugging Face (#12471)
+
+### `llama-index-llms-maritalk` [0.2.0]
+
+- Add streaming for maritalk (#13207)
+
+### `llama-index-llms-mistral-rs` [0.1.0]
+
+- Integrate mistral.rs LLM (#13105)
+
+### `llama-index-llms-mymagic` [0.1.7]
+
+- mymagicai api update (#13148)
+
+### `llama-index-llms-nvidia-triton` [0.1.5]
+
+- Streaming Support for Nvidia's Triton Integration (#13135)
+
+### `llama-index-llms-ollama` [0.1.3]
+
+- added async support to ollama llms (#13150)
+
+### `llama-index-readers-microsoft-sharepoint` [0.2.2]
+
+- Exclude access control metadata keys from LLMs and embeddings - SharePoint Reader (#13184)
+
+### `llama-index-readers-web` [0.1.11]
+
+- feat: Browserbase Web Reader (#12877)
+
+### `llama-index-readers-youtube-metadata` [0.1.0]
+
+- Added YouTube Metadata Reader (#12975)
+
+### `llama-index-storage-kvstore-redis` [0.1.4]
+
+- fix redis kvstore key that was in bytes (#13201)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.5]
+
+- Respect filter condition for Azure AI Search (#13215)
+
+### `llama-index-vector-stores-chroma` [0.1.7]
+
+- small bump for new chroma client version (#13158)
+
+### `llama-index-vector-stores-firestore` [0.1.0]
+
+- Adding Firestore Vector Store (#12048)
+
+### `llama-index-vector-stores-kdbai` [0.1.5]
+
+- small fix to returned IDs after `add()` (#12515)
+
+### `llama-index-vector-stores-milvus` [0.1.11]
+
+- Add hybrid retrieval mode to MilvusVectorStore (#13122)
+
+### `llama-index-vector-stores-postgres` [0.1.7]
+
+- parameterize queries in pgvector store (#13199)
+
+## [2024-04-27]
+
+### `llama-index-core` [0.10.33]
+
+- add agent_worker.as_agent() (#13061)
+
+### `llama-index-embeddings-bedrock` [0.1.5]
+
+- Use Bedrock cohere character limit (#13126)
+
+### `llama-index-tools-google` [0.1.5]
+
+- Change default value for attendees to empty list (#13134)
+
+### `llama-index-graph-stores-falkordb` [0.1.4]
+
+- Skip index creation error when index already exists (#13085)
+
+### `llama-index-tools-google` [0.1.4]
+
+- Fix datetime for google calendar create_event api (#13132)
+
+### `llama-index-llms-anthropic` [0.1.11]
+
+- Merge multiple prompts into one (#13131)
+
+### `llama-index-indices-managed-llama-cloud` [0.1.6]
+
+- Use MetadataFilters in LlamaCloud Retriever (#13117)
+
+### `llama-index-graph-stores-kuzu` [0.1.3]
+
+- Fix kuzu integration .execute() calls (#13100)
+
+### `llama-index-vector-stores-lantern` [0.1.3]
+
+- Maintenance update to keep up to date with lantern builds (#13116)
+
 ## [2024-04-25]
 
 ### `llama-index-core` [0.10.32]

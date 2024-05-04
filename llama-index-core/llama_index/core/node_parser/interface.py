@@ -99,11 +99,22 @@ class NodeParser(TransformComponent, ABC):
                         )
 
                 if self.include_prev_next_rel:
-                    if i > 0:
+                    # establish prev/next relationships if nodes share the same source_node
+                    if (
+                        i > 0
+                        and node.source_node
+                        and nodes[i - 1].source_node
+                        and nodes[i - 1].source_node.node_id == node.source_node.node_id
+                    ):
                         node.relationships[NodeRelationship.PREVIOUS] = nodes[
                             i - 1
                         ].as_related_node_info()
-                    if i < len(nodes) - 1:
+                    if (
+                        i < len(nodes) - 1
+                        and node.source_node
+                        and nodes[i + 1].source_node
+                        and nodes[i + 1].source_node.node_id == node.source_node.node_id
+                    ):
                         node.relationships[NodeRelationship.NEXT] = nodes[
                             i + 1
                         ].as_related_node_info()
