@@ -46,7 +46,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
-        azure_ad_token_provider: AzureADTokenProvider = None,
+        azure_ad_token_provider: Optional[AzureADTokenProvider] = None,
         deployment_name: Optional[str] = None,
         max_retries: int = 10,
         reuse_client: bool = True,
