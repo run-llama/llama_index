@@ -11,13 +11,14 @@ Below we show a few examples of LLM customization. This includes
 - changing the number of output tokens (for OpenAI, Cohere, or AI21)
 - having more fine-grained control over all parameters for any LLM, from context window to chunk overlap
 
+Note: Some examples below rely on having the data directory present containing the documents to load.
+You can download the example Paul Graham essay from [link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt)
+and store it in the `data` directory under current working directory.
+
 ## Example: Changing the underlying LLM
 
 An example snippet of customizing the LLM being used is shown below.
 In this example, we use `gpt-4` instead of `gpt-3.5-turbo`. Available models include `gpt-3.5-turbo`, `gpt-3.5-turbo-instruct`, `gpt-3.5-turbo-16k`, `gpt-4`, `gpt-4-32k`, `text-davinci-003`, and `text-davinci-002`.
-
-Pre-requisite: Download the example Paul Graham essay from [link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt)
-and store it in the `data` directory under current working directory.
 
 Note that
 you may also plug in any LLM shown on Langchain's
