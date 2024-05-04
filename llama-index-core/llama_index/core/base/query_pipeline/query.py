@@ -107,8 +107,8 @@ class OutputKeys(BaseModel):
     def from_keys(
         cls,
         required_keys: Set[str],
-    ) -> "InputKeys":
-        """Create InputKeys from tuple."""
+    ) -> "OutputKeys":
+        """Create OutputKeys from tuple."""
         return cls(required_keys=required_keys)
 
     def validate(self, input_keys: Set[str]) -> None:

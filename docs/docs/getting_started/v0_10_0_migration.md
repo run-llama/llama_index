@@ -2,7 +2,7 @@
 
 With the introduction of LlamaIndex v0.10.0, there were several changes
 
-- integrations have separate `pip install`s (See the [full registry](https://pretty-sodium-5e0.notion.site/ce81b247649a44e4b6b35dfb24af28a6?v=53b3c2ced7bb4c9996b81b83c9f01139))
+- integrations have separate `pip install`s (See the [full registry](https://llamahub.ai/))
 - many imports changed
 - the `ServiceContext` was deprecated
 

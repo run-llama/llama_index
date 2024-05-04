@@ -60,4 +60,4 @@ agent.chat("What products are in my store?")
 
 `run_graphql_query`: Executes a GraphQL query against the Shopify store
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

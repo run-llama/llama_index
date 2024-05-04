@@ -117,6 +117,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
+        if not chat_history:
+            # Keep the question as is if there's no conversation context.
+            return last_message
+
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
@@ -132,6 +136,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
+        if not chat_history:
+            # Keep the question as is if there's no conversation context.
+            return last_message
+
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 

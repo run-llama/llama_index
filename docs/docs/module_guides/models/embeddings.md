@@ -24,6 +24,7 @@ Then:
 
 ```python
 from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import VectorStoreIndex
 from llama_index.core import Settings
 
 # global

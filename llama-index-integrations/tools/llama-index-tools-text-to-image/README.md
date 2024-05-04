@@ -27,4 +27,4 @@ agent.chat("make the second image higher quality")
 `show_images`: Show the images using matplot, useful for Jupyter notebooks
 `generate_image_variation`: Generate a variation of an image given a URL.
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.
