@@ -1,4 +1,3 @@
-from typing import Sequence
 from utils import gen_stream
 
 from llama_index.core.base.llms.types import (
@@ -32,7 +31,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 import logging
 
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, Sequence
 
 from mlx_lm import load, generate
 
