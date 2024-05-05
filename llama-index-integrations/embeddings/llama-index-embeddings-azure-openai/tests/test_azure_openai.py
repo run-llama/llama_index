@@ -11,7 +11,7 @@ def test_custom_http_client(azure_openai_mock: MagicMock) -> None:
     Should get passed on to the implementation from OpenAI.
     """
     custom_http_client = httpx.Client()
-    embedding = AzureOpenAIEmbedding(http_client=custom_http_client)
+    embedding = AzureOpenAIEmbedding(http_client=custom_http_client, api_key="mock")
     embedding._get_client()
     azure_openai_mock.assert_called()
     kwargs = azure_openai_mock.call_args.kwargs
