@@ -191,6 +191,12 @@ class AzureOpenAI(OpenAI):
 
             self.api_key = self.api_key or os.getenv("AZURE_OPENAI_API_KEY")
 
+        if self.api_key is None:
+            raise ValueError(
+                "You must set an `api_key` parameter. "
+                "Alternatively, you can set the AZURE_OPENAI_API_KEY env var OR set `use_azure_ad=True`."
+            )
+
         return {
             "api_key": self.api_key,
             "max_retries": self.max_retries,
