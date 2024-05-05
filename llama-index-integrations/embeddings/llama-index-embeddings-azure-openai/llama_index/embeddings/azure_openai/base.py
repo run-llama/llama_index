@@ -60,7 +60,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
-        api_key = get_from_param_or_env("api_key", api_key, "AZURE_OPENAI_API_KEY", "")
+        api_key = get_from_param_or_env("api_key", api_key, "AZURE_OPENAI_API_KEY")
 
         azure_deployment = resolve_from_aliases(
             azure_deployment,
