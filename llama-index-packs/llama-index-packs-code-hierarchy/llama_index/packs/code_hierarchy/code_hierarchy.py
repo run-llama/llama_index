@@ -652,13 +652,13 @@ class CodeHierarchyNodeParser(NodeParser):
     def _get_indentation(text: str) -> Tuple[str, int, int]:
         indent_char = None
         minimum_chain = None
+        first_indent_char = None
 
         # Check that text is at least 1 line long
         text_split = text.splitlines()
         if len(text_split) == 0:
             raise ValueError("Text should be at least one line long.")
-
-        for line in text_split:
+        for line_id, line in enumerate(text_split):
             stripped_line = line.lstrip()
 
             if stripped_line:
@@ -666,11 +666,14 @@ class CodeHierarchyNodeParser(NodeParser):
                 spaces_count = line.count(" ", 0, len(line) - len(stripped_line))
                 tabs_count = line.count("\t", 0, len(line) - len(stripped_line))
 
-                if not indent_char:
-                    if spaces_count:
-                        indent_char = " "
-                    if tabs_count:
-                        indent_char = "\t"
+                if spaces_count:
+                    indent_char = " "
+                if tabs_count:
+                    indent_char = "\t"
+                
+                if line_id == 0:
+                    first_indent_char = indent_char
+
 
                 # Detect mixed indentation.
                 if spaces_count > 0 and tabs_count > 0:
@@ -685,6 +688,7 @@ class CodeHierarchyNodeParser(NodeParser):
                     char_count = line.count(
                         indent_char, 0, len(line) - len(stripped_line)
                     )
+                    char_count = char_count * 4 if indent_char == "\t" else char_count
                     if minimum_chain is not None:
                         if char_count > 0:
                             minimum_chain = min(char_count, minimum_chain)
@@ -693,8 +697,7 @@ class CodeHierarchyNodeParser(NodeParser):
                             minimum_chain = char_count
 
         # Handle edge case
-        if indent_char is None:
-            indent_char = " "
+        indent_char = " "
         if minimum_chain is None:
             minimum_chain = 4
 
@@ -702,14 +705,14 @@ class CodeHierarchyNodeParser(NodeParser):
         first_line = text_split[0]
         first_indent_count = 0
         for char in first_line:
-            if char == indent_char:
-                first_indent_count += 1
+            if char == first_indent_char:
+                first_indent_count += 1 if first_indent_char == " " else 4
             else:
                 break
 
         # Return the default indent level if only one indentation level was found.
         return indent_char, minimum_chain, first_indent_count // minimum_chain
-
+    
     @staticmethod
     def _get_comment_text(node: TextNode) -> str:
         """Gets just the natural language text for a skeletonize comment."""
