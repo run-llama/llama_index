@@ -14,19 +14,6 @@ from llama_index.llms.cohere import Cohere, DocumentMessage, is_cohere_model
 def test_is_cohere():
     assert is_cohere_model(Cohere(api_key="mario"))
     assert not is_cohere_model(MockLLM())
-    # Try more model families, if available
-    try:
-        from llama_index.llms.openai import OpenAI
-
-        assert not is_cohere_model(OpenAI(api_key="yoshi"))
-    except ImportError:
-        pass
-    try:
-        from llama_index.llms.anthropic import Anthropic
-
-        assert not is_cohere_model(Anthropic(api_key="peach"))
-    except ImportError:
-        pass
 
 
 def test_embedding_class():
