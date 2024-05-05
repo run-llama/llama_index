@@ -46,7 +46,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
-        azure_ad_token_provider: AzureADTokenProvider = None,
+        azure_ad_token_provider: Optional[AzureADTokenProvider] = None,
         deployment_name: Optional[str] = None,
         max_retries: int = 10,
         reuse_client: bool = True,
@@ -59,6 +59,8 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         azure_endpoint = get_from_param_or_env(
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
+
+        api_key = get_from_param_or_env("api_key", api_key, "AZURE_OPENAI_API_KEY")
 
         azure_deployment = resolve_from_aliases(
             azure_deployment,

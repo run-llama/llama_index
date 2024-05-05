@@ -36,4 +36,4 @@ agent.chat("What parameters does the x endpoint need?")
 
 `load_openapi_spec`: Returns the parsed OpenAPI spec that the class was initialized with
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

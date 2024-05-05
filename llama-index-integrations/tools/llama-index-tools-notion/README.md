@@ -23,4 +23,4 @@ agent.chat("Append the heading 'I am legend' to the movies page")
 `search_data`: Searches for matching pages or databases
 `append_data`: Appends content to the matching page or database
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.
