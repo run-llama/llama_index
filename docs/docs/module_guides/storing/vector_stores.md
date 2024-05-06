@@ -38,7 +38,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Metal                    | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | MongoDB Atlas            | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | MyScale                  | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
-| Milvus / Zilliz          | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| Milvus / Zilliz          | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | OpenSearch               | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Pinecone                 | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
@@ -83,6 +83,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
