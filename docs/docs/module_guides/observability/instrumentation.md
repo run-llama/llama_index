@@ -277,6 +277,7 @@ project
 
 - [Basic Usage](../../examples/instrumentation/basic_usage.ipynb)
 - [Observing Model Calls](../../examples/instrumentation/observe_api_calls.ipynb)
+- [Observing All Events](../../examples/instrumentation/instrumentation_observability_rundown.ipynb)
 
 
 ## API Reference
