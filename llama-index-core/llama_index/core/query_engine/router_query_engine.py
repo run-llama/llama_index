@@ -157,6 +157,7 @@ class RouterQueryEngine(BaseQueryEngine):
         return cls(
             selector,
             query_engine_tools,
+            llm=llm,
             service_context=service_context,
             summarizer=summarizer,
             **kwargs,
