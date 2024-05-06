@@ -5,8 +5,10 @@ Memory backed by a vector database.
 """
 
 import json
+import uuid
 from typing import Any, Callable, Dict, List, Optional
 
+from llama_index.core.schema import TextNode, BaseNode, RelatedNodeInfo, NodeRelationship
 from llama_index.core.vector_stores.types import VectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field, root_validator
@@ -25,6 +27,24 @@ DEFAULT_TOKEN_LIMIT = 3000
 
 DEFAULT_SYSTEM_MESSAGE = "This is a set of relevant messages retrieved from longer-term history: "
 
+def to_node(message: ChatMessage, node_id: Optional[str] = None, **node_kwargs: Any) -> BaseNode:
+    """Convert to node."""
+    from llama_index.core.schema import BaseNode
+
+    return BaseNode(
+        text=message.content,
+        id_=node_id,
+        metadata={"role": message.role.value, **message.additional_kwargs},
+    )
+
+def from_node(node: "BaseNode") -> "ChatMessage":
+    """Create from node."""
+    return ChatMessage(
+        role=MessageRole(node.metadata.get("role", MessageRole.USER.value)),
+        content=node.text,
+        additional_kwargs={k: v for k, v in node.metadata.items() if k != "role"},
+    )
+
 
 class VectorMemory(BaseMemory):
     """Memory backed by a vector index."""
@@ -36,6 +56,11 @@ class VectorMemory(BaseMemory):
 
     # whether to condense all memory into a single message
     return_single_message: bool = False
+
+    # NOTE/TODO: we need this to store id's for the messages
+    # This is not needed once vector stores implement delete_all capabilities
+    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
+    chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     @classmethod
     def class_name(cls) -> str:
@@ -90,7 +115,8 @@ class VectorMemory(BaseMemory):
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
-        # TODO: 
+        # TODO: while we could implement get_all, would be hacky through metadata filtering
+        # since vector stores don't easily support get()
         raise ValueError(
             "Vector memory does not support get_all method, can only retrieve based on input."
         )
@@ -100,20 +126,23 @@ class VectorMemory(BaseMemory):
         # insert into index
         # ensure everything is serialized
 
-        self.vector_index.insert_nodes([message.to_node()])
+        # assign node id
+        node_id = str(uuid.uuid4())
+        message_node = to_node(message, node_id=node_id, )
+        # HACK: this is a hack to add the source relationship as itself, to make deletion work.
+        message_node.relationships[NodeRelationship.SOURCE] = message_node.as_related_node_info()
+
+        self.chat_store.add_message(self.chat_store_key, ChatMessage(content=node_id))
+        self.vector_index.insert_nodes([message_node])
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
-        # TODO: implementation for later
         self.reset()
         for message in messages:
             self.put(message)
 
     def reset(self) -> None:
         """Reset chat history."""
-        raise NotImplementedError(
-            "As of right now, our vector store abstractions do not support "
-            "dropping an entire collection. If you are using this vector memory "
-            "module, please use the relevant vector store SDK to drop "
-            "the collection whenever `memory.reset()` or `agent.reset()` is called. "
-        )
+        node_id_msgs = self.chat_store.get_messages(self.chat_store_key)
+        node_ids = [msg.content for msg in node_id_msgs]
+        [self.vector_index.delete_ref_doc(node_id) for node_id in node_ids]
