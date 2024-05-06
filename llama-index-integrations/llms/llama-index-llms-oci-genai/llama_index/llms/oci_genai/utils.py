@@ -109,7 +109,6 @@ def create_client(auth_type, auth_profile, service_endpoint):
 def get_serving_mode(model_id: str) -> Any:
     try:
         from oci.generative_ai_inference import models
-        #from generative_ai_service_bmc_python_client import models
 
     except ImportError as ex:
         raise ModuleNotFoundError(
@@ -128,7 +127,6 @@ def get_serving_mode(model_id: str) -> Any:
 def get_completion_generator() -> Any:
     try:
         from oci.generative_ai_inference import models
-        #from generative_ai_service_bmc_python_client import models
 
     except ImportError as ex:
         raise ModuleNotFoundError(
@@ -142,7 +140,6 @@ def get_completion_generator() -> Any:
 def get_chat_generator() -> Any:
     try:
         from oci.generative_ai_inference import models
-        #from generative_ai_service_bmc_python_client import models
 
     except ImportError as ex:
         raise ModuleNotFoundError(
@@ -181,7 +178,6 @@ class CohereProvider(Provider):
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
-            #from generative_ai_service_bmc_python_client import models
             
         except ImportError as ex:
             raise ModuleNotFoundError(
@@ -213,7 +209,7 @@ class CohereProvider(Provider):
 
         role_map = {
             "user": "USER",
-            "system": "USER",
+            "system": "SYSTEM",
             "chatbot": "CHATBOT",
             "assistant": "CHATBOT",
         }
@@ -232,7 +228,6 @@ class MetaProvider(Provider):
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
-            #from generative_ai_service_bmc_python_client import models
             
         except ImportError as ex:
             raise ModuleNotFoundError(
@@ -285,7 +280,7 @@ PROVIDERS = {
     "meta": MetaProvider(),
 }
 
-def get_provider(model: str, provider_name: str=None) -> str:
+def get_provider(model: str, provider_name: str=None) -> Any:
     
     if provider_name is None:
         provider_name = model.split(".")[0].lower()
@@ -299,4 +294,15 @@ def get_provider(model: str, provider_name: str=None) -> str:
     
     return PROVIDERS[provider_name]
 
-
+def get_context_size(model: str, context_size: int=None) -> int:
+    if context_size is None:
+        try:
+            return OCIGENAI_LLMS[model]
+        except KeyError as e:
+            raise ValueError(
+                f"Invalid context size derived from model_id: {model} "
+                "Please explicitly pass in the context size "
+                "when using custom endpoint", e
+            ) from e
+    else:
+        return context_size
