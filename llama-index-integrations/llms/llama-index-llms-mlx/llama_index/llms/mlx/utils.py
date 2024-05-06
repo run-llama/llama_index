@@ -3,7 +3,7 @@ from typing import Dict, Optional, Tuple, Generator, Union, Callable, Any
 
 import mlx.core as mx
 import mlx.nn as nn
-from tokenizer_utils import TokenizerWrapper
+from .tokenizer_utils import TokenizerWrapper
 from transformers import PreTrainedTokenizer
 
 

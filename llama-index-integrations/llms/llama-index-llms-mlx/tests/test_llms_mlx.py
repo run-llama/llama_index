@@ -1,5 +1,5 @@
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.llms.anthropic import MLXLLM
+from llama_index.llms.mlx import MLXLLM
 
 
 def test_text_inference_embedding_class():

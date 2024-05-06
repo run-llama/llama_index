@@ -1,4 +1,4 @@
-from utils import gen_stream
+from .utils import gen_stream
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
