@@ -17,3 +17,15 @@ def test_deepinfra_text_prefix():
     model = DeepInfraEmbeddingModel(text_prefix="text")
     result = model._add_text_prefix(["test"])
     assert result == ["texttest"]
+
+
+def test_deepinfra_default_query_prefix():
+    model = DeepInfraEmbeddingModel()
+    result = model._add_query_prefix(["test"])
+    assert result == ["test"]
+
+
+def test_deepinfra_default_text_prefix():
+    model = DeepInfraEmbeddingModel()
+    result = model._add_text_prefix(["test"])
+    assert result == ["test"]
