@@ -27,26 +27,17 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 from llama_index.llms.oci_genai.utils import (
-    OCIGENAI_LLMS,
-    STREAMING_MODELS,
     CHAT_MODELS,
-    COMPLETION_MODELS,
     create_client,
     get_provider,
     get_serving_mode,
     get_completion_generator,
-    get_chat_generator
+    get_chat_generator,
+    get_context_size
 )
 
 # TODO: 
-# (1) stop sequences. works for meta (llama2/3), still need to check for command-r (resolve oci sdk issue)
-# (2) remove manual LLM checks. done (all our models support streaming but not all support chat)
 # (3) command-r extra params. documents param works, need to check other
-# (4) is stream, verify override in complete and chat
-# (5) remove stop token attribute (not used) from provider class. Done
-# (6) async. decide what we want to do. e.g., raise notImplemented
-# (7) role mapping for chat. confirm, test. (for meta "Conversation roles must alternate user/assistant/user/assistant/" but it does accept system?)
-# (8) test R-plus
 class OCIGenAI(LLM):
     """OCI large language models.
 
@@ -173,10 +164,11 @@ class OCIGenAI(LLM):
 
         self._chat_generator = get_chat_generator() 
 
+        context_size = get_context_size(model, context_size)
+
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        context_size = context_size or OCIGENAI_LLMS[model]
-               
+        
         super().__init__(
             model=model,
             temperature=temperature,
@@ -329,25 +321,25 @@ class OCIGenAI(LLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        # TODO: do synchronous complete for now
+        # do synchronous complete for now
         return self.complete(prompt, formatted=formatted, **kwargs)
-        #raise NotImplementedError
         
     
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         """Chat asynchronously."""
-        # TODO: do synchronous chat for now
-        #return self.chat(messages, **kwargs)
-        raise NotImplementedError
+        # do synchronous chat for now
+        return self.chat(messages, **kwargs)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        raise NotImplementedError
+        # do synchronous stream chat for now
+        return self.stream_chat(messages, **kwargs)
 
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError
+        # do synchronous stream complete for now
+        return self.stream_complete(prompt, formatted, **kwargs)
