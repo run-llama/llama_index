@@ -90,6 +90,8 @@ class RelytVectorStore(BasePydanticVectorStore):
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._client.delete(meta_contains({"ref_doc_id": ref_doc_id}))
 
+    # TODO: the more filter type(le, ne, ge ...) will add later, after the base api supported,
+    #  now only support eq filter for meta information
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         results = self._client.search(
             embedding=query.query_embedding,

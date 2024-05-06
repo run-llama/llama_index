@@ -32,10 +32,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-
-[tool.poetry.dependencies.pgvecto-rs]
-extras = ["sdk"]
-version = "^0.1.4"
+pgvecto-rs = {version = "^0.1.4", extras = ["sdk"]}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
