@@ -179,7 +179,7 @@ class AzureDynamicSessionsToolSpec(BaseToolSpec):
         return _run(self, python_code)
 
     def upload_file(self, data=None, remote_file_path: str = None, local_file_path: str = None) -> List[RemoteFileMetadata]:
-        """Upload a file to the session pool.
+        """Upload a file to the session.
 
         Args:
             data: The data to upload.
@@ -218,7 +218,7 @@ class AzureDynamicSessionsToolSpec(BaseToolSpec):
         return remote_files_metadatas
 
     def download_file_to_local(self, remote_file_path: str, local_file_path: str = None) -> Optional[BufferedReader]:
-        """Download a file from the session pool back to your local environment.
+        """Download a file from the session back to your local environment.
 
         Args:
             remote_file_path: The path to download the file from, relative to `/mnt/data`.
@@ -246,10 +246,10 @@ class AzureDynamicSessionsToolSpec(BaseToolSpec):
         return BytesIO(response.content)
 
     def list_files(self) -> list[RemoteFileMetadata]:
-        """List the files in the session pool.
+        """List the files in the session.
 
         Returns:
-            list[RemoteFileMetadata]: The metadata for the files in the session pool
+            list[RemoteFileMetadata]: The metadata for the files in the session
         """
         access_token = self.access_token_provider(self)
         api_url = self._build_url(f"python/files?identifier={self.session_id}")
