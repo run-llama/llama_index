@@ -88,10 +88,17 @@ class NVIDIA(OpenAILike):
         if mode == "nim":
             if not base_url:
                 raise ValueError("base_url is required for nim mode")
+        if mode == "nvidia":
+            api_key = get_from_param_or_env(
+                "api_key",
+                api_key,
+                "NVIDIA_API_KEY",
+            )
+            base_url = base_url or BASE_URL
 
         self._mode = mode
         if base_url:
-            self.base_url = base_url
+            self.api_base = base_url
         if model:
             self.model = model
         if api_key:
