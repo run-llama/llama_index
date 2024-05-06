@@ -512,7 +512,7 @@ class OpenAI(FunctionCallingLLM):
 
         openai_completion_logprobs = response.choices[0].logprobs
         logprobs = None
-        if openai_completion_logprobs and openai_completion_logprobs.top_logprobs:
+        if openai_completion_logprobs:
             logprobs = from_openai_completion_logprobs(openai_completion_logprobs)
 
         return CompletionResponse(
@@ -751,7 +751,7 @@ class OpenAI(FunctionCallingLLM):
         text = response.choices[0].text
         openai_completion_logprobs = response.choices[0].logprobs
         logprobs = None
-        if openai_completion_logprobs and openai_completion_logprobs.top_logprobs:
+        if openai_completion_logprobs:
             logprobs = from_openai_completion_logprobs(openai_completion_logprobs)
 
         return CompletionResponse(
