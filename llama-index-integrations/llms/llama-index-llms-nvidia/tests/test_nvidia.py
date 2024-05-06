@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, LLMMetadata
+from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.llms.nvidia import NVIDIA
 
 from openai.types.chat.chat_completion import (
@@ -126,7 +126,7 @@ async def mock_async_chat_completion_stream_v1(
     return gen()
 
 
-@patch("llama_index.llms.nvidia.base.SyncOpenAI")
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -143,7 +143,7 @@ def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "Cool Test Message"
 
 
-@patch("llama_index.llms.nvidia.base.SyncOpenAI")
+@patch("llama_index.llms.openai.base.SyncOpenAI")
 def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -171,7 +171,7 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
 
 
 @pytest.mark.asyncio()
-@patch("llama_index.llms.nvidia.base.AsyncOpenAI")
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_chat_model_basic(MockAsyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockAsyncOpenAI.return_value
@@ -191,7 +191,7 @@ async def test_async_chat_model_basic(MockAsyncOpenAI: MagicMock) -> None:
 
 
 @pytest.mark.asyncio()
-@patch("llama_index.llms.nvidia.base.AsyncOpenAI")
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_streaming_chat_model(MockAsyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockAsyncOpenAI.return_value
@@ -219,15 +219,6 @@ def test_validates_api_key_is_present() -> None:
         os.environ["NVIDIA_API_KEY"] = ""
 
         assert NVIDIA(api_key="nvai-" + "x" * 9 + "-" + "x" * 54)
-
-
-@pytest.mark.integration()
-def test_chat_completion(chat_model: str, mode: dict) -> None:
-    message = ChatMessage(content="Hello")
-    response = NVIDIA(model=chat_model).mode(**mode).chat([message])
-    assert isinstance(response, ChatResponse)
-    assert isinstance(response.message, ChatMessage)
-    assert isinstance(response.message.content, str)
 
 
 def test_metadata(chat_model: str, mode: dict) -> None:

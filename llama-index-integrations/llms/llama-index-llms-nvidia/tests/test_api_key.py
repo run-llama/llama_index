@@ -20,7 +20,7 @@ def no_env_var(var: str) -> Generator[None, None, None]:
 
 
 def get_api_key(instance: Any) -> str:
-    return instance._client.api_key
+    return instance.api_key
 
 
 def test_create_without_api_key() -> None:
