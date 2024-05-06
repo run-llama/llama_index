@@ -3,6 +3,11 @@ from typing import Any, List, Optional, Literal, Generator
 from urllib.parse import urlparse
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 import requests
@@ -12,6 +17,8 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
 DEFAULT_BASE_URL = "https://ai.api.nvidia.com/v1"
+
+dispatcher = get_dispatcher(__name__)
 
 
 class Model(BaseModel):
@@ -134,6 +141,16 @@ class NVIDIARerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatch_event = dispatcher.get_dispatch_event()
+        dispatch_event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError(
                 "Missing query bundle in extra info. Please do not give empty query!"
@@ -211,4 +228,5 @@ class NVIDIARerank(BaseNodePostprocessor):
             results = results[: self.top_n]
             event.on_end(payload={EventPayload.NODES: results})
 
+        dispatch_event(ReRankEndEvent(nodes=results))
         return results

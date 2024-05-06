@@ -225,21 +225,13 @@ project
     └── app_query_engine.py
 ```
 
-Notebook Guides:
+## Notebook Guides:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/instrumentation/basic_usage.ipynb
-/examples/instrumentation/observe_api_calls.ipynb
-```
+
+- [Basic Usage](../../examples/instrumentation/basic_usage.ipynb)
+- [Observing Model Calls](../../examples/instrumentation/observe_api_calls.ipynb)
+
 
 ## API Reference
 
-```{toctree}
----
-maxdepth: 1
----
-/api_reference/instrumentation.rst
-```
+- [Instrumentation API Reference](../../api_reference/instrumentation/index.md)

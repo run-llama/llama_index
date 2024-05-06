@@ -395,7 +395,7 @@ class AgentRunner(BaseAgentRunner):
         """Execute step."""
         dispatch_event = dispatcher.get_dispatch_event()
 
-        dispatch_event(AgentRunStepStartEvent())
+        dispatch_event(AgentRunStepStartEvent(task_id=task_id, step=step, input=input))
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -422,7 +422,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
-        dispatch_event(AgentRunStepEndEvent())
+        dispatch_event(AgentRunStepEndEvent(step_output=cur_step_output))
         return cur_step_output
 
     @dispatcher.span
@@ -437,7 +437,7 @@ class AgentRunner(BaseAgentRunner):
         """Execute step."""
         dispatch_event = dispatcher.get_dispatch_event()
 
-        dispatch_event(AgentRunStepStartEvent())
+        dispatch_event(AgentRunStepStartEvent(task_id=task_id, step=step, input=input))
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -463,7 +463,7 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
-        dispatch_event(AgentRunStepEndEvent())
+        dispatch_event(AgentRunStepEndEvent(step_output=cur_step_output))
         return cur_step_output
 
     @dispatcher.span
@@ -569,7 +569,7 @@ class AgentRunner(BaseAgentRunner):
         task = self.create_task(message)
 
         result_output = None
-        dispatch_event(AgentChatWithStepStartEvent())
+        dispatch_event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = self._run_step(
@@ -587,7 +587,7 @@ class AgentRunner(BaseAgentRunner):
             task.task_id,
             result_output,
         )
-        dispatch_event(AgentChatWithStepEndEvent())
+        dispatch_event(AgentChatWithStepEndEvent(response=result))
         return result
 
     @dispatcher.span
@@ -606,7 +606,7 @@ class AgentRunner(BaseAgentRunner):
         task = self.create_task(message)
 
         result_output = None
-        dispatch_event(AgentChatWithStepStartEvent())
+        dispatch_event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
@@ -624,7 +624,7 @@ class AgentRunner(BaseAgentRunner):
             task.task_id,
             result_output,
         )
-        dispatch_event(AgentChatWithStepEndEvent())
+        dispatch_event(AgentChatWithStepEndEvent(response=result))
         return result
 
     @dispatcher.span
@@ -754,7 +754,7 @@ class BasePlanningAgentRunner(AgentRunner):
         ...
 
     @abstractmethod
-    def run_task(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
+    def run_task(self, task_id: str, **kwargs: Any) -> AGENT_CHAT_RESPONSE_TYPE:
         """Run task."""
         ...
 
@@ -766,7 +766,7 @@ class BasePlanningAgentRunner(AgentRunner):
         """Refine plan (async)."""
         return self.refine_plan(input, plan_id, **kwargs)
 
-    async def arun_task(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
+    async def arun_task(self, task_id: str, **kwargs: Any) -> AGENT_CHAT_RESPONSE_TYPE:
         """Run task (async)."""
         return self.run_task(task_id, **kwargs)
 
@@ -788,7 +788,7 @@ class BasePlanningAgentRunner(AgentRunner):
         plan_id = self.create_plan(message)
 
         results = []
-        dispatch_event(AgentChatWithStepStartEvent())
+        dispatch_event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
             # EXIT CONDITION: check if all sub-tasks are completed
             next_task_ids = self.get_next_tasks(plan_id)
@@ -813,7 +813,11 @@ class BasePlanningAgentRunner(AgentRunner):
             # refine the plan
             self.refine_plan(message, plan_id)
 
-        dispatch_event(AgentChatWithStepEndEvent())
+        dispatch_event(
+            AgentChatWithStepEndEvent(
+                response=results[-1] if len(results) > 0 else None
+            )
+        )
         return results[-1]
 
     @dispatcher.span
@@ -834,7 +838,7 @@ class BasePlanningAgentRunner(AgentRunner):
         plan_id = self.create_plan(message)
 
         results = []
-        dispatch_event(AgentChatWithStepStartEvent())
+        dispatch_event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
             # EXIT CONDITION: check if all sub-tasks are completed
             next_task_ids = self.get_next_tasks(plan_id)
@@ -859,5 +863,9 @@ class BasePlanningAgentRunner(AgentRunner):
             # refine the plan
             await self.arefine_plan(message, plan_id)
 
-        dispatch_event(AgentChatWithStepEndEvent())
+        dispatch_event(
+            AgentChatWithStepEndEvent(
+                response=results[-1] if len(results) > 0 else None
+            )
+        )
         return results[-1]
