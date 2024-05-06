@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.tools.azure_dynamic_session"
+import_path = "llama_index.tools.azure_dynamic_sessions"
 
 [tool.llamahub.class_authors]
-AzureDynamicSessionToolSpec = "ajhofmann"
+AzureDynamicSessionsToolSpec = "ajhofmann"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,7 +22,7 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index tools azure_dynamic_session integration"
+description = "llama-index tools azure_dynamic_sessions integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["ajhofmann"]

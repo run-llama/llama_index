@@ -6,12 +6,12 @@ In order to utilize the tool, you will need to have the Session Pool management 
 
 ## Usage
 
-A more detailed sample is located in a Jupyter notebook [here](https://github.com/emptycrown/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-azure-dynamic-session/examples/azure_dynamic_session.ipynb)
+A more detailed sample is located in a Jupyter notebook [here](https://github.com/emptycrown/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-azure-dynamic-sessions/examples/azure_dynamic_sessions.ipynb)
 
-Here's an example usage of the `AzureDynamicSessionToolSpec`.
+Here's an example usage of the `AzureDynamicSessionsToolSpec`.
 
 ```python
-from llama_index.tools.azure_dynamic_session import AzureDynamicSessionToolSpec
+from llama_index.tools.azure_dynamic_sessions import AzureDynamicSessionsToolSpec
 from llama_index.core.agent import ReActAgent
 from llama_index.llms.azure_openai import AzureOpenAI
 
@@ -23,7 +23,7 @@ llm = AzureOpenAI(
     api_version=api_version,
 )
 
-dynamic_session_tool = AzureDynamicSessionToolSpec(
+dynamic_session_tool = AzureDynamicSessionsToolSpec(
     pool_managment_endpoint="your-pool-management-endpoint"
 )
 
@@ -34,7 +34,7 @@ print(agent.chat("Tell me the current time in Seattle."))
 print(dynamic_session_tool.code_interpreter("1+1"))
 ```
 
-`code_interpreter`: Send a Python code to be executed in Azure Dynamic Session and return the output in a JSON format.
+`code_interpreter`: Send a Python code to be executed in Azure Container Apps Dynamic Session and return the output in a JSON format.
 
 `list_files`: List the files available in a Session under the path `/mnt/data`.
 
