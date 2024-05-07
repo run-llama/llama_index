@@ -39,11 +39,18 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         [0.1, 0.2, 0.3, ...]
     """
 
+    """model_id can be obtained from the DeepInfra website."""
     _model_id: str = PrivateAttr()
+    """normalize flag to normalize embeddings post retrieval."""
     _normalize: bool = PrivateAttr()
+    """api_token should be obtained from the DeepInfra website."""
     _api_token: str = PrivateAttr()
+    """query_prefix is used to add a prefix to queries."""
     _query_prefix: str = PrivateAttr()
+    """text_prefix is used to add a prefix to texts."""
     _text_prefix: str = PrivateAttr()
+    """batch_size is the batch size for embedding requests."""
+    _batch_size: int = PrivateAttr()
 
     def __init__(
         self,
@@ -53,6 +60,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         query_prefix: str = "",
         text_prefix: str = "",
+        batch_size: int = MAX_BATCH_SIZE,
     ) -> None:
         """
         Init params.
@@ -62,6 +70,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         self._api_token = os.getenv(ENV_VARIABLE, api_token)
         self._query_prefix = query_prefix
         self._text_prefix = text_prefix
+        self._batch_size = batch_size
 
         super().__init__(callback_manager=callback_manager)
 
@@ -199,8 +208,8 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         )
 
 
-def _chunk(items: List[str]) -> List[List[str]]:
+def _chunk(items: List[str], batch_size: int = MAX_BATCH_SIZE) -> List[List[str]]:
     """
-    Chunk items into batches of size MAX_BATCH_SIZE.
+    Chunk items into batches of size batch_size.
     """
-    return [items[i : i + MAX_BATCH_SIZE] for i in range(0, len(items), MAX_BATCH_SIZE)]
+    return [items[i : i + batch_size] for i in range(0, len(items), batch_size)]
