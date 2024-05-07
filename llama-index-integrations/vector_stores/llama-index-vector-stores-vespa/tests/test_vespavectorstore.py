@@ -109,7 +109,7 @@ def added_node_ids(vespa_app, nodes):
 def test_query_text_search(vespa_app, added_node_ids):
     query = VectorStoreQuery(
         query_str="Inception",  # Ensure the query matches the case used in the nodes
-        mode="text_search",
+        mode=VectorStoreQueryMode.TEXT_SEARCH,
         similarity_top_k=1,
     )
     result = vespa_app.query(query)
@@ -122,7 +122,7 @@ def test_query_text_search(vespa_app, added_node_ids):
 def test_query_vector_search(vespa_app, added_node_ids):
     query = VectorStoreQuery(
         query_str="magic, wizardry",
-        mode="semantic_hybrid",
+        mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
         similarity_top_k=1,
     )
     result = vespa_app.query(query)
