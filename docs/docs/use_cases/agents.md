@@ -19,7 +19,7 @@ LlamaIndex provides a comprehensive framework for building agents. This includes
 
 The scope of possible use cases for agents is vast and ever-expanding. That said, here are some practical use cases that can deliver immediate value.
 
-- **Agentic RAG**: Build a context-augmented research assistant over your data that not only answers simple questions, but complex research tasks. Here are two resources ([resource 1](../understanding/putting_it_all_together/agents.md), [resource 2](./optimizing/agentic_strategies/agentic_strategies.md)) to help you get started.
+- **Agentic RAG**: Build a context-augmented research assistant over your data that not only answers simple questions, but complex research tasks. Here are two resources ([resource 1](../understanding/putting_it_all_together/agents.md), [resource 2](../optimizing/agentic_strategies/agentic_strategies.md)) to help you get started.
 
 - **SQL Agent**: A subset of the above is a "text-to-SQL assistant" that can interact with a structured database. Check out [this guide](https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/query_pipeline_agent/?h=sql+agent#setup-simple-retry-agent-pipeline-for-text-to-sql) to see how to build an agent from scratch.
 

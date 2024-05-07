@@ -46,24 +46,24 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         dispatch_event = dispatcher.get_dispatch_event()
 
-        dispatch_event(QueryStartEvent())
+        dispatch_event(QueryStartEvent(query=str_or_query_bundle))
         with self.callback_manager.as_trace("query"):
             if isinstance(str_or_query_bundle, str):
                 str_or_query_bundle = QueryBundle(str_or_query_bundle)
             query_result = self._query(str_or_query_bundle)
-        dispatch_event(QueryEndEvent())
+        dispatch_event(QueryEndEvent(query=str_or_query_bundle, response=query_result))
         return query_result
 
     @dispatcher.span
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         dispatch_event = dispatcher.get_dispatch_event()
 
-        dispatch_event(QueryStartEvent())
+        dispatch_event(QueryStartEvent(query=str_or_query_bundle))
         with self.callback_manager.as_trace("query"):
             if isinstance(str_or_query_bundle, str):
                 str_or_query_bundle = QueryBundle(str_or_query_bundle)
             query_result = await self._aquery(str_or_query_bundle)
-        dispatch_event(QueryEndEvent())
+        dispatch_event(QueryEndEvent(query=str_or_query_bundle, response=query_result))
         return query_result
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:

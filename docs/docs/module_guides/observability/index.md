@@ -1,4 +1,4 @@
-# Observability (Legacy)
+# Observability
 
 **NOTE:**
 

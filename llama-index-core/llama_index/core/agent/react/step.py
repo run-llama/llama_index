@@ -3,7 +3,6 @@
 import asyncio
 import uuid
 from functools import partial
-from itertools import chain
 from threading import Thread
 from typing import (
     Any,
@@ -54,7 +53,7 @@ from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
-from llama_index.core.utils import print_text, unit_generator
+from llama_index.core.utils import print_text
 
 
 def add_user_step_to_reasoning(
@@ -483,17 +482,12 @@ class ReActAgentWorker(BaseAgentWorker):
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
         """
-        updated_stream = chain.from_iterable(  # need to add back partial response chunk
-            [
-                unit_generator(chunk),
-                chat_stream,
-            ]
-        )
-        # use cast to avoid mypy issue with chain and Generator
-        updated_stream_c: Generator[ChatResponse, None, None] = cast(
-            Generator[ChatResponse, None, None], updated_stream
-        )
-        return updated_stream_c
+
+        def gen() -> Generator[ChatResponse, None, None]:
+            yield chunk
+            yield from chat_stream
+
+        return gen()
 
     async def _async_add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
