@@ -14,111 +14,37 @@ pip install llama-index llama-index-embeddings-deepinfra
 
 ## Usage
 
-In order to provide the API token, you can set the `DEEPINFRA_API_TOKEN` environment variable or pass it as an argument to the `DeepinfraEmbeddings` class.
-
-### Use with default configuration
-
 ```python
 from dotenv import load_dotenv, find_dotenv
 from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
 
+# Load environment variables
 _ = load_dotenv(find_dotenv())
 
-model = DeepInfraEmbeddingModel()
-response = model.get_query_embedding("hello world")
-# Print the embeddings
-print(response)
-```
-
-### Use with custom model_id
-
-```python
-from llama_index.embeddings.deepinfra import DeepinfraEmbeddings
-
-
+# Initialize model with optional configuration
 model = DeepInfraEmbeddingModel(
-    model_id="BAAI/bge-large-en-v1.5",
-    api_token="YOUR_API_TOKEN",
-    normalize=True,
+    model_id="BAAI/bge-large-en-v1.5",  # Use custom model ID
+    api_token="YOUR_API_TOKEN",  # Optionally provide token here
+    normalize=True,  # Optional normalization
+    text_prefix="text: ",  # Optional text prefix
+    query_prefix="query: ",  # Optional query prefix
 )
 
-response = model.get_query_embedding("hello world")
-# Print the embeddings
-print(response)
-```
-
-### Use with query prefix
-
-```python
-from dotenv import load_dotenv, find_dotenv
-from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
-
-_ = load_dotenv(find_dotenv())
-
-model = DeepInfraEmbeddingModel(
-    model_id="BAAI/bge-large-en-v1.5",
-    query_prefix="query: ",
-)
-
-response = model.get_query_embedding("hello world")
-# Print the embeddings
-print(response)
-```
-
-### Use with text prefix
-
-```python
-from dotenv import load_dotenv, find_dotenv
-from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
-
-_ = load_dotenv(find_dotenv())
-
-model = DeepInfraEmbeddingModel(
-    model_id="BAAI/bge-large-en-v1.5",
-    text_prefix="text: ",
-)
-
+# Example usage
 response = model.get_text_embedding("hello world")
-# Print the embeddings
-print(response)
-```
 
-### Send batch requests
-
-```python
-from dotenv import load_dotenv, find_dotenv
-from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
-
-_ = load_dotenv(find_dotenv())
-
-model = DeepInfraEmbeddingModel(
-    model_id="BAAI/bge-large-en-v1.5",
-)
-
+# Batch requests
 texts = ["hello world", "goodbye world"]
-
 response = model.get_text_embedding_batch(texts)
-# Print the embeddings
-print(response)
-```
 
-### Asynchronous requests
-
-```python
-from dotenv import load_dotenv, find_dotenv
-from llama_index.embeddings.deepinfra import DeepInfraEmbeddingModel
-
-_ = load_dotenv(find_dotenv())
-
-model = DeepInfraEmbeddingModel(
-    model_id="BAAI/bge-large-en-v1.5",
-)
+# Query requests
+response = model.get_query_embedding("hello world")
 
 
+# Asynchronous requests
 async def main():
     text = "hello world"
     response = await model.aget_text_embedding(text)
-    print(response)
 
 
 if __name__ == "__main__":

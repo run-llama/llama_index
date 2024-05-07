@@ -184,13 +184,19 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         """
         Add query prefix to queries.
         """
-        return [self._query_prefix + query for query in queries]
+        return (
+            [self._query_prefix + query for query in queries]
+            if self._query_prefix
+            else queries
+        )
 
     def _add_text_prefix(self, texts: List[str]) -> List[str]:
         """
         Add text prefix to texts.
         """
-        return [self._text_prefix + text for text in texts]
+        return (
+            [self._text_prefix + text for text in texts] if self._text_prefix else texts
+        )
 
 
 def _chunk(items: List[str]) -> List[List[str]]:
