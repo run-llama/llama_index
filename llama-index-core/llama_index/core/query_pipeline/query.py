@@ -16,6 +16,7 @@ from typing import (
 )
 
 import networkx
+import asyncio
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import Field
@@ -340,7 +341,6 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
-        batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline."""
@@ -379,6 +379,9 @@ class QueryPipeline(QueryComponent):
                 merged[key] = d1.get(key, d2.get(key))
         return merged
 
+    async def run_tasks(self, jobs):
+        return await asyncio.gather(*jobs)
+
     def run_multi(
         self,
         module_input_dict: Dict[str, Any],
@@ -396,11 +399,16 @@ class QueryPipeline(QueryComponent):
                 if batch:
                     outputs = {}
 
-                    batch_size = min(
+                    batch_lengths = {
                         len(values)
                         for subdict in module_input_dict.values()
                         for values in subdict.values()
-                    )
+                    }
+
+                    if len(batch_lengths) != 1:
+                        raise ValueError("Length of batch inputs must be the same.")
+
+                    batch_size = next(iter(batch_lengths))
 
                     # List individual outputs from batch multi input.
                     inputs = [
@@ -413,16 +421,16 @@ class QueryPipeline(QueryComponent):
                         }
                         for i in range(batch_size)
                     ]
-                    for input in inputs:
-                        output, _ = self._run_multi(input)
-                        outputs = self.merge_dicts(outputs, output)
+                    jobs = [self._arun_multi(input) for input in inputs]
+                    results = asyncio.run(self.run_tasks(jobs))
+
+                    for result in results:
+                        outputs = self.merge_dicts(outputs, result[0])
+
                     return outputs
                 else:
                     outputs, _ = self._run_multi(module_input_dict)
                     return outputs
-
-    # {"qc1_0": {"input1": [1,5], "input2": [2,1]}, "qc1_1": {"input1": [3,7], "input2": [4,2]}}
-    # for kwarg in [dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())]:
 
     def run_multi_with_intermediates(
         self,
@@ -481,7 +489,6 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
-        batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline."""
@@ -520,11 +527,16 @@ class QueryPipeline(QueryComponent):
                 if batch:
                     outputs = {}
 
-                    batch_size = min(
+                    batch_lengths = {
                         len(values)
                         for subdict in module_input_dict.values()
                         for values in subdict.values()
-                    )
+                    }
+
+                    if len(batch_lengths) != 1:
+                        raise ValueError("Length of batch inputs must be the same.")
+
+                    batch_size = next(iter(batch_lengths))
 
                     # List individual outputs from batch multi input.
                     inputs = [
@@ -537,9 +549,13 @@ class QueryPipeline(QueryComponent):
                         }
                         for i in range(batch_size)
                     ]
-                    for input in inputs:
-                        output, _ = self._arun_multi(input)
-                        outputs = self.merge_dicts(outputs, output)
+
+                    jobs = [self._arun_multi(input) for input in inputs]
+                    results = await asyncio.gather(*jobs)
+
+                    for result in results:
+                        outputs = self.merge_dicts(outputs, result[0])
+
                     return outputs
                 else:
                     outputs, _ = await self._arun_multi(module_input_dict)
@@ -639,18 +655,28 @@ class QueryPipeline(QueryComponent):
             result_outputs = []
             intermediates = []
 
+            if len({len(value) for value in kwargs.values()}) != 1:
+                raise ValueError("Length of batch inputs must be the same.")
+
             # List of individual inputs from batch input
             kwargs = [
                 dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())
             ]
-            for kwarg in kwargs:
-                result_output, intermediate = self._run_multi(
+
+            jobs = [
+                self._arun_multi(
                     {root_key: kwarg}, show_intermediates=show_intermediates
                 )
+                for kwarg in kwargs
+            ]
+
+            results = asyncio.run(self.run_tasks(jobs))
+
+            for result in results:
                 result_outputs.append(
-                    self._get_single_result_output(result_output, return_values_direct)
+                    self._get_single_result_output(result[0], return_values_direct)
                 )
-                intermediates.append(intermediate)
+                intermediates.append(result[1])
 
             return result_outputs, intermediates
         else:
@@ -684,18 +710,28 @@ class QueryPipeline(QueryComponent):
             result_outputs = []
             intermediates = []
 
+            if len({len(value) for value in kwargs.values()}) != 1:
+                raise ValueError("Length of batch inputs must be the same.")
+
             # List of individual inputs from batch input
             kwargs = [
                 dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())
             ]
-            for kwarg in kwargs:
-                result_output, intermediate = await self._arun_multi(
+
+            jobs = [
+                self._arun_multi(
                     {root_key: kwarg}, show_intermediates=show_intermediates
                 )
+                for kwarg in kwargs
+            ]
+
+            results = await asyncio.gather(*jobs)
+
+            for result in results:
                 result_outputs.append(
-                    self._get_single_result_output(result_output, return_values_direct)
+                    self._get_single_result_output(result[0], return_values_direct)
                 )
-                intermediates.append(intermediate)
+                intermediates.append(result[1])
 
             return result_outputs, intermediates
         else:

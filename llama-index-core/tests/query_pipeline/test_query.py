@@ -319,6 +319,9 @@ async def test_query_pipeline_async() -> None:
     output = await p.arun(inp1=1, inp2=2)
     assert output == "3:1"
 
+    output = await p.arun(inp1=[1, 2], inp2=[2, 3], batch=True)
+    assert output == ["3:1", "5:2"]
+
     # try run run_multi
     # link both qc1_0 and qc1_1 to qc2
     qc1_0 = QueryComponent1()
@@ -332,6 +335,15 @@ async def test_query_pipeline_async() -> None:
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
     assert output == {"qc2": {"output": "3:7"}}
+
+    output = await p.arun_multi(
+        {
+            "qc1_0": {"input1": [1, 5], "input2": [2, 1]},
+            "qc1_1": {"input1": [3, 7], "input2": [4, 2]},
+        },
+        batch=True,
+    )
+    assert output == {"qc2": {"output": ["3:7", "6:9"]}}
 
 
 def test_query_pipeline_init() -> None:
