@@ -2,8 +2,15 @@ from typing import Any, List, Optional
 from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
+
+dispatcher = get_dispatcher(__name__)
 
 
 class RankLLMRerank(BaseNodePostprocessor):
@@ -85,6 +92,16 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
+        dispatch_event = dispatcher.get_dispatch_event()
+        dispatch_event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
+            )
+        )
+
         docs = [(node.get_content(), node.get_score()) for node in nodes]
 
         if self.with_retrieval:
@@ -131,6 +148,8 @@ class RankLLMRerank(BaseNodePostprocessor):
             new_nodes.append(
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
+
+        dispatch_event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
         return new_nodes[: self.top_n]
 
 
