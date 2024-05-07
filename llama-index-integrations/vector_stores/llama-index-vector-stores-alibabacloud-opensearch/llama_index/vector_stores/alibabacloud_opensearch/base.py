@@ -3,7 +3,7 @@
 import json
 import logging
 import asyncio
-from typing import Any, List, Dict, Optional, cast
+from typing import Any, List, Dict, Optional
 
 from llama_index.core.schema import BaseNode, TextNode
 
@@ -125,7 +125,7 @@ class AlibabaCloudOpenSearchConfig:
         self.password = password
         self.namespace = namespace
         self.table_name = table_name
-        self.data_source_name = "_".join([self.instance_id, self.table_name])
+        self.data_source_name = f"{self.instance_id}_{self.table_name}"
         self.field_mapping = field_mapping
         self.id_field = id_field
         self.embedding_field = embedding_field
@@ -134,9 +134,7 @@ class AlibabaCloudOpenSearchConfig:
 
         if output_fields is None:
             self.output_fields = (
-                [value for value in self.field_mapping.values()]
-                if self.field_mapping
-                else []
+                list(self.field_mapping.values()) if self.field_mapping else []
             )
         if self.text_field not in self.output_fields:
             self.output_fields.append(self.text_field)
@@ -255,10 +253,10 @@ class AlibabaCloudOpenSearchStore(VectorStore):
 
             try:
                 await self._send_data("add", docs)
-                return [node.node_id for node in nodes]
             except Exception as e:
-                logging.error(f"add to {self._config.instance_id} failed: {e}")
-                raise e
+                logging.error(f"Add to {self._config.instance_id} failed: {e}")
+                raise RuntimeError(f"Fail to add docs, error:{e}")
+        return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -296,11 +294,12 @@ class AlibabaCloudOpenSearchStore(VectorStore):
 
     async def _send_data(self, cmd: str, fields_list: List[dict]) -> None:
         """
-        Asynchronously send data
+        Asynchronously send data.
 
         Args:
             cmd (str): data operator, add: upsert the doc, delete: delete the doc
             fields_list (list[dict]): doc fields list
+
         """
         docs = []
         for fields in fields_list:

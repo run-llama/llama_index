@@ -103,8 +103,10 @@ Below we show more examples of how to construct various vector stores we support
 
 ```python
 from llama_index.vector_stores.alibabacloud_opensearch import (
-    AlibabaCloudOpenSearchStore, AlibabaCloudOpenSearchConfig
+    AlibabaCloudOpenSearchStore,
+    AlibabaCloudOpenSearchConfig,
 )
+
 config = AlibabaCloudOpenSearchConfig(
     endpoint="***",
     instance_id="***",
