@@ -1,3 +1,3 @@
-from llama_index.storage.kvstore.azure.base import AzureDBKVStore
+from llama_index.storage.kvstore.azure.base import AzureKVStore
 
-__all__ = ["AzureDBKVStore"]
+__all__ = ["AzureKVStore"]
