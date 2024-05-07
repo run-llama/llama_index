@@ -109,6 +109,7 @@ with_fields_template = ApplicationPackage(
                     Field(name="author", type="string", indexing=["summary"]),
                     Field(name="theme", type="string", indexing=["summary"]),
                     Field(name="year", type="int", indexing=["summary"]),
+                    Field(name="metadata", type="string", indexing=["summary"]),
                     Field(
                         name="text",
                         type="string",

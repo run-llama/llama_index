@@ -15,6 +15,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
 )
 
+from llama_index.schema.vespa.vespa_node import VespaNode
 from llama_index.vector_stores.vespa.templates import hybrid_template
 
 import asyncio
@@ -157,7 +158,14 @@ class VespaVectorStore(VectorStore):
 
     def _try_get_running_app(self) -> Vespa:
         app = Vespa(url=f"{self.url}:{self.port}")
+
         status = app.get_application_status()
+        try:
+            status.status_code
+        except AttributeError:
+            raise ConnectionError(
+                f"Vespa application not running on url {self.url} and port {self.port}. Please start Vespa application first."
+            )
         if status.status_code == 200:
             return app
         else:
@@ -213,14 +221,12 @@ class VespaVectorStore(VectorStore):
                 node, remove_text=False, flat_metadata=self.flat_metadata
             )
             logger.debug(f"Metadata: {metadata}")
-            entry = {
-                "id": node.node_id,
-                "fields": {
-                    "id": node.node_id,
-                    "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                    "metadata": json.dumps(metadata),
-                },
-            }
+
+            if isinstance(node, VespaNode):
+                entry = self._get_vespa_node_entry(node)
+                print(entry)
+            else:
+                entry = self._get_base_node_entry(node, metadata)
             if self.embeddings_outside_vespa:
                 entry["fields"]["embedding"] = node.get_embedding()
             data_to_insert.append(entry)
@@ -234,6 +240,29 @@ class VespaVectorStore(VectorStore):
             callback=callback,
         )
         return ids
+
+    def _get_base_node_entry(self, node: BaseNode, metadata:dict):
+        entry = {
+            "id": node.node_id,
+            "fields": {
+                "id": node.node_id,
+                "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                "metadata": json.dumps(metadata),
+            },
+        }
+        return entry
+    def _get_vespa_node_entry(self,node: VespaNode):
+        vespa_fields = node.vespa_fields
+        metadata = node_to_metadata_dict(
+            node, remove_text=False, flat_metadata=self.flat_metadata
+        )
+        vespa_fields.update({
+            "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
+            "id": node.node_id,
+            "metadata": json.dumps(metadata),
+        })
+        entry = {"id": node.node_id, "fields": vespa_fields}
+        return entry
 
     async def async_add(
         self,
@@ -459,8 +488,10 @@ class VespaVectorStore(VectorStore):
             )
         logger.debug("Response:")
         logger.debug(response.json)
+        logger.info(response.json)
         logger.debug("Hits:")
         logger.debug(response.hits)
+        logger.info(response.hits)
         nodes = []
         ids: List[str] = []
         similarities: List[float] = []
