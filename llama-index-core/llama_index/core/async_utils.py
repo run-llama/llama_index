@@ -20,6 +20,18 @@ def asyncio_module(show_progress: bool = False) -> Any:
     return module
 
 
+def asyncio_run(coro: Coroutine) -> Any:
+    try:
+        loop = asyncio.get_running_loop()
+        return (
+            asyncio.ensure_future(coro)
+            if loop.is_running()
+            else loop.run_until_complete(coro)
+        )
+    except RuntimeError:
+        return asyncio.run(coro)
+
+
 def run_async_tasks(
     tasks: List[Coroutine],
     show_progress: bool = False,
@@ -51,7 +63,7 @@ def run_async_tasks(
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
 
-    outputs: List[Any] = asyncio.run(_gather())
+    outputs: List[Any] = asyncio_run(_gather())
     return outputs
 
 

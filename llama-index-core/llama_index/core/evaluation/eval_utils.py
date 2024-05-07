@@ -4,7 +4,6 @@ NOTE: These are beta functions, might change.
 
 """
 
-import asyncio
 import subprocess
 import tempfile
 from collections import defaultdict
@@ -16,7 +15,7 @@ import pandas as pd
 from llama_index_client import ProjectCreate
 from llama_index_client.types.eval_question_create import EvalQuestionCreate
 
-from llama_index.core.async_utils import asyncio_module
+from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
 from llama_index.core.evaluation.base import EvaluationResult
@@ -46,7 +45,7 @@ def get_responses(
     Sync version of aget_responses.
 
     """
-    return asyncio.run(aget_responses(*args, **kwargs))
+    return asyncio_run(aget_responses(*args, **kwargs))
 
 
 def get_results_df(

@@ -1,8 +1,8 @@
 """Evaluator."""
-import asyncio
 from abc import abstractmethod
 from typing import Any, Optional, Sequence
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
@@ -59,7 +59,7 @@ class BaseEvaluator(PromptMixin):
         Subclasses can override this method to provide custom evaluation logic and
         take in additional arguments.
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate(
                 query=query,
                 response=response,

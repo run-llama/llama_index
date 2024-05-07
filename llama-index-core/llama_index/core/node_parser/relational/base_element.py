@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 import pandas as pd
 from tqdm import tqdm
 
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import PydanticResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
@@ -194,7 +194,7 @@ class BaseElementNodeParser(NodeParser):
                 else loop.run_until_complete(summary_co)
             )
         except RuntimeError:
-            summary_outputs = asyncio.run(summary_co)
+            summary_outputs = asyncio_run(summary_co)
         for element, summary_output in zip(elements, summary_outputs):
             element.table_output = summary_output
 
