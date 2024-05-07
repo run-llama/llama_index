@@ -183,11 +183,18 @@ class BaseElementNodeParser(NodeParser):
             _get_table_output(table_context, self.summary_query_str)
             for table_context in table_context_list
         ]
-        summary_outputs = asyncio.run(
-            run_jobs(
-                summary_jobs, show_progress=self.show_progress, workers=self.num_workers
-            )
+        summary_co = run_jobs(
+            summary_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
+        try:
+            loop = asyncio.get_running_loop()
+            summary_outputs = (
+                asyncio.ensure_future(summary_co)
+                if loop.is_running()
+                else loop.run_until_complete(summary_co)
+            )
+        except RuntimeError:
+            summary_outputs = asyncio.run(summary_co)
         for element, summary_output in zip(elements, summary_outputs):
             element.table_output = summary_output
 
