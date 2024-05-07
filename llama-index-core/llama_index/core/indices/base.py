@@ -387,6 +387,11 @@ class BaseIndex(Generic[IS], ABC):
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
     ) -> BaseQueryEngine:
+        """Convert the index to a query engine.
+
+        Calls `index.as_retriever(**kwargs)` to get the retriever and then wraps it in a
+        `RetrieverQueryEngine.from_args(retriever, **kwrags)` call.
+        """
         # NOTE: lazy import
         from llama_index.core.query_engine.retriever_query_engine import (
             RetrieverQueryEngine,
@@ -411,6 +416,20 @@ class BaseIndex(Generic[IS], ABC):
         llm: Optional[LLMType] = None,
         **kwargs: Any,
     ) -> BaseChatEngine:
+        """Convert the index to a chat engine.
+
+        Calls `index.as_query_engine(llm=llm, **kwargs)` to get the query engine and then
+        wraps it in a chat engine based on the chat mode.
+
+        Chat modes:
+            - `ChatMode.BEST` (default): Chat engine that uses an agent (react or openai) with a query engine tool
+            - `ChatMode.CONTEXT`: Chat engine that uses a retriever to get context
+            - `ChatMode.CONDENSE_QUESTION`: Chat engine that condenses questions
+            - `ChatMode.CONDENSE_PLUS_CONTEXT`: Chat engine that condenses questions and uses a retriever to get context
+            - `ChatMode.SIMPLE`: Simple chat engine that uses the LLM directly
+            - `ChatMode.REACT`: Chat engine that uses a react agent with a query engine tool
+            - `ChatMode.OPENAI`: Chat engine that uses an openai agent with a query engine tool
+        """
         service_context = kwargs.get("service_context", self.service_context)
 
         if service_context is not None:
