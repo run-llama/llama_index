@@ -6,7 +6,7 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 
 ## Agent with OpenAI Models
 
-- [OpneAI Agent](../../../examples/agent/openai_agent.ipynb)
+- [OpenAI Agent](../../../examples/agent/openai_agent.ipynb)
 - [OpenAI Agent with Query Engine Tools](../../../examples/agent/openai_agent_with_query_engine.ipynb)
 - [Retrieval Augmented Agent](../../../examples/agent/openai_agent_retrieval.ipynb)
 - [OpenAI Agent Cookbook](../../../examples/agent/openai_agent_query_cookbook.ipynb)

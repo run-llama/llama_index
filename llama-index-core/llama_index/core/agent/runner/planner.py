@@ -10,6 +10,7 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.chat_engine.types import (
     ChatResponseMode,
+    AGENT_CHAT_RESPONSE_TYPE,
 )
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.llm import LLM
@@ -424,7 +425,7 @@ class StructuredPlannerAgent(BasePlanningAgentRunner):
         task_id: str,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         tool_choice: Union[str, dict] = "auto",
-    ) -> TaskStepOutput:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Run a task."""
         while True:
             # pass step queue in as argument, assume step executor is stateless
@@ -449,7 +450,7 @@ class StructuredPlannerAgent(BasePlanningAgentRunner):
         task_id: str,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         tool_choice: Union[str, dict] = "auto",
-    ) -> TaskStepOutput:
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Run a task."""
         while True:
             # pass step queue in as argument, assume step executor is stateless
