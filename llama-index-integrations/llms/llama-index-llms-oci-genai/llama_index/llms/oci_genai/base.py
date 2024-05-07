@@ -10,12 +10,12 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    MessageRole
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 
-from llama_index.core.constants import ( 
+from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.core.llms.callbacks import (
@@ -33,11 +33,12 @@ from llama_index.llms.oci_genai.utils import (
     get_serving_mode,
     get_completion_generator,
     get_chat_generator,
-    get_context_size
+    get_context_size,
 )
 
-# TODO: 
-# (3) command-r extra params. documents param works, need to check other
+
+# TODO:
+# (1) placeholder for future LLMs in utils.py e.g., llama3, command R+
 class OCIGenAI(LLM):
     """OCI large language models.
 
@@ -67,6 +68,7 @@ class OCIGenAI(LLM):
                     compartment_id="MY_OCID"
                 )
     """
+
     model: str = Field(description="Id of the OCI Generative AI model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -84,12 +86,12 @@ class OCIGenAI(LLM):
 
     auth_type: Optional[str] = Field(
         description="Authentication type, can be: API_KEY, SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used",
-        default="API_KEY"
+        default="API_KEY",
     )
 
     auth_profile: Optional[str] = Field(
         description="The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used",
-        default="DEFAULT"
+        default="DEFAULT",
     )
 
     additional_kwargs: Dict[str, Any] = Field(
@@ -109,14 +111,12 @@ class OCIGenAI(LLM):
         temperature: Optional[float] = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = 512,
         context_size: Optional[int] = None,
-
         service_endpoint: str = None,
         compartment_id: str = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
         client: Optional[Any] = None,
         provider: Optional[str] = None,
-        
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -124,7 +124,6 @@ class OCIGenAI(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        
     ) -> None:
         """
         Initializes the OCIGenAI class.
@@ -147,14 +146,16 @@ class OCIGenAI(LLM):
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
 
-            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the 
-                                    provided service endpoint and authentifcation method.            
+            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
+                                    provided service endpoint and authentifcation method.
 
             provider (Optional[str]): Provider name of the model. If not specified, the provider will be derived from the model name.
 
             additional_kwargs (Optional[Dict[str, Any]]): Additional kwargs for the the LLM.
         """
-        self._client = client or create_client(auth_type, auth_profile, service_endpoint)
+        self._client = client or create_client(
+            auth_type, auth_profile, service_endpoint
+        )
 
         self._provider = get_provider(model, provider)
 
@@ -162,24 +163,22 @@ class OCIGenAI(LLM):
 
         self._completion_generator = get_completion_generator()
 
-        self._chat_generator = get_chat_generator() 
+        self._chat_generator = get_chat_generator()
 
         context_size = get_context_size(model, context_size)
 
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        
+
         super().__init__(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             context_size=context_size,
-
-            service_endpoint = service_endpoint,
-            compartment_id = compartment_id,
-            auth_type = auth_type,
-            auth_profile = auth_profile,
-                        
+            service_endpoint=service_endpoint,
+            compartment_id=compartment_id,
+            auth_type=auth_type,
+            auth_profile=auth_profile,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -224,7 +223,6 @@ class OCIGenAI(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-                    
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
         inference_params["prompt"] = prompt
@@ -234,17 +232,17 @@ class OCIGenAI(LLM):
             serving_mode=self._serving_mode,
             inference_request=self._provider.oci_completion_request(**inference_params),
         )
-                
+
         response = self._client.generate_text(request)
         return CompletionResponse(
-            text=self._provider.completion_response_to_text(response), raw=response.__dict__
+            text=self._provider.completion_response_to_text(response),
+            raw=response.__dict__,
         )
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = True
         inference_params["prompt"] = prompt
@@ -253,68 +251,74 @@ class OCIGenAI(LLM):
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
             inference_request=self._provider.oci_completion_request(**inference_params),
-        )       
-        
+        )
+
         response = self._client.generate_text(request)
 
         def gen() -> CompletionResponseGen:
             content = ""
             for event in response.data.events():
-                content_delta = self._provider.completion_stream_to_text(json.loads(event.data))
+                content_delta = self._provider.completion_stream_to_text(
+                    json.loads(event.data)
+                )
                 content += content_delta
-                yield CompletionResponse(text=content, delta=content_delta, raw=event.__dict__)
+                yield CompletionResponse(
+                    text=content, delta=content_delta, raw=event.__dict__
+                )
 
         return gen()
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = False
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
-        
+
         request = self._chat_generator(
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
             chat_request=self._provider.oci_chat_request(**chat_params),
         )
-        
+
         response = self._client.chat(request)
 
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=self._provider.chat_response_to_text(response)),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=self._provider.chat_response_to_text(response),
+            ),
             raw=response.__dict__,
         )
-        
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-                
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
-        
+
         request = self._chat_generator(
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
             chat_request=self._provider.oci_chat_request(**chat_params),
         )
-        
+
         response = self._client.chat(request)
-        
+
         def gen() -> ChatResponseGen:
             content = ""
             for event in response.data.events():
-                content_delta = self._provider.chat_stream_to_text(json.loads(event.data))
+                content_delta = self._provider.chat_stream_to_text(
+                    json.loads(event.data)
+                )
                 content += content_delta
                 yield ChatResponse(
-                    message=ChatMessage(role=MessageRole.ASSISTANT, content=content), 
+                    message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
                     delta=content_delta,
                     raw=event.__dict__,
-                    )
+                )
 
         return gen()
 
@@ -323,12 +327,10 @@ class OCIGenAI(LLM):
     ) -> CompletionResponse:
         # do synchronous complete for now
         return self.complete(prompt, formatted=formatted, **kwargs)
-        
-    
+
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        """Chat asynchronously."""
         # do synchronous chat for now
         return self.chat(messages, **kwargs)
 

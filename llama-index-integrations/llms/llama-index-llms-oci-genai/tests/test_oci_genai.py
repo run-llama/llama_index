@@ -79,6 +79,6 @@ def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     messages = [
         ChatMessage(role="user", content="This is a prompt."),
     ]
-    
+
     output = llm.chat(messages, temperature=0.2)
     assert str(output.message) == "assistant: This is the completion."

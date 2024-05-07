@@ -26,3 +26,6 @@ genai_demo/llama_generate_text_demo.py
 genai_demo/utils.py
 llama-index-integrations/embeddings/llama-index-embeddings-ocigenai/llama_index/embeddings/ocigenai/play.py
 llama-index-integrations/embeddings/llama-index-embeddings-ocigenai/llama_index/embeddings/ocigenai/rag.py
+llama-index-integrations/embeddings/llama-index-embeddings-oci-genai/llama_index/embeddings/oci_genai/rag.py
+llama-index-integrations/embeddings/llama-index-embeddings-oci-genai/llama_index/embeddings/oci_genai/play.py
+llama-index-integrations/llms/llama-index-llms-oci-genai/llama_index/llms/oci_genai/play.py

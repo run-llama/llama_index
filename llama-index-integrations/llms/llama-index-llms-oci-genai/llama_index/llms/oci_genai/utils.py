@@ -3,12 +3,15 @@ from enum import Enum
 from typing import Any, Sequence, Dict
 from llama_index.core.base.llms.types import ChatMessage
 
+
 class OCIAuthType(Enum):
     """OCI authentication types as enumerator."""
+
     API_KEY = 1
     SECURITY_TOKEN = 2
     INSTANCE_PRINCIPAL = 3
     RESOURCE_PRINCIPAL = 4
+
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -22,8 +25,9 @@ CHAT_MODELS = {
     "meta.llama-2-70b-chat": 4096,
     "cohere.command-r": 128000,
     "cohere.command-r-plus": 128000,
+    "meta.llama-3-70b-instruct": 8000,
 }
-  
+
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
 
 STREAMING_MODELS = {
@@ -31,12 +35,13 @@ STREAMING_MODELS = {
     "cohere.command-light",
     "meta.llama-2-70b-chat",
     "cohere.command-r",
-    "cohere.command-r-plus"
+    "cohere.command-r-plus",
 }
+
 
 def create_client(auth_type, auth_profile, service_endpoint):
     """OCI Gen AI client
-    
+
     Args:
         auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL.
                                     If not specified, API_KEY will be used
@@ -57,9 +62,7 @@ def create_client(auth_type, auth_profile, service_endpoint):
         }
 
         if auth_type == OCIAuthType(1).name:
-            client_kwargs["config"] = oci.config.from_file(
-                profile_name=auth_profile
-            )
+            client_kwargs["config"] = oci.config.from_file(profile_name=auth_profile)
             client_kwargs.pop("signer", None)
         elif auth_type == OCIAuthType(2).name:
 
@@ -67,15 +70,11 @@ def create_client(auth_type, auth_profile, service_endpoint):
                 pk = oci.signer.load_private_key_from_file(
                     oci_config.get("key_file"), None
                 )
-                with open(
-                    oci_config.get("security_token_file"), encoding="utf-8"
-                ) as f:
+                with open(oci_config.get("security_token_file"), encoding="utf-8") as f:
                     st_string = f.read()
                 return oci.auth.signers.SecurityTokenSigner(st_string, pk)
 
-            client_kwargs["config"] = oci.config.from_file(
-                profile_name=auth_profile
-            )
+            client_kwargs["config"] = oci.config.from_file(profile_name=auth_profile)
             client_kwargs["signer"] = make_security_token_signer(
                 oci_config=client_kwargs["config"]
             )
@@ -84,14 +83,14 @@ def create_client(auth_type, auth_profile, service_endpoint):
                 "signer"
             ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
         elif auth_type == OCIAuthType(4).name:
-            client_kwargs[
-                "signer"
-            ] = oci.auth.signers.get_resource_principals_signer()
+            client_kwargs["signer"] = oci.auth.signers.get_resource_principals_signer()
         else:
-            raise ValueError(f"Please provide valid value to auth_type, {auth_type} is not valid.")
-  
+            raise ValueError(
+                f"Please provide valid value to auth_type, {auth_type} is not valid."
+            )
+
         return oci.generative_ai_inference.GenerativeAiInferenceClient(**client_kwargs)
-            
+
     except ImportError as ex:
         raise ModuleNotFoundError(
             "Could not import oci python package. "
@@ -99,10 +98,10 @@ def create_client(auth_type, auth_profile, service_endpoint):
         ) from ex
     except Exception as e:
         raise ValueError(
-            """Could not authenticate with OCI client. Please check if ~/.oci/config exists. 
-            If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified 
+            """Could not authenticate with OCI client. Please check if ~/.oci/config exists.
+            If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified
             auth_profile and auth_type are valid.""",
-            e
+            e,
         ) from e
 
 
@@ -151,7 +150,6 @@ def get_chat_generator() -> Any:
 
 
 class Provider(ABC):
-    
     @abstractmethod
     def completion_response_to_text(self, response: Any) -> str:
         ...
@@ -174,11 +172,10 @@ class Provider(ABC):
 
 
 class CohereProvider(Provider):
-    
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
-            
+
         except ImportError as ex:
             raise ModuleNotFoundError(
                 "Could not import oci python package. "
@@ -200,35 +197,37 @@ class CohereProvider(Provider):
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if 'text' in event_data:
-            return event_data['text']
+        if "text" in event_data:
+            return event_data["text"]
         else:
             return ""
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
-
         role_map = {
             "user": "USER",
             "system": "SYSTEM",
             "chatbot": "CHATBOT",
             "assistant": "CHATBOT",
         }
-        
-        oci_chat_history = [self.oci_chat_message(role=role_map[msg.role.value], message=msg.content) for msg in messages[:-1]]
+
+        oci_chat_history = [
+            self.oci_chat_message(role=role_map[msg.role.value], message=msg.content)
+            for msg in messages[:-1]
+        ]
         oci_params = {
             "message": messages[-1].content,
             "chat_history": oci_chat_history,
-            "api_format": self.chat_api_format
+            "api_format": self.chat_api_format,
         }
-    
+
         return oci_params
-    
+
+
 class MetaProvider(Provider):
-        
     def __init__(self) -> None:
         try:
             from oci.generative_ai_inference import models
-            
+
         except ImportError as ex:
             raise ModuleNotFoundError(
                 "Could not import oci python package. "
@@ -240,7 +239,7 @@ class MetaProvider(Provider):
         self.oci_chat_message = models.Message
         self.oci_chat_message_content = models.TextContent
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
-        
+
     def completion_response_to_text(self, response: Any) -> str:
         return response.data.inference_response.choices[0].text
 
@@ -257,31 +256,36 @@ class MetaProvider(Provider):
             return ""
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
-
         role_map = {
             "user": "user",
             "system": "system",
             "chatbot": "assistant",
             "assistant": "assistant",
         }
-        
-        oci_messages = [self.oci_chat_message(role=role_map[msg.role.value], content=[self.oci_chat_message_content(text=msg.content)]) for msg in messages]
+
+        oci_messages = [
+            self.oci_chat_message(
+                role=role_map[msg.role.value],
+                content=[self.oci_chat_message_content(text=msg.content)],
+            )
+            for msg in messages
+        ]
         oci_params = {
             "messages": oci_messages,
             "api_format": self.chat_api_format,
-            "top_k": -1
+            "top_k": -1,
         }
-    
+
         return oci_params
-        
+
 
 PROVIDERS = {
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
 }
 
-def get_provider(model: str, provider_name: str=None) -> Any:
-    
+
+def get_provider(model: str, provider_name: str = None) -> Any:
     if provider_name is None:
         provider_name = model.split(".")[0].lower()
 
@@ -291,10 +295,11 @@ def get_provider(model: str, provider_name: str=None) -> Any:
             "Please explicitly pass in the supported provider "
             "when using custom endpoint"
         )
-    
+
     return PROVIDERS[provider_name]
 
-def get_context_size(model: str, context_size: int=None) -> int:
+
+def get_context_size(model: str, context_size: int = None) -> int:
     if context_size is None:
         try:
             return OCIGENAI_LLMS[model]
@@ -302,7 +307,8 @@ def get_context_size(model: str, context_size: int=None) -> int:
             raise ValueError(
                 f"Invalid context size derived from model_id: {model} "
                 "Please explicitly pass in the context size "
-                "when using custom endpoint", e
+                "when using custom endpoint",
+                e,
             ) from e
     else:
         return context_size
