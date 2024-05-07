@@ -15,21 +15,18 @@ from llama_index.core import StorageContext, VectorStoreIndex
 from .conftest import lock
 
 
-def test_required_vars():
-    """Confirm that the environment has all it needs."""
-    required_vars = ["OPENAI_API_KEY", "MONGODB_URI"]
-    for var in required_vars:
-        try:
-            os.environ[var]
-        except KeyError:
-            pytest.fail(f"Required var '{var}' not in os.environ")
-
-
+@pytest.mark.skipif(
+    os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
+)
 def test_mongodb_connection(atlas_client):
     """Confirm that the connection to the datastore works."""
     assert atlas_client.admin.command("ping")["ok"]
 
 
+@pytest.mark.skipif(
+    os.environ.get("MONGODB_URI") is None or os.environ.get("OPENAI_API_KEY") is None,
+    reason="Requires MONGODB_URI and OPENAI_API_KEY in os.environ",
+)
 def test_index(documents, vector_store):
     """End-to-end example from essay and query to response.
 
