@@ -86,7 +86,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
             dict: A dictionary containing embeddings from the API.
         """
         url = self.get_url()
-        chunked_data = _chunk(data)
+        chunked_data = _chunk(data, self._batch_size)
         embeddings = []
         for chunk in chunked_data:
             response = requests.post(
@@ -121,7 +121,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
 
         """
         url = self.get_url()
-        chunked_data = _chunk(data)
+        chunked_data = _chunk(data, self._batch_size)
         embeddings = []
         for chunk in chunked_data:
             async with aiohttp.ClientSession() as session:
