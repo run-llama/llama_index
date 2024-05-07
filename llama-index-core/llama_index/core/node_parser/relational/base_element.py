@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
@@ -186,15 +185,7 @@ class BaseElementNodeParser(NodeParser):
         summary_co = run_jobs(
             summary_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
-        try:
-            loop = asyncio.get_running_loop()
-            summary_outputs = (
-                asyncio.ensure_future(summary_co)
-                if loop.is_running()
-                else loop.run_until_complete(summary_co)
-            )
-        except RuntimeError:
-            summary_outputs = asyncio_run(summary_co)
+        summary_outputs = asyncio_run(summary_co)
         for element, summary_output in zip(elements, summary_outputs):
             element.table_output = summary_output
 
