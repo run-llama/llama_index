@@ -22,10 +22,9 @@ COMPLETION_MODELS = {
 }
 
 CHAT_MODELS = {
-    "meta.llama-2-70b-chat": 4096,
     "cohere.command-r": 128000,
     "cohere.command-r-plus": 128000,
-    "meta.llama-3-70b-instruct": 8000,
+    "meta.llama-3-70b-instruct": 8192,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -36,6 +35,7 @@ STREAMING_MODELS = {
     "meta.llama-2-70b-chat",
     "cohere.command-r",
     "cohere.command-r-plus",
+    "meta.llama-3-70b-instruct"
 }
 
 
