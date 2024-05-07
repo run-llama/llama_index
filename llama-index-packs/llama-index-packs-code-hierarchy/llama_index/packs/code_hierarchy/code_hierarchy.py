@@ -670,10 +670,9 @@ class CodeHierarchyNodeParser(NodeParser):
                     indent_char = " "
                 if tabs_count:
                     indent_char = "\t"
-                
+
                 if line_id == 0:
                     first_indent_char = indent_char
-
 
                 # Detect mixed indentation.
                 if spaces_count > 0 and tabs_count > 0:
@@ -712,7 +711,7 @@ class CodeHierarchyNodeParser(NodeParser):
 
         # Return the default indent level if only one indentation level was found.
         return indent_char, minimum_chain, first_indent_count // minimum_chain
-    
+
     @staticmethod
     def _get_comment_text(node: TextNode) -> str:
         """Gets just the natural language text for a skeletonize comment."""
