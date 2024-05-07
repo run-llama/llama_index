@@ -1,8 +1,8 @@
 """Test response utils."""
 
-import asyncio
 from typing import List
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.prompts.base import PromptTemplate
@@ -266,7 +266,7 @@ def test_accumulate_response_aget(
         response_mode=ResponseMode.ACCUMULATE,
     )
 
-    response = asyncio.run(
+    response = asyncio_run(
         builder.aget_response(
             text_chunks=texts,
             query_str=query_str,
