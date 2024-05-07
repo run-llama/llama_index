@@ -84,6 +84,7 @@ Relevant guides with both approaches can be found below:
 - [Reciprocal Rerank Query Fusion](../../examples/retrievers/reciprocal_rerank_fusion.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 
 ## Metadata Filters
 

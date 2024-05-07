@@ -1,7 +1,7 @@
-import asyncio
 from typing import Any, Dict, Tuple
 
 import pytest
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.indices.struct_store.base import default_output_parser
 from llama_index.core.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.core.indices.struct_store.sql_query import (
@@ -116,40 +116,40 @@ def test_sql_index_async_query(
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
     task = sql_query_engine.aquery(sql_to_test)
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
     nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
     task = nl_query_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     nl_table_engine = NLSQLTableQueryEngine(
         index.sql_database, service_context=mock_service_context
     )
     task = nl_table_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     ## sql_only = True  ###
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
     task = sql_query_engine.aquery(sql_to_test)
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == sql_to_test
 
     # query the index with natural language
     nl_query_engine = NLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
     task = nl_query_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == sql_to_test
 
     nl_table_engine = NLSQLTableQueryEngine(
         index.sql_database, service_context=mock_service_context, sql_only=True
     )
     task = nl_table_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == sql_to_test
 
 
