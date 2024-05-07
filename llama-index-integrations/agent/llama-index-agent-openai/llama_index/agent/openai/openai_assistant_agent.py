@@ -1,4 +1,5 @@
 """OpenAI Assistant Agent."""
+
 import asyncio
 import json
 import logging
@@ -133,11 +134,11 @@ def _process_files(client: Any, files: List[str]) -> Dict[str, str]:
         file_dict[file_obj.id] = file
     return file_dict
 
+
 def format_attachments(file_ids: Optional[List[str]] = None) -> List[Dict[str, str]]:
     """Create attachments from file_ids."""
     file_ids = file_ids or []
-    attachments = [{"file_id": file_id} for file_id in file_ids]
-    return attachments
+    return [{"file_id": file_id} for file_id in file_ids]
 
 
 class OpenAIAssistantAgent(BaseAgent):
@@ -239,7 +240,7 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
-            attachments=attachments
+            attachments=attachments,
         )
         return cls(
             client,
@@ -347,7 +348,7 @@ class OpenAIAssistantAgent(BaseAgent):
             thread_id=self._thread_id,
             role="user",
             content=message,
-            attachments=attachments
+            attachments=attachments,
         )
 
     def _run_function_calling(self, run: Any) -> List[ToolOutput]:
