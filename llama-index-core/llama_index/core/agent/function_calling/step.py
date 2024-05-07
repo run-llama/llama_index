@@ -417,7 +417,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
         task.memory.set(
-            task.memory.get_all() + task.extra_state["new_memory"].get_all()
+            task.memory.get(input=task.input) + task.extra_state["new_memory"].get_all()
         )
         # reset new memory
         task.extra_state["new_memory"].reset()

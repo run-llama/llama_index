@@ -6,8 +6,10 @@ Memory backed by a vector database.
 
 import json
 import uuid
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from llama_index.core.bridge.pydantic import validator
 
+from llama_index.core.vector_stores.simple import SimpleVectorStore
 from llama_index.core.schema import TextNode, BaseNode, RelatedNodeInfo, NodeRelationship
 from llama_index.core.vector_stores.types import VectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -18,7 +20,8 @@ from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
 from llama_index.core.utils import get_tokenizer
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 
-from llama_index.core.indices.vector_store import VectorStoreIndex
+if TYPE_CHECKING:
+    from llama_index.core.indices.vector_store import VectorStoreIndex
 
 DEFAULT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
@@ -29,10 +32,10 @@ DEFAULT_SYSTEM_MESSAGE = "This is a set of relevant messages retrieved from long
 
 def to_node(message: ChatMessage, node_id: Optional[str] = None, **node_kwargs: Any) -> BaseNode:
     """Convert to node."""
-    from llama_index.core.schema import BaseNode
+    from llama_index.core.schema import TextNode
 
-    return BaseNode(
-        text=message.content,
+    return TextNode(
+        text=str(message.content),
         id_=node_id,
         metadata={"role": message.role.value, **message.additional_kwargs},
     )
@@ -49,7 +52,7 @@ def from_node(node: "BaseNode") -> "ChatMessage":
 class VectorMemory(BaseMemory):
     """Memory backed by a vector index."""
 
-    vector_index: VectorStoreIndex
+    vector_index: Any
     retriever_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE
@@ -61,6 +64,16 @@ class VectorMemory(BaseMemory):
     # This is not needed once vector stores implement delete_all capabilities
     chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
+
+    @validator('vector_index')
+    def validate_vector_index(cls, value: Any) -> Any:
+        """Validate vector index."""
+        # NOTE: we can't import VectorStoreIndex directly due to circular imports,
+        # which is why the type is Any
+        from llama_index.core.indices.vector_store import VectorStoreIndex
+        if not isinstance(value, VectorStoreIndex):
+            raise ValueError(f"Expected 'vector_index' to be an instance of VectorStoreIndex, got {type(value)}")
+        return value
 
     @classmethod
     def class_name(cls) -> str:
@@ -84,9 +97,17 @@ class VectorMemory(BaseMemory):
             retriever_kwargs (Optional[Dict]): kwargs for initializing the retriever
         
         """
+        from llama_index.core.indices.vector_store import VectorStoreIndex
+
         index_kwargs = index_kwargs or {}
         retriever_kwargs = retriever_kwargs or {}
-        index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model, **index_kwargs)
+
+        if vector_store is None:
+            # initialize a blank in-memory vector store
+            # NOTE: can't easily do that from `from_vector_store` at the moment.
+            index = VectorStoreIndex.from_documents([], embed_model=embed_model, **index_kwargs)
+        else:
+            index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model, **index_kwargs)
         return cls(vector_index=index, retriever_kwargs=retriever_kwargs)
 
     def get(self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
@@ -95,9 +116,9 @@ class VectorMemory(BaseMemory):
             raise ValueError("Input must be provided to get chat history.")
 
         # retrieve from index
-        retriever = self.vector_index.get_retriever(**self.retriever_kwargs)
+        retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
         nodes = retriever.retrieve(input or "")
-        messages = [ChatMessage.from_node(node) for node in nodes]
+        messages = [from_node(node) for node in nodes]
 
         # add system message
         if self.system_message:
@@ -128,7 +149,7 @@ class VectorMemory(BaseMemory):
 
         # assign node id
         node_id = str(uuid.uuid4())
-        message_node = to_node(message, node_id=node_id, )
+        message_node = to_node(message, node_id=node_id)
         # HACK: this is a hack to add the source relationship as itself, to make deletion work.
         message_node.relationships[NodeRelationship.SOURCE] = message_node.as_related_node_info()
 
@@ -137,6 +158,7 @@ class VectorMemory(BaseMemory):
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
+        print(messages)
         self.reset()
         for message in messages:
             self.put(message)
@@ -146,3 +168,9 @@ class VectorMemory(BaseMemory):
         node_id_msgs = self.chat_store.get_messages(self.chat_store_key)
         node_ids = [msg.content for msg in node_id_msgs]
         [self.vector_index.delete_ref_doc(node_id) for node_id in node_ids]
+
+        # delete from chat history
+        self.chat_store.delete_messages(self.chat_store_key)
+
+
+VectorMemory.update_forward_refs()

@@ -47,25 +47,6 @@ class ChatMessage(BaseModel):
             role = MessageRole(role)
         return cls(role=role, content=content, **kwargs)
 
-    # def to_node(self, node_id: Optional[str] = None) -> "BaseNode":
-    #     """Convert to node."""
-    #     from llama_index.core.schema import BaseNode
-
-    #     return BaseNode(
-    #         text=self.content,
-    #         metadata={"role": self.role.value, **self.additional_kwargs},
-    #     )
-
-    # @classmethod
-    # def from_node(cls, node: "BaseNode") -> "ChatMessage":
-    #     """Create from node."""
-    #     return cls(
-    #         role=MessageRole(node.metadata.get("role", MessageRole.USER.value)),
-    #         content=node.text,
-    #         additional_kwargs={k: v for k, v in node.metadata.items() if k != "role"},
-    #     )
-            
-
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, (V1BaseModel, V2BaseModel)):
             return value.dict()
