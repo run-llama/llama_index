@@ -48,6 +48,7 @@ class MarkdownReader(BaseReader):
         for line in lines:
             header_match = re.match(r"^#+\s", line)
             if header_match:
+                # Upon first header, skip if current text chunk is empty
                 if current_header is not None or len(current_lines) > 0:
                     markdown_tups.append((current_header, "\n".join(current_lines)))
 
