@@ -53,6 +53,10 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         storage_context = storage_context or StorageContext.from_defaults(
             lpg_graph_store=lpg_graph_store
         )
+
+        if lpg_graph_store is not None:
+            storage_context.lpg_graph_store = lpg_graph_store
+
         if embed_triplets and storage_context.lpg_graph_store.supports_vector_queries:
             self._embed_model = (
                 resolve_embed_model(embed_model)

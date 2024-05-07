@@ -180,9 +180,9 @@ class SchemaLLMTripletExtractor(TransformComponent):
             obj_type = triplet.object.type
 
             # check relations
-            if relation not in self.kg_validation_schema[subject_type]:
+            if relation not in self.kg_validation_schema.get(subject_type, [relation]):
                 continue
-            if relation not in self.kg_validation_schema[obj_type]:
+            if relation not in self.kg_validation_schema.get(obj_type, [relation]):
                 continue
 
             # remove self-references
