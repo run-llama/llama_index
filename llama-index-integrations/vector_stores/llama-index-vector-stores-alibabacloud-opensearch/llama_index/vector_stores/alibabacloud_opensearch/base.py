@@ -215,7 +215,7 @@ class AlibabaCloudOpenSearchStore(VectorStore):
         Args:
             nodes (List[BaseNode]): list of nodes with embeddings
         """
-        return asyncio.get_running_loop().run_until_complete(
+        return asyncio.get_event_loop().run_until_complete(
             self.async_add(nodes, **add_kwargs)
         )
 
