@@ -12,9 +12,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
 from pgvecto_rs.sdk import PGVectoRs, Record
 from pgvecto_rs.sdk.filters import meta_contains
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -57,14 +57,45 @@ class RelytVectorStore(BasePydanticVectorStore):
     stores_text = True
 
     _client: "PGVectoRs" = PrivateAttr()
+    _collection_name: str = PrivateAttr()
 
-    def __init__(self, client: "PGVectoRs") -> None:
+    def __init__(self, client: "PGVectoRs", collection_name: str) -> None:
         self._client: PGVectoRs = client
+        self._collection_name = collection_name
+        self.init_index()
         super().__init__()
 
     @classmethod
     def class_name(cls) -> str:
         return "RelytStore"
+
+    def init_index(self):
+        index_name = f"idx_{self._collection_name}_embedding"
+        with self._client._engine.connect() as conn:
+            with conn.begin():
+                index_query = text(
+                    f"""
+                        SELECT 1
+                        FROM pg_indexes
+                        WHERE indexname = '{index_name}';
+                    """)
+                result = conn.execute(index_query).scalar()
+                if not result:
+                    index_statement = text(
+                        f"""
+                            CREATE INDEX {index_name}
+                            ON collection_{self._collection_name}
+                            USING vectors (embedding vector_l2_ops)
+                            WITH (options = $$
+                            optimizing.optimizing_threads = 30
+                            segment.max_growing_segment_size = 2000
+                            segment.max_sealed_segment_size = 30000000
+                            [indexing.hnsw]
+                            m=30
+                            ef_construction=500
+                            $$);
+                        """)
+                    conn.execute(index_statement)
 
     @property
     def client(self) -> Any:
@@ -89,6 +120,9 @@ class RelytVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._client.delete(meta_contains({"ref_doc_id": ref_doc_id}))
+
+    def drop(self) -> None:
+        self._client.drop()
 
     # TODO: the more filter type(le, ne, ge ...) will add later, after the base api supported,
     #  now only support eq filter for meta information
