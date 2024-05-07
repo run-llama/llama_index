@@ -11,7 +11,9 @@ A more detailed sample is located in a Jupyter notebook [here](https://github.co
 Here's an example usage of the `AzureDynamicSessionsToolSpec`.
 
 ```python
-from llama_index.tools.azure_dynamic_sessions import AzureDynamicSessionsToolSpec
+from llama_index.tools.azure_dynamic_sessions import (
+    AzureDynamicSessionsToolSpec,
+)
 from llama_index.core.agent import ReActAgent
 from llama_index.llms.azure_openai import AzureOpenAI
 
@@ -27,7 +29,9 @@ dynamic_session_tool = AzureDynamicSessionsToolSpec(
     pool_managment_endpoint="your-pool-management-endpoint"
 )
 
-agent = ReActAgent.from_tools(dynamic_session_tool.to_tool_list(), llm=llm, verbose=True)
+agent = ReActAgent.from_tools(
+    dynamic_session_tool.to_tool_list(), llm=llm, verbose=True
+)
 
 print(agent.chat("Tell me the current time in Seattle."))
 
