@@ -197,6 +197,7 @@ nav:
           - ./examples/embeddings/ipex_llm.ipynb
           - ./examples/embeddings/octoai.ipynb
           - ./examples/embeddings/ipex_llm_gpu.ipynb
+          - ./examples/embeddings/nvidia.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -311,6 +312,7 @@ nav:
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/octoai.ipynb
           - ./examples/llm/mistral_rs.ipynb
+          - ./examples/llm/nvidia.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -373,6 +375,7 @@ nav:
           - ./examples/node_postprocessor/JinaRerank.ipynb
           - ./examples/node_postprocessor/rankLLM.ipynb
           - ./examples/node_postprocessor/openvino_rerank.ipynb
+          - ./examples/node_postprocessor/NVIDIARerank.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
@@ -461,6 +464,7 @@ nav:
       - Tools:
           - ./examples/tools/OnDemandLoaderTool.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
+          - ./examples/tools/azure_dynamic_sessions.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -547,6 +551,8 @@ nav:
           - ./examples/vector_stores/AWSDocDBDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/FirestoreVectorStore.ipynb
+          - ./examples/vector_stores/VespaIndexDemo.ipynb
+          - ./examples/vector_stores/VertexAIVectorSearchDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -722,6 +728,7 @@ nav:
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/nomic.md
+          - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
@@ -804,6 +811,7 @@ nav:
           - ./api_reference/llms/monsterapi.md
           - ./api_reference/llms/mymagic.md
           - ./api_reference/llms/neutrino.md
+          - ./api_reference/llms/nvidia.md
           - ./api_reference/llms/nvidia_tensorrt.md
           - ./api_reference/llms/nvidia_triton.md
           - ./api_reference/llms/octoai.md
@@ -946,6 +954,7 @@ nav:
           - ./api_reference/postprocessor/long_context_reorder.md
           - ./api_reference/postprocessor/longllmlingua.md
           - ./api_reference/postprocessor/metadata_replacement.md
+          - ./api_reference/postprocessor/nvidia_rerank.md
           - ./api_reference/postprocessor/openvino_rerank.md
           - ./api_reference/postprocessor/presidio.md
           - ./api_reference/postprocessor/prev_next.md
@@ -1289,6 +1298,8 @@ nav:
               - ./api_reference/storage/vector_store/typesense.md
               - ./api_reference/storage/vector_store/upstash.md
               - ./api_reference/storage/vector_store/vearch.md
+              - ./api_reference/storage/vector_store/vertexaivectorsearch.md
+              - ./api_reference/storage/vector_store/vespa.md
               - ./api_reference/storage/vector_store/weaviate.md
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
@@ -1850,6 +1861,11 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-youtube-metadata
             - ../llama-index-integrations/llms/llama-index-llms-mistral-rs
             - ../llama-index-integrations/agent/llama-index-agent-introspective
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vertexaivectorsearch
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vespa
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-nvidia
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-nvidia-rerank
+            - ../llama-index-integrations/llms/llama-index-llms-nvidia
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
