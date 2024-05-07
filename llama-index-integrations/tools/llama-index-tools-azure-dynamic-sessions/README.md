@@ -6,7 +6,7 @@ In order to utilize the tool, you will need to have the Session Pool management 
 
 ## Usage
 
-A more detailed sample is located in a Jupyter notebook [here](https://github.com/emptycrown/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-azure-dynamic-sessions/examples/azure_dynamic_sessions.ipynb)
+A more detailed sample is located in a Jupyter notebook [here](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-azure-dynamic-sessions/examples/azure_dynamic_sessions.ipynb)
 
 Here's an example usage of the `AzureDynamicSessionsToolSpec`.
 
