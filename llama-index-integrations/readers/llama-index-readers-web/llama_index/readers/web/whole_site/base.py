@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -26,13 +26,18 @@ class WholeSiteReader(BaseReader):
         max_depth (int, optional): Maximum depth for BFS. Defaults to 10.
     """
 
-    def __init__(self, prefix: str, max_depth: int = 10) -> None:
+    def __init__(
+        self,
+        prefix: str,
+        max_depth: int = 10,
+        driver: Optional[webdriver.Chrome] = None,
+    ) -> None:
         """
         Initialize the WholeSiteReader with the provided prefix and maximum depth.
         """
         self.prefix = prefix
         self.max_depth = max_depth
-        self.driver = self.setup_driver()
+        self.driver = driver if driver else self.setup_driver()
 
     def setup_driver(self):
         """
@@ -95,29 +100,30 @@ class WholeSiteReader(BaseReader):
 
         while urls_to_visit:
             current_url, depth = urls_to_visit.pop(0)
-
             print(f"Visiting: {current_url}, {len(urls_to_visit)} left")
 
-            if depth > self.max_depth:
-                continue
             try:
                 self.driver.get(current_url)
                 page_content = self.extract_content()
+                added_urls.add(current_url)
 
-                # links = self.driver.find_elements(By.TAG_NAME, 'a')
-                links = self.extract_links()
-                # clean all urls
-                links = [self.clean_url(link) for link in links]
-                # extract new links
-                links = [link for link in links if link not in added_urls]
-                print(f"Found {len(links)} new potential links")
-                for href in links:
-                    try:
-                        if href.startswith(self.prefix) and href not in added_urls:
-                            urls_to_visit.append((href, depth + 1))
-                            added_urls.add(href)
-                    except Exception:
-                        continue
+                next_depth = depth + 1
+                if next_depth <= self.max_depth:
+                    # links = self.driver.find_elements(By.TAG_NAME, 'a')
+                    links = self.extract_links()
+                    # clean all urls
+                    links = [self.clean_url(link) for link in links]
+                    # extract new links
+                    links = [link for link in links if link not in added_urls]
+                    print(f"Found {len(links)} new potential links")
+
+                    for href in links:
+                        try:
+                            if href.startswith(self.prefix) and href not in added_urls:
+                                urls_to_visit.append((href, next_depth))
+                                added_urls.add(href)
+                        except Exception:
+                            continue
 
                 documents.append(
                     Document(text=page_content, extra_info={"URL": current_url})

@@ -42,6 +42,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
+    "gpt-4-turbo-2024-04-09": 128000,
+    "gpt-4-turbo": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,
@@ -54,6 +56,8 @@ GPT4_MODELS: Dict[str, int] = {
 AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
+    # 0125 (2024) model (JSON mode)
+    "gpt-35-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-35-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -63,15 +67,13 @@ AZURE_TURBO_MODELS: Dict[str, int] = {
 
 TURBO_MODELS: Dict[str, int] = {
     # stable model names:
-    #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
-    #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
-    #   resolves to gpt-3.5-turbo-1106 after
-    "gpt-3.5-turbo": 4096,
+    #   resolves to gpt-3.5-turbo-0125 as of 2024-04-29.
+    "gpt-3.5-turbo": 16384,
     # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
     # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
     # 0125 (2024) model (JSON mode)
-    "gpt-3.5-turbo-0125": 16385,
+    "gpt-3.5-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -161,7 +163,7 @@ def create_retry_decorator(
                     openai.APIError,
                     openai.APIConnectionError,
                     openai.RateLimitError,
-                    openai.APIStatusError,
+                    openai.InternalServerError,
                 )
             )
         ),

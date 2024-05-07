@@ -3,11 +3,11 @@
 import logging
 from typing import Any, List, Optional
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
 
 import voyageai
-from pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ class VoyageEmbedding(BaseEmbedding):
             You can either specify the key here or store it as an environment variable.
     """
 
-    client: voyageai.Client = PrivateAttr(None)
-    aclient: voyageai.client_async.AsyncClient = PrivateAttr()
+    _client: voyageai.Client = PrivateAttr(None)
+    _aclient: voyageai.client_async.AsyncClient = PrivateAttr()
     truncation: Optional[bool] = None
 
     def __init__(
@@ -53,8 +53,8 @@ class VoyageEmbedding(BaseEmbedding):
             **kwargs,
         )
 
-        self.client = voyageai.Client(api_key=voyage_api_key)
-        self.aclient = voyageai.AsyncClient(api_key=voyage_api_key)
+        self._client = voyageai.Client(api_key=voyage_api_key)
+        self._aclient = voyageai.AsyncClient(api_key=voyage_api_key)
         self.truncation = truncation
 
     @classmethod
@@ -62,7 +62,7 @@ class VoyageEmbedding(BaseEmbedding):
         return "VoyageEmbedding"
 
     def _get_embedding(self, texts: List[str], input_type: str) -> List[List[float]]:
-        return self.client.embed(
+        return self._client.embed(
             texts,
             model=self.model_name,
             input_type=input_type,
@@ -72,7 +72,7 @@ class VoyageEmbedding(BaseEmbedding):
     async def _aget_embedding(
         self, texts: List[str], input_type: str
     ) -> List[List[float]]:
-        r = await self.aclient.embed(
+        r = await self._aclient.embed(
             texts,
             model=self.model_name,
             input_type=input_type,

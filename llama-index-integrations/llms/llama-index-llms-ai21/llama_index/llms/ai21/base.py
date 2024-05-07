@@ -23,7 +23,19 @@ import ai21
 
 
 class AI21(CustomLLM):
-    """AI21 Labs LLM."""
+    """AI21 Labs LLM.
+
+    Examples:
+        `pip install llama-index-llms-ai21`
+
+        ```python
+        from llama_index.llms.ai21 import AI21
+
+        llm = AI21(model="j2-mid", api_key=api_key)
+        resp = llm.complete("Paul Graham is ")
+        print(resp)
+        ```
+    """
 
     model: str = Field(description="The AI21 model to use.")
     maxTokens: int = Field(description="The maximum number of tokens to generate.")

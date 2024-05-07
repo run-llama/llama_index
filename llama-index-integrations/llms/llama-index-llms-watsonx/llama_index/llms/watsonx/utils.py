@@ -2,15 +2,27 @@ import os
 from typing import Optional, Union
 
 WATSONX_MODELS = {
+    "google/flan-t5-xl": 4096,
     "google/flan-t5-xxl": 4096,
     "google/flan-ul2": 4096,
     "bigscience/mt0-xxl": 4096,
-    "eleutherai/gpt-neox-20b": 8192,
-    "bigcode/starcoder": 8192,
+    "bigcode/starcoder": 8192,  # deprecated, removed after 25.04.2024
+    "core42/jais-13b-chat": 8192,
+    "codellama/codellama-34b-instruct-hf": 16384,
+    "meta-llama/llama-2-13b-chat": 4096,
     "meta-llama/llama-2-70b-chat": 4096,
-    "ibm/mpt-7b-instruct2": 2048,
-    "ibm/granite-13b-instruct-v1": 8192,
-    "ibm/granite-13b-chat-v1": 8192,
+    "meta-llama/llama-3-8b-instruct": 8192,
+    "meta-llama/llama-3-70b-instruct": 8192,
+    "ibm-mistralai/merlinite-7b": 32768,
+    "ibm-mistralai/mixtral-8x7b-instruct-v01-q": 32768,  # deprecated, removed after 23.05.2024
+    "ibm/granite-13b-chat-v2": 8192,
+    "ibm/granite-13b-instruct-v2": 8192,
+    "ibm/granite-20b-multilingual": 8192,
+    "ibm/granite-7b-lab": 8192,
+    "ibm/granite-8b-japanese": 8192,
+    "mistralai/mixtral-8x7b-instruct-v01": 32768,
+    "elyza/elyza-japanese-llama-2-7b-instruct": 4096,
+    "mncai/llama2-13b-dpo-v7": 4096,
 }
 
 

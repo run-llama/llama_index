@@ -1,17 +1,18 @@
 import logging
-from typing import Any, List, NamedTuple, Optional, Type
+from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import asyncpg  # noqa
 import pgvector  # noqa
 import psycopg2  # noqa
 import sqlalchemy
-import sqlalchemy.ext.asyncio  # noqa
+import sqlalchemy.ext.asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterOperator,
     MetadataFilters,
+    MetadataFilter,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -108,13 +109,34 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
+    """Postgres Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-postgres`
+
+        ```python
+        from llama_index.vector_stores.postgres import PGVectorStore
+
+        # Create PGVectorStore instance
+        vector_store = PGVectorStore.from_params(
+            database="vector_db",
+            host="localhost",
+            password="password",
+            port=5432,
+            user="postgres",
+            table_name="paul_graham_essay",
+            embed_dim=1536  # openai embedding dimension
+        )
+        ```
+    """
+
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True
     flat_metadata = False
 
-    connection_string: str
-    async_connection_string: str
+    connection_string: Union[str, sqlalchemy.URL]
+    async_connection_string: Union[str, sqlalchemy.URL]
     table_name: str
     schema_name: str
     embed_dim: int
@@ -135,8 +157,8 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        connection_string: str,
-        async_connection_string: str,
+        connection_string: Union[str, sqlalchemy.URL],
+        async_connection_string: Union[str, sqlalchemy.URL],
         table_name: str,
         schema_name: str,
         hybrid_search: bool = False,
@@ -208,8 +230,8 @@ class PGVectorStore(BasePydanticVectorStore):
         password: Optional[str] = None,
         table_name: str = "llamaindex",
         schema_name: str = "public",
-        connection_string: Optional[str] = None,
-        async_connection_string: Optional[str] = None,
+        connection_string: Optional[Union[str, sqlalchemy.URL]] = None,
+        async_connection_string: Optional[Union[str, sqlalchemy.URL]] = None,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
@@ -263,16 +285,20 @@ class PGVectorStore(BasePydanticVectorStore):
 
             # Check if the specified schema exists with "CREATE" statement
             check_schema_statement = text(
-                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
+                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema_name"
             )
-            result = session.execute(check_schema_statement).fetchone()
+            result = session.execute(
+                check_schema_statement, {"schema_name": self.schema_name}
+            ).fetchone()
 
             # If the schema does not exist, then create it
             if not result:
                 create_schema_statement = text(
-                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
+                    f"CREATE SCHEMA IF NOT EXISTS :schema_name"
                 )
-                session.execute(create_schema_statement)
+                session.execute(
+                    create_schema_statement, {"schema_name": self.schema_name}
+                )
 
             session.commit()
 
@@ -346,9 +372,45 @@ class PGVectorStore(BasePydanticVectorStore):
             return "<="
         elif operator == FilterOperator.IN:
             return "IN"
+        elif operator == FilterOperator.NIN:
+            return "NOT IN"
+        elif operator == FilterOperator.CONTAINS:
+            return "@>"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
+
+    def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
+        from sqlalchemy import text
+
+        if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
+            # Expects a single value in the metadata, and a list to compare
+            return text(
+                f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
+            ).bindparams(values=tuple(filter_.value))
+        elif filter_.operator == FilterOperator.CONTAINS:
+            # Expects a list stored in the metadata, and a single value to compare
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'[\"{filter_.value}\"]'"
+            )
+        else:
+            # Check if value is a number. If so, cast the metadata value to a float
+            # This is necessary because the metadata is stored as a string
+            try:
+                return text(
+                    f"(metadata_->>'{filter_.key}')::float "
+                    f"{self._to_postgres_operator(filter_.operator)} "
+                    f"{float(filter_.value)}"
+                )
+            except ValueError:
+                # If not a number, then treat it as a string
+                return text(
+                    f"metadata_->>'{filter_.key}' "
+                    f"{self._to_postgres_operator(filter_.operator)} "
+                    f"'{filter_.value}'"
+                )
 
     def _recursively_apply_filters(self, filters: List[MetadataFilters]) -> Any:
         """
@@ -370,18 +432,7 @@ class PGVectorStore(BasePydanticVectorStore):
         return sqlalchemy_conditions[filters.condition](
             *(
                 (
-                    sqlalchemy.text(
-                        f"metadata_->>'{filter_.key}' "
-                        f"{self._to_postgres_operator(filter_.operator)} "
-                        # Do not enclose the value in quotes for IN operator
-                        # because we expect a (list of values) as a string
-                        # with the values already enclosed in quotes
-                        # e.g. ('Jane', 'John', 'Jack')
-                        f"{filter_.value}"
-                        if filter_.operator == FilterOperator.IN
-                        # Enclose the value in quotes for other operators
-                        else f"'{filter_.value}'"
-                    )
+                    self._build_filter_clause(filter_)
                     if not isinstance(filter_, MetadataFilters)
                     else self._recursively_apply_filters(filter_)
                 )
@@ -431,12 +482,16 @@ class PGVectorStore(BasePydanticVectorStore):
             from sqlalchemy import text
 
             if kwargs.get("ivfflat_probes"):
+                ivfflat_probes = kwargs.get("ivfflat_probes")
                 session.execute(
-                    text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}")
+                    text(f"SET ivfflat.probes = :ivfflat_probes"),
+                    {"ivfflat_probes": ivfflat_probes},
                 )
             if kwargs.get("hnsw_ef_search"):
+                hnsw_ef_search = kwargs.get("hnsw_ef_search")
                 session.execute(
-                    text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}")
+                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
+                    {"hnsw_ef_search": hnsw_ef_search},
                 )
 
             res = session.execute(
@@ -464,12 +519,16 @@ class PGVectorStore(BasePydanticVectorStore):
             from sqlalchemy import text
 
             if kwargs.get("hnsw_ef_search"):
+                hnsw_ef_search = kwargs.get("hnsw_ef_search")
                 await async_session.execute(
-                    text(f"SET hnsw.ef_search = {kwargs.get('hnsw_ef_search')}")
+                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
+                    {"hnsw_ef_search": hnsw_ef_search},
                 )
             if kwargs.get("ivfflat_probes"):
+                ivfflat_probes = kwargs.get("ivfflat_probes")
                 await async_session.execute(
-                    text(f"SET ivfflat.probes = {kwargs.get('ivfflat_probes')}")
+                    text(f"SET ivfflat.probes = :ivfflat_probes"),
+                    {"ivfflat_probes": ivfflat_probes},
                 )
 
             res = await async_session.execute(stmt)
@@ -697,10 +756,10 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             stmt = sqlalchemy.text(
                 f"DELETE FROM {self.schema_name}.data_{self.table_name} where "
-                f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
+                f"(metadata_->>'doc_id')::text = :ref_doc_id"
             )
 
-            session.execute(stmt)
+            session.execute(stmt, {"ref_doc_id": ref_doc_id})
             session.commit()
 
 

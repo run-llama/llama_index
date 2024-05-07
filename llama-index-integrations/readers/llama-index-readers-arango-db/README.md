@@ -1,11 +1,11 @@
-# LlamaIndex Readers Integration: Arango Db
+# LlamaIndex Readers Integration: ArangoDB
 
 ```bash
 pip install llama-index-readers-arango-db
 ```
 
-This loader loads documents from ArangoDB. The user specifies a ArangoDB instance to
-initialize the reader. They then specify the collection name and query params to
+This loader loads documents from [ArangoDB](https://github.com/arangodb/arangodb?tab=readme-ov-file#arangodb). The user specifies an ArangoDB instance to
+initialize the reader. They then specify the collection name and query parameters to
 fetch the relevant docs.
 
 ## Usage
@@ -35,4 +35,6 @@ documents = reader.load_data(
 )
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+A demo notebook is available [here](https://colab.research.google.com/github/arangodb/interactive_tutorials/blob/master/notebooks/example_output/Langchain_Full_output.ipynb).
+
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

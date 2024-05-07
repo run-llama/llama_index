@@ -4,6 +4,7 @@ Pinecone Vector store index.
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 from collections import Counter
 from functools import partial
@@ -133,7 +134,11 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     condition = _transform_pinecone_filter_condition(condition)
     if standard_filters.filters:
         for filter in standard_filters.filters:
-            if filter.operator:
+            if isinstance(filter, MetadataFilters):
+                sub_filter = _to_pinecone_filter(filter)
+                if sub_filter:
+                    filters_list.append(sub_filter)
+            elif filter.operator:
                 filters_list.append(
                     {
                         filter.key: {
@@ -178,6 +183,34 @@ class PineconeVectorStore(BasePydanticVectorStore):
             Defaults to None. If not None, then this vector will be used as the query
             vector if the query is empty.
 
+    Examples:
+        `pip install llama-index-vector-stores-pinecone`
+
+        ```python
+        import os
+        from llama_index.vector_stores.pinecone import PineconeVectorStore
+        from pinecone import Pinecone, ServerlessSpec
+
+        # Set up Pinecone API key
+        os.environ["PINECONE_API_KEY"] = "<Your Pinecone API key, from app.pinecone.io>"
+        api_key = os.environ["PINECONE_API_KEY"]
+
+        # Create Pinecone Vector Store
+        pc = Pinecone(api_key=api_key)
+
+        pc.create_index(
+            name="quickstart",
+            dimension=1536,
+            metric="dotproduct",
+            spec=ServerlessSpec(cloud="aws", region="us-west-2"),
+        )
+
+        pinecone_index = pc.Index("quickstart")
+
+        vector_store = PineconeVectorStore(
+            pinecone_index=pinecone_index,
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -404,7 +437,13 @@ class PineconeVectorStore(BasePydanticVectorStore):
                     "values": [v * (1 - query.alpha) for v in sparse_vector["values"]],
                 }
 
-        query_embedding = None
+        # pinecone requires a query embedding, so default to 0s if not provided
+        if query.query_embedding is not None:
+            dimension = len(query.query_embedding)
+        else:
+            dimension = self._pinecone_index.describe_index_stats()["dimension"]
+        query_embedding = [0.0] * dimension
+
         if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID):
             query_embedding = cast(List[float], query.query_embedding)
             if query.alpha is not None:

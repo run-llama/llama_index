@@ -1,3 +1,29 @@
+# Copyright 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import gc
 import json
 import os
@@ -35,6 +61,53 @@ PAD_TOKEN = 2
 
 
 class LocalTensorRTLLM(CustomLLM):
+    r"""Local TensorRT LLM.
+
+    [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) provides users with an easy-to-use Python API to define Large Language Models (LLMs) and build TensorRT engines that contain state-of-the-art optimizations to perform inference
+    efficiently on NVIDIA GPUs.
+
+    Since TensorRT-LLM is a SDK for interacting with local models in process there are a few environment steps that must be followed to ensure that the TensorRT-LLM setup can be used.
+
+    1. Nvidia Cuda 12.2 or higher is currently required to run TensorRT-LLM
+    2. Install `tensorrt_llm` via pip with `pip3 install tensorrt_llm -U --extra-index-url https://pypi.nvidia.com`
+    3. For this example we will use Llama2. The Llama2 model files need to be created via scripts following the instructions
+    (https://github.com/NVIDIA/trt-llm-rag-windows/blob/release/1.0/README.md#building-trt-engine)
+        * The following files will be created from following the stop above
+        * `Llama_float16_tp1_rank0.engine`: The main output of the build script, containing the executable graph of operations with the model weights embedded.
+        * `config.json`: Includes detailed information about the model, like its general structure and precision, as well as information about which plug-ins were incorporated into the engine.
+        * `model.cache`: Caches some of the timing and optimization information from model compilation, making successive builds quicker.
+    4. `mkdir model`
+    5. Move all of the files mentioned above to the model directory.
+
+    Examples:
+        `pip install llama-index-llms-nvidia-tensorrt`
+
+        ```python
+        from llama_index.llms.nvidia_tensorrt import LocalTensorRTLLM
+
+
+        def completion_to_prompt(completion):
+            return f"<s> [INST] {completion} [/INST] "
+
+        def messages_to_prompt(messages):
+            content = ""
+            for message in messages:
+                content += str(message) + "\n"
+            return f"<s> [INST] {content} [/INST] "
+
+        llm = LocalTensorRTLLM(
+            model_path="./model",
+            engine_name="llama_float16_tp1_rank0.engine",
+            tokenizer_dir="meta-llama/Llama-2-13b-chat",
+            completion_to_prompt=completion_to_prompt,
+            messages_to_prompt=messages_to_prompt,
+        )
+
+        resp = llm.complete("Who is Paul Graham?")
+        print(str(resp))
+        ```
+    """
+
     model_path: Optional[str] = Field(description="The path to the trt engine.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -111,7 +184,9 @@ class LocalTensorRTLLM(CustomLLM):
                 ]
                 remove_input_padding = config["plugin_config"]["remove_input_padding"]
                 tp_size = config["builder_config"]["tensor_parallel"]
-                pp_size = config["builder_config"]["pipeline_parallel"]
+                pp_size = 1
+                if "pipeline_parallel" in config["builder_config"]:
+                    pp_size = config["builder_config"]["pipeline_parallel"]
                 world_size = tp_size * pp_size
                 assert (
                     world_size == tensorrt_llm.mpi_world_size()
@@ -138,6 +213,7 @@ class LocalTensorRTLLM(CustomLLM):
                     gpt_attention_plugin=use_gpt_attention_plugin,
                     paged_kv_cache=paged_kv_cache,
                     remove_input_padding=remove_input_padding,
+                    max_batch_size=config["builder_config"]["max_batch_size"],
                 )
 
                 assert (

@@ -5,7 +5,12 @@ This module maintains the list of transformations that are supported by the syst
 from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GenericModel,
+    ValidationError,
+)
 from llama_index.core.node_parser import (
     CodeSplitter,
     HTMLNodeParser,
@@ -14,6 +19,7 @@ from llama_index.core.node_parser import (
     SentenceSplitter,
     SimpleFileNodeParser,
     TokenTextSplitter,
+    MarkdownElementNodeParser,
 )
 from llama_index.core.schema import BaseComponent, BaseNode, Document
 
@@ -196,6 +202,17 @@ def build_configurable_transformation_enum():
         )
     )
 
+    enum_members.append(
+        (
+            "MARKDOWN_ELEMENT_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Markdown Element Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=MarkdownElementNodeParser,
+            ),
+        )
+    )
+
     # Embeddings
     try:
         from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
@@ -210,7 +227,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -228,7 +245,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -246,7 +263,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     return ConfigurableComponent("ConfigurableTransformations", enum_members)

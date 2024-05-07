@@ -33,6 +33,33 @@ from llama_index.llms.vertex.utils import (
 
 
 class Vertex(LLM):
+    """Vertext LLM.
+
+    Examples:
+        `pip install llama-index-llms-vertex`
+
+        ```python
+        from llama_index.llms.openai import Vertex
+
+        # Set up necessary variables
+        credentials = {
+            "project_id": "INSERT_PROJECT_ID",
+            "api_key": "INSERT_API_KEY",
+        }
+
+        # Create an instance of the Vertex class
+        llm = Vertex(
+            model="text-bison",
+            project=credentials["project_id"],
+            credentials=credentials,
+        )
+
+        # Access the complete method from the instance
+        response = llm.complete("Hello world!")
+        print(str(response))
+        ```
+    """
+
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
