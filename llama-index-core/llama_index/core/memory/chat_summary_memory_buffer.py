@@ -87,8 +87,9 @@ class ChatSummaryMemoryBuffer(BaseMemory):
             token_limit = DEFAULT_TOKEN_LIMIT
 
         chat_store = chat_store or SimpleChatStore()
-        chat_history = chat_history or []
-        chat_store.set_messages(chat_store_key, chat_history)
+
+        if chat_history is not None:
+            chat_store.set_messages(chat_store_key, chat_history)
 
         summarize_prompt = summarize_prompt or SUMMARIZE_PROMPT
         return cls(

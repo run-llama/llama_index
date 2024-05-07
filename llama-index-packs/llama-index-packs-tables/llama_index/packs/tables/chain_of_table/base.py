@@ -647,7 +647,7 @@ class ChainOfTableQueryEngine(CustomQueryEngine):
         super().__init__(table=table, llm=llm, verbose=verbose, **kwargs)
 
     def custom_query(self, query_str: str) -> Response:
-        """Run chain of thought query engine."""
+        """Run chain of table query engine."""
         op_chain = []
         dynamic_plan_parser = FnComponent(fn=_dynamic_plan_parser)
 
