@@ -26,7 +26,7 @@ description = "llama-index tools azure_dynamic_sessions integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = ["ajhofmann"]
-name = "llama-index-tools-azure-dynamic-session"
+name = "llama-index-tools-azure-dynamic-sessions"
 readme = "README.md"
 version = "0.1.3"
 

@@ -1,6 +1,6 @@
-# Azure Dynamic Session Tool
+# Azure Dynamic Sessions Tool
 
-This tool leverages Azure Dynamic Session Pool to enable an Agent to run generated Python code in a secure environment with very low latency.
+This tool leverages Azure Dynamic Sessions Pool to enable an Agent to run generated Python code in a secure environment with very low latency.
 
 In order to utilize the tool, you will need to have the Session Pool management endpoint first. More details in here: "some-url"
 
@@ -34,7 +34,7 @@ print(agent.chat("Tell me the current time in Seattle."))
 print(dynamic_session_tool.code_interpreter("1+1"))
 ```
 
-`code_interpreter`: Send a Python code to be executed in Azure Container Apps Dynamic Session and return the output in a JSON format.
+`code_interpreter`: Send a Python code to be executed in Azure Container Apps Dynamic Sessions and return the output in a JSON format.
 
 `list_files`: List the files available in a Session under the path `/mnt/data`.
 
