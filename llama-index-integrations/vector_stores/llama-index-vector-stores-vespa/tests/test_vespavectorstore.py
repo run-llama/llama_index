@@ -23,7 +23,11 @@ except Exception:
 @pytest.fixture(scope="session")
 def vespa_app():
     app_package: ApplicationPackage = hybrid_template
-    return VespaVectorStore(application_package=app_package, deployment_target="local")
+    try:
+        # Try getting the local instance if available
+        return VespaVectorStore(url="http://localhost", application_package=app_package, deployment_target="local")
+    except ConnectionError:
+        return VespaVectorStore(application_package=app_package, deployment_target="local")
 
 
 @pytest.fixture(scope="session")
@@ -130,6 +134,7 @@ def test_query_vector_search(vespa_app, added_node_ids):
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
 def test_delete_node(vespa_app, added_node_ids):
+    print("added node ids: ", added_node_ids)
     # Testing the deletion of a node
     vespa_app.delete(ref_doc_id=added_node_ids[1])
     query = VectorStoreQuery(
