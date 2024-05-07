@@ -17,7 +17,7 @@ from .conftest import lock
 
 def test_required_vars():
     """Confirm that the environment has all it needs."""
-    required_vars = ["OPENAI_API_KEY", "MONGO_URI"]
+    required_vars = ["OPENAI_API_KEY", "MONGODB_URI"]
     for var in required_vars:
         try:
             os.environ[var]

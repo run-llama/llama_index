@@ -128,13 +128,13 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
-            if "MONGO_URI" not in os.environ:
+            if "MONGODB_URI" not in os.environ:
                 raise ValueError(
-                    "Must specify MONGO_URI via env variable "
+                    "Must specify MONGODB_URI via env variable "
                     "if not directly passing in client."
                 )
             self._mongodb_client = MongoClient(
-                os.environ["MONGO_URI"],
+                os.environ["MONGODB_URI"],
                 driver=DriverInfo(name="llama-index", version=version("llama-index")),
             )
 

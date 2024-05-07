@@ -19,7 +19,7 @@ to create an account, deploy an Atlas cluster, and connect to a database.
 
 ### Retrieve the URI used by Python to connect to the Cluster
 
-When you deploy, this will be stored as the environment variable: `MONGO_URI`,
+When you deploy, this will be stored as the environment variable: `MONGODB_URI`,
 It will look something like the following. The username and password, if not provided,
 can be configured in _Database Access_ under Security in the left panel.
 
@@ -81,13 +81,13 @@ Remember these values as they will be as the environment variables,
 
 To establish a connection to the MongoDB Cluster, Database, and Collection, plus create a Vector Search Index,
 define the following environment variables.
-You can confirm that the required ones have been set like this: `assert "MONGO_URI" in os.environ`
+You can confirm that the required ones have been set like this: `assert "MONGODB_URI" in os.environ`
 
 **IMPORTANT** It is crucial that the choices are consistent between setup in Atlas and Python environment(s).
 
 | Name                 | Description       | Example                                                             |
 | -------------------- | ----------------- | ------------------------------------------------------------------- |
-| `MONGO_URI`          | Connection String | mongodb+srv://`<user>`:`<password>`@llama-index.zeatahb.mongodb.net |
+| `MONGODB_URI`        | Connection String | mongodb+srv://`<user>`:`<password>`@llama-index.zeatahb.mongodb.net |
 | `MONGODB_DATABASE`   | Database name     | llama_index_test_db                                                 |
 | `MONGODB_COLLECTION` | Collection name   | llama_index_test_vectorstore                                        |
 | `MONGODB_INDEX`      | Search index name | vector_index                                                        |
