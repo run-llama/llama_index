@@ -22,11 +22,15 @@ def test_create_with_api_key(param: str, masked_env_var: str) -> None:
 
 
 def test_api_key_priority(masked_env_var: str) -> None:
-    os.environ["NVIDIA_API_KEY"] = "ENV"
-    assert get_api_key(NVIDIA()) == "ENV"
-    assert get_api_key(NVIDIA(nvidia_api_key="PARAM")) == "PARAM"
-    assert get_api_key(NVIDIA(api_key="PARAM")) == "PARAM"
-    assert get_api_key(NVIDIA(api_key="LOW", nvidia_api_key="HIGH")) == "HIGH"
+    try:
+        os.environ["NVIDIA_API_KEY"] = "ENV"
+        assert get_api_key(NVIDIA()) == "ENV"
+        assert get_api_key(NVIDIA(nvidia_api_key="PARAM")) == "PARAM"
+        assert get_api_key(NVIDIA(api_key="PARAM")) == "PARAM"
+        assert get_api_key(NVIDIA(api_key="LOW", nvidia_api_key="HIGH")) == "HIGH"
+    finally:
+        # we must clean up environ or it may impact other tests
+        del os.environ["NVIDIA_API_KEY"]
 
 
 @pytest.mark.integration()

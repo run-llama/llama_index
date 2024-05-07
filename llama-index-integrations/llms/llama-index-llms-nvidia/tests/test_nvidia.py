@@ -221,5 +221,5 @@ def test_validates_api_key_is_present() -> None:
         assert NVIDIA(api_key="nvai-" + "x" * 9 + "-" + "x" * 54)
 
 
-def test_metadata(chat_model: str, mode: dict) -> None:
-    assert isinstance(NVIDIA(model=chat_model).mode(**mode).metadata, LLMMetadata)
+def test_metadata() -> None:
+    assert isinstance(NVIDIA().metadata, LLMMetadata)
