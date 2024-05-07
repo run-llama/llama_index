@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentMessage(ChatMessage):
-    role: MessageRole = MessageRole.SYSTEM
+    role: MessageRole = MessageRole.CHATBOT
 
 
 # Define new templates with DocumentMessage's to leverage Cohere's `documents` argument
