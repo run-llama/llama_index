@@ -42,6 +42,11 @@ class BaseMemory(BaseComponent):
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
 
+    def put_messages(self, messages: List[ChatMessage]) -> None:
+        """Put chat history."""
+        for message in messages:
+            self.put(message)
+
     @abstractmethod
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
