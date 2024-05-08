@@ -161,7 +161,9 @@ class NVIDIAEmbedding(BaseEmbedding):
         assert len(texts) <= 259, "The batch size should not be larger than 259."
 
         data = self._client.embeddings.create(
-            input=texts, model=self.model, extra_body={"input_type": "passage"}
+            input=texts,
+            model=self.model,
+            extra_body={"input_type": "passage", "truncate": self.truncate},
         ).data
         return [d.embedding for d in data]
 
@@ -172,7 +174,7 @@ class NVIDIAEmbedding(BaseEmbedding):
                 await self._aclient.embeddings.create(
                     input=[query],
                     model=self.model,
-                    extra_body={"input_type": "query"},
+                    extra_body={"input_type": "query", "truncate": self.truncate},
                 )
             )
             .data[0]
