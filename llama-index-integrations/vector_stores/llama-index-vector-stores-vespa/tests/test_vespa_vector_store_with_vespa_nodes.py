@@ -108,7 +108,7 @@ def vespa_nodes() -> list:
 
     ]
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def added_node_ids(vespa_app, vespa_nodes):
     yield vespa_app.add(vespa_nodes)
     for node in vespa_nodes:
@@ -163,3 +163,36 @@ class TestSemanticQuery:
         assert node.vespa_fields["theme"] == "Totalitarianism"
         assert node.vespa_fields["year"] == 1949
         assert node.vespa_fields["id"] == "5"
+
+
+class TestDeleteNode:
+    def setup_method(self):
+        self.test_node = VespaNode(
+            vespa_fields={
+                "title": "Clean Code: A Handbook of Agile Software Craftsmanship",
+                "author": "Robert C Martin",
+                "theme": "Software Development",
+                "year": 2008,
+                "id": "8"
+            },
+            text="Clean Code: A Handbook of Agile Software Craftsmanship ",
+            metadata={"added_by": "gokturkDev"},
+        )
+
+    @pytest.mark.skipif(not docker_available, reason="Docker not available")
+    def test_deletes_node(self, vespa_app):
+        vespa_app.add([self.test_node])
+        query = VectorStoreQuery(
+            query_str="Clean Code: A Handbook of Agile Software Craftsmanship",  # Ensure the query matches the case used in the nodes
+            mode=VectorStoreQueryMode.TEXT_SEARCH,
+            similarity_top_k=1,
+        )
+        result = vespa_app.query(query)
+        assert len(result.nodes) == 1
+
+        vespa_app.delete(self.test_node.node_id)
+        result = vespa_app.query(query)
+        assert len(result.nodes) == 0
+
+
+
