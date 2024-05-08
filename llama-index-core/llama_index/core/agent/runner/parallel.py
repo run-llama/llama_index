@@ -11,6 +11,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -183,7 +184,7 @@ class ParallelAgentRunner(BaseAgentRunner):
         Assume that all steps can be run in parallel.
 
         """
-        return asyncio.run(self.arun_steps_in_queue(task_id, mode=mode, **kwargs))
+        return asyncio_run(self.arun_steps_in_queue(task_id, mode=mode, **kwargs))
 
     async def arun_steps_in_queue(
         self,

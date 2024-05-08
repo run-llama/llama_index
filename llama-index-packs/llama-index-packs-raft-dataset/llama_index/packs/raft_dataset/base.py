@@ -8,7 +8,8 @@ import logging
 from datasets import Dataset
 
 # Configure logging to output to the console, with messages of level DEBUG and above
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core import SimpleDirectoryReader
@@ -199,14 +200,14 @@ class RAFTDatasetPack(BaseLlamaPack):
         """Run the pipeline."""
         chunks = self.get_chunks(self.file_path, self.chunk_size)
 
-        logging.info(f"Number of chunks created: {len(chunks)}")
+        logger.info(f"Number of chunks created: {len(chunks)}")
 
         self.num_distract_docs = (
             min(self.num_distract_docs, len(chunks)) - 1
         )  # should be less than number of chunks/ nodes created
 
         for index, chunk in enumerate(chunks):
-            logging.info(f"Processing chunk: {index}")
+            logger.info(f"Processing chunk: {index}")
             self.add_chunk_to_dataset(
                 chunks, chunk, self.num_questions_per_chunk, self.num_distract_docs
             )

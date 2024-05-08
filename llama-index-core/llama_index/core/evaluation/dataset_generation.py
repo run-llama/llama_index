@@ -8,6 +8,7 @@ import uuid
 from typing import Coroutine, Dict, List, Optional, Tuple
 
 from deprecated import deprecated
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core import Document, ServiceContext, SummaryIndex
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -325,13 +326,13 @@ class DatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self, num: int | None = None) -> List[str]:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_questions_from_nodes(num=num))
+        return asyncio_run(self.agenerate_questions_from_nodes(num=num))
 
     def generate_dataset_from_nodes(
         self, num: int | None = None
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
+        return asyncio_run(self.agenerate_dataset_from_nodes(num=num))
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
