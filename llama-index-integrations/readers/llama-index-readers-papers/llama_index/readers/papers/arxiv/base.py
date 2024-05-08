@@ -73,7 +73,7 @@ class ArxivReader(BaseReader):
             return paper_lookup[os.path.basename(filename)]
 
         arxiv_documents = SimpleDirectoryReader(
-            papers_dir, file_metadata=get_paper_metadata
+            papers_dir, file_metadata=get_paper_metadata, exclude_hidden=False
         ).load_data()
         # Include extra documents containing the abstracts
         abstract_documents = []
