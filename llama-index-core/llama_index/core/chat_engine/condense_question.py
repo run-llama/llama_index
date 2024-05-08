@@ -1,17 +1,25 @@
+import asyncio
 import logging
 from threading import Thread
 from typing import Any, List, Optional, Type
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.base.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    StreamingResponse,
+    AsyncStreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.core.chat_engine.utils import response_gen_from_query_engine
+from llama_index.core.chat_engine.utils import (
+    response_gen_from_query_engine,
+    aresponse_gen_from_query_engine,
+)
 from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -152,7 +160,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def _get_tool_output_from_response(
         self, query: str, response: RESPONSE_TYPE
     ) -> ToolOutput:
-        if isinstance(response, StreamingResponse):
+        if isinstance(response, (StreamingResponse, AsyncStreamingResponse)):
             return ToolOutput(
                 content="",
                 tool_name="query_engine",
@@ -348,19 +356,19 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
 
         # Record response
-        if (
-            isinstance(query_response, StreamingResponse)
-            and query_response.response_gen is not None
-        ):
+        if isinstance(query_response, AsyncStreamingResponse):
             # override the generator to include writing to chat history
             # TODO: query engine does not support async generator yet
             self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
             response = StreamingAgentChatResponse(
-                chat_stream=response_gen_from_query_engine(query_response.response_gen),
+                achat_stream=aresponse_gen_from_query_engine(
+                    query_response.async_response_gen()
+                ),
                 sources=[tool_output],
             )
             thread = Thread(
-                target=response.write_response_to_history, args=(self._memory,)
+                target=lambda x: asyncio.run(response.awrite_response_to_history(x)),
+                args=(self._memory,),
             )
             thread.start()
         else:

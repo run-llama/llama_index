@@ -42,6 +42,7 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
+    "gpt-4-1106-vision-preview": 128000,
     "gpt-4-turbo-2024-04-09": 128000,
     "gpt-4-turbo": 128000,
     # 0613 models (function calling):
@@ -269,14 +270,16 @@ def from_openai_token_logprob(
     openai_token_logprob: ChatCompletionTokenLogprob,
 ) -> List[LogProb]:
     """Convert a single openai token logprob to generic list of logprobs."""
-    try:
-        result = [
-            LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
-            for el in openai_token_logprob.top_logprobs
-        ]
-    except Exception as e:
-        print(openai_token_logprob)
-        raise
+    result = []
+    if openai_token_logprob.top_logprobs:
+        try:
+            result = [
+                LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
+                for el in openai_token_logprob.top_logprobs
+            ]
+        except Exception as e:
+            print(openai_token_logprob)
+            raise
     return result
 
 
@@ -284,10 +287,11 @@ def from_openai_token_logprobs(
     openai_token_logprobs: Sequence[ChatCompletionTokenLogprob],
 ) -> List[List[LogProb]]:
     """Convert openai token logprobs to generic list of LogProb."""
-    return [
-        from_openai_token_logprob(token_logprob)
-        for token_logprob in openai_token_logprobs
-    ]
+    result = []
+    for token_logprob in openai_token_logprobs:
+        if logprobs := from_openai_token_logprob(token_logprob):
+            result.append(logprobs)
+    return result
 
 
 def from_openai_completion_logprob(
@@ -304,10 +308,13 @@ def from_openai_completion_logprobs(
     openai_completion_logprobs: Logprobs,
 ) -> List[List[LogProb]]:
     """Convert openai completion logprobs to generic list of LogProb."""
-    return [
-        from_openai_completion_logprob(completion_logprob)
-        for completion_logprob in openai_completion_logprobs.top_logprobs
-    ]
+    result = []
+    if openai_completion_logprobs.top_logprobs:
+        result = [
+            from_openai_completion_logprob(completion_logprob)
+            for completion_logprob in openai_completion_logprobs.top_logprobs
+        ]
+    return result
 
 
 def from_openai_completion(openai_completion: Completion) -> CompletionResponse:

@@ -16,7 +16,6 @@ MAX_BATCH_SIZE = 2048
 
 API_URL = "https://api.jina.ai/v1/embeddings"
 
-
 VALID_ENCODING = ["float", "ubinary", "binary"]
 
 
@@ -78,34 +77,39 @@ class JinaEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return self._get_text_embeddings([query], encoding_type=self._encoding_queries)[
-            0
-        ]
+        return self._get_embeddings([query], encoding_type=self._encoding_queries)[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        result = await self._aget_text_embeddings(
+        result = await self._aget_embeddings(
             [query], encoding_type=self._encoding_queries
         )
         return result[0]
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self._get_text_embeddings(
-            [text], encoding_type=self._encoding_documents
-        )[0]
+        return self._get_text_embeddings([text])[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        result = await self._aget_text_embeddings(
-            [text], encoding_type=self._encoding_documents
-        )
+        result = await self._aget_text_embeddings([text])
         return result[0]
 
-    def _get_text_embeddings(
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        return self._get_embeddings(texts=texts, encoding_type=self._encoding_documents)
+
+    async def _aget_text_embeddings(
+        self,
+        texts: List[str],
+    ) -> List[List[float]]:
+        return await self._aget_embeddings(
+            texts=texts, encoding_type=self._encoding_documents
+        )
+
+    def _get_embeddings(
         self, texts: List[str], encoding_type: str = "float"
     ) -> List[List[float]]:
-        """Get text embeddings."""
+        """Get embeddings."""
         # Call Jina AI Embedding API
         resp = self._session.post(  # type: ignore
             API_URL,
@@ -134,7 +138,7 @@ class JinaEmbedding(BaseEmbedding):
             ]
         return [result["embedding"] for result in sorted_embeddings]
 
-    async def _aget_text_embeddings(
+    async def _aget_embeddings(
         self, texts: List[str], encoding_type: str = "float"
     ) -> List[List[float]]:
         """Asynchronously get text embeddings."""
