@@ -224,7 +224,6 @@ class VespaVectorStore(VectorStore):
 
             if isinstance(node, VespaNode):
                 entry = self._get_vespa_node_entry(node)
-                print(entry)
             else:
                 entry = self._get_base_node_entry(node, metadata)
             if self.embeddings_outside_vespa:
@@ -258,7 +257,6 @@ class VespaVectorStore(VectorStore):
         )
         vespa_fields.update({
             "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
-            "id": node.node_id,
             "metadata": json.dumps(metadata),
         })
         entry = {"id": node.node_id, "fields": vespa_fields}
@@ -496,17 +494,37 @@ class VespaVectorStore(VectorStore):
         ids: List[str] = []
         similarities: List[float] = []
         for hit in response.hits:
-            response_fields: dict = hit.get("fields", {})
-            metadata = response_fields.get("metadata", {})
-            metadata = json.loads(metadata)
-            logger.debug(f"Metadata: {metadata}")
-            node = metadata_dict_to_node(metadata)
-            text = response_fields.get("body", "")
-            node.set_content(text)
+            node = self._vespa_hit_to_node(hit)
             nodes.append(node)
-            ids.append(response_fields.get("id"))
+            id = hit["fields"].get("id")
+            ids.append(id)
             similarities.append(hit["relevance"])
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
+
+    def _vespa_hit_to_node(self, hit: dict) -> BaseNode | VespaNode:
+        response_fields = hit.get("fields", {})
+        if self._is_vespa_node(response_fields):
+            node = self._get_vespa_node_from_fields(response_fields)
+        else:
+            node = self._get_base_node_from_fields(response_fields)
+        text = response_fields.get("body", "")
+        node.set_content(text)
+        return node
+
+    def _is_vespa_node(self, fields: dict):
+        # Check if there are more fields than text and metadata
+        base_node_fields = ["text", "metadata"]
+        return len([f for f in fields if f not in base_node_fields]) > 0
+
+    def _get_vespa_node_from_fields(self, fields: dict):
+        vespa_fields = fields
+        return VespaNode(vespa_fields=vespa_fields)
+
+    def _get_base_node_from_fields(self, fields: dict):
+        metadata = fields.get("metadata", {})
+        node = metadata_dict_to_node(metadata)
+        return node
+
 
     async def aquery(
         self,

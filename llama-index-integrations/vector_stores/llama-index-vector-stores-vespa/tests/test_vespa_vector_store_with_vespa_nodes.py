@@ -34,9 +34,10 @@ def vespa_nodes() -> list:
                 "author": "Stephen King",
                 "theme": "Friendship",
                 "year": 1994,
+                "id": "1"
             },
             text="The Shawshank Redemption",
-            metadata={"id": "1"},
+            metadata={"added_by": "gokturkDev"},
         ),
         VespaNode(
             vespa_fields={
@@ -44,9 +45,10 @@ def vespa_nodes() -> list:
                 "director": "Francis Ford Coppola",
                 "theme": "Mafia",
                 "year": 1972,
+                "id": "2"
             },
             text="The Godfather",
-            metadata={"id": "2"},
+            metadata={"added_by": "gokturkDev"},
         ),
         VespaNode(
             vespa_fields={
@@ -54,9 +56,10 @@ def vespa_nodes() -> list:
                 "director": "Christopher Nolan",
                 "theme": "Fiction",
                 "year": 2010,
+                "id": "3"
             },
             text="Inception",
-            metadata={"id": "3"},
+            metadata={"added_by": "gokturkDev"},
         ),
         VespaNode(
             vespa_fields={
@@ -64,9 +67,10 @@ def vespa_nodes() -> list:
                 "author": "Harper Lee",
                 "theme": "Mafia",
                 "year": 1960,
+                "id": 4
             },
             text="To Kill a Mockingbird",
-            metadata={"id": "4"},
+            metadata={"added_by": "gokturkDev"},
         ),
         VespaNode(
             vespa_fields={
@@ -74,9 +78,10 @@ def vespa_nodes() -> list:
                 "author": "George Orwell",
                 "theme": "Totalitarianism",
                 "year": 1949,
+                "id": "5"
             },
             text="1984",
-            metadata={"id": "5"},
+            metadata={"added_by": "gokturkDev"},
         ),
         VespaNode(
             vespa_fields={
@@ -84,9 +89,10 @@ def vespa_nodes() -> list:
                 "author": "F. Scott Fitzgerald",
                 "theme": "The American Dream",
                 "year": 1925,
+                "id": "6"
             },
             text="The Great Gatsby",
-            metadata={"id": "6"},
+            metadata={"added_by": "gokturkDev"},
         ),
         VespaNode(
             vespa_fields={
@@ -94,24 +100,41 @@ def vespa_nodes() -> list:
                 "author": "J.K. Rowling",
                 "theme": "Fiction",
                 "year": 1997,
+                "id": "7"
             },
             text="Harry Potter and the Sorcerer's Stone",
-            metadata={"id": "7"},
+            metadata={"added_by": "gokturkDev"},
         ),
 
     ]
 
 @pytest.fixture(scope="session")
 def added_node_ids(vespa_app, vespa_nodes):
-    return vespa_app.add(vespa_nodes)
+    yield vespa_app.add(vespa_nodes)
+    for node in vespa_nodes:
+        vespa_app.delete(node.node_id)
 
-@pytest.mark.skipif(not docker_available, reason="Docker not available")
-def test_vespa_node_text_query(vespa_app, added_node_ids):
-    query = VectorStoreQuery(
-        query_str="Gatsby",  # Ensure the query matches the case used in the nodes
-        mode=VectorStoreQueryMode.DEFAULT,
-        similarity_top_k=1,
-    )
-    result = vespa_app.query(query)
-    assert len(result.nodes) == 1
-    print(result.nodes[0].metadata)
+class TestTextQuery:
+    def setup_method(self):
+        self.text_query =  VectorStoreQuery(
+            query_str="1984",  # Ensure the query matches the case used in the nodes
+            mode=VectorStoreQueryMode.DEFAULT,
+            similarity_top_k=1,
+        )
+    @pytest.mark.skipif(not docker_available, reason="Docker not available")
+    def test_returns_hit(self, vespa_app, added_node_ids):
+        result = vespa_app.query(self.text_query)
+        assert len(result.nodes) == 1
+
+    def test_returns_vespa_node(self, vespa_app, added_node_ids):
+        result = vespa_app.query(self.text_query)
+        node = result.nodes[0]
+        assert isinstance(node, VespaNode)
+    def test_correctly_assigns_vespa_node_fields(self, vespa_app, added_node_ids):
+        result = vespa_app.query(self.text_query)
+        node = result.nodes[0]
+        assert node.vespa_fields["title"] == "1984"
+        assert node.vespa_fields["author"] == "George Orwell"
+        assert node.vespa_fields["theme"] == "Totalitarianism"
+        assert node.vespa_fields["year"] == 1949
+        assert node.vespa_fields["id"] == "5"
