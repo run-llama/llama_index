@@ -10,6 +10,14 @@ A more detailed sample is located in a Jupyter notebook [here](https://github.co
 
 Here's an example usage of the `AzureDynamicSessionsToolSpec`.
 
+1. First, install the Azure Dynamic Sessions package using `pip`:
+
+```
+pip install llama-index-tools-azure-dynamic-sessions
+```
+
+2. Next, set up the Dynamic Sessions tool and a LLM agent:
+
 ```python
 from llama_index.tools.azure_dynamic_sessions import (
     AzureDynamicSessionsToolSpec,
@@ -32,18 +40,38 @@ dynamic_session_tool = AzureDynamicSessionsToolSpec(
 agent = ReActAgent.from_tools(
     dynamic_session_tool.to_tool_list(), llm=llm, verbose=True
 )
-
-print(agent.chat("Tell me the current time in Seattle."))
-
-print(dynamic_session_tool.code_interpreter("1+1"))
 ```
 
-`code_interpreter`: Send a Python code to be executed in Azure Container Apps Dynamic Sessions and return the output in a JSON format.
+3. Use the tool as you need:
 
-`list_files`: List the files available in a Session under the path `/mnt/data`.
+```python
+print(agent.chat("Tell me the current time in Seattle."))
 
-`upload_file`: Upload a file or a stream of data into a Session under the path `/mnt/data`.
+"""
+Sample Return:
+Thought: To provide the current time in Seattle, I need to calculate it based on the current UTC time and adjust for Seattle's time zone, which is Pacific Daylight Time (PDT) during daylight saving time and Pacific Standard Time (PST) outside of daylight saving time. PDT is UTC-7, and PST is UTC-8. I can use the code interpreter tool to get the current UTC time and adjust it accordingly.
+Action: code_interpreter
+Action Input: {'python_code': "from datetime import datetime, timedelta; import pytz; utc_now = datetime.now(pytz.utc); seattle_time = utc_now.astimezone(pytz.timezone('America/Los_Angeles')); seattle_time.strftime('%Y-%m-%d %H:%M:%S %Z%z')"}
+Observation: {'$id': '1', 'status': 'Success', 'stdout': '', 'stderr': '', 'result': '2024-05-04 13:54:09 PDT-0700', 'executionTimeInMilliseconds': 120}
+Thought: I can answer without using any more tools. I'll use the user's language to answer.
+Answer: The current time in Seattle is 2024-05-04 13:54:09 PDT.
+The current time in Seattle is 2024-05-04 13:54:09 PDT.
+"""
 
-`download_file`: Download a file by its path relative to the path `/mnt/data` to the tool's hosting agent.
+print(dynamic_session_tool.code_interpreter("1+1"))
+
+"""
+Sample Return:
+{'$id': '1', 'status': 'Success', 'stdout': '', 'stderr': '', 'result': 2, 'executionTimeInMilliseconds': 11}
+"""
+```
+
+`code_interpreter`: (Available to developer and LLM Agent in tool spec) Send a Python code to be executed in Azure Container Apps Dynamic Sessions and return the output in a JSON format.
+
+`list_files`: (Available to developer and LLM Agent in tool spec) List the files available in a Session under the path `/mnt/data`.
+
+`upload_file`: (Available to developer) Upload a file or a stream of data into a Session under the path `/mnt/data`.
+
+`download_file`: (Available to developer) Download a file by its path relative to the path `/mnt/data` to the tool's hosting agent.
 
 This loader is designed to be used as a way to load data as a Tool in a Agent.
