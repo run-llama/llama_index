@@ -728,7 +728,7 @@ class ReActAgentWorker(BaseAgentWorker):
             # wait until response writing is done
             agent_response._ensure_async_setup()
 
-            await agent_response._is_function_false_event.wait()
+            await agent_response.is_function_false_event.wait()
 
         return self._get_task_step_response(agent_response, step, is_done)
 

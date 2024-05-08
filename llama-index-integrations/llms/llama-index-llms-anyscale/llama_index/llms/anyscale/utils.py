@@ -7,6 +7,8 @@ DEFAULT_ANYSCALE_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_ANYSCALE_API_VERSION = ""
 
 LLAMA_MODELS = {
+    "meta-llama/Meta-Llama-3-70B-Instruct": 8192,
+    "meta-llama/Meta-Llama-3-8B-Instruct": 8192,
     "meta-llama/Llama-2-7b-chat-hf": 4096,
     "meta-llama/Llama-2-13b-chat-hf": 4096,
     "meta-llama/Llama-2-70b-chat-hf": 4096,

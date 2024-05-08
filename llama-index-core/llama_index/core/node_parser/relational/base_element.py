@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
@@ -6,7 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 import pandas as pd
 from tqdm import tqdm
 
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import PydanticResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
@@ -172,7 +171,7 @@ class BaseElementNodeParser(NodeParser):
             try:
                 response = await query_engine.aquery(summary_query_str)
                 return cast(PydanticResponse, response).response
-            except ValidationError:
+            except (ValidationError, ValueError):
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
                 query_engine = index.as_query_engine(llm=llm)
@@ -183,11 +182,10 @@ class BaseElementNodeParser(NodeParser):
             _get_table_output(table_context, self.summary_query_str)
             for table_context in table_context_list
         ]
-        summary_outputs = asyncio.run(
-            run_jobs(
-                summary_jobs, show_progress=self.show_progress, workers=self.num_workers
-            )
+        summary_co = run_jobs(
+            summary_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
+        summary_outputs = asyncio_run(summary_co)
         for element, summary_output in zip(elements, summary_outputs):
             element.table_output = summary_output
 

@@ -1,5 +1,58 @@
 # ChangeLog
 
+## [2024-05-07]
+
+### `llama-index-agent-introspective` [0.1.0]
+
+- Add CRITIC and reflection agent integrations (#13108)
+
+### `llama-index-core` [0.10.35]
+
+- fix `from_defaults()` erasing summary memory buffer history (#13325)
+- use existing async event loop instead of `asyncio.run()` in core (#13309)
+- fix async streaming from query engine in condense question chat engine (#13306)
+- Handle ValueError in extract_table_summaries in element node parsers (#13318)
+- Handle llm properly for QASummaryQueryEngineBuilder and RouterQueryEngine (#13281)
+- expand instrumentation payloads (#13302)
+- Fix Bug in sql join statement missing schema (#13277)
+
+### `llama-index-embeddings-jinaai` [0.1.5]
+
+- add encoding_type parameters in JinaEmbedding class (#13172)
+- fix encoding type access in JinaEmbeddings (#13315)
+
+### `llama-index-embeddings-nvidia` [0.1.0]
+
+- add nvidia nim embeddings support (#13177)
+
+### `llama-index-llms-mistralai` [0.1.12]
+
+- Fix async issue when streaming with Mistral AI (#13292)
+
+### `llama-index-llms-nvidia` [0.1.0]
+
+- add nvidia nim llm support (#13176)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.1.0]
+
+- add nvidia nim rerank support (#13178)
+
+### `llama-index-readers-file` [0.1.21]
+
+- Update MarkdownReader to parse text before first header (#13327)
+
+### `llama-index-readers-web` [0.1.13]
+
+- feat: Spider Web Loader (#13200)
+
+### `llama-index-vector-stores-vespa` [0.1.0]
+
+- Add VectorStore integration for Vespa (#13213)
+
+### `llama-index-vector-stores-vertexaivectorsearch` [0.1.0]
+
+- Add support for Vertex AI Vector Search as Vector Store (#13186)
+
 ## [2024-05-02]
 
 ### `llama-index-core` [0.10.34]
