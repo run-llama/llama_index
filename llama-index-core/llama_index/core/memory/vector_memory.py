@@ -44,36 +44,8 @@ def _stringify_chat_message(msg: ChatMessage) -> Dict:
     msg_dict = msg.dict()
     msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
     return msg_dict
+
     
-    # if not isinstance(d, Dict):
-    #     return str(d)
-    # return {str(k): _stringify_dict(v) for k, v in d.items()}
-
-# def to_node(message: ChatMessage, node_id: Optional[str] = None, **node_kwargs: Any) -> BaseNode:
-#     """Convert to node.
-
-#     Non-stringable objects will get stringified.
-    
-#     """
-#     from llama_index.core.schema import TextNode
-
-#     add_kwargs_dict = _stringify_dict(message.additional_kwargs)
-
-#     return TextNode(
-#         text=str(message.content),
-#         id_=node_id,
-#         metadata={"role": message.role.value, **add_kwargs_dict},
-#     )
-
-# def from_node(node: "BaseNode") -> "ChatMessage":
-#     """Create from node."""
-#     return ChatMessage(
-#         role=MessageRole(node.metadata.get("role", MessageRole.USER.value)),
-#         content=node.text,
-#         additional_kwargs={k: v for k, v in node.metadata.items() if k != "role"},
-#     )
-
-
 CUR_USER_MSG_KEY = "cur_user_msg"
 
 
@@ -156,10 +128,8 @@ class VectorMemory(BaseMemory):
         # retrieve from index
         retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
         nodes = retriever.retrieve(input or "")
-        # messages = [from_node(node) for node in nodes]
 
         # retrieve underlying messages
-        # messages = [from_node(sub_node) for node in nodes for sub_node in node.metadata["sub_nodes"]]
         messages = [
             ChatMessage.parse_obj(sub_dict) 
             for node in nodes for sub_dict in node.metadata["sub_dicts"]
@@ -169,13 +139,6 @@ class VectorMemory(BaseMemory):
         if self.system_message:
             messages = [
                 ChatMessage.from_str(self.system_message, role=MessageRole.SYSTEM)] + messages
-
-        # # if batching by user message, return the latest user message that is "incomplete"
-        # if self.batch_by_user_message:
-        #     # get the latest user message
-        #     user_msg = self.chat_store.get_messages(self.cur_user_msg_key)
-        #     if user_msg:
-        #         messages = messages + user_msg
 
         if self.return_single_message:
             # condense all messages into a single message
@@ -200,8 +163,6 @@ class VectorMemory(BaseMemory):
         # create subnodes for each message
         sub_dicts = []
         for msg in self.chat_store.get_messages(self.cur_user_msg_key):
-            # sub_nodes.append(to_node(msg))
-            # sub_dicts.append(_stringify_dict(msg.dict()))
             sub_dicts.append(_stringify_chat_message(msg))
 
         if not sub_dicts:
@@ -217,19 +178,11 @@ class VectorMemory(BaseMemory):
             excluded_embed_metadata_keys=["sub_dicts"],
             excluded_llm_metadata_keys=["sub_dicts"],
         )
-        # super_node = TextNode(
-        #     text=" ".join([node.get_content() for node in sub_nodes]),
-        #     id_=node_id,
-        #     metadata={"sub_nodes": [node.dict() for node in sub_nodes]},
-        #     excluded_embed_metadata_keys=["sub_nodes"],
-        #     excluded_llm_metadata_keys=["sub_nodes"],
-        # )
         # HACK: this is a hack to add the source relationship as itself, to make deletion work.
         super_node.relationships[NodeRelationship.SOURCE] = super_node.as_related_node_info()
 
         if override_last:
             # delete the last node
-            # last_node_id = self.chat_store.get_messages(self.chat_store_key)[-1].content
             last_node_id = self.chat_store.delete_last_message(self.chat_store_key).content
             self.vector_index.delete_ref_doc(last_node_id)
 
@@ -248,18 +201,6 @@ class VectorMemory(BaseMemory):
             # if not user message, add to holding queue
             self.chat_store.add_message(self.cur_user_msg_key, message)
             self._commit_node(override_last=True)
-        
-        # insert into index
-        # ensure everything is serialized
-
-        # # assign node id
-        # node_id = str(uuid.uuid4())
-        # message_node = to_node(message, node_id=node_id)
-        # # HACK: this is a hack to add the source relationship as itself, to make deletion work.
-        # message_node.relationships[NodeRelationship.SOURCE] = message_node.as_related_node_info()
-
-        # self.chat_store.add_message(self.chat_store_key, ChatMessage(content=node_id))
-        # self.vector_index.insert_nodes([message_node])
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
