@@ -1,4 +1,4 @@
-"""OrallamaVS vector store index."""
+# OopCompanion:suppressRename
 from __future__ import annotations
 
 import array
@@ -10,9 +10,17 @@ import os
 import traceback
 import uuid
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, cast, TypeVar, Callable
-
-import oracledb
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Type,
+    cast,
+    TypeVar,
+    Callable,
+    TYPE_CHECKING,
+)
 
 from llama_index.core.schema import (
     BaseNode,
@@ -27,6 +35,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+
+if TYPE_CHECKING:
+    from oracledb import Connection, DatabaseError
+
 
 logger = logging.getLogger(__name__)
 log_level = os.getenv("LOG_LEVEL", "ERROR").upper()
@@ -109,12 +121,12 @@ def _stringify_list(lst: List) -> str:
 
 
 @_handle_exceptions
-def _table_exists(client: oracledb.Connection, table_name: str):
+def _table_exists(client: Connection, table_name: str):
     try:
         with client.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             return True
-    except oracledb.DatabaseError as ex:
+    except DatabaseError as ex:
         err_obj = ex.args
         if err_obj[0].code == 942:
             return False
@@ -122,7 +134,7 @@ def _table_exists(client: oracledb.Connection, table_name: str):
 
 
 @_handle_exceptions
-def _index_exists(client: oracledb.Connection, index_name: str) -> bool:
+def _index_exists(client: Connection, index_name: str) -> bool:
     # Check if the index exists
     query = (
         "SELECT index_name FROM all_indexes WHERE upper(index_name) = upper(:idx_name)"
@@ -156,13 +168,13 @@ def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
     raise ValueError(f"Unsupported distance strategy: {distance_strategy}")
 
 
-def _get_index_name(base_name: str):
+def _get_index_name(base_name: str) -> str:
     unique_id = str(uuid.uuid4()).replace("-", "")
     return f"{base_name}_{unique_id}"
 
 
 @_handle_exceptions
-def _create_table(client: oracledb.Connection, table_name: str) -> None:
+def _create_table(client: Connection, table_name: str) -> None:
     if not _table_exists(client, table_name):
         with client.cursor() as cursor:
             column_definitions = ", ".join(
@@ -180,7 +192,7 @@ def _create_table(client: oracledb.Connection, table_name: str) -> None:
 
 @_handle_exceptions
 def create_index(
-    client: oracledb.Connection,
+    client: Connection,
     vector_store: OraLlamaVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
@@ -200,21 +212,8 @@ def create_index(
 
 
 @_handle_exceptions
-def _create_hnsw_index(
-    client: oracledb.Connection,
-    table_name: str,
-    distance_strategy: DistanceStrategy,
-    params: Optional[dict[str, Any]] = None,
-) -> None:
-    defaults = {
-        "idx_name": "HNSW",
-        "idx_type": "HNSW",
-        "neighbors": 32,
-        "efConstruction": 200,
-        "accuracy": 90,
-        "parallel": 8,
-    }
-
+def _create_config(defaults: dict, params: dict) -> dict:
+    config: dict = {}
     if params:
         config = params.copy()
         # Ensure compulsory parts are included
@@ -231,6 +230,26 @@ def _create_hnsw_index(
                 raise ValueError(f"Invalid parameter: {key}")
     else:
         config = defaults
+    return config
+
+
+@_handle_exceptions
+def _create_hnsw_index(
+    client: Connection,
+    table_name: str,
+    distance_strategy: DistanceStrategy,
+    params: Optional[dict[str, Any]] = None,
+) -> None:
+    defaults = {
+        "idx_name": "HNSW",
+        "idx_type": "HNSW",
+        "neighbors": 32,
+        "efConstruction": 200,
+        "accuracy": 90,
+        "parallel": 8,
+    }
+
+    config = _create_config(defaults, params)
 
     # Base SQL statement
     idx_name = config["idx_name"]
@@ -271,7 +290,7 @@ def _create_hnsw_index(
 
 @_handle_exceptions
 def _create_ivf_index(
-    client: oracledb.Connection,
+    client: Connection,
     table_name: str,
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
@@ -285,22 +304,7 @@ def _create_ivf_index(
         "parallel": 8,
     }
 
-    if params:
-        config = params.copy()
-        # Ensure compulsory parts are included
-        for compulsory_key in ["idx_name", "parallel"]:
-            if compulsory_key not in config:
-                if compulsory_key == "idx_name":
-                    config[compulsory_key] = _get_index_name(defaults[compulsory_key])
-                else:
-                    config[compulsory_key] = defaults[compulsory_key]
-
-        # Validate keys in config against defaults
-        for key in config:
-            if key not in defaults:
-                raise ValueError(f"Invalid parameter: {key}")
-    else:
-        config = defaults
+    config = _create_config(defaults, params)
 
     # Base SQL statement
     idx_name = config["idx_name"]
@@ -334,7 +338,7 @@ def _create_ivf_index(
 
 
 @_handle_exceptions
-def drop_table_purge(client: oracledb.Connection, table_name: str):
+def drop_table_purge(client: Connection, table_name: str):
     if _table_exists(client, table_name):
         cursor = client.cursor()
         with cursor:
@@ -346,7 +350,7 @@ def drop_table_purge(client: oracledb.Connection, table_name: str):
 
 
 @_handle_exceptions
-def drop_index_if_exists(client: oracledb.Connection, index_name: str):
+def drop_index_if_exists(client: Connection, index_name: str):
     if _index_exists(client, index_name):
         drop_query = f"DROP INDEX {index_name}"
         with client.cursor() as cursor:
@@ -381,12 +385,20 @@ class OraLlamaVS(VectorStore):
 
     def __init__(
         self,
-        _client: oracledb.Connection,
+        _client: Connection,
         table_name: str,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
         batch_size: Optional[int] = 32,
         params: Optional[dict[str, Any]] = None,
     ):
+        try:
+            import oracledb  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         try:
             """Initialize with oracledb client."""
             self._client = _client
@@ -440,7 +452,9 @@ class OraLlamaVS(VectorStore):
         """
         return dml, _data
 
-    def _build_query(self, distance_function: str, where_str: Optional[str] = None):
+    def _build_query(
+        self, distance_function: str, k: int, where_str: Optional[str] = None
+    ):
         where_clause = f"WHERE {where_str}" if where_str else ""
 
         return f"""
@@ -452,8 +466,8 @@ class OraLlamaVS(VectorStore):
                 vector_distance(embedding, :embedding, {distance_function}) AS distance
             FROM {self.table_name}
             {where_clause}
-            ORDER BY vector_distance(embedding, :embedding, {distance_function})
-            FETCH APPROX FIRST :k ROWS ONLY
+            ORDER BY distance
+            FETCH APPROX FIRST {k} ROWS ONLY
         """
 
     def _build_hybrid_query(
@@ -496,7 +510,7 @@ class OraLlamaVS(VectorStore):
     def get_clob_value(self, result: Any) -> str:
         clob_value = ""
         if result:
-            if isinstance(result, oracledb.LOB):
+            if isinstance(result, LOB):
                 clob_value = result.read()
             elif isinstance(result, str):
                 clob_value = result
@@ -521,7 +535,9 @@ class OraLlamaVS(VectorStore):
             )
 
         # build query sql
-        query_sql = self._build_query(distance_function, where_str)
+        query_sql = self._build_query(
+            distance_function, query.similarity_top_k, where_str
+        )
         """
         if query.mode == VectorStoreQueryMode.HYBRID and query.query_str is not None:
             amplify_ratio = self.AMPLIFY_RATIO_LE5
@@ -532,6 +548,7 @@ class OraLlamaVS(VectorStore):
             query_sql = self._build_hybrid_query(
                 self._build_query(
                     query_embed=query.query_embedding,
+                    k=query.similarity_top_k,
                     where_str=where_str,
                     limit=query.similarity_top_k * amplify_ratio,
                 ),
@@ -542,7 +559,7 @@ class OraLlamaVS(VectorStore):
         """
         embedding = array.array("f", query.query_embedding)
         with self._client.cursor() as cursor:
-            cursor.execute(query_sql, embedding=embedding, k=query.similarity_top_k)
+            cursor.execute(query_sql, embedding=embedding)
             results = cursor.fetchall()
 
             similarities = []
