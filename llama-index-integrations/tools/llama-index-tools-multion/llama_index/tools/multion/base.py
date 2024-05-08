@@ -7,11 +7,11 @@ class MultionToolSpec(BaseToolSpec):
 
     spec_functions = ["browse"]
 
-    def __init__(self,  api_key: str) -> None:
+    def __init__(self, api_key: str) -> None:
         """Initialize with parameters."""
         from multion.client import MultiOn
-        self.multion = MultiOn(api_key=api_key)
 
+        self.multion = MultiOn(api_key=api_key)
 
     def browse(self, cmd: str):
         """
@@ -24,5 +24,4 @@ class MultionToolSpec(BaseToolSpec):
         Args:
             cmd (str): The detailed and specific natural language instructrion for web browsing
         """
-
         return self.multion.browse(cmd=cmd, local=True)
