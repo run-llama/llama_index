@@ -5,6 +5,7 @@ import tempfile
 from fpdf import FPDF
 from llama_index.readers.file import PDFReader
 from pathlib import Path
+from typing import Dict
 
 
 @pytest.fixture()
@@ -17,6 +18,11 @@ def multi_page_pdf() -> FPDF:
     pdf.set_font("Helvetica", size=12)
     pdf.cell(200, 10, text="Page 2 Content", align="C")
     return pdf
+
+
+@pytest.fixture()
+def extra_info() -> Dict[str, str]:
+    return {"ABC": "abc", "DEF": "def"}
 
 
 def test_pdfreader_loads_data_into_full_document(multi_page_pdf: FPDF) -> None:
@@ -54,14 +60,15 @@ def test_pdfreader_loads_data_into_multiple_documents(multi_page_pdf: FPDF) -> N
     os.remove(temp_file.name)
 
 
-def test_pdfreader_loads_metadata_into_full_document(multi_page_pdf: FPDF) -> None:
+def test_pdfreader_loads_metadata_into_full_document(
+    multi_page_pdf: FPDF, extra_info: Dict[str, str]
+) -> None:
     with tempfile.NamedTemporaryFile(
         mode="w", delete=False, suffix=".pdf"
     ) as temp_file:
         multi_page_pdf.output(temp_file.name)
         temp_file_path = Path(temp_file.name)
 
-    extra_info = {"ABC": "abc", "DEF": "def"}
     expected_metadata = {"file_name": temp_file_path.name}
     expected_metadata.update(extra_info)
 
@@ -74,14 +81,15 @@ def test_pdfreader_loads_metadata_into_full_document(multi_page_pdf: FPDF) -> No
     os.remove(temp_file.name)
 
 
-def test_pdfreader_loads_metadata_into_multiple_documents(multi_page_pdf: FPDF) -> None:
+def test_pdfreader_loads_metadata_into_multiple_documents(
+    multi_page_pdf: FPDF, extra_info: Dict[str, str]
+) -> None:
     with tempfile.NamedTemporaryFile(
         mode="w", delete=False, suffix=".pdf"
     ) as temp_file:
         multi_page_pdf.output(temp_file.name)
         temp_file_path = Path(temp_file.name)
 
-    extra_info = {"ABC": "abc", "DEF": "def"}
     expected_metadata = {"file_name": temp_file_path.name}
     expected_metadata.update(extra_info)
 
