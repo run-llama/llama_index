@@ -222,6 +222,7 @@ class GithubClient:
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
         verbose: bool = False,
+        fail_on_http_error: bool = True,
     ) -> None:
         """
         Initialize the GithubClient.
@@ -233,6 +234,8 @@ class GithubClient:
             - base_url (str): Base URL for the Github API
                 (defaults to "https://api.github.com").
             - api_version (str): Github API version (defaults to "2022-11-28").
+            - verbose (bool): Whether to print verbose output (defaults to False).
+            - fail_on_http_error (bool): Whether to raise an exception on HTTP errors (defaults to True).
 
         Raises:
             ValueError: If no Github token is provided.
@@ -249,6 +252,7 @@ class GithubClient:
         self._base_url = base_url
         self._api_version = api_version
         self._verbose = verbose
+        self._fail_on_http_error = fail_on_http_error
 
         self._endpoints = {
             "getTree": "/repos/{owner}/{repo}/git/trees/{tree_sha}",
