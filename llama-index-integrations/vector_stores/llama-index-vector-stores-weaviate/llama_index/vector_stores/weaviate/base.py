@@ -58,6 +58,10 @@ def _transform_weaviate_filter_operator(operator: str) -> str:
         return "GreaterThanEqual"
     elif operator == "<=":
         return "LessThanEqual"
+    elif operator == "all":
+        return "ContainsAll"
+    elif operator == "any":
+        return "ContainsAny"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -77,6 +81,8 @@ def _to_weaviate_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
             elif isinstance(filter.value, str) and filter.value.isnumeric():
                 filter.value = float(filter.value)
                 value_type = "valueNumber"
+            if filter.operator in ["any", "all"]:
+                value_type = "valueTextArray"
             filters_list.append(
                 {
                     "path": filter.key,

@@ -46,7 +46,7 @@ def _build_metadata_filter_fn(
     metadata_filters: Optional[MetadataFilters] = None,
 ) -> Callable[[str], bool]:
     """Build metadata filter function."""
-    filter_list = metadata_filters.legacy_filters() if metadata_filters else []
+    filter_list = metadata_filters.filters if metadata_filters else []
     if not filter_list:
         return lambda _: True
 
@@ -62,8 +62,17 @@ def _build_metadata_filter_fn(
             if metadata_value is None:
                 filter_matches = False
             elif isinstance(metadata_value, list):
-                if filter_.value not in metadata_value:
-                    filter_matches = False
+                match filter_.operator:
+                    case "any":
+                        if not any(value in metadata_value for value in filter_.value):
+                            filter_matches = False
+                    case "all":
+                        for value in filter_.value:
+                            if value not in metadata_value:
+                                filter_matches = False
+                    case _:
+                        if filter_.value not in metadata_value:
+                            filter_matches = False
             elif isinstance(metadata_value, (int, float, str, bool)):
                 if metadata_value != filter_.value:
                     filter_matches = False
