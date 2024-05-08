@@ -230,8 +230,6 @@ class OpenAIAssistantAgent(BaseAgent):
         file_ids = file_ids or []
 
         file_dict = _process_files(client, files)
-        all_file_ids = list(file_dict.keys()) + file_ids
-        attachments = format_attachments(file_ids=all_file_ids)
 
         # TODO: openai's typing is a bit sus
         all_openai_tools = cast(List[Any], all_openai_tools)
@@ -240,7 +238,6 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
-            attachments=attachments,
         )
         return cls(
             client,
