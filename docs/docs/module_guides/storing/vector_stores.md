@@ -22,6 +22,7 @@ We are actively adding more integrations and improving feature coverage for each
 | BaiduVectorDB            | cloud                   | ✓                  | ✓             |        | ✓               |       |
 | ChatGPT Retrieval Plugin | aggregator              |                    |               | ✓      | ✓               |       |
 | Chroma                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
+| Couchbase                | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | DashVector               | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Databricks               | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Deeplake                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
@@ -37,8 +38,8 @@ We are actively adding more integrations and improving feature coverage for each
 | Metal                    | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | MongoDB Atlas            | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | MyScale                  | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
-| Milvus / Zilliz          | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
-| Neo4jVector              | self-hosted / cloud     |                    |               | ✓      | ✓               |       |
+| Milvus / Zilliz          | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
+| Neo4jVector              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | OpenSearch               | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Pinecone                 | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Postgres                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
@@ -54,6 +55,8 @@ We are actively adding more integrations and improving feature coverage for each
 | Timescale                |                         | ✓                  |               | ✓      | ✓               | ✓     |
 | Typesense                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Upstash                  | cloud                   |                    |               |        | ✓               |       |
+| Vearch                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
+| Vertex AI Vector Search  | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 
 For more details, see [Vector Store Integrations](../../community/integrations/vector_stores.md).
@@ -67,6 +70,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Baidu](../../examples/vector_stores/BaiduVectorDBIndexDemo.ipynb)
 - [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
 - [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
+- [Couchbase](../../examples/vector_stores/CouchbaseVectorStoreDemo.ipynb)
 - [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
 - [Databricks](../../examples/vector_stores/DatabricksVectorSearchDemo.ipynb)
 - [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
@@ -79,6 +83,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
@@ -100,6 +105,8 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
 - [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
 - [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
+- [Vearch](../../examples/vector_stores/VearchDemo.ipynb)
+- [Vertex AI Vector Search](../../examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

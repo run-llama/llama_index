@@ -113,6 +113,20 @@ p = QueryPipeline(chain=[prompt_tmpl, llm, summarizer_c])
 p.run(topic="YC")
 ```
 
+### Intermediate outputs
+
+If you wish to obtain the intermediate outputs of modules in QueryPipeline, you can use `run_with_intermediates` or `run_multi_with_intermediates` for single-input and multi-input, respectively.
+
+The output will be a tuple of the normal output and a dictionary containing module key -> `ComponentIntermediates`. ComponentIntermediates has 2 fields: `inputs` dict and `outputs` dict.
+
+```python
+output, intermediates = p.run_with_intermediates(topic="YC")
+print(output)
+print(intermediates)
+
+# output is (Response, {"module_key": ComponentIntermediates("inputs": {}, "outputs": {})})
+```
+
 ## Defining a Custom Query Component
 
 You can easily define a custom component: Either passing a function to a `FnComponent` or subclassing a `CustomQueryComponent`.

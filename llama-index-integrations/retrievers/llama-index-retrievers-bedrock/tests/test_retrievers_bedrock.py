@@ -41,7 +41,7 @@ def test_retrieve(mock_get_aws_service_client):
 
     # Call the method being tested
     query = "Test query"
-    result = retriever._retrieve(query)
+    result = retriever.retrieve(query)
 
     # Assert the expected output
     expected_result = [

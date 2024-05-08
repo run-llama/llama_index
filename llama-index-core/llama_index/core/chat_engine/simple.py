@@ -1,7 +1,7 @@
-import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Type
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
@@ -167,7 +167,7 @@ class SimpleChatEngine(BaseChatEngine):
             achat_stream=await self._llm.astream_chat(all_messages)
         )
         thread = Thread(
-            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+            target=lambda x: asyncio_run(chat_response.awrite_response_to_history(x)),
             args=(self._memory,),
         )
         thread.start()

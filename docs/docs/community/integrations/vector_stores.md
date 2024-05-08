@@ -13,9 +13,11 @@ as the storage backend for `VectorStoreIndex`.
 - Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
+- AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
+- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -37,6 +39,7 @@ as the storage backend for `VectorStoreIndex`.
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
+- Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
@@ -201,6 +204,33 @@ client = clickhouse_connect.get_client(
 
 # construct vector store
 vector_store = ClickHouseVectorStore(clickhouse_client=client)
+```
+
+**Couchbase**
+
+```python
+from datetime import timedelta
+
+from couchbase.auth import PasswordAuthenticator
+from couchbase.cluster import Cluster
+from couchbase.options import ClusterOptions
+
+# Create a Couchbase Cluster object
+auth = PasswordAuthenticator("DATABASE_USERNAME", "DATABASE_PASSWORD")
+options = ClusterOptions(auth)
+cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+# Create the Vector Store
+vector_store = CouchbaseVectorStore(
+    cluster=cluster,
+    bucket_name="BUCKET_NAME",
+    scope_name="SCOPE_NAME",
+    collection_name="COLLECTION_NAME",
+    index_name="SEARCH_INDEX_NAME",
+)
 ```
 
 **DashVector**
@@ -627,6 +657,19 @@ from llama_index.vector_stores.upstash import UpstashVectorStore
 vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
 ```
 
+**Vertex AI Vector Search**
+
+```python
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
+vector_store = VertexAIVectorStore(
+    project_id="[your-google-cloud-project-id]",
+    region="[your-google-cloud-region]",
+    index_id="[your-index-resource-name]",
+    endpoint_id="[your-index-endpoint-name]",
+)
+```
+
 **Weaviate**
 
 ```python
@@ -817,6 +860,7 @@ documents = reader.load_data(
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)

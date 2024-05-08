@@ -1,9 +1,18 @@
+from typing import List
+
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import QueryType
+from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
 class SynthesizeStartEvent(BaseEvent):
+    """SynthesizeStartEvent.
+
+    Args:
+        query (QueryType): Query as a string or query bundle.
+    """
+
     query: QueryType
 
     @classmethod
@@ -13,6 +22,13 @@ class SynthesizeStartEvent(BaseEvent):
 
 
 class SynthesizeEndEvent(BaseEvent):
+    """SynthesizeEndEvent.
+
+    Args:
+        query (QueryType): Query as a string or query bundle.
+        response (RESPONSE_TYPE): Response.
+    """
+
     query: QueryType
     response: RESPONSE_TYPE
 
@@ -23,6 +39,16 @@ class SynthesizeEndEvent(BaseEvent):
 
 
 class GetResponseStartEvent(BaseEvent):
+    """GetResponseStartEvent.
+
+    Args:
+        query_str (str): Query string.
+        text_chunks (List[str]): List of text chunks.
+    """
+
+    query_str: str
+    text_chunks: List[str]
+
     @classmethod
     def class_name(cls):
         """Class name."""
@@ -30,6 +56,15 @@ class GetResponseStartEvent(BaseEvent):
 
 
 class GetResponseEndEvent(BaseEvent):
+    """GetResponseEndEvent.
+
+    Args:
+        query (str): Query string.
+        response (RESPONSE_TEXT_TYPE): Response.
+    """
+
+    response: RESPONSE_TEXT_TYPE
+
     @classmethod
     def class_name(cls):
         """Class name."""

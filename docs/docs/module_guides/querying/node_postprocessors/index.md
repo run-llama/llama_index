@@ -117,7 +117,7 @@ A dummy node-postprocessor can be implemented in just a few lines of code:
 
 ```python
 from llama_index.core import QueryBundle
-from llama_index.core.postprocessor import BaseNodePostprocessor
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore
 
 

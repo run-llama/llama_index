@@ -8,11 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-contains_example = true
+contains_example = false
 import_path = "llama_index.retrievers.bedrock"
 
 [tool.llamahub.class_authors]
-BedrockRetriever = "AmazonBedrock"
+AmazonKnowledgeBasesRetriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -27,7 +27,7 @@ license = "MIT"
 name = "llama-index-retrievers-bedrock"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

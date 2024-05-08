@@ -4,19 +4,24 @@ Contains parsers for docx, pdf files.
 
 """
 
+import io
+import logging
 import struct
 import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from tenacity import retry, stop_after_attempt
+
 from fsspec import AbstractFileSystem
-import logging
-import io
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs, is_default_fs
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
+
+RETRY_TIMES = 3
 
 
 class PDFReader(BaseReader):
@@ -28,6 +33,9 @@ class PDFReader(BaseReader):
         """
         self.return_full_document = return_full_document
 
+    @retry(
+        stop=stop_after_attempt(RETRY_TIMES),
+    )
     def load_data(
         self,
         file: Path,
@@ -98,6 +106,9 @@ class DocxReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import docx2txt
         except ImportError:
@@ -152,6 +163,8 @@ class HWPReader(BaseReader):
                 "from fsspec filesystems. Will load from local filesystem instead."
             )
 
+        if not isinstance(file, Path):
+            file = Path(file)
         load_file = olefile.OleFileIO(file)
         file_dir = load_file.listdir()
         if self.is_valid(file_dir) is False:
