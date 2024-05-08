@@ -118,7 +118,32 @@ class TestTextQuery:
     def setup_method(self):
         self.text_query =  VectorStoreQuery(
             query_str="1984",  # Ensure the query matches the case used in the nodes
-            mode=VectorStoreQueryMode.DEFAULT,
+            mode=VectorStoreQueryMode.TEXT_SEARCH,
+            similarity_top_k=1,
+        )
+    @pytest.mark.skipif(not docker_available, reason="Docker not available")
+    def test_returns_hit(self, vespa_app, added_node_ids):
+        result = vespa_app.query(self.text_query)
+        assert len(result.nodes) == 1
+
+    def test_returns_vespa_node(self, vespa_app, added_node_ids):
+        result = vespa_app.query(self.text_query)
+        node = result.nodes[0]
+        assert isinstance(node, VespaNode)
+    def test_correctly_assigns_vespa_node_fields(self, vespa_app, added_node_ids):
+        result = vespa_app.query(self.text_query)
+        node = result.nodes[0]
+        assert node.vespa_fields["title"] == "1984"
+        assert node.vespa_fields["author"] == "George Orwell"
+        assert node.vespa_fields["theme"] == "Totalitarianism"
+        assert node.vespa_fields["year"] == 1949
+        assert node.vespa_fields["id"] == "5"
+
+class TestSemanticQuery:
+    def setup_method(self):
+        self.text_query =  VectorStoreQuery(
+            query_str="1984",  # Ensure the query matches the case used in the nodes
+            mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
             similarity_top_k=1,
         )
     @pytest.mark.skipif(not docker_available, reason="Docker not available")
