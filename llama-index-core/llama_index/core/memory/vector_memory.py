@@ -183,8 +183,6 @@ class VectorMemory(BaseMemory):
                 ChatMessage.from_str(" ".join([m.content for m in messages]), role=MessageRole.USER)
             ]
 
-        print(f"Memory returning messages: {messages}")
-
         return messages
 
     def get_all(self) -> List[ChatMessage]:
