@@ -1,4 +1,4 @@
-# Azure Dynamic Sessions Tool
+# Azure Code Interpreter Tool
 
 This tool leverages Azure Dynamic Sessions Pool to enable an Agent to run generated Python code in a secure environment with very low latency.
 
@@ -6,21 +6,21 @@ In order to utilize the tool, you will need to have the Session Pool management 
 
 ## Usage
 
-A more detailed sample is located in a Jupyter notebook [here](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools/llama-index-tools-azure-dynamic-sessions/examples/azure_dynamic_sessions.ipynb)
+A more detailed sample is located in a Jupyter notebook [here](https://github.com/run-llama/llama_index/tree/main/docs/docs/examples/tools/azure_code_interpreter.ipynb)
 
-Here's an example usage of the `AzureDynamicSessionsToolSpec`.
+Here's an example usage of the `AzureCodeInterpreterToolSpec`.
 
 1. First, install the Azure Dynamic Sessions package using `pip`:
 
 ```
-pip install llama-index-tools-azure-dynamic-sessions
+pip install llama-index-tools-azure-code-interpreter
 ```
 
 2. Next, set up the Dynamic Sessions tool and a LLM agent:
 
 ```python
-from llama_index.tools.azure_dynamic_sessions import (
-    AzureDynamicSessionsToolSpec,
+from llama_index.tools.azure_code_interpreter import (
+    AzureCodeInterpreterToolSpec,
 )
 from llama_index.core.agent import ReActAgent
 from llama_index.llms.azure_openai import AzureOpenAI
@@ -33,12 +33,12 @@ llm = AzureOpenAI(
     api_version=api_version,
 )
 
-dynamic_session_tool = AzureDynamicSessionsToolSpec(
+code_interpreter_spec = AzureCodeInterpreterToolSpec(
     pool_managment_endpoint="your-pool-management-endpoint"
 )
 
 agent = ReActAgent.from_tools(
-    dynamic_session_tool.to_tool_list(), llm=llm, verbose=True
+    code_interpreter_spec.to_tool_list(), llm=llm, verbose=True
 )
 ```
 
@@ -66,6 +66,10 @@ Sample Return:
 """
 ```
 
+## Included Tools
+
+The `AzureCodeInterpreterToolSpec` provides the following tools to the agent:
+
 `code_interpreter`: (Available to developer and LLM Agent in tool spec) Send a Python code to be executed in Azure Container Apps Dynamic Sessions and return the output in a JSON format.
 
 `list_files`: (Available to developer and LLM Agent in tool spec) List the files available in a Session under the path `/mnt/data`.
@@ -73,5 +77,3 @@ Sample Return:
 `upload_file`: (Available to developer) Upload a file or a stream of data into a Session under the path `/mnt/data`.
 
 `download_file`: (Available to developer) Download a file by its path relative to the path `/mnt/data` to the tool's hosting agent.
-
-This loader is designed to be used as a way to load data as a Tool in a Agent.
