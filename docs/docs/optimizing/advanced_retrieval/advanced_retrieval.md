@@ -4,7 +4,7 @@
 
 There are a variety of more advanced retrieval strategies you may wish to try, each with different benefits:
 
-- {ref}`Reranking <cohere_rerank>`
+- [Reranking](../../examples/node_postprocessor/CohereRerank.ipynb)
 - [Recursive retrieval](../../examples/query_engine/pdf_tables/recursive_retriever.ipynb)
 - [Embedded tables](../../examples/query_engine/sec_tables/tesla_10q_table.ipynb)
 - [Small-to-big retrieval](../../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
@@ -47,3 +47,4 @@ Here are some third-party resources on advanced retrieval strategies.
 - [DeepMemory (Activeloop)](../../examples/retrievers/deep_memory.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)

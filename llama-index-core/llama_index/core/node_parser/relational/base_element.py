@@ -1,11 +1,11 @@
-import asyncio
+import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
 from tqdm import tqdm
 
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import PydanticResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
@@ -171,7 +171,7 @@ class BaseElementNodeParser(NodeParser):
             try:
                 response = await query_engine.aquery(summary_query_str)
                 return cast(PydanticResponse, response).response
-            except ValidationError:
+            except (ValidationError, ValueError):
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
                 query_engine = index.as_query_engine(llm=llm)
@@ -182,11 +182,10 @@ class BaseElementNodeParser(NodeParser):
             _get_table_output(table_context, self.summary_query_str)
             for table_context in table_context_list
         ]
-        summary_outputs = asyncio.run(
-            run_jobs(
-                summary_jobs, show_progress=self.show_progress, workers=self.num_workers
-            )
+        summary_co = run_jobs(
+            summary_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
+        summary_outputs = asyncio_run(summary_co)
         for element, summary_output in zip(elements, summary_outputs):
             element.table_output = summary_output
 
@@ -287,8 +286,6 @@ class BaseElementNodeParser(NodeParser):
                 elif element.type == "table_text":
                     # if the table is non-perfect table, we still want to keep the original text of table
                     table_md = str(element.element)
-                table_id = element.id + "_table"
-                table_ref_id = element.id + "_table_ref"
 
                 col_schema = "\n\n".join([str(col) for col in table_output.columns])
 
@@ -303,19 +300,20 @@ class BaseElementNodeParser(NodeParser):
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
 
+                # shared index_id and node_id
+                node_id = str(uuid.uuid4())
                 index_node = IndexNode(
                     text=table_summary,
                     metadata={"col_schema": col_schema},
                     excluded_embed_metadata_keys=["col_schema"],
-                    id_=table_ref_id,
-                    index_id=table_id,
+                    index_id=node_id,
                 )
 
                 table_str = table_summary + "\n" + table_md
 
                 text_node = TextNode(
+                    id_=node_id,
                     text=table_str,
-                    id_=table_id,
                     metadata={
                         # serialize the table as a dictionary string for dataframe of perfect table
                         "table_df": (

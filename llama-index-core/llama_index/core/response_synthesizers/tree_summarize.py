@@ -85,7 +85,7 @@ class TreeSummarize(BaseSynthesizer):
         if len(text_chunks) == 1:
             response: RESPONSE_TEXT_TYPE
             if self._streaming:
-                response = self._llm.stream(
+                response = await self._llm.astream(
                     summary_template, context_str=text_chunks[0], **response_kwargs
                 )
             else:

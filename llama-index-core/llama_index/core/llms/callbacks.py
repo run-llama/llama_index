@@ -51,9 +51,11 @@ def llm_chat_callback() -> Callable:
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 span_id = dispatcher.root.current_span_id or ""
+                model_dict = _self.to_dict()
+                model_dict.pop("api_key", None)
                 dispatcher.event(
                     LLMChatStartEvent(
-                        model_dict=_self.to_dict(),
+                        model_dict=model_dict,
                         messages=messages,
                         additional_kwargs=kwargs,
                         span_id=span_id,
@@ -125,9 +127,11 @@ def llm_chat_callback() -> Callable:
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 span_id = dispatcher.root.current_span_id or ""
+                model_dict = _self.to_dict()
+                model_dict.pop("api_key", None)
                 dispatcher.event(
                     LLMChatStartEvent(
-                        model_dict=_self.to_dict(),
+                        model_dict=model_dict,
                         messages=messages,
                         additional_kwargs=kwargs,
                         span_id=span_id,
@@ -237,9 +241,11 @@ def llm_completion_callback() -> Callable:
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 span_id = dispatcher.root.current_span_id or ""
+                model_dict = _self.to_dict()
+                model_dict.pop("api_key", None)
                 dispatcher.event(
                     LLMCompletionStartEvent(
-                        model_dict=_self.to_dict(),
+                        model_dict=model_dict,
                         prompt=str(args[0]),
                         additional_kwargs=kwargs,
                         span_id=span_id,
@@ -303,9 +309,11 @@ def llm_completion_callback() -> Callable:
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             with wrapper_logic(_self) as callback_manager:
                 span_id = dispatcher.root.current_span_id or ""
+                model_dict = _self.to_dict()
+                model_dict.pop("api_key", None)
                 dispatcher.event(
                     LLMCompletionStartEvent(
-                        model_dict=_self.to_dict(),
+                        model_dict=model_dict,
                         prompt=str(args[0]),
                         additional_kwargs=kwargs,
                         span_id=span_id,
