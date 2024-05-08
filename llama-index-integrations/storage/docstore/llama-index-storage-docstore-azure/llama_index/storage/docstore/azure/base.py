@@ -12,7 +12,7 @@ class AzureDocumentStore(KVDocumentStore):
 
     Args:
         azure_kvstore (AzureKVStore): Azure key-value store
-        namespace (Optional[str]): namespace for the docstore
+        namespace (Optional[str]): namespace for the AzureDocumentStore
         node_collection_suffix (Optional[str]): suffix for node collection
         ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
         metadata_collection_suffix (Optional[str]): suffix for metadata collection
@@ -51,7 +51,7 @@ class AzureDocumentStore(KVDocumentStore):
 
         Args:
             connection_string (str): Azure connection string
-            namespace (Optional[str]): namespace for the docstore
+            namespace (Optional[str]): namespace for the AzureDocumentStore
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
@@ -80,7 +80,7 @@ class AzureDocumentStore(KVDocumentStore):
         Args:
             account_name (str): Azure Storage Account Name
             account_key (str): Azure Storage Account Key
-            namespace (Optional[str]): namespace for the docstore
+            namespace (Optional[str]): namespace for the AzureDocumentStore
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
@@ -109,7 +109,7 @@ class AzureDocumentStore(KVDocumentStore):
         Args:
             endpoint (str): Azure Table service endpoint
             sas_token (str): Shared Access Signature token
-            namespace (Optional[str]): namespace for the docstore
+            namespace (Optional[str]): namespace for the AzureDocumentStore
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
@@ -136,7 +136,7 @@ class AzureDocumentStore(KVDocumentStore):
 
         Args:
             endpoint (str): Azure Table service endpoint
-            namespace (Optional[str]): namespace for the docstore
+            namespace (Optional[str]): namespace for the AzureDocumentStore
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
