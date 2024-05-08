@@ -20,6 +20,7 @@ TREE_JSON = '{"sha":"01d1b2024af28c7d5abf2a66108e7ed5611c6308","url":"https://ap
 
 github_token = os.environ.get("GITHUB_TOKEN", None)
 
+
 @pytest.fixture()
 def mock_error(monkeypatch):
     async def mock_get_blob(self, *args, **kwargs):
@@ -46,9 +47,7 @@ def mock_error(monkeypatch):
     monkeypatch.setattr(GithubClient, "get_tree", mock_get_tree)
 
 
-@pytest.mark.skipif(
-    not github_token, reason="No github token"
-)
+@pytest.mark.skipif(not github_token, reason="No github token")
 def test_fail_on_http_error_true(mock_error):
     token = os.getenv("GITHUB_TOKEN")
     gh_client = GithubClient(token, fail_on_http_error=True)
@@ -61,9 +60,7 @@ def test_fail_on_http_error_true(mock_error):
         reader.load_data(commit_sha="a11a953e738cbda93335ede83f012914d53dc4f7")
 
 
-@pytest.mark.skipif(
-    not github_token, reason="No github token"
-)
+@pytest.mark.skipif(not github_token, reason="No github token")
 def test_fail_on_http_error_false(mock_error):
     token = os.getenv("GITHUB_TOKEN")
     gh_client = GithubClient(token, fail_on_http_error=False)
