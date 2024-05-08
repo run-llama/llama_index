@@ -567,7 +567,8 @@ class IndexNode(TextNode):
 
 
 class NodeWithScore(BaseComponent):
-    node: BaseNode
+    node: TextNode | ImageNode | IndexNode
+
     score: Optional[float] = None
 
     def __str__(self) -> str:
