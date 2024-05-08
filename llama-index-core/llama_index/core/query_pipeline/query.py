@@ -16,9 +16,8 @@ from typing import (
 )
 
 import networkx
-import asyncio
 
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import asyncio_run, run_jobs
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -319,21 +318,14 @@ class QueryPipeline(QueryComponent):
             with self.callback_manager.event(
                 CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
-                if batch:
-                    outputs, _ = self._run(
-                        *args,
-                        return_values_direct=return_values_direct,
-                        show_intermediates=False,
-                        batch=True,
-                        **kwargs,
-                    )
-                else:
-                    outputs, _ = self._run(
-                        *args,
-                        return_values_direct=return_values_direct,
-                        show_intermediates=False,
-                        **kwargs,
-                    )
+                outputs, _ = self._run(
+                    *args,
+                    return_values_direct=return_values_direct,
+                    show_intermediates=False,
+                    batch=batch,
+                    **kwargs,
+                )
+
                 return outputs
 
     def run_with_intermediates(
@@ -341,9 +333,13 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        batch: Optional[bool] = None,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline."""
+        if batch is not None:
+            raise ValueError("Batch is not supported for run_with_intermediates.")
+
         # first set callback manager
         callback_manager = callback_manager or self.callback_manager
         self.set_callback_manager(callback_manager)
@@ -378,9 +374,6 @@ class QueryPipeline(QueryComponent):
             else:
                 merged[key] = d1.get(key, d2.get(key))
         return merged
-
-    async def run_tasks(self, jobs):
-        return await asyncio.gather(*jobs)
 
     def run_multi(
         self,
@@ -422,7 +415,7 @@ class QueryPipeline(QueryComponent):
                         for i in range(batch_size)
                     ]
                     jobs = [self._arun_multi(input) for input in inputs]
-                    results = asyncio.run(self.run_tasks(jobs))
+                    results = asyncio_run(run_jobs(jobs, workers=len(jobs)))
 
                     for result in results:
                         outputs = self.merge_dicts(outputs, result[0])
@@ -467,21 +460,14 @@ class QueryPipeline(QueryComponent):
             with self.callback_manager.event(
                 CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_payload}
             ) as query_event:
-                if batch:
-                    outputs, _ = await self._arun(
-                        *args,
-                        return_values_direct=return_values_direct,
-                        show_intermediates=False,
-                        batch=True,
-                        **kwargs,
-                    )
-                else:
-                    outputs, _ = await self._arun(
-                        *args,
-                        return_values_direct=return_values_direct,
-                        show_intermediates=False,
-                        **kwargs,
-                    )
+                outputs, _ = await self._arun(
+                    *args,
+                    return_values_direct=return_values_direct,
+                    show_intermediates=False,
+                    batch=batch,
+                    **kwargs,
+                )
+
                 return outputs
 
     async def arun_with_intermediates(
@@ -489,9 +475,13 @@ class QueryPipeline(QueryComponent):
         *args: Any,
         return_values_direct: bool = True,
         callback_manager: Optional[CallbackManager] = None,
+        batch: Optional[bool] = None,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
         """Run the pipeline."""
+        if batch is not None:
+            raise ValueError("Batch is not supported for run_with_intermediates.")
+
         # first set callback manager
         callback_manager = callback_manager or self.callback_manager
         self.set_callback_manager(callback_manager)
@@ -551,7 +541,7 @@ class QueryPipeline(QueryComponent):
                     ]
 
                     jobs = [self._arun_multi(input) for input in inputs]
-                    results = await asyncio.gather(*jobs)
+                    results = await run_jobs(jobs, workers=len(jobs))
 
                     for result in results:
                         outputs = self.merge_dicts(outputs, result[0])
@@ -670,7 +660,7 @@ class QueryPipeline(QueryComponent):
                 for kwarg in kwargs
             ]
 
-            results = asyncio.run(self.run_tasks(jobs))
+            results = asyncio_run(run_jobs(jobs, workers=len(jobs)))
 
             for result in results:
                 result_outputs.append(
@@ -725,7 +715,7 @@ class QueryPipeline(QueryComponent):
                 for kwarg in kwargs
             ]
 
-            results = await asyncio.gather(*jobs)
+            results = await run_jobs(jobs, workers=len(jobs))
 
             for result in results:
                 result_outputs.append(
