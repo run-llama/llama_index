@@ -486,10 +486,8 @@ class VespaVectorStore(VectorStore):
             )
         logger.debug("Response:")
         logger.debug(response.json)
-        logger.info(response.json)
         logger.debug("Hits:")
         logger.debug(response.hits)
-        logger.info(response.hits)
         nodes = []
         ids: List[str] = []
         similarities: List[float] = []
