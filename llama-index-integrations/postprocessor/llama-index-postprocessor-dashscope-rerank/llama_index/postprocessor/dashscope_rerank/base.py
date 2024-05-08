@@ -3,8 +3,15 @@ from typing import List, Optional
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankStartEvent,
+    ReRankEndEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
+
+dispatcher = get_dispatcher()
 
 try:
     import dashscope
@@ -42,6 +49,17 @@ class DashScopeRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatch_event = dispatcher.get_dispatch_event()
+
+        dispatch_event(
+            ReRankStartEvent(
+                model=self.model,
+                top_n=self.top_n,
+                query=query_bundle,
+                nodes=nodes,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
         if len(nodes) == 0:
@@ -71,4 +89,9 @@ class DashScopeRerank(BaseNodePostprocessor):
                 new_nodes.append(new_node_with_score)
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
+        dispatch_event(
+            ReRankEndEvent(
+                nodes=new_nodes,
+            )
+        )
         return new_nodes
