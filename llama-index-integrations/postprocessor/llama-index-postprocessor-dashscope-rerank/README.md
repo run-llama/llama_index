@@ -1,1 +1,1 @@
-# LlamaIndex Postprocessor Integration: Dashscope-Rerank
+# LlamaIndex Postprocessor Integration: DashScope-Rerank
