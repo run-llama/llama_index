@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 
 from dataclasses_json import DataClassJsonMixin, config
+from httpx import HTTPError
 
 
 @dataclass
@@ -294,7 +295,7 @@ class GithubClient:
 
         Raises:
             - ImportError: If the `httpx` library is not installed.
-            - httpx.HTTPError: If the API request fails.
+            - httpx.HTTPError: If the API request fails and fail_on_http_error is True.
 
         Examples:
             >>> response = client.request("getTree", "GET",
@@ -451,6 +452,12 @@ class GithubClient:
         except KeyError:
             print(f"Failed to get blob for {owner}/{repo}/{file_sha}")
             return None
+        except HTTPError as excp:
+            print(f"HTTP Exception for {excp.request.url} - {excp}")
+            if self._fail_on_http_error:
+                raise
+            else:
+                return None
 
     async def get_commit(
         self,
