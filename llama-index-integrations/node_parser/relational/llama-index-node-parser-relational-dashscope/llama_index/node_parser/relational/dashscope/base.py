@@ -53,7 +53,7 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         }
 
         my_input = {
-            "text": node.get_content(),
+            "text": json.loads(node.get_content()),
             "file_type": ftype_map.get(ftype, ftype),
             "chunk_size": self.chunk_size,
             "overlap_size": self.overlap_size,
