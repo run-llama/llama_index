@@ -1,17 +1,12 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2023 - , Oracle and/or its affiliates.
-# -----------------------------------------------------------------------------
 # Authors:
 #   Harichandan Roy (hroy)
 #   David Jiang (ddjiang)
 #
 # -----------------------------------------------------------------------------
-# oracleds.py
+# ...readers/oracleai.py
 # -----------------------------------------------------------------------------
 from __future__ import annotations
-
-
-# sys.path.remove(sys.path[0])
 
 import os
 import json
@@ -19,16 +14,16 @@ import time
 import struct
 import random
 import hashlib
-import oracledb
 import traceback
 
-from oracledb import Connection
 from html.parser import HTMLParser
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
+if TYPE_CHECKING:
+    from oracledb import Connection
 
 """ParseOracleDocMetadata class"""
 
@@ -114,6 +109,15 @@ class OracleDocReader:
             Plain text and metadata as Langchain Document.
         """
         metadata = {}
+
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         try:
             oracledb.defaults.fetch_lobs = False
             cursor = conn.cursor()
@@ -183,6 +187,14 @@ class OracleReader(BaseReader):
 
     def load(self) -> List[Document]:
         """Load data into LangChain Document objects..."""
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         ncols = 0
         results = []
         metadata = {}
@@ -369,28 +381,16 @@ class OracleTextSplitter:
         self.conn = conn
         self.params = params
 
-        self._oracledb = oracledb
-        self._json = json
-
-    """
-    def __init__(
-        self, conn, params, **kwargs: Any
-    ) -> None:
-        # Initialize.
-        self.conn = conn
-        self.params = params
-        super().__init__(**kwargs)
         try:
             import oracledb
-            import json
-
-            self._oracledb = oracledb
-            self._json = json
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
-                "oracledb is not installed, please install it with `pip install oracledb`."
-            )
-    """
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
+        self._oracledb = oracledb
+        self._json = json
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming text and return chunks."""
@@ -401,7 +401,7 @@ class OracleTextSplitter:
             # returns strings or bytes instead of a locator
             self._oracledb.defaults.fetch_lobs = False
 
-            cursor.setinputsizes(content=oracledb.CLOB)
+            cursor.setinputsizes(content=self._oracledb.CLOB)
             cursor.execute(
                 "select t.* from dbms_vector_chain.utl_to_chunks(:content, json(:params)) t",
                 content=text,
