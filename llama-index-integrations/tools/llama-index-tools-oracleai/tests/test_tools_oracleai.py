@@ -1,6 +1,8 @@
-import oracledb
-
+from typing import TYPE_CHECKING
 from llama_index.tools.oracleai import OracleSummary
+
+if TYPE_CHECKING:
+    import oracledb
 
 
 # unit tests

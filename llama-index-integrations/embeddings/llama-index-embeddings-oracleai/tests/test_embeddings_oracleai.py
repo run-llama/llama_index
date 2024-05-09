@@ -1,7 +1,9 @@
-import oracledb
-
+from typing import TYPE_CHECKING
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.embeddings.oracleai import OracleEmbeddings
+
+if TYPE_CHECKING:
+    import oracledb
 
 
 def test_class():
