@@ -2,7 +2,7 @@
 
 ## [2024-05-09]
 
-### `llama-index-core` [0.10.35]
+### `llama-index-core` [0.10.36]
 
 - add start_char_idx and end_char_idx with MarkdownElementParser (#13377)
 - use handlers from global default (#13368)
