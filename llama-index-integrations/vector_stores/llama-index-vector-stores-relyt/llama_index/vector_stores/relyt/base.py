@@ -78,7 +78,8 @@ class RelytVectorStore(BasePydanticVectorStore):
                         SELECT 1
                         FROM pg_indexes
                         WHERE indexname = '{index_name}';
-                    """)
+                    """
+                )
                 result = conn.execute(index_query).scalar()
                 if not result:
                     index_statement = text(
@@ -94,7 +95,8 @@ class RelytVectorStore(BasePydanticVectorStore):
                             m=30
                             ef_construction=500
                             $$);
-                        """)
+                        """
+                    )
                     conn.execute(index_statement)
 
     @property
