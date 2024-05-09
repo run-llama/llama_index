@@ -17,7 +17,8 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, validator
+from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_INPUT_FILES,
@@ -70,14 +71,21 @@ class MultiModalLLMMetadata(BaseModel):
     )
 
 
-# TODO add callback functionality
-
-
 class MultiModalLLM(ChainableMixin, BaseComponent):
     """Multi-Modal LLM interface."""
 
+    callback_manager: CallbackManager = Field(
+        default_factory=CallbackManager, exclude=True
+    )
+
     class Config:
         arbitrary_types_allowed = True
+
+    @validator("callback_manager", pre=True)
+    def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
+        if v is None:
+            return CallbackManager([])
+        return v
 
     @property
     @abstractmethod
