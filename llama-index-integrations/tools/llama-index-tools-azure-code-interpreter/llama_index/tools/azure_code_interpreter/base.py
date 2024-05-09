@@ -222,16 +222,16 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
         files = [("file", (remote_file_path, data, "application/octet-stream"))]
 
-        response = requests.request(
-            "POST", api_url, headers=headers, files=files
-        )
+        response = requests.request("POST", api_url, headers=headers, files=files)
         response.raise_for_status()
 
         response_json = response.json()
         remote_files_metadatas = []
         for entry in response_json["value"]:
             if "properties" in entry:
-                remote_files_metadatas.append(RemoteFileMetadata.from_dict(entry["properties"]))
+                remote_files_metadatas.append(
+                    RemoteFileMetadata.from_dict(entry["properties"])
+                )
         return remote_files_metadatas
 
     def download_file_to_local(
@@ -249,9 +249,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         access_token = self.access_token_provider()
         # In case if the file path LLM provides is absolute, remove the /mnt/data/ prefix
         remote_file_path = remote_file_path.replace("/mnt/data/", "")
-        api_url = self._build_url(
-            f"files/content/{remote_file_path}"
-        )
+        api_url = self._build_url(f"files/content/{remote_file_path}")
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
@@ -283,5 +281,6 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
         response_json = response.json()
         return [
-            RemoteFileMetadata.from_dict(entry["properties"]) for entry in response_json["value"]
+            RemoteFileMetadata.from_dict(entry["properties"])
+            for entry in response_json["value"]
         ]
