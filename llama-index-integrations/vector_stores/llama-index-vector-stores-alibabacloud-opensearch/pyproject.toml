@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.alibabacloud_opensearch"
 
 [tool.llamahub.class_authors]
-AlibabaCloudOpenSearch = "llama-index"
+AlibabaCloudOpenSearch = "goctave"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,11 +21,11 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["goctave <gshuiwang@gmail.com>"]
 description = "llama-index vector_stores Alibaba Cloud OpenSearch integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-alibabacloud_opensearch"
+name = "llama-index-vector-stores-alibabacloud-opensearch"
 readme = "README.md"
 version = "0.1.0"
 

@@ -252,7 +252,7 @@ class AlibabaCloudOpenSearchStore(VectorStore):
                 docs.append(doc)
 
             try:
-                await self._send_data("add", docs)
+                await self._async_send_data("add", docs)
             except Exception as e:
                 logging.error(f"Add to {self._config.instance_id} failed: {e}")
                 raise RuntimeError(f"Fail to add docs, error:{e}")
@@ -290,9 +290,9 @@ class AlibabaCloudOpenSearchStore(VectorStore):
         docs = []
         for doc in json_response["result"]:
             docs.append({"id": doc["id"]})
-        await self._send_data("delete", docs)
+        await self._async_send_data("delete", docs)
 
-    async def _send_data(self, cmd: str, fields_list: List[dict]) -> None:
+    async def _async_send_data(self, cmd: str, fields_list: List[dict]) -> None:
         """
         Asynchronously send data.
 
