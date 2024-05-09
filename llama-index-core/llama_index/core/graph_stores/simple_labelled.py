@@ -201,3 +201,20 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
     def client(self) -> Any:
         """Get client."""
         raise NotImplementedError("Client not implemented for SimpleLPGStore.")
+
+    def save_networkx_graph(self) -> None:
+        """Display the graph store."""
+        import networkx as nx
+
+        G = nx.DiGraph()
+        for node in self.graph.nodes.values():
+            G.add_node(node.id, label=node.id)
+        for triplet in self.graph.triplets:
+            G.add_edge(triplet[0], triplet[2], label=triplet[1])
+
+        # save to html file
+        from pyvis.network import Network
+
+        net = Network(notebook=False, directed=True)
+        net.from_nx(G)
+        net.write_html("kg.html")

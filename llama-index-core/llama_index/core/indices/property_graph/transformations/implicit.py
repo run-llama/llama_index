@@ -18,21 +18,19 @@ class ImplicitEdgeExtractor(TransformComponent):
 
             if node.source_node:
                 edges.append(
-                    Edge(
-                        source_node_id=node.source_node.node_id,
-                        target_node_id=node.node_id,
-                        relation=Relation(
-                            label=get_node_rel_string(NodeRelationship.SOURCE),
-                            properties=metadata,
-                        ),
+                    Relation(
+                        target_id=node.source_node.node_id,
+                        source_id=node.node_id,
+                        label=get_node_rel_string(NodeRelationship.SOURCE),
+                        properties=metadata,
                     )
                 )
 
             if node.parent_node:
                 edges.append(
                     Relation(
-                        source_node_id=node.parent_node.node_id,
-                        target_node_id=node.node_id,
+                        target_id=node.parent_node.node_id,
+                        source_id=node.node_id,
                         label=get_node_rel_string(NodeRelationship.PARENT),
                         properties=metadata,
                     )
@@ -41,8 +39,8 @@ class ImplicitEdgeExtractor(TransformComponent):
             if node.prev_node:
                 edges.append(
                     Relation(
-                        source_node_id=node.prev_node.node_id,
-                        target_node_id=node.node_id,
+                        target_id=node.prev_node.node_id,
+                        source_id=node.node_id,
                         label=get_node_rel_string(NodeRelationship.PREVIOUS),
                         properties=metadata,
                     )
@@ -51,8 +49,8 @@ class ImplicitEdgeExtractor(TransformComponent):
             if node.next_node:
                 edges.append(
                     Relation(
-                        source_node_id=node.node_id,
-                        target_node_id=node.next_node.node_id,
+                        source_id=node.node_id,
+                        target_id=node.next_node.node_id,
                         label=get_node_rel_string(NodeRelationship.NEXT),
                         properties=metadata,
                     )
@@ -62,8 +60,8 @@ class ImplicitEdgeExtractor(TransformComponent):
                 for child_node in node.child_nodes:
                     edges.append(
                         Relation(
-                            source_node_id=node.node_id,
-                            target_node_id=child_node.node_id,
+                            source_id=node.node_id,
+                            target_id=child_node.node_id,
                             label=get_node_rel_string(NodeRelationship.CHILD),
                             properties=metadata,
                         )

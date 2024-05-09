@@ -10,7 +10,16 @@ from llama_index.core.llms.llm import LLM
 
 
 DEFAULT_ENTITIES = Literal[
-    "PRODUCT", "MARKET", "TECHNOLOGY", "EVENT", "CONCEPT", "ORGANIZATION", "PERSON"
+    "PRODUCT",
+    "MARKET",
+    "TECHNOLOGY",
+    "EVENT",
+    "CONCEPT",
+    "ORGANIZATION",
+    "PERSON",
+    "LOCATION",
+    "TIME",
+    "MISCELLANEOUS",
 ]
 
 DEFAULT_RELATIONS = Literal[
@@ -25,6 +34,7 @@ DEFAULT_RELATIONS = Literal[
     "DIED_IN",
 ]
 
+# Which entities can be connected to which relations
 DEFAULT_VALIDATION_SCHEMA: Dict[str, Any] = {
     "PRODUCT": (
         "USED_BY",
@@ -56,6 +66,28 @@ DEFAULT_VALIDATION_SCHEMA: Dict[str, Any] = {
         "WORKED_ON",
         "HAS",
         "IS_A",
+    ),
+    "LOCATION": (
+        "LOCATED_IN",
+        "PART_OF",
+        "HAS",
+        "IS_A",
+        "DIED_IN",
+        "BORN_IN",
+        "USED_BY",
+        "USED_FOR",
+    ),
+    "TIME": ("BORN_IN", "DIED_IN", "LOCATED_IN", "PART_OF", "HAS", "IS_A"),
+    "MISCELLANEOUS": (
+        "USED_BY",
+        "USED_FOR",
+        "LOCATED_IN",
+        "PART_OF",
+        "WORKED_ON",
+        "HAS",
+        "IS_A",
+        "BORN_IN",
+        "DIED_IN",
     ),
 }
 
@@ -96,19 +128,21 @@ class SchemaLLMTripletExtractor(TransformComponent):
         if kg_schema_cls is None:
             possible_entities = possible_entities or DEFAULT_ENTITIES
             entity_cls = create_model(
-                "Entity",
-                type=(possible_entities, ...),
-                value=(str, ...),
-                __doc__="Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
-                + str(possible_entities),
+                "Entity", type=(possible_entities, ...), value=(str, ...)
+            )
+            entity_cls.__doc__ = (
+                "Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
+                + str(possible_entities)
             )
 
             possible_relations = possible_relations or DEFAULT_RELATIONS
             relation_cls = create_model(
                 "Relation",
                 type=(possible_relations, ...),
-                __doc__="Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
-                + str(possible_relations),
+            )
+            relation_cls.__doc__ = (
+                "Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
+                + str(possible_relations)
             )
 
             triplet_cls = create_model(
@@ -116,8 +150,8 @@ class SchemaLLMTripletExtractor(TransformComponent):
                 subject=(entity_cls, ...),
                 relation=(relation_cls, ...),
                 object=(entity_cls, ...),
-                __doc__="Triplet in a knowledge graph.",
             )
+            triplet_cls.__doc__ = "Triplet in a knowledge graph."
 
             def validate(v: Any, values: Any) -> Any:
                 """Validate triplets."""
@@ -144,8 +178,8 @@ class SchemaLLMTripletExtractor(TransformComponent):
                 "KGSchema",
                 triplets=(List[triplet_cls], ...),
                 __validators__={"validator1": root},
-                __doc__="Knowledge Graph Schema.",
             )
+            kg_schema_cls.__doc__ = ("Knowledge Graph Schema.",)
 
         super().__init__(
             llm=llm,

@@ -137,8 +137,10 @@ class LabelledPropertyGraph(BaseModel):
 
     def add_relation(self, relation: Relation) -> None:
         """Add a relation."""
-        assert relation.source_id in self.nodes
-        assert relation.target_id in self.nodes
+        if relation.source_id not in self.nodes:
+            self.nodes[relation.source_id] = EntityNode(name=relation.source_id)
+        if relation.target_id not in self.nodes:
+            self.nodes[relation.target_id] = EntityNode(name=relation.target_id)
 
         self.add_triplet(
             (self.nodes[relation.source_id], relation, self.nodes[relation.target_id])
