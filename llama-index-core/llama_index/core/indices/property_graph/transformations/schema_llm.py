@@ -128,30 +128,32 @@ class SchemaLLMTripletExtractor(TransformComponent):
         if kg_schema_cls is None:
             possible_entities = possible_entities or DEFAULT_ENTITIES
             entity_cls = create_model(
-                "Entity", type=(possible_entities, ...), value=(str, ...)
-            )
-            entity_cls.__doc__ = (
-                "Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
-                + str(possible_entities)
+                "Entity",
+                __doc__=(
+                    "Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
+                    + str(possible_entities)
+                ),
+                type=(possible_entities, ...),
+                value=(str, ...),
             )
 
             possible_relations = possible_relations or DEFAULT_RELATIONS
             relation_cls = create_model(
                 "Relation",
+                __doc__=(
+                    "Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
+                    + str(possible_relations)
+                ),
                 type=(possible_relations, ...),
-            )
-            relation_cls.__doc__ = (
-                "Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
-                + str(possible_relations)
             )
 
             triplet_cls = create_model(
                 "Triplet",
+                __doc__="Triplet in a knowledge graph.",
                 subject=(entity_cls, ...),
                 relation=(relation_cls, ...),
                 object=(entity_cls, ...),
             )
-            triplet_cls.__doc__ = "Triplet in a knowledge graph."
 
             def validate(v: Any, values: Any) -> Any:
                 """Validate triplets."""
@@ -176,10 +178,10 @@ class SchemaLLMTripletExtractor(TransformComponent):
             root = validator("triplets", pre=True)(validate)
             kg_schema_cls = create_model(
                 "KGSchema",
-                triplets=(List[triplet_cls], ...),
+                __doc__="Knowledge Graph Schema.",
                 __validators__={"validator1": root},
+                triplets=(List[triplet_cls], ...),
             )
-            kg_schema_cls.__doc__ = ("Knowledge Graph Schema.",)
 
         super().__init__(
             llm=llm,
