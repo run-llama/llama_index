@@ -243,10 +243,11 @@ def llm_completion_callback() -> Callable:
                 span_id = dispatcher.root.current_span_id or ""
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
+                prompt = kwargs.get("prompt", None) or args[0]
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=model_dict,
-                        prompt=str(args[0]),
+                        prompt=str(prompt),
                         additional_kwargs=kwargs,
                         span_id=span_id,
                     )
@@ -254,7 +255,7 @@ def llm_completion_callback() -> Callable:
                 event_id = callback_manager.on_event_start(
                     CBEventType.LLM,
                     payload={
-                        EventPayload.PROMPT: args[0],
+                        EventPayload.PROMPT: prompt,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
@@ -269,7 +270,7 @@ def llm_completion_callback() -> Callable:
                         async for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=str(args[0]),
+                                    prompt=str(prompt),
                                     response=x,
                                     span_id=span_id,
                                 )
@@ -280,7 +281,7 @@ def llm_completion_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.PROMPT: args[0],
+                                EventPayload.PROMPT: prompt,
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
@@ -291,14 +292,14 @@ def llm_completion_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.PROMPT: args[0],
+                            EventPayload.PROMPT: prompt,
                             EventPayload.COMPLETION: f_return_val,
                         },
                         event_id=event_id,
                     )
                     dispatcher.event(
                         LLMCompletionEndEvent(
-                            prompt=str(args[0]),
+                            prompt=str(prompt),
                             response=f_return_val,
                             span_id=span_id,
                         )
@@ -311,10 +312,11 @@ def llm_completion_callback() -> Callable:
                 span_id = dispatcher.root.current_span_id or ""
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
+                prompt = kwargs.get("prompt", None) or args[0]
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=model_dict,
-                        prompt=str(args[0]),
+                        prompt=str(prompt),
                         additional_kwargs=kwargs,
                         span_id=span_id,
                     )
@@ -322,7 +324,7 @@ def llm_completion_callback() -> Callable:
                 event_id = callback_manager.on_event_start(
                     CBEventType.LLM,
                     payload={
-                        EventPayload.PROMPT: args[0],
+                        EventPayload.PROMPT: prompt,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
@@ -336,7 +338,7 @@ def llm_completion_callback() -> Callable:
                         for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=str(args[0]), response=x, span_id=span_id
+                                    prompt=str(prompt), response=x, span_id=span_id
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -345,7 +347,7 @@ def llm_completion_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.PROMPT: args[0],
+                                EventPayload.PROMPT: prompt,
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
@@ -356,14 +358,14 @@ def llm_completion_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.PROMPT: args[0],
+                            EventPayload.PROMPT: prompt,
                             EventPayload.COMPLETION: f_return_val,
                         },
                         event_id=event_id,
                     )
                     dispatcher.event(
                         LLMCompletionEndEvent(
-                            prompt=str(args[0]),
+                            prompt=str(prompt),
                             response=f_return_val,
                             span_id=span_id,
                         )
