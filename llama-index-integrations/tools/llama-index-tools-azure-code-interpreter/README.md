@@ -2,7 +2,13 @@
 
 This tool leverages Azure Dynamic Sessions Pool to enable an Agent to run generated Python code in a secure environment with very low latency.
 
-In order to utilize the tool, you will need to have the Session Pool management endpoint first. More details in here: "some-url"
+In order to utilize the tool, you will need to have the Session Pool management endpoint first. [Learn more](https://aka.ms/aca/sessions)
+
+## Prerequisites
+
+- Make sure to create a Session Pool and note down the `poolManagementEndpoint`.
+
+- In order to have the code execution right, the correct role needs to be assigned to the current user agent. Be sure to assign `Session Pool Executor` role to the correct user agent's identity (e.g. User Email, Service Principal, Managed Identity, etc.) in Session Pool's access control panel through the Portal or CLI. [Learn more](https://aka.ms/aca/sessions)
 
 ## Usage
 

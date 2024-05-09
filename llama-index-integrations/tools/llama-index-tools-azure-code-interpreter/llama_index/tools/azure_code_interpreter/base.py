@@ -152,8 +152,8 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         if self.sanitize_input:
             python_code = _sanitize_input(python_code)
 
-        access_token = self.access_token_provider()
-        api_url = self._build_url("python/execute")
+        access_token = self.access_token_provider(self)
+        api_url = self._build_url("code/execute")
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
@@ -163,14 +163,14 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
             "properties": {
                 "codeInputType": "inline",
                 "executionType": "synchronous",
-                "pythonCode": python_code,
+                "code": python_code,
             }
         }
 
         response = requests.post(api_url, headers=headers, json=body)
         response.raise_for_status()
         response_json = response.json()
-        if response_json["result"]:
+        if "result" in response_json and response_json["result"]:
             if isinstance(response_json["result"], dict):
                 if "base64_data" in response_json["result"]:
                     base64_encoded_data = response_json["result"]["base64_data"]
@@ -194,14 +194,12 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
     def upload_file(
         self,
         data: Optional[Any] = None,
-        remote_file_path: Optional[str] = None,
         local_file_path: Optional[str] = None,
     ) -> List[RemoteFileMetadata]:
-        """Upload a file to the session.
+        """Upload a file to the session under the path /mnt/data.
 
         Args:
             data: The data to upload.
-            remote_file_path: The path to upload the file to, relative to `/mnt/data`. If local_file_path is provided, this is defaulted to its filename.
             local_file_path: The path to the local file to upload.
 
         Returns:
@@ -211,27 +209,29 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
             raise ValueError("data and local_file_path cannot be provided together")
 
         if local_file_path:
-            if not remote_file_path:
-                remote_file_path = f"/mnt/data/{os.path.basename(local_file_path)}"
+            remote_file_path = f"/mnt/data/{os.path.basename(local_file_path)}"
             data = open(local_file_path, "rb")
 
-        access_token = self.access_token_provider()
-        api_url = self._build_url(f"python/uploadFile?identifier={self.session_id}")
+        access_token = self.access_token_provider(self)
+        if not remote_file_path.startswith("/mnt/data"):
+            remote_file_path = f"/mnt/data/{remote_file_path}"
+        api_url = self._build_url("files/upload")
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
-        payload = {}
+
         files = [("file", (remote_file_path, data, "application/octet-stream"))]
 
         response = requests.request(
-            "POST", api_url, headers=headers, data=payload, files=files
+            "POST", api_url, headers=headers, files=files
         )
         response.raise_for_status()
 
         response_json = response.json()
         remote_files_metadatas = []
-        for entry in response_json["$values"]:
-            remote_files_metadatas.append(RemoteFileMetadata.from_dict(entry))
+        for entry in response_json["value"]:
+            if "properties" in entry:
+                remote_files_metadatas.append(RemoteFileMetadata.from_dict(entry["properties"]))
         return remote_files_metadatas
 
     def download_file_to_local(
@@ -250,7 +250,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         # In case if the file path LLM provides is absolute, remove the /mnt/data/ prefix
         remote_file_path = remote_file_path.replace("/mnt/data/", "")
         api_url = self._build_url(
-            f"python/downloadFile?identifier={self.session_id}&filename={remote_file_path}"
+            f"files/content/{remote_file_path}"
         )
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -272,8 +272,8 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         Returns:
             List[RemoteFileMetadata]: The metadata for the files in the session
         """
-        access_token = self.access_token_provider()
-        api_url = self._build_url(f"python/files?identifier={self.session_id}")
+        access_token = self.access_token_provider(self)
+        api_url = self._build_url("files")
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
@@ -283,5 +283,5 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
         response_json = response.json()
         return [
-            RemoteFileMetadata.from_dict(entry) for entry in response_json["$values"]
+            RemoteFileMetadata.from_dict(entry["properties"]) for entry in response_json["value"]
         ]
