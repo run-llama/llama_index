@@ -1,9 +1,9 @@
 import os
 
 import pytest
-from llama_index.core import SimpleDirectoryReader
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.schema import Document
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from pymongo import MongoClient
@@ -11,18 +11,16 @@ from pymongo import MongoClient
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 import threading
-from pathlib import Path
 
 lock = threading.Lock()
 
 
 @pytest.fixture(scope="session")
-def documents(tmp_path_factory):
+def documents():
     """List of documents represents data to be embedded in the datastore.
     Minimum requirements for Documents in the /upsert endpoint's UpsertRequest.
     """
-    data_dir = Path(__file__).parents[4] / "docs/docs/examples/data/paul_graham"
-    return SimpleDirectoryReader(data_dir).load_data()
+    return [Document.example()]
 
 
 @pytest.fixture(scope="session")
