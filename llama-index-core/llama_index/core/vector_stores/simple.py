@@ -62,17 +62,16 @@ def _build_metadata_filter_fn(
             if metadata_value is None:
                 filter_matches = False
             elif isinstance(metadata_value, list):
-                match filter_.operator:
-                    case "any":
-                        if not any(value in metadata_value for value in filter_.value):
+                if filter_.operator == "any":
+                    if not any(value in metadata_value for value in filter_.value):
+                        filter_matches = False
+                elif filter_.operator == "all":
+                    for value in filter_.value:
+                        if value not in metadata_value:
                             filter_matches = False
-                    case "all":
-                        for value in filter_.value:
-                            if value not in metadata_value:
-                                filter_matches = False
-                    case _:
-                        if filter_.value not in metadata_value:
-                            filter_matches = False
+                else:
+                    if filter_.value not in metadata_value:
+                        filter_matches = False
             elif isinstance(metadata_value, (int, float, str, bool)):
                 if metadata_value != filter_.value:
                     filter_matches = False

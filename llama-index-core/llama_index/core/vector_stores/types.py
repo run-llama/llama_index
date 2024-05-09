@@ -73,6 +73,7 @@ class FilterOperator(str, Enum):
     ANY = "any"  # Contains any (array of strings)
     ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+    CONTAINS = "contains"  # metadata array contains value (string or number)
 
 
 class FilterCondition(str, Enum):
