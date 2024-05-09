@@ -598,6 +598,7 @@ class LLM(BaseLLM):
         """
         from llama_index.core.agent.react import ReActAgentWorker
         from llama_index.core.agent.types import Task
+        from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.memory import ChatMemoryBuffer
 
         worker = ReActAgentWorker(
@@ -645,6 +646,7 @@ class LLM(BaseLLM):
         """Predict and call the tool."""
         from llama_index.core.agent.react import ReActAgentWorker
         from llama_index.core.agent.types import Task
+        from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.memory import ChatMemoryBuffer
 
         worker = ReActAgentWorker(
