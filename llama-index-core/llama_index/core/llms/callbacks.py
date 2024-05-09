@@ -236,9 +236,18 @@ def llm_completion_callback() -> Callable:
 
             yield callback_manager
 
+        def extract_prompt(*args: Any, **kwargs: Any) -> str:
+            if len(args) > 0:
+                return str(args[0])
+            elif "prompt" in kwargs:
+                return kwargs["prompt"]
+            else:
+                return str(kwargs)
+
         async def wrapped_async_llm_predict(
             _self: Any, *args: Any, **kwargs: Any
         ) -> Any:
+            prompt = extract_prompt(*args, **kwargs)
             with wrapper_logic(_self) as callback_manager:
                 span_id = dispatcher.root.current_span_id or ""
                 model_dict = _self.to_dict()
@@ -246,7 +255,7 @@ def llm_completion_callback() -> Callable:
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=model_dict,
-                        prompt=str(args[0]),
+                        prompt=prompt,
                         additional_kwargs=kwargs,
                         span_id=span_id,
                     )
@@ -254,7 +263,7 @@ def llm_completion_callback() -> Callable:
                 event_id = callback_manager.on_event_start(
                     CBEventType.LLM,
                     payload={
-                        EventPayload.PROMPT: args[0],
+                        EventPayload.PROMPT: prompt,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
@@ -269,7 +278,7 @@ def llm_completion_callback() -> Callable:
                         async for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=str(args[0]),
+                                    prompt=prompt,
                                     response=x,
                                     span_id=span_id,
                                 )
@@ -280,7 +289,7 @@ def llm_completion_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.PROMPT: args[0],
+                                EventPayload.PROMPT: prompt,
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
@@ -291,14 +300,14 @@ def llm_completion_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.PROMPT: args[0],
+                            EventPayload.PROMPT: prompt,
                             EventPayload.COMPLETION: f_return_val,
                         },
                         event_id=event_id,
                     )
                     dispatcher.event(
                         LLMCompletionEndEvent(
-                            prompt=str(args[0]),
+                            prompt=prompt,
                             response=f_return_val,
                             span_id=span_id,
                         )
@@ -307,6 +316,7 @@ def llm_completion_callback() -> Callable:
             return f_return_val
 
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
+            prompt = extract_prompt(*args, **kwargs)
             with wrapper_logic(_self) as callback_manager:
                 span_id = dispatcher.root.current_span_id or ""
                 model_dict = _self.to_dict()
@@ -314,7 +324,7 @@ def llm_completion_callback() -> Callable:
                 dispatcher.event(
                     LLMCompletionStartEvent(
                         model_dict=model_dict,
-                        prompt=str(args[0]),
+                        prompt=prompt,
                         additional_kwargs=kwargs,
                         span_id=span_id,
                     )
@@ -322,7 +332,7 @@ def llm_completion_callback() -> Callable:
                 event_id = callback_manager.on_event_start(
                     CBEventType.LLM,
                     payload={
-                        EventPayload.PROMPT: args[0],
+                        EventPayload.PROMPT: prompt,
                         EventPayload.ADDITIONAL_KWARGS: kwargs,
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
@@ -336,7 +346,7 @@ def llm_completion_callback() -> Callable:
                         for x in f_return_val:
                             dispatcher.event(
                                 LLMCompletionEndEvent(
-                                    prompt=str(args[0]), response=x, span_id=span_id
+                                    prompt=prompt, response=x, span_id=span_id
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -345,7 +355,7 @@ def llm_completion_callback() -> Callable:
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
-                                EventPayload.PROMPT: args[0],
+                                EventPayload.PROMPT: prompt,
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
@@ -356,14 +366,14 @@ def llm_completion_callback() -> Callable:
                     callback_manager.on_event_end(
                         CBEventType.LLM,
                         payload={
-                            EventPayload.PROMPT: args[0],
+                            EventPayload.PROMPT: prompt,
                             EventPayload.COMPLETION: f_return_val,
                         },
                         event_id=event_id,
                     )
                     dispatcher.event(
                         LLMCompletionEndEvent(
-                            prompt=str(args[0]),
+                            prompt=prompt,
                             response=f_return_val,
                             span_id=span_id,
                         )
