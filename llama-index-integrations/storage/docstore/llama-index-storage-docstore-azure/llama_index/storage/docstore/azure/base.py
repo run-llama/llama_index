@@ -3,6 +3,7 @@ from typing import Optional
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.core.storage.docstore.types import DEFAULT_BATCH_SIZE
 from llama_index.storage.kvstore.azure import AzureKVStore
+from llama_index.storage.kvstore.azure.base import ServiceMode
 
 
 class AzureDocumentStore(KVDocumentStore):
@@ -31,11 +32,11 @@ class AzureDocumentStore(KVDocumentStore):
         """Init an AzureDocumentStore."""
         super().__init__(
             azure_kvstore,
-            namespace=namespace,
-            batch_size=batch_size,
-            node_collection_suffix=node_collection_suffix,
-            ref_doc_collection_suffix=ref_doc_collection_suffix,
-            metadata_collection_suffix=metadata_collection_suffix,
+            namespace,
+            batch_size,
+            node_collection_suffix,
+            ref_doc_collection_suffix,
+            metadata_collection_suffix,
         )
 
     @classmethod
@@ -46,6 +47,7 @@ class AzureDocumentStore(KVDocumentStore):
         node_collection_suffix: Optional[str] = None,
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureDocumentStore":
         """Load an AzureDocumentStore from an Azure connection string.
 
@@ -55,8 +57,11 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
+            service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
-        azure_kvstore = AzureKVStore.from_connection_string(connection_string)
+        azure_kvstore = AzureKVStore.from_connection_string(
+            connection_string, service_mode=service_mode
+        )
         return cls(
             azure_kvstore,
             namespace,
@@ -74,6 +79,7 @@ class AzureDocumentStore(KVDocumentStore):
         node_collection_suffix: Optional[str] = None,
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureDocumentStore":
         """Load an AzureDocumentStore from an account name and key.
 
@@ -84,8 +90,11 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
+            service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
-        azure_kvstore = AzureKVStore.from_account_and_key(account_name, account_key)
+        azure_kvstore = AzureKVStore.from_account_and_key(
+            account_name, account_key, service_mode=service_mode
+        )
         return cls(
             azure_kvstore,
             namespace,
@@ -103,6 +112,7 @@ class AzureDocumentStore(KVDocumentStore):
         node_collection_suffix: Optional[str] = None,
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureDocumentStore":
         """Load an AzureDocumentStore from a SAS token.
 
@@ -113,8 +123,11 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
+            service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
-        azure_kvstore = AzureKVStore.from_sas_token(endpoint, sas_token)
+        azure_kvstore = AzureKVStore.from_sas_token(
+            endpoint, sas_token, service_mode=service_mode
+        )
         return cls(
             azure_kvstore,
             namespace,
@@ -131,6 +144,7 @@ class AzureDocumentStore(KVDocumentStore):
         node_collection_suffix: Optional[str] = None,
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureDocumentStore":
         """Load an AzureDocumentStore from an AAD token.
 
@@ -140,8 +154,9 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix (Optional[str]): suffix for node collection
             ref_doc_collection_suffix (Optional[str]): suffix for ref doc collection
             metadata_collection_suffix (Optional[str]): suffix for metadata collection
+            service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
-        azure_kvstore = AzureKVStore.from_aad_token(endpoint)
+        azure_kvstore = AzureKVStore.from_aad_token(endpoint, service_mode=service_mode)
         return cls(
             azure_kvstore,
             namespace,
