@@ -1,7 +1,9 @@
-import oracledb
-
+from typing import TYPE_CHECKING
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.oracleai import OracleReader, OracleTextSplitter
+
+if TYPE_CHECKING:
+    import oracledb
 
 
 def test_class():
