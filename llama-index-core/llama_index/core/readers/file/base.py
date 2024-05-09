@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 
+from abc import ABC, abstractmethod
 import os
 import logging
 import mimetypes
@@ -18,6 +19,32 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
+
+
+class BaseFilesystemReader(BaseReader, ABC):
+    @abstractmethod
+    def list_files(self, **kwargs) -> List[Path]:
+        """List files in the given filesystem."""
+
+    async def alist_files(self, **kwargs) -> List[Path]:
+        """List files in the given filesystem asynchronously."""
+        return self.list_files(**kwargs)
+
+    @abstractmethod
+    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
+        """Get FS-specific file info that uniquely identifies the file. This call shouldn't imply reading the file."""
+
+    async def aget_file_info(self, input_file: Path, **kwargs) -> Dict:
+        """Get file info that uniquely identifies the file asynchronously. This call shouldn't imply reading the file."""
+        return self.get_file_info(input_file, **kwargs)
+
+    @abstractmethod
+    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
+        """Read file from filesystem and return documents."""
+
+    def aread_file(self, input_file: Path, **kwargs) -> List[Document]:
+        """Read file from filesystem and return documents asynchronously."""
+        return self.read_file(input_file, **kwargs)
 
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
@@ -59,16 +86,21 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
     return default_file_reader_cls
 
 
-def _format_file_timestamp(timestamp: float) -> Optional[str]:
+def _format_file_timestamp(
+    timestamp: float, include_time: bool = False
+) -> Optional[str]:
     """Format file timestamp to a %Y-%m-%d string.
 
     Args:
         timestamp (float): timestamp in float
+        include_time (bool): whether to include time in the formatted string
 
     Returns:
         str: formatted timestamp
     """
     try:
+        if include_time:
+            return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
         return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
     except Exception:
         return None
@@ -135,7 +167,7 @@ def is_default_fs(fs: fsspec.AbstractFileSystem) -> bool:
 logger = logging.getLogger(__name__)
 
 
-class SimpleDirectoryReader(BaseReader):
+class SimpleDirectoryReader(BaseFilesystemReader):
     """Simple directory reader.
 
     Load files from file directory.
@@ -347,6 +379,76 @@ class SimpleDirectoryReader(BaseReader):
             )
 
         return documents
+
+    def list_files(self, **kwargs) -> List[Path]:
+        """List files in the given filesystem."""
+        return self.input_files
+
+    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
+        info_result = self.fs.info(input_file)
+
+        creation_date = _format_file_timestamp(
+            info_result.get("created"), include_time=True
+        )
+        last_modified_date = _format_file_timestamp(
+            info_result.get("mtime"), include_time=True
+        )
+
+        info_dict = {
+            "file_path": input_file,
+            "file_size": info_result.get("size"),
+            "creation_date": creation_date,
+            "last_modified_date": last_modified_date,
+        }
+
+        # Ignore None values
+        return {
+            meta_key: meta_value
+            for meta_key, meta_value in info_dict.items()
+            if meta_value is not None
+        }
+
+    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
+        file_metadata = kwargs.get("file_metadata", self.file_metadata)
+        file_extractor = kwargs.get("file_extractor", self.file_extractor)
+        filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
+        encoding = kwargs.get("encoding", self.encoding)
+        errors = kwargs.get("errors", self.errors)
+        raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
+        fs = kwargs.get("fs", self.fs)
+
+        return SimpleDirectoryReader.load_file(
+            input_file=input_file,
+            file_metadata=file_metadata,
+            file_extractor=file_extractor,
+            filename_as_id=filename_as_id,
+            encoding=encoding,
+            errors=errors,
+            raise_on_error=raise_on_error,
+            fs=fs,
+            **kwargs,
+        )
+
+    async def aread_file(self, input_file: Path, **kwargs) -> List[Document]:
+        file_metadata = kwargs.get("file_metadata", self.file_metadata)
+        file_extractor = kwargs.get("file_extractor", self.file_extractor)
+        filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
+        encoding = kwargs.get("encoding", self.encoding)
+        errors = kwargs.get("errors", self.errors)
+        raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
+        fs = kwargs.get("fs", self.fs)
+
+        return await SimpleDirectoryReader.aload_file(
+            input_file=input_file,
+            file_metadata=file_metadata,
+            file_extractor=file_extractor,
+            filename_as_id=filename_as_id,
+            encoding=encoding,
+            errors=errors,
+            raise_on_error=raise_on_error,
+            fs=fs,
+            **kwargs,
+        )
 
     @staticmethod
     def load_file(

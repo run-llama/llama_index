@@ -472,3 +472,35 @@ def test_parallel_load() -> None:
         # check paths. Split handles path_part_X doc_ids from md and json files
         for doc in documents:
             assert str(doc.node_id).split("_part")[0] in doc_paths
+
+
+@pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
+def test_list_and_load_workflow() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        with open(f"{tmp_dir}/test1.txt", "w") as f:
+            f.write("test1")
+        with open(f"{tmp_dir}/test2.txt", "w") as f:
+            f.write("test2")
+
+        reader = SimpleDirectoryReader(tmp_dir)
+        files = reader.list_files()
+        assert len(files) == 2
+
+        original_docs = reader.load_data()
+
+        new_docs = []
+        for file in files:
+            file_info = reader.get_file_info(file)
+            assert file_info is not None
+            assert len(file_info) == 4
+
+            new_docs.extend(reader.read_file(file))
+
+        assert len(original_docs) == len(new_docs)
+
+        # the lists aren't necessarily in the same order, so we need to map them
+        original_docs_map = {doc.metadata["file_path"]: doc for doc in original_docs}
+        for new_doc in new_docs:
+            assert new_doc.metadata["file_path"] in original_docs_map
+            original_doc = original_docs_map[new_doc.metadata["file_path"]]
+            assert new_doc.hash == original_doc.hash
