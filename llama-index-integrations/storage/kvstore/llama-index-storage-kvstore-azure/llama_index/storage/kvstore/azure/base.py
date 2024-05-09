@@ -18,7 +18,6 @@ IMPORT_ERROR_MSG = (
 
 # https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#table-names
 ALPHANUMERIC_REGEX = re.compile(r"[^A-Za-z0-9]")
-DISALLOWED_KEY_CHARS_REGEX = re.compile(r"[\x00-\x1F\x7F-\x9F/#\?\t\n\r\\]")
 DEFAULT_PARTITION_KEY = "default"
 # https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
 STORAGE_MAX_ITEM_PROPERTIES = 255
@@ -33,6 +32,12 @@ MISSING_ASYNC_CLIENT_ERROR_MSG = "AzureKVStore was not initialized with an async
 
 
 class ServiceMode(Enum):
+    """Whether the AzureKVStore operates on an Azure Table Storage or Cosmos DB.
+
+    Args:
+        Enum (Enum): The enumeration type for the service mode.
+    """
+
     COSMOS = auto()
     STORAGE = auto()
 
@@ -44,14 +49,6 @@ class AzureKVStore(BaseKVStore):
     and Cosmos DB, allowing for operations like put, get, delete on key-value pairs.
     It supports connecting to the service using different credentials and manages table creation
     and data serialization to conform to the storage requirements.
-
-    Attributes:
-        _table_client (TableServiceClient): A client for interacting with the Azure Table service synchronously.
-        _atable_client (Optional[AsyncTableServiceClient]): A client for interacting with the Azure Table service asynchronously.
-        _service_mode (ServiceMode): The service mode, either STORAGE or COSMOS, defining specific limits and behaviors.
-
-    Raises:
-        ImportError: If required Azure SDK libraries are not installed.
     """
 
     def __init__(
