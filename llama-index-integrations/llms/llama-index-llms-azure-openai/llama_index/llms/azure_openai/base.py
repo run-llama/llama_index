@@ -102,6 +102,7 @@ class AzureOpenAI(OpenAI):
         deployment: Optional[str] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
+        async_http_client: Optional[httpx.AsyncClient] = None,
         # base class
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -138,6 +139,7 @@ class AzureOpenAI(OpenAI):
             api_version=api_version,
             callback_manager=callback_manager,
             http_client=http_client,
+            async_http_client=async_http_client,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
@@ -182,7 +184,9 @@ class AzureOpenAI(OpenAI):
             )
         return self._aclient
 
-    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+    def _get_credential_kwargs(
+        self, is_async: bool = False, **kwargs: Any
+    ) -> Dict[str, Any]:
         if self.use_azure_ad:
             self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
             self.api_key = self._azure_ad_token.token
@@ -206,7 +210,7 @@ class AzureOpenAI(OpenAI):
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
             **kwargs,
         }
 
