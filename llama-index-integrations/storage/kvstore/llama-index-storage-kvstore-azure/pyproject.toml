@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.storage.kvstore.azure"
 
 [tool.llamahub.class_authors]
-AzureKVStore = "llama-index"
+AzureKVStore = "Falven"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.storage.index_store.azure"
 
 [tool.llamahub.class_authors]
-AzureIndexStore = "llama-index"
+AzureIndexStore = "Falven"
 
 [tool.mypy]
 disallow_untyped_defs = true
