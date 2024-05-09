@@ -47,6 +47,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.base.llms.generic_utils import (
     completion_to_chat_decorator,
+    stream_completion_to_chat_decorator,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.llms.nvidia_triton.utils import GrpcTritonClient
@@ -236,10 +237,12 @@ class NvidiaTriton(LLM):
         chat_fn = completion_to_chat_decorator(self.complete)
         return chat_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        raise NotImplementedError
+        chat_stream_fn = stream_completion_to_chat_decorator(self.stream_complete)
+        return chat_stream_fn(messages, **kwargs)
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -266,7 +269,7 @@ class NvidiaTriton(LLM):
             if isinstance(token, InferenceServerException):
                 client.stop_stream(model_params["model_name"], request_id)
                 raise token
-            response = response + token
+            response += token
 
         return CompletionResponse(
             text=response,
@@ -275,7 +278,34 @@ class NvidiaTriton(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        raise NotImplementedError
+        from tritonclient.utils import InferenceServerException
+
+        client = self._get_client()
+
+        invocation_params = self._get_model_default_parameters
+        invocation_params.update(kwargs)
+        invocation_params["prompt"] = [[prompt]]
+        model_params = self._identifying_params
+        model_params.update(kwargs)
+        request_id = str(random.randint(1, 9999999))  # nosec
+
+        if self.triton_load_model_call:
+            client.load_model(model_params["model_name"])
+
+        result_queue = client.request_streaming(
+            model_params["model_name"], request_id, **invocation_params
+        )
+
+        def gen() -> CompletionResponseGen:
+            text = ""
+            for token in result_queue:
+                if isinstance(token, InferenceServerException):
+                    client.stop_stream(model_params["model_name"], request_id)
+                    raise token
+                text += token
+                yield CompletionResponse(text=text, delta=token)
+
+        return gen()
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any

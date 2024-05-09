@@ -1,7 +1,7 @@
-import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager, trace_method
@@ -292,7 +292,7 @@ class ContextChatEngine(BaseChatEngine):
             source_nodes=nodes,
         )
         thread = Thread(
-            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+            target=lambda x: asyncio_run(chat_response.awrite_response_to_history(x)),
             args=(self._memory,),
         )
         thread.start()

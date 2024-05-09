@@ -31,4 +31,4 @@ agent.chat(
 `find_similar`: Find similar documents to a given URL.
 `current_date`: Utility for the Agent to get todays date
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.
