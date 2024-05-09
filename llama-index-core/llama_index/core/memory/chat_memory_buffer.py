@@ -4,7 +4,10 @@ from typing import Any, Callable, Dict, List, Optional
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field, root_validator
 from llama_index.core.llms.llm import LLM
-from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory, BaseChatStoreMemory
+from llama_index.core.memory.types import (
+    DEFAULT_CHAT_STORE_KEY,
+    BaseChatStoreMemory,
+)
 from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
 from llama_index.core.utils import get_tokenizer
 
@@ -101,7 +104,9 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
 
         return cls(**data)
 
-    def get(self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
+    def get(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
         """Get chat history."""
         chat_history = self.get_all()
 

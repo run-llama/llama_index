@@ -4,7 +4,6 @@ Memory backed by a vector database.
 
 """
 
-import json
 import uuid
 from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 from llama_index.core.bridge.pydantic import validator
@@ -64,15 +63,17 @@ class VectorMemory(BaseMemory):
     # until the next user message into a single message
     # This is on by default, ensuring that we always fetch contiguous blocks of user/response pairs.
     # Turning this off may lead to errors in the function calling API of the LLM.
-    # If this is on, we don't commit to vector store until all the messages are present.
-    # `get()` will also return the latest user message 
-    # that is "incomplete" (hasn't been committed to the vector store)
+    # If this is on, then any message that's not a user message will be combined with the last user message
+    # in the vector store.
     batch_by_user_message: bool = True
 
+    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
     # NOTE/TODO: we need this to store id's for the messages
     # This is not needed once vector stores implement delete_all capabilities
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
+    # NOTE: this is to store the current user message batch (if `batch_by_user_message` is True) 
+    # allows us to keep track of the current user message batch
+    # so we can delete it when we commit a new node
     cur_user_msg_key: str = Field(default=CUR_USER_MSG_KEY)
 
     @validator('vector_index')

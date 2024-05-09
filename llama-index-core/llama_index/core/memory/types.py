@@ -55,6 +55,7 @@ class BaseMemory(BaseComponent):
     def reset(self) -> None:
         """Reset chat history."""
 
+
 class BaseChatStoreMemory(BaseComponent):
     """Base class for any .
 
