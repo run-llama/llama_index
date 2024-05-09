@@ -82,7 +82,8 @@ class AzStorageBlobReader(BasePydanticReader):
             if self.blob:
                 blob_client = container_client.get_blob_client(self.blob)
                 stream = blob_client.download_blob()
-                download_file_path = os.path.join(temp_dir, stream.name)
+                sanitized_file_name = stream.name.replace("/", "-")
+                download_file_path = os.path.join(temp_dir, sanitized_file_name)
                 logger.info(f"Start download of {self.blob}")
                 start_time = time.time()
                 with open(file=download_file_path, mode="wb") as download_file:
@@ -100,7 +101,8 @@ class AzStorageBlobReader(BasePydanticReader):
                     self.name_starts_with, self.include
                 )
                 for obj in blobs_list:
-                    download_file_path = os.path.join(temp_dir, obj.name)
+                    sanitized_file_name = obj.name.replace("/", "-")
+                    download_file_path = os.path.join(temp_dir, sanitized_file_name)
                     logger.info(f"Start download of {obj.name}")
                     start_time = time.time()
                     blob_client = container_client.get_blob_client(obj)
