@@ -112,7 +112,7 @@ def get_data_model(
     Index(
         hnsw_indexname,
         model.embedding,  # type: ignore
-        postgresql_using="hnsw",
+        postgresql_using="lantern_hnsw",
         postgresql_with={
             "m": m,
             "ef_construction": ef_construction,

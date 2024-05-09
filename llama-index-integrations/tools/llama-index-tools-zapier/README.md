@@ -26,4 +26,4 @@ agent.chat("Can you find the taco night file in google drive")
 `list_actions`: Get the actions that you have enabled through zapier
 `natural_language_query`: Make a natural language query to zapier
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

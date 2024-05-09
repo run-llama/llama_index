@@ -1,13 +1,21 @@
 import pytest
 from typing import List
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, LogProb
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai.utils import (
     from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,
     to_openai_tool,
+)
+
+from llama_index.llms.openai.utils import (
+    from_openai_completion_logprobs,
+    from_openai_token_logprob,
+    from_openai_token_logprobs,
 )
 
 
@@ -223,3 +231,23 @@ def test_to_openai_message_with_pydantic_description() -> None:
             "parameters": TestOutput.schema(),
         },
     }
+
+
+def test_from_openai_token_logprob_none_top_logprob() -> None:
+    logprob = ChatCompletionTokenLogprob(token="", logprob=1.0, top_logprobs=[])
+    logprob.top_logprobs = None
+    result: List[LogProb] = from_openai_token_logprob(logprob)
+    assert isinstance(result, list)
+
+
+def test_from_openai_token_logprobs_none_top_logprobs() -> None:
+    logprob = ChatCompletionTokenLogprob(token="", logprob=1.0, top_logprobs=[])
+    logprob.top_logprobs = None
+    result: List[LogProb] = from_openai_token_logprobs([logprob])
+    assert isinstance(result, list)
+
+
+def test_from_openai_completion_logprobs_none_top_logprobs() -> None:
+    logprobs = Logprobs(top_logprobs=None)
+    result = from_openai_completion_logprobs(logprobs)
+    assert isinstance(result, list)

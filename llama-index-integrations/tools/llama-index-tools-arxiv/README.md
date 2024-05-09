@@ -22,4 +22,4 @@ agent.chat("what are the latest developments in machine learning")
 
 `arxiv_query`: Search arXiv for results related to the query
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

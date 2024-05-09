@@ -10,9 +10,11 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Alibaba Cloud OpenSearch (`AlibabaCloudOpenSearchStore`). [QuickStart](https://help.aliyun.com/zh/open-search/vector-search-edition).
 - Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
+- AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
@@ -38,6 +40,7 @@ as the storage backend for `VectorStoreIndex`.
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
+- Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
@@ -95,6 +98,25 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Alibaba Cloud OpenSearch**
+
+```python
+from llama_index.vector_stores.alibabacloud_opensearch import (
+    AlibabaCloudOpenSearchStore,
+    AlibabaCloudOpenSearchConfig,
+)
+
+config = AlibabaCloudOpenSearchConfig(
+    endpoint="***",
+    instance_id="***",
+    username="your_username",
+    password="your_password",
+    table_name="llama",
+)
+
+vector_store = AlibabaCloudOpenSearchStore(config)
+```
 
 **Amazon Neptune - Neptune Analytics**
 
@@ -655,6 +677,19 @@ from llama_index.vector_stores.upstash import UpstashVectorStore
 vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
 ```
 
+**Vertex AI Vector Search**
+
+```python
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
+vector_store = VertexAIVectorStore(
+    project_id="[your-google-cloud-project-id]",
+    region="[your-google-cloud-region]",
+    index_id="[your-index-resource-name]",
+    endpoint_id="[your-index-endpoint-name]",
+)
+```
+
 **Weaviate**
 
 ```python
@@ -829,6 +864,7 @@ documents = reader.load_data(
 
 ## Vector Store Examples
 
+- [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
 - [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
@@ -845,6 +881,7 @@ documents = reader.load_data(
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
