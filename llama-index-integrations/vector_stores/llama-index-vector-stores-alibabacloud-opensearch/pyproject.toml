@@ -5,38 +5,34 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.kdbai"
+import_path = "llama_index.vector_stores.alibabacloud_opensearch"
 
 [tool.llamahub.class_authors]
-KDBAIVectorStore = "llama-index"
+AlibabaCloudOpenSearch = "goctave"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = ">=3.8.1,<4.0"
+python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores kdbai integration"
+authors = ["goctave <gshuiwang@gmail.com>"]
+description = "llama-index vector_stores Alibaba Cloud OpenSearch integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-kdbai"
+name = "llama-index-vector-stores-alibabacloud-opensearch"
 readme = "README.md"
-version = "0.1.6"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
-pykx = "^2.1.1"
-kdbai-client = "^0.1.2"
+llama-index-core = "^0.10.1"
+alibabacloud_ha3engine_vector = "^1.1.3"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
