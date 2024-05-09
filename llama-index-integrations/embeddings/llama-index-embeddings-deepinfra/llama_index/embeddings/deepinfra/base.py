@@ -49,8 +49,6 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
     _query_prefix: str = PrivateAttr()
     """text_prefix is used to add a prefix to texts."""
     _text_prefix: str = PrivateAttr()
-    """batch_size is the batch size for embedding requests."""
-    _batch_size: int = PrivateAttr()
 
     def __init__(
         self,
@@ -60,19 +58,20 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         query_prefix: str = "",
         text_prefix: str = "",
-        batch_size: int = MAX_BATCH_SIZE,
+        embed_batch_size: int = MAX_BATCH_SIZE,
     ) -> None:
         """
         Init params.
         """
+        super().__init__(
+            callback_manager=callback_manager, embed_batch_size=embed_batch_size
+        )
+
         self._model_id = model_id
         self._normalize = normalize
-        self._api_token = os.getenv(ENV_VARIABLE, api_token)
+        self._api_token = api_token or os.getenv(ENV_VARIABLE, None)
         self._query_prefix = query_prefix
         self._text_prefix = text_prefix
-        self._batch_size = batch_size
-
-        super().__init__(callback_manager=callback_manager)
 
     def _post(self, data: List[str]) -> List[List[float]]:
         """
@@ -86,7 +85,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
             dict: A dictionary containing embeddings from the API.
         """
         url = self.get_url()
-        chunked_data = _chunk(data, self._batch_size)
+        chunked_data = _chunk(data, self.embed_batch_size)
         embeddings = []
         for chunk in chunked_data:
             response = requests.post(
@@ -121,7 +120,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
 
         """
         url = self.get_url()
-        chunked_data = _chunk(data, self._batch_size)
+        chunked_data = _chunk(data, self.embed_batch_size)
         embeddings = []
         for chunk in chunked_data:
             async with aiohttp.ClientSession() as session:
