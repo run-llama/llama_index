@@ -425,6 +425,8 @@
   "set_google_config": "llama_index.vector_stores.google",
   "GoogleVectorStore": "llama_index.vector_stores.google",
   "MetalVectorStore": "llama_index.vector_stores.metal",
+  "AlibabaCloudOpenSearchConfig": "llama_index.vector_stores.alibabacloud_opensearch",
+  "AlibabaCloudOpenSearchStore": "llama_index.vector_stores.alibabacloud_opensearch",
   "PathwayRetriever": "llama_index.retrievers.pathway",
   "AmazonKnowledgeBasesRetriever": "llama_index.retrievers.bedrock",
   "MongoDBAtlasBM25Retriever": "llama_index.retrievers.mongodb_atlas_bm25_retriever",

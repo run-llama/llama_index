@@ -4,6 +4,7 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.types import TokenGen, TokenAsyncGen
@@ -179,7 +180,7 @@ class AsyncStreamingResponse:
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        return asyncio.run(self._async_str)
+        return asyncio_run(self._async_str)
 
     async def _async_str(self) -> str:
         """Convert to string representation."""
