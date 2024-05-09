@@ -242,48 +242,6 @@ class Ollama(CustomLLM):
                             ),
                         )
 
-    @llm_chat_callback()
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        payload = {
-            "model": self.model,
-            "messages": [
-                {
-                    "role": message.role.value,
-                    "content": message.content,
-                    **message.additional_kwargs,
-                }
-                for message in messages
-            ],
-            "options": self._model_kwargs,
-            "stream": False,
-            **kwargs,
-        }
-
-        if self.json_mode:
-            payload["format"] = "json"
-
-        async with httpx.AsyncClient(timeout=Timeout(self.request_timeout)) as client:
-            response = await client.post(
-                url=f"{self.base_url}/api/chat",
-                json=payload,
-            )
-            response.raise_for_status()
-            raw = response.json()
-            message = raw["message"]
-            return ChatResponse(
-                message=ChatMessage(
-                    content=message.get("content"),
-                    role=MessageRole(message.get("role")),
-                    additional_kwargs=get_additional_kwargs(
-                        message, ("content", "role")
-                    ),
-                ),
-                raw=raw,
-                additional_kwargs=get_additional_kwargs(raw, ("message",)),
-            )
-
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
