@@ -1,9 +1,9 @@
 import os
-
+from typing import List
 import pytest
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, TextNode
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 from pymongo import MongoClient
@@ -16,7 +16,7 @@ lock = threading.Lock()
 
 
 @pytest.fixture(scope="session")
-def documents():
+def documents() -> List[Document]:
     """List of documents represents data to be embedded in the datastore.
     Minimum requirements for Documents in the /upsert endpoint's UpsertRequest.
     """
@@ -24,7 +24,7 @@ def documents():
 
 
 @pytest.fixture(scope="session")
-def nodes(documents):
+def nodes(documents) -> List[TextNode]:
     if OPENAI_API_KEY is None:
         return None
 
@@ -45,7 +45,7 @@ MONGODB_URI = os.environ.get("MONGODB_URI")
 
 
 @pytest.fixture(scope="session")
-def atlas_client():
+def atlas_client() -> MongoClient:
     if MONGODB_URI is None:
         return None
 
@@ -64,7 +64,7 @@ def atlas_client():
 
 
 @pytest.fixture(scope="session")
-def vector_store(atlas_client):
+def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
     if MONGODB_URI is None:
         return None
 
