@@ -32,6 +32,7 @@ class NVIDIA(OpenAILike):
         model: str = DEFAULT_MODEL,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
+        max_tokens: Optional[int] = 1024,
         **kwargs: Any,
     ) -> None:
         api_key = get_from_param_or_env(
@@ -45,6 +46,7 @@ class NVIDIA(OpenAILike):
             model=model,
             api_key=api_key,
             api_base=BASE_URL,
+            max_tokens=max_tokens,
             is_chat_model=True,
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             **kwargs,

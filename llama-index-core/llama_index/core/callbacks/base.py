@@ -68,6 +68,15 @@ class CallbackManager(BaseCallbackHandler, ABC):
                     )
             handlers.append(new_handler)
 
+        # if we passed in no handlers, use the global default
+        if len(handlers) == 0:
+            from llama_index.core.settings import Settings
+
+            # hidden var access to prevent recursion in getter
+            cb_manager = Settings._callback_manager
+            if cb_manager is not None:
+                handlers = cb_manager.handlers
+
         self.handlers = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
