@@ -1,25 +1,23 @@
 # -----------------------------------------------------------------------------
-# Copyright (c) 2023 - , Oracle and/or its affiliates.
-# -----------------------------------------------------------------------------
 # Authors:
 #   Harichandan Roy (hroy)
 #   David Jiang (ddjiang)
 #
 # -----------------------------------------------------------------------------
-# oracleds.py
+# ...embeddings/oracleai.py
 # -----------------------------------------------------------------------------
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-import oracledb
 import json
 
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.base.embeddings.base import (
-    BaseEmbedding,
-)
+from llama_index.core.embeddings import BaseEmbedding
+
+if TYPE_CHECKING:
+    from oracledb import Connection
 
 """OracleEmbeddings class"""
 
@@ -86,6 +84,14 @@ class OracleEmbeddings(BaseEmbedding):
             raise
 
     def _get_embedding(self, text: str) -> List[float]:
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         if text is None:
             return None
 
