@@ -184,9 +184,11 @@ def get_runtime() -> Tuple[Framework, Runtime]:
     """
     from importlib.metadata import version
 
-    framework = Framework(
-        name="Llama Pebblo Reader", version=version("llama-index-readers-pebblo")
-    )
+    try:
+        reader_version = version("llama-index-readers-pebblo")
+    except Exception:
+        reader_version = "unknown"
+    framework = Framework(name="Llama Pebblo Reader", version=reader_version)
     uname = platform.uname()
 
     runtime = Runtime(
