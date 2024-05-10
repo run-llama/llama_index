@@ -1,6 +1,6 @@
 import logging
 import warnings
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 
 import httpx
 from llama_index.core.callbacks import CallbackManager
@@ -22,7 +22,7 @@ UPSTAGE_EMBEDDING_MODELS = {
 }
 
 
-def get_engine(model) -> tuple[Any, Any]:
+def get_engine(model) -> Tuple[Any, Any]:
     """
     get query engine and passage engine for the model.
     """
