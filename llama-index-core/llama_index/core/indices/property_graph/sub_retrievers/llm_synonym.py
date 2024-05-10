@@ -66,9 +66,6 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         return self._get_nodes_with_score(triplets)
 
     async def _aprepare_matches(self, matches: List[str]) -> List[NodeWithScore]:
-        import pdb
-
-        pdb.set_trace()
         kg_nodes = await self._graph_store.aget(ids=matches)
         triplets = await self._graph_store.aget_rel_map(
             kg_nodes,

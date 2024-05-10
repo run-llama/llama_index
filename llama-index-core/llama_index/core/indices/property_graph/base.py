@@ -12,7 +12,6 @@ from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMTripletExtractor,
     ImplicitEdgeExtractor,
 )
-from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.ingestion.pipeline import (
     run_transformations,
     arun_transformations,
@@ -27,6 +26,7 @@ from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode, TransformComponent
 from llama_index.core.settings import Settings
+from llama_index.core.vector_stores.types import VectorStore
 
 if TYPE_CHECKING:
     from llama_index.core.indices.property_graph.sub_retrievers.base import (
@@ -47,7 +47,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             Defaults to `[SimpleLLMTripletExtractor(llm=llm), ImplicitEdgeExtractor()]`.
         lpg_graph_store (Optional[LabelledPropertyGraphStore]):
             The labelled property graph store to use. If not provided, a new `SimpleLPGStore` will be created.
-        vector_index (Optional[VectorStoreIndex]):
+        vector_store (Optional[VectorStore]):
             The vector store index to use, if the graph store does not support vector queries.
         use_async (bool):
             Whether to use async for transformations. Defaults to `True`.
@@ -76,7 +76,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         kg_transformations: Optional[List[TransformComponent]] = None,
         lpg_graph_store: Optional[LabelledPropertyGraphStore] = None,
         # vector related params
-        vector_index: Optional[VectorStoreIndex] = None,
+        vector_store: Optional[VectorStore] = None,
         use_async: bool = True,
         embed_model: Optional[EmbedType] = None,
         embed_kg_nodes: bool = True,
@@ -92,10 +92,14 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             lpg_graph_store=lpg_graph_store
         )
 
+        # lazily initialize the graph store on the storage context
         if lpg_graph_store is not None:
             storage_context.lpg_graph_store = lpg_graph_store
         else:
             storage_context.lpg_graph_store = SimpleLPGStore()
+
+        if vector_store is not None:
+            storage_context.vector_store = vector_store
 
         if embed_kg_nodes and (
             storage_context.lpg_graph_store.supports_vector_queries or embed_kg_nodes
@@ -115,16 +119,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         self._use_async = use_async
         self._llm = llm
 
-        if (
-            embed_kg_nodes
-            and not storage_context.lpg_graph_store.supports_vector_queries
-            and vector_index is None
-        ):
-            raise ValueError(
-                "Please provide a `vector_index` if `embed_kg_nodes` is True and the graph store "
-                "does not support vector queries."
-            )
-        self.vector_index = vector_index
+        self.vector_store = storage_context.vector_store
 
         super().__init__(
             nodes=nodes,
@@ -180,7 +175,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
 
         # embed nodes (if needed)
         if self._embed_model and (
-            self.lpg_graph_store.supports_vector_queries or self.vector_index
+            self.lpg_graph_store.supports_vector_queries or self.vector_store
         ):
             # embed llama-index nodes
             node_texts = [
@@ -212,18 +207,18 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):
                 kg_node.embedding = embedding
 
+        # if graph store doesn't support vectors, or the vector index was provided, use it
+        if (
+            not self.lpg_graph_store.supports_vector_queries
+            and self.vector_store is not None
+        ):
+            self._insert_nodes_to_vector_index(kg_nodes_to_insert)
+
         self.lpg_graph_store.upsert_llama_nodes(nodes)
         self.lpg_graph_store.upsert_nodes(kg_nodes_to_insert)
 
         # important: upsert relations after nodes
         self.lpg_graph_store.upsert_relations(kg_rels_to_insert)
-
-        # if graph store doesn't support vectors, or the vector index was provided, use it
-        if (
-            not self.lpg_graph_store.supports_vector_queries
-            and self.vector_index is not None
-        ):
-            self._insert_nodes_to_vector_index(kg_nodes_to_insert)
 
         return nodes
 
@@ -237,11 +232,14 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
                         id_=node.id,
                         text=str(node),
                         metadata=node.properties,
-                        embedding=node.embedding,
+                        embedding=[*node.embedding],
                     )
                 )
 
-        self.vector_index.insert_nodes(llama_nodes)
+            # clear the embedding to save memory, its not used now
+            node.embedding = None
+
+        self.vector_store.add(llama_nodes)
 
     def _build_index_from_nodes(self, nodes: Optional[Sequence[BaseNode]]) -> IndexList:
         """Build index from nodes."""
@@ -288,12 +286,12 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             ]
 
             if self._embed_model and (
-                self.lpg_graph_store.supports_vector_queries or self.vector_index
+                self.lpg_graph_store.supports_vector_queries or self.vector_store
             ):
                 retrievers.append(
                     LPGVectorRetriever(
                         graph_store=self.lpg_graph_store,
-                        vector_index=self.vector_index,
+                        vector_store=self.vector_store,
                         include_text=include_text,
                         **kwargs,
                     )

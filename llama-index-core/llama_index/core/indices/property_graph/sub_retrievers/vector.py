@@ -4,11 +4,10 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
-from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
-from llama_index.core.vector_stores.types import VectorStoreQuery
 from llama_index.core.settings import Settings
 from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStore
 
 
 class LPGVectorRetriever(BaseLPGRetriever):
@@ -17,7 +16,7 @@ class LPGVectorRetriever(BaseLPGRetriever):
         graph_store: LabelledPropertyGraphStore,
         include_text: bool = True,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_index: Optional[VectorStoreIndex] = None,
+        vector_store: Optional[VectorStore] = None,
         similarity_top_k: int = 2,
         triple_depth: int = 1,
         **kwargs: Any
@@ -25,7 +24,7 @@ class LPGVectorRetriever(BaseLPGRetriever):
         self._retriever_kwargs = kwargs or {}
         self._embed_model = embed_model or Settings.embed_model
         self._similarity_top_k = similarity_top_k
-        self._vector_index = vector_index
+        self._vector_store = vector_store
         self._triple_depth = triple_depth
 
         super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
@@ -69,8 +68,8 @@ class LPGVectorRetriever(BaseLPGRetriever):
             kg_ids = [node.id for node in kg_nodes]
             triplets = self._graph_store.get_rel_map(kg_nodes, depth=self._triple_depth)
 
-        elif self._vector_index is not None:
-            query_result = self._vector_index.vector_store.query(vector_store_query)
+        elif self._vector_store is not None:
+            query_result = self._vector_store.query(vector_store_query)
             if query_result.nodes is not None and query_result.similarities is not None:
                 kg_ids = [node.node_id for node in query_result.nodes]
                 scores = query_result.similarities
@@ -120,10 +119,8 @@ class LPGVectorRetriever(BaseLPGRetriever):
                 kg_nodes, depth=self._triple_depth
             )
 
-        elif self._vector_index is not None:
-            query_result = await self._vector_index.vector_store.aquery(
-                vector_store_query
-            )
+        elif self._vector_store is not None:
+            query_result = await self._vector_store.aquery(vector_store_query)
             if query_result.nodes is not None and query_result.similarities is not None:
                 kg_ids = [node.node_id for node in query_result.nodes]
                 scores = query_result.similarities
