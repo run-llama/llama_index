@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -7,6 +7,7 @@ from llama_index.core.storage.kvstore.types import (
     BaseKVStore,
 )
 
+from redis.asyncio import Redis as AsyncRedis
 from redis import Redis
 
 
@@ -15,8 +16,9 @@ class RedisKVStore(BaseKVStore):
     Redis KV Store.
 
     Args:
+        redis_uri (str): Redis URI
         redis_client (Any): Redis client
-        redis_url (Optional[str]): Redis server URI
+        async_redis_client (Any): Async Redis client
 
     Raises:
             ValueError: If redis-py is not installed
@@ -32,17 +34,35 @@ class RedisKVStore(BaseKVStore):
     def __init__(
         self,
         redis_uri: Optional[str] = "redis://127.0.0.1:6379",
+        redis_client: Optional[Redis] = None,
+        async_redis_client: Optional[AsyncRedis] = None,
         **kwargs: Any,
     ) -> None:
         # user could inject customized redis client.
         # for instance, redis have specific TLS connection, etc.
-        if "redis_client" in kwargs:
-            self._redis_client = cast(Redis, kwargs["redis_client"])
+        if redis_client is not None:
+            self._redis_client = redis_client
+
+            # create async client from sync client
+            if async_redis_client is not None:
+                self._async_redis_client = async_redis_client
+            else:
+                try:
+                    self._async_redis_client = AsyncRedis.from_url(
+                        self._redis_client.connection_pool.connection_kwargs["url"]
+                    )
+                except Exception:
+                    print(
+                        "Could not create async redis client from sync client, "
+                        "pass in `async_redis_client` explicitly."
+                    )
+                    self._async_redis_client = None
         elif redis_uri is not None:
             # otherwise, try initializing redis client
             try:
                 # connect to redis from url
                 self._redis_client = Redis.from_url(redis_uri, **kwargs)
+                self._async_redis_client = AsyncRedis.from_url(redis_uri, **kwargs)
             except ValueError as e:
                 raise ValueError(f"Redis failed to connect: {e}")
         else:
@@ -72,7 +92,9 @@ class RedisKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        return self.put(key=key, val=val, collection=collection)
+        return await self._async_redis_client.hset(
+            name=collection, key=key, value=json.dumps(val)
+        )
 
     def put_all(
         self,
@@ -126,7 +148,10 @@ class RedisKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        return self.get(key=key, collection=collection)
+        val_str = await self._async_redis_client.hget(name=collection, key=key)
+        if val_str is None:
+            return None
+        return json.loads(val_str)
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
@@ -138,7 +163,11 @@ class RedisKVStore(BaseKVStore):
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store."""
-        return self.get_all(collection=collection)
+        collection_kv_dict = {}
+        async for key, val_str in self._async_redis_client.hscan_iter(name=collection):
+            value = dict(json.loads(val_str))
+            collection_kv_dict[key.decode()] = value
+        return collection_kv_dict
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """
@@ -161,7 +190,8 @@ class RedisKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        return self.delete(key=key, collection=collection)
+        deleted_num = await self._async_redis_client.hdel(collection, key)
+        return bool(deleted_num > 0)
 
     @classmethod
     def from_host_and_port(
