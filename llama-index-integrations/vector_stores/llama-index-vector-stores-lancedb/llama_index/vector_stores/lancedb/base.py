@@ -16,6 +16,8 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
+    FilterOperator,
+    FilterCondition,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -34,15 +36,47 @@ import lancedb
 _logger = logging.getLogger(__name__)
 
 
-def _to_lance_filter(standard_filters: MetadataFilters) -> Any:
+sql_operator_mapper = {
+    FilterOperator.EQ: " = ",
+    FilterOperator.GT: " > ",
+    FilterOperator.GTE: " >= ",
+    FilterOperator.LTE: " <= ",
+    FilterOperator.TEXT_MATCH: " LIKE ",
+    FilterOperator.NE: " NOT LIKE ",
+    FilterOperator.IN: " IN ",
+}
+
+
+def _to_lance_filter(standard_filters: MetadataFilters, metadata_keys: list) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
     filters = []
-    for filter in standard_filters.legacy_filters():
-        if isinstance(filter.value, str):
-            filters.append(filter.key + ' = "' + filter.value + '"')
+    for filter in standard_filters.filters:
+        key = filter.key
+        if filter.key in metadata_keys:
+            key = f"metadata.{filter.key}"
+        if (
+            filter.operator == FilterOperator.TEXT_MATCH
+            or filter.operator == FilterOperator.NE
+        ):
+            filters.append(
+                key + sql_operator_mapper[filter.operator] + f"'%{filter.value}%'"
+            )
+        if isinstance(filter.value, list):
+            val = ",".join(filter.value)
+            filters.append(key + sql_operator_mapper[filter.operator] + f"({val})")
+        elif isinstance(filter.value, int):
+            filters.append(
+                key + sql_operator_mapper[filter.operator] + f"{filter.value}"
+            )
         else:
-            filters.append(filter.key + " = " + str(filter.value))
-    return " AND ".join(filters)
+            filters.append(
+                key + sql_operator_mapper[filter.operator] + f"'{filter.value!s}'"
+            )
+
+    if standard_filters.condition == FilterCondition.OR:
+        return " OR ".join(filters)
+    else:
+        return " AND ".join(filters)
 
 
 def _to_llama_similarities(results: DataFrame) -> List[float]:
@@ -94,15 +128,13 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         ```python
         from llama_index.vector_stores.lancedb import LanceDBVectorStore
 
-        vector_store = LanceDBVectorStore(uri="/tmp/lancedb")
+        vector_store = LanceDBVectorStore()  # native invocation
         ```
     """
 
     stores_text = True
     flat_metadata: bool = True
-    _connection: Any = PrivateAttr()
     uri: Optional[str]
-    table_name: Optional[str]
     vector_column_name: Optional[str]
     nprobes: Optional[int]
     refine_factor: Optional[int]
@@ -111,11 +143,17 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     api_key: Optional[str]
     region: Optional[str]
 
+    _table_name: Optional[str] = PrivateAttr()
+    _connection: Any = PrivateAttr()
+    _table: Any = PrivateAttr()
+    _metadata_keys: Any = PrivateAttr()
+
     def __init__(
         self,
         connection: Optional[Any] = None,
         uri: Optional[str] = "/tmp/lancedb",
-        table_name: str = "vectors",
+        table: Optional[Any] = None,
+        table_name: Optional[str] = "vectors",
         vector_column_name: str = "vector",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
@@ -126,26 +164,40 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        if os.getenv("LANCE_API_KEY") is not None:
-            api_key = os.getenv("LANCE_API_KEY")
+        self._table_name = table_name
+        self._metadata_keys = None
 
-        if "db://" in uri and api_key is None:
-            raise ValueError("API key is required for LanceDB cloud db.")
-
-        if isinstance(connection, lancedb.db.LanceTable):
+        if isinstance(connection, lancedb.db.LanceDBConnection):
             self._connection = connection
         elif isinstance(connection, str):
-            raise ValueError("`connection` has to be a lancedb.db.LanceTable object.")
+            raise ValueError(
+                "`connection` has to be a lancedb.db.LanceDBConnection object."
+            )
         else:
-            if api_key is None:
-                self._connection = lancedb.connect(uri)
+            if api_key is None and os.getenv("LANCE_API_KEY") is None:
+                if uri.startswith("db://"):
+                    raise ValueError("API key is required for LanceDB cloud.")
+                else:
+                    self._connection = lancedb.connect(uri)
             else:
                 if "db://" not in uri:
                     self._connection = lancedb.connect(uri)
                     warnings.warn(
                         "api key provided with local uri. The data will be stored locally"
                     )
-                self._connection = lancedb.connect(uri, api_key=api_key, region=region)
+                self._connection = lancedb.connect(
+                    uri, api_key=api_key or os.getenv("LANCE_API_KEY"), region=region
+                )
+
+        if table:
+            assert isinstance(table, lancedb.db.LanceTable)
+            self._table = table
+            self._table_name = table.name
+        else:
+            if self._table_exists():
+                self._table = self._connection.open_table(table_name)
+            else:
+                self._table = None
 
         super().__init__(
             uri=uri,
@@ -162,6 +214,13 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     def client(self) -> None:
         """Get client."""
         return self._connection
+
+    @classmethod
+    def from_table(cls, table: lancedb.db.LanceTable) -> "LanceDBVectorStore":
+        """Create instance from table."""
+        if not isinstance(table, lancedb.db.LanceTable):
+            raise Exception("argument is not lancdb table instance")
+        return cls(table=table)
 
     @classmethod
     def from_params(
@@ -189,6 +248,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             **kwargs,
         )
 
+    def _table_exists(self, tbl_name: Optional[str] = None) -> bool:
+        return (tbl_name or self._table_name) in self._connection.table_names()
+
     def add(
         self,
         nodes: List[BaseNode],
@@ -203,6 +265,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             metadata = node_to_metadata_dict(
                 node, remove_text=False, flat_metadata=self.flat_metadata
             )
+            if not self._metadata_keys:
+                self._metadata_keys = list(metadata.keys())
             append_data = {
                 "id": node.node_id,
                 "doc_id": node.ref_doc_id,
@@ -213,11 +277,11 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             data.append(append_data)
             ids.append(node.node_id)
 
-        if self.table_name in self._connection.table_names():
-            tbl = self._connection.open_table(self.table_name)
-            tbl.add(data)
-        else:
-            self._connection.create_table(self.table_name, data)
+            if self._table is None:
+                self._table = self._connection.create_table(self._table_name, data)
+
+            self._table.add(data)
+
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -228,7 +292,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        table = self._connection.open_table(self.table_name)
+        table = self._connection.open_table(self._table_name)
         table.delete('document_id = "' + ref_doc_id + '"')
 
     def query(
@@ -244,11 +308,12 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     "Use kwargs only for lancedb specific items that are "
                     "not supported via the generic query interface."
                 )
-            where = _to_lance_filter(query.filters)
+            where = _to_lance_filter(query.filters, self._metadata_keys)
         else:
             where = kwargs.pop("where", None)
 
-        table = self._connection.open_table(self.table_name)
+        table = self._table or self._connection.open_table(self._table_name)
+
         lance_query = (
             table.search(
                 query=query.query_embedding,
@@ -263,17 +328,21 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             lance_query.refine_factor(self.refine_factor)
 
         results = lance_query.to_pandas()
+
+        if len(results) == 0:
+            raise Warning("query results are empty..")
+
         nodes = []
         for _, item in results.iterrows():
             try:
                 node = metadata_dict_to_node(item.metadata)
-                node.embedding = list(item[self.vector_column_name])
+                node.embedding = None
             except Exception:
                 # deprecated legacy logic for backward compatibility
                 _logger.debug(
                     "Failed to parse Node metadata, fallback to legacy logic."
                 )
-                if "metadata" in item:
+                if item.metadata:
                     metadata, node_info, _relation = legacy_metadata_dict_to_node(
                         item.metadata, text_key=self.text_key
                     )
