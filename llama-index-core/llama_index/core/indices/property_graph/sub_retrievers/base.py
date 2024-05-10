@@ -2,8 +2,19 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
-from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle
+from llama_index.core.graph_stores.types import LabelledPropertyGraphStore, Triplet
+from llama_index.core.indices.property_graph.base import (
+    TRIPLET_SOURCE_KEY,
+)
+from llama_index.core.schema import (
+    BaseNode,
+    NodeWithScore,
+    NodeRelationship,
+    RelatedNodeInfo,
+    QueryBundle,
+    TextNode,
+)
+
 
 DEFAULT_PREAMBLE = "Here are some facts extracted from the provided text:\n\n"
 
@@ -14,12 +25,37 @@ class BaseLPGRetriever(BaseRetriever):
         graph_store: LabelledPropertyGraphStore,
         include_text: bool = True,
         include_text_preamble: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         self._graph_store = graph_store
         self.include_text = include_text
         self._include_text_preamble = include_text_preamble or DEFAULT_PREAMBLE
         super().__init__(callback_manager=kwargs.get("callback_manager", None))
+
+    def _get_nodes_with_score(
+        self, triplets: List[Triplet], scores: Optional[List[float]] = None
+    ) -> List[NodeWithScore]:
+        results = []
+        for i, triplet in enumerate(triplets):
+            source_id = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
+            relationships = {}
+            if source_id is not None:
+                relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
+                    node_id=source_id
+                )
+
+            text = f"{triplet[0]!s} -> {triplet[1]!s} -> {triplet[2]!s}"
+            results.append(
+                NodeWithScore(
+                    node=TextNode(
+                        text=text,
+                        relationships=relationships,
+                    ),
+                    score=1.0 if scores is None else scores[i],
+                )
+            )
+
+        return results
 
     def _add_source_text(
         self, retrieved_nodes: List[NodeWithScore], og_node_map: Dict[str, BaseNode]
@@ -41,12 +77,14 @@ class BaseLPGRetriever(BaseRetriever):
                 if len(graph_content) > 0:
                     graph_content_str = "\n".join(graph_content)
                     cur_content = node.get_content()
-                    node.set_content(
+                    new_content = (
                         self._include_text_preamble
                         + graph_content_str
                         + "\n\n"
                         + cur_content
                     )
+                    node = TextNode(**node.dict())
+                    node.text = new_content
                 result_nodes.append(
                     NodeWithScore(
                         node=node,

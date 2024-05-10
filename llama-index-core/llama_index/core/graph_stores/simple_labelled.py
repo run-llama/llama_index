@@ -60,6 +60,10 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get triplets."""
+        # if nothing is passed, return empty list
+        if not ids and not properties and not entity_names and not relation_names:
+            return []
+
         triplets = self.graph.get_triplets()
         if entity_names:
             triplets = [
@@ -99,12 +103,17 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
         cur_depth = 0
         graph_triplets = self.get_triplets(ids=[gn.id for gn in graph_nodes])
+        seen_triplets = set()
 
-        while len(graph_triplets) > 0 or cur_depth < depth:
+        while len(graph_triplets) > 0 and cur_depth < depth:
             triplets.extend(graph_triplets)
 
             # get next depth
-            graph_triplets = self.get(ids=[t[2].id for t in graph_triplets])
+            graph_triplets = self.get_triplets(
+                entity_names=[t[2].id for t in graph_triplets]
+            )
+            graph_triplets = [t for t in graph_triplets if str(t) not in seen_triplets]
+            seen_triplets.update([str(t) for t in graph_triplets])
             depth += 1
 
         return triplets[:limit]
@@ -176,6 +185,19 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         """Load from persist dir."""
         persist_path = os.path.join(persist_dir, DEFUALT_LPG_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict,
+    ) -> "SimpleLPGStore":
+        """Load from dict."""
+        graph = LabelledPropertyGraph.parse_obj(data)
+        return cls(graph)
+
+    def to_dict(self) -> dict:
+        """Convert to dict."""
+        return self.graph.dict()
 
     # NOTE: Unimplemented methods for SimpleLPGStore
 

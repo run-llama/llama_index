@@ -1,8 +1,8 @@
 import asyncio
-from typing import Any, Dict, List, Literal, Optional, TypeAlias
+from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
 from llama_index.core.async_utils import run_jobs
-from llama_index.core.bridge.pydantic import create_model, validator
+from llama_index.core.bridge.pydantic import create_model, validator, Field
 from llama_index.core.graph_stores.types import EntityNode, Relation, Triplet
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import TransformComponent, BaseNode
@@ -32,6 +32,7 @@ DEFAULT_RELATIONS = Literal[
     "IS_A",
     "BORN_IN",
     "DIED_IN",
+    "HAS_ALIAS",
 ]
 
 # Which entities can be connected to which relations
@@ -109,14 +110,16 @@ class SchemaLLMTripletExtractor(TransformComponent):
     kg_validation_schema: Dict[str, Any]
     num_workers: int
     max_triplets_per_chunk: int
+    strict: bool
     show_progress: bool
 
     def __init__(
         self,
         llm: LLM,
-        extract_prompt: PromptTemplate = None,
+        extract_prompt: Union[PromptTemplate, str] = None,
         possible_entities: Optional[TypeAlias] = None,
         possible_relations: Optional[TypeAlias] = None,
+        strict: bool = True,
         kg_schema_cls: Any = None,
         kg_validation_schema: Dict[str, str] = None,
         max_triplets_per_chunk: int = 10,
@@ -124,32 +127,44 @@ class SchemaLLMTripletExtractor(TransformComponent):
         show_progress: bool = False,
     ) -> None:
         """Init params."""
+        if isinstance(extract_prompt, str):
+            extract_prompt = PromptTemplate(extract_prompt)
+
         # Build a pydantic model on the fly
         if kg_schema_cls is None:
             possible_entities = possible_entities or DEFAULT_ENTITIES
             entity_cls = create_model(
                 "Entity",
-                __doc__=(
-                    "Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
-                    + str(possible_entities)
+                type=(
+                    possible_entities if strict else str,
+                    Field(
+                        ...,
+                        description=(
+                            "Entity in a knowledge graph. Only extract entities with types that are listed as valid: "
+                            + str(possible_entities)
+                        ),
+                    ),
                 ),
-                type=(possible_entities, ...),
-                value=(str, ...),
+                name=(str, ...),
             )
 
             possible_relations = possible_relations or DEFAULT_RELATIONS
             relation_cls = create_model(
                 "Relation",
-                __doc__=(
-                    "Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
-                    + str(possible_relations)
+                type=(
+                    possible_relations if strict else str,
+                    Field(
+                        ...,
+                        description=(
+                            "Relation in a knowledge graph. Only extract relations with types that are listed as valid: "
+                            + str(possible_relations)
+                        ),
+                    ),
                 ),
-                type=(possible_relations, ...),
             )
 
             triplet_cls = create_model(
                 "Triplet",
-                __doc__="Triplet in a knowledge graph.",
                 subject=(entity_cls, ...),
                 relation=(relation_cls, ...),
                 object=(entity_cls, ...),
@@ -178,10 +193,10 @@ class SchemaLLMTripletExtractor(TransformComponent):
             root = validator("triplets", pre=True)(validate)
             kg_schema_cls = create_model(
                 "KGSchema",
-                __doc__="Knowledge Graph Schema.",
                 __validators__={"validator1": root},
                 triplets=(List[triplet_cls], ...),
             )
+            kg_schema_cls.__doc__ = "Knowledge Graph Schema."
 
         super().__init__(
             llm=llm,
@@ -190,6 +205,7 @@ class SchemaLLMTripletExtractor(TransformComponent):
             kg_validation_schema=kg_validation_schema or DEFAULT_VALIDATION_SCHEMA,
             num_workers=num_workers,
             max_triplets_per_chunk=max_triplets_per_chunk,
+            strict=strict,
             show_progress=show_progress,
         )
 
@@ -207,12 +223,12 @@ class SchemaLLMTripletExtractor(TransformComponent):
 
         valid_triplets = []
         for triplet in kg_schema.triplets:
-            subject = triplet.subject.value
+            subject = triplet.subject.name
             subject_type = triplet.subject.type
 
             relation = triplet.relation.type
 
-            obj = triplet.object.value
+            obj = triplet.object.name
             obj_type = triplet.object.type
 
             # check relations

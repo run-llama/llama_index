@@ -1,9 +1,6 @@
 from typing import List, Optional, Union
 
 from llama_index.core.llms.llm import LLM
-from llama_index.core.indices.property_graph.base import (
-    TRIPLET_SOURCE_KEY,
-)
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
@@ -12,9 +9,6 @@ from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.schema import (
     NodeWithScore,
-    TextNode,
-    NodeRelationship,
-    RelatedNodeInfo,
     QueryBundle,
 )
 
@@ -39,6 +33,7 @@ class LLMSynonymRetriever(BaseLPGRetriever):
             BasePromptTemplate, str
         ] = DEFAULT_SYNONYM_EXPAND_TEMPLATE,
         max_keywords: int = 10,
+        triple_depth: int = 1,
         output_parsing_fn: Optional[callable] = None,
         llm: Optional[LLM] = None,
         **kwargs,
@@ -49,6 +44,7 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         self._synonym_prompt = synonym_prompt
         self._output_parsing_fn = output_parsing_fn
         self._max_keywords = max_keywords
+        self._triple_depth = triple_depth
         super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
 
     def _parse_llm_output(self, output: str) -> List[str]:
@@ -60,44 +56,26 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         # capitalize to normalize with ingestion
         return [x.strip().capitalize() for x in matches if x.strip()]
 
-    def _get_nodes_with_score(self, triplets: List[Triplet]) -> List[NodeWithScore]:
-        results = []
-        for triplet in triplets:
-            source_id = triplet[0].properties.get(TRIPLET_SOURCE_KEY, None)
-            relationships = {}
-            if source_id is not None:
-                relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(
-                    node_id=source_id
-                )
-
-            text = f"{triplet[0]!s} -> {triplet[1]!s} -> {triplet[2]!s}"
-            results.append(
-                NodeWithScore(
-                    node=TextNode(
-                        text=text,
-                        relationships=relationships,
-                    ),
-                    score=1.0,
-                )
-            )
-
-        return results
-
     def _prepare_matches(self, matches: List[Triplet]) -> List[NodeWithScore]:
-        results = []
-        for match in matches:
-            sub_results = self._graph_store.get_triplets(entity_names=[match])
-            results.extend(self._get_nodes_with_score(sub_results))
+        kg_nodes = self._graph_store.get(ids=matches)
+        triplets = self._graph_store.get_rel_map(
+            kg_nodes,
+            depth=self._triple_depth,
+        )
 
-        return results
+        return self._get_nodes_with_score(triplets)
 
     async def _aprepare_matches(self, matches: List[str]) -> List[NodeWithScore]:
-        results = []
-        for match in matches:
-            sub_results = await self._graph_store.aget_triplets(entity_names=[match])
-            results.extend(self._get_nodes_with_score(sub_results))
+        import pdb
 
-        return results
+        pdb.set_trace()
+        kg_nodes = await self._graph_store.aget(ids=matches)
+        triplets = await self._graph_store.aget_rel_map(
+            kg_nodes,
+            depth=self._triple_depth,
+        )
+
+        return self._get_nodes_with_score(triplets)
 
     def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         response = self._llm.predict(

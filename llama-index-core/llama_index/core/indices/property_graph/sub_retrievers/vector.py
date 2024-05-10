@@ -4,6 +4,7 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BaseLPGRetriever,
 )
+from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
 from llama_index.core.vector_stores.types import VectorStoreQuery
 from llama_index.core.settings import Settings
@@ -16,12 +17,16 @@ class LPGVectorRetriever(BaseLPGRetriever):
         graph_store: LabelledPropertyGraphStore,
         include_text: bool = True,
         embed_model: Optional[BaseEmbedding] = None,
-        similarity_top_k: int = 10,
+        vector_index: Optional[VectorStoreIndex] = None,
+        similarity_top_k: int = 2,
+        triple_depth: int = 1,
         **kwargs: Any
     ) -> None:
         self._retriever_kwargs = kwargs or {}
         self._embed_model = embed_model or Settings.embed_model
         self._similarity_top_k = similarity_top_k
+        self._vector_index = vector_index
+        self._triple_depth = triple_depth
 
         super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
 
@@ -33,24 +38,122 @@ class LPGVectorRetriever(BaseLPGRetriever):
 
         return VectorStoreQuery(
             query_embedding=query_bundle.embedding,
-            top_k=self._similarity_top_k,
+            similarity_top_k=self._similarity_top_k,
+            **self._retriever_kwargs,
+        )
+
+    async def _aget_vector_store_query(
+        self, query_bundle: QueryBundle
+    ) -> VectorStoreQuery:
+        if query_bundle.embedding is None:
+            query_bundle.embedding = (
+                await self._embed_model.aget_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
+                )
+            )
+
+        return VectorStoreQuery(
+            query_embedding=query_bundle.embedding,
+            similarity_top_k=self._similarity_top_k,
             **self._retriever_kwargs,
         )
 
     def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         vector_store_query = self._get_vector_store_query(query_bundle)
 
-        # TODO: Transform these into proper return types
-        kg_nodes, scores = self._graph_store.vector_query(vector_store_query)
+        triplets = []
+        kg_ids = []
+        new_scores = []
+        if self._graph_store.supports_vector_queries:
+            kg_nodes, scores = self._graph_store.vector_query(vector_store_query)
+            kg_ids = [node.id for node in kg_nodes]
+            triplets = self._graph_store.get_rel_map(kg_nodes, depth=self._triple_depth)
 
-        return []
+        elif self._vector_index is not None:
+            query_result = self._vector_index.vector_store.query(vector_store_query)
+            if query_result.nodes is not None and query_result.similarities is not None:
+                kg_ids = [node.node_id for node in query_result.nodes]
+                scores = query_result.similarities
+                kg_nodes = self._graph_store.get(ids=kg_ids)
+                triplets = self._graph_store.get_rel_map(
+                    kg_nodes, depth=self._triple_depth
+                )
+
+            elif query_result.ids is not None and query_result.similarities is not None:
+                kg_ids = query_result.ids
+                scores = query_result.similarities
+                kg_nodes = self._graph_store.get(ids=kg_ids)
+                triplets = self._graph_store.get_rel_map(
+                    kg_nodes, depth=self._triple_depth
+                )
+
+        for triplet in triplets:
+            score1 = (
+                scores[kg_ids.index(triplet[0].id)] if triplet[0].id in kg_ids else 0.0
+            )
+            score2 = (
+                scores[kg_ids.index(triplet[2].id)] if triplet[2].id in kg_ids else 0.0
+            )
+            new_scores.append(max(score1, score2))
+
+        assert len(triplets) == len(new_scores)
+
+        # get the top-k
+        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)[
+            : self._similarity_top_k
+        ]
+
+        return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
 
     async def aretrieve_from_graph(
         self, query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
-        vector_store_query = self._get_vector_store_query(query_bundle)
+        vector_store_query = await self._aget_vector_store_query(query_bundle)
 
-        # TODO: Transform these into proper return types
-        kg_nodes, scores = await self._graph_store.avector_query(vector_store_query)
+        triplets = []
+        kg_ids = []
+        new_scores = []
+        if self._graph_store.supports_vector_queries:
+            kg_nodes, scores = await self._graph_store.avector_query(vector_store_query)
+            kg_ids = [node.id for node in kg_nodes]
+            triplets = await self._graph_store.aget_rel_map(
+                kg_nodes, depth=self._triple_depth
+            )
 
-        return []
+        elif self._vector_index is not None:
+            query_result = await self._vector_index.vector_store.aquery(
+                vector_store_query
+            )
+            if query_result.nodes is not None and query_result.similarities is not None:
+                kg_ids = [node.node_id for node in query_result.nodes]
+                scores = query_result.similarities
+                kg_nodes = await self._graph_store.aget(ids=kg_ids)
+                triplets = await self._graph_store.aget_rel_map(
+                    kg_nodes, depth=self._triple_depth
+                )
+
+            elif query_result.ids is not None and query_result.similarities is not None:
+                kg_ids = query_result.ids
+                scores = query_result.similarities
+                kg_nodes = await self._graph_store.aget(ids=kg_ids)
+                triplets = await self._graph_store.aget_rel_map(
+                    kg_nodes, depth=self._triple_depth
+                )
+
+        for triplet in triplets:
+            score1 = (
+                scores[kg_ids.index(triplet[0].id)] if triplet[0].id in kg_ids else 0.0
+            )
+            score2 = (
+                scores[kg_ids.index(triplet[2].id)] if triplet[2].id in kg_ids else 0.0
+            )
+            new_scores.append(max(score1, score2))
+
+        assert len(triplets) == len(new_scores)
+
+        # get the top-k
+        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)[
+            : self._similarity_top_k
+        ]
+
+        return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])

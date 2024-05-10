@@ -9,12 +9,14 @@ from llama_index.core.constants import (
     GRAPH_STORE_KEY,
     INDEX_STORE_KEY,
     VECTOR_STORE_KEY,
+    LPG_STORE_KEY,
 )
 from llama_index.core.graph_stores.simple import (
     DEFAULT_PERSIST_FNAME as GRAPH_STORE_FNAME,
 )
 from llama_index.core.graph_stores.simple import SimpleGraphStore
 from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
+from llama_index.core.graph_stores.types import DEFUALT_LPG_PERSIST_FNAME as LPG_FNAME
 from llama_index.core.graph_stores.types import GraphStore, LabelledPropertyGraphStore
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.docstore.types import (
@@ -57,6 +59,7 @@ class StorageContext:
     - index_store: BaseIndexStore
     - vector_store: VectorStore
     - graph_store: GraphStore
+    - lpg_graph_store: LabelledPropertyGraphStore (lazily initialized)
 
     """
 
@@ -95,7 +98,6 @@ class StorageContext:
             docstore = docstore or SimpleDocumentStore()
             index_store = index_store or SimpleIndexStore()
             graph_store = graph_store or SimpleGraphStore()
-            lpg_graph_store = lpg_graph_store or SimpleLPGStore()
             image_store = image_store or SimpleVectorStore()
 
             if vector_store:
@@ -117,9 +119,13 @@ class StorageContext:
             graph_store = graph_store or SimpleGraphStore.from_persist_dir(
                 persist_dir, fs=fs
             )
-            lpg_graph_store = lpg_graph_store or SimpleLPGStore.from_persist_dir(
-                persist_dir, fs=fs
-            )
+
+            try:
+                lpg_graph_store = lpg_graph_store or SimpleLPGStore.from_persist_dir(
+                    persist_dir, fs=fs
+                )
+            except FileNotFoundError:
+                lpg_graph_store = None
 
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
@@ -149,7 +155,7 @@ class StorageContext:
         vector_store_fname: str = VECTOR_STORE_FNAME,
         image_store_fname: str = IMAGE_STORE_FNAME,
         graph_store_fname: str = GRAPH_STORE_FNAME,
-        lpg_graph_store_fname: str = "lpg_graph_store.json",
+        lpg_graph_store_fname: str = LPG_FNAME,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the storage context.
@@ -173,7 +179,9 @@ class StorageContext:
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
         self.graph_store.persist(persist_path=graph_store_path, fs=fs)
-        self.lpg_graph_store.persist(persist_path=lpg_graph_store_path, fs=fs)
+
+        if self.lpg_graph_store:
+            self.lpg_graph_store.persist(persist_path=lpg_graph_store_path, fs=fs)
 
         # save each vector store under it's namespace
         for vector_store_name, vector_store in self.vector_stores.items():
@@ -195,7 +203,7 @@ class StorageContext:
             isinstance(self.docstore, SimpleDocumentStore)
             and isinstance(self.index_store, SimpleIndexStore)
             and isinstance(self.graph_store, SimpleGraphStore)
-            and isinstance(self.lpg_graph_store, SimpleLPGStore)
+            and isinstance(self.lpg_graph_store, (SimpleLPGStore, type(None)))
             and all(
                 isinstance(vs, SimpleVectorStore) for vs in self.vector_stores.values()
             )
@@ -208,7 +216,7 @@ class StorageContext:
         assert isinstance(self.docstore, SimpleDocumentStore)
         assert isinstance(self.index_store, SimpleIndexStore)
         assert isinstance(self.graph_store, SimpleGraphStore)
-        assert isinstance(self.lpg_graph_store, SimpleLPGStore)
+        assert isinstance(self.lpg_graph_store, (SimpleLPGStore, type(None)))
 
         return {
             VECTOR_STORE_KEY: {
@@ -219,7 +227,9 @@ class StorageContext:
             DOC_STORE_KEY: self.docstore.to_dict(),
             INDEX_STORE_KEY: self.index_store.to_dict(),
             GRAPH_STORE_KEY: self.graph_store.to_dict(),
-            "lpg_graph_store": self.lpg_graph_store.to_dict(),
+            LPG_STORE_KEY: self.lpg_graph_store.to_dict()
+            if self.lpg_graph_store
+            else None,
         }
 
     @classmethod
@@ -228,7 +238,11 @@ class StorageContext:
         docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
-        lpg_graph_store = SimpleLPGStore.from_dict(save_dict["lpg_graph_store"])
+        lpg_graph_store = (
+            SimpleLPGStore.from_dict(save_dict[LPG_STORE_KEY])
+            if save_dict[LPG_STORE_KEY]
+            else None
+        )
 
         vector_stores: Dict[str, VectorStore] = {}
         for key, vector_store_dict in save_dict[VECTOR_STORE_KEY].items():
