@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.postprocessor.dashscope_rerank"
 
 [tool.llamahub.class_authors]
-CLASS = "llama-index"
+DashScopeRerank = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -33,7 +33,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
-dashscope = "1.17.1"
+dashscope = ">=1.17.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
