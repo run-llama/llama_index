@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from uuid import UUID
 
 from llama_index.core.storage.kvstore.types import (
@@ -76,7 +76,6 @@ class AzureKVStore(BaseKVStore):
         Raises:
             ImportError: If the Azure data tables package is not available.
         """
-        super().__init__(*args, **kwargs)
         try:
             from azure.data.tables import TableServiceClient
             from azure.data.tables.aio import (
@@ -85,7 +84,10 @@ class AzureKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        self._service_mode = service_mode
+        self.service_mode = service_mode
+
+        super().__init__(*args, **kwargs)
+
         self._table_client = cast(TableServiceClient, table_client)
         self._atable_client = cast(Optional[AsyncTableServiceClient], atable_client)
 
@@ -267,13 +269,14 @@ class AzureKVStore(BaseKVStore):
             if not collection
             else self._sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
-        entity = {
-            "PartitionKey": partition_key,
-            "RowKey": key,
-            **self._serialize(val),
-        }
-        table_client.upsert_entity(entity, mode=UpdateMode.REPLACE)
+        self._table_client.create_table_if_not_exists(table_name).upsert_entity(
+            {
+                "PartitionKey": partition_key,
+                "RowKey": key,
+                **self._serialize(val),
+            },
+            mode=UpdateMode.REPLACE,
+        )
 
     async def aput(
         self,
@@ -309,8 +312,7 @@ class AzureKVStore(BaseKVStore):
             if not collection
             else self._sanitize_table_name(collection)
         )
-        table_client = self._atable_client.create_table_if_not_exists(table_name)
-        await table_client.upsert_entity(
+        await self._atable_client.create_table_if_not_exists(table_name).upsert_entity(
             {
                 "PartitionKey": partition_key,
                 "RowKey": key,
@@ -363,7 +365,7 @@ class AzureKVStore(BaseKVStore):
             entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
         ):
             table_client.submit_transaction(
-                [(TransactionOperation.UPSERT, entity) for entity in batch]
+                (TransactionOperation.UPSERT, entity) for entity in batch
             )
 
     async def aput_all(
@@ -413,7 +415,7 @@ class AzureKVStore(BaseKVStore):
             entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
         ):
             await table_client.submit_transaction(
-                [(TransactionOperation.UPSERT, entity) for entity in batch]
+                (TransactionOperation.UPSERT, entity) for entity in batch
             )
 
     def get(
@@ -677,6 +679,97 @@ class AzureKVStore(BaseKVStore):
             san_table_name += "A" * (3 - san_length)
         return san_table_name
 
+    def _serialize_and_encode(self, value: Any) -> Tuple[str, bytes, int]:
+        """Serialize a value to a JSON string and encode it to UTF-16 bytes for storage calculations.
+
+        Args:
+            value (Any): The value to serialize.
+
+        Returns:
+            Tuple[str, bytes, int]: A tuple containing the serialized value as a JSON string, the UTF-16-encoded bytes, and the length of the encoded value.
+        """
+        serialized_val = json.dumps(value, default=str)
+        # Azure Table Storage checks sizes against UTF-16-encoded bytes
+        bytes_val = serialized_val.encode("utf-16", errors="ignore")
+        val_length = len(bytes_val)
+        return serialized_val, bytes_val, val_length
+
+    def _validate_properties_size(self, current_size: int) -> None:
+        """Validate the total size of all properties in an entity against the service limits.
+
+        Args:
+            current_size (int): The current total size of all properties in an entity.
+
+        Raises:
+            ValueError: If the total size exceeds the service limits.
+        """
+        if (
+            self.service_mode == ServiceMode.STORAGE
+            and current_size > STORAGE_MAX_TOTAL_PROPERTIES_SIZE_BYTES
+        ):
+            raise ValueError(
+                f"The total size of all properties in an Azure Table Storage Item "
+                f"cannot exceed {STORAGE_MAX_TOTAL_PROPERTIES_SIZE_BYTES / 1048576}MiB.\n"
+                "Consider splitting documents into smaller parts."
+            )
+        elif (
+            self.service_mode == ServiceMode.COSMOS
+            and current_size > COSMOS_MAX_TOTAL_PROPERTIES_SIZE_BYTES
+        ):
+            raise ValueError(
+                f"The total size of all properties in an Azure Cosmos DB Item "
+                f"cannot exceed {COSMOS_MAX_TOTAL_PROPERTIES_SIZE_BYTES / 1000000}MB.\n"
+                "Consider splitting documents into smaller parts."
+            )
+
+    def _compute_num_parts(self, val_length: int) -> int:
+        """Compute the number of parts to split a large property into based on the maximum property value size.
+
+        Args:
+            val_length (int): The length of the property value in bytes.
+
+        Returns:
+            int: The number of parts to split the property into.
+        """
+        return val_length // STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE + (
+            1 if val_length % STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE else 0
+        )
+
+    def _validate_property_count(self, num_properties: int) -> None:
+        """Validate the number of properties in an entity against the service limits.
+
+        Args:
+            num_properties (int): The number of properties in the entity.
+
+        Raises:
+            ValueError: If the number of properties exceeds the service limits.
+        """
+        if num_properties > STORAGE_MAX_ITEM_PROPERTIES:
+            raise ValueError(
+                "The number of properties in an Azure Table Storage Item "
+                f"cannot exceed {STORAGE_MAX_ITEM_PROPERTIES}."
+            )
+
+    def _split_large_values(
+        self, num_parts: int, bytes_val: str, item: dict, key: str
+    ) -> None:
+        """Split a large property value into multiple parts and store them in the item dictionary.
+
+        Args:
+            num_parts (int): The number of parts to split the property value into.
+            bytes_val (str): The UTF-16-encoded bytes of the property value.
+            item (dict): The dictionary to store the split parts.
+            key (str): The key for the property value.
+        """
+        for i in range(num_parts):
+            start_index = i * STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE
+            end_index = start_index + STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE
+            # Convert back from UTF-16 bytes to str after slicing safely on character boundaries
+            serialized_part = bytes_val[start_index:end_index].decode(
+                "utf-16", errors="ignore"
+            )
+            item[f"{key}{STORAGE_PART_KEY_DELIMITER}{i + 1}"] = serialized_part
+
     def _serialize(self, value: dict) -> dict:
         """Serialize all values in a dictionary to JSON strings to ensure compatibility with Azure Table Storage.
         The Azure Table Storage API does not support complex data types like dictionaries or nested objects
@@ -690,28 +783,13 @@ class AzureKVStore(BaseKVStore):
         """
         item = {}
         num_properties = len(value) + len(BUILT_IN_KEYS)
-        total_properties_size = 0
+        size_properties = 0
         for key, val in value.items():
             # Serialize all values for the sake of size calculation
-            serialized_val = json.dumps(val, default=str)
-            # Azure Table Storage checks sizes against UTF-16-encoded bytes
-            bytes_val = serialized_val.encode("utf-16", errors="ignore")
-            val_length = len(bytes_val)
-            total_properties_size += val_length
-            if self._service_mode == ServiceMode.STORAGE:
-                if total_properties_size > STORAGE_MAX_TOTAL_PROPERTIES_SIZE_BYTES:
-                    raise ValueError(
-                        "The total size of all properties in an Azure Table Storage Item "
-                        f"cannot exceed {STORAGE_MAX_TOTAL_PROPERTIES_SIZE_BYTES / 1048576}MiB.\n"
-                        "Consider splitting documents into smaller parts."
-                    )
-            elif self._service_mode == ServiceMode.COSMOS:
-                if total_properties_size > COSMOS_MAX_TOTAL_PROPERTIES_SIZE_BYTES:
-                    raise ValueError(
-                        "The total size of all properties in an Azure Cosmos DB Item "
-                        f"cannot exceed {COSMOS_MAX_TOTAL_PROPERTIES_SIZE_BYTES / 1000000}MB.\n"
-                        "Consider splitting documents into smaller parts."
-                    )
+            serialized_val, bytes_val, val_length = self._serialize_and_encode(val)
+
+            size_properties += val_length
+            self._validate_properties_size(size_properties)
 
             # Skips serialization for non-enums and non-serializable types
             if not isinstance(val, Enum) and isinstance(val, NON_SERIALIZABLE_TYPES):
@@ -719,35 +797,54 @@ class AzureKVStore(BaseKVStore):
                 continue
 
             # Unlike Azure Table Storage, Cosmos DB does not have per-property limits
-            if self._service_mode != ServiceMode.STORAGE:
+            if self.service_mode != ServiceMode.STORAGE:
                 continue
 
+            # No need to split the property into parts
             if val_length < STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE:
-                # No need to split the value
                 item[key] = serialized_val
                 continue
 
-            num_parts = val_length // STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE + (
-                1 if val_length % STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE else 0
-            )
+            num_parts = self._compute_num_parts(val_length)
             num_properties += num_parts
-            if num_properties > STORAGE_MAX_ITEM_PROPERTIES:
-                raise ValueError(
-                    "The number of properties in an Azure Table Storage Item "
-                    f"cannot exceed {STORAGE_MAX_ITEM_PROPERTIES}."
-                )
 
-            # Split the serialized value into chunks
-            for i in range(num_parts):
-                start_index = i * STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE
-                end_index = start_index + STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE
-                # Convert back from UTF-16 bytes to str after slicing safely on character boundaries
-                serialized_part = bytes_val[start_index:end_index].decode(
-                    "utf-16", errors="ignore"
-                )
-                item[f"{key}{STORAGE_PART_KEY_DELIMITER}{i + 1}"] = serialized_part
+            self._validate_property_count(num_properties)
+
+            self._split_large_values(num_parts, bytes_val, item, key)
 
         return item
+
+    def _deserialize_or_fallback(self, value: str) -> Union[Any, str]:
+        """Deserialize a JSON string back to its original Python data type, falling
+        back to the original string if deserialization fails.
+
+        Args:
+            value (str): The JSON string to deserialize.
+
+        Returns:
+            Union[Any, str]: The deserialized value or the original string if deserialization fails.
+        """
+        try:
+            # Attempt to deserialize the joined parts
+            return json.loads(value)
+        except ValueError:
+            # Fallback to the concatenated string if deserialization fails
+            return value
+
+    def _concatenate_large_values(
+        self, parts_to_assemble: dict, deserialized_item: dict
+    ) -> None:
+        """Concatenate split parts of large properties back into a single value.
+
+        Args:
+            parts_to_assemble (dict): A dictionary containing the parts of large properties to reassemble.
+            deserialized_item (dict): The dictionary to store the reassembled properties.
+        """
+        for base_key, parts in parts_to_assemble.items():
+            concatenated_value = "".join(parts[i] for i in sorted(parts.keys()))
+            deserialized_item[base_key] = self._deserialize_or_fallback(
+                concatenated_value
+            )
 
     def _deserialize(self, item: dict) -> dict:
         """Deserialize values in a dictionary from JSON strings back to their original Python data types.
@@ -774,13 +871,10 @@ class AzureKVStore(BaseKVStore):
             if isinstance(val, str):
                 # Deserialize non-partial values
                 if (
-                    self._service_mode == ServiceMode.STORAGE
+                    self.service_mode == ServiceMode.STORAGE
                     and STORAGE_PART_KEY_DELIMITER not in key
                 ):
-                    try:
-                        deserialized_item[key] = json.loads(val)
-                    except ValueError:
-                        deserialized_item[key] = val
+                    deserialized_item[key] = self._deserialize_or_fallback(val)
                     continue
 
                 # Deserialize partial values
@@ -795,12 +889,6 @@ class AzureKVStore(BaseKVStore):
             # Assign non-serialized values
             deserialized_item[key] = val
 
-        # Reassemble any parts
-        for base_key, parts in parts_to_assemble.items():
-            concatenated_value = "".join(parts[i] for i in sorted(parts.keys()))
-            try:
-                # Attempt to deserialize the joined parts
-                deserialized_item[base_key] = json.loads(concatenated_value)
-            except ValueError:
-                deserialized_item[base_key] = concatenated_value
+        self._concatenate_large_values(parts_to_assemble, deserialized_item)
+
         return deserialized_item
