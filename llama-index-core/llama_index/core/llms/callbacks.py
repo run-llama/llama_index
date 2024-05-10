@@ -242,7 +242,7 @@ def llm_completion_callback() -> Callable:
             elif "prompt" in kwargs:
                 return kwargs["prompt"]
             else:
-                return str(kwargs)
+raise ValueError("No prompt provided in positional or keyword arguments")
 
         async def wrapped_async_llm_predict(
             _self: Any, *args: Any, **kwargs: Any
