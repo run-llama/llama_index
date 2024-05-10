@@ -123,6 +123,9 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
         Raises:
             Exception: If the specified SharePoint site is not found.
         """
+        if hasattr(self, "_site_id_with_host_name"):
+            return self._site_id_with_host_name
+
         site_information_endpoint = (
             f"https://graph.microsoft.com/v1.0/sites?search={sharepoint_site_name}"
         )
@@ -159,6 +162,9 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
         Raises:
             ValueError: If there is an error in obtaining the drive ID.
         """
+        if hasattr(self, "_drive_id"):
+            return self._drive_id
+
         self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
 
         response = requests.get(
@@ -629,6 +635,7 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
                 os.path.join(sharepoint_site_name, sharepoint_folder_path),
             )
             file_paths.extend(folder_contents)
+            return file_paths
 
         except Exception as exp:
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
@@ -636,8 +643,89 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
 
         return file_paths
 
+    def _get_item_from_path(self, input_file: Path) -> Dict[str, Any]:
+        """
+        Retrieves the item details for a specified file in SharePoint.
+
+        Args:
+            input_file (Path): The path of the file in SharePoint.
+                Should include the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+
+        Returns:
+            Dict[str, Any]: Dictionary containing the item details.
+        """
+        # Get the file ID
+        # remove the site_name prefix
+        file_path = (
+            str(input_file).lstrip("/").replace(f"{self.sharepoint_site_name}/", "", 1)
+        )
+        endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
+
+        response = requests.get(
+            url=endpoint,
+            headers=self._authorization_headers,
+        )
+
+        return response.json()
+
     def get_file_info(self, input_file: Path, **kwargs) -> Dict:
-        raise NotImplementedError
+        """
+        Retrieves metadata for a specified file in SharePoint without downloading it.
+
+        Args:
+            input_file (Path): The path of the file in SharePoint. The path should include
+                                the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+        """
+        try:
+            item = self._get_item_from_path(input_file)
+
+            info_dict = {
+                "file_path": str(input_file),
+                "size": item.get("size"),
+                "created_at": item.get("createdDateTime"),
+                "modified_at": item.get("lastModifiedDateTime"),
+                "etag": item.get("eTag"),
+            }
+
+            if (
+                self.attach_permission_metadata
+            ):  # changes in access control should trigger a reingestion of the file
+                permissions = self._get_permissions_info(item)
+                info_dict.update(permissions)
+
+            return {
+                meta_key: meta_value
+                for meta_key, meta_value in info_dict.items()
+                if meta_value is not None
+            }
+
+        except Exception as exp:
+            logger.error(
+                "An error occurred while fetching file information from SharePoint: %s",
+                exp,
+            )
+            raise
 
     def read_file(self, input_file: Path, **kwargs) -> List[Document]:
-        raise NotImplementedError
+        try:
+            access_token = self._get_access_token()
+            self._site_id_with_host_name = self._get_site_id_with_host_name(
+                access_token, self.sharepoint_site_name
+            )
+            self._drive_id = self._get_drive_id()
+
+            item = self._get_item_from_path(input_file)
+
+            input_file_dir = input_file.parent
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                metadata = self._download_file(item, temp_dir, input_file_dir)
+                return self._load_documents_with_metadata(
+                    metadata, temp_dir, recursive=False
+                )
+
+        except Exception as exp:
+            logger.error(
+                "An error occurred while reading file from SharePoint: %s", exp
+            )
+            raise
