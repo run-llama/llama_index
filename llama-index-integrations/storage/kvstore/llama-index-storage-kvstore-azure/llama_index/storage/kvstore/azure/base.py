@@ -2,7 +2,7 @@ import json
 import re
 from collections import defaultdict
 from datetime import datetime
-from enum import Enum, auto
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from uuid import UUID
 
@@ -18,6 +18,9 @@ IMPORT_ERROR_MSG = (
 
 # https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#table-names
 ALPHANUMERIC_REGEX = re.compile(r"[^A-Za-z0-9]")
+MIN_TABLE_NAME_LENGTH = 3
+MAX_TABLE_NAME_LENGTH = 63
+TABLE_NAME_PLACEHOLDER_CHARACTER = "A"
 DEFAULT_PARTITION_KEY = "default"
 # https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
 STORAGE_MAX_ITEM_PROPERTIES = 255
@@ -26,20 +29,20 @@ STORAGE_MAX_TOTAL_PROPERTIES_SIZE_BYTES = 1048576
 STORAGE_PART_KEY_DELIMITER = "_part_"
 # https://learn.microsoft.com/en-us/azure/cosmos-db/concepts-limits#per-item-limits
 COSMOS_MAX_TOTAL_PROPERTIES_SIZE_BYTES = 2097152
-NON_SERIALIZABLE_TYPES = (bytes, bool, datetime, float, UUID, int, str)
+ODATA_SUPPORTED_TYPES = (bytes, bool, datetime, float, UUID, int, str)
 BUILT_IN_KEYS = {"PartitionKey", "RowKey", "Timestamp"}
 MISSING_ASYNC_CLIENT_ERROR_MSG = "AzureKVStore was not initialized with an async client"
 
 
-class ServiceMode(Enum):
+class ServiceMode(str, Enum):
     """Whether the AzureKVStore operates on an Azure Table Storage or Cosmos DB.
 
     Args:
         Enum (Enum): The enumeration type for the service mode.
     """
 
-    COSMOS = auto()
-    STORAGE = auto()
+    COSMOS = "cosmos"
+    STORAGE = "storage"
 
 
 class AzureKVStore(BaseKVStore):
@@ -125,11 +128,19 @@ class AzureKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        table_client = TableServiceClient.from_connection_string(connection_string)
-        atable_client = AsyncTableServiceClient.from_connection_string(
+        table_service_client = TableServiceClient.from_connection_string(
             connection_string
         )
-        return cls(table_client, atable_client, service_mode, *args, **kwargs)
+        atable_service_client = AsyncTableServiceClient.from_connection_string(
+            connection_string
+        )
+        return cls(
+            table_service_client,
+            atable_service_client,
+            service_mode,
+            *args,
+            **kwargs,
+        )
 
     @classmethod
     def from_account_and_key(
@@ -275,7 +286,7 @@ class AzureKVStore(BaseKVStore):
                 "RowKey": key,
                 **self._serialize(val),
             },
-            mode=UpdateMode.REPLACE,
+            UpdateMode.REPLACE,
         )
 
     async def aput(
@@ -307,6 +318,7 @@ class AzureKVStore(BaseKVStore):
 
         if self._atable_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
+
         table_name = (
             DEFAULT_COLLECTION
             if not collection
@@ -486,6 +498,7 @@ class AzureKVStore(BaseKVStore):
 
         if self._atable_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
+
         table_name = (
             DEFAULT_COLLECTION
             if not collection
@@ -673,11 +686,26 @@ class AzureKVStore(BaseKVStore):
         """
         san_table_name = ALPHANUMERIC_REGEX.sub("", table_name)
         if san_table_name[0].isdigit():
-            san_table_name = f"A{san_table_name}"
+            san_table_name = f"{TABLE_NAME_PLACEHOLDER_CHARACTER}{san_table_name}"
         san_length = len(san_table_name)
-        if san_length < 3:
-            san_table_name += "A" * (3 - san_length)
+        if san_length < MIN_TABLE_NAME_LENGTH:
+            san_table_name += TABLE_NAME_PLACEHOLDER_CHARACTER * (
+                MIN_TABLE_NAME_LENGTH - san_length
+            )
+        elif len(san_table_name) > MAX_TABLE_NAME_LENGTH:
+            san_table_name = san_table_name[:MAX_TABLE_NAME_LENGTH]
         return san_table_name
+
+    def _should_serialize(self, value: Any) -> bool:
+        """Check if a value should be serialized based on its type.
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value should be serialized, False otherwise.
+        """
+        return not isinstance(value, ODATA_SUPPORTED_TYPES) or isinstance(value, Enum)
 
     def _serialize_and_encode(self, value: Any) -> Tuple[str, bytes, int]:
         """Serialize a value to a JSON string and encode it to UTF-16 bytes for storage calculations.
@@ -688,13 +716,13 @@ class AzureKVStore(BaseKVStore):
         Returns:
             Tuple[str, bytes, int]: A tuple containing the serialized value as a JSON string, the UTF-16-encoded bytes, and the length of the encoded value.
         """
-        serialized_val = json.dumps(value, default=str)
+        serialized_val = json.dumps(value)
         # Azure Table Storage checks sizes against UTF-16-encoded bytes
         bytes_val = serialized_val.encode("utf-16", errors="ignore")
         val_length = len(bytes_val)
         return serialized_val, bytes_val, val_length
 
-    def _validate_properties_size(self, current_size: int) -> None:
+    def _validate_total_property_size(self, current_size: int) -> None:
         """Validate the total size of all properties in an entity against the service limits.
 
         Args:
@@ -783,16 +811,16 @@ class AzureKVStore(BaseKVStore):
         """
         item = {}
         num_properties = len(value) + len(BUILT_IN_KEYS)
-        size_properties = 0
+        total_property_size = 0
         for key, val in value.items():
             # Serialize all values for the sake of size calculation
             serialized_val, bytes_val, val_length = self._serialize_and_encode(val)
 
-            size_properties += val_length
-            self._validate_properties_size(size_properties)
+            total_property_size += val_length
+            self._validate_total_property_size(total_property_size)
 
-            # Skips serialization for non-enums and non-serializable types
-            if not isinstance(val, Enum) and isinstance(val, NON_SERIALIZABLE_TYPES):
+            # Skips serialization for native ODATA types
+            if not self._should_serialize(val):
                 item[key] = val
                 continue
 
