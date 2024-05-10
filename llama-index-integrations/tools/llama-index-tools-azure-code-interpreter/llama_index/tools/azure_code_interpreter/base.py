@@ -152,7 +152,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         if self.sanitize_input:
             python_code = _sanitize_input(python_code)
 
-        access_token = self.access_token_provider(self)
+        access_token = self.access_token_provider()
         api_url = self._build_url("code/execute")
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -170,25 +170,35 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         response = requests.post(api_url, headers=headers, json=body)
         response.raise_for_status()
         response_json = response.json()
-        if "result" in response_json and response_json["result"]:
-            if isinstance(response_json["result"], dict):
-                if "base64_data" in response_json["result"]:
-                    base64_encoded_data = response_json["result"]["base64_data"]
-                    if self.local_save_path:
-                        file_path = f"{self.local_save_path}/{self.session_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{response_json['result']['format']}"
-                        decoded_data = base64.b64decode(base64_encoded_data)
-                        with open(file_path, "wb") as f:
-                            f.write(decoded_data)
-                        # Check if file is written to the file path successfully. if so, update the response_json
-                        response_json["result"]["saved_to_local_path"] = response_json[
-                            "result"
-                        ].pop("base64_data")
-                        if os.path.exists(file_path):
-                            response_json["result"]["saved_to_local_path"] = True
+        if "properties" in response_json:
+            if (
+                "result" in response_json["properties"]
+                and response_json["properties"]["result"]
+            ):
+                if isinstance(response_json["properties"]["result"], dict):
+                    if "base64_data" in response_json["properties"]["result"]:
+                        base64_encoded_data = response_json["properties"]["result"][
+                            "base64_data"
+                        ]
+                        if self.local_save_path:
+                            file_path = f"{self.local_save_path}/{self.session_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{response_json['properties']['result']['format']}"
+                            decoded_data = base64.b64decode(base64_encoded_data)
+                            with open(file_path, "wb") as f:
+                                f.write(decoded_data)
+                            # Check if file is written to the file path successfully. if so, update the response_json
+                            response_json["properties"]["result"][
+                                "saved_to_local_path"
+                            ] = response_json["properties"]["result"].pop("base64_data")
+                            if os.path.exists(file_path):
+                                response_json["properties"]["result"][
+                                    "saved_to_local_path"
+                                ] = True
+                            else:
+                                response_json["properties"]["result"][
+                                    "saved_to_local_path"
+                                ] = False
                         else:
-                            response_json["result"]["saved_to_local_path"] = False
-                    else:
-                        response_json["result"]["base64_data"] = ""
+                            response_json["properties"]["result"]["base64_data"] = ""
         return response_json
 
     def upload_file(
@@ -212,7 +222,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
             remote_file_path = f"/mnt/data/{os.path.basename(local_file_path)}"
             data = open(local_file_path, "rb")
 
-        access_token = self.access_token_provider(self)
+        access_token = self.access_token_provider()
         if not remote_file_path.startswith("/mnt/data"):
             remote_file_path = f"/mnt/data/{remote_file_path}"
         api_url = self._build_url("files/upload")
@@ -270,7 +280,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         Returns:
             List[RemoteFileMetadata]: The metadata for the files in the session
         """
-        access_token = self.access_token_provider(self)
+        access_token = self.access_token_provider()
         api_url = self._build_url("files")
         headers = {
             "Authorization": f"Bearer {access_token}",
