@@ -171,23 +171,32 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         response.raise_for_status()
         response_json = response.json()
         if "properties" in response_json:
-            if "result" in response_json["properties"] and response_json["properties"]["result"]:
+            if (
+                "result" in response_json["properties"]
+                and response_json["properties"]["result"]
+            ):
                 if isinstance(response_json["properties"]["result"], dict):
                     if "base64_data" in response_json["properties"]["result"]:
-                        base64_encoded_data = response_json["properties"]["result"]["base64_data"]
+                        base64_encoded_data = response_json["properties"]["result"][
+                            "base64_data"
+                        ]
                         if self.local_save_path:
                             file_path = f"{self.local_save_path}/{self.session_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{response_json['properties']['result']['format']}"
                             decoded_data = base64.b64decode(base64_encoded_data)
                             with open(file_path, "wb") as f:
                                 f.write(decoded_data)
                             # Check if file is written to the file path successfully. if so, update the response_json
-                            response_json["properties"]["result"]["saved_to_local_path"] = response_json["properties"][
-                                "result"
-                            ].pop("base64_data")
+                            response_json["properties"]["result"][
+                                "saved_to_local_path"
+                            ] = response_json["properties"]["result"].pop("base64_data")
                             if os.path.exists(file_path):
-                                response_json["properties"]["result"]["saved_to_local_path"] = True
+                                response_json["properties"]["result"][
+                                    "saved_to_local_path"
+                                ] = True
                             else:
-                                response_json["properties"]["result"]["saved_to_local_path"] = False
+                                response_json["properties"]["result"][
+                                    "saved_to_local_path"
+                                ] = False
                         else:
                             response_json["properties"]["result"]["base64_data"] = ""
         return response_json
