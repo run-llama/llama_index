@@ -13,7 +13,7 @@ from .conftest import lock
 
 def test_documents(documents: List[Document]) -> None:
     """Sanity check essay was found and documents loaded."""
-    assert len(documents) == 1
+    assert len(documents) == 25
     assert isinstance(documents[0], Document)
 
 
@@ -45,7 +45,7 @@ def test_vectorstore(
         assert set(ids) == {node.node_id for node in nodes}
 
         # 2. test query()
-        query_str = "Who is this author of this essay?"
+        query_str = "What are LLMs useful for?"
         n_similar = 2
         query_embedding = OpenAIEmbedding().get_text_embedding(query_str)
         query = VectorStoreQuery(
@@ -65,9 +65,7 @@ def test_vectorstore(
                 retries -= 1
 
         assert all(score > 0.89 for score in query_responses.similarities)
-        assert any(
-            "seem more like rants" in node.text for node in query_responses.nodes
-        )
+        assert any("LLM" in node.text for node in query_responses.nodes)
         assert all(id_res in ids for id_res in query_responses.ids)
 
         # 3. Test delete()
@@ -88,4 +86,4 @@ def test_vectorstore(
                 retries -= 1
             else:
                 retries = 0
-        assert n_remaining == 0
+        assert n_remaining == n_docs - 1

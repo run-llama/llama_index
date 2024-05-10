@@ -46,7 +46,7 @@ def test_index(
         )
         query_engine = index.as_query_engine()
 
-        question = "Who is the author of this essay?"
+        question = "What are LLMs useful for?"
         no_response = True
         response = None
         retries = 5
@@ -59,4 +59,4 @@ def test_index(
                 retries -= 1
                 sleep(5)
         assert retries
-        assert "Paul Graham" in response.response
+        assert "LLM" in response.response
