@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.storage.kvstore.firestore"
+import_path = "llama_index.tools.azure_code_interpreter"
 
 [tool.llamahub.class_authors]
-FirestoreKVStore = "llama-index"
+AzureCodeInterpreterToolSpec = "harryli0108"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,19 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index kvstore firestore integration"
+description = "llama-index tools azure dynamic sessions integration for code interpreter"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-storage-kvstore-firestore"
+maintainers = ["ajhofmann"]
+name = "llama-index-tools-azure-code-interpreter"
 readme = "README.md"
-version = "0.2.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-google-cloud-firestore = "^2.14.0"
+azure-identity = "^1.16.0"
+requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

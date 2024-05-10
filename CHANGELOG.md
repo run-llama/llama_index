@@ -1,5 +1,73 @@
 # ChangeLog
 
+## [2024-05-09]
+
+### `llama-index-core` [0.10.36]
+
+- add start_char_idx and end_char_idx with MarkdownElementParser (#13377)
+- use handlers from global default (#13368)
+
+### `llama-index-readers-pebblo` [0.1.0]
+
+- Initial release (#13128)
+
+### `llama-index-llms-cohere` [0.1.7]
+
+- Call Cohere RAG inference with documents argument (#13196)
+
+### `llama-index-vector-scores-kdbai` [0.1.6]
+
+- update add method decode utf-8 (#13194)
+
+### `llama-index-vector-stores-alibabacloud-opensearch` [0.1.0]
+
+- Initial release (#13286)
+
+### `llama-index-tools-multion` [0.2.0]
+
+- update tool to use updated api/sdk (#13373)
+
+### `llama-index-vector-sores-weaviate` [1.0.0]
+
+- Update to weaviate client v4 (#13229)
+
+### `llama-index-readers-file` [0.1.22]
+
+- fix bug where PDFReader ignores extra_info (#13369)
+
+### `llama-index-llms-azure-openai` [0.1.8]
+
+- Add sync httpx client support (#13370)
+
+### `llama-index-llms-openai` [0.1.18]
+
+- Add sync httpx client support (#13370)
+- Add missing openai model token context (#13337)
+
+### `llama-index-readers-github` [0.1.9]
+
+- Add fail_on_http_error (#13366)
+
+### `llama-index-vector-stores-pinecone` [0.1.7]
+
+- Add attribution tag for pinecone (#13329)
+
+### `llama-index-llms-nvidia` [0.1.1]
+
+- set default max_tokens to 1024 (#13371)
+
+### `llama-index-readers-papers` [0.1.5]
+
+- Fix hiddent temp directory issue for arxiv reader (#13351)
+
+### `llama-index-embeddings-nvidia` [0.1.1]
+
+- fix truncate passing aget_query_embedding and get_text_embedding (#13367)
+
+### `llama-index-llms-anyscare` [0.1.4]
+
+- Add llama-3 models (#13336)
+
 ## [2024-05-07]
 
 ### `llama-index-agent-introspective` [0.1.0]
