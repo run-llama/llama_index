@@ -2,10 +2,11 @@
 
 from multiprocessing import cpu_count
 from tempfile import TemporaryDirectory
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 from llama_index.core.readers.file.base import SimpleDirectoryReader
+from llama_index.core.schema import Document
 
 try:
     from llama_index.readers.file import PDFReader
@@ -475,7 +476,7 @@ def test_parallel_load() -> None:
 
 
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_list_and_load_workflow() -> None:
+def test_list_and_read_file_workflow() -> None:
     with TemporaryDirectory() as tmp_dir:
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
@@ -483,12 +484,12 @@ def test_list_and_load_workflow() -> None:
             f.write("test2")
 
         reader = SimpleDirectoryReader(tmp_dir)
+        original_docs = reader.load_data()
+
         files = reader.list_files()
         assert len(files) == 2
 
-        original_docs = reader.load_data()
-
-        new_docs = []
+        new_docs: List[Document] = []
         for file in files:
             file_info = reader.get_file_info(file)
             assert file_info is not None

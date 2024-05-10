@@ -2,12 +2,13 @@
 
 import logging
 import os
+from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Union, Optional
 from typing import Any, Dict, List, Optional
 
 import requests
-from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.readers import SimpleDirectoryReader, BaseFilesystemReader
 from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
@@ -15,8 +16,9 @@ from llama_index.core.bridge.pydantic import PrivateAttr, Field
 logger = logging.getLogger(__name__)
 
 
-class SharePointReader(BasePydanticReader):
-    """SharePoint reader.
+class SharePointReader(BasePydanticReader, BaseFilesystemReader):
+    """
+    SharePoint reader.
 
 
     Reads folders from the SharePoint site from a folder under documents.
@@ -531,3 +533,111 @@ class SharePointReader(BasePydanticReader):
 
         except Exception as exp:
             logger.error("An error occurred while accessing SharePoint: %s", exp)
+
+    def _list_folder_contents(
+        self, folder_id: str, recursive: bool, current_path: str
+    ) -> List[Path]:
+        """
+        Helper method to fetch the contents of a folder.
+
+        Args:
+            folder_id (str): ID of the folder whose contents are to be listed.
+            recursive (bool): Whether to include subfolders recursively.
+
+        Returns:
+            List[Path]: List of file paths.
+        """
+        folder_contents_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
+        )
+        response = requests.get(
+            url=folder_contents_endpoint,
+            headers=self._authorization_headers,
+        )
+        items = response.json().get("value", [])
+
+        file_paths = []
+        for item in items:
+            if "folder" in item and recursive:
+                # Recursive call for subfolder
+                subfolder_id = item["id"]
+                subfolder_paths = self._list_folder_contents(
+                    subfolder_id, recursive, os.path.join(current_path, item["name"])
+                )
+                file_paths.extend(subfolder_paths)
+            elif "file" in item:
+                # Append file path
+                file_path = Path(os.path.join(current_path, item["name"]))
+                file_paths.append(file_path)
+
+        return file_paths
+
+    def list_files(
+        self,
+        sharepoint_site_name: Optional[str] = None,
+        sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
+        recursive: bool = True,
+    ) -> List[Path]:
+        """
+        Lists the files in the specified folder in the SharePoint site.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Path]: A list of paths of the files in the specified folder.
+
+        Raises:
+            Exception: If an error occurs while accessing SharePoint site.
+        """
+        # If no arguments are provided to load_data, default to the object attributes
+        if not sharepoint_site_name:
+            sharepoint_site_name = self.sharepoint_site_name
+
+        if not sharepoint_folder_path:
+            sharepoint_folder_path = self.sharepoint_folder_path
+
+        if not sharepoint_folder_id:
+            sharepoint_folder_id = self.sharepoint_folder_id
+
+        # TODO: make both of these values optional — and just default to the client ID defaults
+        if not sharepoint_site_name:
+            raise ValueError("sharepoint_site_name must be provided.")
+
+        if not sharepoint_folder_path and not sharepoint_folder_id:
+            raise ValueError(
+                "sharepoint_folder_path or sharepoint_folder_id must be provided."
+            )
+
+        file_paths = []
+        try:
+            access_token = self._get_access_token()
+            self._site_id_with_host_name = self._get_site_id_with_host_name(
+                access_token, sharepoint_site_name
+            )
+            self._drive_id = self._get_drive_id()
+            if not sharepoint_folder_id:
+                sharepoint_folder_id = self._get_sharepoint_folder_id(
+                    sharepoint_folder_path
+                )
+
+            # Fetch folder contents
+            folder_contents = self._list_folder_contents(
+                sharepoint_folder_id,
+                recursive,
+                os.path.join(sharepoint_site_name, sharepoint_folder_path),
+            )
+            file_paths.extend(folder_contents)
+
+        except Exception as exp:
+            logger.error("An error occurred while listing files in SharePoint: %s", exp)
+            raise
+
+        return file_paths
+
+    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
+        raise NotImplementedError
+
+    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
+        raise NotImplementedError

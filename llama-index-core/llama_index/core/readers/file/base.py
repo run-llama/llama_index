@@ -89,7 +89,8 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
 def _format_file_timestamp(
     timestamp: float, include_time: bool = False
 ) -> Optional[str]:
-    """Format file timestamp to a %Y-%m-%d string.
+    """
+    Format file timestamp to a %Y-%m-%d string.
 
     Args:
         timestamp (float): timestamp in float
@@ -109,7 +110,8 @@ def _format_file_timestamp(
 def default_file_metadata_func(
     file_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
 ) -> Dict:
-    """Get some handy metadata from filesystem.
+    """
+    Get some handy metadata from filesystem.
 
     Args:
         file_path: str: file path in str
@@ -168,7 +170,8 @@ logger = logging.getLogger(__name__)
 
 
 class SimpleDirectoryReader(BaseFilesystemReader):
-    """Simple directory reader.
+    """
+    Simple directory reader.
 
     Load files from file directory.
     Automatically select the best file reader given file extensions.
@@ -347,7 +350,8 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         return new_input_files
 
     def _exclude_metadata(self, documents: List[Document]) -> List[Document]:
-        """Exclude metadata from documents.
+        """
+        Exclude metadata from documents.
 
         Args:
             documents (List[Document]): List of documents.
@@ -461,7 +465,8 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         raise_on_error: bool = False,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Static method for loading file.
+        """
+        Static method for loading file.
 
         NOTE: necessarily as a static method for parallel processing.
 
@@ -619,7 +624,8 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         num_workers: Optional[int] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
@@ -684,7 +690,8 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         num_workers: Optional[int] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
@@ -715,7 +722,8 @@ class SimpleDirectoryReader(BaseFilesystemReader):
     def iter_data(
         self, show_progress: bool = False
     ) -> Generator[List[Document], Any, Any]:
-        """Load data iteratively from the input directory.
+        """
+        Load data iteratively from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
