@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.core import Document, ServiceContext, VectorStoreIndex
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import SentenceSplitter
@@ -80,11 +80,8 @@ class RAGFusionPipelinePack(BaseLlamaPack):
             splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=0)
             nodes = splitter.get_nodes_from_documents(documents)
 
-            service_context = ServiceContext.from_defaults(
-                llm=self.llm, embed_model=embed_model
-            )
-            vector_index = VectorStoreIndex(nodes, service_context=service_context)
-            self.query_engines.append(vector_index.as_query_engine())
+            vector_index = VectorStoreIndex(nodes, embed_model=embed_model)
+            self.query_engines.append(vector_index.as_query_engine(llm=self.llm))
 
             self.retrievers[str(chunk_size)] = vector_index.as_retriever()
 
