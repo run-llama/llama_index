@@ -4,7 +4,7 @@ The LlamaIndex ecosystem is structured using a collection of namespaced packages
 
 What this means for users is that LlamaIndex comes with a core starter bundle, and additional integrations can be installed as needed.
 
-A complete list of packages and available integrations is available in our [temporary registry](https://pretty-sodium-5e0.notion.site/ce81b247649a44e4b6b35dfb24af28a6?v=53b3c2ced7bb4c9996b81b83c9f01139), which will be moving to [LlamaHub](https://llamahub.ai/) soon!
+A complete list of packages and available integrations is available on [LlamaHub](https://llamahub.ai/).
 
 ## Quickstart Installation from Pip
 

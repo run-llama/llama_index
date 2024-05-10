@@ -1,4 +1,6 @@
+import json
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -11,14 +13,20 @@ from typing import (
     cast,
     get_args,
     runtime_checkable,
-    TYPE_CHECKING,
 )
 
-from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.llms.function_calling import FunctionCallingLLM
-import json
 import httpx
 import tiktoken
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    acompletion_to_chat_decorator,
+    astream_chat_to_completion_decorator,
+    astream_completion_to_chat_decorator,
+    chat_to_completion_decorator,
+    completion_to_chat_decorator,
+    stream_chat_to_completion_decorator,
+    stream_completion_to_chat_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -39,23 +47,15 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    acompletion_to_chat_decorator,
-    astream_chat_to_completion_decorator,
-    astream_completion_to_chat_decorator,
-    chat_to_completion_decorator,
-    completion_to_chat_decorator,
-    stream_chat_to_completion_decorator,
-    stream_completion_to_chat_decorator,
-)
+from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     OpenAIToolCall,
     create_retry_decorator,
+    from_openai_completion_logprobs,
     from_openai_message,
     from_openai_token_logprobs,
-    from_openai_completion_logprobs,
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -101,7 +101,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class OpenAI(FunctionCallingLLM):
-    """OpenAI LLM.
+    """
+    OpenAI LLM.
 
     Examples:
         `pip install llama-index-llms-openai`
@@ -177,6 +178,7 @@ class OpenAI(FunctionCallingLLM):
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
+    _async_http_client: Optional[httpx.AsyncClient] = PrivateAttr()
 
     def __init__(
         self,
@@ -193,6 +195,7 @@ class OpenAI(FunctionCallingLLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        async_http_client: Optional[httpx.AsyncClient] = None,
         # base class
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -233,6 +236,7 @@ class OpenAI(FunctionCallingLLM):
         self._client = None
         self._aclient = None
         self._http_client = http_client
+        self._async_http_client = async_http_client
 
     def _get_client(self) -> SyncOpenAI:
         if not self.reuse_client:
@@ -244,10 +248,10 @@ class OpenAI(FunctionCallingLLM):
 
     def _get_aclient(self) -> AsyncOpenAI:
         if not self.reuse_client:
-            return AsyncOpenAI(**self._get_credential_kwargs())
+            return AsyncOpenAI(**self._get_credential_kwargs(is_async=True))
 
         if self._aclient is None:
-            self._aclient = AsyncOpenAI(**self._get_credential_kwargs())
+            self._aclient = AsyncOpenAI(**self._get_credential_kwargs(is_async=True))
         return self._aclient
 
     def _get_model_name(self) -> str:
@@ -330,14 +334,14 @@ class OpenAI(FunctionCallingLLM):
             return kwargs["use_chat_completions"]
         return self.metadata.is_chat_model
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
@@ -359,11 +363,21 @@ class OpenAI(FunctionCallingLLM):
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
-        response = client.chat.completions.create(
-            messages=message_dicts,
-            stream=False,
-            **self._get_model_kwargs(**kwargs),
-        )
+
+        if self.reuse_client:
+            response = client.chat.completions.create(
+                messages=message_dicts,
+                stream=False,
+                **self._get_model_kwargs(**kwargs),
+            )
+        else:
+            with client:
+                response = client.chat.completions.create(
+                    messages=message_dicts,
+                    stream=False,
+                    **self._get_model_kwargs(**kwargs),
+                )
+
         openai_message = response.choices[0].message
         message = from_openai_message(openai_message)
         openai_token_logprobs = response.choices[0].logprobs
@@ -383,7 +397,8 @@ class OpenAI(FunctionCallingLLM):
         tool_calls: List[ChoiceDeltaToolCall],
         tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
     ) -> List[ChoiceDeltaToolCall]:
-        """Use the tool_calls_delta objects received from openai stream chunks
+        """
+        Use the tool_calls_delta objects received from openai stream chunks
         to update the running tool_calls object.
 
         Args:
@@ -483,11 +498,19 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = client.completions.create(
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
+        if self.reuse_client:
+            response = client.completions.create(
+                prompt=prompt,
+                stream=False,
+                **all_kwargs,
+            )
+        else:
+            with client:
+                response = client.completions.create(
+                    prompt=prompt,
+                    stream=False,
+                    **all_kwargs,
+                )
         text = response.choices[0].text
 
         openai_completion_logprobs = response.choices[0].logprobs
@@ -617,16 +640,30 @@ class OpenAI(FunctionCallingLLM):
     ) -> ChatResponse:
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
-        response = await aclient.chat.completions.create(
-            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
-        )
-        message_dict = response.choices[0].message
-        message = from_openai_message(message_dict)
-        logprobs_dict = response.choices[0].logprobs
+
+        if self.reuse_client:
+            response = await aclient.chat.completions.create(
+                messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
+            )
+        else:
+            async with aclient:
+                response = await aclient.chat.completions.create(
+                    messages=message_dicts,
+                    stream=False,
+                    **self._get_model_kwargs(**kwargs),
+                )
+
+        openai_message = response.choices[0].message
+        message = from_openai_message(openai_message)
+        openai_token_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_token_logprobs and openai_token_logprobs.content:
+            logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
 
         return ChatResponse(
             message=message,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
@@ -700,11 +737,19 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = await aclient.completions.create(
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
+        if self.reuse_client:
+            response = await aclient.completions.create(
+                prompt=prompt,
+                stream=False,
+                **all_kwargs,
+            )
+        else:
+            async with aclient:
+                response = await aclient.completions.create(
+                    prompt=prompt,
+                    stream=False,
+                    **all_kwargs,
+                )
 
         text = response.choices[0].text
         openai_completion_logprobs = response.choices[0].logprobs

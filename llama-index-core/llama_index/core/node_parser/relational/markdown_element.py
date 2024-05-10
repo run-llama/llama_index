@@ -32,10 +32,13 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        nodes = self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(
+            elements, node.metadata, ref_doc_text=node.get_content()
+        )
         source_document = node.source_node or node.as_related_node_info()
         for n in nodes:
             n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
         return nodes
 
     def extract_elements(
@@ -155,7 +158,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         elements[idx] = Element(
                             id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
                             type="table",
-                            element=element,
+                            element=element.element,
                             table=table,
                         )
                     else:

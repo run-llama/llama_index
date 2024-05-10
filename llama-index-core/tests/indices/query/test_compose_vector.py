@@ -1,9 +1,9 @@
 """Test recursive queries."""
 
-import asyncio
 from typing import Any, Dict, List
 
 import pytest
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.data_structs.data_structs import IndexStruct
 from llama_index.core.indices.composability.graph import ComposableGraph
@@ -258,7 +258,7 @@ def test_recursive_query_vector_table_async(
 
     query_engine = graph.as_query_engine(custom_query_engines=custom_query_engines)
     task = query_engine.aquery("Cat?")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == ("Cat?:Cat?:This is a test v2.")
 
 

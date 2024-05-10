@@ -25,11 +25,58 @@ Listed below are the core classes as well as their brief description of the
 Using the new `instrumentation` module involves 3 high-level steps.
 
 1. Define a `dispatcher`
-2. Define and attach your `EventHandler`'s to `dispatcher`
-3. Define and attach your `SpanHandler` to `dispatcher`
+2. (Optional) Define and attach your `EventHandler`'s to `dispatcher`
+3. (Optional) Define and attach your `SpanHandler` to `dispatcher`
 
 Doing so, would result in the ability to handle events and obtain spans that have
 been transmitted throughout the `llama-index` library and extension packages.
+
+For example, if I wanted to track every LLM call made in the library:
+
+```python
+from typing import Dict, List
+
+from llama_index.core.instrumentation.events.llm import (
+    LLMChatEndEvent,
+    LLMChatStartEvent,
+    LLMChatInProgressEvent,
+)
+
+
+class ExampleEventHandler(BaseEventHandler):
+    events: List[BaseEvent] = []
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "ExampleEventHandler"
+
+    def handle(self, event: BaseEvent) -> None:
+        """Logic for handling event."""
+        print("-----------------------")
+        # all events have these attributes
+        print(event.id_)
+        print(event.timestamp)
+        print(event.span_id)
+
+        # event specific attributes
+        if isinstance(event, LLMChatStartEvent):
+            # initial
+            print(event.messages)
+            print(event.additional_kwargs)
+            print(event.model_dict)
+        elif isinstance(event, LLMChatInProgressEvent):
+            # streaming
+            print(event.response.delta)
+        elif isinstance(event, LLMChatEndEvent):
+            # final response
+            print(event.response)
+
+        self.events.append(event)
+        print("-----------------------")
+```
+
+See the [full guide](../../examples/instrumentation/instrumentation_observability_rundown.ipynb) on all events logged in LlamaIndex, or visit the [api reference](../../api_reference/instrumentation/index.md) for more details.
 
 ### Defining a custom `EventHandler`
 
@@ -225,21 +272,14 @@ project
     └── app_query_engine.py
 ```
 
-Notebook Guides:
+## Notebook Guides:
 
-```{toctree}
----
-maxdepth: 1
----
-/examples/instrumentation/basic_usage.ipynb
-/examples/instrumentation/observe_api_calls.ipynb
-```
+
+- [Basic Usage](../../examples/instrumentation/basic_usage.ipynb)
+- [Observing Model Calls](../../examples/instrumentation/observe_api_calls.ipynb)
+- [Observing All Events](../../examples/instrumentation/instrumentation_observability_rundown.ipynb)
+
 
 ## API Reference
 
-```{toctree}
----
-maxdepth: 1
----
-/api_reference/instrumentation.rst
-```
+- [Instrumentation API Reference](../../api_reference/instrumentation/index.md)
