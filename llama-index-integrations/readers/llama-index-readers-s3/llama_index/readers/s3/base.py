@@ -5,16 +5,18 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 
 """
 
+from pathlib import Path
 import warnings
 from typing import Callable, Dict, List, Optional, Union
+from datetime import datetime, timezone
 
-from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.readers import SimpleDirectoryReader, BaseFilesystemReader
 from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import Field
 
 
-class S3Reader(BasePydanticReader):
+class S3Reader(BasePydanticReader, BaseFilesystemReader):
     """
     General reader for any S3 file or directory.
 
@@ -66,16 +68,19 @@ class S3Reader(BasePydanticReader):
     def class_name(cls) -> str:
         return "S3Reader"
 
-    def load_s3_files_as_docs(self, temp_dir=None) -> List[Document]:
-        """Load file(s) from S3."""
+    def _get_s3fs(self):
         from s3fs import S3FileSystem
 
-        s3fs = S3FileSystem(
+        return S3FileSystem(
             key=self.aws_access_id,
             endpoint_url=self.s3_endpoint_url,
             secret=self.aws_access_secret,
             token=self.aws_session_token,
         )
+
+    def _get_simple_directory_reader(self) -> SimpleDirectoryReader:
+        # we don't want to keep the reader as a field in the class to keep it serializable
+        s3fs = self._get_s3fs()
 
         input_dir = self.bucket
         input_files = None
@@ -85,7 +90,7 @@ class S3Reader(BasePydanticReader):
         elif self.prefix:
             input_dir = f"{input_dir}/{self.prefix}"
 
-        loader = SimpleDirectoryReader(
+        return SimpleDirectoryReader(
             input_dir=input_dir,
             input_files=input_files,
             file_extractor=self.file_extractor,
@@ -97,7 +102,18 @@ class S3Reader(BasePydanticReader):
             fs=s3fs,
         )
 
+    def load_s3_files_as_docs(self, temp_dir=None) -> List[Document]:
+        """Load file(s) from S3."""
+        loader = self._get_simple_directory_reader()
         return loader.load_data()
+
+    def _adjust_documents(self, documents: List[Document]) -> List[Document]:
+        for doc in documents:
+            if self.s3_endpoint_url:
+                doc.id_ = self.s3_endpoint_url + "_" + doc.id_
+            else:
+                doc.id_ = "s3_" + doc.id_
+        return documents
 
     def load_data(self, custom_temp_subdir: str = None) -> List[Document]:
         """
@@ -116,10 +132,40 @@ class S3Reader(BasePydanticReader):
             )
 
         documents = self.load_s3_files_as_docs()
-        for doc in documents:
-            if self.s3_endpoint_url:
-                doc.id_ = self.s3_endpoint_url + "_" + doc.id_
-            else:
-                doc.id_ = "s3_" + doc.id_
+        return self._adjust_documents(documents)
 
-        return documents
+    def list_files(self, **kwargs) -> List[Path]:
+        simple_directory_reader = self._get_simple_directory_reader()
+        return simple_directory_reader.list_files(**kwargs)
+
+    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
+        # can't use SimpleDirectoryReader.get_file_info because it lacks some fields
+        fs = self._get_s3fs()
+        info_result = fs.info(input_file)
+
+        last_modified_date = info_result.get("LastModified")
+        if last_modified_date and isinstance(last_modified_date, datetime):
+            last_modified_date = last_modified_date.astimezone(timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        else:
+            last_modified_date = None
+
+        info_dict = {
+            "file_path": str(input_file),
+            "file_size": info_result.get("size"),
+            "last_modified_date": last_modified_date,
+            "content_hash": info_result.get("ETag"),
+        }
+
+        # Ignore None values
+        return {
+            meta_key: meta_value
+            for meta_key, meta_value in info_dict.items()
+            if meta_value is not None
+        }
+
+    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
+        simple_directory_reader = self._get_simple_directory_reader()
+        docs = simple_directory_reader.read_file(input_file, **kwargs)
+        return self._adjust_documents(docs)
