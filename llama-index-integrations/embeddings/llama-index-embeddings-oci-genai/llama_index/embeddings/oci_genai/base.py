@@ -204,6 +204,10 @@ class OCIGenAIEmbeddings(BaseEmbedding):
     @classmethod
     def class_name(self) -> str:
         return "OCIGenAIEmbeddings"
+    
+    @staticmethod
+    def list_supported_models() -> List[str]:
+        return list(SUPPORTED_MODELS)
 
     
     def  _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
@@ -219,10 +223,6 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         if self.model.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model)
         else:
-            if self.model not in SUPPORTED_MODELS:
-                raise ValueError(
-                    f"Model {self.model} is not supported. Supported models are {list(SUPPORTED_MODELS)}"
-                )
             serving_mode = models.OnDemandServingMode(model_id=self.model)
 
         request = models.EmbedTextDetails(
