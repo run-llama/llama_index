@@ -92,7 +92,7 @@ class RedisKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        return await self._async_redis_client.hset(
+        await self._async_redis_client.hset(
             name=collection, key=key, value=json.dumps(val)
         )
 
