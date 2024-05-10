@@ -47,3 +47,4 @@ Here are some third-party resources on advanced retrieval strategies.
 - [DeepMemory (Activeloop)](../../examples/retrievers/deep_memory.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)

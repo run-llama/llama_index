@@ -4,6 +4,11 @@ import numpy as np
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.utils import infer_torch_device
@@ -12,6 +17,8 @@ from transformers import AutoTokenizer
 from optimum.intel.openvino import OVModelForSequenceClassification
 
 DEFAULT_COLBERT_MAX_LENGTH = 512
+
+dispatcher = get_dispatcher(__name__)
 
 
 class OpenVINORerank(BaseNodePostprocessor):
@@ -127,6 +134,16 @@ class OpenVINORerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatch_event = dispatcher.get_dispatch_event()
+        dispatch_event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
         if len(nodes) == 0:
@@ -172,4 +189,5 @@ class OpenVINORerank(BaseNodePostprocessor):
             ]
             event.on_end(payload={EventPayload.NODES: reranked_nodes})
 
+        dispatch_event(ReRankEndEvent(nodes=reranked_nodes))
         return reranked_nodes

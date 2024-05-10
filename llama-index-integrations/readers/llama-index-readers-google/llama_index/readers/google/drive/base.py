@@ -121,8 +121,14 @@ class GoogleDriveReader(BasePydanticReader):
             with open(service_account_key_path, encoding="utf-8") as json_file:
                 service_account_key = json.load(json_file)
 
-        if client_config is None and service_account_key is None:
-            raise ValueError("Must specify `client_config` or `service_account_key`.")
+        if (
+            client_config is None
+            and service_account_key is None
+            and authorized_user_info is None
+        ):
+            raise ValueError(
+                "Must specify `client_config` or `service_account_key` or `authorized_user_info`."
+            )
 
         super().__init__(
             drive_id=drive_id,

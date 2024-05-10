@@ -72,7 +72,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     Args:
         uri (str, optional): The URI to connect to, comes in the form of
-            "http://address:port".
+            "https://address:port" for Milvus or Zilliz Cloud service,
+            or "path/to/local/milvus.db" for the lite local Milvus. Defaults to
+            "http://localhost:19530".
         token (str, optional): The token for log in. Empty if not using rbac, if
             using rbac it will most likely be "username:password".
         collection_name (str, optional): The name of the collection where data will be

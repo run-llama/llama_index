@@ -1,5 +1,206 @@
 # ChangeLog
 
+## [2024-05-09]
+
+### `llama-index-core` [0.10.36]
+
+- add start_char_idx and end_char_idx with MarkdownElementParser (#13377)
+- use handlers from global default (#13368)
+
+### `llama-index-readers-pebblo` [0.1.0]
+
+- Initial release (#13128)
+
+### `llama-index-llms-cohere` [0.1.7]
+
+- Call Cohere RAG inference with documents argument (#13196)
+
+### `llama-index-vector-scores-kdbai` [0.1.6]
+
+- update add method decode utf-8 (#13194)
+
+### `llama-index-vector-stores-alibabacloud-opensearch` [0.1.0]
+
+- Initial release (#13286)
+
+### `llama-index-tools-multion` [0.2.0]
+
+- update tool to use updated api/sdk (#13373)
+
+### `llama-index-vector-sores-weaviate` [1.0.0]
+
+- Update to weaviate client v4 (#13229)
+
+### `llama-index-readers-file` [0.1.22]
+
+- fix bug where PDFReader ignores extra_info (#13369)
+
+### `llama-index-llms-azure-openai` [0.1.8]
+
+- Add sync httpx client support (#13370)
+
+### `llama-index-llms-openai` [0.1.18]
+
+- Add sync httpx client support (#13370)
+- Add missing openai model token context (#13337)
+
+### `llama-index-readers-github` [0.1.9]
+
+- Add fail_on_http_error (#13366)
+
+### `llama-index-vector-stores-pinecone` [0.1.7]
+
+- Add attribution tag for pinecone (#13329)
+
+### `llama-index-llms-nvidia` [0.1.1]
+
+- set default max_tokens to 1024 (#13371)
+
+### `llama-index-readers-papers` [0.1.5]
+
+- Fix hiddent temp directory issue for arxiv reader (#13351)
+
+### `llama-index-embeddings-nvidia` [0.1.1]
+
+- fix truncate passing aget_query_embedding and get_text_embedding (#13367)
+
+### `llama-index-llms-anyscare` [0.1.4]
+
+- Add llama-3 models (#13336)
+
+## [2024-05-07]
+
+### `llama-index-agent-introspective` [0.1.0]
+
+- Add CRITIC and reflection agent integrations (#13108)
+
+### `llama-index-core` [0.10.35]
+
+- fix `from_defaults()` erasing summary memory buffer history (#13325)
+- use existing async event loop instead of `asyncio.run()` in core (#13309)
+- fix async streaming from query engine in condense question chat engine (#13306)
+- Handle ValueError in extract_table_summaries in element node parsers (#13318)
+- Handle llm properly for QASummaryQueryEngineBuilder and RouterQueryEngine (#13281)
+- expand instrumentation payloads (#13302)
+- Fix Bug in sql join statement missing schema (#13277)
+
+### `llama-index-embeddings-jinaai` [0.1.5]
+
+- add encoding_type parameters in JinaEmbedding class (#13172)
+- fix encoding type access in JinaEmbeddings (#13315)
+
+### `llama-index-embeddings-nvidia` [0.1.0]
+
+- add nvidia nim embeddings support (#13177)
+
+### `llama-index-llms-mistralai` [0.1.12]
+
+- Fix async issue when streaming with Mistral AI (#13292)
+
+### `llama-index-llms-nvidia` [0.1.0]
+
+- add nvidia nim llm support (#13176)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.1.0]
+
+- add nvidia nim rerank support (#13178)
+
+### `llama-index-readers-file` [0.1.21]
+
+- Update MarkdownReader to parse text before first header (#13327)
+
+### `llama-index-readers-web` [0.1.13]
+
+- feat: Spider Web Loader (#13200)
+
+### `llama-index-vector-stores-vespa` [0.1.0]
+
+- Add VectorStore integration for Vespa (#13213)
+
+### `llama-index-vector-stores-vertexaivectorsearch` [0.1.0]
+
+- Add support for Vertex AI Vector Search as Vector Store (#13186)
+
+## [2024-05-02]
+
+### `llama-index-core` [0.10.34]
+
+- remove error ignoring during chat engine streaming (#13160)
+- add structured planning agent (#13149)
+- update base class for planner agent (#13228)
+- Fix: Error when parse file using SimpleFileNodeParser and file's extension doesn't in FILE_NODE_PARSERS (#13156)
+- add matching `source_node.node_id` verification to node parsers (#13109)
+- Retrieval Metrics: Updating HitRate and MRR for Evaluation@K documents retrieved. Also adding RR as a separate metric (#12997)
+- Add chat summary memory buffer (#13155)
+
+### `llama-index-indices-managed-zilliz` [0.1.3]
+
+- ZillizCloudPipelineIndex accepts flexible params to create pipelines (#10134, #10112)
+
+### `llama-index-llms-huggingface` [0.1.7]
+
+- Add tool usage support with text-generation-inference integration from Hugging Face (#12471)
+
+### `llama-index-llms-maritalk` [0.2.0]
+
+- Add streaming for maritalk (#13207)
+
+### `llama-index-llms-mistral-rs` [0.1.0]
+
+- Integrate mistral.rs LLM (#13105)
+
+### `llama-index-llms-mymagic` [0.1.7]
+
+- mymagicai api update (#13148)
+
+### `llama-index-llms-nvidia-triton` [0.1.5]
+
+- Streaming Support for Nvidia's Triton Integration (#13135)
+
+### `llama-index-llms-ollama` [0.1.3]
+
+- added async support to ollama llms (#13150)
+
+### `llama-index-readers-microsoft-sharepoint` [0.2.2]
+
+- Exclude access control metadata keys from LLMs and embeddings - SharePoint Reader (#13184)
+
+### `llama-index-readers-web` [0.1.11]
+
+- feat: Browserbase Web Reader (#12877)
+
+### `llama-index-readers-youtube-metadata` [0.1.0]
+
+- Added YouTube Metadata Reader (#12975)
+
+### `llama-index-storage-kvstore-redis` [0.1.4]
+
+- fix redis kvstore key that was in bytes (#13201)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.5]
+
+- Respect filter condition for Azure AI Search (#13215)
+
+### `llama-index-vector-stores-chroma` [0.1.7]
+
+- small bump for new chroma client version (#13158)
+
+### `llama-index-vector-stores-firestore` [0.1.0]
+
+- Adding Firestore Vector Store (#12048)
+
+### `llama-index-vector-stores-kdbai` [0.1.5]
+
+- small fix to returned IDs after `add()` (#12515)
+
+### `llama-index-vector-stores-milvus` [0.1.11]
+
+- Add hybrid retrieval mode to MilvusVectorStore (#13122)
+
+### `llama-index-vector-stores-postgres` [0.1.7]
+
+- parameterize queries in pgvector store (#13199)
+
 ## [2024-04-27]
 
 ### `llama-index-core` [0.10.33]
