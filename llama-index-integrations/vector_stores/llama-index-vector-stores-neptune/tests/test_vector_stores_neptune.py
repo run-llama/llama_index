@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-from llama_index.core.vector_stores.types import VectorStore
 from llama_index.vector_stores.neptune import NeptuneAnalyticsVectorStore
 
 
