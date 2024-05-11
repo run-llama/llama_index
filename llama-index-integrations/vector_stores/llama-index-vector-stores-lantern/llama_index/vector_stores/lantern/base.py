@@ -472,6 +472,8 @@ class LanternVectorStore(BasePydanticVectorStore):
         from sqlalchemy.types import UserDefinedType
 
         class REGCONFIG(UserDefinedType):
+            cache_ok = True
+
             def get_col_spec(self, **kw: Any) -> str:
                 return "regconfig"
 
