@@ -10,7 +10,6 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import API_CATALOG_MODELS
 
 from llama_index.llms.openai_like import OpenAILike
 
@@ -32,6 +31,7 @@ class NVIDIA(OpenAILike):
         model: str = DEFAULT_MODEL,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
+        max_tokens: Optional[int] = 1024,
         **kwargs: Any,
     ) -> None:
         api_key = get_from_param_or_env(
@@ -45,6 +45,7 @@ class NVIDIA(OpenAILike):
             model=model,
             api_key=api_key,
             api_base=BASE_URL,
+            max_tokens=max_tokens,
             is_chat_model=True,
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             **kwargs,
@@ -52,10 +53,19 @@ class NVIDIA(OpenAILike):
 
     @property
     def available_models(self) -> List[Model]:
-        ids = API_CATALOG_MODELS.keys()
+        exclude = {
+            "mistralai/mixtral-8x22b-v0.1",  # not a /chat/completion endpoint
+        }
+        # do not exclude models in nim mode. the nim administrator has control
+        # over the model name and may deploy an excluded name on the nim's
+        # /chat/completion endpoint.
         if self._mode == "nim":
-            ids = [model.id for model in self._get_client().models.list()]
-        return [Model(id=name) for name in ids]
+            exclude = set()
+        return [
+            model
+            for model in self._get_client().models.list().data
+            if model.id not in exclude
+        ]
 
     @classmethod
     def class_name(cls) -> str:

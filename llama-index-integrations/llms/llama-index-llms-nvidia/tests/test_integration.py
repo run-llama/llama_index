@@ -73,3 +73,16 @@ async def test_astream_complete(chat_model: str, mode: dict) -> None:
     responses = [response async for response in gen]
     assert all(isinstance(response, CompletionResponse) for response in responses)
     assert all(isinstance(response.delta, str) for response in responses)
+
+
+@pytest.mark.integration()
+@pytest.mark.parametrize(
+    "excluded",
+    [
+        "mistralai/mixtral-8x22b-v0.1",  # not a /chat/completion endpoint
+    ],
+)
+def test_exclude_models(mode: dict, excluded: str) -> None:
+    assert excluded not in [
+        model.id for model in NVIDIA().mode(**mode).available_models
+    ]
