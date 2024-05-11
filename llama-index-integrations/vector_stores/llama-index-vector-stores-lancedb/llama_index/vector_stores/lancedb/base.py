@@ -278,9 +278,11 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ids.append(node.node_id)
 
             if self._table is None:
-                self._table = self._connection.create_table(self._table_name, data)
+                self._table = self._connection.create_table(
+                    self._table_name, data, mode=add_kwargs.pop("mode", "overwrite")
+                )
 
-            self._table.add(data)
+            self._table.add(data, mode=add_kwargs.pop("mode", "overwrite"))
 
         return ids
 
@@ -312,10 +314,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             where = kwargs.pop("where", None)
 
-        table = self._table or self._connection.open_table(self._table_name)
-
         lance_query = (
-            table.search(
+            self._table.search(
                 query=query.query_embedding,
                 vector_column_name=self.vector_column_name,
             )
