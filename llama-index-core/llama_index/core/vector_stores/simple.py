@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
@@ -18,9 +19,9 @@ from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
+    BasePydanticVectorStore,
     MetadataFilters,
     FilterCondition,
-    VectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -95,7 +96,7 @@ class SimpleVectorStoreData(DataClassJsonMixin):
     metadata_dict: Dict[str, Any] = field(default_factory=dict)
 
 
-class SimpleVectorStore(VectorStore):
+class SimpleVectorStore(BasePydanticVectorStore):
     """Simple Vector Store.
 
     In this vector store, embeddings are stored within a simple, in-memory dictionary.
@@ -107,6 +108,8 @@ class SimpleVectorStore(VectorStore):
     """
 
     stores_text: bool = False
+    _data: SimpleVectorStoreData = PrivateAttr()
+    _fs: fsspec.AbstractFileSystem = PrivateAttr()
 
     def __init__(
         self,
@@ -115,6 +118,7 @@ class SimpleVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        super().__init__()
         self._data = data or SimpleVectorStoreData()
         self._fs = fs or fsspec.filesystem("file")
 
@@ -142,11 +146,11 @@ class SimpleVectorStore(VectorStore):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
-    ) -> Dict[str, VectorStore]:
+    ) -> Dict[str, BasePydanticVectorStore]:
         """Load from namespaced persist dir."""
         listing_fn = os.listdir if fs is None else fs.listdir
 
-        vector_stores: Dict[str, VectorStore] = {}
+        vector_stores: Dict[str, BasePydanticVectorStore] = {}
 
         try:
             for fname in listing_fn(persist_dir):
@@ -176,6 +180,11 @@ class SimpleVectorStore(VectorStore):
 
         return vector_stores
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "SimpleVectorStore"
+
     @property
     def client(self) -> None:
         """Get client."""
@@ -184,6 +193,14 @@ class SimpleVectorStore(VectorStore):
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
         return self._data.embedding_dict[text_id]
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes."""
+        raise NotImplementedError("SimpleVectorStore does not store nodes directly.")
 
     def add(
         self,
@@ -223,6 +240,37 @@ class SimpleVectorStore(VectorStore):
             # prior to metadata functionality.
             if self._data.metadata_dict is not None:
                 self._data.metadata_dict.pop(text_id, None)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        filter_fn = _build_metadata_filter_fn(
+            lambda node_id: self._data.metadata_dict[node_id], filters
+        )
+
+        if node_ids is not None:
+            node_id_set = set(node_ids)
+
+            def node_filter_fn(node_id: str) -> bool:
+                return node_id in node_id_set and filter_fn(node_id)
+
+        else:
+
+            def node_filter_fn(node_id: str) -> bool:
+                return filter_fn(node_id)
+
+        for node_id in list(self._data.embedding_dict.keys()):
+            if node_filter_fn(node_id):
+                del self._data.embedding_dict[node_id]
+                del self._data.text_id_to_ref_doc_id[node_id]
+                self._data.metadata_dict.pop(node_id, None)
+
+    def clear(self) -> None:
+        """Clear the store."""
+        self._data = SimpleVectorStoreData()
 
     def query(
         self,
