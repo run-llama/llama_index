@@ -312,7 +312,18 @@ class BaseNode(BaseComponent):
         if not isinstance(relation, list):
             raise ValueError("Child objects must be a list of RelatedNodeInfo objects.")
         return relation
+    
+    @property
+    def reference_nodes(self) -> Optional[List[RelatedNodeInfo]]:
+        """Reference nodes."""
+        if NodeRelationship.REFERENCE not in self.relationships:
+            return None
 
+        relation = self.relationships[NodeRelationship.REFERENCE]
+        if not isinstance(relation, list):
+            raise ValueError("Reference objects must be a list of RelatedNodeInfo objects.")
+        return relation
+    
     @property
     def ref_doc_id(self) -> Optional[str]:
         """Deprecated: Get ref doc id."""
