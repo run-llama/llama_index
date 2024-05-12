@@ -81,6 +81,7 @@ networkx = ">=3.0"
 psycopg2-binary = {optional = true, version = "^2.9.9"}
 dirtyjson = "^1.0.8"
 tqdm = "^4.66.1"
+rag-pychunk = "1.0.4"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 llamaindex-py-client = "^0.1.18"
