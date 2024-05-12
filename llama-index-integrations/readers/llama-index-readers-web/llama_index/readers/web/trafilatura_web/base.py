@@ -72,5 +72,6 @@ class TrafilaturaWebReader(BasePydanticReader):
                 include_links=include_links,
                 **kwargs,
             )
+            documents.append(Document(text=response, id_=url))
 
         return documents
