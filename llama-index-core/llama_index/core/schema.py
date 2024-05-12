@@ -148,6 +148,7 @@ class NodeRelationship(str, Enum):
     NEXT = auto()
     PARENT = auto()
     CHILD = auto()
+    REFERENCE = auto()
 
 
 class ObjectType(str, Enum):
