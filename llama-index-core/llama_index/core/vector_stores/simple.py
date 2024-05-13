@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
@@ -108,7 +108,8 @@ class SimpleVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = False
-    _data: SimpleVectorStoreData = PrivateAttr()
+
+    data: SimpleVectorStoreData = Field(default_factory=SimpleVectorStoreData)
     _fs: fsspec.AbstractFileSystem = PrivateAttr()
 
     def __init__(
@@ -118,8 +119,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__()
-        self._data = data or SimpleVectorStoreData()
+        super().__init__(data=data or SimpleVectorStoreData())
         self._fs = fs or fsspec.filesystem("file")
 
     @classmethod
@@ -190,9 +190,14 @@ class SimpleVectorStore(BasePydanticVectorStore):
         """Get client."""
         return
 
+    @property
+    def _data(self) -> SimpleVectorStoreData:
+        """Backwards compatibility."""
+        return self.data
+
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
-        return self._data.embedding_dict[text_id]
+        return self.data.embedding_dict[text_id]
 
     def get_nodes(
         self,
@@ -209,14 +214,14 @@ class SimpleVectorStore(BasePydanticVectorStore):
     ) -> List[str]:
         """Add nodes to index."""
         for node in nodes:
-            self._data.embedding_dict[node.node_id] = node.get_embedding()
-            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
+            self.data.embedding_dict[node.node_id] = node.get_embedding()
+            self.data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
 
             metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=False
             )
             metadata.pop("_node_content", None)
-            self._data.metadata_dict[node.node_id] = metadata
+            self.data.metadata_dict[node.node_id] = metadata
         return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -228,18 +233,18 @@ class SimpleVectorStore(BasePydanticVectorStore):
 
         """
         text_ids_to_delete = set()
-        for text_id, ref_doc_id_ in self._data.text_id_to_ref_doc_id.items():
+        for text_id, ref_doc_id_ in self.data.text_id_to_ref_doc_id.items():
             if ref_doc_id == ref_doc_id_:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:
-            del self._data.embedding_dict[text_id]
-            del self._data.text_id_to_ref_doc_id[text_id]
+            del self.data.embedding_dict[text_id]
+            del self.data.text_id_to_ref_doc_id[text_id]
             # Handle metadata_dict not being present in stores that were persisted
             # without metadata, or, not being present for nodes stored
             # prior to metadata functionality.
-            if self._data.metadata_dict is not None:
-                self._data.metadata_dict.pop(text_id, None)
+            if self.data.metadata_dict is not None:
+                self.data.metadata_dict.pop(text_id, None)
 
     def delete_nodes(
         self,
@@ -248,7 +253,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         filter_fn = _build_metadata_filter_fn(
-            lambda node_id: self._data.metadata_dict[node_id], filters
+            lambda node_id: self.data.metadata_dict[node_id], filters
         )
 
         if node_ids is not None:
@@ -262,15 +267,15 @@ class SimpleVectorStore(BasePydanticVectorStore):
             def node_filter_fn(node_id: str) -> bool:
                 return filter_fn(node_id)
 
-        for node_id in list(self._data.embedding_dict.keys()):
+        for node_id in list(self.data.embedding_dict.keys()):
             if node_filter_fn(node_id):
-                del self._data.embedding_dict[node_id]
-                del self._data.text_id_to_ref_doc_id[node_id]
-                self._data.metadata_dict.pop(node_id, None)
+                del self.data.embedding_dict[node_id]
+                del self.data.text_id_to_ref_doc_id[node_id]
+                self.data.metadata_dict.pop(node_id, None)
 
     def clear(self) -> None:
         """Clear the store."""
-        self._data = SimpleVectorStoreData()
+        self.data = SimpleVectorStoreData()
 
     def query(
         self,
@@ -281,8 +286,8 @@ class SimpleVectorStore(BasePydanticVectorStore):
         # Prevent metadata filtering on stores that were persisted without metadata.
         if (
             query.filters is not None
-            and self._data.embedding_dict
-            and not self._data.metadata_dict
+            and self.data.embedding_dict
+            and not self.data.metadata_dict
         ):
             raise ValueError(
                 "Cannot filter stores that were persisted without metadata. "
@@ -290,7 +295,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
             )
         # Prefilter nodes based on the query filter and node ID restrictions.
         query_filter_fn = _build_metadata_filter_fn(
-            lambda node_id: self._data.metadata_dict[node_id], query.filters
+            lambda node_id: self.data.metadata_dict[node_id], query.filters
         )
 
         if query.node_ids is not None:
@@ -307,7 +312,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         node_ids = []
         embeddings = []
         # TODO: consolidate with get_query_text_embedding_similarities
-        for node_id, embedding in self._data.embedding_dict.items():
+        for node_id, embedding in self.data.embedding_dict.items():
             if node_filter_fn(node_id) and query_filter_fn(node_id):
                 node_ids.append(node_id)
                 embeddings.append(embedding)
@@ -354,7 +359,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w") as f:
-            json.dump(self._data.to_dict(), f)
+            json.dump(self.data.to_dict(), f)
 
     @classmethod
     def from_persist_path(
@@ -379,4 +384,4 @@ class SimpleVectorStore(BasePydanticVectorStore):
         return cls(data)
 
     def to_dict(self) -> dict:
-        return self._data.to_dict()
+        return self.data.to_dict()
