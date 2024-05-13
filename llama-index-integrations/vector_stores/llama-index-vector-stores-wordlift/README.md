@@ -4,9 +4,14 @@
 
 # LlamaIndex Vector_Stores Integration: Wordlift
 
-Wordlift is an AI-powered SEO platform. With our AI we build your own knowledge graph for your business with entities marked up by the different topics, categories and regions. Using this graph, search engines will be able to understand the structure of your content faster and more precisely.
+Wordlift is an AI-powered SEO platform. With our AI we build your own knowledge graph for your business with entities marked up by the different topics, categories and regions. Using this graph, search engines will be able to understand the structure of your content faster and more precisely. To access a Wordlift key and unlock our AI-powered SEO tools, visit [Wordlift](https://wordlift.io/).
 
-This integration allows you to use Wordlift as a vector store for LlamaIndex to work with your Knowledge graph.
+This integration enables the use of Wordlift as a vector store for LlamaIndex, allowing you to work with your knowledge graph directly from your codebase.
+
+## Features
+
+- Perform retrieval-augmented generation (RAG) using your knowledge graph data directly in your codebase.
+- Add new nodes and search within your knowledge graph effortlessly.
 
 ## Usage
 
