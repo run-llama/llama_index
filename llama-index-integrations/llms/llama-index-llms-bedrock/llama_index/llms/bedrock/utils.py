@@ -46,10 +46,12 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-v2:1": 200000,
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "anthropic.claude-3-opus-20240229-v1:0": 200000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
+    "mistral.mistral-large-2402-v1:0": 32000,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -65,9 +67,11 @@ STREAMING_MODELS = {
     "anthropic.claude-v2:1",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
+    "anthropic.claude-3-opus-20240229-v1:0",
     "meta.llama2-13b-chat-v1",
     "mistral.mistral-7b-instruct-v0:2",
     "mistral.mixtral-8x7b-instruct-v0:1",
+    "mistral.mistral-large-2402-v1:0",
 }
 
 

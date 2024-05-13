@@ -1,4 +1,6 @@
+import json
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -11,12 +13,20 @@ from typing import (
     cast,
     get_args,
     runtime_checkable,
-    TYPE_CHECKING,
 )
 
-import json
 import httpx
 import tiktoken
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    acompletion_to_chat_decorator,
+    astream_chat_to_completion_decorator,
+    astream_completion_to_chat_decorator,
+    chat_to_completion_decorator,
+    completion_to_chat_decorator,
+    stream_chat_to_completion_decorator,
+    stream_completion_to_chat_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -37,24 +47,15 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    acompletion_to_chat_decorator,
-    astream_chat_to_completion_decorator,
-    astream_completion_to_chat_decorator,
-    chat_to_completion_decorator,
-    completion_to_chat_decorator,
-    stream_chat_to_completion_decorator,
-    stream_completion_to_chat_decorator,
-)
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     OpenAIToolCall,
     create_retry_decorator,
+    from_openai_completion_logprobs,
     from_openai_message,
     from_openai_token_logprobs,
-    from_openai_completion_logprobs,
     is_chat_model,
     is_function_calling_model,
     openai_modelname_to_contextsize,
@@ -93,8 +94,15 @@ class Tokenizer(Protocol):
         ...
 
 
-class OpenAI(LLM):
-    """OpenAI LLM.
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
+class OpenAI(FunctionCallingLLM):
+    """
+    OpenAI LLM.
 
     Examples:
         `pip install llama-index-llms-openai`
@@ -170,6 +178,7 @@ class OpenAI(LLM):
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
+    _async_http_client: Optional[httpx.AsyncClient] = PrivateAttr()
 
     def __init__(
         self,
@@ -186,6 +195,7 @@ class OpenAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        async_http_client: Optional[httpx.AsyncClient] = None,
         # base class
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -226,6 +236,7 @@ class OpenAI(LLM):
         self._client = None
         self._aclient = None
         self._http_client = http_client
+        self._async_http_client = async_http_client
 
     def _get_client(self) -> SyncOpenAI:
         if not self.reuse_client:
@@ -237,10 +248,10 @@ class OpenAI(LLM):
 
     def _get_aclient(self) -> AsyncOpenAI:
         if not self.reuse_client:
-            return AsyncOpenAI(**self._get_credential_kwargs())
+            return AsyncOpenAI(**self._get_credential_kwargs(is_async=True))
 
         if self._aclient is None:
-            self._aclient = AsyncOpenAI(**self._get_credential_kwargs())
+            self._aclient = AsyncOpenAI(**self._get_credential_kwargs(is_async=True))
         return self._aclient
 
     def _get_model_name(self) -> str:
@@ -323,14 +334,14 @@ class OpenAI(LLM):
             return kwargs["use_chat_completions"]
         return self.metadata.is_chat_model
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
@@ -352,11 +363,21 @@ class OpenAI(LLM):
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
         message_dicts = to_openai_message_dicts(messages)
-        response = client.chat.completions.create(
-            messages=message_dicts,
-            stream=False,
-            **self._get_model_kwargs(**kwargs),
-        )
+
+        if self.reuse_client:
+            response = client.chat.completions.create(
+                messages=message_dicts,
+                stream=False,
+                **self._get_model_kwargs(**kwargs),
+            )
+        else:
+            with client:
+                response = client.chat.completions.create(
+                    messages=message_dicts,
+                    stream=False,
+                    **self._get_model_kwargs(**kwargs),
+                )
+
         openai_message = response.choices[0].message
         message = from_openai_message(openai_message)
         openai_token_logprobs = response.choices[0].logprobs
@@ -376,7 +397,8 @@ class OpenAI(LLM):
         tool_calls: List[ChoiceDeltaToolCall],
         tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
     ) -> List[ChoiceDeltaToolCall]:
-        """Use the tool_calls_delta objects received from openai stream chunks
+        """
+        Use the tool_calls_delta objects received from openai stream chunks
         to update the running tool_calls object.
 
         Args:
@@ -476,11 +498,19 @@ class OpenAI(LLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = client.completions.create(
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
+        if self.reuse_client:
+            response = client.completions.create(
+                prompt=prompt,
+                stream=False,
+                **all_kwargs,
+            )
+        else:
+            with client:
+                response = client.completions.create(
+                    prompt=prompt,
+                    stream=False,
+                    **all_kwargs,
+                )
         text = response.choices[0].text
 
         openai_completion_logprobs = response.choices[0].logprobs
@@ -553,85 +583,6 @@ class OpenAI(LLM):
             "total_tokens": usage.get("total_tokens", 0),
         }
 
-    def _get_tool_call(
-        self,
-        response: ChatResponse,
-    ) -> OpenAIToolCall:
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-
-        if len(tool_calls) < 1:
-            raise ValueError(
-                f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
-            )
-
-        # TODO: support more than one tool call?
-        tool_call = tool_calls[0]
-        if not isinstance(tool_call, get_args(OpenAIToolCall)):
-            raise ValueError("Invalid tool_call object")
-
-        if tool_call.type != "function":
-            raise ValueError("Invalid tool type. Unsupported by OpenAI")
-
-        return tool_call
-
-    def _call_tool(
-        self,
-        tool_call: OpenAIToolCall,
-        tools_by_name: Dict[str, "BaseTool"],
-        verbose: bool = False,
-    ) -> "AgentChatResponse":
-        from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.tools.calling import call_tool
-
-        arguments_str = tool_call.function.arguments
-        name = tool_call.function.name
-        if verbose:
-            print("=== Calling Function ===")
-            print(f"Calling function: {name} with args: {arguments_str}")
-        tool = tools_by_name[name]
-        argument_dict = json.loads(arguments_str)
-
-        tool_output = call_tool(tool, argument_dict)
-
-        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
-
-    def predict_and_call(
-        self,
-        tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        **kwargs: Any,
-    ) -> "AgentChatResponse":
-        if not self.metadata.is_function_calling_model:
-            return super().predict_and_call(
-                tools,
-                user_msg=user_msg,
-                chat_history=chat_history,
-                verbose=verbose,
-                **kwargs,
-            )
-
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
-        tools_by_name = {tool.metadata.name: tool for tool in tools}
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = self.chat(
-            messages,
-            tools=tool_specs,
-            **kwargs,
-        )
-
-        tool_call = self._get_tool_call(response)
-
-        return self._call_tool(tool_call, tools_by_name, verbose=verbose)
-
     # ===== Async Endpoints =====
     @llm_chat_callback()
     async def achat(
@@ -689,16 +640,30 @@ class OpenAI(LLM):
     ) -> ChatResponse:
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
-        response = await aclient.chat.completions.create(
-            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
-        )
-        message_dict = response.choices[0].message
-        message = from_openai_message(message_dict)
-        logprobs_dict = response.choices[0].logprobs
+
+        if self.reuse_client:
+            response = await aclient.chat.completions.create(
+                messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
+            )
+        else:
+            async with aclient:
+                response = await aclient.chat.completions.create(
+                    messages=message_dicts,
+                    stream=False,
+                    **self._get_model_kwargs(**kwargs),
+                )
+
+        openai_message = response.choices[0].message
+        message = from_openai_message(openai_message)
+        openai_token_logprobs = response.choices[0].logprobs
+        logprobs = None
+        if openai_token_logprobs and openai_token_logprobs.content:
+            logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
 
         return ChatResponse(
             message=message,
             raw=response,
+            logprobs=logprobs,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
@@ -772,11 +737,19 @@ class OpenAI(LLM):
         all_kwargs = self._get_model_kwargs(**kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
-        response = await aclient.completions.create(
-            prompt=prompt,
-            stream=False,
-            **all_kwargs,
-        )
+        if self.reuse_client:
+            response = await aclient.completions.create(
+                prompt=prompt,
+                stream=False,
+                **all_kwargs,
+            )
+        else:
+            async with aclient:
+                response = await aclient.completions.create(
+                    prompt=prompt,
+                    stream=False,
+                    **all_kwargs,
+                )
 
         text = response.choices[0].text
         openai_completion_logprobs = response.choices[0].logprobs
@@ -820,40 +793,54 @@ class OpenAI(LLM):
 
         return gen()
 
-    async def _acall_tool(
-        self,
-        tool_call: OpenAIToolCall,
-        tools_by_name: Dict[str, "BaseTool"],
-        verbose: bool = False,
-    ) -> "AgentChatResponse":
-        from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.tools.calling import acall_tool
-
-        arguments_str = tool_call.function.arguments
-        name = tool_call.function.name
-        if verbose:
-            print("=== Calling Function ===")
-            print(f"Calling function: {name} with args: {arguments_str}")
-        tool = tools_by_name[name]
-        argument_dict = json.loads(arguments_str)
-
-        tool_output = await acall_tool(tool, argument_dict)
-
-        return AgentChatResponse(response=tool_output.content, sources=[tool_output])
-
-    async def apredict_and_call(
+    def chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
-    ) -> "AgentChatResponse":
-        if not self.metadata.is_function_calling_model:
-            return await super().apredict_and_call(user_msg, tools, verbose, **kwargs)
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        from llama_index.agent.openai.utils import resolve_tool_choice
 
+        # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
-        tools_by_name = {tool.metadata.name: tool for tool in tools}
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = self.chat(
+            messages,
+            tools=tool_specs,
+            tool_choice=resolve_tool_choice(tool_choice),
+            **kwargs,
+        )
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    async def achat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        from llama_index.agent.openai.utils import resolve_tool_choice
+
+        # misralai uses the same openai tool format
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -865,9 +852,44 @@ class OpenAI(LLM):
         response = await self.achat(
             messages,
             tools=tool_specs,
+            tool_choice=resolve_tool_choice(tool_choice),
             **kwargs,
         )
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
 
-        tool_call = self._get_tool_call(response)
+    def get_tool_calls_from_response(
+        self,
+        response: "AgentChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
 
-        return await self._acall_tool(tool_call, tools_by_name, verbose=verbose)
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            if not isinstance(tool_call, get_args(OpenAIToolCall)):
+                raise ValueError("Invalid tool_call object")
+            if tool_call.type != "function":
+                raise ValueError("Invalid tool type. Unsupported by OpenAI")
+            argument_dict = json.loads(tool_call.function.arguments)
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.id,
+                    tool_name=tool_call.function.name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections

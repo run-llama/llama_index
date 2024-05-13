@@ -27,6 +27,6 @@ With function calling APIs, the output is inherently in a structured format, and
 
 ## Resources
 
-- [Pydanitc Programs](./pydantic_program.md)
+- [Pydantic Programs](./pydantic_program.md)
 - [Structured Outputs + Query Engines](./query_engine.md)
 - [Output Parsers](./output_parser.md)

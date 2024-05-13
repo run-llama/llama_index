@@ -1,12 +1,18 @@
 import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
-from llama_index.core.async_utils import asyncio_module
+from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 
 
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def eval_response_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
@@ -26,6 +32,11 @@ async def eval_response_worker(
         )
 
 
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def eval_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
@@ -46,6 +57,11 @@ async def eval_worker(
         )
 
 
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+)
 async def response_worker(
     semaphore: asyncio.Semaphore,
     query_engine: BaseQueryEngine,
@@ -206,15 +222,22 @@ class BatchEvalRunner:
         )
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
+        # boolean to check if using multi kwarg evaluator
+        multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
+            next(iter(eval_kwargs_lists.values())), dict
+        )
+
         # run evaluations
         eval_jobs = []
         for idx, query in enumerate(cast(List[str], queries)):
             response_str = cast(List, response_strs)[idx]
             contexts = cast(List, contexts_list)[idx]
             for name, evaluator in self.evaluators.items():
-                if name in eval_kwargs_lists:
-                    # multi-evaluator
-                    kwargs = eval_kwargs_lists[name]
+                if multi_kwargs:
+                    # multi-evaluator - get appropriate runtime kwargs if present
+                    kwargs = (
+                        eval_kwargs_lists[name] if name in eval_kwargs_lists else {}
+                    )
                 else:
                     # single evaluator (maintain backwards compatibility)
                     kwargs = eval_kwargs_lists
@@ -259,14 +282,21 @@ class BatchEvalRunner:
         queries, responses = self._validate_and_clean_inputs(queries, responses)
         eval_kwargs_lists = self._validate_nested_eval_kwargs_types(eval_kwargs_lists)
 
+        # boolean to check if using multi kwarg evaluator
+        multi_kwargs = len(eval_kwargs_lists) > 0 and isinstance(
+            next(iter(eval_kwargs_lists.values())), dict
+        )
+
         # run evaluations
         eval_jobs = []
         for idx, query in enumerate(cast(List[str], queries)):
             response = cast(List, responses)[idx]
             for name, evaluator in self.evaluators.items():
-                if name in eval_kwargs_lists:
-                    # multi-evaluator
-                    kwargs = eval_kwargs_lists[name]
+                if multi_kwargs:
+                    # multi-evaluator - get appropriate runtime kwargs if present
+                    kwargs = (
+                        eval_kwargs_lists[name] if name in eval_kwargs_lists else {}
+                    )
                 else:
                     # single evaluator (maintain backwards compatibility)
                     kwargs = eval_kwargs_lists
@@ -330,7 +360,7 @@ class BatchEvalRunner:
         Sync version of aevaluate_response_strs.
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate_response_strs(
                 queries=queries,
                 response_strs=response_strs,
@@ -351,7 +381,7 @@ class BatchEvalRunner:
         Sync version of aevaluate_responses.
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate_responses(
                 queries=queries,
                 responses=responses,
@@ -371,10 +401,42 @@ class BatchEvalRunner:
         Sync version of aevaluate_queries.
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate_queries(
                 query_engine=query_engine,
                 queries=queries,
                 **eval_kwargs_lists,
             )
+        )
+
+    def upload_eval_results(
+        self,
+        project_name: str,
+        app_name: str,
+        results: Dict[str, List[EvaluationResult]],
+    ) -> None:
+        """
+        Upload the evaluation results to LlamaCloud.
+
+        Args:
+            project_name (str): The name of the project.
+            app_name (str): The name of the app.
+            results (Dict[str, List[EvaluationResult]]):
+                The evaluation results, a mapping of metric name to a list of EvaluationResult objects.
+
+        Examples:
+            ```python
+            results = batch_runner.evaluate_responses(...)
+
+            batch_runner.upload_eval_results(
+                project_name="my_project",
+                app_name="my_app",
+                results=results
+            )
+            ```
+        """
+        from llama_index.core.evaluation.eval_utils import upload_eval_results
+
+        upload_eval_results(
+            project_name=project_name, app_name=app_name, results=results
         )

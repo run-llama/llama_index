@@ -11,7 +11,7 @@ from llama_index.core.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
 )
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, NodeRelationship, TextNode
 from llama_index.core.node_parser.relational.utils import html_to_df
 
 
@@ -67,7 +67,13 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(elements, node.metadata)
+
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
 
     def extract_elements(
         self, text: str, table_filters: Optional[List[Callable]] = None, **kwargs: Any

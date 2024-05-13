@@ -4,7 +4,7 @@ from llama_index.core.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
 )
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, TextNode, NodeRelationship
 from llama_index.core.node_parser.relational.utils import md_to_df
 
 
@@ -32,7 +32,14 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(
+            elements, node.metadata, ref_doc_text=node.get_content()
+        )
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
 
     def extract_elements(
         self,
@@ -151,7 +158,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         elements[idx] = Element(
                             id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
                             type="table",
-                            element=element,
+                            element=element.element,
                             table=table,
                         )
                     else:

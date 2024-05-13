@@ -2,7 +2,11 @@
 
 import asyncio
 from itertools import zip_longest
-from typing import Any, Coroutine, Iterable, List, TypeVar
+from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -14,6 +18,18 @@ def asyncio_module(show_progress: bool = False) -> Any:
         module = asyncio
 
     return module
+
+
+def asyncio_run(coro: Coroutine) -> Any:
+    """Gets an existing event loop to run the coroutine.
+
+    If there is no existing event loop, creates a new one.
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coro)
+    except RuntimeError:
+        return asyncio.run(coro)
 
 
 def run_async_tasks(
@@ -47,7 +63,7 @@ def run_async_tasks(
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
 
-    outputs: List[Any] = asyncio.run(_gather())
+    outputs: List[Any] = asyncio_run(_gather())
     return outputs
 
 
@@ -84,10 +100,12 @@ DEFAULT_NUM_WORKERS = 4
 T = TypeVar("T")
 
 
+@dispatcher.span
 async def run_jobs(
     jobs: List[Coroutine[Any, Any, T]],
     show_progress: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
+    desc: Optional[str] = None,
 ) -> List[T]:
     """Run jobs.
 
@@ -101,13 +119,21 @@ async def run_jobs(
         List[Any]:
             List of results.
     """
-    asyncio_mod = get_asyncio_module(show_progress=show_progress)
+    parent_span_id = dispatcher.current_span_id
     semaphore = asyncio.Semaphore(workers)
 
+    @dispatcher.async_span_with_parent_id(parent_id=parent_span_id)
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job
 
     pool_jobs = [worker(job) for job in jobs]
 
-    return await asyncio_mod.gather(*pool_jobs)
+    if show_progress:
+        from tqdm.asyncio import tqdm_asyncio
+
+        results = await tqdm_asyncio.gather(*pool_jobs, desc=desc)
+    else:
+        results = await asyncio.gather(*pool_jobs)
+
+    return results

@@ -1,11 +1,11 @@
 """Test json index."""
 
-import asyncio
 import json
 from typing import Any, Dict, cast
 from unittest.mock import patch
 
 import pytest
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.json_query import (
     JSONQueryEngine,
@@ -79,7 +79,7 @@ def test_json_query_engine(
 
     if call_apredict:
         task = query_engine.aquery(QueryBundle("test_nl_query"))
-        response: Response = cast(Response, asyncio.run(task))
+        response: Response = cast(Response, asyncio_run(task))
     else:
         response = cast(Response, query_engine.query(QueryBundle("test_nl_query")))
 

@@ -1,8 +1,8 @@
-import asyncio
 import logging
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
@@ -179,6 +179,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def _aretrieve_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Build context for a message from retriever."""
         nodes = await self._retriever.aretrieve(message)
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(
+                nodes, query_bundle=QueryBundle(message)
+            )
+
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
@@ -353,7 +358,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             source_nodes=context_nodes,
         )
         thread = Thread(
-            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
+            target=lambda x: asyncio_run(chat_response.awrite_response_to_history(x)),
             args=(self._memory,),
         )
         thread.start()

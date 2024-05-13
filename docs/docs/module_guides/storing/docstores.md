@@ -91,7 +91,7 @@ parser = SentenceSplitter()
 nodes = parser.get_nodes_from_documents(documents)
 
 # create (or load) docstore and add nodes
-docstore = FirestoreDocumentStore.from_dataabse(
+docstore = FirestoreDocumentStore.from_database(
     project="project-id",
     database="(default)",
 )

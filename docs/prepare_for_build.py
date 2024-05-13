@@ -19,6 +19,7 @@ EXAMPLES_DIR = "docs/docs/examples"
 FOLDER_NAME_TO_LABEL = {
     "./examples/agent": "Agents",
     "./examples/callbacks": "Callbacks",
+    "./examples/cookbooks": "Cookbooks",
     "./examples/chat_engine": "Chat Engines",
     "./examples/customization": "Customization",
     "./examples/data_connectors": "Data Connectors",

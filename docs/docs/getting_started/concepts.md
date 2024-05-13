@@ -1,9 +1,9 @@
-# High-Level Concepts
+# High-Level Concepts (RAG)
 
 This is a quick guide to the high-level concepts you'll encounter frequently when building LLM applications.
 
 !!! tip
-If you haven't, [install LlamaIndex](./installation.md) and complete the [starter tutorial](./starter_example.md) before you read this. It will help ground these steps in your experience.
+    If you haven't, [install LlamaIndex](./installation.md) and complete the [starter tutorial](./starter_example.md) before you read this. It will help ground these steps in your experience.
 
 ## Retrieval Augmented Generation (RAG)
 
@@ -74,8 +74,9 @@ A query engine is an end-to-end pipeline that allows you to ask questions over y
 A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
 
 [**Agents**](../module_guides/deploying/agents/index.md):
-An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools/llamahub_tools_guide.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
+An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
 
 !!! tip
-_ Tell me how to [customize things](./customization.md)
-_ Continue learning with our [understanding LlamaIndex](../understanding/index.md) guide \* Ready to dig deep? Check out the module guides on the left
+    * Tell me how to [customize things](./customization.md)
+    * Continue learning with our [understanding LlamaIndex](../understanding/index.md) guide
+    * Ready to dig deep? Check out the [component guides](../module_guides/index.md)

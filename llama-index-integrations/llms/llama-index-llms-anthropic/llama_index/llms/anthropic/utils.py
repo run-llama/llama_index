@@ -1,8 +1,9 @@
 from typing import Dict, Sequence, Tuple
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 from anthropic.types import MessageParam, TextBlockParam
+from anthropic.types.beta.tools import ToolResultBlockParam, ToolUseBlockParam
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -17,6 +18,10 @@ CLAUDE_MODELS: Dict[str, int] = {
     "claude-3-sonnet-20240229": 180000,
     "claude-3-haiku-20240307": 180000,
 }
+
+
+def is_function_calling_model(modelname: str) -> bool:
+    return "claude-3" in modelname
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
@@ -62,16 +67,45 @@ def messages_to_anthropic_messages(
     system_prompt = ""
     for message in messages:
         if message.role == MessageRole.SYSTEM:
-            system_prompt = message.content
-        else:
-            message = MessageParam(
-                role=message.role.value,
-                content=[
-                    TextBlockParam(text=message.content, type="text")
-                ],  # TODO: type detect for multimodal
+            system_prompt += message.content + "\n"
+        elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
+            content = ToolResultBlockParam(
+                tool_use_id=message.additional_kwargs["tool_call_id"],
+                type="tool_result",
+                content=[TextBlockParam(text=message.content, type="text")],
             )
-            anthropic_messages.append(message)
-    return __merge_common_role_msgs(anthropic_messages), system_prompt
+            anth_message = MessageParam(
+                role=MessageRole.USER.value,
+                content=[content],
+            )
+            anthropic_messages.append(anth_message)
+        else:
+            content = []
+            if message.content:
+                content.append(TextBlockParam(text=message.content, type="text"))
+
+            tool_calls = message.additional_kwargs.get("tool_calls", [])
+            for tool_call in tool_calls:
+                assert "id" in tool_call
+                assert "input" in tool_call
+                assert "name" in tool_call
+
+                content.append(
+                    ToolUseBlockParam(
+                        id=tool_call["id"],
+                        input=tool_call["input"],
+                        name=tool_call["name"],
+                        type="tool_use",
+                    )
+                )
+
+            anth_message = MessageParam(
+                role=message.role.value,
+                content=content,  # TODO: type detect for multimodal
+            )
+            anthropic_messages.append(anth_message)
+
+    return __merge_common_role_msgs(anthropic_messages), system_prompt.strip()
 
 
 # Function used in bedrock
@@ -103,3 +137,9 @@ def messages_to_anthropic_prompt(messages: Sequence[ChatMessage]) -> str:
 
     str_list = [_message_to_anthropic_prompt(message) for message in messages]
     return "".join(str_list)
+
+
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]

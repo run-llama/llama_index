@@ -1,7 +1,5 @@
 # Q&A patterns
 
-(Semantic-search)=
-
 ## Semantic Search
 
 The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](../../community/integrations/vector_stores.md):
@@ -194,7 +192,7 @@ query the index, and then ask followup questions.
 **Guides**
 
 - [Query Transformations](../../optimizing/advanced_retrieval/query_transformations.md)
-- [Multi-Step Query Decomposition](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
+- [Multi-Step Query Decomposition](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
 
 ## Temporal Queries
 

@@ -4,7 +4,12 @@
 
 from typing import Any, List
 import random
+import logging
 from datasets import Dataset
+
+# Configure logging to output to the console, with messages of level DEBUG and above
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core import SimpleDirectoryReader
@@ -30,7 +35,6 @@ class RAFTDatasetPack(BaseLlamaPack):
         num_distract_docs: int = 3,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         default_breakpoint_percentile_threshold=DEFAULT_BREAKPOINT_PERCENTILE_THRESHOLD,
-        **kwargs: Any,
     ):
         self.file_path = file_path
         self.num_questions_per_chunk = num_questions_per_chunk
@@ -97,12 +101,8 @@ class RAFTDatasetPack(BaseLlamaPack):
         messages = [
             ChatMessage(
                 role="system",
-                content="You are a synthetic question-answer pair generator. Given a chunk of context about some topic(s), generate %s example questions a user could ask and would be answered using information from the chunk. For example, if the given context was a Wikipedia paragraph about the United States, an example question could be 'How many states are in the United States?'"
+                content="You are a synthetic question-answer pair generator. Given a chunk of context about some topic(s), generate %s example questions a user could ask and would be answered using information from the chunk. For example, if the given context was a Wikipedia paragraph about the United States, an example question could be 'How many states are in the United States?'. The questions should be able to be answered in a few words or less."
                 % (x),
-            ),
-            ChatMessage(
-                role="system",
-                content="The questions should be able to be answered in a few words or less.",
             ),
             ChatMessage(role="user", content=str(chunk)),
         ]
@@ -116,10 +116,7 @@ class RAFTDatasetPack(BaseLlamaPack):
         Takes in a `file_path`, retrieves the document, breaks it down into chunks of size
         `chunk_size`, and returns the chunks.
         """
-        chunks = []
-
         documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
-        # TODO: Should be changed to SemanticSplitterNodeParser
         splitter = SemanticSplitterNodeParser(
             buffer_size=1,
             breakpoint_percentile_threshold=self.default_breakpoint_percentile_threshold,
@@ -156,7 +153,7 @@ class RAFTDatasetPack(BaseLlamaPack):
             datapt["type"] = "general"
             datapt["question"] = q
 
-            # add 4 distractor docs
+            # add distractor docs
             docs = [chunk]
             indices = list(range(len(chunks)))
             indices.remove(i)
@@ -199,15 +196,18 @@ class RAFTDatasetPack(BaseLlamaPack):
             else:
                 self.ds = self.ds.add_item(datapt)
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
+    def run(self) -> Any:
         """Run the pipeline."""
         chunks = self.get_chunks(self.file_path, self.chunk_size)
+
+        logger.info(f"Number of chunks created: {len(chunks)}")
 
         self.num_distract_docs = (
             min(self.num_distract_docs, len(chunks)) - 1
         )  # should be less than number of chunks/ nodes created
 
-        for chunk in chunks:
+        for index, chunk in enumerate(chunks):
+            logger.info(f"Processing chunk: {index}")
             self.add_chunk_to_dataset(
                 chunks, chunk, self.num_questions_per_chunk, self.num_distract_docs
             )

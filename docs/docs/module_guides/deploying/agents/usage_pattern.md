@@ -64,6 +64,7 @@ query_engine_tools = [
             description="Provides information about Lyft financials for year 2021. "
             "Use a detailed plain text question as input to the tool.",
         ),
+        return_direct=False,
     ),
     QueryEngineTool(
         query_engine=uber_engine,
@@ -72,6 +73,7 @@ query_engine_tools = [
             description="Provides information about Uber financials for year 2021. "
             "Use a detailed plain text question as input to the tool.",
         ),
+        return_direct=False,
     ),
 ]
 
@@ -106,6 +108,27 @@ query_engine_tools = [
 outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
+## Agent With Planning
+
+Breaking down an initial task into easier-to-digest sub-tasks is a powerful pattern.
+
+LlamaIndex provides an agent planning module that does just this:
+
+```python
+from llama_index.agent.openai import OpenAIAgentWorker
+from llama_index.core.agent import (
+    StructuredPlannerAgent,
+    FunctionCallingAgentWorker,
+)
+
+worker = FunctionCallingAgentWorker.from_tools(tools, llm=llm)
+agent = StructuredPlannerAgent(worker)
+```
+
+In general, this agent may take longer to respond compared to the basic `AgentRunner` class, but the outputs will often be more complete. Another tradeoff to consider is that planning often requires a very capable LLM (for context, `gpt-3.5-turbo` is sometimes flakey for planning, while `gpt-4-turbo` does much better.)
+
+See more in the [complete guide](../../../examples/agent/structured_planner.ipynb)
+
 ## Lower-Level API
 
 The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.
@@ -138,6 +161,10 @@ class MyAgentWorker(CustomSimpleAgentWorker):
 
     # define class here
     pass
+
+
+# Wrap the worker into an AgentRunner
+agent = MyAgentWorker(...).as_agent()
 ```
 
 Check out our [Custom Agent Notebook Guide](../../../examples/agent/custom_agent.ipynb) for more details.
@@ -161,25 +188,25 @@ We first build an `ObjectIndex` over an existing set of Tools.
 ```python
 # define an "object" index over these tools
 from llama_index.core import VectorStoreIndex
-from llama_index.core.objects import ObjectIndex, SimpleToolNodeMapping
+from llama_index.core.objects import ObjectIndex
 
-tool_mapping = SimpleToolNodeMapping.from_objects(all_tools)
 obj_index = ObjectIndex.from_objects(
     all_tools,
-    tool_mapping,
-    VectorStoreIndex,
+    index_cls=VectorStoreIndex,
 )
 ```
 
-We then define our `FnRetrieverOpenAIAgent`:
+We then define our `OpenAIAgent`:
 
 ```python
-from llama_index.agent.openai_legacy import FnRetrieverOpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
-agent = FnRetrieverOpenAIAgent.from_retriever(
-    obj_index.as_retriever(), verbose=True
+agent = OpenAIAgent.from_tools(
+    tool_retriever=obj_index.as_retriever(similarity_top_k=2), verbose=True
 )
 ```
+
+You can find more details on the object index in the [full guide](../../../examples/objects/object_index.ipynb).
 
 ### Context Retrieval Agents
 

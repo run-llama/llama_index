@@ -100,29 +100,30 @@ class WholeSiteReader(BaseReader):
 
         while urls_to_visit:
             current_url, depth = urls_to_visit.pop(0)
-
             print(f"Visiting: {current_url}, {len(urls_to_visit)} left")
 
-            if depth > self.max_depth:
-                continue
             try:
                 self.driver.get(current_url)
                 page_content = self.extract_content()
+                added_urls.add(current_url)
 
-                # links = self.driver.find_elements(By.TAG_NAME, 'a')
-                links = self.extract_links()
-                # clean all urls
-                links = [self.clean_url(link) for link in links]
-                # extract new links
-                links = [link for link in links if link not in added_urls]
-                print(f"Found {len(links)} new potential links")
-                for href in links:
-                    try:
-                        if href.startswith(self.prefix) and href not in added_urls:
-                            urls_to_visit.append((href, depth + 1))
-                            added_urls.add(href)
-                    except Exception:
-                        continue
+                next_depth = depth + 1
+                if next_depth <= self.max_depth:
+                    # links = self.driver.find_elements(By.TAG_NAME, 'a')
+                    links = self.extract_links()
+                    # clean all urls
+                    links = [self.clean_url(link) for link in links]
+                    # extract new links
+                    links = [link for link in links if link not in added_urls]
+                    print(f"Found {len(links)} new potential links")
+
+                    for href in links:
+                        try:
+                            if href.startswith(self.prefix) and href not in added_urls:
+                                urls_to_visit.append((href, next_depth))
+                                added_urls.add(href)
+                        except Exception:
+                            continue
 
                 documents.append(
                     Document(text=page_content, extra_info={"URL": current_url})

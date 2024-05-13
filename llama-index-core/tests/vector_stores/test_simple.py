@@ -7,6 +7,7 @@ from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
+    FilterCondition,
 )
 
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
@@ -148,3 +149,35 @@ class SimpleVectorStoreTest(unittest.TestCase):
             result.ids,
             [_NODE_ID_WEIGHT_3_RANK_C, _NODE_ID_WEIGHT_1_RANK_A],
         )
+
+    def test_query_with_filters_with_filter_condition(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        # test OR filter
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="rank", value="c"),
+                ExactMatchFilter(key="weight", value=1.0),
+            ],
+            condition=FilterCondition.OR,
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), 3)
+
+        # test AND filter
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="rank", value="c"),
+                ExactMatchFilter(key="weight", value=1.0),
+            ],
+            condition=FilterCondition.AND,
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), 0)

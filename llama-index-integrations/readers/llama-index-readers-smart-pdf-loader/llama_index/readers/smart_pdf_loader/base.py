@@ -35,7 +35,10 @@ class SmartPDFLoader(BaseReader):
         doc = self.pdf_reader.read_pdf(pdf_path_or_url)
         for chunk in doc.chunks():
             document = Document(
-                text=chunk.to_context_text(), extra_info={"chunk_type": chunk.tag}
+                text=chunk.to_context_text(),
+                extra_info={**extra_info, "chunk_type": chunk.tag}
+                if extra_info
+                else {"chunk_type": chunk.tag},
             )
             results.append(document)
         return results

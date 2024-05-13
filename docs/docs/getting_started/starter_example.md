@@ -3,17 +3,17 @@
 This is our famous "5 lines of code" starter example using OpenAI.
 
 !!! tip
-Make sure you've followed the [installation](installation.md) steps first.
+    Make sure you've followed the [installation](installation.md) steps first.
 
 !!! tip
-Want to use local models?
-If you want to do our starter tutorial using only local models, [check out this tutorial instead](starter_example_local.md).
+    Want to use local models?
+    If you want to do our starter tutorial using only local models, [check out this tutorial instead](starter_example_local.md).
 
 ## Download data
 
 This example uses the text of Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). This and many other examples can be found in the `examples` folder of our repo.
 
-The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt) and save it in a folder called `data`.
+The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt) and save it in a folder called `data`.
 
 ## Set your OpenAI API key
 
@@ -118,4 +118,7 @@ print(response)
 
 Now you can efficiently query to your heart's content! But this is just the beginning of what you can do with LlamaIndex.
 
-!!! tip - learn more about the [high-level concepts](./concepts.md). - tell me how to [customize things](./customization.md). - curious about a specific module? check out the guides on the left 👈
+!!! tip
+    - learn more about the [high-level concepts](./concepts.md).
+    - tell me how to [customize things](./customization.md).
+    - curious about a specific module? check out the [component guides](../module_guides/index.md).

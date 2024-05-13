@@ -27,4 +27,4 @@ agent.chat("is there any videos of it levitating")
 `bing_image_search`: Search for images related to a query
 `bing_video_search`: Search for videos related to a query
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

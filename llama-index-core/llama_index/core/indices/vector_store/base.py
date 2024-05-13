@@ -326,8 +326,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                     self._object_map[node.index_id] = node.obj
                     node.obj = None
 
-        self._insert(nodes, **insert_kwargs)
-        self._storage_context.index_store.add_index_struct(self._index_struct)
+        with self._callback_manager.as_trace("insert_nodes"):
+            self._insert(nodes, **insert_kwargs)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         pass
