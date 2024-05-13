@@ -13,6 +13,7 @@ GPT4V_MODELS = {
     "gpt-4-vision-preview": 128000,
     "gpt-4-turbo-2024-04-09": 128000,
     "gpt-4-turbo": 128000,
+    "gpt-4o": 128000,
 }
 
 
