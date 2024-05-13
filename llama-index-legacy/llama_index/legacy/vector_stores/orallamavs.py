@@ -1,4 +1,4 @@
-"""OrallamaVS vector store index."""
+# OopCompanion:suppressRename
 from __future__ import annotations
 
 import array
@@ -37,9 +37,8 @@ from llama_index.core.vector_stores.types import (
 )
 
 if TYPE_CHECKING:
-    from oracledb import Connection
+    from oracledb import LOB, Connection, DatabaseError
 
-# OopCompanion:suppressRename
 
 logger = logging.getLogger(__name__)
 log_level = os.getenv("LOG_LEVEL", "ERROR").upper()
@@ -127,7 +126,7 @@ def _table_exists(client: Connection, table_name: str):
         with client.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             return True
-    except oracledb.DatabaseError as ex:
+    except DatabaseError as ex:
         err_obj = ex.args
         if err_obj[0].code == 942:
             return False
@@ -424,7 +423,7 @@ class OraLlamaVS(VectorStore):
 
     @classmethod
     def class_name(cls) -> str:
-        return "OracleVS"
+        return "OraLlamaVS"
 
     def _append_meta_filter_condition(
         self, where_str: Optional[str], exact_match_filter: list
@@ -511,7 +510,7 @@ class OraLlamaVS(VectorStore):
     def get_clob_value(self, result: Any) -> str:
         clob_value = ""
         if result:
-            if isinstance(result, oracledb.LOB):
+            if isinstance(result, LOB):
                 clob_value = result.read()
             elif isinstance(result, str):
                 clob_value = result

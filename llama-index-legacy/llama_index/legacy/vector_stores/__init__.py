@@ -35,6 +35,7 @@ from llama_index.legacy.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
 )
+from llama_index.legacy.vector_stores.orallamavs import OraLlamaVS
 from llama_index.legacy.vector_stores.pgvecto_rs import PGVectoRsStore
 from llama_index.legacy.vector_stores.pinecone import PineconeVectorStore
 from llama_index.legacy.vector_stores.postgres import PGVectorStore
@@ -74,6 +75,7 @@ __all__ = [
     "CassandraVectorStore",
     "ChromaVectorStore",
     "MetalVectorStore",
+    "OraLlamaVS",
     "OpensearchVectorStore",
     "OpensearchVectorClient",
     "ChatGPTRetrievalPluginClient",
