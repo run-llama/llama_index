@@ -1,5 +1,5 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.orallamavs import OraLlamaVS
+from llama_index.vector_stores.oracledb import OraLlamaVS
 
 
 def test_class():

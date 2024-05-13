@@ -7,7 +7,6 @@ import json
 import logging
 import math
 import os
-import traceback
 import uuid
 from enum import Enum
 from typing import (
@@ -37,7 +36,7 @@ from llama_index.core.vector_stores.types import (
 )
 
 if TYPE_CHECKING:
-    from oracledb import LOB, Connection, DatabaseError
+    from oracledb import Connection
 
 
 logger = logging.getLogger(__name__)
@@ -398,7 +397,7 @@ class OraLlamaVS(VectorStore):
         params: Optional[dict[str, Any]] = None,
     ):
         try:
-            import oracledb  # noqa: F401
+            import oracledb
         except ImportError as e:
             raise ImportError(
                 "Unable to import oracledb, please install with "
@@ -432,8 +431,6 @@ class OraLlamaVS(VectorStore):
             raise RuntimeError(
                 "Failed to create table due to an unexpected error."
             ) from ex
-
-
 
     @property
     def client(self) -> Any:
