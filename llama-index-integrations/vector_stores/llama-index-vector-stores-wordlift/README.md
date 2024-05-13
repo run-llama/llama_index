@@ -15,13 +15,10 @@ This integration enables the use of Wordlift as a vector store for LlamaIndex, a
 
 ## Usage
 
-In Wordlift Knowledge Graphs, the text nodes are stored using a specific embedding models, the nomic-embed-text-v1.\
-Be sure to set nomic-embed-text-v1 as the embedding model, rather than relying on the default OpenAI embedding model.
+Please refer to the [notebook](./examples/wordlift_vector_store_demo.ipynb) for usage of Wordlift as vector store in LlamaIndex.
 
 Wordlift Knowledge Graphs are built on the principles of fully Linked Data, where each entity is assigned a permanent dereferentiable URI.\
 When adding nodes to an existing Knowledge Graph, it's essential to include an "entity_id" in the metadata of each loaded document.\
 For further insights into Fully Linked Data, explore these resources:
 [W3C Linked Data](https://www.w3.org/DesignIssues/LinkedData.html),
 [5 Star Data](https://5stardata.info/en/).
-
-Please refer to the [notebook](../../../docs/docs/examples/vector_stores/wordlift_vector_store_demo.ipynb) for usage of Wordlift as vector store in LlamaIndex.
