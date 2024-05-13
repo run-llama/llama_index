@@ -5,7 +5,6 @@ backend_packages = [
     "pants.backend.python.mixed_interpreter_constraints",
     "pants.backend.python.typecheck.mypy",
 ]
-level = "error"
 pants_version = "2.19.0"
 remote_cache_read = true
 remote_cache_rpc_timeout_millis = 60000
