@@ -301,7 +301,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
-        self.lpg_graph_store.delete(node_ids=[node_id])
+        self.lpg_graph_store.delete(ids=[node_id])
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Index-specific logic for inserting nodes to the index struct."""
