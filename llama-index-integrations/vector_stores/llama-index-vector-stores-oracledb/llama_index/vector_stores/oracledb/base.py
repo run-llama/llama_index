@@ -11,15 +11,15 @@ import traceback
 import uuid
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
     Type,
-    cast,
     TypeVar,
-    Callable,
-    TYPE_CHECKING,
+    cast,
 )
 
 from llama_index.core.schema import (
@@ -37,7 +37,7 @@ from llama_index.core.vector_stores.types import (
 )
 
 if TYPE_CHECKING:
-    from oracledb import Connection, DatabaseError
+    from oracledb import LOB, Connection, DatabaseError
 
 
 logger = logging.getLogger(__name__)
@@ -120,13 +120,19 @@ def _stringify_list(lst: List) -> str:
     return "[" + ",".join(str(item) for item in lst) + "]"
 
 
-@_handle_exceptions
-def _table_exists(client: Connection, table_name: str):
+def _table_exists(client: Connection, table_name: str) -> bool:
+    try:
+        import oracledb
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import oracledb, please install with "
+            "`pip install -U oracledb`."
+        ) from e
     try:
         with client.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             return True
-    except DatabaseError as ex:
+    except oracledb.DatabaseError as ex:
         err_obj = ex.args
         if err_obj[0].code == 942:
             return False
@@ -411,10 +417,23 @@ class OraLlamaVS(VectorStore):
 
             _create_table(_client, self.table_name)
 
+        except oracledb.DatabaseError as db_err:
+            logger.exception(f"Database error occurred while create table: {db_err}")
+            raise RuntimeError(
+                "Failed to create table due to a database error."
+            ) from db_err
+        except ValueError as val_err:
+            logger.exception(f"Validation error: {val_err}")
+            raise RuntimeError(
+                "Failed to create table due to a validation error."
+            ) from val_err
         except Exception as ex:
-            print("An exception occurred ::", ex)
-            traceback.print_exc()
-            raise
+            logger.exception("An unexpected error occurred while creating the index.")
+            raise RuntimeError(
+                "Failed to create table due to an unexpected error."
+            ) from ex
+
+
 
     @property
     def client(self) -> Any:
@@ -423,7 +442,7 @@ class OraLlamaVS(VectorStore):
 
     @classmethod
     def class_name(cls) -> str:
-        return "OracleVS"
+        return "OraLlamaVS"
 
     def _append_meta_filter_condition(
         self, where_str: Optional[str], exact_match_filter: list
@@ -507,11 +526,25 @@ class OraLlamaVS(VectorStore):
             self._client.commit()
 
     @_handle_exceptions
-    def get_clob_value(self, result: Any) -> str:
+    def _get_clob_value(self, result: Any) -> str:
+        try:
+            import oracledb
+        except ImportError as e:
+            raise ImportError(
+                "Unable to import oracledb, please install with "
+                "`pip install -U oracledb`."
+            ) from e
+
         clob_value = ""
         if result:
-            if isinstance(result, LOB):
-                clob_value = result.read()
+            if isinstance(result, oracledb.LOB):
+                raw_data = result.read()
+                if isinstance(raw_data, bytes):
+                    clob_value = raw_data.decode(
+                        "utf-8"
+                    )  # Specify the correct encoding
+                else:
+                    clob_value = raw_data
             elif isinstance(result, str):
                 clob_value = result
             else:
@@ -567,7 +600,7 @@ class OraLlamaVS(VectorStore):
             nodes = []
             for result in results:
                 doc_id = result[1]
-                text = self.get_clob_value(result[2])
+                text = self._get_clob_value(result[2])
                 node_info = (
                     json.loads(result[3]) if isinstance(result[3], str) else result[3]
                 )
