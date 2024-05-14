@@ -31,7 +31,7 @@ def test_llm_complete_throws_if_duplicate_prompt(llm: LLM, prompt: str) -> None:
 
 
 def test_llm_complete_throws_if_no_prompt(llm: LLM) -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         llm.complete()
 
 
@@ -53,5 +53,5 @@ def test_llm_stream_complete_throws_if_duplicate_prompt(llm: LLM, prompt: str) -
 
 
 def test_llm_stream_complete_throws_if_no_prompt(llm: LLM) -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         llm.stream_complete()
