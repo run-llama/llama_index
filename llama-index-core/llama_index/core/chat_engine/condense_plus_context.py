@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from threading import Thread
 from typing import Any, List, Optional, Tuple
@@ -357,12 +358,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             sources=[context_source],
             source_nodes=context_nodes,
         )
-        thread = Thread(
-            target=lambda x: asyncio_run(chat_response.awrite_response_to_history(x)),
-            args=(self._memory,),
-        )
-        thread.start()
-
+        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
         return chat_response
 
     def reset(self) -> None:
