@@ -54,7 +54,8 @@ DEFAULT_PROMPT = PromptTemplate(DEFAULT_TEMPLATE)
 
 
 class CondenseQuestionChatEngine(BaseChatEngine):
-    """Condense Question Chat Engine.
+    """
+    Condense Question Chat Engine.
 
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.

@@ -2,7 +2,6 @@ import asyncio
 from threading import Thread
 from typing import Any, List, Optional, Type
 
-from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
@@ -21,7 +20,8 @@ from llama_index.core.settings import (
 
 
 class SimpleChatEngine(BaseChatEngine):
-    """Simple Chat Engine.
+    """
+    Simple Chat Engine.
 
     Have a conversation with the LLM.
     This does not make use of a knowledge base.
