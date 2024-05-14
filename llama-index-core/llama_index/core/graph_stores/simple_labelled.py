@@ -207,7 +207,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = {}
-    ) -> List[LabelledNode]:
+    ) -> Any:
         """Query the graph store with statement and parameters."""
         raise NotImplementedError(
             "Structured query not implemented for SimpleLPGStore."

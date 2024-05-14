@@ -371,7 +371,7 @@ class LabelledPropertyGraphStore(ABC):
     @abstractmethod
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = {}
-    ) -> List[LabelledNode]:
+    ) -> Any:
         """Query the graph store with statement and parameters."""
         ...
 
@@ -456,7 +456,7 @@ class LabelledPropertyGraphStore(ABC):
 
     async def astructured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = {}
-    ) -> List[LabelledNode]:
+    ) -> Any:
         """Asynchronously query the graph store with statement and parameters."""
         return self.structured_query(query, param_map)
 
