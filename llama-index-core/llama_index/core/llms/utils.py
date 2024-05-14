@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
-    from langchain.base_language import BaseLanguageModel
+    from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
 
 import os
 
@@ -19,7 +19,7 @@ def resolve_llm(
     from llama_index.core.settings import Settings
 
     try:
-        from langchain.base_language import BaseLanguageModel
+        from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
     except ImportError:
         BaseLanguageModel = None  # type: ignore
 

@@ -8,10 +8,11 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, cast
 import numpy as np
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -20,6 +21,8 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+from pymongo import MongoClient
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +108,7 @@ class DocDbIndex:
             # an index that does not exist)
 
 
-class AWSDocDbVectorStore(VectorStore):
+class AWSDocDbVectorStore(BasePydanticVectorStore):
     """AWS DocumentDB Vector Store.
 
     To use, you should have both:
@@ -119,6 +122,16 @@ class AWSDocDbVectorStore(VectorStore):
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _docdb_client: MongoClient = PrivateAttr()
+    _similarity_score: AWSDocDbVectorStoreSimilarityType = PrivateAttr()
+    _collection: Any = PrivateAttr()
+    _embedding_key: str = PrivateAttr()
+    _id_key: str = PrivateAttr()
+    _text_key: str = PrivateAttr()
+    _metadata_key: str = PrivateAttr()
+    _insert_kwargs: Dict = PrivateAttr()
+    _index_crud: DocDbIndex = PrivateAttr()
 
     def __init__(
         self,
@@ -148,11 +161,7 @@ class AWSDocDbVectorStore(VectorStore):
             the metadata for each document.
             insert_kwargs: The kwargs used during `insert`.
         """
-        import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
-        try:
-            from pymongo import MongoClient
-        except ImportError:
-            raise ImportError(import_err_msg)
+        super().__init__()
 
         if docdb_client is not None:
             self._docdb_client = cast(MongoClient, docdb_client)
@@ -166,6 +175,10 @@ class AWSDocDbVectorStore(VectorStore):
         self._metadata_key = metadata_key
         self._insert_kwargs = insert_kwargs or {}
         self._index_crud = DocDbIndex(index_name, self._embedding_key, self._collection)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AWSDocDbVectorStore"
 
     def add(
         self,

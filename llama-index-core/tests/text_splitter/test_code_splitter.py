@@ -2,6 +2,7 @@
 import os
 from typing import List
 
+import tree_sitter  # noqa
 from llama_index.core.schema import Document, MetadataMode, TextNode
 from llama_index.core.text_splitter import CodeSplitter
 
