@@ -79,14 +79,12 @@ boto3 = "1.33.6"  # needed for tests
 botocore = ">=1.33.13"
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 docker = "^7.0.0"
-google-ai-generativelanguage = {python = ">=3.9,<3.12", version = "^0.4.0"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 motor = "^3.3.2"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
-pymongo = "^4.5.0"  # needed for tests
 pypdf = "*"
 pytest = "7.2.1"
 pytest-asyncio = "0.21.0"
