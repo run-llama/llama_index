@@ -504,7 +504,31 @@ vector_index = VectorStoreIndex.from_documents(
 query_engine = vector_index.as_query_engine()
 ```
 
+## Setup
+
+UpTrain provides you with:
+1. Dashboards with advanced drill-down and filtering options
+1. Insights and common topics among failing cases
+1. Observability and real-time monitoring of production data
+1. Regression testing via seamless integration with your CI/CD pipelines
+
+You can choose between the following two alternatives for evaluating using UpTrain:
+
 # Alternative 1: Evaluate using UpTrain's Open-Source Software (OSS)
+
+You can use the open-source evaluation service to evaluate your model. In this case, you will need to provide an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
+
+In order to view your evaluations in the UpTrain dashboard, you will need to set it up by running the following commands in your terminal:
+
+```bash
+git clone https://github.com/uptrain-ai/uptrain
+cd uptrain
+bash run_uptrain.sh
+```
+
+This will start the UpTrain dashboard on your local machine. You can access it at `http://localhost:3000/dashboard`.
+
+**Note:** The `project_name` will be the project name under which the evaluations performed will be shown in the UpTrain dashboard.
 
 ```python
 settings = UpTrainSettings(
@@ -545,16 +569,15 @@ pd.DataFrame(results)
 
 # Alternative 2: Evaluate using UpTrain's Managed Service and Dashboards
 
-Alternate to using the OSS, you can use the UpTrain API Client to send the generated responses to the UpTrain Managed Service. The Managed Service will then perform the evaluations and provide you with dashboards.
+Alternatively, you can use UpTrain's managed service to evaluate your model. You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
 
-You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
+The benefits of using the managed service are:
+1. No need to set up the UpTrain dashboard on your local machine.
+1. Access to many LLMs without needing their API keys.
 
-**UpTrain Managed service provides:**
+Once you perform the evaluations, you can view them in the UpTrain dashboard at `https://dashboard.uptrain.ai/dashboard`
 
-1. Dashboards with advanced drill-down and filtering options
-2. Insights and common topics among failing cases
-3. Observability and real-time monitoring of production data
-4. Regression testing via seamless integration with your CI/CD pipelines
+**Note:** The `project_name` will be the project name under which the evaluations performed will be shown in the UpTrain dashboard.
 
 ```python
 UPTRAIN_API_KEY = "up-**********************"  # your UpTrain API key
