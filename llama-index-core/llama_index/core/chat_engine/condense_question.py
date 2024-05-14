@@ -366,11 +366,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 ),
                 sources=[tool_output],
             )
-            thread = Thread(
-                target=lambda x: asyncio.run(response.awrite_response_to_history(x)),
-                args=(self._memory,),
-            )
-            thread.start()
+            asyncio.create_task(response.awrite_response_to_history(self._memory))
         else:
             raise ValueError("Streaming is not enabled. Please use achat() instead.")
         return response
