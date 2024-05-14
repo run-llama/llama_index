@@ -526,6 +526,7 @@ nav:
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
           - ./examples/vector_stores/TiDBVector.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
+          - ./examples/vector_stores/orallamavs.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
