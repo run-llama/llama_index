@@ -103,7 +103,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",
-        id_key: str = "id",
+        id_key: str = "_id",
         embedding_key: str = "embedding",
         text_key: str = "text",
         metadata_key: str = "metadata",
@@ -128,13 +128,13 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
-            if "MONGO_URI" not in os.environ:
+            if "MONGODB_URI" not in os.environ:
                 raise ValueError(
-                    "Must specify MONGO_URI via env variable "
+                    "Must specify MONGODB_URI via env variable "
                     "if not directly passing in client."
                 )
             self._mongodb_client = MongoClient(
-                os.environ["MONGO_URI"],
+                os.environ["MONGODB_URI"],
                 driver=DriverInfo(name="llama-index", version=version("llama-index")),
             )
 
@@ -193,7 +193,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        self._collection.delete_one(
+        self._collection.delete_many(
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
         )
 

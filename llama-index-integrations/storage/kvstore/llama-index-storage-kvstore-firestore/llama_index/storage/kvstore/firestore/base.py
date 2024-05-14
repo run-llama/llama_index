@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 
+from google.auth.credentials import Credentials
 from google.cloud.firestore_v1.async_client import AsyncClient
 from google.cloud.firestore_v1.client import Client
 from google.cloud.firestore_v1.services.firestore.transports.base import (
@@ -27,19 +28,31 @@ class FirestoreKVStore(BaseKVStore):
     Args:
         project (str): The project which the client acts on behalf of.
         database (str): The database name that the client targets.
+        credentials (google.auth.credentials.Credentials): The OAuth2
+            Credentials to access Firestore. If not passed, falls back
+            to the default inferred from the environment.
     """
 
     def __init__(
         self,
         project: Optional[str] = None,
         database: str = DEFAULT_FIRESTORE_DATABASE,
+        credentials: Optional[Credentials] = None,
     ) -> None:
         client_info = DEFAULT_CLIENT_INFO
         client_info.user_agent = USER_AGENT
         self._adb = AsyncClient(
-            project=project, database=database, client_info=client_info
+            project=project,
+            database=database,
+            client_info=client_info,
+            credentials=credentials,
         )
-        self._db = Client(project=project, database=database, client_info=client_info)
+        self._db = Client(
+            project=project,
+            database=database,
+            client_info=client_info,
+            credentials=credentials,
+        )
 
     def firestore_collection(self, collection: str) -> str:
         return collection.replace("/", SLASH_REPLACEMENT)
@@ -193,7 +206,7 @@ class FirestoreKVStore(BaseKVStore):
         output = {}
         async for doc in docs:
             key = doc.id
-            data = doc.get().to_dict()
+            data = (await doc.get()).to_dict()
             if data is None:
                 continue
             val = self.replace_field_name_get(data)

@@ -30,23 +30,20 @@ license = "MIT"
 name = "llama-index-embeddings-ipex-llm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
-ipex-llm = {allow-prereleases = true, version = ">=2.1.0b20240409"}
-py-cpuinfo = "*"
-protobuf = "*"
-intel-openmp = {markers = "platform_machine=='x86_64' or platform_machine == 'AMD64'", version = "*"}
-mpmath = "<=1.3.0"
-numpy = "<=1.26.4"
-torch = "<2.2.0"
-transformers = ">=4.34.0,<4.39.0"
-sentencepiece = "*"
-accelerate = "0.21.0"
-tabulate = "*"
-sentence-transformers = "^2.6.1"
+ipex-llm = {allow-prereleases = true, extras = ["llama-index"], version = ">=2.1.0b20240423"}
+torch = {optional = true, version = "2.1.0a0"}
+torchvision = {optional = true, version = "0.16.0a0"}
+intel_extension_for_pytorch = {optional = true, version = "2.1.10+xpu"}
+bigdl-core-xe-21 = {optional = true, version = "*"}
+bigdl-core-xe-esimd-21 = {optional = true, version = "*"}
+
+[tool.poetry.extras]
+xpu = ["bigdl-core-xe-21", "bigdl-core-xe-esimd-21", "intel_extension_for_pytorch", "torch", "torchvision"]
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

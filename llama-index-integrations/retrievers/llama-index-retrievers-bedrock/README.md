@@ -10,10 +10,36 @@
 
 > Knowledge base can be configured through [AWS Console](https://aws.amazon.com/console/) or by using [AWS SDKs](https://aws.amazon.com/developer/tools/).
 
-### Notebook
+## Installation
+
+```
+pip install llama-index-retrievers-bedrock
+```
+
+## Usage
+
+```
+from llama_index.retrievers.bedrock import AmazonKnowledgeBasesRetriever
+
+retriever = AmazonKnowledgeBasesRetriever(
+    knowledge_base_id="<knowledge-base-id>",
+    retrieval_config={
+        "vectorSearchConfiguration": {
+            "numberOfResults": 4,
+            "overrideSearchType": "HYBRID",
+            "filter": {"equals": {"key": "tag", "value": "space"}},
+        }
+    },
+)
+
+query = "How big is Milky Way as compared to the entire universe?"
+retrieved_results = retriever.retrieve(query)
+
+# Prints the first retrieved result
+print(retrieved_results[0].get_content())
+```
+
+## Notebook
 
 Explore the retriever using Notebook present at:
-
-```
-docs/docs/examples/retrievers/bedrock_retriever.ipynb
-```
+https://docs.llamaindex.ai/en/latest/examples/retrievers/bedrock_retriever/

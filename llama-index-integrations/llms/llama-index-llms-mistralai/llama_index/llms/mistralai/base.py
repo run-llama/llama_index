@@ -324,7 +324,7 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.chat_stream(messages=messages, **all_kwargs)
+        response = self._aclient.chat_stream(messages=messages, **all_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""

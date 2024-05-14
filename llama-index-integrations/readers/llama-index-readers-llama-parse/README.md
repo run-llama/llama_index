@@ -6,15 +6,13 @@ LlamaParse directly integrates with [LlamaIndex](https://github.com/run-llama/ll
 
 Currently available for **free**. Try it out today!
 
-**NOTE:** Currently, only PDF files are supported.
-
 ## Getting Started
 
 First, login and get an api-key from `https://cloud.llamaindex.ai`.
 
 Then, make sure you have the latest LlamaIndex version installed.
 
-**NOTE:** If you are upgrading from v0.9.X, we recommend following our [migration guide](https://pretty-sodium-5e0.notion.site/v0-10-0-Migration-Guide-6ede431dcb8841b09ea171e7f133bd77), as well as uninstalling your previous version first.
+**NOTE:** If you are upgrading from v0.9.X, we recommend following our [migration guide](../../../docs/docs/getting_started/v0_10_0_migration.md), as well as uninstalling your previous version first.
 
 ```
 pip uninstall llama-index  # run this if upgrading from v0.9.x or older
@@ -86,6 +84,7 @@ Several end-to-end indexing examples can be found in the examples folder
 - [Getting Started](https://github.com/run-llama/llama_parse/blob/main/examples/demo_basic.ipynb)
 - [Advanced RAG Example](https://github.com/run-llama/llama_parse/blob/main/examples/demo_advanced.ipynb)
 - [Raw API Usage](https://github.com/run-llama/llama_parse/blob/main/examples/demo_api.ipynb)
+- [JSON MODE](https://github.com/run-llama/llama_parse/blob/main/examples/demo_json.ipynb)
 
 ## Terms of Service
 
