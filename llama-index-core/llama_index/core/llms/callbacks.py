@@ -97,7 +97,7 @@ def llm_chat_callback() -> Callable:
                         dispatcher.event(
                             LLMChatEndEvent(
                                 messages=messages,
-                                response=x,
+                                response=last_response,
                                 span_id=span_id,
                             )
                         )
@@ -173,7 +173,7 @@ def llm_chat_callback() -> Callable:
                         dispatcher.event(
                             LLMChatEndEvent(
                                 messages=messages,
-                                response=x,
+                                response=last_response,
                                 span_id=span_id,
                             )
                         )
