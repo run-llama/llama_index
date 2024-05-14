@@ -32,4 +32,4 @@ agent.chat("What happened in the latest Burning Man festival?")
 
 `search`: Search for relevant dynamic data based on a query. Returns a list of urls and their relevant content.
 
-This loader is designed to be used as a way to load data as a Tool in an Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in an Agent.

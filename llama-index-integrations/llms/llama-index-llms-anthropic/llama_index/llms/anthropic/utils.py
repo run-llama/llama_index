@@ -67,7 +67,7 @@ def messages_to_anthropic_messages(
     system_prompt = ""
     for message in messages:
         if message.role == MessageRole.SYSTEM:
-            system_prompt = message.content
+            system_prompt += message.content + "\n"
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             content = ToolResultBlockParam(
                 tool_use_id=message.additional_kwargs["tool_call_id"],
@@ -105,7 +105,7 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
 
-    return __merge_common_role_msgs(anthropic_messages), system_prompt
+    return __merge_common_role_msgs(anthropic_messages), system_prompt.strip()
 
 
 # Function used in bedrock

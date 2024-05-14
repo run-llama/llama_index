@@ -7,7 +7,7 @@ from llama_index.core.response_synthesizers import TreeSummarize
 from llama_index.core.schema import NodeWithScore
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.file import PDFReader
-from pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field
 
 # backwards compatibility
 try:
