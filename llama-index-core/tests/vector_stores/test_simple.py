@@ -181,3 +181,21 @@ class SimpleVectorStoreTest(unittest.TestCase):
         )
         result = simple_vector_store.query(query)
         self.assertEqual(len(result.ids), 0)
+
+    def test_clear(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+        simple_vector_store.clear()
+        query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), 0)
+
+    def test_delete_nodes(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+        simple_vector_store.delete_nodes(
+            [_NODE_ID_WEIGHT_1_RANK_A, _NODE_ID_WEIGHT_2_RANK_C]
+        )
+        query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
+        result = simple_vector_store.query(query)
+        self.assertEqual(result.ids, [_NODE_ID_WEIGHT_3_RANK_C])

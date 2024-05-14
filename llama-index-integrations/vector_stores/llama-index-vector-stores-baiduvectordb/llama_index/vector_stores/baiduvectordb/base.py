@@ -4,6 +4,7 @@ import json
 import time
 from typing import Any, Dict, List, Optional
 
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
     NodeRelationship,
@@ -12,7 +13,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -120,7 +121,7 @@ class TableParams:
         self.filter_fields = filter_fields
 
 
-class BaiduVectorDB(VectorStore):
+class BaiduVectorDB(BasePydanticVectorStore):
     """Baidu VectorDB as a vector store.
 
     In order to use this you need to have a database instance.
@@ -135,7 +136,12 @@ class BaiduVectorDB(VectorStore):
         table_params (Optional[TableParams]): The table parameters for BaiduVectorDB
     """
 
-    user_defined_fields: List[TableField] = []
+    user_defined_fields: List[TableField] = Field(default_factory=list)
+    batch_size: int
+
+    _vdb_client: Any = PrivateAttr()
+    _database: Any = PrivateAttr()
+    _table: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -148,11 +154,14 @@ class BaiduVectorDB(VectorStore):
         **kwargs: Any,
     ):
         """Init params."""
+        super().__init__(
+            user_defined_fields=table_params.filter_fields,
+            batch_size=batch_size,
+        )
+
         self._init_client(endpoint, account, api_key)
         self._create_database_if_not_exists(database_name)
         self._create_table(table_params)
-        self.batch_size = batch_size
-        self.user_defined_fields = table_params.filter_fields
 
     @classmethod
     def class_name(cls) -> str:
@@ -190,15 +199,15 @@ class BaiduVectorDB(VectorStore):
             endpoint=endpoint,
             connection_timeout_in_mills=DEFAULT_TIMEOUT_IN_MILLS,
         )
-        self.vdb_client = pymochow.MochowClient(config)
+        self._vdb_client = pymochow.MochowClient(config)
 
     def _create_database_if_not_exists(self, database_name: str) -> None:
-        db_list = self.vdb_client.list_databases()
+        db_list = self._vdb_client.list_databases()
 
         if database_name in [db.database_name for db in db_list]:
-            self.database = self.vdb_client.database(database_name)
+            self._database = self._vdb_client.database(database_name)
         else:
-            self.database = self.vdb_client.create_database(database_name)
+            self._database = self._vdb_client.create_database(database_name)
 
     def _create_table(self, table_params: TableParams) -> None:
         import pymochow
@@ -207,9 +216,9 @@ class BaiduVectorDB(VectorStore):
             raise ValueError(VALUE_NONE_ERROR.format("table_params"))
 
         try:
-            self.table = self.database.describe_table(table_params.table_name)
+            self._table = self._database.describe_table(table_params.table_name)
             if table_params.drop_exists:
-                self.database.drop_table(table_params.table_name)
+                self._database.drop_table(table_params.table_name)
                 # wait db release resource
                 time.sleep(5)
                 self._create_table_in_db(table_params)
@@ -264,7 +273,7 @@ class BaiduVectorDB(VectorStore):
             indexes.append(SecondaryIndex(index_name=index_name, field=field.name))
 
         schema = Schema(fields=fields, indexes=indexes)
-        self.table = self.database.create_table(
+        self._table = self._database.create_table(
             table_name=table_params.table_name,
             replication=table_params.replication,
             partition=Partition(partition_num=table_params.partition),
@@ -364,12 +373,12 @@ class BaiduVectorDB(VectorStore):
                 rows = []
 
         if len(rows) > 0:
-            self.table.upsert(rows=rows)
+            self._table.upsert(rows=rows)
 
-        self.table.rebuild_index(INDEX_VECTOR)
+        self._table.rebuild_index(INDEX_VECTOR)
         while True:
             time.sleep(2)
-            index = self.table.describe_index(INDEX_VECTOR)
+            index = self._table.describe_index(INDEX_VECTOR)
             if index.state == IndexState.NORMAL:
                 break
 
@@ -406,7 +415,7 @@ class BaiduVectorDB(VectorStore):
             params=HNSWSearchParams(ef=DEFAULT_HNSW_EF, limit=query.similarity_top_k),
             filter=search_filter,
         )
-        res = self.table.search(anns=anns, retrieve_vector=True)
+        res = self._table.search(anns=anns, retrieve_vector=True)
         rows = res.rows
         if rows is None or len(rows) == 0:
             return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
