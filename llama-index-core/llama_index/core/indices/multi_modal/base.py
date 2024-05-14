@@ -33,7 +33,7 @@ from llama_index.core.vector_stores.simple import (
     DEFAULT_VECTOR_STORE,
     SimpleVectorStore,
 )
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         # Image-related kwargs
         # image_vector_store going to be deprecated. image_store can be passed from storage_context
         # keep image_vector_store here for backward compatibility
-        image_vector_store: Optional[VectorStore] = None,
+        image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip:ViT-B/32",
         is_image_to_text: bool = False,
         # is_image_vector_store_empty is used to indicate whether image_vector_store is empty
@@ -112,7 +112,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     @property
-    def image_vector_store(self) -> VectorStore:
+    def image_vector_store(self) -> BasePydanticVectorStore:
         return self._image_vector_store
 
     @property
@@ -164,12 +164,12 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     @classmethod
     def from_vector_store(
         cls,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
         # Image-related kwargs
-        image_vector_store: Optional[VectorStore] = None,
+        image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
         **kwargs: Any,
     ) -> "VectorStoreIndex":
