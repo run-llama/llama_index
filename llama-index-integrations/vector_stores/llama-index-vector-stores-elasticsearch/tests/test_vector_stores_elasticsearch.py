@@ -1,3 +1,4 @@
+import aiohttp  # noqa
 import logging
 import os
 import re
