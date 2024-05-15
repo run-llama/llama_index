@@ -1,12 +1,12 @@
 import logging
-from typing import Any, List
+from typing import Any, List, Sequence
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
-    VectorStoreQueryResult,
+    VectorStoreQueryResult, FilterCondition, MetadataFilters,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -70,9 +70,33 @@ class RelytVectorStore(BasePydanticVectorStore):
         return "RelytStore"
 
     def init_index(self):
-        index_name = f"idx_{self._collection_name}_embedding"
+        # index_name = f"idx_{self._collection_name}_embedding"
         with self._client._engine.connect() as conn:
             with conn.begin():
+                # index_query = text(
+                #     f"""
+                #         SELECT 1
+                #         FROM pg_indexes
+                #         WHERE indexname = '{index_name}';
+                #     """)
+                # result = conn.execute(index_query).scalar()
+                # if not result:
+                #     index_statement = text(
+                #         f"""
+                #             CREATE INDEX {index_name}
+                #             ON collection_{self._collection_name}
+                #             USING vectors (embedding vector_l2_ops)
+                #             WITH (options = $$
+                #             optimizing.optimizing_threads = 30
+                #             segment.max_growing_segment_size = 2000
+                #             segment.max_sealed_segment_size = 30000000
+                #             [indexing.hnsw]
+                #             m=30
+                #             ef_construction=500
+                #             $$);
+                #         """)
+                #     conn.execute(index_statement)
+                index_name = f"meta_{self._collection_name}_embedding"
                 index_query = text(
                     f"""
                         SELECT 1
@@ -83,20 +107,7 @@ class RelytVectorStore(BasePydanticVectorStore):
                 result = conn.execute(index_query).scalar()
                 if not result:
                     index_statement = text(
-                        f"""
-                            CREATE INDEX {index_name}
-                            ON collection_{self._collection_name}
-                            USING vectors (embedding vector_l2_ops)
-                            WITH (options = $$
-                            optimizing.optimizing_threads = 30
-                            segment.max_growing_segment_size = 2000
-                            segment.max_sealed_segment_size = 30000000
-                            [indexing.hnsw]
-                            m=30
-                            ef_construction=500
-                            $$);
-                        """
-                    )
+                        f""" CREATE INDEX {index_name} ON collection_{self._collection_name} USING gin (meta); """)
                     conn.execute(index_statement)
 
     @property
@@ -126,28 +137,68 @@ class RelytVectorStore(BasePydanticVectorStore):
     def drop(self) -> None:
         self._client.drop()
 
-    # TODO: the more filter type(le, ne, ge ...) will add later, after the base api supported,
-    #  now only support eq filter for meta information
+    def transformer_filter(self, filters) -> str:
+        filter_statement = ""
+        for filter in filters:
+            if isinstance(filter, MetadataFilters):
+                f_stmt = self.transformer_filter(filter)
+                if filter_statement == "":
+                    filter_statement = f_stmt
+                else:
+                    filter_statement += filter.condition + f_stmt
+            else:
+                key = filter.key
+                value = filter.value
+                op = filter.operator
+                filter_cond = key + op + value
+                if filter_statement == "":
+                    filter_statement = filter_cond
+                else:
+                    filter_statement += filters.condition + filter_cond
+        return filter_statement
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        results = self._client.search(
-            embedding=query.query_embedding,
-            top_k=query.similarity_top_k,
-            filter=(
-                meta_contains(
-                    {pair.key: pair.value for pair in query.filters.legacy_filters()}
-                )
-                if query.filters is not None
-                else None
-            ),
-        )
+        # Add the filter if provided
+        try:
+            from sqlalchemy.engine import Row
+        except ImportError:
+            raise ImportError(
+                "Could not import Row from sqlalchemy.engine. "
+                "Please 'pip install sqlalchemy>=1.4'."
+            )
+
+        embedding = VectorStoreQuery.query_embedding
+        k = VectorStoreQuery.similarity_top_k
+        filter_condition = ""
+        filters = VectorStoreQuery.filters
+
+        if filters is not None:
+            filter_condition += f"WHERE {self.transformer_filter(filters)}"
+
+        sql_query = f"""
+                        SELECT id, text, meta, embedding <-> :embedding as distance
+                        FROM {self._collection_name}
+                        {filter_condition}
+                        ORDER BY embedding <-> :embedding
+                        LIMIT :k
+                    """
+
+        # Set up the query parameters
+        embedding_str = ", ".join(format(x) for x in embedding)
+        embedding_str = "[" + embedding_str + "]"
+        params = {"embedding": embedding_str, "k": k}
+
+        # Execute the query and fetch the results
+        with self.engine.connect() as conn:
+            results: Sequence[Row] = conn.execute(text(sql_query), params).fetchall()
 
         nodes = [
-            metadata_dict_to_node(record.meta, text=record.text)
-            for record, _ in results
+            metadata_dict_to_node(reocrd.meta, text=reocrd.text)
+            for reocrd in results
         ]
 
         return VectorStoreQueryResult(
             nodes=nodes,
-            similarities=[score for _, score in results],
-            ids=[str(record.id) for record, _ in results],
+            similarities=[r.distance for r in results],
+            ids=[str(r.id) for r in results],
         )
