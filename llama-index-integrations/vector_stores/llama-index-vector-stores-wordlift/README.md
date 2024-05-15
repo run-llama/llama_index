@@ -1,12 +1,12 @@
 <picture>
-  <img alt="#Wordlift" width="200" src="https://eacn2n47zot.exactdn.com/wp-content/uploads/2022/12/logo.svg" style="margin-bottom: 25px;">
+  <img alt="#WordLift" width="200" src="https://eacn2n47zot.exactdn.com/wp-content/uploads/2022/12/logo.svg" style="margin-bottom: 25px;">
 </picture>
 
-# LlamaIndex Vector_Stores Integration: Wordlift
+# LlamaIndex Vector_Stores Integration: WordLift
 
-WordLift is an AI-powered SEO platform. With our AI we build your own knowledge graph for your business with entities marked up by the different topics, categories and regions. Using this graph, search engines will be able to understand the structure of your content faster and more precisely. To access a Wordlift key and unlock our AI-powered SEO tools, visit [Wordlift](https://wordlift.io/).
+WordLift is an AI-powered SEO platform. With our AI we build your own knowledge graph for your business with entities marked up by the different topics, categories and regions. Using this graph, search engines will be able to understand the structure of your content faster and more precisely. To access a WordLift key and unlock our AI-powered SEO tools, visit [WordLift](https://wordlift.io/).
 
-This integration enables the use of Wordlift as a vector store for LlamaIndex, allowing you to work with your knowledge graph directly from your codebase.
+This integration enables the use of WordLift as a vector store for LlamaIndex, allowing you to work with your knowledge graph directly from your codebase.
 
 ## Features
 
@@ -15,7 +15,7 @@ This integration enables the use of Wordlift as a vector store for LlamaIndex, a
 
 ## Usage
 
-Please refer to the [notebook](./examples/wordlift_vector_store_demo.ipynb) for usage of Wordlift as vector store in LlamaIndex.
+Please refer to the [notebook](./examples/wordlift_vector_store_demo.ipynb) for usage of WordLift as vector store in LlamaIndex.
 
 WordLift Knowledge Graphs are built on the principles of fully Linked Data, where each entity is assigned a permanent dereferentiable URI.\
 When adding nodes to an existing Knowledge Graph, it's essential to include an "entity_id" in the metadata of each loaded document.\
