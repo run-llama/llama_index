@@ -3,10 +3,11 @@
 import logging
 from typing import Any, List, Optional, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -42,7 +43,7 @@ def _to_dashvector_filter(
     return " and ".join(filters)
 
 
-class DashVectorStore(VectorStore):
+class DashVectorStore(BasePydanticVectorStore):
     """Dash Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -77,6 +78,10 @@ class DashVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    _support_sparse_vector: bool = PrivateAttr()
+    _encoder: Optional[Any] = PrivateAttr()
+    _collection: Optional[Any] = PrivateAttr()
+
     def __init__(
         self,
         collection: Optional[Any] = None,
@@ -84,6 +89,8 @@ class DashVectorStore(VectorStore):
         encoder: Optional[Any] = None,
     ) -> None:
         """Initialize params."""
+        super().__init__()
+
         try:
             import dashvector
         except ImportError:
@@ -107,6 +114,11 @@ class DashVectorStore(VectorStore):
 
         if collection is not None:
             self._collection = cast(dashvector.Collection, collection)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "DashVectorStore"
 
     def add(
         self,

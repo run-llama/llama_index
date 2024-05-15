@@ -37,12 +37,18 @@ class LlamaCloudRetriever(BaseRetriever):
         if len(projects) == 0:
             raise ValueError(f"No project found with name {project_name}")
 
-        self._dense_similarity_top_k = dense_similarity_top_k or OMIT
-        self._sparse_similarity_top_k = sparse_similarity_top_k or OMIT
-        self._enable_reranking = enable_reranking or OMIT
-        self._rerank_top_n = rerank_top_n or OMIT
-        self._alpha = alpha or OMIT
-        self._filters = filters or OMIT
+        self._dense_similarity_top_k = (
+            dense_similarity_top_k if dense_similarity_top_k is not None else OMIT
+        )
+        self._sparse_similarity_top_k = (
+            sparse_similarity_top_k if sparse_similarity_top_k is not None else OMIT
+        )
+        self._enable_reranking = (
+            enable_reranking if enable_reranking is not None else OMIT
+        )
+        self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
+        self._alpha = alpha if alpha is not None else OMIT
+        self._filters = filters if filters is not None else OMIT
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager", None),
