@@ -35,7 +35,7 @@ version = "0.1.1"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
-ipex-llm = {allow-prereleases = true, extras = ["llama-index"], version = ">=2.1.0b20240423"}
+ipex-llm = {allow-prereleases = true, extras = ["llama-index"], version = ">=2.1.0b20240514"}
 torch = {optional = true, source = "ipex-xpu-src-us", version = "2.1.0a0"}
 torchvision = {optional = true, source = "ipex-xpu-src-us", version = "0.16.0a0"}
 intel_extension_for_pytorch = {optional = true, source = "ipex-xpu-src-us", version = "2.1.10+xpu"}
