@@ -6,14 +6,14 @@ from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
-    VectorStoreQueryResult, FilterCondition, MetadataFilters,
+    VectorStoreQueryResult, FilterCondition, MetadataFilters, FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
 from pgvecto_rs.sdk import PGVectoRs, Record
-from pgvecto_rs.sdk.filters import meta_contains
+from pydantic import StrictStr
 from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
@@ -59,9 +59,10 @@ class RelytVectorStore(BasePydanticVectorStore):
     _client: "PGVectoRs" = PrivateAttr()
     _collection_name: str = PrivateAttr()
 
-    def __init__(self, client: "PGVectoRs", collection_name: str) -> None:
+    def __init__(self, client: "PGVectoRs", collection_name: str, enable_vector_index: bool) -> None:
         self._client: PGVectoRs = client
         self._collection_name = collection_name
+        self._enable_vector_index = enable_vector_index
         self.init_index()
         super().__init__()
 
@@ -70,32 +71,32 @@ class RelytVectorStore(BasePydanticVectorStore):
         return "RelytStore"
 
     def init_index(self):
-        # index_name = f"idx_{self._collection_name}_embedding"
+        index_name = f"idx_{self._collection_name}_embedding"
         with self._client._engine.connect() as conn:
             with conn.begin():
-                # index_query = text(
-                #     f"""
-                #         SELECT 1
-                #         FROM pg_indexes
-                #         WHERE indexname = '{index_name}';
-                #     """)
-                # result = conn.execute(index_query).scalar()
-                # if not result:
-                #     index_statement = text(
-                #         f"""
-                #             CREATE INDEX {index_name}
-                #             ON collection_{self._collection_name}
-                #             USING vectors (embedding vector_l2_ops)
-                #             WITH (options = $$
-                #             optimizing.optimizing_threads = 30
-                #             segment.max_growing_segment_size = 2000
-                #             segment.max_sealed_segment_size = 30000000
-                #             [indexing.hnsw]
-                #             m=30
-                #             ef_construction=500
-                #             $$);
-                #         """)
-                #     conn.execute(index_statement)
+                index_query = text(
+                    f"""
+                        SELECT 1
+                        FROM pg_indexes
+                        WHERE indexname = '{index_name}';
+                    """)
+                result = conn.execute(index_query).scalar()
+                if not result and self._enable_vector_index:
+                    index_statement = text(
+                        f"""
+                            CREATE INDEX {index_name}
+                            ON collection_{self._collection_name}
+                            USING vectors (embedding vector_l2_ops)
+                            WITH (options = $$
+                            optimizing.optimizing_threads = 10
+                            segment.max_growing_segment_size = 2000
+                            segment.max_sealed_segment_size = 30000000
+                            [indexing.hnsw]
+                            m=30
+                            ef_construction=500
+                            $$);
+                        """)
+                    conn.execute(index_statement)
                 index_name = f"meta_{self._collection_name}_embedding"
                 index_query = text(
                     f"""
@@ -131,11 +132,41 @@ class RelytVectorStore(BasePydanticVectorStore):
         self._client.insert(records)
         return [node.id_ for node in nodes]
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        self._client.delete(meta_contains({"ref_doc_id": ref_doc_id}))
+    def delete(self, filters: str, **delete_kwargs: Any) -> None:
+        if filters is None:
+            raise ValueError("filters cannot be None")
+
+        filter_condition = f"WHERE {filters}"
+
+        with self._client._engine.connect() as conn:
+            with conn.begin():
+                sql_query = f""" DELETE FROM collection_{self._collection_name} {filter_condition}"""
+                conn.execute(text(sql_query))
 
     def drop(self) -> None:
         self._client.drop()
+
+    def to_postgres_operator(self, operator: FilterOperator) -> str:
+        if operator == FilterOperator.EQ:
+            return " = "
+        elif operator == FilterOperator.GT:
+            return " > "
+        elif operator == FilterOperator.LT:
+            return " < "
+        elif operator == FilterOperator.NE:
+            return " != "
+        elif operator == FilterOperator.GTE:
+            return " >= "
+        elif operator == FilterOperator.LTE:
+            return " <= "
+        elif operator == FilterOperator.IN:
+            return " in "
+
+    def to_postgres_conditions(self, operator: FilterOperator) -> str:
+        if operator == FilterCondition.AND:
+            return "AND"
+        elif operator == FilterCondition.OR:
+            return "OR"
 
     def transformer_filter(self, filters) -> str:
         filter_statement = ""
@@ -150,7 +181,17 @@ class RelytVectorStore(BasePydanticVectorStore):
                 key = filter.key
                 value = filter.value
                 op = filter.operator
-                filter_cond = key + op + value
+                if isinstance(value, StrictStr):
+                    value = "'{}'".format(value)
+                if op == FilterOperator.IN:
+                    new_val = []
+                    for v in value:
+                        if isinstance(v, StrictStr):
+                            new_val.append("'{}'".format(v))
+                        else:
+                            new_val.append(str(v))
+                    value = "(" + ",".join(new_val) + ")"
+                filter_cond = key + self.to_postgres_operator(op) + value
                 if filter_statement == "":
                     filter_statement = filter_cond
                 else:
