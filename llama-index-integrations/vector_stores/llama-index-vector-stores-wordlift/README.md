@@ -1,5 +1,5 @@
 <picture>
-  <img alt="#WordLift" width="200" src="https://eacn2n47zot.exactdn.com/wp-content/uploads/2022/12/logo.svg" style="margin-bottom: 25px;">
+  <img alt="#WordLift" width="200" src="https://wordlift.io/wp-content/uploads/2022/12/logo.svg" style="margin-bottom: 25px;">
 </picture>
 
 # LlamaIndex Vector_Stores Integration: WordLift
