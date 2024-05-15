@@ -8,8 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-contains_example = false
+contains_example = true
 import_path = "llama_index.vector_stores.wordlift"
+
+[tool.llamahub.class_authors]
+WordliftVectorStore = "ziodave"
 
 [tool.mypy]
 disallow_untyped_defs = true
