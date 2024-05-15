@@ -382,8 +382,7 @@ class BedrockEmbedding(BaseEmbedding):
             Sample Payload of type dict of following format
             {
                 'texts': ["This is a test document", "This is another document"],
-                'input_type': 'search_document',
-                'truncate': 'NONE'
+                'input_type': 'search_document'
             }
 
         """
@@ -396,11 +395,12 @@ class BedrockEmbedding(BaseEmbedding):
                 "text": "search_document",
                 "query": "search_query",
             }
+            payload = [payload] if isinstance(payload, str) else payload
+            payload = [p[:2048] if len(p) > 2048 else p for p in payload]
             request_body = json.dumps(
                 {
-                    "texts": [payload] if isinstance(payload, str) else payload,
+                    "texts": payload,
                     "input_type": input_types[input_type],
-                    "truncate": "NONE",
                 }
             )
         else:

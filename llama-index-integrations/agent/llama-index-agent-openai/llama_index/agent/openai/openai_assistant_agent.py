@@ -1,4 +1,5 @@
 """OpenAI Assistant Agent."""
+
 import asyncio
 import json
 import logging
@@ -134,6 +135,12 @@ def _process_files(client: Any, files: List[str]) -> Dict[str, str]:
     return file_dict
 
 
+def format_attachments(file_ids: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """Create attachments from file_ids."""
+    file_ids = file_ids or []
+    return [{"file_id": file_id} for file_id in file_ids]
+
+
 class OpenAIAssistantAgent(BaseAgent):
     """OpenAIAssistant agent.
 
@@ -223,7 +230,6 @@ class OpenAIAssistantAgent(BaseAgent):
         file_ids = file_ids or []
 
         file_dict = _process_files(client, files)
-        all_file_ids = list(file_dict.keys()) + file_ids
 
         # TODO: openai's typing is a bit sus
         all_openai_tools = cast(List[Any], all_openai_tools)
@@ -232,7 +238,6 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
-            file_ids=all_file_ids,
         )
         return cls(
             client,
@@ -335,12 +340,12 @@ class OpenAIAssistantAgent(BaseAgent):
 
     def add_message(self, message: str, file_ids: Optional[List[str]] = None) -> Any:
         """Add message to assistant."""
-        file_ids = file_ids or []
+        attachments = format_attachments(file_ids=file_ids)
         return self._client.beta.threads.messages.create(
             thread_id=self._thread_id,
             role="user",
             content=message,
-            file_ids=file_ids,
+            attachments=attachments,
         )
 
     def _run_function_calling(self, run: Any) -> List[ToolOutput]:

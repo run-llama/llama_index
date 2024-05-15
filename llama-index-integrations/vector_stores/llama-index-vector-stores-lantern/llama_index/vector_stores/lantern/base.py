@@ -112,7 +112,7 @@ def get_data_model(
     Index(
         hnsw_indexname,
         model.embedding,  # type: ignore
-        postgresql_using="hnsw",
+        postgresql_using="lantern_hnsw",
         postgresql_with={
             "m": m,
             "ef_construction": ef_construction,
@@ -472,6 +472,11 @@ class LanternVectorStore(BasePydanticVectorStore):
         from sqlalchemy.types import UserDefinedType
 
         class REGCONFIG(UserDefinedType):
+            # The TypeDecorator.cache_ok class-level flag indicates if this custom TypeDecorator is safe to be used as part of a cache key.
+            # If the TypeDecorator is not guaranteed to produce the same bind/result behavior and SQL generation every time,
+            # this flag should be set to False; otherwise if the class produces the same behavior each time, it may be set to True.
+            cache_ok = True
+
             def get_col_spec(self, **kw: Any) -> str:
                 return "regconfig"
 

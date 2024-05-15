@@ -20,6 +20,18 @@ def asyncio_module(show_progress: bool = False) -> Any:
     return module
 
 
+def asyncio_run(coro: Coroutine) -> Any:
+    """Gets an existing event loop to run the coroutine.
+
+    If there is no existing event loop, creates a new one.
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coro)
+    except RuntimeError:
+        return asyncio.run(coro)
+
+
 def run_async_tasks(
     tasks: List[Coroutine],
     show_progress: bool = False,
@@ -51,7 +63,7 @@ def run_async_tasks(
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
 
-    outputs: List[Any] = asyncio.run(_gather())
+    outputs: List[Any] = asyncio_run(_gather())
     return outputs
 
 

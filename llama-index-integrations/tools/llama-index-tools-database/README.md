@@ -33,4 +33,4 @@ The tools available are:
 `describe_tables`: A tool to describe the schema of a table
 `load_data`: A tool that accepts an SQL query and returns the result
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.
