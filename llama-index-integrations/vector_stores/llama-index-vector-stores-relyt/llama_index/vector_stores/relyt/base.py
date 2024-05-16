@@ -21,7 +21,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from psycopg2.extensions import JSONB
+from sqlalchemy.dialects.postgresql import JSONB
 from pydantic import StrictStr
 from sqlalchemy import text, TEXT, Table, Column, String, create_engine, Engine, insert
 
@@ -107,7 +107,7 @@ class RelytVectorStore(BasePydanticVectorStore):
                         f"""
                             CREATE TABLE {self._collection_name} (
                                 id TEXT PRIMARY KEY DEFAULT (md5(random()::text || clock_timestamp()::text)::uuid),
-                                embedding vector({self.embedding_dimension}),
+                                embedding vector({self._dimension}),
                                 text TEXT,
                                 meta JSONB
                             ) USING heap;
@@ -184,12 +184,10 @@ class RelytVectorStore(BasePydanticVectorStore):
         ids, content, embeddings, meta = zip(
             *[
                 (
-                    node.get_metadata_str(),
+                    node.id_,
                     node.get_content(metadata_mode=MetadataMode.NONE),
                     node.get_embedding(),
-                    node_to_metadata_dict(
-                        node, remove_text=True, flat_metadata=self.flat_metadata
-                    ),
+                    node_to_metadata_dict(node, remove_text=True),
                 )
                 for node in nodes
             ]
