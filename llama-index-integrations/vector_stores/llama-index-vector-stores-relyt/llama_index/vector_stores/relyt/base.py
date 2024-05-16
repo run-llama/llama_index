@@ -6,7 +6,10 @@ from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
-    VectorStoreQueryResult, FilterCondition, MetadataFilters, FilterOperator,
+    VectorStoreQueryResult,
+    FilterCondition,
+    MetadataFilters,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -59,7 +62,9 @@ class RelytVectorStore(BasePydanticVectorStore):
     _client: "PGVectoRs" = PrivateAttr()
     _collection_name: str = PrivateAttr()
 
-    def __init__(self, client: "PGVectoRs", collection_name: str, enable_vector_index: bool) -> None:
+    def __init__(
+        self, client: "PGVectoRs", collection_name: str, enable_vector_index: bool
+    ) -> None:
         self._client: PGVectoRs = client
         self._collection_name = collection_name
         self._enable_vector_index = enable_vector_index
@@ -79,7 +84,8 @@ class RelytVectorStore(BasePydanticVectorStore):
                         SELECT 1
                         FROM pg_indexes
                         WHERE indexname = '{index_name}';
-                    """)
+                    """
+                )
                 result = conn.execute(index_query).scalar()
                 if not result and self._enable_vector_index:
                     index_statement = text(
@@ -95,7 +101,8 @@ class RelytVectorStore(BasePydanticVectorStore):
                             m=30
                             ef_construction=500
                             $$);
-                        """)
+                        """
+                    )
                     conn.execute(index_statement)
                 index_name = f"meta_{self._collection_name}_embedding"
                 index_query = text(
@@ -108,7 +115,8 @@ class RelytVectorStore(BasePydanticVectorStore):
                 result = conn.execute(index_query).scalar()
                 if not result:
                     index_statement = text(
-                        f""" CREATE INDEX {index_name} ON collection_{self._collection_name} USING gin (meta); """)
+                        f""" CREATE INDEX {index_name} ON collection_{self._collection_name} USING gin (meta); """
+                    )
                     conn.execute(index_statement)
 
     @property
@@ -161,12 +169,14 @@ class RelytVectorStore(BasePydanticVectorStore):
             return " <= "
         elif operator == FilterOperator.IN:
             return " in "
+        return " = "
 
     def to_postgres_conditions(self, operator: FilterOperator) -> str:
         if operator == FilterCondition.AND:
-            return "AND"
+            return " AND "
         elif operator == FilterCondition.OR:
-            return "OR"
+            return " OR "
+        return " AND "
 
     def transformer_filter(self, filters) -> str:
         filter_statement = ""
@@ -176,18 +186,20 @@ class RelytVectorStore(BasePydanticVectorStore):
                 if filter_statement == "":
                     filter_statement = f_stmt
                 else:
-                    filter_statement += filter.condition + f_stmt
+                    filter_statement += (
+                        self.to_postgres_conditions(filter.condition) + f_stmt
+                    )
             else:
                 key = filter.key
                 value = filter.value
                 op = filter.operator
                 if isinstance(value, StrictStr):
-                    value = "'{}'".format(value)
+                    value = f"'{value}'"
                 if op == FilterOperator.IN:
                     new_val = []
                     for v in value:
                         if isinstance(v, StrictStr):
-                            new_val.append("'{}'".format(v))
+                            new_val.append(f"'{v}'")
                         else:
                             new_val.append(str(v))
                     value = "(" + ",".join(new_val) + ")"
@@ -195,7 +207,9 @@ class RelytVectorStore(BasePydanticVectorStore):
                 if filter_statement == "":
                     filter_statement = filter_cond
                 else:
-                    filter_statement += filters.condition + filter_cond
+                    filter_statement += (
+                        self.to_postgres_conditions(filters.condition) + filter_cond
+                    )
         return filter_statement
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -234,8 +248,7 @@ class RelytVectorStore(BasePydanticVectorStore):
             results: Sequence[Row] = conn.execute(text(sql_query), params).fetchall()
 
         nodes = [
-            metadata_dict_to_node(reocrd.meta, text=reocrd.text)
-            for reocrd in results
+            metadata_dict_to_node(reocrd.meta, text=reocrd.text) for reocrd in results
         ]
 
         return VectorStoreQueryResult(
