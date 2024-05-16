@@ -200,7 +200,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         response = self.database_query(f"""
         MATCH (e:`__Entity__`)
         WHERE e.name in $names
-        MATCH p=(e)-[*1..{depth}]->()
+        MATCH p=(e)-[:!MENTIONS]->{{1,{depth}}}()
         UNWIND relationships(p) AS rel
         WITH distinct rel
         WITH startNode(rel) AS source,
