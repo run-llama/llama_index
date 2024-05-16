@@ -194,14 +194,14 @@ class UpstageEmbedding(OpenAIEmbedding):
         batch_size = min(self.embed_batch_size, len(texts))
         texts = [text.replace("\n", " ") for text in texts]
 
-        response = []
+        embeddings = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
             response = client.embeddings.create(
                 input=batch, model=self._text_engine, **self.additional_kwargs
             )
-            response.extend([r.embedding for r in response.data])
-        return response
+            embeddings.extend([r.embedding for r in response.data])
+        return embeddings
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
@@ -209,11 +209,11 @@ class UpstageEmbedding(OpenAIEmbedding):
         batch_size = min(self.embed_batch_size, len(texts))
         texts = [text.replace("\n", " ") for text in texts]
 
-        response = []
+        embeddings = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
             response = await client.embeddings.create(
                 input=batch, model=self._text_engine, **self.additional_kwargs
             )
-            response.extend([r.embedding for r in response.data])
-        return response
+            embeddings.extend([r.embedding for r in response.data])
+        return embeddings
