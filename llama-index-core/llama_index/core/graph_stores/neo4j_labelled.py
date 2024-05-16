@@ -91,7 +91,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             }
             WITH e, row WHERE row.properties.triplet_source_id IS NOT NULL
             MERGE (c:Chunk {id: row.properties.triplet_source_id})
-            MERGE (e)-[:SOURCE_CHUNK]->(c)
+            MERGE (e)<-[:MENTIONS]-(c)
             """, param_map={"data": [el.dict() for el in entity_nodes]})
 
     def upsert_relations(self, relations: List[Relation]) -> None:
@@ -102,7 +102,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         MERGE (source:`__Entity__` {name: row.source_id})
         MERGE (target:`__Entity__` {name: row.target_id})
         WITH source, target, row
-        CALL apoc.merge.relationship(source, row.label, row.properties, {}, target) YIELD rel
+        CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
         RETURN count(*)        
         """, param_map={"data": params})
 
@@ -190,6 +190,35 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             rel = Relation(source_id=record["source_id"], target_id=record["target_id"], label=record["type"])
             triples.append([source, rel, target])
         return triples
+    def get_rel_map(
+        self, graph_nodes: List[LabelledNode], depth: int = 2, limit: int = 30
+    ) -> List[Triplet]:
+        """Get depth-aware rel map."""
+        triples = []
+        names = [node.name for node in graph_nodes]
+        # Needs some optimization / atm only outgoing rels
+        response = self.database_query(f"""
+        MATCH (e:`__Entity__`)
+        WHERE e.name in $names
+        MATCH p=(e)-[*1..{depth}]->()
+        UNWIND relationships(p) AS rel
+        WITH distinct rel
+        WITH startNode(rel) AS source,
+             type(rel) AS type,
+             endNode(rel) AS endNode
+        RETURN source.name AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
+                   source{{.* , embedding: Null, name: Null}} AS source_properties,
+                   type,
+                   endNode.name AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   endNode{{.* , embedding: Null, name: Null}} AS target_properties
+        LIMIT toInteger($limit)
+        """, param_map={"names": names, "limit": limit})
+        for record in response:
+            source = EntityNode(name=record["source_id"], type=record["source_type"], properties=remove_empty_values(record['source_properties']))
+            target = EntityNode(name=record["target_id"], type=record["target_type"], properties=remove_empty_values(record['target_properties']))
+            rel = Relation(source_id=record["source_id"], target_id=record["target_id"], label=record["type"])
+            triples.append([source, rel, target])
+        return triples
     
     def database_query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         with self._driver.session(database=self._database) as session:
@@ -204,8 +233,6 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> None:
         """Delete matching data."""
-    def get_rel_map(self ):
-        pass
     def get_schema(self):
         pass
     def persist(self):
