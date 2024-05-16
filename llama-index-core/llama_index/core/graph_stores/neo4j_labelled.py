@@ -10,6 +10,20 @@ from llama_index.core.graph_stores.types import (
     ChunkNode
 )
 
+def remove_empty_values(input_dict):
+    """
+    Remove entries with empty values from the dictionary.
+
+    Parameters:
+    input_dict (dict): The dictionary from which empty values need to be removed.
+
+    Returns:
+    dict: A new dictionary with all empty values removed.
+    """
+    # Create a new dictionary excluding empty values
+    return {key: value for key, value in input_dict.items() if value}
+
+
 class Neo4jLPGStore(LabelledPropertyGraphStore):
     """
     Simple Labelled Property Graph Store.
@@ -32,14 +46,6 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
     ) -> None:
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
-
-    def get(
-        self,
-        properties: Optional[dict] = None,
-        ids: Optional[List[str]] = None,
-    ) -> List[LabelledNode]:
-        """Get nodes."""
-        print(properties, ids)
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         # Lists to hold separated types
@@ -100,6 +106,37 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         RETURN count(*)        
         """, param_map={"data": params})
 
+    def get(
+        self,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[LabelledNode]:
+        """Get nodes."""
+        cypher_statement = "MATCH (e:`__Entity__`) "
+        params = {}
+        if properties or ids:
+            cypher_statement += "WHERE "
+        if ids:
+            cypher_statement += "e.name in $entity_names "
+            params["entity_names"] = ids
+        if properties:
+            prop_list = []
+            for i, prop in enumerate(properties):
+                prop_list.append(f"e.`{prop}` = $property_{i}")
+                params[f"property_{i}"] = properties[prop]
+            cypher_statement += " AND ".join(prop_list)
+        return_statement = """
+        WITH e
+        RETURN e.name AS name,
+               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
+               e{.* , embedding: Null, name: Null} AS properties
+        """
+        cypher_statement += return_statement
+        response = self.database_query(cypher_statement, param_map=params)
+        nodes = []
+        for record in response:
+            nodes.append(EntityNode(name=record["name"], type=record["type"], properties=remove_empty_values(record['properties'])))
+        return nodes
     def get_triplets(
             self,
             entity_names: Optional[List[str]] = None,
@@ -119,7 +156,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             prop_list = []
             for i, prop in enumerate(properties):
                 prop_list.append(f"e.`{prop}` = $property_{i}")
-                params[f"property_{i}"] = entity_names
+                params[f"property_{i}"] = properties[prop]
             cypher_statement += " AND ".join(prop_list)
 
 
@@ -129,22 +166,27 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         CALL {{
             WITH e
             MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t)
-            RETURN e.name AS source_id, [l in labels(e) WHERE l <> 'Entity' | l][0] AS source_type,
+            RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
+                   e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
-                   t.name AS target_id, [l in labels(t) WHERE l <> 'Entity' | l][0] AS target_type
+                   t.name AS target_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
+            WITH e
             MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t)
-            RETURN t.name AS source_id, [l in labels(t) WHERE l <> 'Entity' | l][0] AS source_type,
+            RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
+                   e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
-                   e.name AS target_id, [l in labels(e) WHERE l <> 'Entity' | l][0] AS target_type
+                   e.name AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   t{{.* , embedding: Null, name: Null}} AS target_properties
         }}
-        RETURN source_id, source_type, type, target_id, target_type"""
+        RETURN source_id, source_type, type, target_id, target_type, source_properties, target_properties"""
         cypher_statement += return_statement
         data = self.database_query(cypher_statement, param_map=params)
         triples = []
         for record in data:
-            source = LabelledNode(name=record["source_id"], type=record["source_type"])
-            target = LabelledNode(name=record["target_id"], type=record["target_type"])
+            source = EntityNode(name=record["source_id"], type=record["source_type"], properties=remove_empty_values(record['source_properties']))
+            target = EntityNode(name=record["target_id"], type=record["target_type"], properties=remove_empty_values(record['target_properties']))
             rel = Relation(source_id=record["source_id"], target_id=record["target_id"], label=record["type"])
             triples.append([source, rel, target])
         return triples
