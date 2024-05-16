@@ -267,6 +267,20 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
             logger.error(response.json()["error"])
             raise ValueError(response.json()["error"])
 
+    def _get_file_content_by_url(self, item: Dict[str, Any]) -> bytes:
+        """
+        Retrieves the content of the file from the provided URL.
+
+        Args:
+            item (Dict[str, Any]): Dictionary containing file metadata.
+
+        Returns:
+            bytes: The content of the file.
+        """
+        file_download_url = item["@microsoft.graph.downloadUrl"]
+        response = requests.get(file_download_url)
+        return response.content
+
     def _download_file_by_url(self, item: Dict[str, Any], download_dir: str) -> str:
         """
         Downloads the file from the provided URL.
@@ -279,17 +293,16 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
             str: The path of the downloaded file in the temporary directory.
         """
         # Get the download URL for the file.
-        file_download_url = item["@microsoft.graph.downloadUrl"]
         file_name = item["name"]
 
-        response = requests.get(file_download_url)
+        content = self._get_file_content_by_url(item)
 
         # Create the directory if it does not exist and save the file.
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
         file_path = os.path.join(download_dir, file_name)
         with open(file_path, "wb") as f:
-            f.write(response.content)
+            f.write(content)
 
         return file_path
 
