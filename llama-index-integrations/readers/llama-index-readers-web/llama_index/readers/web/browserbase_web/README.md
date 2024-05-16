@@ -38,11 +38,9 @@ docs = reader.load_data(
 ### Parameters
 
 - `urls` Required. A list of URLs to fetch.
-- `text_content` Optional. Retrieve only text content. Default is `False`.
-- `session_id` Optional. Session ID.
-- `proxy`: Optional. Enable Proxies.
-
-## Loading images
+- `text_content` Retrieve only text content. Default is `False`.
+- `session_id` Optional. Provide an existing Session ID.
+- `proxy` Optional. Enable/Disable Proxies.## Loading images
 
 You can also load screenshots of webpages (as bytes) for multi-modal models.
 
