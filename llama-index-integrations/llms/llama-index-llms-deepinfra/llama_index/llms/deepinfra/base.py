@@ -54,7 +54,7 @@ class DeepInfraLLM(LLM):
         from llama_index.llms.deepinfra import DeepInfraLLM
 
         llm = DeepInfraLLM(
-            model_name="mistralai/Mixtral-8x22B-Instruct-v0.1", # Default model name
+            model="mistralai/Mixtral-8x22B-Instruct-v0.1", # Default model name
             api_key = "your-deepinfra-api-key",
             temperature=0.5,
             max_tokens=50,
@@ -66,7 +66,7 @@ class DeepInfraLLM(LLM):
         ```
     """
 
-    model_name: str = Field(
+    model: str = Field(
         default=DEFAULT_MODEL_NAME, description="The DeepInfra model to use."
     )
 
@@ -108,7 +108,6 @@ class DeepInfraLLM(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
-
         super().__init__(
             model=model,
             temperature=temperature,
@@ -134,7 +133,7 @@ class DeepInfraLLM(LLM):
         return LLMMetadata(
             num_output=self.max_tokens,
             is_chat_model=self._is_chat_model,
-            model_name=self.model,
+            model=self.model,
         )
 
     @property
@@ -169,7 +168,7 @@ class DeepInfraLLM(LLM):
         Yields:
             CompletionResponseGen: The streaming text completion.
         """
-        payload = {"model": self.model_name, "input": prompt, **kwargs}
+        payload = {"model": self.model, "input": prompt, **kwargs}
 
         content = ""
         for response_dict in self._request_stream(self.get_model_endpoint(), payload):
@@ -191,7 +190,7 @@ class DeepInfraLLM(LLM):
             ChatResponse: The chat response containing a sequence of messages.
         """
         payload = {
-            "model": self.model_name,
+            "model": self.model,
             "messages": [
                 {"role": message.role, "content": message.content}
                 for message in messages
@@ -220,7 +219,7 @@ class DeepInfraLLM(LLM):
             ChatResponseGen: The chat response containing a sequence of messages.
         """
         payload = {
-            "model": self.model_name,
+            "model": self.model,
             "messages": [
                 {"role": message.role, "content": message.content}
                 for message in messages
@@ -277,7 +276,7 @@ class DeepInfraLLM(LLM):
         Yields:
             CompletionResponseAsyncGen: The streaming text completion.
         """
-        payload = {"model": self.model_name, "input": prompt, **kwargs}
+        payload = {"model": self.model, "input": prompt, **kwargs}
 
         content = ""
         async for response_dict in self._arequest_stream(
@@ -301,7 +300,7 @@ class DeepInfraLLM(LLM):
             ChatResponse: The chat response containing a sequence of messages.
         """
         payload = {
-            "model": self.model_name,
+            "model": self.model,
             "messages": [
                 {"role": message.role, "content": message.content}
                 for message in messages
@@ -331,7 +330,7 @@ class DeepInfraLLM(LLM):
             ChatResponseAsyncGen: The chat response containing a sequence of messages.
         """
         payload = {
-            "model": self.model_name,
+            "model": self.model,
             "messages": [
                 {"role": message.role, "content": message.content}
                 for message in messages
@@ -389,14 +388,15 @@ class DeepInfraLLM(LLM):
         Yields:
             str: The streaming response from the API.
         """
-        payload["stream"] = True
-
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
         response = requests.post(
-            self.get_url(endpoint), json=payload, headers=headers, stream=True
+            self.get_url(endpoint),
+            json={**payload, "stream": True},
+            headers=headers,
+            stream=True,
         )
         response.raise_for_status()
 
@@ -439,15 +439,15 @@ class DeepInfraLLM(LLM):
         Yields:
             str: The streaming response from the API.
         """
-        payload["stream"] = True
-
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.get_url(endpoint), json=payload, headers=headers
+                self.get_url(endpoint),
+                json={**payload, "stream": True},
+                headers=headers,
             ) as response:
                 response.raise_for_status()
                 async for line in response.content:
@@ -459,7 +459,7 @@ class DeepInfraLLM(LLM):
         """
         Get DeepInfra model endpoint.
         """
-        return f"{INFERENCE_ENDPOINT}/{self.model_name}"
+        return f"{INFERENCE_ENDPOINT}/{self.model}"
 
     def get_url(self, endpoint: str) -> str:
         """
