@@ -279,6 +279,10 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
         """
         file_download_url = item["@microsoft.graph.downloadUrl"]
         response = requests.get(file_download_url)
+        if response.status_code != 200:
+            logger.error(response.json()["error"])
+            raise ValueError(response.json()["error_description"])
+
         return response.content
 
     def _download_file_by_url(self, item: Dict[str, Any], download_dir: str) -> str:
@@ -357,6 +361,13 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
 
                 permissions_dict[ids_key].append(id)
                 permissions_dict[display_names_key].append(display_name)
+
+        # sort to get consistent results, if possible
+        for key in permissions_dict:
+            try:
+                permissions_dict[key] = sorted(permissions_dict[key])
+            except TypeError:
+                pass
 
         return permissions_dict
 
