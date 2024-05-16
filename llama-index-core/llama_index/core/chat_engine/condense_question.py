@@ -54,7 +54,8 @@ DEFAULT_PROMPT = PromptTemplate(DEFAULT_TEMPLATE)
 
 
 class CondenseQuestionChatEngine(BaseChatEngine):
-    """Condense Question Chat Engine.
+    """
+    Condense Question Chat Engine.
 
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.
@@ -366,11 +367,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 ),
                 sources=[tool_output],
             )
-            thread = Thread(
-                target=lambda x: asyncio.run(response.awrite_response_to_history(x)),
-                args=(self._memory,),
-            )
-            thread.start()
+            asyncio.create_task(response.awrite_response_to_history(self._memory))
         else:
             raise ValueError("Streaming is not enabled. Please use achat() instead.")
         return response

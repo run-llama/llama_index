@@ -597,7 +597,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             index_field = metadata_mapping[0]
 
             if len(odata_filter) > 0:
-                odata_filter.append(" {metadata_filters.condition.value} ")
+                odata_filter.append(f" {metadata_filters.condition.value} ")
             if isinstance(f.value, str):
                 escaped_value = "".join([("''" if s == "'" else s) for s in f.value])
                 odata_filter.append(f"{index_field} eq '{escaped_value}'")

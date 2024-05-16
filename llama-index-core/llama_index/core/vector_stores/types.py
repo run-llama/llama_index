@@ -316,10 +316,29 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     stores_text: bool
     is_embedding_query: bool = True
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @property
     @abstractmethod
     def client(self) -> Any:
         """Get client."""
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        raise NotImplementedError("get_nodes not implemented")
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Asynchronously get nodes from vector store."""
+        return self.get_nodes(node_ids, filters)
 
     @abstractmethod
     def add(
@@ -352,6 +371,32 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         it will just call delete synchronously.
         """
         self.delete(ref_doc_id, **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete nodes from vector store."""
+        raise NotImplementedError("delete_nodes not implemented")
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronously delete nodes from vector store."""
+        self.delete_nodes(node_ids, filters)
+
+    def clear(self) -> None:
+        """Clear all nodes from configured vector store."""
+        raise NotImplementedError("clear not implemented")
+
+    async def aclear(self) -> None:
+        """Asynchronously clear all nodes from configured vector store."""
+        self.clear()
 
     @abstractmethod
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:

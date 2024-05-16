@@ -1,8 +1,8 @@
+import asyncio
 import logging
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
-from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
@@ -54,7 +54,8 @@ DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
 
 
 class CondensePlusContextChatEngine(BaseChatEngine):
-    """Condensed Conversation & Context Chat Engine.
+    """
+    Condensed Conversation & Context Chat Engine.
 
     First condense a conversation and latest user message to a standalone question
     Then build a context for the standalone question from a retriever,
@@ -357,12 +358,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             sources=[context_source],
             source_nodes=context_nodes,
         )
-        thread = Thread(
-            target=lambda x: asyncio_run(chat_response.awrite_response_to_history(x)),
-            args=(self._memory,),
-        )
-        thread.start()
-
+        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
         return chat_response
 
     def reset(self) -> None:
