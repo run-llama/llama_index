@@ -32,7 +32,7 @@ class BrowserbaseWebReader(BaseReader):
     def lazy_load_data(
         self,
         urls: Sequence[str],
-        text_content: Optional[bool] = None,
+        text_content: bool = False,
         session_id: Optional[str] = None,
         proxy: Optional[bool] = None,
     ) -> Iterator[Document]:
