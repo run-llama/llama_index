@@ -8,7 +8,7 @@ def get_node_rel_string(relationship: NodeRelationship) -> str:
     return str(relationship).split(".")[-1]
 
 
-class ImplicitEdgeExtractor(TransformComponent):
+class ImplicitTripletExtractor(TransformComponent):
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
         """Extract edges from node relationships."""
         for node in nodes:

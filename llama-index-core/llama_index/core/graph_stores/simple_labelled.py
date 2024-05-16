@@ -206,7 +206,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         raise NotImplementedError("Schema not implemented for SimpleLPGStore.")
 
     def structured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+        self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Query the graph store with statement and parameters."""
         raise NotImplementedError(

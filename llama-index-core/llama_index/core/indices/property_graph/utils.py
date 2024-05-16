@@ -1,7 +1,4 @@
-from typing import Any, List, Tuple
-from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
-from llama_index.core.schema import QueryBundle, NodeWithScore
-from llama_index.core.vector_stores.types import VectorStore
+from typing import List, Tuple
 
 
 def default_parse_triplets_fn(
@@ -38,12 +35,3 @@ def default_parse_triplets_fn(
 
         results.append((subj, pred, obj))
     return results
-
-
-def vector_store_retrieval_wrapper(
-    query_bundle: QueryBundle,
-    vector_store: VectorStore,
-    lpg_graph_store: LabelledPropertyGraphStore,
-    **kwargs: Any
-) -> List[NodeWithScore]:
-    vector

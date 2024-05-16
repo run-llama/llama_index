@@ -1,5 +1,5 @@
 from llama_index.core.indices.property_graph.transformations.implicit import (
-    ImplicitEdgeExtractor,
+    ImplicitTripletExtractor,
 )
 from llama_index.core.indices.property_graph.transformations.schema_llm import (
     SchemaLLMTripletExtractor,
@@ -9,7 +9,7 @@ from llama_index.core.indices.property_graph.transformations.simple_llm import (
 )
 
 __all__ = [
-    "ImplicitEdgeExtractor",
+    "ImplicitTripletExtractor",
     "SchemaLLMTripletExtractor",
     "SimpleLLMTripletExtractor",
 ]

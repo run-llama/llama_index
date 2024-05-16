@@ -370,7 +370,7 @@ class LabelledPropertyGraphStore(ABC):
 
     @abstractmethod
     def structured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = {}
+        self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Query the graph store with statement and parameters."""
         ...

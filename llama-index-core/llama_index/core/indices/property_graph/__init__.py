@@ -1,6 +1,9 @@
 from llama_index.core.indices.property_graph.base import LabelledPropertyGraphIndex
 from llama_index.core.indices.property_graph.retriever import LPGRetriever
 from llama_index.core.indices.property_graph.sub_retrievers.base import BaseLPGRetriever
+from llama_index.core.indices.property_graph.sub_retrievers.custom import (
+    CustomLPGRetriever,
+)
 from llama_index.core.indices.property_graph.sub_retrievers.llm_synonym import (
     LLMSynonymRetriever,
 )
@@ -8,7 +11,7 @@ from llama_index.core.indices.property_graph.sub_retrievers.vector import (
     LPGVectorRetriever,
 )
 from llama_index.core.indices.property_graph.transformations.implicit import (
-    ImplicitEdgeExtractor,
+    ImplicitTripletExtractor,
 )
 from llama_index.core.indices.property_graph.transformations.schema_llm import (
     SchemaLLMTripletExtractor,
@@ -22,9 +25,10 @@ __all__ = [
     "LabelledPropertyGraphIndex",
     "LPGRetriever",
     "BaseLPGRetriever",
+    "CustomLPGRetriever",
     "LLMSynonymRetriever",
     "LPGVectorRetriever",
-    "ImplicitEdgeExtractor",
+    "ImplicitTripletExtractor",
     "SchemaLLMTripletExtractor",
     "SimpleLLMTripletExtractor",
     "default_parse_triplets_fn",

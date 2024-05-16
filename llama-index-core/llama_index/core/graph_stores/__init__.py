@@ -1,6 +1,7 @@
 """Graph stores."""
 
 from llama_index.core.graph_stores.simple import SimpleGraphStore
+from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
 from llama_index.core.graph_stores.types import (
     LabelledNode,
     Relation,
@@ -16,4 +17,5 @@ __all__ = [
     "EntityNode",
     "ChunkNode",
     "LabelledPropertyGraphStore",
+    "SimpleLPGStore",
 ]

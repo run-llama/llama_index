@@ -10,7 +10,7 @@ from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMTripletExtractor,
-    ImplicitEdgeExtractor,
+    ImplicitTripletExtractor,
 )
 from llama_index.core.ingestion.pipeline import (
     run_transformations,
@@ -42,7 +42,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             A list of nodes to insert into the index.
         llm (Optional[BaseLLM]):
             The language model to use for extracting triplets. Defaults to `Settings.llm`.
-        kg_transformations (Optional[List[TransformComponent]]):
+        kg_extractors (Optional[List[TransformComponent]]):
             A list of transformations to apply to the nodes to extract triplets.
             Defaults to `[SimpleLLMTripletExtractor(llm=llm), ImplicitEdgeExtractor()]`.
         lpg_graph_store (Optional[LabelledPropertyGraphStore]):
@@ -60,7 +60,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             The callback manager to use.
         transformations (Optional[List[TransformComponent]]):
             A list of transformations to apply to the nodes before inserting them into the index.
-            These are applied prior to the `kg_transformations`.
+            These are applied prior to the `kg_extractors`.
         storage_context (Optional[StorageContext]):
             The storage context to use.
         show_progress (bool):
@@ -73,7 +73,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
         llm: Optional[BaseLLM] = None,
-        kg_transformations: Optional[List[TransformComponent]] = None,
+        kg_extractors: Optional[List[TransformComponent]] = None,
         lpg_graph_store: Optional[LabelledPropertyGraphStore] = None,
         # vector related params
         vector_store: Optional[VectorStore] = None,
@@ -112,14 +112,18 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         else:
             self._embed_model = None
 
-        self._kg_transformations = kg_transformations or [
+        self._kg_extractors = kg_extractors or [
             SimpleLLMTripletExtractor(llm=llm or Settings.llm),
-            ImplicitEdgeExtractor(),
+            ImplicitTripletExtractor(),
         ]
         self._use_async = use_async
         self._llm = llm
 
-        self.vector_store = storage_context.vector_store
+        # if we aren't embedding kg nodes, don't use the vector store
+        if embed_kg_nodes and not lpg_graph_store.supports_vector_queries:
+            self.vector_store = storage_context.vector_store
+        else:
+            self.vector_store = None
 
         super().__init__(
             nodes=nodes,
@@ -141,12 +145,12 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         if self._use_async:
             nodes = asyncio.run(
                 arun_transformations(
-                    nodes, self._kg_transformations, show_progress=self._show_progress
+                    nodes, self._kg_extractors, show_progress=self._show_progress
                 )
             )
         else:
             nodes = run_transformations(
-                nodes, self._kg_transformations, show_progress=self._show_progress
+                nodes, self._kg_extractors, show_progress=self._show_progress
             )
 
         # ensure all nodes have nodes and/or relations in metadata
@@ -210,7 +214,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         # if graph store doesn't support vectors, or the vector index was provided, use it
         if (
             not self.lpg_graph_store.supports_vector_queries
-            and self.vector_store is not None
+            or self.vector_store is not None
         ):
             self._insert_nodes_to_vector_index(kg_nodes_to_insert)
 
@@ -276,7 +280,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         )
 
         if sub_retrievers is None:
-            retrievers = [
+            sub_retrievers = [
                 LLMSynonymRetriever(
                     graph_store=self.lpg_graph_store,
                     include_text=include_text,
@@ -288,7 +292,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             if self._embed_model and (
                 self.lpg_graph_store.supports_vector_queries or self.vector_store
             ):
-                retrievers.append(
+                sub_retrievers.append(
                     LPGVectorRetriever(
                         graph_store=self.lpg_graph_store,
                         vector_store=self.vector_store,
@@ -297,7 +301,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
                     )
                 )
 
-        return LPGRetriever(retrievers, use_async=self._use_async, **kwargs)
+        return LPGRetriever(sub_retrievers, use_async=self._use_async, **kwargs)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
