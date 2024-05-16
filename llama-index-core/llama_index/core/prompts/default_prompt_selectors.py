@@ -21,7 +21,7 @@ try:
         COHERE_REFINE_TEMPLATE,
         COHERE_TREE_SUMMARIZE_TEMPLATE,
         COHERE_REFINE_TABLE_CONTEXT_PROMPT,
-    )
+    )  # pants: no-infer-dep
 except ImportError:
     COHERE_QA_TEMPLATE = None
     COHERE_REFINE_TEMPLATE = None

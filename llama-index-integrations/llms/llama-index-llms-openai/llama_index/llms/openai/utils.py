@@ -45,6 +45,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-1106-vision-preview": 128000,
     "gpt-4-turbo-2024-04-09": 128000,
     "gpt-4-turbo": 128000,
+    "gpt-4o": 128000,
+    "gpt-4o-2024-05-13": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,

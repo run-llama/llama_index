@@ -265,7 +265,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
         else:
             host, port = extract_host_port(uri)
-            connections.connect("default", host, port)
+            connections.connect("default", host=host, port=port)
             self._collection = Collection(collection_name)
 
         self._create_index_if_required()

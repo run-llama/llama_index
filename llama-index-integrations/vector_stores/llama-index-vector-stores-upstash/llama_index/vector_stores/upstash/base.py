@@ -9,10 +9,11 @@ https://upstash.com/docs/vector/overall/getstarted
 import logging
 from typing import Any, List
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -24,6 +25,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from upstash_vector import Index
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ def _to_upstash_filters(filters: MetadataFilters) -> str:
     # print(combined_filters)
 
 
-class UpstashVectorStore(VectorStore):
+class UpstashVectorStore(BasePydanticVectorStore):
     """Upstash Vector Store.
 
     Examples:
@@ -105,6 +107,9 @@ class UpstashVectorStore(VectorStore):
 
     stores_text: bool = True
     flat_metadata: bool = False
+
+    batch_size: int
+    _index: Index = PrivateAttr()
 
     @classmethod
     def class_name(cls) -> str:
@@ -129,15 +134,7 @@ class UpstashVectorStore(VectorStore):
         Raises:
             ImportError: If the upstash-vector python package is not installed.
         """
-        self.batch_size = batch_size
-
-        try:
-            from upstash_vector import Index
-        except ImportError:
-            raise ImportError(
-                "Could not import upstash_vector.Index, Please install it with `pip install upstash-vector`"
-            )
-
+        super().__init__(batch_size=batch_size)
         self._index = Index(url=url, token=token)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
