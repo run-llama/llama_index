@@ -7,23 +7,27 @@ import sys
 import time
 import traceback
 import uuid
+from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import islice
 from pathlib import Path
 from typing import (
+    AbstractSet,
     Any,
     AsyncGenerator,
     Callable,
     Dict,
     Generator,
+    Hashable,
     Iterable,
     List,
     Optional,
     Protocol,
     Set,
     Type,
+    TypeVar,
     Union,
     runtime_checkable,
 )
@@ -497,3 +501,33 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
         Any: the single element
     """
     yield x
+
+
+_T = TypeVar("_T", bound=Hashable)
+
+
+def iter_duplicates(values: Iterable[_T]) -> Iterable[_T]:
+    seen: AbstractSet[_T] = set()
+    for v in values:
+        if v in seen:
+            yield v
+        else:
+            seen.add(v)
+
+
+def find_duplicates(values: Iterable[_T]) -> AbstractSet[_T]:
+    return set(iter_duplicates(values))
+
+
+_K = TypeVar("_K", bound=Hashable)
+_V = TypeVar("_V")
+
+
+def full_groupby(values: Iterable[_V], *, key: Callable[[_V], _K]):
+    """Unlike :class:`itertools.groupby`, groups are not broken by non-contiguous data."""
+    groups: dict[_K, list[_V]] = defaultdict(list)
+
+    for value in values:
+        groups[key(value)].append(value)
+
+    return groups.items()
