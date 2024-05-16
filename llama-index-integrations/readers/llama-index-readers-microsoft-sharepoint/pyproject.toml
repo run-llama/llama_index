@@ -33,7 +33,7 @@ version = "0.2.3"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.36.post1"
+llama-index-core = "^0.10.37.post1"
 requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]

@@ -591,7 +591,7 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
 
         return file_paths
 
-    def list_files(
+    def list_resources(
         self,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
@@ -681,7 +681,7 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
 
         return response.json()
 
-    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
+    def get_resource_info(self, resource_id: str, **kwargs) -> Dict:
         """
         Retrieves metadata for a specified file in SharePoint without downloading it.
 
@@ -690,10 +690,10 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
                                 the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
         """
         try:
-            item = self._get_item_from_path(input_file)
+            item = self._get_item_from_path(Path(resource_id))
 
             info_dict = {
-                "file_path": str(input_file),
+                "file_path": resource_id,
                 "size": item.get("size"),
                 "created_at": item.get("createdDateTime"),
                 "modified_at": item.get("lastModifiedDateTime"),
@@ -719,7 +719,7 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
             )
             raise
 
-    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
+    def load_resource(self, resource_id: str, **kwargs) -> List[Document]:
         try:
             access_token = self._get_access_token()
             self._site_id_with_host_name = self._get_site_id_with_host_name(
@@ -727,9 +727,11 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
             )
             self._drive_id = self._get_drive_id()
 
-            item = self._get_item_from_path(input_file)
+            path = Path(resource_id)
 
-            input_file_dir = input_file.parent
+            item = self._get_item_from_path(path)
+
+            input_file_dir = path.parent
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 metadata = self._download_file(item, temp_dir, input_file_dir)
@@ -740,5 +742,22 @@ class SharePointReader(BasePydanticReader, BaseFilesystemReader):
         except Exception as exp:
             logger.error(
                 "An error occurred while reading file from SharePoint: %s", exp
+            )
+            raise
+
+    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+        try:
+            access_token = self._get_access_token()
+            self._site_id_with_host_name = self._get_site_id_with_host_name(
+                access_token, self.sharepoint_site_name
+            )
+            self._drive_id = self._get_drive_id()
+
+            item = self._get_item_from_path(input_file)
+            return self._get_file_content_by_url(item)
+
+        except Exception as exp:
+            logger.error(
+                "An error occurred while reading file content from SharePoint: %s", exp
             )
             raise
