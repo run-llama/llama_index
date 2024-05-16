@@ -124,47 +124,142 @@ class DeepInfraLLM(LLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return False
+        return True
+
+    async def acomplete(self, prompt: str, **kwargs) -> str:
+        """
+        Asynchronously generate completion for the given prompt.
+
+        Args:
+            prompt (str): The input prompt to generate completion for.
+            **kwargs: Additional keyword arguments for the API request.
+
+        Returns:
+            str: The generated text completion.
+        """
+        result = await self._arequest(self.model_name, {"input": prompt, **kwargs})
+        return result["results"][0]["generated_text"]
 
     def complete(self, prompt: str, **kwargs) -> str:
         """
         Generate completion for the given prompt.
-        """
-        result = requests.post(
-            self.get_url(),
-            json={"input": prompt, **kwargs},
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
-            },
-        )
-        result.raise_for_status()
-        return result.json()["results"][0]["generated_text"]
 
-    async def acomplete(self, prompt: str, **kwargs) -> str:
+        Args:
+            prompt (str): The input prompt to generate completion for.
+            **kwargs: Additional keyword arguments for the API request.
+
+        Returns:
+            str: The generated text completion.
+        """
+        result = self._request(self.model_name, {"input": prompt, **kwargs})
+        return result["results"][0]["generated_text"]
+
+    def chat(self, messages: Sequence[ChatMessage], **kwargs) -> ChatResponse:
+        """
+        Generate a chat response for the given messages.
+
+        Args:
+            messages (Sequence[ChatMessage]): A sequence of chat messages.
+            **kwargs: Additional keyword arguments for the API request.
+
+        Returns:
+            ChatResponse: The chat response containing a sequence of messages.
+        """
+        payload = {
+            "model": self.model_name,
+            "messages": [
+                {"role": message.role, "content": message.content}
+                for message in messages
+            ],
+            **kwargs,
+        }
+        result = self._request("openai/chat/completions", payload)
+        return ChatResponse(
+            messages=[
+                ChatMessage(
+                    role=choice["message"]["role"], content=choice["message"]["content"]
+                )
+                for choice in result["choices"]
+            ]
+        )
+
+    async def achat(self, messages: Sequence[ChatMessage], **kwargs) -> ChatResponse:
+        """
+        Asynchronously generate a chat response for the given messages.
+
+        Args:
+            messages (Sequence[ChatMessage]): A sequence of chat messages.
+            **kwargs: Additional keyword arguments for the API request.
+
+        Returns:
+            ChatResponse: The chat response containing a sequence of messages.
+        """
+        payload = {
+            "model": self.model_name,
+            "messages": [
+                {"role": message.role, "content": message.content}
+                for message in messages
+            ],
+            **kwargs,
+        }
+        result = await self._arequest("openai/chat/completions", payload)
+        return ChatResponse(
+            messages=[
+                ChatMessage(
+                    role=choice["message"]["role"], content=choice["message"]["content"]
+                )
+                for choice in result["choices"]
+            ]
+        )
+
+    def get_url(self):
+        """
+        Get DeepInfra API URL.
+        """
+        return f"{INFERENCE_URL}/{self.model_name}"
+
+    def _request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Private method to perform a synchronous request to the DeepInfra API.
+
+        Args:
+            endpoint (str): The API endpoint to send the request to.
+            payload (Dict[str, Any]): The request payload.
+
+        Returns:
+            Dict[str, Any]: The API response.
+        """
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            f"{INFERENCE_URL}/{endpoint}", json=payload, headers=headers
+        )
+        response.raise_for_status()
+        return response.json()
+
+    async def _arequest(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Private method to perform an asynchronous request to the DeepInfra API.
+
+        Args:
+            endpoint (str): The API endpoint to send the request to.
+            payload (Dict[str, Any]): The request payload.
+
+        Returns:
+            Dict[str, Any]: The API response.
+        """
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.get_url(),
-                json={"input": prompt, **kwargs},
-                headers={
-                    "Authorization": f"Bearer {self._api_key}",
-                    "Content-Type": "application/json",
-                },
+                f"{INFERENCE_URL}/{endpoint}", json=payload, headers=headers
             ) as response:
                 response.raise_for_status()
-                result = await response.json()
-                return result["results"][0]["generated_text"]
-
-    def stream_complete(self, question: str) -> CompletionResponseGen:
-        raise NotImplementedError(
-            "DeepInfra does not currently support streaming completion."
-        )
-
-    async def achat(self, question: str) -> ChatResponse:
-        raise NotImplementedError("DeepInfra does not currently support chat.")
-
-    def chat(self, question: str) -> ChatResponse:
-        raise NotImplementedError("DeepInfra does not currently support chat.")
+                return await response.json()
 
     async def astream_complete(self, question: str) -> CompletionResponseAsyncGen:
         raise NotImplementedError("DeepInfra does not currently support streaming.")
@@ -175,8 +270,7 @@ class DeepInfraLLM(LLM):
     def stream_chat(self, question: str) -> ChatResponseGen:
         raise NotImplementedError("DeepInfra does not currently support chat.")
 
-    def get_url(self):
-        """
-        Get DeepInfra API URL.
-        """
-        return f"{INFERENCE_URL}/{self.model_name}"
+    def stream_complete(self, question: str) -> CompletionResponseGen:
+        raise NotImplementedError(
+            "DeepInfra does not currently support streaming completion."
+        )
