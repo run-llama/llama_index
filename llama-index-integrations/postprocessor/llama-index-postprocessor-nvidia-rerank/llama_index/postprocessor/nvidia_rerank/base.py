@@ -9,7 +9,7 @@ from llama_index.core.instrumentation.events.rerank import (
     ReRankStartEvent,
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 import requests
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
@@ -184,7 +184,10 @@ class NVIDIARerank(BaseNodePostprocessor):
                 payloads = {
                     "model": self.model,
                     "query": {"text": query_bundle.query_str},
-                    "passages": [{"text": n.get_content()} for n in batch],
+                    "passages": [
+                        {"text": n.get_content(metadata_mode=MetadataMode.EMBED)}
+                        for n in batch
+                    ],
                 }
                 # the hosted NIM path is different from the local NIM path
                 url = self._base_url
