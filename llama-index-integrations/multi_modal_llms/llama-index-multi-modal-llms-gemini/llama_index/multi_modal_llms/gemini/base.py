@@ -32,6 +32,7 @@ from llama_index.llms.gemini.utils import (
 GEMINI_MM_MODELS = (
     "models/gemini-pro-vision",
     "models/gemini-ultra-vision",
+    "models/gemini-1.5-flash-latest",
 )
 
 
