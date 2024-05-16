@@ -15,36 +15,36 @@ import fsspec
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BaseReader, BaseResourcesReader
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
 
-class BaseFilesystemReader(BaseReader, ABC):
+class BaseFilesystemReader(BaseResourcesReader, ABC):
     @abstractmethod
-    def list_files(self, **kwargs) -> List[Path]:
-        """List files in the given filesystem."""
+    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+        """
+        Read the content of a file.
 
-    async def alist_files(self, **kwargs) -> List[Path]:
-        """List files in the given filesystem asynchronously."""
-        return self.list_files(**kwargs)
+        Args:
+            input_file (Path): Path to the file.
 
-    @abstractmethod
-    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
-        """Get FS-specific file info that uniquely identifies the file. This call shouldn't imply reading the file."""
+        Returns:
+            bytes: File content.
+        """
 
-    async def aget_file_info(self, input_file: Path, **kwargs) -> Dict:
-        """Get file info that uniquely identifies the file asynchronously. This call shouldn't imply reading the file."""
-        return self.get_file_info(input_file, **kwargs)
+    def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
+        """
+        Read the content of a file asynchronously.
 
-    @abstractmethod
-    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
-        """Read file from filesystem and return documents."""
+        Args:
+            input_file (Path): Path to the file.
 
-    def aread_file(self, input_file: Path, **kwargs) -> List[Document]:
-        """Read file from filesystem and return documents asynchronously."""
-        return self.read_file(input_file, **kwargs)
+        Returns:
+            bytes: File content.
+        """
+        return self.read_file_content(input_file, **kwargs)
 
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
@@ -384,12 +384,12 @@ class SimpleDirectoryReader(BaseFilesystemReader):
 
         return documents
 
-    def list_files(self, **kwargs) -> List[Path]:
+    def list_resources(self, *args: Any, **kwargs: Any) -> List[Path]:
         """List files in the given filesystem."""
         return self.input_files
 
-    def get_file_info(self, input_file: Path, **kwargs) -> Dict:
-        info_result = self.fs.info(input_file)
+    def get_resource_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
+        info_result = self.fs.info(resource_id)
 
         creation_date = _format_file_timestamp(
             info_result.get("created"), include_time=True
@@ -399,7 +399,7 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         )
 
         info_dict = {
-            "file_path": input_file,
+            "file_path": resource_id,
             "file_size": info_result.get("size"),
             "creation_date": creation_date,
             "last_modified_date": last_modified_date,
@@ -412,7 +412,9 @@ class SimpleDirectoryReader(BaseFilesystemReader):
             if meta_value is not None
         }
 
-    def read_file(self, input_file: Path, **kwargs) -> List[Document]:
+    def load_resource(
+        self, resource_id: str, *args: Any, **kwargs: Any
+    ) -> List[Document]:
         file_metadata = kwargs.get("file_metadata", self.file_metadata)
         file_extractor = kwargs.get("file_extractor", self.file_extractor)
         filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
@@ -422,7 +424,7 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         fs = kwargs.get("fs", self.fs)
 
         return SimpleDirectoryReader.load_file(
-            input_file=input_file,
+            input_file=Path(resource_id),
             file_metadata=file_metadata,
             file_extractor=file_extractor,
             filename_as_id=filename_as_id,
@@ -433,7 +435,9 @@ class SimpleDirectoryReader(BaseFilesystemReader):
             **kwargs,
         )
 
-    async def aread_file(self, input_file: Path, **kwargs) -> List[Document]:
+    async def aload_resource(
+        self, resource_id: str, *args: Any, **kwargs: Any
+    ) -> List[Document]:
         file_metadata = kwargs.get("file_metadata", self.file_metadata)
         file_extractor = kwargs.get("file_extractor", self.file_extractor)
         filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
@@ -443,7 +447,7 @@ class SimpleDirectoryReader(BaseFilesystemReader):
         fs = kwargs.get("fs", self.fs)
 
         return await SimpleDirectoryReader.aload_file(
-            input_file=input_file,
+            input_file=Path(resource_id),
             file_metadata=file_metadata,
             file_extractor=file_extractor,
             filename_as_id=filename_as_id,
@@ -453,6 +457,12 @@ class SimpleDirectoryReader(BaseFilesystemReader):
             fs=fs,
             **kwargs,
         )
+
+    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+        """Read file content."""
+        fs: fsspec.AbstractFileSystem = kwargs.get("fs", self.fs)
+        with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
+            return f.read()
 
     @staticmethod
     def load_file(

@@ -24,7 +24,7 @@ There are two ways you can use UpTrain with LlamaIndex:
 
 # 1. Using the UpTrain Callback Handler <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/callbacks/UpTrainCallback.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-Below is how to use UpTrain Callback Handler to evaluate different components of your RAG pipelines.
+The following three demonstrations explain how you can use UpTrain Callback Handler to evaluate different components of your RAG pipelines.
 
 ## 1. **RAG Query Engine Evaluations**:
 
@@ -59,39 +59,6 @@ These evaluations collectively ensure the robustness and effectiveness of the RA
 - We have performed evaluations using a basic RAG query engine; the same evaluations can be performed using the advanced RAG query engine as well.
 - Same is true for Re-Ranking evaluations, we have performed evaluations using SentenceTransformerRerank, the same evaluations can be performed using other re-rankers as well.
 
-## 1. **RAG Query Engine Evaluations**:
-
-The RAG query engine plays a crucial role in retrieving context and generating responses. To ensure its performance and response quality, we conduct the following evaluations:
-
-- **[Context Relevance](https://docs.uptrain.ai/predefined-evaluations/context-awareness/context-relevance)**: Determines if the retrieved context has sufficient information to answer the user query or not.
-- **[Factual Accuracy](https://docs.uptrain.ai/predefined-evaluations/context-awareness/factual-accuracy)**: Assesses if the LLM's response can be verified via the retrieved context.
-- **[Response Completeness](https://docs.uptrain.ai/predefined-evaluations/response-quality/response-completeness)**: Checks if the response contains all the information required to answer the user query comprehensively.
-
-## 2. **Sub-Question Query Generation Evaluation**:
-
-The SubQuestionQueryGeneration operator decomposes a question into sub-questions, generating responses for each using an RAG query engine. To measure it's accuracy, we use:
-
-- **[Sub Query Completeness](https://docs.uptrain.ai/predefined-evaluations/query-quality/sub-query-completeness)**: Assures that the sub-questions accurately and comprehensively cover the original query.
-
-## 3. **Re-Ranking Evaluations**:
-
-Re-ranking involves reordering nodes based on relevance to the query and choosing the top nodes. Different evaluations are performed based on the number of nodes returned after re-ranking.
-
-a. Same Number of Nodes
-
-- **[Context Reranking](https://docs.uptrain.ai/predefined-evaluations/context-awareness/context-reranking)**: Checks if the order of re-ranked nodes is more relevant to the query than the original order.
-
-b. Different Number of Nodes:
-
-- **[Context Conciseness](https://docs.uptrain.ai/predefined-evaluations/context-awareness/context-conciseness)**: Examines whether the reduced number of nodes still provides all the required information.
-
-These evaluations collectively ensure the robustness and effectiveness of the RAG query engine, SubQuestionQueryGeneration operator, and the re-ranking process in the LlamaIndex pipeline.
-
-#### **Note:**
-
-- We have performed evaluations using basic RAG query engine, the same evaluations can be performed using the advanced RAG query engine as well.
-- Same is true for Re-Ranking evaluations, we have performed evaluations using SentenceTransformerRerank, the same evaluations can be performed using other re-rankers as well.
-
 ## Install Dependencies and Import Libraries
 
 Install notebook dependencies.
@@ -105,6 +72,8 @@ Install notebook dependencies.
 Import libraries.
 
 ```python
+from getpass import getpass
+
 from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.readers.web import SimpleWebPageReader
@@ -120,49 +89,57 @@ import os
 
 ## Setup
 
-You can choose between the following options for evaluating using UpTrain:
-
-### 1. **UpTrain's Open-Source Software (OSS)**:
-
-You can use the open-source evaluation service to evaluate your model.
-In this case, you will need to provide an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
-
-Parameters:
-
-- key_type="openai"
-- api_key="OPENAI_API_KEY"
-- project_name_prefix="PROJECT_NAME_PREFIX"
-
-### 2. **UpTrain Managed Service and Dashboards**:
-
-You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
-
-UpTrain Managed service provides:
-
+UpTrain provides you with:
 1. Dashboards with advanced drill-down and filtering options
 1. Insights and common topics among failing cases
 1. Observability and real-time monitoring of production data
 1. Regression testing via seamless integration with your CI/CD pipelines
 
-The notebook contains some screenshots of the dashboards and the insights that you can get from the UpTrain managed service.
+You can choose between the following options for evaluating using UpTrain:
+### 1. **UpTrain's Open-Source Software (OSS)**:
+You can use the open-source evaluation service to evaluate your model. In this case, you will need to provide an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
+
+In order to view your evaluations in the UpTrain dashboard, you will need to set it up by running the following commands in your terminal:
+
+```bash
+git clone https://github.com/uptrain-ai/uptrain
+cd uptrain
+bash run_uptrain.sh
+```
+
+This will start the UpTrain dashboard on your local machine. You can access it at `http://localhost:3000/dashboard`.
 
 Parameters:
+- key_type="openai"
+- api_key="OPENAI_API_KEY"
+- project_name="PROJECT_NAME"
 
+
+### 2. **UpTrain Managed Service and Dashboards**:
+Alternatively, you can use UpTrain's managed service to evaluate your model. You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
+
+The benefits of using the managed service are:
+1. No need to set up the UpTrain dashboard on your local machine.
+1. Access to many LLMs without needing their API keys.
+
+Once you perform the evaluations, you can view them in the UpTrain dashboard at `https://dashboard.uptrain.ai/dashboard`
+
+Parameters:
 - key_type="uptrain"
 - api_key="UPTRAIN_API_KEY"
-- project_name_prefix="PROJECT_NAME_PREFIX"
+- project_name="PROJECT_NAME"
 
-**Note:** The `project_name_prefix` will be used as prefix for the project names in the UpTrain dashboard. These will be different for different types of evals. For example, if you set project_name_prefix="llama" and perform the sub_question evaluation, the project name will be "llama_sub_question_answering".
+**Note:** The `project_name` will be the project name under which the evaluations performed will be shown in the UpTrain dashboard.
+
+## Create the UpTrain Callback Handler
 
 ```python
-os.environ[
-    "OPENAI_API_KEY"
-] = "sk-***********"  # Replace with your OpenAI API key
+os.environ["OPENAI_API_KEY"] = getpass()
 
 callback_handler = UpTrainCallbackHandler(
     key_type="openai",
     api_key=os.environ["OPENAI_API_KEY"],
-    project_name_prefix="llama",
+    project_name="uptrain_llamaindex",
 )
 
 Settings.callback_manager = CallbackManager([callback_handler])
@@ -450,7 +427,7 @@ Here's a short GIF showcasing the dashboard and the insights that you can get fr
 
 ![output.gif](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/output.gif)
 
-# 2. Using EvalLlamaIndex <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/evaluation/UpTrain.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# 2. Using UpTrain's EvalLlamaIndex <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/evaluation/UpTrain.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install UpTrain and LlamaIndex
 
@@ -527,7 +504,31 @@ vector_index = VectorStoreIndex.from_documents(
 query_engine = vector_index.as_query_engine()
 ```
 
+## Setup
+
+UpTrain provides you with:
+1. Dashboards with advanced drill-down and filtering options
+1. Insights and common topics among failing cases
+1. Observability and real-time monitoring of production data
+1. Regression testing via seamless integration with your CI/CD pipelines
+
+You can choose between the following two alternatives for evaluating using UpTrain:
+
 # Alternative 1: Evaluate using UpTrain's Open-Source Software (OSS)
+
+You can use the open-source evaluation service to evaluate your model. In this case, you will need to provide an OpenAI API key. You can get yours [here](https://platform.openai.com/account/api-keys).
+
+In order to view your evaluations in the UpTrain dashboard, you will need to set it up by running the following commands in your terminal:
+
+```bash
+git clone https://github.com/uptrain-ai/uptrain
+cd uptrain
+bash run_uptrain.sh
+```
+
+This will start the UpTrain dashboard on your local machine. You can access it at `http://localhost:3000/dashboard`.
+
+**Note:** The `project_name` will be the project name under which the evaluations performed will be shown in the UpTrain dashboard.
 
 ```python
 settings = UpTrainSettings(
@@ -555,7 +556,10 @@ Now that we have the list of queries, we can use the EvalLlamaIndex object to ge
 
 ```python
 results = llamaindex_object.evaluate(
-    data=data, checks=[Evals.CONTEXT_RELEVANCE, Evals.RESPONSE_CONCISENESS]
+    project_name="uptrain-llama-index",
+    evaluation_name="nyc_wikipedia",  # adding project and evaluation names allow you to track the results in the UpTrain dashboard
+    data=data,
+    checks=[Evals.CONTEXT_RELEVANCE, Evals.RESPONSE_CONCISENESS],
 )
 ```
 
@@ -565,16 +569,15 @@ pd.DataFrame(results)
 
 # Alternative 2: Evaluate using UpTrain's Managed Service and Dashboards
 
-Alternate to using the OSS, you can use the UpTrain API Client to send the generated responses to the UpTrain Managed Service. The Managed Service will then perform the evaluations and provide you with dashboards.
+Alternatively, you can use UpTrain's managed service to evaluate your model. You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
 
-You can create a free UpTrain account [here](https://uptrain.ai/) and get free trial credits. If you want more trial credits, [book a call with the maintainers of UpTrain here](https://calendly.com/uptrain-sourabh/30min).
+The benefits of using the managed service are:
+1. No need to set up the UpTrain dashboard on your local machine.
+1. Access to many LLMs without needing their API keys.
 
-**UpTrain Managed service provides:**
+Once you perform the evaluations, you can view them in the UpTrain dashboard at `https://dashboard.uptrain.ai/dashboard`
 
-1. Dashboards with advanced drill-down and filtering options
-2. Insights and common topics among failing cases
-3. Observability and real-time monitoring of production data
-4. Regression testing via seamless integration with your CI/CD pipelines
+**Note:** The `project_name` will be the project name under which the evaluations performed will be shown in the UpTrain dashboard.
 
 ```python
 UPTRAIN_API_KEY = "up-**********************"  # your UpTrain API key
@@ -605,7 +608,8 @@ Now that we have the list of queries, we can use the EvalLlamaIndex object to ge
 
 ```python
 results = llamaindex_object.evaluate(
-    project_name="nyc_wikipedia",  # adding this project name allows you to track the results in the UpTrain dashboard
+    project_name="uptrain-llama-index",
+    evaluation_name="nyc_wikipedia",  # adding project and evaluation names allow you to track the results in the UpTrain dashboard
     data=data,
     checks=[Evals.CONTEXT_RELEVANCE, Evals.RESPONSE_CONCISENESS],
 )
@@ -619,13 +623,11 @@ pd.DataFrame(results)
 
 Histogram of score vs number of cases with that score
 
-![dashboard.png](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/nyc_wiki_results.png)
-
-### Insights:
+![nyc_dashboard.png](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/nyc_dashboard.png)
 
 You can filter failure cases and generate common topics among them. This can help identify the core issue and help fix it
 
-![LlamaIndex_Integration.gif](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/LlamaIndex_Integration.gif)
+![nyc_insights.png](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/nyc_insights.png)
 
 ## Learn More
 
