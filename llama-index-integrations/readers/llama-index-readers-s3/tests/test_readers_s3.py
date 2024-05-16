@@ -7,6 +7,7 @@ import pytest
 import os
 import requests
 from s3fs import S3FileSystem
+import hashlib
 
 test_bucket = "test"
 files = [
@@ -56,7 +57,7 @@ def test_load_all_files(init_s3_files):
         bucket=test_bucket,
         s3_endpoint_url=endpoint_url,
     )
-    files = reader.list_files()
+    files = reader.list_resources()
     assert len(files) == 3
     documents = reader.load_data()
     assert len(documents) == len(files)
@@ -68,7 +69,7 @@ def test_load_single_file(init_s3_files):
         key="test.txt",
         s3_endpoint_url=endpoint_url,
     )
-    files = reader.list_files()
+    files = reader.list_resources()
     assert len(files) == 1
     documents = reader.load_data()
     assert len(documents) == 1
@@ -81,7 +82,7 @@ def test_load_with_prefix(init_s3_files):
         prefix="subdir",
         s3_endpoint_url=endpoint_url,
     )
-    files = reader.list_files()
+    files = reader.list_resources()
     assert len(files) == 1
     assert str(files[0]).startswith(f"{test_bucket}/subdir")
     documents = reader.load_data()
@@ -89,7 +90,7 @@ def test_load_with_prefix(init_s3_files):
     assert documents[0].id_ == f"{endpoint_url}_{test_bucket}/subdir/test2.txt"
 
     reader.prefix = "subdir2"
-    files = reader.list_files()
+    files = reader.list_resources()
     assert len(files) == 1
     assert str(files[0]).startswith(f"{test_bucket}/subdir2")
     documents = reader.load_data()
@@ -108,6 +109,15 @@ def test_load_not_recursive(init_s3_files):
     assert documents[0].id_ == f"{endpoint_url}_{test_bucket}/test.txt"
 
 
+def _compare_document_lists(
+    documents1: List[Document], documents2: List[Document]
+) -> None:
+    assert len(documents1) == len(documents2)
+    hashes_1 = {doc.hash for doc in documents1}
+    hashes_2 = {doc.hash for doc in documents2}
+    assert hashes_1 == hashes_2
+
+
 def test_list_and_read_file_workflow(init_s3_files):
     reader = S3Reader(
         bucket=test_bucket,
@@ -115,21 +125,38 @@ def test_list_and_read_file_workflow(init_s3_files):
     )
 
     original_docs = reader.load_data()
-    files = reader.list_files()
+    files = reader.list_resources()
     new_docs: List[Document] = []
     for file in files:
-        file_info = reader.get_file_info(file)
+        file_info = reader.get_resource_info(file)
         assert file_info is not None
         assert len(file_info) == 4
-        new_docs.extend(reader.read_file(file))
+        new_docs.extend(reader.load_resource(file))
+    _compare_document_lists(original_docs, new_docs)
 
-    assert len(original_docs) == len(new_docs)
-    # the lists aren't necessarily in the same order, so we need to map them
-    original_docs_map = {doc.metadata["file_path"]: doc for doc in original_docs}
-    for new_doc in new_docs:
-        assert new_doc.metadata["file_path"] in original_docs_map
-        original_doc = original_docs_map[new_doc.metadata["file_path"]]
-        assert new_doc.hash == original_doc.hash
+    new_docs = reader.load_resources(files)
+    _compare_document_lists(original_docs, new_docs)
+
+
+def test_read_file_content(init_s3_files):
+    s3fs = S3FileSystem(
+        endpoint_url=endpoint_url,
+    )
+    checksums = {}
+    for file in files:
+        with s3fs.open(file, "rb") as f:
+            content = f.read()
+            checksums[file] = hashlib.md5(content).hexdigest()
+
+    reader = S3Reader(
+        bucket=test_bucket,
+        s3_endpoint_url=endpoint_url,
+    )
+
+    for file in files:
+        content = reader.read_file_content(file)
+        checksum = hashlib.md5(content).hexdigest()
+        assert checksum == checksums[file]
 
 
 def test_serialize():
