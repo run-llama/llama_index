@@ -46,8 +46,8 @@ def test_upstage_embedding_text_embeddings(upstage_embedding):
 
 def test_upstage_embedding_text_embeddings_fail_large_batch():
     texts = ["hello"] * 2049
-    upstage_embedding = UpstageEmbedding(embed_batch_size=2049)
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
+        upstage_embedding = UpstageEmbedding(embed_batch_size=2049)
         upstage_embedding.get_text_embedding_batch(texts)
 
 

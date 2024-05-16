@@ -19,7 +19,13 @@ UPSTAGE_EMBEDDING_MODELS = {
         "query": "solar-1-mini-embedding-query",
         "passage": "solar-1-mini-embedding-passage",
     },
+    "solar-embedding-1-large": {
+        "query": "solar-embedding-1-large-query",
+        "passage": "solar-embedding-1-large-passage",
+    },
 }
+
+MAX_EMBED_BATCH_SIZE = 100
 
 
 def get_engine(model) -> Tuple[Any, Any]:
@@ -60,7 +66,7 @@ class UpstageEmbedding(OpenAIEmbedding):
 
     def __init__(
         self,
-        model: str = "solar-1-mini-embedding",
+        model: str = "solar-embedding-1-large",
         embed_batch_size: int = 100,
         dimensions: Optional[int] = None,
         additional_kwargs: Dict[str, Any] = None,
@@ -78,6 +84,11 @@ class UpstageEmbedding(OpenAIEmbedding):
         if dimensions is not None:
             warnings.warn("Received dimensions argument. This is not supported yet.")
             additional_kwargs["dimensions"] = dimensions
+
+        if embed_batch_size > MAX_EMBED_BATCH_SIZE:
+            raise ValueError(
+                f"embed_batch_size should be less than or equal to {MAX_EMBED_BATCH_SIZE}."
+            )
 
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base
@@ -108,7 +119,6 @@ class UpstageEmbedding(OpenAIEmbedding):
             default_headers=default_headers,
             **kwargs,
         )
-
         self._client = None
         self._aclient = None
         self._http_client = http_client
@@ -180,40 +190,30 @@ class UpstageEmbedding(OpenAIEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        assert (
-            len(texts) <= 2048
-        ), "The batch size should be less than or equal to 2048."
         client = self._get_client()
+        batch_size = min(self.embed_batch_size, len(texts))
         texts = [text.replace("\n", " ") for text in texts]
-        response = []
 
-        for text in texts:
-            response.append(
-                client.embeddings.create(
-                    input=text, model=self._text_engine, **self.additional_kwargs
-                )
-                .data[0]
-                .embedding
+        response = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            response = client.embeddings.create(
+                input=batch, model=self._text_engine, **self.additional_kwargs
             )
+            response.extend([r.embedding for r in response.data])
         return response
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        assert (
-            len(texts) <= 2048
-        ), "The batch size should be less than or equal to 2048."
         client = self._get_aclient()
+        batch_size = min(self.embed_batch_size, len(texts))
         texts = [text.replace("\n", " ") for text in texts]
-        response = []
 
-        for text in texts:
-            response.append(
-                (
-                    await client.embeddings.create(
-                        input=text, model=self._text_engine, **self.additional_kwargs
-                    )
-                )
-                .data[0]
-                .embedding
+        response = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            response = await client.embeddings.create(
+                input=batch, model=self._text_engine, **self.additional_kwargs
             )
+            response.extend([r.embedding for r in response.data])
         return response
