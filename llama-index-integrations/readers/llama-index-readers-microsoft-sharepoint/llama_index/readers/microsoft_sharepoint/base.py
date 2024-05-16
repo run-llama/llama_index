@@ -421,6 +421,28 @@ class SharePointReader(BasePydanticReader):
             recursive,
         )
 
+    def _exclude_access_control_metadata(
+        self, documents: List[Document]
+    ) -> List[Document]:
+        """
+        Excludes the access control metadata from the documents for embedding and LLM calls.
+
+        Args:
+            documents (List[Document]): A list of documents.
+
+        Returns:
+            List[Document]: A list of documents with access control metadata excluded.
+        """
+        for doc in documents:
+            access_control_keys = [
+                key for key in doc.metadata if key.startswith("allowed_")
+            ]
+
+            doc.excluded_embed_metadata_keys.extend(access_control_keys)
+            doc.excluded_llm_metadata_keys.extend(access_control_keys)
+
+        return documents
+
     def _load_documents_with_metadata(
         self,
         files_metadata: Dict[str, Any],
@@ -448,7 +470,10 @@ class SharePointReader(BasePydanticReader):
             file_metadata=get_metadata,
             recursive=recursive,
         )
-        return simple_loader.load_data()
+        docs = simple_loader.load_data()
+        if self.attach_permission_metadata:
+            docs = self._exclude_access_control_metadata(docs)
+        return docs
 
     def load_data(
         self,

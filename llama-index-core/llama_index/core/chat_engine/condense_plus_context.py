@@ -54,7 +54,8 @@ DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
 
 
 class CondensePlusContextChatEngine(BaseChatEngine):
-    """Condensed Conversation & Context Chat Engine.
+    """
+    Condensed Conversation & Context Chat Engine.
 
     First condense a conversation and latest user message to a standalone question
     Then build a context for the standalone question from a retriever,
@@ -357,12 +358,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             sources=[context_source],
             source_nodes=context_nodes,
         )
-        thread = Thread(
-            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
-            args=(self._memory,),
-        )
-        thread.start()
-
+        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
         return chat_response
 
     def reset(self) -> None:

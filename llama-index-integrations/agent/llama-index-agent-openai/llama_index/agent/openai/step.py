@@ -389,9 +389,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
         )
         thread.start()
         # Wait for the event to be set
-        chat_stream_response._is_function_not_none_thread_event.wait()
+        chat_stream_response.is_function_not_none_thread_event.wait()
         # If it is executing an openAI function, wait for the thread to finish
-        if chat_stream_response._is_function:
+        if chat_stream_response.is_function:
             thread.join()
 
         # if it's false, return the answer (to stream)
@@ -414,7 +414,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         chat_stream_response._ensure_async_setup()
 
         # wait until openAI functions stop executing
-        await chat_stream_response._is_function_false_event.wait()
+        await chat_stream_response.is_function_false_event.wait()
 
         # return response stream
         return chat_stream_response

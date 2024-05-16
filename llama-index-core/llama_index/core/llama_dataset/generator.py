@@ -1,12 +1,11 @@
 """Dataset generation from documents."""
 from __future__ import annotations
 
-import asyncio
 import re
 from typing import List, Optional
 
 from llama_index.core import Document, ServiceContext, SummaryIndex
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llama_dataset import (
@@ -239,11 +238,11 @@ class RagDatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self) -> LabelledRagDataset:
         """Generates questions but not the reference answers."""
-        return asyncio.run(self.agenerate_questions_from_nodes())
+        return asyncio_run(self.agenerate_questions_from_nodes())
 
     def generate_dataset_from_nodes(self) -> LabelledRagDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes())
+        return asyncio_run(self.agenerate_dataset_from_nodes())
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
