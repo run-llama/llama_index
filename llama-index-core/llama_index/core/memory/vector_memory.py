@@ -5,29 +5,26 @@ Memory backed by a vector database.
 """
 
 import uuid
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional
 from llama_index.core.bridge.pydantic import validator
 
-from llama_index.core.vector_stores.simple import SimpleVectorStore
-from llama_index.core.schema import TextNode, BaseNode, RelatedNodeInfo, NodeRelationship
+from llama_index.core.schema import TextNode, NodeRelationship
 from llama_index.core.vector_stores.types import VectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field, root_validator
-from llama_index.core.llms.llm import LLM
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
 from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
-from llama_index.core.utils import get_tokenizer
-from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
+from llama_index.core.embeddings.utils import EmbedType
 
-if TYPE_CHECKING:
-    from llama_index.core.indices.vector_store import VectorStoreIndex
 
 DEFAULT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
 
 
+DEFAULT_SYSTEM_MESSAGE = (
+    "This is a set of relevant messages retrieved from longer-term history: "
+)
 
-DEFAULT_SYSTEM_MESSAGE = "This is a set of relevant messages retrieved from longer-term history: "
 
 def _stringify_obj(d: Any):
     """Utility function to convert all keys in a dictionary to strings."""
@@ -38,13 +35,14 @@ def _stringify_obj(d: Any):
     else:
         return str(d)
 
+
 def _stringify_chat_message(msg: ChatMessage) -> Dict:
     """Utility function to convert chatmessage to serializable dict."""
     msg_dict = msg.dict()
     msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
     return msg_dict
 
-    
+
 CUR_USER_MSG_KEY = "cur_user_msg"
 
 
@@ -58,8 +56,8 @@ class VectorMemory(BaseMemory):
 
     # whether to condense all memory into a single message
     return_single_message: bool = False
-    
-    # Whether to combine a user message with all subsequent messages 
+
+    # Whether to combine a user message with all subsequent messages
     # until the next user message into a single message
     # This is on by default, ensuring that we always fetch contiguous blocks of user/response pairs.
     # Turning this off may lead to errors in the function calling API of the LLM.
@@ -71,19 +69,22 @@ class VectorMemory(BaseMemory):
     # NOTE/TODO: we need this to store id's for the messages
     # This is not needed once vector stores implement delete_all capabilities
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
-    # NOTE: this is to store the current user message batch (if `batch_by_user_message` is True) 
+    # NOTE: this is to store the current user message batch (if `batch_by_user_message` is True)
     # allows us to keep track of the current user message batch
     # so we can delete it when we commit a new node
     cur_user_msg_key: str = Field(default=CUR_USER_MSG_KEY)
 
-    @validator('vector_index')
+    @validator("vector_index")
     def validate_vector_index(cls, value: Any) -> Any:
         """Validate vector index."""
         # NOTE: we can't import VectorStoreIndex directly due to circular imports,
         # which is why the type is Any
         from llama_index.core.indices.vector_store import VectorStoreIndex
+
         if not isinstance(value, VectorStoreIndex):
-            raise ValueError(f"Expected 'vector_index' to be an instance of VectorStoreIndex, got {type(value)}")
+            raise ValueError(
+                f"Expected 'vector_index' to be an instance of VectorStoreIndex, got {type(value)}"
+            )
         return value
 
     @classmethod
@@ -106,7 +107,7 @@ class VectorMemory(BaseMemory):
             embed_model (Optional[EmbedType]): embedding model
             index_kwargs (Optional[Dict]): kwargs for initializing the index
             retriever_kwargs (Optional[Dict]): kwargs for initializing the retriever
-        
+
         """
         from llama_index.core.indices.vector_store import VectorStoreIndex
 
@@ -116,12 +117,18 @@ class VectorMemory(BaseMemory):
         if vector_store is None:
             # initialize a blank in-memory vector store
             # NOTE: can't easily do that from `from_vector_store` at the moment.
-            index = VectorStoreIndex.from_documents([], embed_model=embed_model, **index_kwargs)
+            index = VectorStoreIndex.from_documents(
+                [], embed_model=embed_model, **index_kwargs
+            )
         else:
-            index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model, **index_kwargs)
+            index = VectorStoreIndex.from_vector_store(
+                vector_store, embed_model=embed_model, **index_kwargs
+            )
         return cls(vector_index=index, retriever_kwargs=retriever_kwargs)
 
-    def get(self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
+    def get(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
         """Get chat history."""
         if input is None:
             raise ValueError("Input must be provided to get chat history.")
@@ -132,19 +139,23 @@ class VectorMemory(BaseMemory):
 
         # retrieve underlying messages
         messages = [
-            ChatMessage.parse_obj(sub_dict) 
-            for node in nodes for sub_dict in node.metadata["sub_dicts"]
+            ChatMessage.parse_obj(sub_dict)
+            for node in nodes
+            for sub_dict in node.metadata["sub_dicts"]
         ]
 
         # add system message
         if self.system_message:
             messages = [
-                ChatMessage.from_str(self.system_message, role=MessageRole.SYSTEM)] + messages
+                ChatMessage.from_str(self.system_message, role=MessageRole.SYSTEM)
+            ].extend(messages)
 
         if self.return_single_message:
             # condense all messages into a single message
             messages = [
-                ChatMessage.from_str(" ".join([m.content for m in messages]), role=MessageRole.USER)
+                ChatMessage.from_str(
+                    " ".join([m.content for m in messages]), role=MessageRole.USER
+                )
             ]
 
         return messages
@@ -173,23 +184,28 @@ class VectorMemory(BaseMemory):
         # this metadata is excluded from embedding and LLM synthesis
         # the concatenated text is put into the super node text field
         super_node = TextNode(
-            text=" ".join([str(sub_dicts[i]["content"]) for i in range(len(sub_dicts))]),
+            text=" ".join(
+                [str(sub_dicts[i]["content"]) for i in range(len(sub_dicts))]
+            ),
             id_=node_id,
             metadata={"sub_dicts": sub_dicts},
             excluded_embed_metadata_keys=["sub_dicts"],
             excluded_llm_metadata_keys=["sub_dicts"],
         )
         # HACK: this is a hack to add the source relationship as itself, to make deletion work.
-        super_node.relationships[NodeRelationship.SOURCE] = super_node.as_related_node_info()
+        super_node.relationships[
+            NodeRelationship.SOURCE
+        ] = super_node.as_related_node_info()
 
         if override_last:
             # delete the last node
-            last_node_id = self.chat_store.delete_last_message(self.chat_store_key).content
+            last_node_id = self.chat_store.delete_last_message(
+                self.chat_store_key
+            ).content
             self.vector_index.delete_ref_doc(last_node_id)
 
         self.vector_index.insert_nodes([super_node])
         self.chat_store.add_message(self.chat_store_key, ChatMessage(content=node_id))
-        
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
