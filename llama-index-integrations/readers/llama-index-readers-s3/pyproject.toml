@@ -33,7 +33,7 @@ version = "0.1.8"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.36.post1"
+llama-index-core = "^0.10.37.post1"
 llama-index-readers-file = "^0.1.12"
 s3fs = ">=2024.3.1"
 
