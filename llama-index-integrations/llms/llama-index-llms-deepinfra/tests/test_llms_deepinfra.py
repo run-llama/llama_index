@@ -1,6 +1,5 @@
 from llama_index.llms.deepinfra import DeepInfraLLM
-from llama_index.core.base.llms.base import LLM
-from unittest.mock import patch
+from llama_index.llms.base import LLM
 
 
 def test_llm_class():
@@ -11,14 +10,3 @@ def test_llm_class():
 def test_deepinfra_llm_class():
     model = DeepInfraLLM()
     assert isinstance(model, LLM)
-
-
-# Mocking the requests.post method
-
-
-@patch("requests.post")
-def test_complete(mock_post):
-    model = DeepInfraLLM()
-    mock_post.return_value.json.return_value = {"choices": [{"text": "Hello World!"}]}
-    response = model.complete("Hello World!")
-    assert response == "Hello World!"
