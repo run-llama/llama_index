@@ -1,5 +1,3 @@
-import json
-
 import aiohttp
 import requests
 
@@ -11,14 +9,12 @@ from typing import (
     Sequence,
     AsyncGenerator,
     Generator,
-    Union,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
 
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
     CompletionResponse,
@@ -30,6 +26,11 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     ChatMessage,
+)
+
+from llama_index.llms.deepinfra.utils import (
+    maybe_decode_sse_data,
+    chat_messages_to_list,
 )
 
 """DeepInfra API base URL."""
@@ -72,19 +73,6 @@ class DeepInfraLLM(LLM):
 
     _api_key: Optional[str] = PrivateAttr()
 
-    temperature: float = Field(
-        default=DEFAULT_TEMPERATURE,
-        description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
-    )
-
-    max_tokens: int = Field(
-        default=DEFAULT_NUM_OUTPUTS,
-        description="The maximum number of tokens to generate.",
-        gte=1,
-    )
-
     generate_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional keyword arguments for generation."
     )
@@ -92,8 +80,6 @@ class DeepInfraLLM(LLM):
     def __init__(
         self,
         model: str = DEFAULT_MODEL_NAME,
-        temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: int = DEFAULT_NUM_OUTPUTS,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
@@ -110,8 +96,6 @@ class DeepInfraLLM(LLM):
         self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
         super().__init__(
             model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
             api_base=API_BASE,
             api_key=api_key,
             additional_kwargs=additional_kwargs,
@@ -152,7 +136,8 @@ class DeepInfraLLM(LLM):
         Returns:
             str: The generated text completion.
         """
-        result = self._request(self.get_model_endpoint(), {"input": prompt, **kwargs})
+        payload = self._build_payload(input=prompt, **kwargs)
+        result = self._request(self.get_model_endpoint(), payload)
         return CompletionResponse(
             text=result["results"][0]["generated_text"], raw=result
         )
@@ -168,7 +153,7 @@ class DeepInfraLLM(LLM):
         Yields:
             CompletionResponseGen: The streaming text completion.
         """
-        payload = {"model": self.model, "input": prompt, **kwargs}
+        payload = self._build_payload(input=prompt, **kwargs)
 
         content = ""
         for response_dict in self._request_stream(self.get_model_endpoint(), payload):
@@ -189,14 +174,8 @@ class DeepInfraLLM(LLM):
         Returns:
             ChatResponse: The chat response containing a sequence of messages.
         """
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": message.role, "content": message.content}
-                for message in messages
-            ],
-            **kwargs,
-        }
+        messages = chat_messages_to_list(messages)
+        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
         result = self._request(CHAT_API_ENDPOINT, payload)
 
         return ChatResponse(
@@ -207,7 +186,9 @@ class DeepInfraLLM(LLM):
             raw=result,
         )
 
-    def stream_chat(self, messages: Sequence[ChatMessage], **kwargs) -> ChatResponseGen:
+    def stream_chat(
+        self, chat_messages: Sequence[ChatMessage], **kwargs
+    ) -> ChatResponseGen:
         """
         Generate a synchronous streaming chat response for the given messages.
 
@@ -218,14 +199,8 @@ class DeepInfraLLM(LLM):
         Yields:
             ChatResponseGen: The chat response containing a sequence of messages.
         """
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": message.role, "content": message.content}
-                for message in messages
-            ],
-            **kwargs,
-        }
+        messages = chat_messages_to_list(chat_messages)
+        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
 
         content = ""
         role = MessageRole.ASSISTANT
@@ -256,9 +231,9 @@ class DeepInfraLLM(LLM):
         Returns:
             CompletionResponse: The generated text completion.
         """
-        result = await self._arequest(
-            self.get_model_endpoint(), {"input": prompt, **kwargs}
-        )
+        payload = self._build_payload(input=prompt, **kwargs)
+
+        result = await self._arequest(self.get_model_endpoint(), payload)
         return CompletionResponse(
             text=result["results"][0]["generated_text"], raw=result
         )
@@ -276,7 +251,7 @@ class DeepInfraLLM(LLM):
         Yields:
             CompletionResponseAsyncGen: The streaming text completion.
         """
-        payload = {"model": self.model, "input": prompt, **kwargs}
+        payload = self._build_payload(input=prompt, model=self.model, **kwargs)
 
         content = ""
         async for response_dict in self._arequest_stream(
@@ -288,7 +263,9 @@ class DeepInfraLLM(LLM):
                 text=content, delta=content_delta, raw=response_dict
             )
 
-    async def achat(self, messages: Sequence[ChatMessage], **kwargs) -> ChatResponse:
+    async def achat(
+        self, chat_messages: Sequence[ChatMessage], **kwargs
+    ) -> ChatResponse:
         """
         Asynchronously generate a chat response for the given messages.
 
@@ -299,14 +276,9 @@ class DeepInfraLLM(LLM):
         Returns:
             ChatResponse: The chat response containing a sequence of messages.
         """
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": message.role, "content": message.content}
-                for message in messages
-            ],
-            **kwargs,
-        }
+        messages = chat_messages_to_list(chat_messages)
+        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
+
         result = await self._arequest(CHAT_API_ENDPOINT, payload)
         return ChatResponse(
             message=ChatMessage(
@@ -317,7 +289,7 @@ class DeepInfraLLM(LLM):
         )
 
     async def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs
+        self, chat_messages: Sequence[ChatMessage], **kwargs
     ) -> ChatResponseAsyncGen:
         """
         Asynchronously generate a streaming chat response for the given messages.
@@ -329,14 +301,8 @@ class DeepInfraLLM(LLM):
         Yields:
             ChatResponseAsyncGen: The chat response containing a sequence of messages.
         """
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": message.role, "content": message.content}
-                for message in messages
-            ],
-            **kwargs,
-        }
+        messages = chat_messages_to_list(chat_messages)
+        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
 
         content = ""
         role = MessageRole.ASSISTANT
@@ -371,7 +337,14 @@ class DeepInfraLLM(LLM):
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
-        response = requests.post(self.get_url(endpoint), json=payload, headers=headers)
+        response = requests.post(
+            self.get_url(endpoint),
+            json={
+                **payload,
+                "stream": False,
+            },
+            headers=headers,
+        )
         response.raise_for_status()
         return response.json()
 
@@ -394,14 +367,17 @@ class DeepInfraLLM(LLM):
         }
         response = requests.post(
             self.get_url(endpoint),
-            json={**payload, "stream": True},
+            json={
+                **payload,
+                "stream": True,
+            },
             headers=headers,
             stream=True,
         )
         response.raise_for_status()
 
         for line in response.iter_lines():
-            if resp := self.decode_data(line):
+            if resp := maybe_decode_sse_data(line):
                 yield resp
 
     async def _arequest(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -421,7 +397,12 @@ class DeepInfraLLM(LLM):
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.get_url(endpoint), json=payload, headers=headers
+                self.get_url(endpoint),
+                json={
+                    **payload,
+                    "stream": False,
+                },
+                headers=headers,
             ) as response:
                 response.raise_for_status()
                 return await response.json()
@@ -446,12 +427,15 @@ class DeepInfraLLM(LLM):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 self.get_url(endpoint),
-                json={**payload, "stream": True},
+                json={
+                    **payload,
+                    "stream": True,
+                },
                 headers=headers,
             ) as response:
                 response.raise_for_status()
                 async for line in response.content:
-                    if resp := self.decode_data(line):
+                    if resp := maybe_decode_sse_data(line):
                         yield resp
 
     # Utility Method
@@ -467,23 +451,16 @@ class DeepInfraLLM(LLM):
         """
         return f"{API_BASE}/{endpoint}"
 
-    def decode_data(self, data: bytes) -> Union[dict, None]:
+    def _build_payload(self, **kwargs) -> Dict[str, Any]:
         """
-        Decode data from the streaming response.
-        Checks whether the incoming data is an actual
-        SSE data message.
+        Build the payload for the API request.
 
         Args:
-            data (bytes): The incoming data.
+            prompt (str): The input prompt to generate completion for.
+            stream (bool): Whether to stream the response.
+            **kwargs: Additional keyword arguments for the API request.
 
         Returns:
-            Union[dict, None]: The decoded data or None.
+            Dict[str, Any]: The API request payload.
         """
-        if data and data.startswith(b"data: "):
-            data = data.decode("utf-8").strip("data: ")
-            try:
-                return json.loads(data)
-            except json.JSONDecodeError:
-                return None
-        else:
-            return None
+        return {**self.generate_kwargs, **kwargs}
