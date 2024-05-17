@@ -179,11 +179,14 @@ class PostgresMLIndex(BaseManagedIndex):
         return PostgresMLRetriever(self, **kwargs)
 
     def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        from llama_index.indices.managed.postgresml.retriever import (
+            PostgresMLRetriever,
+        )
         from llama_index.indices.managed.postgresml.query import (
             PostgresMLQueryEngine,
         )
 
-        return PostgresMLQueryEngine(self)
+        return PostgresMLQueryEngine(PostgresMLRetriever(self, **kwargs), **kwargs)
 
     @classmethod
     def from_documents(
