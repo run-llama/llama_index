@@ -590,6 +590,7 @@ nav:
           - ./module_guides/indexing/index.md
           - Index Guide: ./module_guides/indexing/index_guide.md
           - Vector Store Index: ./module_guides/indexing/vector_store_index.md
+          - Property Graph Index: ./module_guides/indexing/lpg_index_guide.md
           - Document Management: ./module_guides/indexing/document_management.md
           - LlamaCloud: ./module_guides/indexing/llama_cloud_index.md
           - Metadata Extraction: ./module_guides/indexing/metadata_extraction.md

@@ -209,7 +209,7 @@ If your graph store supports vectors, then you only need to manage that graph st
 ```python
 from llama_index.core.indices.property_graph import LPGVectorRetriever
 
-vector_retriever = LLMSynonymRetriever(
+vector_retriever = LPGVectorRetriever(
     graph_store=index.lpg_graph_store,
     # only needed when the graph store doesn't support vector queries
     # vector_store=index.vector_store,
