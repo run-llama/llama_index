@@ -9,7 +9,7 @@ from llama_index.core.instrumentation.events.rerank import (
     ReRankEndEvent,
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher()
 
@@ -74,7 +74,10 @@ class DashScopeRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            texts = [node.node.get_content() for node in nodes]
+            texts = [
+                node.node.get_content(metadata_mode=MetadataMode.EMBED)
+                for node in nodes
+            ]
             results = dashscope.TextReRank.call(
                 model=self.model,
                 top_n=self.top_n,
