@@ -14,8 +14,12 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
         ):
-            single_arg = arguments[next(iter(arguments))]
-            return tool(single_arg)
+            try:
+                single_arg = arguments[next(iter(arguments))]
+                return tool(single_arg)
+            except Exception:
+                # some tools will REQUIRE kwargs, so try it
+                return tool(**arguments)
         else:
             return tool(**arguments)
     except Exception as e:
@@ -36,8 +40,12 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
         ):
-            single_arg = arguments[next(iter(arguments))]
-            return await async_tool.acall(single_arg)
+            try:
+                single_arg = arguments[next(iter(arguments))]
+                return await async_tool.acall(single_arg)
+            except Exception:
+                # some tools will REQUIRE kwargs, so try it
+                return await async_tool.acall(**arguments)
         else:
             return await async_tool.acall(**arguments)
     except Exception as e:
