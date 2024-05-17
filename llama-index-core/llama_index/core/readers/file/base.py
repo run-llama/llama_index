@@ -15,17 +15,17 @@ import fsspec
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Callable, Dict, Generator, List, Optional, Type
 
-from llama_index.core.readers.base import BaseReader, BaseResourcesReader
+from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
 
 
-class BaseFilesystemReader(BaseResourcesReader, ABC):
+class FileSystemReaderMixin(ABC):
     @abstractmethod
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         """
-        Read the content of a file.
+        Read the bytes content of a file.
 
         Args:
             input_file (Path): Path to the file.
@@ -36,7 +36,7 @@ class BaseFilesystemReader(BaseResourcesReader, ABC):
 
     def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
         """
-        Read the content of a file asynchronously.
+        Read the bytes content of a file asynchronously.
 
         Args:
             input_file (Path): Path to the file.
@@ -169,7 +169,7 @@ def is_default_fs(fs: fsspec.AbstractFileSystem) -> bool:
 logger = logging.getLogger(__name__)
 
 
-class SimpleDirectoryReader(BaseFilesystemReader):
+class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
     """
     Simple directory reader.
 
