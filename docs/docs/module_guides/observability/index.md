@@ -323,7 +323,7 @@ from langtrace_python_sdk import langtrace # Must precede any llm module imports
 langtrace.init(api_key = '<LANGTRACE_API_KEY>')
 ```
 
-![](../../_static/integrations/langtrace.png)
+![](../../_static/integrations/langtrace.gif)
 
 #### Guides
 
