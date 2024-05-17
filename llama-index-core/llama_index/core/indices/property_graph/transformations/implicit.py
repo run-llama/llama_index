@@ -13,9 +13,10 @@ class ImplicitTripletExtractor(TransformComponent):
         """Extract edges from node relationships."""
         for node in nodes:
             existing_relations = node.metadata.pop("relations", [])
+            existing_nodes = node.metadata.pop("nodes", [])
+
             edges = []
             metadata = node.metadata.copy()
-
             if node.source_node:
                 edges.append(
                     Relation(
@@ -69,5 +70,6 @@ class ImplicitTripletExtractor(TransformComponent):
 
             existing_relations.extend(edges)
             node.metadata["relations"] = existing_relations
+            node.metadata["nodes"] = existing_nodes
 
         return nodes
