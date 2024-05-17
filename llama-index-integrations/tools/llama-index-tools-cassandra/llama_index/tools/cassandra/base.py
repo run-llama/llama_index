@@ -2,7 +2,6 @@
 from typing import List
 
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -11,7 +10,7 @@ from llama_index.tools.cassandra.cassandra_database_wrapper import (
 )
 
 
-class CassandraDatabaseToolSpec(BaseToolSpec, BaseReader):
+class CassandraDatabaseToolSpec(BaseToolSpec):
     """Base tool for interacting with an Apache Cassandra database."""
 
     db: CassandraDatabase = Field(exclude=True)
