@@ -8,7 +8,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 from llama_index.core.bridge.pydantic import validator
 
-from llama_index.core.schema import TextNode, NodeRelationship
+from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import VectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field
@@ -192,17 +192,13 @@ class VectorMemory(BaseMemory):
             excluded_embed_metadata_keys=["sub_dicts"],
             excluded_llm_metadata_keys=["sub_dicts"],
         )
-        # HACK: this is a hack to add the source relationship as itself, to make deletion work.
-        super_node.relationships[
-            NodeRelationship.SOURCE
-        ] = super_node.as_related_node_info()
 
         if override_last:
             # delete the last node
             last_node_id = self.chat_store.delete_last_message(
                 self.chat_store_key
             ).content
-            self.vector_index.delete_ref_doc(last_node_id)
+            self.vector_index._vector_store.delete_nodes([last_node_id])
 
         self.vector_index.insert_nodes([super_node])
         self.chat_store.add_message(self.chat_store_key, ChatMessage(content=node_id))
@@ -229,7 +225,7 @@ class VectorMemory(BaseMemory):
         """Reset chat history."""
         node_id_msgs = self.chat_store.get_messages(self.chat_store_key)
         node_ids = [msg.content for msg in node_id_msgs]
-        [self.vector_index.delete_ref_doc(node_id) for node_id in node_ids]
+        self.vector_index._vector_store.delete_nodes(node_ids)
 
         # delete from chat history
         self.chat_store.delete_messages(self.chat_store_key)
