@@ -29,6 +29,11 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
 )
 
+from llama_index.core.llms.callbacks import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
+
 from llama_index.llms.deepinfra.utils import (
     maybe_decode_sse_data,
     chat_messages_to_list,
@@ -153,6 +158,7 @@ class DeepInfraLLM(LLM):
         return True
 
     # Synchronous Methods
+    @llm_completion_callback()
     def complete(self, prompt: str, **kwargs) -> CompletionResponse:
         """
         Generate completion for the given prompt.
@@ -170,6 +176,7 @@ class DeepInfraLLM(LLM):
             text=result["results"][0]["generated_text"], raw=result
         )
 
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs) -> CompletionResponseGen:
         """
         Generate a synchronous streaming completion for the given prompt.
@@ -191,6 +198,7 @@ class DeepInfraLLM(LLM):
                 text=content, delta=content_delta, raw=response_dict
             )
 
+    @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs) -> ChatResponse:
         """
         Generate a chat response for the given messages.
@@ -214,6 +222,7 @@ class DeepInfraLLM(LLM):
             raw=result,
         )
 
+    @llm_chat_callback()
     def stream_chat(
         self, chat_messages: Sequence[ChatMessage], **kwargs
     ) -> ChatResponseGen:
@@ -248,6 +257,7 @@ class DeepInfraLLM(LLM):
                 yield ChatResponse(message=message, raw=response_dict)
 
     # Asynchronous Methods
+    @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs) -> CompletionResponse:
         """
         Asynchronously generate completion for the given prompt.
@@ -266,6 +276,7 @@ class DeepInfraLLM(LLM):
             text=result["results"][0]["generated_text"], raw=result
         )
 
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs
     ) -> CompletionResponseAsyncGen:
@@ -291,6 +302,7 @@ class DeepInfraLLM(LLM):
                 text=content, delta=content_delta, raw=response_dict
             )
 
+    @llm_chat_callback()
     async def achat(
         self, chat_messages: Sequence[ChatMessage], **kwargs
     ) -> ChatResponse:
@@ -316,6 +328,7 @@ class DeepInfraLLM(LLM):
             raw=result,
         )
 
+    @llm_chat_callback()
     async def astream_chat(
         self, chat_messages: Sequence[ChatMessage], **kwargs
     ) -> ChatResponseAsyncGen:
