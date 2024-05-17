@@ -4,6 +4,7 @@ from typing import (
     Sequence,
 )
 
+from llama_index.core import instrumentation
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -253,3 +254,19 @@ class BaseLLM(ChainableMixin, BaseComponent):
                 print(response.text, end="", flush=True)
             ```
         """
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        dispatcher = instrumentation.get_dispatcher(cls.__module__)
+        for name in (
+            "chat",
+            "complete",
+            "stream_chat",
+            "stream_complete",
+            "achat",
+            "acomplete",
+            "astream_chat",
+            "astream_complete",
+        ):
+            if (method := cls.__dict__.get(name)) and callable(method):
+                setattr(cls, name, dispatcher.span(method))

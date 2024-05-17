@@ -209,6 +209,19 @@ def llm_chat_callback() -> Callable:
         if not is_wrapped:
             f.__wrapped__ = True  # type: ignore
 
+        for attr in (
+            "__module__",
+            "__name__",
+            "__qualname__",
+            "__doc__",
+            "__annotations__",
+        ):
+            if v := getattr(f, attr, None):
+                setattr(async_dummy_wrapper, attr, v)
+                setattr(wrapped_async_llm_chat, attr, v)
+                setattr(dummy_wrapper, attr, v)
+                setattr(wrapped_llm_chat, attr, v)
+
         if asyncio.iscoroutinefunction(f):
             if is_wrapped:
                 return async_dummy_wrapper
@@ -393,6 +406,19 @@ def llm_completion_callback() -> Callable:
         is_wrapped = getattr(f, "__wrapped__", False)
         if not is_wrapped:
             f.__wrapped__ = True  # type: ignore
+
+        for attr in (
+            "__module__",
+            "__name__",
+            "__qualname__",
+            "__doc__",
+            "__annotations__",
+        ):
+            if v := getattr(f, attr, None):
+                setattr(async_dummy_wrapper, attr, v)
+                setattr(wrapped_async_llm_predict, attr, v)
+                setattr(dummy_wrapper, attr, v)
+                setattr(wrapped_llm_predict, attr, v)
 
         if asyncio.iscoroutinefunction(f):
             if is_wrapped:
