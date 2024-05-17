@@ -49,7 +49,9 @@ class FireCrawlWebReader(BasePydanticReader):
     def class_name(cls) -> str:
         return "Firecrawl_reader"
 
-    def load_data(self, url: Optional[str] = None, query: Optional[str] = None) -> List[Document]:
+    def load_data(
+        self, url: Optional[str] = None, query: Optional[str] = None
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
@@ -96,6 +98,8 @@ class FireCrawlWebReader(BasePydanticReader):
                     )
                 )
         else:
-            raise ValueError("Invalid mode. Please choose 'scrape', 'crawl' or 'search'.")
+            raise ValueError(
+                "Invalid mode. Please choose 'scrape', 'crawl' or 'search'."
+            )
 
         return documents

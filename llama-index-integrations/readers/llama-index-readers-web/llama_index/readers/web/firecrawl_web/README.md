@@ -21,7 +21,7 @@
 
   firecrawl_reader = FireCrawlWebReader(
       api_key="your_api_key_here",
-      mode="crawl", # or "scrape" or "search"
+      mode="crawl",  # or "scrape" or "search"
       params={"additional": "parameters"},
   )
   ```
@@ -33,7 +33,7 @@
 documents = firecrawl_reader.load_data(url="http://example.com")
 # For search mode
 documents = firecrawl_reader.load_data(query="search term")
-````
+```
 
 ### Example Usage
 
@@ -42,9 +42,9 @@ Here is an example demonstrating how to initialize the FireCrawlWebReader, load 
 ```python
 # Initialize the FireCrawlWebReader with your API key and desired mode
 firecrawl_reader = FireCrawlWebReader(
-  api_key="your_api_key_here", # Replace with your actual API key
-  mode="crawl", # Choose between "crawl", "scrape", and "search"
-  params={"additional": "parameters"}, # Optional additional parameters
+    api_key="your_api_key_here",  # Replace with your actual API key
+    mode="crawl",  # Choose between "crawl", "scrape", and "search"
+    params={"additional": "parameters"},  # Optional additional parameters
 )
 
 # Load documents from Paul Graham's essay URL
