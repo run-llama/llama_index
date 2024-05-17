@@ -1,8 +1,29 @@
 import json
 
-from typing import Union, Sequence, Dict, Any
+from typing import Union, Sequence, Dict, Any, Callable
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    retry_if_result,
+)
 
+from requests.exceptions import Timeout, ConnectionError
 from llama_index.core.base.llms.types import ChatMessage
+
+
+def is_server_error(response: Any) -> bool:
+    """
+    Check if the response is a 500x error.
+
+    Args:
+        response: The response object.
+
+    Returns:
+        bool: True if the response is a 500x error, False otherwise.
+    """
+    return response.status_code >= 500 and response.status_code < 600
 
 
 def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
@@ -38,3 +59,78 @@ def chat_messages_to_list(messages: Sequence[ChatMessage]) -> Sequence[Dict[str,
         Sequence[Dict[str, Any]]: A list of dictionaries.
     """
     return [{"role": message.role, "content": message.content} for message in messages]
+
+
+def create_retry_decorator(retry_limit: int) -> Callable[[Any], Any]:
+    """
+    Create a retry decorator with the given retry limit.
+
+    Args:
+        retry_limit (int): The retry limit.
+
+    Returns:
+        Callable[[Any], Any]: The retry decorator.
+    """
+    initial_delay = 4
+    max_delay = 10
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(retry_limit),
+        wait=wait_exponential(multiplier=1, min=initial_delay, max=max_delay),
+        retry=(
+            retry_if_exception_type(Timeout)
+            | retry_if_exception_type(ConnectionError)
+            | retry_if_result(is_server_error)
+        ),
+    )
+
+
+def retry_request(
+    request_func: Callable[..., Any], max_retries: int = 10, *args: Any, **kwargs: Any
+) -> Any:
+    """
+    Retry a request function.
+
+    Args:
+        request_func (Callable[..., Any]): The request function.
+        max_retries (int): The maximum number of retries.
+        *args (Any): The positional arguments.
+        **kwargs (Any): The keyword arguments.
+
+    Returns:
+        Any: The response.
+    """
+    retry_func = create_retry_decorator(max_retries)
+
+    @retry_func
+    def retry_func(request_func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        return request_func(*args, **kwargs)
+
+    return retry_func(request_func, *args, **kwargs)
+
+
+async def aretry_request(
+    request_func: Callable[..., Any], max_retries: int = 10, *args: Any, **kwargs: Any
+) -> Any:
+    """
+    Retry a request function asynchronously.
+
+    Args:
+        request_func (Callable[..., Any]): The request function.
+        max_retries (int): The maximum number of retries.
+        *args (Any): The positional arguments.
+        **kwargs (Any): The keyword arguments.
+
+    Returns:
+        Any: The response.
+    """
+    retry_decorator = create_retry_decorator(max_retries)
+
+    @retry_decorator
+    async def retry_func(
+        request_func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
+        return await request_func(*args, **kwargs)
+
+    return await retry_func(request_func, *args, **kwargs)

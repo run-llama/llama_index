@@ -12,6 +12,7 @@ from typing import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
+from llama_index.core.constants import DEFAULT_TEMPERATURE
 
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.callbacks import CallbackManager
@@ -31,6 +32,8 @@ from llama_index.core.base.llms.types import (
 from llama_index.llms.deepinfra.utils import (
     maybe_decode_sse_data,
     chat_messages_to_list,
+    retry_request,
+    aretry_request,
 )
 
 """DeepInfra API base URL."""
@@ -71,6 +74,24 @@ class DeepInfraLLM(LLM):
         default=DEFAULT_MODEL_NAME, description="The DeepInfra model to use."
     )
 
+    temperature: float = Field(
+        default=DEFAULT_TEMPERATURE,
+        description="The temperature to use during generation.",
+        gte=0.0,
+        lte=1.0,
+    )
+    max_tokens: Optional[int] = Field(
+        description="The maximum number of tokens to generate.",
+        gt=0,
+    )
+
+    timeout: Optional[float] = Field(
+        default=None, description="The timeout to use in seconds.", gte=0
+    )
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries.", gte=0
+    )
+
     _api_key: Optional[str] = PrivateAttr()
 
     generate_kwargs: Dict[str, Any] = Field(
@@ -81,7 +102,11 @@ class DeepInfraLLM(LLM):
         self,
         model: str = DEFAULT_MODEL_NAME,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: Optional[int] = None,
         max_retries: int = 10,
+        api_base: str = API_BASE,
+        timeout: Optional[float] = None,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -96,8 +121,11 @@ class DeepInfraLLM(LLM):
         self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
         super().__init__(
             model=model,
-            api_base=API_BASE,
+            api_base=api_base,
             api_key=api_key,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
@@ -331,22 +359,27 @@ class DeepInfraLLM(LLM):
             payload (Dict[str, Any]): The request payload.
 
         Returns:
-            Dict[str, Any]: The API response.
+                Dict[str, Any]: The API response.
         """
         headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
-        response = requests.post(
-            self.get_url(endpoint),
-            json={
-                **payload,
-                "stream": False,
-            },
-            headers=headers,
-        )
-        response.raise_for_status()
-        return response.json()
+
+        def perform_request():
+            response = requests.post(
+                self.get_url(endpoint),
+                json={
+                    **payload,
+                    "stream": False,
+                },
+                headers=headers,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+
+        return retry_request(perform_request, max_retries=self.max_retries)
 
     def _request_stream(
         self, endpoint: str, payload: Dict[str, Any]
@@ -365,20 +398,25 @@ class DeepInfraLLM(LLM):
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
-        response = requests.post(
-            self.get_url(endpoint),
-            json={
-                **payload,
-                "stream": True,
-            },
-            headers=headers,
-            stream=True,
-        )
-        response.raise_for_status()
 
-        for line in response.iter_lines():
-            if resp := maybe_decode_sse_data(line):
-                yield resp
+        def perform_request():
+            response = requests.post(
+                self.get_url(endpoint),
+                json={
+                    **payload,
+                    "stream": True,
+                },
+                headers=headers,
+                stream=True,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+
+            for line in response.iter_lines():
+                if resp := maybe_decode_sse_data(line):
+                    yield resp
+
+        return retry_request(perform_request, max_retries=self.max_retries)
 
     async def _arequest(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -395,17 +433,22 @@ class DeepInfraLLM(LLM):
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.get_url(endpoint),
-                json={
-                    **payload,
-                    "stream": False,
-                },
-                headers=headers,
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
+
+        async def perform_request():
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.get_url(endpoint),
+                    json={
+                        **payload,
+                        "stream": False,
+                    },
+                    headers=headers,
+                    timeout=self.timeout,
+                ) as response:
+                    response.raise_for_status()
+                    return await response.json()
+
+        return await aretry_request(perform_request, max_retries=self.max_retries)
 
     async def _arequest_stream(
         self, endpoint: str, payload: Dict[str, Any]
@@ -424,19 +467,27 @@ class DeepInfraLLM(LLM):
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
         }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.get_url(endpoint),
-                json={
-                    **payload,
-                    "stream": True,
-                },
-                headers=headers,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.content:
-                    if resp := maybe_decode_sse_data(line):
-                        yield resp
+
+        async def perform_request():
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.get_url(endpoint),
+                    json={
+                        **payload,
+                        "stream": True,
+                    },
+                    headers=headers,
+                    timeout=self.timeout,
+                ) as response:
+                    response.raise_for_status()
+                    async for line in response.content:
+                        if resp := maybe_decode_sse_data(line):
+                            yield resp
+
+        async for result in aretry_request(
+            perform_request, max_retries=self.max_retries
+        ):
+            yield result
 
     # Utility Method
     def get_model_endpoint(self) -> str:
@@ -454,6 +505,9 @@ class DeepInfraLLM(LLM):
     def _build_payload(self, **kwargs) -> Dict[str, Any]:
         """
         Build the payload for the API request.
+        The temperature and max_tokens parameters explicitly override
+        the corresponding values in generate_kwargs.
+        Any provided kwargs override all other parameters, including temperature and max_tokens.
 
         Args:
             prompt (str): The input prompt to generate completion for.
@@ -463,4 +517,9 @@ class DeepInfraLLM(LLM):
         Returns:
             Dict[str, Any]: The API request payload.
         """
-        return {**self.generate_kwargs, **kwargs}
+        return {
+            **self.generate_kwargs,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            **kwargs,
+        }
