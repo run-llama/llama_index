@@ -3,6 +3,7 @@
 [Browserbase](https://browserbase.com) is a developer platform to reliably run, manage, and monitor headless browsers.
 
 Power your AI data retrievals with:
+
 - [Serverless Infrastructure](https://docs.browserbase.com/under-the-hood) providing reliable browsers to extract data from complex UIs
 - [Stealth Mode](https://docs.browserbase.com/features/stealth-mode) with included fingerprinting tactics and automatic captcha solving
 - [Session Debugger](https://docs.browserbase.com/features/sessions) to inspect your Browser Session with networks timeline and logs
@@ -13,7 +14,7 @@ Power your AI data retrievals with:
 - Get an API key and Project ID from [browserbase.com](https://browserbase.com) and set it in environment variables (`BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID`).
 - Install the [Browserbase SDK](http://github.com/browserbase/python-sdk):
 
-```python
+```bash
 pip install browserbase
 ```
 
