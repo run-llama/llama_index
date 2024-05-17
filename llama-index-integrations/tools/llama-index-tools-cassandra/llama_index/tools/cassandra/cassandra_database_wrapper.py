@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from cassandra.cluster import ResultSet, Session
 from pydantic import BaseModel, Field, root_validator
 
-
 IGNORED_KEYSPACES = [
     "system",
     "system_auth",
@@ -58,36 +57,18 @@ class CassandraDatabase:
         else:
             raise ValueError("Fetch parameter must be either 'one', 'all', or 'cursor'")
 
-    def run_no_throw(
-        self,
-        query: str,
-        fetch: str = "all",
-        include_columns: bool = False,
-        **kwargs: Any,
-    ) -> Union[str, Sequence[Dict[str, Any]], ResultSet]:
-        """Execute a CQL query and return the results or an error message."""
-        try:
-            return self.run(query, fetch, include_columns, **kwargs)
-        except Exception as e:
-            """Format the error message"""
-            return f"Error: {e}\n{traceback.format_exc()}"
-
-    def get_keyspace_tables_str_no_throw(self, keyspace: str) -> str:
-        """Get the tables for the specified keyspace."""
-        try:
-            return self.get_keyspace_tables_str(keyspace)
-        except Exception as e:
-            """Format the error message"""
-            return f"Error: {e}\n{traceback.format_exc()}"
-
     def get_keyspace_tables_str(self, keyspace: str) -> str:
         """Get the tables for the specified keyspace."""
-        tables = self.get_keyspace_tables(keyspace)
-        schema_string = ""
-        for table in tables:
-            schema_string += table.as_markdown() + "\n\n"
+        try:
+            tables = self.get_keyspace_tables(keyspace)
+            schema_string = ""
+            for table in tables:
+                schema_string += table.as_markdown() + "\n\n"
 
-        return schema_string
+            return schema_string
+        except Exception as e:
+            """Format the error message"""
+            return f"Error: {e}\n{traceback.format_exc()}"
 
     def get_keyspace_tables(self, keyspace: str) -> List[Table]:
         """Get the Table objects for the specified keyspace."""
@@ -97,36 +78,30 @@ class CassandraDatabase:
         else:
             return []
 
-    def get_table_data_no_throw(
-        self, keyspace: str, table: str, predicate: str, limit: int
-    ) -> str:
-        """Get data from the specified table in the specified keyspace. Optionally can
-        take a predicate for the WHERE clause and a limit.
-        """
-        try:
-            return self.get_table_data(keyspace, table, predicate, limit)
-        except Exception as e:
-            """Format the error message"""
-            return f"Error: {e}\n{traceback.format_exc()}"
-
     # This is a more basic string building function that doesn't use a query builder
     # or prepared statements
     # TODO: Refactor to use prepared statements
     def get_table_data(
         self, keyspace: str, table: str, predicate: str, limit: int
     ) -> str:
-        """Get data from the specified table in the specified keyspace."""
-        query = f"SELECT * FROM {keyspace}.{table}"
+        """Get data from the specified table in the specified keyspace. Optionally can
+        take a predicate for the WHERE clause and a limit.
+        """
+        try:
+            query = f"SELECT * FROM {keyspace}.{table}"
 
-        if predicate:
-            query += f" WHERE {predicate}"
-        if limit:
-            query += f" LIMIT {limit}"
+            if predicate:
+                query += f" WHERE {predicate}"
+            if limit:
+                query += f" LIMIT {limit}"
 
-        query += ";"
+            query += ";"
 
-        result = self.run(query, fetch="all")
-        return "\n".join(str(row) for row in result)
+            result = self.run(query, fetch="all")
+            return "\n".join(str(row) for row in result)
+        except Exception as e:
+            """Format the error message"""
+            return f"Error: {e}\n{traceback.format_exc()}"
 
     def get_context(self) -> Dict[str, Any]:
         """Return db context that you may want in agent prompt."""
