@@ -59,7 +59,6 @@ class LMStudio(CustomLLM):
         default=DEFAULT_REQUEST_TIMEOUT,
         description="The timeout for making http request in seconds to LM Studio API server.",
     )
-
     num_output: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
         description=LLMMetadata.__fields__["num_output"].field_info.description,
@@ -91,7 +90,7 @@ class LMStudio(CustomLLM):
     def __create_payload_from_messages(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> dict[str, Any]:
-        payload = {
+        return {
             "model": self.model_name,
             "messages": [
                 {
@@ -109,7 +108,6 @@ class LMStudio(CustomLLM):
             "stream": False,
             **kwargs,
         }
-        return payload
 
     def __create_chat_response_from_http_response(
         self, response: httpx.Response
@@ -154,7 +152,6 @@ class LMStudio(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-
         complete_fn = chat_to_completion_decorator(self.chat)
         return complete_fn(prompt, **kwargs)
 
