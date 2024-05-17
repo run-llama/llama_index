@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING
 
-from llama_index.core.data_structs import IndexList
+from llama_index.core.data_structs import IndexLPG
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     )
 
 
-class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
+class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
     """An index for a labelled property graph.
 
     Args:
@@ -67,7 +67,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
             Whether to show progress bars for transformations. Defaults to `False`.
     """
 
-    index_struct_cls = IndexList
+    index_struct_cls = IndexLPG
 
     def __init__(
         self,
@@ -95,7 +95,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         # lazily initialize the graph store on the storage context
         if lpg_graph_store is not None:
             storage_context.lpg_graph_store = lpg_graph_store
-        else:
+        elif storage_context.lpg_graph_store is None:
             storage_context.lpg_graph_store = SimpleLPGStore()
 
         if vector_store is not None:
@@ -120,7 +120,10 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
         self._llm = llm
 
         # if we aren't embedding kg nodes, don't use the vector store
-        if embed_kg_nodes and not lpg_graph_store.supports_vector_queries:
+        if (
+            embed_kg_nodes
+            and not storage_context.lpg_graph_store.supports_vector_queries
+        ):
             self.vector_store = storage_context.vector_store
         else:
             self.vector_store = None
@@ -245,12 +248,12 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexList]):
 
         self.vector_store.add(llama_nodes)
 
-    def _build_index_from_nodes(self, nodes: Optional[Sequence[BaseNode]]) -> IndexList:
+    def _build_index_from_nodes(self, nodes: Optional[Sequence[BaseNode]]) -> IndexLPG:
         """Build index from nodes."""
         nodes = self._insert_nodes(nodes or [])
 
         # this isn't really used or needed
-        return IndexList(nodes=[])
+        return IndexLPG()
 
     def as_retriever(
         self,

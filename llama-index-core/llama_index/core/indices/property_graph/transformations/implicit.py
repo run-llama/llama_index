@@ -68,6 +68,16 @@ class ImplicitTripletExtractor(TransformComponent):
                         )
                     )
 
+            # link all existing kg_nodes to the current text chunk
+            for kg_node in existing_nodes:
+                edges.append(
+                    Relation(
+                        target_id=node.id_,
+                        source_id=kg_node.id,
+                        label="SOURCE_CHUNK",
+                    )
+                )
+
             existing_relations.extend(edges)
             node.metadata["relations"] = existing_relations
             node.metadata["nodes"] = existing_nodes

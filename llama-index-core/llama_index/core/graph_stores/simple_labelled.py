@@ -1,8 +1,11 @@
 import fsspec
+import json
 import os
 from typing import Any, List, Dict, Tuple, Optional
 
 from llama_index.core.graph_stores.types import (
+    ChunkNode,
+    EntityNode,
     LabelledPropertyGraphStore,
     Triplet,
     LabelledNode,
@@ -172,9 +175,11 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         """Load from persist path."""
         if fs is None:
             fs = fsspec.filesystem("file")
+
         with fs.open(persist_path, "r") as f:
-            graph = LabelledPropertyGraph.parse_raw(f.read())
-        return cls(graph)
+            data = json.loads(f.read())
+
+        return cls.from_dict(data)
 
     @classmethod
     def from_persist_dir(
@@ -192,7 +197,27 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         data: dict,
     ) -> "SimpleLPGStore":
         """Load from dict."""
+        # need to load nodes manually
+        node_dicts = data["nodes"]
+
+        kg_nodes = {}
+        for id, node_dict in node_dicts.items():
+            if "name" in node_dict:
+                kg_nodes[id] = EntityNode.parse_obj(node_dict)
+            elif "text" in node_dict:
+                kg_nodes[id] = ChunkNode.parse_obj(node_dict)
+            else:
+                raise ValueError(f"Could not infer node type for data: {node_dict!s}")
+
+        # clear the nodes, to load later
+        data["nodes"] = {}
+
+        # load the graph
         graph = LabelledPropertyGraph.parse_obj(data)
+
+        # add the node back
+        graph.nodes = kg_nodes
+
         return cls(graph)
 
     def to_dict(self) -> dict:
@@ -224,8 +249,8 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         """Get client."""
         raise NotImplementedError("Client not implemented for SimpleLPGStore.")
 
-    def save_networkx_graph(self) -> None:
-        """Display the graph store."""
+    def save_networkx_graph(self, name: str = "kg.html") -> None:
+        """Display the graph store, useful for debugging."""
         import networkx as nx
 
         G = nx.DiGraph()
@@ -239,4 +264,4 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
         net = Network(notebook=False, directed=True)
         net.from_nx(G)
-        net.write_html("kg.html")
+        net.write_html(name)
