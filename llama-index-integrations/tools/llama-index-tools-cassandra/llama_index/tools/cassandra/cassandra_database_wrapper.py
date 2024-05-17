@@ -145,21 +145,22 @@ class CassandraDatabase:
     def format_schema_to_markdown(self) -> str:
         """
         Generates a markdown representation of the schema for all keyspaces and tables
-        within the CassandraDatabase instance. This method utilizes the
-        format_keyspace_to_markdown method to create markdown sections for each
-        keyspace, assembling them into a comprehensive schema document.
+        within the CassandraDatabase instance.
 
-        Iterates through each keyspace in the database, utilizing
-        format_keyspace_to_markdown to generate markdown for each keyspace's schema,
-        including details of its tables. These sections are concatenated to form a
-        single markdown document that represents the schema of the entire database or
-        the subset of keyspaces that have been resolved in this instance.
+        This method utilizes the format_keyspace_to_markdown method to create markdown
+        sections for each keyspace, assembling them into a comprehensive schema document.
+
+        Iterates through each keyspace in the database, utilizing format_keyspace_to_markdown
+        to generate markdown for each keyspace's schema, including details of its tables.
+        These sections are concatenated to form a single markdown document that represents
+        the schema of the entire database or the subset of keyspaces that have been resolved
+        in this instance.
 
         Returns:
-        A markdown string that documents the schema of all resolved keyspaces and
-        their tables within this CassandraDatabase instance. This includes keyspace
-        names, table names, comments, columns, partition keys, clustering keys,
-        and indexes for each table.
+            str: A markdown string that documents the schema of all resolved keyspaces and
+            their tables within this CassandraDatabase instance. This includes keyspace names,
+            table names, comments, columns, partition keys, clustering keys, and indexes for
+            each table.
         """
         schema = self._resolve_schema()
         output = "# Cassandra Database Schema\n\n"
@@ -170,21 +171,22 @@ class CassandraDatabase:
     def _validate_cql(self, cql: str, type: str = "SELECT") -> str:
         """
         Validates a CQL query string for basic formatting and safety checks.
+
         Ensures that `cql` starts with the specified type (e.g., SELECT) and does
         not contain content that could indicate CQL injection vulnerabilities.
 
-        Parameters:
-        - cql (str): The CQL query string to be validated.
-        - type (str): The expected starting keyword of the query, used to verify
-          that the query begins with the correct operation type
-          (e.g., "SELECT", "UPDATE"). Defaults to "SELECT".
+        Args:
+            cql (str): The CQL query string to be validated.
+            type (str): The expected starting keyword of the query, used to verify
+                that the query begins with the correct operation type
+                (e.g., "SELECT", "UPDATE"). Defaults to "SELECT".
 
         Returns:
-        - str: The trimmed and validated CQL query string without a trailing semicolon.
+            str: The trimmed and validated CQL query string without a trailing semicolon.
 
         Raises:
-        - ValueError: If the value of `type` is not supported
-        - DatabaseError: If `cql` is considered unsafe
+            ValueError: If the value of `type` is not supported.
+            DatabaseError: If `cql` is considered unsafe.
         """
         SUPPORTED_TYPES = ["SELECT"]
         if type and type.upper() not in SUPPORTED_TYPES:
