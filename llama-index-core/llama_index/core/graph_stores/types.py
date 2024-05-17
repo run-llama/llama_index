@@ -378,7 +378,7 @@ class LabelledPropertyGraphStore(ABC):
     @abstractmethod
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> List[Tuple[LabelledNode, float]]:
+    ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
         ...
 
@@ -462,7 +462,7 @@ class LabelledPropertyGraphStore(ABC):
 
     async def avector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> List[Tuple[LabelledNode, float]]:
+    ) -> Tuple[List[LabelledNode], List[float]]:
         """Asynchronously query the graph store with a vector store query."""
         return self.vector_query(query, **kwargs)
 

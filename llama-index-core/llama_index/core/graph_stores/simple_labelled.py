@@ -215,7 +215,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> List[Tuple[LabelledNode, float]]:
+    ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
         raise NotImplementedError("Vector query not implemented for SimpleLPGStore.")
 
