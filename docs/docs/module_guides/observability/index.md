@@ -312,7 +312,7 @@ set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])
 
 #### Install
 
-```python
+```shell
 pip install langtrace-python-sdk
 ```
 
