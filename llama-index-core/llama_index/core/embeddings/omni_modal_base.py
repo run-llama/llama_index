@@ -36,7 +36,6 @@ from llama_index.core.base.embeddings.base import (
     mean_agg,
     similarity,
 )
-from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.embeddings.utils import resolve_embed_model
@@ -389,6 +388,8 @@ class GenericTransformComponent:
     def __getstate__(self) -> Dict[str, Any]:
         state = {"__dict__": self.__dict__}
 
+        state["__dict__"].pop("callback_manager")
+
         # tiktoken is not pickleable
         # state["__dict__"] = self.dict()
         state["__dict__"].pop("tokenizer", None)
@@ -450,25 +451,23 @@ class GenericTransformComponent:
 
 @dataclass
 class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
-    model_name: str = Field(
-        default="unknown", description="The name of the embedding model."
-    )
-    embed_batch_size: int = Field(
-        default=DEFAULT_EMBED_BATCH_SIZE,
-        description="The batch size for embedding calls.",
-        gt=0,
-        lte=2048,
-    )
-    num_workers: Optional[int] = Field(
-        default=None,
-        description="The number of workers to use for async embedding calls.",
-    )
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
-    )
+    model_name: str = field(default="unknown")
+    """The name of the embedding model."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    embed_batch_size: int = field(default=DEFAULT_EMBED_BATCH_SIZE)
+    """The batch size for embedding calls."""
+
+    num_workers: Optional[int] = field(default=None)
+    """The number of workers to use for async embedding calls."""
+
+    callback_manager: CallbackManager = field(default_factory=CallbackManager)
+
+    def model_post_init(self) -> None:
+        super().model_post_init()
+
+        if not 0 < self.embed_batch_size <= 2048:
+            msg = f"embed_batch_size is not in the range (0, 2048]. Found: {self.embed_batch_size}"
+            raise ValueError(msg)
 
     @staticmethod
     def from_base(embed_model: BaseEmbedding):
@@ -997,6 +996,8 @@ class OmniModalEmbeddingBundle(
         return f"{type(self).__name__}({self._embed_models})"
 
     def model_post_init(self) -> None:
+        super().model_post_init()
+
         embed_models = self._embed_models
 
         # No duplicates
