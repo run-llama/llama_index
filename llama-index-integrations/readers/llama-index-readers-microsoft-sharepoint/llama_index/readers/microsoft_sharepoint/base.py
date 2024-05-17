@@ -8,15 +8,19 @@ from typing import Any, Dict, List, Union, Optional
 from typing import Any, Dict, List, Optional
 
 import requests
-from llama_index.core.readers import SimpleDirectoryReader, BaseFilesystemReader
-from llama_index.core.readers.base import BaseReader, BasePydanticReader
+from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
+from llama_index.core.readers.base import (
+    BaseReader,
+    BasePydanticReader,
+    ResourcesReaderMixin,
+)
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 logger = logging.getLogger(__name__)
 
 
-class SharePointReader(BasePydanticReader, BaseFilesystemReader):
+class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     """
     SharePoint reader.
 

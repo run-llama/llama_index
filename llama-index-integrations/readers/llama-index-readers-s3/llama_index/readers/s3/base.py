@@ -10,13 +10,17 @@ from typing import Callable, Dict, List, Optional, Union
 from datetime import datetime, timezone
 from pathlib import Path
 
-from llama_index.core.readers import SimpleDirectoryReader, BaseFilesystemReader
-from llama_index.core.readers.base import BaseReader, BasePydanticReader
+from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
+from llama_index.core.readers.base import (
+    BaseReader,
+    BasePydanticReader,
+    ResourcesReaderMixin,
+)
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import Field
 
 
-class S3Reader(BasePydanticReader, BaseFilesystemReader):
+class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     """
     General reader for any S3 file or directory.
 
