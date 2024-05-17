@@ -14,22 +14,26 @@
 
 ### Using Firecrawl Web Loader
 
-- **Initialization**: Initialize the FireCrawlWebReader by providing the API key, the desired mode of operation (`crawl` or `scrape`), and any optional parameters for the Firecrawl API.
+- **Initialization**: Initialize the FireCrawlWebReader by providing the API key, the desired mode of operation (`crawl`, `scrape`, or `search`), and any optional parameters for the Firecrawl API.
 
   ```python
   from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 
   firecrawl_reader = FireCrawlWebReader(
       api_key="your_api_key_here",
-      mode="crawl",  # or "scrape"
+      mode="crawl",  # or "scrape" or "search"
       params={"additional": "parameters"},
   )
   ```
 
 - **Loading Data**: To load data, use the `load_data` method with the URL you wish to process.
-  ```python
-  documents = firecrawl_reader.load_data(url="http://example.com")
-  ```
+
+```python
+# For crawl or scrape mode
+documents = firecrawl_reader.load_data(url="http://example.com")
+# For search mode
+documents = firecrawl_reader.load_data(query="search term")
+```
 
 ### Example Usage
 
@@ -39,7 +43,7 @@ Here is an example demonstrating how to initialize the FireCrawlWebReader, load 
 # Initialize the FireCrawlWebReader with your API key and desired mode
 firecrawl_reader = FireCrawlWebReader(
     api_key="your_api_key_here",  # Replace with your actual API key
-    mode="crawl",  # Choose between "crawl" and "scrape"
+    mode="crawl",  # Choose between "crawl", "scrape", and "search"
     params={"additional": "parameters"},  # Optional additional parameters
 )
 
