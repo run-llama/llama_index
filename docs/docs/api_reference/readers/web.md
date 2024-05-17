@@ -3,6 +3,7 @@
       members:
         - AsyncWebPageReader
         - BeautifulSoupWebReader
+        - BrowserbaseWebReader
         - KnowledgeBaseWebReader
         - MainContentExtractorReader
         - NewsArticleReader
