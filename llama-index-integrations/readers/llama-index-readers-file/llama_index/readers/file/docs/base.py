@@ -68,13 +68,14 @@ class PDFReader(BaseReader):
 
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
-                text = ""
                 metadata = {"file_name": file.name}
+                if extra_info is not None:
+                    metadata.update(extra_info)
 
-                for page in range(num_pages):
-                    # Extract the text from the page
-                    page_text = pdf.pages[page].extract_text()
-                    text += page_text
+                # Join text extracted from each page
+                text = "\n".join(
+                    pdf.pages[page].extract_text() for page in range(num_pages)
+                )
 
                 docs.append(Document(text=text, metadata=metadata))
 

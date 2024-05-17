@@ -111,8 +111,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
 
-    _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _client: qdrant_client.QdrantClient = PrivateAttr()
+    _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
     _collection_initialized: bool = PrivateAttr()
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
@@ -273,6 +273,86 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return points, ids
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Get nodes from the index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        response = self._client.scroll(
+            collection_name=self.collection_name,
+            limit=9999,
+            scroll_filter=filter,
+        )
+
+        return self.parse_to_query_result(response[0]).nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Asynchronous method to get nodes from the index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        response = await self._aclient.scroll(
+            collection_name=self.collection_name,
+            limit=9999,
+            scroll_filter=filter,
+        )
+
+        return self.parse_to_query_result(response[0]).nodes
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """
         Add nodes to index.
@@ -373,6 +453,90 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ]
             ),
         )
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete nodes using with node_ids.
+
+        Args:
+            node_ids (Optional[List[str]): List of node IDs to delete.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        self._client.delete(
+            collection_name=self.collection_name,
+            points_selector=filter,
+        )
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Asynchronous method to delete nodes using with node_ids.
+
+        Args:
+            node_ids (Optional[List[str]): List of node IDs to delete.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        await self._aclient.delete(
+            collection_name=self.collection_name,
+            points_selector=filter,
+        )
+
+    def clear(self) -> None:
+        """
+        Clear the index.
+        """
+        self._client.delete_collection(collection_name=self.collection_name)
+        self._collection_initialized = False
+
+    async def aclear(self) -> None:
+        """
+        Asynchronous method to clear the index.
+        """
+        await self._aclient.delete_collection(collection_name=self.collection_name)
+        self._collection_initialized = False
 
     @property
     def client(self) -> Any:
@@ -766,8 +930,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     relationships=relationships,
                 )
             nodes.append(node)
-            similarities.append(point.score)
             ids.append(str(point.id))
+            try:
+                similarities.append(point.score)
+            except AttributeError:
+                # certain requests do not return a score
+                similarities.append(1.0)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 

@@ -40,7 +40,7 @@ from llama_index.core.settings import (
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         )
 
     @property
-    def vector_store(self) -> VectorStore:
+    def vector_store(self) -> BasePydanticVectorStore:
         return self._vector_store
 
     def as_retriever(

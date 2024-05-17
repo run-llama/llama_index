@@ -21,13 +21,13 @@ def asyncio_module(show_progress: bool = False) -> Any:
 
 
 def asyncio_run(coro: Coroutine) -> Any:
+    """Gets an existing event loop to run the coroutine.
+
+    If there is no existing event loop, creates a new one.
+    """
     try:
-        loop = asyncio.get_running_loop()
-        return (
-            asyncio.ensure_future(coro)
-            if loop.is_running()
-            else loop.run_until_complete(coro)
-        )
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(coro)
     except RuntimeError:
         return asyncio.run(coro)
 

@@ -382,8 +382,7 @@ class BedrockEmbedding(BaseEmbedding):
             Sample Payload of type dict of following format
             {
                 'texts': ["This is a test document", "This is another document"],
-                'input_type': 'search_document',
-                'truncate': 'NONE'
+                'input_type': 'search_document'
             }
 
         """
@@ -402,7 +401,6 @@ class BedrockEmbedding(BaseEmbedding):
                 {
                     "texts": payload,
                     "input_type": input_types[input_type],
-                    "truncate": "NONE",
                 }
             )
         else:

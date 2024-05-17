@@ -15,7 +15,7 @@ logger.setLevel(logging.WARNING)
 
 
 def get_default_llm() -> LLM:
-    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
     return OpenAI(model="gpt-3.5-turbo-16k")
 

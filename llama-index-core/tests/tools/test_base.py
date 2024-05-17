@@ -7,7 +7,7 @@ from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools.function_tool import FunctionTool
 
 try:
-    import langchain
+    import langchain  # pants: no-infer-dep
 except ImportError:
     langchain = None  # type: ignore
 

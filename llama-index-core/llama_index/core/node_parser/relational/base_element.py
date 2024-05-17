@@ -246,6 +246,7 @@ class BaseElementNodeParser(NodeParser):
         self,
         elements: List[Element],
         metadata_inherited: Optional[Dict[str, Any]] = None,
+        ref_doc_text: Optional[str] = None,
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
         from llama_index.core.node_parser import SentenceSplitter
@@ -300,13 +301,26 @@ class BaseElementNodeParser(NodeParser):
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
 
+                # attempt to find start_char_idx for table
+                # raw table string regardless if perfect or not is stored in element.element
+                start_char_idx = ref_doc_text.find(str(element.element))
+                if start_char_idx >= 0:
+                    end_char_idx = start_char_idx + len(str(element.element))
+                else:
+                    start_char_idx = None
+                    end_char_idx = None
+
                 # shared index_id and node_id
                 node_id = str(uuid.uuid4())
                 index_node = IndexNode(
                     text=table_summary,
-                    metadata={"col_schema": col_schema},
+                    metadata={
+                        "col_schema": col_schema,
+                    },
                     excluded_embed_metadata_keys=["col_schema"],
                     index_id=node_id,
+                    start_char_idx=start_char_idx,
+                    end_char_idx=end_char_idx,
                 )
 
                 table_str = table_summary + "\n" + table_md
@@ -326,6 +340,8 @@ class BaseElementNodeParser(NodeParser):
                     },
                     excluded_embed_metadata_keys=["table_df", "table_summary"],
                     excluded_llm_metadata_keys=["table_df", "table_summary"],
+                    start_char_idx=start_char_idx,
+                    end_char_idx=end_char_idx,
                 )
                 nodes.extend([index_node, text_node])
             else:
