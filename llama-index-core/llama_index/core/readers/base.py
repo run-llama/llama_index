@@ -71,7 +71,7 @@ class BasePydanticReader(BaseReader, BaseComponent):
         arbitrary_types_allowed = True
 
 
-class BaseResourcesReader(BaseReader):
+class ResourcesReaderMixin(ABC):
     """
     Base class for readers that provide access to different types of resources.
 
