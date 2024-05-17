@@ -198,7 +198,7 @@ class VectorMemory(BaseMemory):
             last_node_id = self.chat_store.delete_last_message(
                 self.chat_store_key
             ).content
-            self.vector_index._vector_store.delete_nodes([last_node_id])
+            self.vector_index.delete_nodes([last_node_id])
 
         self.vector_index.insert_nodes([super_node])
         self.chat_store.add_message(self.chat_store_key, ChatMessage(content=node_id))
@@ -225,7 +225,7 @@ class VectorMemory(BaseMemory):
         """Reset chat history."""
         node_id_msgs = self.chat_store.get_messages(self.chat_store_key)
         node_ids = [msg.content for msg in node_id_msgs]
-        self.vector_index._vector_store.delete_nodes(node_ids)
+        self.vector_index.delete_nodes(node_ids)
 
         # delete from chat history
         self.chat_store.delete_messages(self.chat_store_key)
