@@ -89,7 +89,7 @@ class WordliftVectorStore(VectorStore):
                 node_id=node.node_id,
                 embeddings=node.get_embedding(),
                 text=node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                metadata={},
+                metadata=metadata,
             )
             requests.append(entry)
 
