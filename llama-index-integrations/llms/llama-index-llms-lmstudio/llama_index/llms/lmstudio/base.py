@@ -89,7 +89,7 @@ class LMStudio(CustomLLM):
 
     def __create_payload_from_messages(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         return {
             "model": self.model_name,
             "messages": [
