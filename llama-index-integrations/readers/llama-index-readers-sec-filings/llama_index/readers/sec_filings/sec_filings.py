@@ -332,6 +332,7 @@ class SECExtractor:
             {
                 "User-Agent": f"{company} {email}",
                 "Content-Type": "text/html",
+                "Host": "www.sec.gov",
             }
         )
         return session
