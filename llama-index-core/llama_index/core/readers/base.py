@@ -73,7 +73,7 @@ class BasePydanticReader(BaseReader, BaseComponent):
 
 class ResourcesReaderMixin(ABC):
     """
-    Base class for readers that provide access to different types of resources.
+    Mixin for readers that provide access to different types of resources.
 
     Resources refer to specific data entities that can be accessed by the reader.
     Examples of resources include files for a filesystem reader, channel IDs for a Slack reader, or pages for a Notion reader.
