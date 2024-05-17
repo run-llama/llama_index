@@ -56,7 +56,7 @@ class BaseMemory(BaseComponent):
         """Reset chat history."""
 
 
-class BaseChatStoreMemory(BaseComponent):
+class BaseChatStoreMemory(BaseMemory):
     """Base class for any .
 
     NOTE: The interface for memory is not yet finalized and is subject to change.
@@ -76,7 +76,7 @@ class BaseChatStoreMemory(BaseComponent):
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
-    ) -> "BaseMemory":
+    ) -> "BaseChatStoreMemory":
         """Create a chat memory from defaults."""
 
     def get_all(self) -> List[ChatMessage]:
