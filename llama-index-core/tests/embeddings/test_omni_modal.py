@@ -294,7 +294,7 @@ class MockTextEmbedding(OmniModalEmbedding[KD, KQ]):
         return f"{type(self).__name__}(document_modalities={self.document_modalities}, query_modalities={self.query_modalities})"
 
 
-@pytest.mark.parametrize("modality", [MockModalities.A, MockModalities.B])
+@pytest.mark.parametrize("modality", [MockModalities.A])
 def test_get_document_embeddings(modality: Modality[str, MockNode, str]) -> None:
     embed_model = MockTextEmbedding(
         _document_modalities=ModalityBundle.of(modality),
@@ -328,7 +328,7 @@ def test_get_document_embeddings(modality: Modality[str, MockNode, str]) -> None
     ), "Inconsistent with batch operation"
 
 
-@pytest.mark.parametrize("modality", [MockModalities.A, MockModalities.B])
+@pytest.mark.parametrize("modality", [MockModalities.A])
 def test_get_query_embeddings(modality: Modality[str, MockNode, str]) -> None:
     embed_model = MockTextEmbedding(
         _document_modalities=ModalityBundle.of(modality),

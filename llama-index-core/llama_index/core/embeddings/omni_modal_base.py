@@ -1117,9 +1117,8 @@ class OmniModalEmbeddingBundle(
 
         for modality, node_datas in node_datas_by_modality:
             embedder = embedder_by_modality[modality]
-            node_items, data_items = [e[0] for e in node_datas], [
-                e[1] for e in node_datas
-            ]
+            node_items = [e[0] for e in node_datas]
+            data_items = [e[1] for e in node_datas]
 
             embeddings = embedder.get_document_embedding_batch(
                 modality.key, data_items, show_progress=show_progress
@@ -1143,9 +1142,8 @@ class OmniModalEmbeddingBundle(
 
         for modality, node_datas in node_datas_by_modality:
             embedder = embedder_by_modality[modality]
-            node_items, data_items = [e[0] for e in node_datas], [
-                e[1] for e in node_datas
-            ]
+            node_items = [e[0] for e in node_datas]
+            data_items = [e[1] for e in node_datas]
 
             embeddings = await embedder.aget_document_embedding_batch(
                 modality.key, data_items, show_progress=show_progress
