@@ -258,7 +258,7 @@ class BaseLLM(ChainableMixin, BaseComponent):
     def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
         dispatcher = instrumentation.get_dispatcher(cls.__module__)
-        for name in (
+        for attr in (
             "chat",
             "complete",
             "stream_chat",
@@ -268,5 +268,5 @@ class BaseLLM(ChainableMixin, BaseComponent):
             "astream_chat",
             "astream_complete",
         ):
-            if (method := cls.__dict__.get(name)) and callable(method):
-                setattr(cls, name, dispatcher.span(method))
+            if callable(method := cls.__dict__.get(attr)):
+                setattr(cls, attr, dispatcher.span(method))
