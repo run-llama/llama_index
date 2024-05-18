@@ -22,7 +22,6 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.dialects.postgresql import JSONB
-from pydantic import StrictStr
 from sqlalchemy import text, TEXT, Table, Column, String, create_engine, Engine, insert
 
 logger = logging.getLogger(__name__)
@@ -77,21 +76,22 @@ class RelytVectorStore(BasePydanticVectorStore):
         connection_url: str,
         collection_name: str,
         dimension: int,
-        enable_vector_index: bool,
+        addition_columns: dict = None,
+        enable_vector_index: bool = False,
     ) -> None:
         self._client = create_engine(connection_url)
-        self._collection_name = f"collection_{collection_name}"
+        self._collection_name = collection_name
         self._dimension = dimension
         self._enable_vector_index = enable_vector_index
-        self.init_table()
-        self.init_index()
+        self.init_table(addition_columns)
+        self.init_index(addition_columns)
         super().__init__()
 
     @classmethod
     def class_name(cls) -> str:
         return "RelytStore"
 
-    def init_table(self):
+    def init_table(self, addition_columns: dict) -> None:
         with self._client.connect() as conn:
             with conn.begin():
                 table_query = text(
@@ -106,16 +106,63 @@ class RelytVectorStore(BasePydanticVectorStore):
                     table_statement = text(
                         f"""
                             CREATE TABLE {self._collection_name} (
-                                id TEXT PRIMARY KEY DEFAULT (md5(random()::text || clock_timestamp()::text)::uuid),
+                                id TEXT not null DEFAULT (md5(random()::text || clock_timestamp()::text)::uuid),
+                                collection_id text not null,
                                 embedding vector({self._dimension}),
                                 text TEXT,
-                                meta JSONB
-                            ) USING heap;
+                                meta JSONB,
+                                primary key (collection_id, id)
+                            ) distributed by (id) partition by range(collection_id);
                         """
                     )
                     conn.execute(table_statement)
+                    conn.execute(
+                        text(
+                            f"create table {self._collection_name}_part_default partition of {self._collection_name} default;"
+                        )
+                    )
+                    conn.execute(
+                        text(
+                            f"alter table {self._collection_name} alter column id set storage plain"
+                        )
+                    )
+                    conn.execute(
+                        text(
+                            f"alter table {self._collection_name} alter column collection_id set storage plain"
+                        )
+                    )
+                    conn.execute(
+                        text(
+                            f"alter table {self._collection_name} alter column embedding set storage plain"
+                        )
+                    )
+                    conn.execute(
+                        text(
+                            f"alter table {self._collection_name} alter column text set storage plain"
+                        )
+                    )
+                    conn.execute(
+                        text(
+                            f"alter table {self._collection_name} alter column meta set storage plain"
+                        )
+                    )
+                    if addition_columns is not None:
+                        alter_statement = f"ALTER TABLE {self._collection_name} "
+                        for column in addition_columns:
+                            type = addition_columns[column]
+                            conn.execute(
+                                text(
+                                    alter_statement
+                                    + f"ADD COLUMN {column} {type} GENERATED ALWAYS AS (meta->>'{column}') STORED;"
+                                )
+                            )
+                            conn.execute(
+                                text(
+                                    f"alter table {self._collection_name} alter column {column} set storage plain"
+                                )
+                            )
 
-    def init_index(self):
+    def init_index(self, addition_columns: dict) -> None:
         index_name = f"idx_{self._collection_name}_embedding"
         with self._client.connect() as conn:
             with conn.begin():
@@ -158,6 +205,10 @@ class RelytVectorStore(BasePydanticVectorStore):
                         f""" CREATE INDEX {index_name} ON {self._collection_name} USING gin (meta); """
                     )
                     conn.execute(index_statement)
+                    if addition_columns is not None:
+                        for column in addition_columns:
+                            column_index_statement = f" CREATE INDEX {self._collection_name}_{column} ON {self._collection_name} USING btree ({column}); "
+                            conn.execute(text(column_index_statement))
 
     @property
     def client(self) -> Any:
@@ -167,18 +218,6 @@ class RelytVectorStore(BasePydanticVectorStore):
         self,
         nodes: List[BaseNode],
     ) -> List[str]:
-        # records = [
-        #     Record(
-        #         id=node.id_,
-        #         text=node.get_content(metadata_mode=MetadataMode.NONE),
-        #         meta=node_to_metadata_dict(node, remove_text=True),
-        #         embedding=node.get_embedding(),
-        #     )
-        #     for node in nodes
-        # ]
-        #
-        # self._client.insert(records)
-        # return [node.id_ for node in nodes]
         from pgvecto_rs.sqlalchemy import Vector
 
         ids, content, embeddings, meta = zip(
@@ -193,11 +232,16 @@ class RelytVectorStore(BasePydanticVectorStore):
             ]
         )
 
-        # Define the table schema
+        collection_ids = []
+        for metadata in meta:
+            collection_ids.append(metadata["collection_id"])
+
+            # Define the table schema
         chunks_table = Table(
             self._collection_name,
             Base.metadata,
             Column("id", TEXT, primary_key=True),
+            Column("collection_id", TEXT, primary_key=True),
             Column("embedding", Vector(self._dimension)),
             Column("text", String, nullable=True),
             Column("meta", JSONB, nullable=True),
@@ -207,12 +251,13 @@ class RelytVectorStore(BasePydanticVectorStore):
         chunks_table_data = []
         with self._client.connect() as conn:
             with conn.begin():
-                for document, metadata, chunk_id, embedding in zip(
-                    content, meta, ids, embeddings
+                for document, metadata, chunk_id, embedding, collection_id in zip(
+                    content, meta, ids, embeddings, collection_ids
                 ):
                     chunks_table_data.append(
                         {
                             "id": chunk_id,
+                            "collection_id": collection_id,
                             "embedding": embedding,
                             "text": document,
                             "meta": metadata,
@@ -276,7 +321,7 @@ class RelytVectorStore(BasePydanticVectorStore):
 
     def transformer_filter(self, filters) -> str:
         filter_statement = ""
-        for filter in filters:
+        for filter in filters.filters:
             if isinstance(filter, MetadataFilters):
                 f_stmt = self.transformer_filter(filter)
                 if filter_statement == "":
@@ -289,12 +334,12 @@ class RelytVectorStore(BasePydanticVectorStore):
                 key = filter.key
                 value = filter.value
                 op = filter.operator
-                if isinstance(value, StrictStr):
+                if isinstance(value, str):
                     value = f"'{value}'"
                 if op == FilterOperator.IN:
                     new_val = []
                     for v in value:
-                        if isinstance(v, StrictStr):
+                        if isinstance(v, str):
                             new_val.append(f"'{v}'")
                         else:
                             new_val.append(str(v))
@@ -323,7 +368,7 @@ class RelytVectorStore(BasePydanticVectorStore):
         filter_condition = ""
         filters = query.filters
 
-        if filters is not None:
+        if filters and filters.filters:
             filter_condition += f"WHERE {self.transformer_filter(filters)}"
 
         sql_query = f"""
