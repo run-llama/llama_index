@@ -15,6 +15,7 @@ from llama_index.core.embeddings.omni_modal_base import (
     NodeProcessor,
     NodeProcessors,
     OmniModalEmbedding,
+    OmniModalEmbeddingBundle,
     QueryProcessor,
 )
 from llama_index.core.schema import TextNode
@@ -192,36 +193,44 @@ def test_group_nodes_by_modality_partial_match():
 
 
 def test_modality_bundle_empty():
-    bundle = ModalityBundle()
+    bundle = ModalityBundle.of()
+
     assert not bundle
     assert len(bundle) == 0
     assert bundle == bundle
 
+    assert bundle.keys() == set()
+
 
 def test_modality_bundle_single():
-    bundle = ModalityBundle(Modalities.TEXT)
+    bundle = ModalityBundle.of(Modalities.TEXT)
+
     assert bundle
     assert len(bundle) == 1
     assert bundle == bundle
 
+    assert bundle.keys() == {Modalities.TEXT.key}
+
 
 def test_modality_bundle_two():
-    bundle = ModalityBundle(Modalities.TEXT, Modalities.IMAGE)
+    bundle = ModalityBundle.of(Modalities.TEXT, Modalities.IMAGE)
+
     assert bundle
     assert len(bundle) == 2
     assert bundle == bundle
 
-    assert bundle == ModalityBundle(
-        Modalities.IMAGE, Modalities.TEXT
-    ), "Key order should not matter"
+    assert bundle.keys() == {Modalities.TEXT.key, Modalities.IMAGE.key}
+
+    bundle2 = ModalityBundle.of(Modalities.IMAGE, Modalities.TEXT)
+    assert bundle == bundle2, "Key order should not matter"
 
 
 def test_modality_bundle_duplicate():
     with pytest.raises(ValueError, match="duplicate modality keys"):
-        ModalityBundle(Modalities.TEXT, Modalities.TEXT)
+        ModalityBundle.of(Modalities.TEXT, Modalities.TEXT)
 
     with pytest.raises(ValueError, match="duplicate modality keys"):
-        ModalityBundle(Modalities.TEXT, Modalities.IMAGE, Modalities.TEXT)
+        ModalityBundle.of(Modalities.TEXT, Modalities.IMAGE, Modalities.TEXT)
 
 
 def _mock_default_document_modalities():
@@ -280,6 +289,9 @@ class MockTextEmbedding(OmniModalEmbedding[KD, KQ]):
     ) -> Embedding:
         assert isinstance(data, str)
         return self._get_vector(data)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(document_modalities={self.document_modalities}, query_modalities={self.query_modalities})"
 
 
 @pytest.mark.parametrize("modality", [MockModalities.A, MockModalities.B])
@@ -405,3 +417,103 @@ def test_embedding_similarity_euclidean() -> None:
         query_embedding, text2_embedding, mode=SimilarityMode.EUCLIDEAN
     )
     assert euclidean_similarity1 < euclidean_similarity2
+
+
+def test_embedding_bundle_empty():
+    bundle = OmniModalEmbeddingBundle.of()
+
+    assert not bundle
+    assert len(bundle) == 0
+    assert bundle == bundle
+
+    assert bundle.document_modalities == ModalityBundle.of()
+    assert bundle.query_modalities == ModalityBundle.of()
+
+
+def test_embedding_bundle_single():
+    bundle = OmniModalEmbeddingBundle.of(
+        MockTextEmbedding(
+            _document_modalities=ModalityBundle.of(MockModalities.A),
+            _query_modalities=ModalityBundle.of(MockModalities.A),
+        ),
+    )
+
+    assert bundle
+    assert len(bundle) == 1
+    assert bundle == bundle
+
+    assert bundle.document_modalities == ModalityBundle.of(MockModalities.A)
+    assert bundle.query_modalities == ModalityBundle.of(MockModalities.A)
+
+
+def test_embedding_bundle_two():
+    emb_a = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(MockModalities.A),
+        _query_modalities=ModalityBundle.of(MockModalities.A),
+    )
+    emb_b = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(MockModalities.B),
+        _query_modalities=ModalityBundle.of(MockModalities.B),
+    )
+
+    bundle = OmniModalEmbeddingBundle.of(emb_a, emb_b)
+
+    assert bundle
+    assert len(bundle) == 2
+    assert bundle == bundle
+
+    assert bundle.document_modalities == ModalityBundle.of(
+        MockModalities.A, MockModalities.B
+    )
+    assert bundle.query_modalities == ModalityBundle.of(
+        MockModalities.A, MockModalities.B
+    )
+
+    bundle2 = OmniModalEmbeddingBundle.of(emb_b, emb_a)
+    assert bundle == bundle2, "Key order should not matter"
+
+
+def test_embedding_bundle_duplicate():
+    with pytest.raises(ValueError, match="duplicate document modalities"):
+        OmniModalEmbeddingBundle.of(
+            MockTextEmbedding(
+                _document_modalities=ModalityBundle.of(MockModalities.A),
+                _query_modalities=ModalityBundle.of(MockModalities.A),
+            ),
+            MockTextEmbedding(
+                _document_modalities=ModalityBundle.of(MockModalities.A),
+                _query_modalities=ModalityBundle.of(MockModalities.B),
+            ),
+        )
+
+    with pytest.raises(ValueError, match="duplicate document modalities"):
+        OmniModalEmbeddingBundle.of(
+            MockTextEmbedding(
+                _document_modalities=ModalityBundle.of(MockModalities.A),
+                _query_modalities=ModalityBundle.of(MockModalities.A),
+            ),
+            MockTextEmbedding(
+                _document_modalities=ModalityBundle.of(MockModalities.B),
+                _query_modalities=ModalityBundle.of(MockModalities.B),
+            ),
+            MockTextEmbedding(
+                _document_modalities=ModalityBundle.of(MockModalities.A),
+                _query_modalities=ModalityBundle.of(MockModalities.B),
+            ),
+        )
+
+    bundle = OmniModalEmbeddingBundle.of(
+        MockTextEmbedding(
+            _document_modalities=ModalityBundle.of(MockModalities.A),
+            _query_modalities=ModalityBundle.of(MockModalities.A),
+        ),
+        MockTextEmbedding(
+            _document_modalities=ModalityBundle.of(MockModalities.B),
+            _query_modalities=ModalityBundle.of(MockModalities.A),
+        ),
+    )
+
+    assert bundle.document_modalities == ModalityBundle.of(
+        MockModalities.A, MockModalities.B
+    )
+    assert bundle.query_modalities == ModalityBundle.of(MockModalities.A)

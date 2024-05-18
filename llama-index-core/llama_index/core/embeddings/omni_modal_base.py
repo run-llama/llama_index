@@ -294,7 +294,7 @@ class ModalityBundle(Mapping[K, Modality[K, Any, object]]):
     def of(*modalities: Modality[K_co, Any, object]) -> "ModalityBundle[K_co]":  # type: ignore
         return ModalityBundle(*modalities)
 
-    def __init__(self, *modalities: Modality) -> None:
+    def __init__(self, *modalities: Modality[K, Any, object]) -> None:
         super().__init__()
 
         if duplicate_keys := find_duplicates(modality.key for modality in modalities):
@@ -1011,8 +1011,17 @@ class OmniModalEmbeddingBundle(
     def __bool__(self) -> bool:
         return bool(self._embed_models)
 
+    def __eq__(self, other: object, /) -> bool:
+        return (
+            isinstance(other, OmniModalEmbeddingBundle)
+            and other._embed_model_by_document_modality
+            == self._embed_model_by_document_modality
+            and other._embed_models_by_query_modality
+            == self._embed_models_by_query_modality
+        )
+
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._embed_models})"
+        return f"{type(self).__name__}({list(self._embed_models)})"
 
     def model_post_init(self) -> None:
         super().model_post_init()
@@ -1038,26 +1047,26 @@ class OmniModalEmbeddingBundle(
 
         # Allow duplicates
         embed_models_by_query_modality: Dict[
-            Modality[KQ, Any, object], List[OmniModalEmbedding]
+            Modality[KQ, Any, object], List[OmniModalEmbedding[KD, KQ]]
         ] = defaultdict(list)
         for embed_model in embed_models:
             for modality in embed_model.query_modalities.values():
                 embed_models_by_query_modality[modality].append(embed_model)
 
-        self._embed_models_by_query_modality = embed_models_by_query_modality
+        # So that equality checks remain consistent
+        for ms in embed_models_by_query_modality.values():
+            ms.sort(key=lambda m: m.document_modalities.keys())
+
+        # Avoid defaultdict behaviour
+        self._embed_models_by_query_modality = dict(embed_models_by_query_modality)
 
     @cached_property
-    def document_modalities(self) -> Mapping[KD, Modality[KD, Any, object]]:
-        return {
-            modality.key: modality
-            for modality in self._embed_model_by_document_modality
-        }
+    def document_modalities(self) -> ModalityBundle[KD]:
+        return ModalityBundle.of(*self._embed_model_by_document_modality)
 
     @cached_property
-    def query_modalities(self) -> Mapping[KQ, Modality[KQ, Any, object]]:
-        return {
-            modality.key: modality for modality in self._embed_models_by_query_modality
-        }
+    def query_modalities(self) -> ModalityBundle[KQ]:
+        return ModalityBundle.of(*self._embed_models_by_query_modality)
 
     def get_document_embed_model(self, key: KD) -> OmniModalEmbedding[KD, KQ]:
         if key not in self.document_modalities:
@@ -1066,8 +1075,8 @@ class OmniModalEmbeddingBundle(
                 f"Supported modalities: {set(self.document_modalities.values())}"
             )
 
-        modality = self.document_modalities[key]
-        return self._embed_model_by_document_modality[modality]
+        doc_modality = self.document_modalities[key]
+        return self._embed_model_by_document_modality[doc_modality]
 
     def get_query_embed_models(self, key: KQ) -> Collection[OmniModalEmbedding[KD, KQ]]:
         if key not in self.query_modalities:
