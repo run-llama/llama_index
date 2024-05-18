@@ -2,15 +2,13 @@ import os
 
 import pytest
 
-# skip tests if below import is not found
-try:
-    from llama_index.embeddings.upstage import UpstageEmbedding
-except ImportError:
-    pytest.skip("Cannot import UpstageEmbedding", allow_module_level=True)
-
 
 @pytest.fixture()
 def upstage_embedding():
+    UpstageEmbedding = pytest.importorskip(
+        "llama_index.embeddings.upstage", reason="Cannot import UpstageEmbedding"
+    ).UpstageEmbedding
+
     if os.getenv("UPSTAGE_API_KEY") is None:
         pytest.skip("UPSTAGE_API_KEY is not set.")
     return UpstageEmbedding()
@@ -49,6 +47,9 @@ def test_upstage_embedding_text_embeddings(upstage_embedding):
 
 
 def test_upstage_embedding_text_embeddings_fail_large_batch():
+    UpstageEmbedding = pytest.importorskip(
+        "llama_index.embeddings.upstage", reason="Cannot import UpstageEmbedding"
+    ).UpstageEmbedding
     texts = ["hello"] * 2049
     with pytest.raises(ValueError):
         upstage_embedding = UpstageEmbedding(embed_batch_size=2049)
