@@ -2,9 +2,12 @@
 from typing import Any, List, Type
 from unittest.mock import patch
 
+import pytest
+
 from llama_index.core.base.embeddings.base import SimilarityMode
 from llama_index.core.embeddings.omni_modal_base import (
     Modality,
+    ModalityBundle,
     Modalities,
     NodeProcessor,
     NodeProcessors,
@@ -184,6 +187,35 @@ def test_group_nodes_by_modality_partial_match():
     }
 
     assert actual == expected
+
+
+def test_modality_bundle_empty():
+    bundle = ModalityBundle()
+    assert not bundle
+    assert len(bundle) == 0
+    assert bundle == bundle
+
+
+def test_modality_bundle_single():
+    bundle = ModalityBundle(Modalities.TEXT)
+    assert bundle
+    assert len(bundle) == 1
+    assert bundle == bundle
+
+
+def test_modality_bundle_two():
+    bundle = ModalityBundle(Modalities.TEXT, Modalities.IMAGE)
+    assert bundle
+    assert len(bundle) == 2
+    assert bundle == ModalityBundle(Modalities.IMAGE, Modalities.TEXT)
+
+
+def test_modality_bundle_duplicate():
+    with pytest.raises(ValueError, match="duplicate modality keys"):
+        ModalityBundle(Modalities.TEXT, Modalities.TEXT)
+
+    with pytest.raises(ValueError, match="duplicate modality keys"):
+        ModalityBundle(Modalities.TEXT, Modalities.IMAGE, Modalities.TEXT)
 
 
 def mock_get_text_embedding(text: str) -> List[float]:

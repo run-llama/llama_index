@@ -337,7 +337,10 @@ class ModalityBundle(Mapping[K, Modality[K, Any, object]]):
         return self._modalities_by_key.values()
 
     def __eq__(self, other: object, /) -> bool:
-        return isinstance(other, dict) and other == self._modalities_by_key
+        return (
+            isinstance(other, ModalityBundle)
+            and other._modalities_by_key == self._modalities_by_key
+        )
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._modalities_by_key})"
