@@ -2,7 +2,11 @@ import os
 
 import pytest
 
-from llama_index.embeddings.upstage import UpstageEmbedding
+# skip tests if below import is not found
+try:
+    from llama_index.embeddings.upstage import UpstageEmbedding
+except ImportError:
+    pytest.skip("Cannot import UpstageEmbedding", allow_module_level=True)
 
 
 @pytest.fixture()
