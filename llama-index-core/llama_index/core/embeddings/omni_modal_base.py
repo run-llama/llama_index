@@ -242,13 +242,16 @@ class ModalityBundle(Mapping[K, Modality[K, Any, object]]):
     # For better type annotations
     @overload
     @staticmethod
-    def of(__m1: Modality[_K1, Any, object]) -> "ModalityBundle[_K1]":
+    def of(
+        __m1: Modality[_K1, Any, object],
+    ) -> "ModalityBundle[_K1]":
         ...
 
     @overload
     @staticmethod
     def of(
-        __m1: Modality[_K1, Any, object], __m2: Modality[_K2, Any, object]
+        __m1: Modality[_K1, Any, object],
+        __m2: Modality[_K2, Any, object],
     ) -> "ModalityBundle[Union[_K1, _K2]]":
         ...
 
@@ -388,8 +391,6 @@ class GenericTransformComponent:
     def __getstate__(self) -> Dict[str, Any]:
         state = {"__dict__": self.__dict__}
 
-        state["__dict__"].pop("callback_manager")
-
         # tiktoken is not pickleable
         # state["__dict__"] = self.dict()
         state["__dict__"].pop("tokenizer", None)
@@ -428,9 +429,8 @@ class GenericTransformComponent:
         data = self.to_dict(**kwargs)
         return json.dumps(data)
 
-    # TODO: return type here not supported by current mypy version
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:
         if isinstance(kwargs, dict):
             data.update(kwargs)
 
@@ -438,10 +438,12 @@ class GenericTransformComponent:
         return cls(**data)
 
     @classmethod
-    def from_json(cls, data_str: str, **kwargs: Any) -> Self:  # type: ignore
+    def from_json(cls, data_str: str, **kwargs: Any) -> Self:
         data = json.loads(data_str)
         return cls.from_dict(data, **kwargs)
 
+    # Define post-init logic in `model_post_init` to avoid having to rename
+    # the method when switching to Pydantic V2
     def __post_init__(self) -> None:
         return self.model_post_init()
 
@@ -462,11 +464,24 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
 
     callback_manager: CallbackManager = field(default_factory=CallbackManager)
 
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().dict(**kwargs)
+
+        # Avoid having to repeat this code like in BaseEmbedding
+        data.pop("api_key", None)
+
+        # exclude not supported for dataclass field
+        data.pop("callback_manager", None)
+
+        return data
+
     def model_post_init(self) -> None:
         super().model_post_init()
 
-        if not 0 < self.embed_batch_size <= 2048:
-            msg = f"embed_batch_size is not in the range (0, 2048]. Found: {self.embed_batch_size}"
+        # gt/lte not supported for dataclass field
+        embed_batch_size = self.embed_batch_size
+        if not 0 < embed_batch_size <= 2048:
+            msg = f"embed_batch_size is not in the range (0, 2048]. Found: {embed_batch_size}"
             raise ValueError(msg)
 
     @staticmethod
@@ -926,14 +941,15 @@ class OmniModalEmbeddingBundle(
     @overload
     @staticmethod
     def of(
-        __m1: OmniModalEmbedding[_KD1, _KQ1]
+        __m1: OmniModalEmbedding[_KD1, _KQ1],
     ) -> "OmniModalEmbeddingBundle[_KD1, _KQ1]":
         ...
 
     @overload
     @staticmethod
     def of(
-        __m1: OmniModalEmbedding[_KD1, _KQ1], __m2: OmniModalEmbedding[_KD2, _KQ2]
+        __m1: OmniModalEmbedding[_KD1, _KQ1],
+        __m2: OmniModalEmbedding[_KD2, _KQ2],
     ) -> "OmniModalEmbeddingBundle[Union[_KQ1, _KQ2], Union[_KD1, _KD2]]":
         ...
 
