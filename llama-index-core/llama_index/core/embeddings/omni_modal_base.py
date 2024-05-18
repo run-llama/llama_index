@@ -554,7 +554,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
     def get_query_modality(self, key: KQ) -> Modality[KQ, Any, object]:
         if key not in self.query_modalities:
             raise ValueError(
-                f"The query modality ({key}) is not supported. "
+                f"The query modality (key={key}) is not supported. "
                 f"Supported modalities: {set(self.query_modalities.values())}"
             )
 
@@ -686,7 +686,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
     def get_document_modality(self, key: KD) -> Modality[KD, Any, object]:
         if key not in self.document_modalities:
             raise ValueError(
-                f"The document modality ({key}) is not supported. "
+                f"The document modality (key={key}) is not supported. "
                 f"Supported modalities: {set(self.document_modalities.values())}"
             )
 
@@ -1062,7 +1062,7 @@ class OmniModalEmbeddingBundle(
     def get_document_embed_model(self, key: KD) -> OmniModalEmbedding[KD, KQ]:
         if key not in self.document_modalities:
             raise ValueError(
-                f"The document modality ({key}) is not supported. "
+                f"The document modality (key={key}) is not supported. "
                 f"Supported modalities: {set(self.document_modalities.values())}"
             )
 
@@ -1072,7 +1072,7 @@ class OmniModalEmbeddingBundle(
     def get_query_embed_models(self, key: KQ) -> Collection[OmniModalEmbedding[KD, KQ]]:
         if key not in self.query_modalities:
             raise ValueError(
-                f"The query modality ({key}) is not supported. "
+                f"The query modality (key={key}) is not supported. "
                 f"Supported modalities: {set(self.query_modalities.values())}"
             )
 
@@ -1259,7 +1259,7 @@ class TextImageToImageEmbedding(OmniModalEmbedding[KD, Literal["text", "image"]]
         default_factory=_mm_default_document_modalities
     )
 
-    @cached_property
+    @property
     def document_modalities(self) -> ModalityBundle[KD]:
         return self._document_modalities
 

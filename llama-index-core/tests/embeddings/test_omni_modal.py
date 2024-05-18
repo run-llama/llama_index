@@ -1,11 +1,14 @@
 """Embeddings."""
+from dataclasses import dataclass, field
 from typing import Any, List, Type
-from unittest.mock import patch
 
 import pytest
 
-from llama_index.core.base.embeddings.base import SimilarityMode
+from llama_index.core.base.embeddings.base import Embedding, SimilarityMode
 from llama_index.core.embeddings.omni_modal_base import (
+    K,
+    KQ,
+    KD,
     Modality,
     ModalityBundle,
     Modalities,
@@ -14,7 +17,6 @@ from llama_index.core.embeddings.omni_modal_base import (
     OmniModalEmbedding,
     QueryProcessor,
 )
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.schema import TextNode
 from llama_index.core.utils import full_groupby
 
@@ -101,7 +103,7 @@ class MockNodeProcessors:
         return getattr(cls, name)
 
 
-def _create_modality(name: str) -> Modality[str, MockNode, str]:
+def _create_modality(name: K) -> Modality[K, MockNode, str]:
     return Modality(
         name,
         MockNodeProcessors.from_name(name),
@@ -137,7 +139,7 @@ class MockModalities:
         ]
 
     @classmethod
-    def from_name(cls, name: str) -> Modality[str, MockNode, str]:
+    def from_name(cls, name: K) -> Modality[K, MockNode, str]:
         return getattr(cls, name)
 
 
@@ -207,7 +209,11 @@ def test_modality_bundle_two():
     bundle = ModalityBundle(Modalities.TEXT, Modalities.IMAGE)
     assert bundle
     assert len(bundle) == 2
-    assert bundle == ModalityBundle(Modalities.IMAGE, Modalities.TEXT)
+    assert bundle == bundle
+
+    assert bundle == ModalityBundle(
+        Modalities.IMAGE, Modalities.TEXT
+    ), "Key order should not matter"
 
 
 def test_modality_bundle_duplicate():
@@ -218,42 +224,70 @@ def test_modality_bundle_duplicate():
         ModalityBundle(Modalities.TEXT, Modalities.IMAGE, Modalities.TEXT)
 
 
-def mock_get_text_embedding(text: str) -> List[float]:
-    """Mock get text embedding."""
-    # assume dimensions are 5
-    if text == "Hello world.":
-        return [1, 0, 0, 0, 0]
-    elif text == "This is a test.":
-        return [0, 1, 0, 0, 0]
-    elif text == "This is another test.":
-        return [0, 0, 1, 0, 0]
-    elif text == "This is a test v2.":
-        return [0, 0, 0, 1, 0]
-    elif text == "This is a test v3.":
-        return [0, 0, 0, 0, 1]
-    elif text == "This is bar test.":
-        return [0, 0, 1, 0, 0]
-    elif text == "Hello world backup.":
-        # this is used when "Hello world." is deleted.
-        return [1, 0, 0, 0, 0]
-    else:
-        raise ValueError("Invalid text for `mock_get_text_embedding`.")
+def _mock_default_document_modalities():
+    raise ValueError("No document modalities were provided")
 
 
-def mock_get_text_embeddings(texts: List[str]) -> List[List[float]]:
-    """Mock get text embeddings."""
-    return [mock_get_text_embedding(text) for text in texts]
+def _mock_default_query_modalities():
+    raise ValueError("No query modalities were provided")
 
 
-@patch.object(MockEmbedding, "_get_text_embedding", side_effect=mock_get_text_embedding)
-@patch.object(
-    MockEmbedding, "_get_text_embeddings", side_effect=mock_get_text_embeddings
-)
-def test_get_text_embeddings(
-    _mock_get_text_embeddings: Any, _mock_get_text_embedding: Any
-) -> None:
-    """Test get queued text embeddings."""
-    embed_model = OmniModalEmbedding.from_base(MockEmbedding(embed_dim=8))
+@dataclass
+class MockTextEmbedding(OmniModalEmbedding[KD, KQ]):
+    _document_modalities: ModalityBundle[KD] = field(
+        default_factory=_mock_default_query_modalities
+    )
+    _query_modalities: ModalityBundle[KQ] = field(
+        default_factory=_mock_default_document_modalities
+    )
+
+    @property
+    def document_modalities(self) -> ModalityBundle[KD]:
+        return self._document_modalities
+
+    @property
+    def query_modalities(self) -> ModalityBundle[KQ]:
+        return self._query_modalities
+
+    def _get_vector(self, text: str) -> Embedding:
+        # assume dimensions are 5
+        if text == "Hello world.":
+            return [1, 0, 0, 0, 0]
+        elif text == "This is a test.":
+            return [0, 1, 0, 0, 0]
+        elif text == "This is another test.":
+            return [0, 0, 1, 0, 0]
+        elif text == "This is a test v2.":
+            return [0, 0, 0, 1, 0]
+        elif text == "This is a test v3.":
+            return [0, 0, 0, 0, 1]
+        elif text == "This is bar test.":
+            return [0, 0, 1, 0, 0]
+        elif text == "Hello world backup.":
+            # this is used when "Hello world." is deleted.
+            return [1, 0, 0, 0, 0]
+        else:
+            raise ValueError("Invalid text for `mock_get_text_embedding`.")
+
+    def _get_query_embedding(
+        self, modality: Modality[KQ, Any, str], data: object
+    ) -> Embedding:
+        assert isinstance(data, str)
+        return self._get_vector(data)
+
+    def _get_document_embedding(
+        self, modality: Modality[KD, Any, str], data: object
+    ) -> Embedding:
+        assert isinstance(data, str)
+        return self._get_vector(data)
+
+
+@pytest.mark.parametrize("modality", [MockModalities.A, MockModalities.B])
+def test_get_document_embeddings(modality: Modality[str, MockNode, str]) -> None:
+    embed_model = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(modality),
+        _query_modalities=ModalityBundle.of(modality),
+    )
     texts_to_embed = []
     for i in range(8):
         texts_to_embed.append("Hello world.")
@@ -264,22 +298,92 @@ def test_get_text_embeddings(
     for i in range(4):
         texts_to_embed.append("This is a test v2.")
 
-    result_embeddings = embed_model.get_document_embedding_batch(
-        Modalities.TEXT.key, texts_to_embed
-    )
+    doc_embeddings = [
+        embed_model.get_document_embedding(modality.key, texts_to_embed[i])
+        for i in range(24)
+    ]
     for i in range(8):
-        assert result_embeddings[i] == [1, 0, 0, 0, 0]
+        assert doc_embeddings[i] == [1, 0, 0, 0, 0]
     for i in range(8, 16):
-        assert result_embeddings[i] == [0, 1, 0, 0, 0]
+        assert doc_embeddings[i] == [0, 1, 0, 0, 0]
     for i in range(16, 20):
-        assert result_embeddings[i] == [0, 0, 1, 0, 0]
+        assert doc_embeddings[i] == [0, 0, 1, 0, 0]
     for i in range(20, 24):
-        assert result_embeddings[i] == [0, 0, 0, 1, 0]
+        assert doc_embeddings[i] == [0, 0, 0, 1, 0]
+
+    assert doc_embeddings == embed_model.get_document_embedding_batch(
+        modality.key, texts_to_embed
+    ), "Inconsistent with batch operation"
+
+
+@pytest.mark.parametrize("modality", [MockModalities.A, MockModalities.B])
+def test_get_query_embeddings(modality: Modality[str, MockNode, str]) -> None:
+    embed_model = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(modality),
+        _query_modalities=ModalityBundle.of(modality),
+    )
+    texts_to_embed = []
+    for i in range(8):
+        texts_to_embed.append("Hello world.")
+    for i in range(8):
+        texts_to_embed.append("This is a test.")
+    for i in range(4):
+        texts_to_embed.append("This is another test.")
+    for i in range(4):
+        texts_to_embed.append("This is a test v2.")
+
+    query_embeddings = [
+        embed_model.get_query_embedding(modality.key, texts_to_embed[i])
+        for i in range(24)
+    ]
+    for i in range(8):
+        assert query_embeddings[i] == [1, 0, 0, 0, 0]
+    for i in range(8, 16):
+        assert query_embeddings[i] == [0, 1, 0, 0, 0]
+    for i in range(16, 20):
+        assert query_embeddings[i] == [0, 0, 1, 0, 0]
+    for i in range(20, 24):
+        assert query_embeddings[i] == [0, 0, 0, 1, 0]
+
+    qe1 = embed_model.get_agg_embedding_from_queries(modality.key, texts_to_embed[0:8])
+    qe2 = embed_model.get_agg_embedding_from_queries(modality.key, texts_to_embed[8:16])
+    qe3 = embed_model.get_agg_embedding_from_queries(
+        modality.key, texts_to_embed[16:20]
+    )
+    qe4 = embed_model.get_agg_embedding_from_queries(
+        modality.key, texts_to_embed[20:24]
+    )
+
+    assert (
+        query_embeddings == [qe1] * 8 + [qe2] * 8 + [qe3] * 4 + [qe4] * 4
+    ), "Inconsistent with batch operation"
+
+
+def test_get_document_embeddings_missing() -> None:
+    embed_model = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(MockModalities.A),
+        _query_modalities=ModalityBundle.of(MockModalities.A),
+    )
+
+    with pytest.raises(ValueError, match=r"document modality .* is not supported"):
+        embed_model.get_document_embedding(MockModalities.B.key, "")
+
+
+def test_get_query_embeddings_missing() -> None:
+    embed_model = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(MockModalities.A),
+        _query_modalities=ModalityBundle.of(MockModalities.A),
+    )
+
+    with pytest.raises(ValueError, match=r"query modality .* is not supported"):
+        embed_model.get_query_embedding(MockModalities.B.key, "")
 
 
 def test_embedding_similarity() -> None:
-    """Test embedding similarity."""
-    embed_model = OmniModalEmbedding.from_base(MockEmbedding(embed_dim=3))
+    embed_model = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(),
+        _query_modalities=ModalityBundle.of(),
+    )
     text_embedding = [3.0, 4.0, 0.0]
     query_embedding = [0.0, 1.0, 0.0]
     cosine = embed_model.similarity(query_embedding, text_embedding)
@@ -287,7 +391,10 @@ def test_embedding_similarity() -> None:
 
 
 def test_embedding_similarity_euclidean() -> None:
-    embed_model = OmniModalEmbedding.from_base(MockEmbedding(embed_dim=2))
+    embed_model = MockTextEmbedding(
+        _document_modalities=ModalityBundle.of(),
+        _query_modalities=ModalityBundle.of(),
+    )
     query_embedding = [1.0, 0.0]
     text1_embedding = [0.0, 1.0]  # further from query_embedding distance=1.414
     text2_embedding = [1.0, 1.0]  # closer to query_embedding distance=1.0
