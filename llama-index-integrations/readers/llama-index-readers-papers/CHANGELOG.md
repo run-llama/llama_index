@@ -2,7 +2,7 @@
 
 ## [0.1.6] - 2024-05-19
 
-- Fix issue with hidden temporary foler (#13577)
+- Fix issue with hidden temporary folder (#13577)
 
 ## [0.1.5] - 2024-05-07
 
