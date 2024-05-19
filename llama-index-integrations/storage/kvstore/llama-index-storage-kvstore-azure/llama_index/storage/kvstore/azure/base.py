@@ -3,7 +3,17 @@ import re
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from llama_index.core.storage.kvstore.types import (
@@ -30,7 +40,6 @@ STORAGE_PART_KEY_DELIMITER = "_part_"
 # https://learn.microsoft.com/en-us/azure/cosmos-db/concepts-limits#per-item-limits
 COSMOS_MAX_TOTAL_PROPERTIES_SIZE_BYTES = 2097152
 ODATA_SUPPORTED_TYPES = (bytes, bool, datetime, float, UUID, int, str)
-BUILT_IN_KEYS = {"PartitionKey", "RowKey", "Timestamp"}
 MISSING_ASYNC_CLIENT_ERROR_MSG = "AzureKVStore was not initialized with an async client"
 
 
@@ -92,7 +101,9 @@ class AzureKVStore(BaseKVStore):
         super().__init__(*args, **kwargs)
 
         self._table_client = cast(TableServiceClient, table_client)
-        self._atable_client = cast(Optional[AsyncTableServiceClient], atable_client)
+        self._atable_service_client = cast(
+            Optional[AsyncTableServiceClient], atable_client
+        )
 
     @classmethod
     def from_connection_string(
@@ -316,7 +327,7 @@ class AzureKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        if self._atable_client is None:
+        if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
 
         table_name = (
@@ -324,7 +335,9 @@ class AzureKVStore(BaseKVStore):
             if not collection
             else self._sanitize_table_name(collection)
         )
-        await self._atable_client.create_table_if_not_exists(table_name).upsert_entity(
+        await self._atable_service_client.create_table_if_not_exists(
+            table_name
+        ).upsert_entity(
             {
                 "PartitionKey": partition_key,
                 "RowKey": key,
@@ -335,7 +348,7 @@ class AzureKVStore(BaseKVStore):
 
     def put_all(
         self,
-        kv_pairs: List[Tuple[str, dict]],
+        kv_pairs: List[Tuple[str, Optional[dict]]],
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -346,7 +359,7 @@ class AzureKVStore(BaseKVStore):
         transactional upsert operations to optimize performance and ensure atomicity.
 
         Args:
-            kv_pairs (List[Tuple[str, dict]]): A list of tuples, where each tuple contains a key and its corresponding dictionary value.
+            kv_pairs (List[Tuple[str, Optional[dict]]]): A list of tuples, where each tuple contains a key and its corresponding dictionary value.
             collection (str, optional): The name of the table to store the values in. If not specified, uses a default table.
             partition_key (str, optional): The partition key used for storing the values. Defaults to 'default'.
             batch_size (int, optional): The number of operations to include in each transaction batch. Defaults to a sensible system-defined size.
@@ -365,14 +378,20 @@ class AzureKVStore(BaseKVStore):
             else self._sanitize_table_name(collection)
         )
         table_client = self._table_client.create_table_if_not_exists(table_name)
-        entities = [
-            {
+
+        entities = []
+        for key, val in kv_pairs:
+            entity = {
                 "PartitionKey": partition_key,
                 "RowKey": key,
-                **self._serialize(val),
             }
-            for key, val in kv_pairs
-        ]
+
+            if val is not None:
+                serialized_val = self._serialize(val)
+                entity.update(serialized_val)
+
+            entities.append(entity)
+
         for batch in (
             entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
         ):
@@ -382,7 +401,7 @@ class AzureKVStore(BaseKVStore):
 
     async def aput_all(
         self,
-        kv_pairs: List[Tuple[str, dict]],
+        kv_pairs: List[Tuple[str, Optional[dict]]],
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -393,7 +412,7 @@ class AzureKVStore(BaseKVStore):
         and performs asynchronous transactional upserts.
 
         Args:
-            kv_pairs (List[Tuple[str, dict]]): A list of tuples, where each tuple contains a key and its corresponding dictionary value.
+            kv_pairs (List[Tuple[str, Optional[dict]]]): A list of tuples, where each tuple contains a key and its corresponding dictionary value.
             collection (str, optional): The name of the table to store the values in. If not specified, uses a default table.
             partition_key (str, optional): The partition key used for storing the values. Defaults to 'default'.
             batch_size (int, optional): The number of operations to include in each transaction batch. Defaults to a sensible system-defined size.
@@ -407,26 +426,36 @@ class AzureKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        if self._atable_client is None:
+        if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
+
         table_name = (
             DEFAULT_COLLECTION
             if not collection
             else self._sanitize_table_name(collection)
         )
-        table_client = self._atable_client.create_table_if_not_exists(table_name)
-        entities = [
-            {
+
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
+            table_name
+        )
+
+        entities = []
+        for key, val in kv_pairs:
+            entity = {
                 "PartitionKey": partition_key,
                 "RowKey": key,
-                **self._serialize(val),
             }
-            for key, val in kv_pairs
-        ]
+
+            if val is not None:
+                serialized_val = self._serialize(val)
+                entity.update(serialized_val)
+
+            entities.append(entity)
+
         for batch in (
             entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
         ):
-            await table_client.submit_transaction(
+            await atable_client.submit_transaction(
                 (TransactionOperation.UPSERT, entity) for entity in batch
             )
 
@@ -462,6 +491,7 @@ class AzureKVStore(BaseKVStore):
             if not collection
             else self._sanitize_table_name(collection)
         )
+
         table_client = self._table_client.create_table_if_not_exists(table_name)
         try:
             entity = table_client.get_entity(partition_key=partition_key, row_key=key)
@@ -496,7 +526,7 @@ class AzureKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        if self._atable_client is None:
+        if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
 
         table_name = (
@@ -504,9 +534,11 @@ class AzureKVStore(BaseKVStore):
             if not collection
             else self._sanitize_table_name(collection)
         )
-        table_client = self._atable_client.create_table_if_not_exists(table_name)
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
+            table_name
+        )
         try:
-            entity = await table_client.get_entity(
+            entity = await atable_client.get_entity(
                 partition_key=partition_key, row_key=key
             )
             return self._deserialize(entity)
@@ -566,15 +598,17 @@ class AzureKVStore(BaseKVStore):
             ImportError: If the Azure data tables package is not installed.
             ValueError: If the AzureKVStore was not initialized with an asynchronous client.
         """
-        if self._atable_client is None:
+        if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
         table_name = (
             DEFAULT_COLLECTION
             if not collection
             else self._sanitize_table_name(collection)
         )
-        table_client = self._atable_client.create_table_if_not_exists(table_name)
-        entities = table_client.list_entities(
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
+            table_name
+        )
+        entities = atable_client.list_entities(
             filter=f"PartitionKey eq '{partition_key}'"
         )
         return {
@@ -635,16 +669,103 @@ class AzureKVStore(BaseKVStore):
             ImportError: If the Azure data tables package is not installed.
             ValueError: If the AzureKVStore was not initialized with an asynchronous client.
         """
-        if self._atable_client is None:
+        if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
         table_name = (
             DEFAULT_COLLECTION
             if not collection
             else self._sanitize_table_name(collection)
         )
-        table_client = self._atable_client.create_table_if_not_exists(table_name)
-        await table_client.delete_entity(partition_key=partition_key, row_key=key)
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
+            table_name
+        )
+        await atable_client.delete_entity(partition_key=partition_key, row_key=key)
         return True
+
+    def query(
+        self,
+        query_filter: str,
+        collection: str = None,
+    ) -> Generator[dict, None, None]:
+        """Retrieves a value by key from the specified table.
+
+        This method fetches the value associated with the given key from the specified table.
+        If the key is not found, it returns None.
+
+        Args:
+            key (str): The key to retrieve.
+            collection (str, optional): The name of the table to retrieve the value from. If not specified, uses a default table.
+            partition_key (str, optional): The partition key used for retrieving the value. Defaults to 'default'.
+
+        Returns:
+            Optional[dict]: The dictionary value associated with the key if found, otherwise None.
+
+        Raises:
+            ImportError: If the Azure data tables package is not installed.
+        """
+        try:
+            from azure.core.exceptions import ResourceNotFoundError
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
+        table_name = (
+            DEFAULT_COLLECTION
+            if not collection
+            else self._sanitize_table_name(collection)
+        )
+
+        table_client = self._table_client.create_table_if_not_exists(table_name)
+        try:
+            entities = table_client.query_entities(query_filter=query_filter)
+
+            return (self._deserialize(entity) for entity in entities)
+        except ResourceNotFoundError:
+            return None
+
+    async def aquery(
+        self,
+        query_filter: str,
+        collection: str = None,
+    ) -> Optional[AsyncGenerator[dict, None]]:
+        """Asynchronously retrieves a value by key from the specified table.
+
+        Similar to the synchronous get method, this performs an asynchronous fetch operation.
+
+        Args:
+            key (str): The key to retrieve.
+            collection (str, optional): The name of the table to retrieve the value from. If not specified, uses a default table.
+            partition_key (str, optional): The partition key used for retrieving the value. Defaults to 'default'.
+
+        Returns:
+            Optional[dict]: The dictionary value associated with the key if found, otherwise None.
+
+        Raises:
+            ImportError: If the Azure data tables package is not installed.
+            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
+        """
+        try:
+            from azure.core.exceptions import ResourceNotFoundError
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
+        if self._atable_service_client is None:
+            raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
+
+        table_name = (
+            DEFAULT_COLLECTION
+            if not collection
+            else self._sanitize_table_name(collection)
+        )
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
+            table_name
+        )
+        try:
+            entities = atable_client.query_entities(query_filter=query_filter)
+
+            return (self._deserialize(entity) async for entity in entities)
+
+        except ResourceNotFoundError:
+            return None
 
     @classmethod
     def _from_clients(
@@ -810,7 +931,7 @@ class AzureKVStore(BaseKVStore):
             dict: A dictionary with all values serialized as JSON strings.
         """
         item = {}
-        num_properties = len(value) + len(BUILT_IN_KEYS)
+        num_properties = len(value)
         total_property_size = 0
         for key, val in value.items():
             # Serialize all values for the sake of size calculation
@@ -891,10 +1012,6 @@ class AzureKVStore(BaseKVStore):
         parts_to_assemble = defaultdict(dict)
 
         for key, val in item.items():
-            # Skip built-in keys
-            if key in BUILT_IN_KEYS:
-                continue
-
             # Only attempt to deserialize strings
             if isinstance(val, str):
                 # Deserialize non-partial values
