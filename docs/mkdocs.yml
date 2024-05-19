@@ -357,6 +357,7 @@ nav:
           - ./examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
+          - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
       - Multi-Tenancy:
           - ./examples/multi_tenancy/multi_tenancy_rag.ipynb
       - Node Parsers & Text Splitters:
