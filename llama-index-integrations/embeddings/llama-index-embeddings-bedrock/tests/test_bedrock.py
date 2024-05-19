@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from unittest import TestCase
+from unittest import TestCase, mock
 
 import boto3
 from botocore.response import StreamingBody
@@ -12,7 +12,7 @@ class TestBedrockEmbedding(TestCase):
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
     bedrock_stubber = Stubber(bedrock_client)
 
-    def test_get_text_embedding_titan(self) -> None:
+    def _test_get_text_embedding(self, model, titan_body_kwargs=None):
         mock_response = {
             "embedding": [
                 0.017410278,
@@ -34,8 +34,9 @@ class TestBedrockEmbedding(TestCase):
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model=Models.TITAN_EMBEDDING,
+            model=model,
             client=self.bedrock_client,
+            titan_body_kwargs=titan_body_kwargs,
         )
 
         self.bedrock_stubber.activate()
@@ -44,6 +45,15 @@ class TestBedrockEmbedding(TestCase):
 
         self.bedrock_stubber.assert_no_pending_responses()
         self.assertEqual(embedding, mock_response["embedding"])
+
+    def test_get_text_embedding_titan_v1(self) -> None:
+        self._test_get_text_embedding(Models.TITAN_EMBEDDING)
+
+    def test_get_text_embedding_titan_v2(self) -> None:
+        self._test_get_text_embedding(Models.TITAN_EMBEDDING, titan_body_kwargs={
+            "dimensions": 512,
+            "normalize": True
+        })
 
     def test_get_text_embedding_cohere(self) -> None:
         mock_response = {

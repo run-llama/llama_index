@@ -20,6 +20,7 @@ class PROVIDERS(str, Enum):
 
 class Models(str, Enum):
     TITAN_EMBEDDING = "amazon.titan-embed-text-v1"
+    TITAN_EMBEDDING_V2_0 = "amazon.titan-embed-text-v2:0"
     TITAN_EMBEDDING_G1_TEXT_02 = "amazon.titan-embed-g1-text-02"
     COHERE_EMBED_ENGLISH_V3 = "cohere.embed-english-v3"
     COHERE_EMBED_MULTILINGUAL_V3 = "cohere.embed-multilingual-v3"
@@ -74,6 +75,9 @@ class BedrockEmbedding(BaseEmbedding):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the bedrock client."
     )
+    titan_body_kwargs: Dict[str, Any] = Field(
+        description="Additional kwargs for the Titan embed model request body.", exclude=True
+    )
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -88,6 +92,7 @@ class BedrockEmbedding(BaseEmbedding):
         botocore_session: Optional[Any] = None,
         botocore_config: Optional[Any] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        titan_body_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         timeout: float = 60.0,
         callback_manager: Optional[CallbackManager] = None,
@@ -100,6 +105,7 @@ class BedrockEmbedding(BaseEmbedding):
         **kwargs: Any,
     ):
         additional_kwargs = additional_kwargs or {}
+        titan_body_kwargs = titan_body_kwargs or {}
 
         session_kwargs = {
             "profile_name": profile_name,
@@ -109,7 +115,7 @@ class BedrockEmbedding(BaseEmbedding):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
-        config = None
+
         try:
             import boto3
             from botocore.config import Config
@@ -152,6 +158,7 @@ class BedrockEmbedding(BaseEmbedding):
             region_name=region_name,
             botocore_session=botocore_session,
             additional_kwargs=additional_kwargs,
+            titan_body_kwargs=titan_body_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
@@ -389,7 +396,12 @@ class BedrockEmbedding(BaseEmbedding):
         if provider == PROVIDERS.AMAZON:
             if isinstance(payload, list):
                 raise ValueError("Amazon provider does not support list of texts")
-            request_body = json.dumps({"inputText": payload})
+            # Titan Embedding V2.0 has additional body parameters
+            if self.model == Models.TITAN_EMBEDDING_V2_0:
+                request_body = json.dumps({"inputText": payload, **self.titan_body_kwargs})
+            else:
+                request_body = json.dumps({"inputText": payload})
+
         elif provider == PROVIDERS.COHERE:
             input_types = {
                 "text": "search_document",
