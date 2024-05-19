@@ -76,7 +76,8 @@ class BedrockEmbedding(BaseEmbedding):
         default_factory=dict, description="Additional kwargs for the bedrock client."
     )
     titan_body_kwargs: Dict[str, Any] = Field(
-        description="Additional kwargs for the Titan embed model request body.", exclude=True
+        description="Additional kwargs for the Titan embed model request body.",
+        exclude=True,
     )
     _client: Any = PrivateAttr()
 
@@ -398,7 +399,9 @@ class BedrockEmbedding(BaseEmbedding):
                 raise ValueError("Amazon provider does not support list of texts")
             # Titan Embedding V2.0 has additional body parameters
             if self.model == Models.TITAN_EMBEDDING_V2_0:
-                request_body = json.dumps({"inputText": payload, **self.titan_body_kwargs})
+                request_body = json.dumps(
+                    {"inputText": payload, **self.titan_body_kwargs}
+                )
             else:
                 request_body = json.dumps({"inputText": payload})
 

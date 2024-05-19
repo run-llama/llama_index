@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from unittest import TestCase, mock
+from unittest import TestCase
 
 import boto3
 from botocore.response import StreamingBody
@@ -50,10 +50,10 @@ class TestBedrockEmbedding(TestCase):
         self._test_get_text_embedding(Models.TITAN_EMBEDDING)
 
     def test_get_text_embedding_titan_v2(self) -> None:
-        self._test_get_text_embedding(Models.TITAN_EMBEDDING, titan_body_kwargs={
-            "dimensions": 512,
-            "normalize": True
-        })
+        self._test_get_text_embedding(
+            Models.TITAN_EMBEDDING,
+            titan_body_kwargs={"dimensions": 512, "normalize": True},
+        )
 
     def test_get_text_embedding_cohere(self) -> None:
         mock_response = {
