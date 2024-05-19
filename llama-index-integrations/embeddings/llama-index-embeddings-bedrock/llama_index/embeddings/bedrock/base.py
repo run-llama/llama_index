@@ -39,7 +39,7 @@ PROVIDER_SPECIFIC_IDENTIFIERS = {
 
 
 class BedrockEmbedding(BaseEmbedding):
-    model: str = Field(description="The modelId of the Bedrock model to use.")
+    model_name: str = Field(description="The modelId of the Bedrock model to use.")
     profile_name: Optional[str] = Field(
         description="The name of aws profile to use. If not given, then the default profile is used.",
         exclude=True,
@@ -345,12 +345,12 @@ class BedrockEmbedding(BaseEmbedding):
         if self._client is None:
             raise ValueError("Client not set")
 
-        provider = self.model.split(".")[0]
+        provider = self.model_name.split(".")[0]
         request_body = self._get_request_body(provider, payload, type)
 
         response = self._client.invoke_model(
             body=request_body,
-            modelId=self.model,
+            modelId=self.model_name,
             accept="application/json",
             contentType="application/json",
         )
@@ -368,7 +368,7 @@ class BedrockEmbedding(BaseEmbedding):
         return self._get_embedding(text, "text")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        provider = self.model.split(".")[0]
+        provider = self.model_name.split(".")[0]
         if provider == PROVIDERS.COHERE:
             return self._get_embedding(texts, "text")
         return super()._get_text_embeddings(texts)
@@ -398,7 +398,7 @@ class BedrockEmbedding(BaseEmbedding):
             if isinstance(payload, list):
                 raise ValueError("Amazon provider does not support list of texts")
             # Titan Embedding V2.0 has additional body parameters
-            if self.model == Models.TITAN_EMBEDDING_V2_0:
+            if self.model_name == Models.TITAN_EMBEDDING_V2_0:
                 request_body = json.dumps(
                     {"inputText": payload, **self.titan_body_kwargs}
                 )

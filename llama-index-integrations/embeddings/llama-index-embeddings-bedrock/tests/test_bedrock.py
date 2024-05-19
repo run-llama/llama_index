@@ -1,6 +1,7 @@
 import json
 from io import BytesIO
 from unittest import TestCase
+from typing import Dict, Any
 
 import boto3
 from botocore.response import StreamingBody
@@ -12,7 +13,9 @@ class TestBedrockEmbedding(TestCase):
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
     bedrock_stubber = Stubber(bedrock_client)
 
-    def _test_get_text_embedding(self, model, titan_body_kwargs=None):
+    def _test_get_text_embedding(
+        self, model: str, titan_body_kwargs: Dict[str, Any] = None
+    ):
         mock_response = {
             "embedding": [
                 0.017410278,
@@ -34,10 +37,11 @@ class TestBedrockEmbedding(TestCase):
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model=model,
+            model_name=model,
             client=self.bedrock_client,
             titan_body_kwargs=titan_body_kwargs,
         )
+        assert bedrock_embedding.model_name == model
 
         self.bedrock_stubber.activate()
         embedding = bedrock_embedding.get_text_embedding(text="foo bar baz")
@@ -51,7 +55,7 @@ class TestBedrockEmbedding(TestCase):
 
     def test_get_text_embedding_titan_v2(self) -> None:
         self._test_get_text_embedding(
-            Models.TITAN_EMBEDDING,
+            Models.TITAN_EMBEDDING_V2_0,
             titan_body_kwargs={"dimensions": 512, "normalize": True},
         )
 
@@ -73,7 +77,7 @@ class TestBedrockEmbedding(TestCase):
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model=Models.COHERE_EMBED_ENGLISH_V3,
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
             client=self.bedrock_client,
         )
 
@@ -104,7 +108,7 @@ class TestBedrockEmbedding(TestCase):
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model=Models.COHERE_EMBED_ENGLISH_V3,
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
             client=self.bedrock_client,
         )
 
