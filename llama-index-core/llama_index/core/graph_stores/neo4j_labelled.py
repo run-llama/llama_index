@@ -1,5 +1,7 @@
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict, Optional, Tuple
 import neo4j
+from llama_index.core.vector_stores.types import VectorStoreQuery
+
 
 from llama_index.core.graph_stores.types import (
     LabelledPropertyGraphStore,
@@ -34,8 +36,8 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         graph (Optional[LabelledPropertyGraph]): Labelled property graph to initialize the store.
     """
 
-    supports_structured_queries: bool = False
-    supports_vector_queries: bool = False
+    supports_structured_queries: bool = True
+    supports_vector_queries: bool = True
 
     def __init__(
         self,
@@ -102,7 +104,8 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         MERGE (source:`__Entity__` {name: row.source_id})
         MERGE (target:`__Entity__` {name: row.target_id})
         WITH source, target, row
-        CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
+        //CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
+        CALL apoc.merge.relationship(source, row.label, {}, {}, target) YIELD rel
         RETURN count(*)        
         """, param_map={"data": params})
 
@@ -112,6 +115,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
+        print(properties, ids)
         cypher_statement = "MATCH (e:`__Entity__`) "
         params = {}
         if properties or ids:
@@ -143,6 +147,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             relation_names: Optional[List[str]] = None,
             properties: Optional[dict] = None,
             ids: Optional[List[str]] = None) -> List[Triplet]:
+        print(entity_names, properties, ids)
         # TODO: Handle ids
         cypher_statement = "MATCH (e:`__Entity__`) "
         params = {}
@@ -224,6 +229,25 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         with self._driver.session(database=self._database) as session:
             result = session.run(query, param_map)
             return [d.data() for d in result]
+    def vector_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> List[Tuple[LabelledNode, float]]:
+        """Query the graph store with a vector store query."""
+        data = self.database_query("""MATCH (e:`__Entity__`)
+        WHERE e.embedding IS NOT NULL AND size(e.embedding) =
+        WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
+        ORDER BY score DESC LIMIT toInteger($limit)
+        RETURN e.name AS name,
+               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
+               e{.* , embedding: Null, name: Null} AS properties,
+               score""", param_map={"embedding": query.query_embedding, 
+                                    "dimension": len(query.query_embedding),
+                                    "limit": query.similarity_top_k})
+        nodes_with_score = []
+        for record in data:
+            node = EntityNode(name=record["name"], type=record["type"], properties=remove_empty_values(record['properties']))
+            nodes_with_score.append((node, record['score']))
+        return nodes_with_score
 
     def delete(
         self,
@@ -240,6 +264,4 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
     def structured_query(self):
         pass
     def upsert_triplets(self):
-        pass
-    def vector_query(self):
         pass
