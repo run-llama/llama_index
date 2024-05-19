@@ -173,7 +173,9 @@ class BedrockEmbedding(BaseEmbedding):
     def list_supported_models() -> Dict[str, List[str]]:
         list_models = {}
         for provider in PROVIDERS:
-            list_models[provider.value] = [m.value for m in Models]
+            list_models[provider.value] = [
+                m.value for m in Models if provider.value in m.value
+            ]
         return list_models
 
     @classmethod

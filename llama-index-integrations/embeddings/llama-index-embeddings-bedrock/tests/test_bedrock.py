@@ -152,4 +152,18 @@ class TestBedrockEmbedding(TestCase):
             self.assertEqual(embedding[i], mock_response["embeddings"][i])
 
     def test_list_supported_models(self):
-        pass
+        exp_dict = {
+            "amazon": [
+                "amazon.titan-embed-text-v1",
+                "amazon.titan-embed-text-v2:0",
+                "amazon.titan-embed-g1-text-02",
+            ],
+            "cohere": ["cohere.embed-english-v3", "cohere.embed-multilingual-v3"],
+        }
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.COHERE_EMBED_ENGLISH_V3,
+            client=self.bedrock_client,
+        )
+
+        assert bedrock_embedding.list_supported_models() == exp_dict
