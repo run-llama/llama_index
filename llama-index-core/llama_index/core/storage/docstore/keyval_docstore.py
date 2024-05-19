@@ -3,7 +3,6 @@
 import asyncio
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.async_utils import asyncio_run
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
@@ -224,6 +223,7 @@ class KVDocumentStore(BaseDocumentStore):
             collection=self._node_collection,
             batch_size=batch_size,
         )
+
         self._kvstore.put_all(
             metadata_kv_pairs,
             collection=self._metadata_collection,
@@ -322,33 +322,23 @@ class KVDocumentStore(BaseDocumentStore):
             ref_doc_kv_pairs,
         ) = await self._async_prepare_kv_pairs(nodes, allow_update, store_text)
 
-        coroutines = []
-
-        coroutines.append(
+        await asyncio.gather(
             self._kvstore.aput_all(
                 node_kv_pairs,
                 collection=self._node_collection,
                 batch_size=batch_size,
-            )
-        )
-
-        coroutines.append(
+            ),
             self._kvstore.aput_all(
                 metadata_kv_pairs,
                 collection=self._metadata_collection,
                 batch_size=batch_size,
-            )
-        )
-
-        coroutines.append(
+            ),
             self._kvstore.aput_all(
                 ref_doc_kv_pairs,
                 collection=self._ref_doc_collection,
                 batch_size=batch_size,
-            )
+            ),
         )
-
-        asyncio_run(asyncio.gather(*coroutines))
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
         """Get a document from the store.
@@ -507,47 +497,45 @@ class KVDocumentStore(BaseDocumentStore):
         Helper function to remove node doc_id from ref_doc_collection.
         If ref_doc has no more doc_ids, delete it from the collection.
         """
-        ref_doc_id = await self._aget_ref_doc_id(doc_id)
-        if ref_doc_id is None:
-            return
-        ref_doc_info = await self._kvstore.aget(
-            ref_doc_id, collection=self._ref_doc_collection
+        ref_doc_id, ref_doc_info = await asyncio.gather(
+            self._aget_ref_doc_id(doc_id),
+            self.aget_ref_doc_info(doc_id),
         )
-        if ref_doc_info is None:
+        if ref_doc_id is None or ref_doc_info is None:
             return
-        ref_doc_obj = RefDocInfo(**ref_doc_info)
-        if doc_id in ref_doc_obj.node_ids:  # sanity check
-            ref_doc_obj.node_ids.remove(doc_id)
+
+        if doc_id in ref_doc_info.node_ids:  # sanity check
+            ref_doc_info.node_ids.remove(doc_id)
         # delete ref_doc from collection if it has no more doc_ids
-        if len(ref_doc_obj.node_ids) > 0:
+        if len(ref_doc_info.node_ids) > 0:
             await self._kvstore.aput(
                 ref_doc_id,
-                ref_doc_obj.to_dict(),
+                ref_doc_info.to_dict(),
                 collection=self._ref_doc_collection,
             )
         else:
-            await self._kvstore.adelete(
-                ref_doc_id, collection=self._metadata_collection
+            await asyncio.gather(
+                self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection),
+                self._kvstore.adelete(ref_doc_id, collection=self._node_collection),
+                self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection),
             )
-            await self._kvstore.adelete(ref_doc_id, collection=self._node_collection)
-            await self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection)
 
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
         self._remove_from_ref_doc_node(doc_id)
         delete_success = self._kvstore.delete(doc_id, collection=self._node_collection)
-        _ = self._kvstore.delete(doc_id, collection=self._metadata_collection)
+        self._kvstore.delete(doc_id, collection=self._metadata_collection)
 
         if not delete_success and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
 
     async def adelete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
-        await self._aremove_from_ref_doc_node(doc_id)
-        delete_success = await self._kvstore.adelete(
-            doc_id, collection=self._node_collection
+        _, delete_success, _ = await asyncio.gather(
+            self._aremove_from_ref_doc_node(doc_id),
+            self._kvstore.adelete(doc_id, collection=self._node_collection),
+            self._kvstore.adelete(doc_id, collection=self._metadata_collection),
         )
-        _ = await self._kvstore.adelete(doc_id, collection=self._metadata_collection)
 
         if not delete_success and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
@@ -588,9 +576,11 @@ class KVDocumentStore(BaseDocumentStore):
             await self.adelete_document(doc_id, raise_error=False)
 
         # Deleting all the nodes should already delete the ref_doc, but just to be sure
-        await self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection)
-        await self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection)
-        await self._kvstore.adelete(ref_doc_id, collection=self._node_collection)
+        await asyncio.gather(
+            self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection),
+            self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection),
+            self._kvstore.adelete(ref_doc_id, collection=self._node_collection),
+        )
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""

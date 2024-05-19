@@ -44,10 +44,8 @@ MISSING_ASYNC_CLIENT_ERROR_MSG = "AzureKVStore was not initialized with an async
 
 
 class ServiceMode(str, Enum):
-    """Whether the AzureKVStore operates on an Azure Table Storage or Cosmos DB.
-
-    Args:
-        Enum (Enum): The enumeration type for the service mode.
+    """
+    Whether the AzureKVStore operates on an Azure Table Storage or Cosmos DB.
     """
 
     COSMOS = "cosmos"
@@ -55,12 +53,11 @@ class ServiceMode(str, Enum):
 
 
 class AzureKVStore(BaseKVStore):
-    """Provides a key-value store interface for Azure Table Storage and Cosmos DB.
-
-    This class supports both synchronous and asynchronous operations on Azure Table Storage
-    and Cosmos DB, allowing for operations like put, get, delete on key-value pairs.
-    It supports connecting to the service using different credentials and manages table creation
-    and data serialization to conform to the storage requirements.
+    """Provides a key-value store interface for Azure Table Storage and Cosmos
+    DB. This class supports both synchronous and asynchronous operations on
+    Azure Table Storage and Cosmos DB. It supports connecting to the service
+    using different credentials and manages table creation and data
+    serialization to conform to the storage requirements.
     """
 
     def __init__(
@@ -71,23 +68,7 @@ class AzureKVStore(BaseKVStore):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        """
-        Initializes the AzureKVStore with Azure Table Storage clients.
-
-        This constructor initializes the key-value store with either Azure Table Storage or Cosmos DB clients,
-        allowing for both synchronous and asynchronous operations. It also sets the service mode to dictate
-        specific behaviors and limitations based on the selected storage service.
-
-        Args:
-            table_client (TableServiceClient): The client for synchronous operations, initialized externally.
-            atable_client (Optional[AsyncTableServiceClient]): The client for asynchronous operations, initialized externally. Optional.
-            service_mode (ServiceMode): Determines if the store operates using Azure Table Storage or Cosmos DB. Default is STORAGE.
-            *args: Variable length argument list to be passed to the superclass initializer.
-            **kwargs: Arbitrary keyword arguments to be passed to the superclass initializer.
-
-        Raises:
-            ImportError: If the Azure data tables package is not available.
-        """
+        """Initializes the AzureKVStore with Azure Table Storage clients."""
         try:
             from azure.data.tables import TableServiceClient
             from azure.data.tables.aio import (
@@ -113,24 +94,7 @@ class AzureKVStore(BaseKVStore):
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
-        """
-        Creates an instance of AzureKVStore using a connection string.
-
-        This class method initializes the AzureKVStore using a connection string that provides credentials
-        and the necessary configuration to connect to an Azure Table Storage or Cosmos DB.
-
-        Args:
-            connection_string (str): The connection string that includes credentials and other connection details.
-            service_mode (ServiceMode): Specifies the service mode, either Azure Table Storage or Cosmos DB. Default is STORAGE.
-            *args: Variable length argument list for further initialization.
-            **kwargs: Arbitrary keyword arguments for further initialization.
-
-        Returns:
-            AzureKVStore: An initialized AzureKVStore instance.
-
-        Raises:
-            ImportError: If the required Azure SDK libraries are not installed.
-        """
+        """Creates an instance of AzureKVStore using a connection string."""
         try:
             from azure.data.tables import TableServiceClient
             from azure.data.tables.aio import (
@@ -163,26 +127,7 @@ class AzureKVStore(BaseKVStore):
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
-        """
-        Initializes AzureKVStore from an account name and key.
-
-        Provides a method to create an instance of AzureKVStore using the Azure Storage Account name and key,
-        with an optional endpoint specification. Suitable for scenarios where a connection string is not available.
-
-        Args:
-            account_name (str): The Azure Storage Account name.
-            account_key (str): The Azure Storage Account key.
-            endpoint (Optional[str]): The specific endpoint URL for the Azure Table service. If not provided, a default is constructed.
-            service_mode (ServiceMode): Specifies whether to use Azure Table Storage or Cosmos DB. Default is STORAGE.
-            *args: Additional positional arguments for initialization.
-            **kwargs: Additional keyword arguments for initialization.
-
-        Returns:
-            AzureKVStore: A configured instance of AzureKVStore.
-
-        Raises:
-            ImportError: If necessary Azure SDK components are not installed.
-        """
+        """Creates an instance of AzureKVStore from an account name and key."""
         try:
             from azure.core.credentials import AzureNamedKeyCredential
         except ImportError:
@@ -202,25 +147,7 @@ class AzureKVStore(BaseKVStore):
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
-        """
-        Creates an AzureKVStore instance using a SAS token.
-
-        This method allows initializing the store with a Shared Access Signature (SAS) token, which provides
-        restricted access to the storage service without exposing account keys.
-
-        Args:
-            endpoint (str): The Azure Table service endpoint URL.
-            sas_token (str): The Shared Access Signature token providing limited permissions.
-            service_mode (ServiceMode): Determines if the store operates on Azure Table Storage or Cosmos DB. Default is STORAGE.
-            *args: Extra positional arguments.
-            **kwargs: Extra keyword arguments.
-
-        Returns:
-            AzureKVStore: An instance of AzureKVStore configured with a SAS token.
-
-        Raises:
-            ImportError: If the required libraries are not installed.
-        """
+        """Creates an instance of AzureKVStore using a SAS token."""
         try:
             from azure.core.credentials import AzureSasCredential
         except ImportError:
@@ -238,22 +165,8 @@ class AzureKVStore(BaseKVStore):
         **kwargs: Any,
     ) -> "AzureKVStore":
         """
-        Initializes AzureKVStore using Azure Active Directory (AAD) tokens.
-
-        This constructor is suited for environments where AAD authentication is preferred for interacting with Azure services.
-        It uses the default credentials obtained through the environment or managed identity.
-
-        Args:
-            endpoint (str): The endpoint URL for the Azure Table service.
-            service_mode (ServiceMode): Specifies the operational mode, either Azure Table Storage or Cosmos DB. Default is STORAGE.
-            *args: Additional positional arguments for constructor.
-            **kwargs: Additional keyword arguments for constructor.
-
-        Returns:
-            AzureKVStore: A new AzureKVStore instance authenticated via AAD.
-
-        Raises:
-            ImportError: If necessary Azure SDK components are not installed.
+        Creates an instance of AzureKVStore using Azure Active Directory
+        (AAD) tokens.
         """
         try:
             from azure.identity import DefaultAzureCredential
@@ -270,17 +183,7 @@ class AzureKVStore(BaseKVStore):
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> None:
-        """Inserts or replaces a key-value pair in the specified table.
-
-        Args:
-            key (str): The key associated with the value to store.
-            val (dict): The dictionary value to store.
-            collection (str, optional): The name of the table to store the value in. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for storing the value. Defaults to 'default'.
-
-        Raises:
-            ImportError: If necessary Azure SDK components are not installed.
-        """
+        """Inserts or replaces a key-value pair in the specified table."""
         try:
             from azure.data.tables import UpdateMode
         except ImportError:
@@ -307,21 +210,7 @@ class AzureKVStore(BaseKVStore):
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> None:
-        """Asynchronously inserts or replaces a key-value pair in the specified table.
-
-        This method performs an asynchronous upsert operation, meaning that it will insert a new key-value pair
-        or replace the existing pair if the key already exists.
-
-        Args:
-            key (str): The key associated with the value to store.
-            val (dict): The dictionary value to store.
-            collection (str, optional): The name of the table to store the value in. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for storing the value. Defaults to 'default'.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
-        """
+        """Inserts or replaces a key-value pair in the specified table."""
         try:
             from azure.data.tables import UpdateMode
         except ImportError:
@@ -353,19 +242,8 @@ class AzureKVStore(BaseKVStore):
         partition_key: str = DEFAULT_PARTITION_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Inserts or replaces multiple key-value pairs in the specified table using batch operations.
-
-        This method groups the key-value pairs into batches of a specified size and performs
-        transactional upsert operations to optimize performance and ensure atomicity.
-
-        Args:
-            kv_pairs (List[Tuple[str, Optional[dict]]]): A list of tuples, where each tuple contains a key and its corresponding dictionary value.
-            collection (str, optional): The name of the table to store the values in. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for storing the values. Defaults to 'default'.
-            batch_size (int, optional): The number of operations to include in each transaction batch. Defaults to a sensible system-defined size.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
+        """
+        Inserts or replaces multiple key-value pairs in the specified table.
         """
         try:
             from azure.data.tables import TransactionOperation
@@ -406,20 +284,8 @@ class AzureKVStore(BaseKVStore):
         partition_key: str = DEFAULT_PARTITION_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Asynchronously inserts or replaces multiple key-value pairs in the specified table using batch operations.
-
-        Similar to the synchronous put_all, this method groups the key-value pairs into batches
-        and performs asynchronous transactional upserts.
-
-        Args:
-            kv_pairs (List[Tuple[str, Optional[dict]]]): A list of tuples, where each tuple contains a key and its corresponding dictionary value.
-            collection (str, optional): The name of the table to store the values in. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for storing the values. Defaults to 'default'.
-            batch_size (int, optional): The number of operations to include in each transaction batch. Defaults to a sensible system-defined size.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
+        """
+        Inserts or replaces multiple key-value pairs in the specified table.
         """
         try:
             from azure.data.tables import TransactionOperation
@@ -464,23 +330,9 @@ class AzureKVStore(BaseKVStore):
         key: str,
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
+        select: Optional[str | List[str]] = None,
     ) -> Optional[dict]:
-        """Retrieves a value by key from the specified table.
-
-        This method fetches the value associated with the given key from the specified table.
-        If the key is not found, it returns None.
-
-        Args:
-            key (str): The key to retrieve.
-            collection (str, optional): The name of the table to retrieve the value from. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for retrieving the value. Defaults to 'default'.
-
-        Returns:
-            Optional[dict]: The dictionary value associated with the key if found, otherwise None.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-        """
+        """Retrieves a value by key from the specified table."""
         try:
             from azure.core.exceptions import ResourceNotFoundError
         except ImportError:
@@ -494,7 +346,9 @@ class AzureKVStore(BaseKVStore):
 
         table_client = self._table_client.create_table_if_not_exists(table_name)
         try:
-            entity = table_client.get_entity(partition_key=partition_key, row_key=key)
+            entity = table_client.get_entity(
+                partition_key=partition_key, row_key=key, select=select
+            )
             return self._deserialize(entity)
         except ResourceNotFoundError:
             return None
@@ -504,23 +358,9 @@ class AzureKVStore(BaseKVStore):
         key: str,
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
+        select: Optional[str | List[str]] = None,
     ) -> Optional[dict]:
-        """Asynchronously retrieves a value by key from the specified table.
-
-        Similar to the synchronous get method, this performs an asynchronous fetch operation.
-
-        Args:
-            key (str): The key to retrieve.
-            collection (str, optional): The name of the table to retrieve the value from. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for retrieving the value. Defaults to 'default'.
-
-        Returns:
-            Optional[dict]: The dictionary value associated with the key if found, otherwise None.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
-        """
+        """Retrieves a value by key from the specified table."""
         try:
             from azure.core.exceptions import ResourceNotFoundError
         except ImportError:
@@ -539,7 +379,7 @@ class AzureKVStore(BaseKVStore):
         )
         try:
             entity = await atable_client.get_entity(
-                partition_key=partition_key, row_key=key
+                partition_key=partition_key, row_key=key, select=select
             )
             return self._deserialize(entity)
         except ResourceNotFoundError:
@@ -549,22 +389,10 @@ class AzureKVStore(BaseKVStore):
         self,
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
+        select: Optional[str | List[str]] = None,
     ) -> Dict[str, dict]:
-        """Retrieves all key-value pairs from a specified partition in the table.
-
-        This method fetches all entries that share the same partition key, providing a dictionary
-        of key-value pairs where keys are the row keys from the storage and values are the associated
-        data dictionaries.
-
-        Args:
-            collection (str, optional): The name of the table to retrieve the values from. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for retrieving the values. Defaults to 'default'.
-
-        Returns:
-            Dict[str, dict]: A dictionary containing all key-value pairs from the specified partition.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
+        """
+        Retrieves all key-value pairs from a specified partition in the table.
         """
         table_name = (
             DEFAULT_COLLECTION
@@ -573,7 +401,8 @@ class AzureKVStore(BaseKVStore):
         )
         table_client = self._table_client.create_table_if_not_exists(table_name)
         entities = table_client.list_entities(
-            filter=f"PartitionKey eq '{partition_key}'"
+            filter=f"PartitionKey eq '{partition_key}'",
+            select=select,
         )
         return {entity["RowKey"]: self._deserialize(entity) for entity in entities}
 
@@ -581,22 +410,10 @@ class AzureKVStore(BaseKVStore):
         self,
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
+        select: Optional[str | List[str]] = None,
     ) -> Dict[str, dict]:
-        """Asynchronously retrieves all key-value pairs from a specified partition in the table.
-
-        Similar to the synchronous get_all method, this method performs an asynchronous fetch of all
-        entries in the specified partition and table. It returns a dictionary of the retrieved key-value pairs.
-
-        Args:
-            collection (str, optional): The name of the table to retrieve the values from. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for retrieving the values. Defaults to 'default'.
-
-        Returns:
-            Dict[str, dict]: A dictionary containing all key-value pairs from the specified partition.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
+        """
+        Retrieves all key-value pairs from a specified partition in the table.
         """
         if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
@@ -609,7 +426,8 @@ class AzureKVStore(BaseKVStore):
             table_name
         )
         entities = atable_client.list_entities(
-            filter=f"PartitionKey eq '{partition_key}'"
+            filter=f"PartitionKey eq '{partition_key}'",
+            select=select,
         )
         return {
             entity["RowKey"]: self._deserialize(entity) async for entity in entities
@@ -621,21 +439,9 @@ class AzureKVStore(BaseKVStore):
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> bool:
-        """Deletes a specific key-value pair from the store based on the provided key and partition key.
-
-        This method removes a key-value pair from the specified table and partition. It always returns True,
-        indicating that the operation was executed (but not necessarily that the key existed).
-
-        Args:
-            key (str): The key of the item to delete.
-            collection (str, optional): The name of the table from which to delete the item. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for identifying the item. Defaults to 'default'.
-
-        Returns:
-            bool: Always returns True, signifying that the delete operation was attempted.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
+        """
+        Deletes a specific key-value pair from the store based on the
+        provided key and partition key.
         """
         table_name = (
             DEFAULT_COLLECTION
@@ -652,23 +458,7 @@ class AzureKVStore(BaseKVStore):
         collection: str = None,
         partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> bool:
-        """Asynchronously deletes a specific key-value pair from the store.
-
-        Similar to the synchronous delete method, this method performs an asynchronous operation to
-        remove a key-value pair. It always returns True, indicating that the operation was attempted.
-
-        Args:
-            key (str): The key of the item to delete.
-            collection (str, optional): The name of the table from which to delete the item. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for identifying the item. Defaults to 'default'.
-
-        Returns:
-            bool: Always returns True, signifying that the delete operation was attempted.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
-        """
+        """Asynchronously deletes a specific key-value pair from the store."""
         if self._atable_service_client is None:
             raise ValueError(MISSING_ASYNC_CLIENT_ERROR_MSG)
         table_name = (
@@ -686,23 +476,9 @@ class AzureKVStore(BaseKVStore):
         self,
         query_filter: str,
         collection: str = None,
+        select: Optional[str | List[str]] = None,
     ) -> Generator[dict, None, None]:
-        """Retrieves a value by key from the specified table.
-
-        This method fetches the value associated with the given key from the specified table.
-        If the key is not found, it returns None.
-
-        Args:
-            key (str): The key to retrieve.
-            collection (str, optional): The name of the table to retrieve the value from. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for retrieving the value. Defaults to 'default'.
-
-        Returns:
-            Optional[dict]: The dictionary value associated with the key if found, otherwise None.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-        """
+        """Retrieves a value by key from the specified table."""
         try:
             from azure.core.exceptions import ResourceNotFoundError
         except ImportError:
@@ -716,7 +492,9 @@ class AzureKVStore(BaseKVStore):
 
         table_client = self._table_client.create_table_if_not_exists(table_name)
         try:
-            entities = table_client.query_entities(query_filter=query_filter)
+            entities = table_client.query_entities(
+                query_filter=query_filter, select=select
+            )
 
             return (self._deserialize(entity) for entity in entities)
         except ResourceNotFoundError:
@@ -726,23 +504,9 @@ class AzureKVStore(BaseKVStore):
         self,
         query_filter: str,
         collection: str = None,
+        select: Optional[str | List[str]] = None,
     ) -> Optional[AsyncGenerator[dict, None]]:
-        """Asynchronously retrieves a value by key from the specified table.
-
-        Similar to the synchronous get method, this performs an asynchronous fetch operation.
-
-        Args:
-            key (str): The key to retrieve.
-            collection (str, optional): The name of the table to retrieve the value from. If not specified, uses a default table.
-            partition_key (str, optional): The partition key used for retrieving the value. Defaults to 'default'.
-
-        Returns:
-            Optional[dict]: The dictionary value associated with the key if found, otherwise None.
-
-        Raises:
-            ImportError: If the Azure data tables package is not installed.
-            ValueError: If the AzureKVStore was not initialized with an asynchronous client.
-        """
+        """Asynchronously retrieves a value by key from the specified table."""
         try:
             from azure.core.exceptions import ResourceNotFoundError
         except ImportError:
@@ -760,7 +524,9 @@ class AzureKVStore(BaseKVStore):
             table_name
         )
         try:
-            entities = atable_client.query_entities(query_filter=query_filter)
+            entities = atable_client.query_entities(
+                query_filter=query_filter, select=select
+            )
 
             return (self._deserialize(entity) async for entity in entities)
 
@@ -771,14 +537,9 @@ class AzureKVStore(BaseKVStore):
     def _from_clients(
         cls, endpoint: str, credential: Any, *args: Any, **kwargs: Any
     ) -> "AzureKVStore":
-        """Private method to create synchronous and asynchronous table service clients.
-
-        Args:
-            endpoint (str): The service endpoint.
-            credential (Any): Credentials used to authenticate requests.
-
-        Returns:
-            AzureKVStore: An instance of AzureKVStore with initialized clients.
+        """
+        Private method to create synchronous and asynchronous table service
+        clients.
         """
         try:
             from azure.data.tables import TableServiceClient
@@ -795,15 +556,9 @@ class AzureKVStore(BaseKVStore):
         return cls(table_client, atable_client, *args, **kwargs)
 
     def _sanitize_table_name(self, table_name: str) -> str:
-        """Sanitize the table name to ensure it is valid for use in Azure Table Storage or Cosmos.
-        Table names may contain only alphanumeric characters and cannot begin with a numeric character.
-        They are case-insensitive and must be from 3 to 63 characters long.
-
-        Args:
-            table_name (str): The table name to sanitize.
-
-        Returns:
-            str: The sanitized table name.
+        """
+        Sanitize the table name to ensure it is valid for use in Azure Table
+        Storage or Cosmos DB.
         """
         san_table_name = ALPHANUMERIC_REGEX.sub("", table_name)
         if san_table_name[0].isdigit():
@@ -818,24 +573,13 @@ class AzureKVStore(BaseKVStore):
         return san_table_name
 
     def _should_serialize(self, value: Any) -> bool:
-        """Check if a value should be serialized based on its type.
-
-        Args:
-            value (Any): The value to check.
-
-        Returns:
-            bool: True if the value should be serialized, False otherwise.
-        """
+        """Check if a value should be serialized based on its type."""
         return not isinstance(value, ODATA_SUPPORTED_TYPES) or isinstance(value, Enum)
 
     def _serialize_and_encode(self, value: Any) -> Tuple[str, bytes, int]:
-        """Serialize a value to a JSON string and encode it to UTF-16 bytes for storage calculations.
-
-        Args:
-            value (Any): The value to serialize.
-
-        Returns:
-            Tuple[str, bytes, int]: A tuple containing the serialized value as a JSON string, the UTF-16-encoded bytes, and the length of the encoded value.
+        """
+        Serialize a value to a JSON string and encode it to UTF-16 bytes for
+        storage calculations.
         """
         serialized_val = json.dumps(value)
         # Azure Table Storage checks sizes against UTF-16-encoded bytes
@@ -844,13 +588,9 @@ class AzureKVStore(BaseKVStore):
         return serialized_val, bytes_val, val_length
 
     def _validate_total_property_size(self, current_size: int) -> None:
-        """Validate the total size of all properties in an entity against the service limits.
-
-        Args:
-            current_size (int): The current total size of all properties in an entity.
-
-        Raises:
-            ValueError: If the total size exceeds the service limits.
+        """
+        Validate the total size of all properties in an entity against the
+        service limits.
         """
         if (
             self.service_mode == ServiceMode.STORAGE
@@ -872,26 +612,18 @@ class AzureKVStore(BaseKVStore):
             )
 
     def _compute_num_parts(self, val_length: int) -> int:
-        """Compute the number of parts to split a large property into based on the maximum property value size.
-
-        Args:
-            val_length (int): The length of the property value in bytes.
-
-        Returns:
-            int: The number of parts to split the property into.
+        """
+        Compute the number of parts to split a large property into based on the
+        maximum property value size.
         """
         return val_length // STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE + (
             1 if val_length % STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE else 0
         )
 
     def _validate_property_count(self, num_properties: int) -> None:
-        """Validate the number of properties in an entity against the service limits.
-
-        Args:
-            num_properties (int): The number of properties in the entity.
-
-        Raises:
-            ValueError: If the number of properties exceeds the service limits.
+        """
+        Validate the number of properties in an entity against the service
+        limits.
         """
         if num_properties > STORAGE_MAX_ITEM_PROPERTIES:
             raise ValueError(
@@ -902,13 +634,9 @@ class AzureKVStore(BaseKVStore):
     def _split_large_values(
         self, num_parts: int, bytes_val: str, item: dict, key: str
     ) -> None:
-        """Split a large property value into multiple parts and store them in the item dictionary.
-
-        Args:
-            num_parts (int): The number of parts to split the property value into.
-            bytes_val (str): The UTF-16-encoded bytes of the property value.
-            item (dict): The dictionary to store the split parts.
-            key (str): The key for the property value.
+        """
+        Split a large property value into multiple parts and store them in the
+        item dictionary.
         """
         for i in range(num_parts):
             start_index = i * STORAGE_MAX_ITEM_PROPERTY_VALUE_SIZE
@@ -920,15 +648,9 @@ class AzureKVStore(BaseKVStore):
             item[f"{key}{STORAGE_PART_KEY_DELIMITER}{i + 1}"] = serialized_part
 
     def _serialize(self, value: dict) -> dict:
-        """Serialize all values in a dictionary to JSON strings to ensure compatibility with Azure Table Storage.
-        The Azure Table Storage API does not support complex data types like dictionaries or nested objects
-        directly as values in entity properties, so we need to serialize them to JSON strings.
-
-        Args:
-            value (dict): Dictionary containing the values to serialize.
-
-        Returns:
-            dict: A dictionary with all values serialized as JSON strings.
+        """
+        Serialize all values in a dictionary to JSON strings to ensure
+        compatibility with Azure Table Storage.
         """
         item = {}
         num_properties = len(value)
@@ -964,14 +686,9 @@ class AzureKVStore(BaseKVStore):
         return item
 
     def _deserialize_or_fallback(self, value: str) -> Union[Any, str]:
-        """Deserialize a JSON string back to its original Python data type, falling
+        """
+        Deserialize a JSON string back to its original Python data type, falling
         back to the original string if deserialization fails.
-
-        Args:
-            value (str): The JSON string to deserialize.
-
-        Returns:
-            Union[Any, str]: The deserialized value or the original string if deserialization fails.
         """
         try:
             # Attempt to deserialize the joined parts
@@ -983,11 +700,8 @@ class AzureKVStore(BaseKVStore):
     def _concatenate_large_values(
         self, parts_to_assemble: dict, deserialized_item: dict
     ) -> None:
-        """Concatenate split parts of large properties back into a single value.
-
-        Args:
-            parts_to_assemble (dict): A dictionary containing the parts of large properties to reassemble.
-            deserialized_item (dict): The dictionary to store the reassembled properties.
+        """
+        Concatenate split parts of large properties back into a single value.
         """
         for base_key, parts in parts_to_assemble.items():
             concatenated_value = "".join(parts[i] for i in sorted(parts.keys()))
@@ -996,17 +710,9 @@ class AzureKVStore(BaseKVStore):
             )
 
     def _deserialize(self, item: dict) -> dict:
-        """Deserialize values in a dictionary from JSON strings back to their original Python data types.
-        This method handles the conversion of JSON-formatted strings stored in Azure Table Storage
-        back into complex Python data types such as dictionaries. It also handles reassembling split properties.
-
-        Note: This method falls back to the original values when deserialization fails.
-
-        Args:
-            item (dict): Dictionary containing the entity data with values as JSON strings.
-
-        Returns:
-            dict: A dictionary with all values deserialized back into their original Python data types, excluding built-in keys like 'PartitionKey', 'RowKey', and 'Timestamp'.
+        """
+        Deserialize values in a dictionary from JSON strings back to their
+        original Python data types.
         """
         deserialized_item = {}
         parts_to_assemble = defaultdict(dict)
