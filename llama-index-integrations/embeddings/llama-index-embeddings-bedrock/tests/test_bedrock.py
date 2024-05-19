@@ -1,74 +1,106 @@
 import json
 from io import BytesIO
 from unittest import TestCase
-from typing import Dict, Any
 
 import boto3
 from botocore.response import StreamingBody
 from botocore.stub import Stubber
 from llama_index.embeddings.bedrock import BedrockEmbedding, Models
 
+exp_embed = [
+    0.017410278,
+    0.040924072,
+    -0.007507324,
+    0.09429932,
+    0.015304565,
+]
+
 
 class TestBedrockEmbedding(TestCase):
     bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
-    bedrock_stubber = Stubber(bedrock_client)
 
-    def _test_get_text_embedding(
-        self, model: str, titan_body_kwargs: Dict[str, Any] = None
-    ):
-        mock_response = {
-            "embedding": [
-                0.017410278,
-                0.040924072,
-                -0.007507324,
-                0.09429932,
-                0.015304565,
-            ]
-        }
+    exp_query = "foo bar baz"
+    exp_titan_response = {"embedding": exp_embed}
 
-        mock_stream = BytesIO(json.dumps(mock_response).encode())
+    def test_get_text_embedding_titan_v1(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
 
-        self.bedrock_stubber.add_response(
+        mock_stream = BytesIO(json.dumps(self.exp_titan_response).encode())
+        bedrock_stubber.add_response(
             "invoke_model",
             {
                 "contentType": "application/json",
-                "body": StreamingBody(mock_stream, len(json.dumps(mock_response))),
+                "body": StreamingBody(
+                    mock_stream, len(json.dumps(self.exp_titan_response))
+                ),
+            },
+            expected_params={
+                "accept": "application/json",
+                "body": f'{{"inputText": "{self.exp_query}"}}',
+                "contentType": "application/json",
+                "modelId": Models.TITAN_EMBEDDING.value,
             },
         )
 
         bedrock_embedding = BedrockEmbedding(
-            model_name=model,
+            model_name=Models.TITAN_EMBEDDING,
             client=self.bedrock_client,
-            titan_body_kwargs=titan_body_kwargs,
         )
-        assert bedrock_embedding.model_name == model
+        assert bedrock_embedding.model_name == Models.TITAN_EMBEDDING
 
-        self.bedrock_stubber.activate()
-        embedding = bedrock_embedding.get_text_embedding(text="foo bar baz")
-        self.bedrock_stubber.deactivate()
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
 
-        self.bedrock_stubber.assert_no_pending_responses()
-        self.assertEqual(embedding, mock_response["embedding"])
-
-    def test_get_text_embedding_titan_v1(self) -> None:
-        self._test_get_text_embedding(Models.TITAN_EMBEDDING)
+        bedrock_stubber.assert_no_pending_responses()
+        self.assertEqual(embedding, self.exp_titan_response["embedding"])
 
     def test_get_text_embedding_titan_v2(self) -> None:
-        self._test_get_text_embedding(
-            Models.TITAN_EMBEDDING_V2_0,
-            titan_body_kwargs={"dimensions": 512, "normalize": True},
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        exp_body_request_param = json.dumps(
+            {"inputText": self.exp_query, "dimensions": 512, "normalize": True}
         )
 
+        mock_stream = BytesIO(json.dumps(self.exp_titan_response).encode())
+        bedrock_stubber.add_response(
+            "invoke_model",
+            {
+                "contentType": "application/json",
+                "body": StreamingBody(
+                    mock_stream, len(json.dumps(self.exp_titan_response))
+                ),
+            },
+            expected_params={
+                "accept": "application/json",
+                "body": exp_body_request_param,
+                "contentType": "application/json",
+                "modelId": Models.TITAN_EMBEDDING_V2_0.value,
+            },
+        )
+
+        bedrock_embedding = BedrockEmbedding(
+            model_name=Models.TITAN_EMBEDDING_V2_0,
+            client=self.bedrock_client,
+            titan_body_kwargs={"dimensions": 512, "normalize": True},
+        )
+        assert bedrock_embedding.model_name == Models.TITAN_EMBEDDING_V2_0
+
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+        self.assertEqual(embedding, self.exp_titan_response["embedding"])
+
     def test_get_text_embedding_cohere(self) -> None:
-        mock_response = {
-            "embeddings": [
-                [0.017410278, 0.040924072, -0.007507324, 0.09429932, 0.015304565]
-            ]
-        }
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"embeddings": [exp_embed]}
 
         mock_stream = BytesIO(json.dumps(mock_response).encode())
 
-        self.bedrock_stubber.add_response(
+        bedrock_stubber.add_response(
             "invoke_model",
             {
                 "contentType": "application/json",
@@ -81,25 +113,22 @@ class TestBedrockEmbedding(TestCase):
             client=self.bedrock_client,
         )
 
-        self.bedrock_stubber.activate()
-        embedding = bedrock_embedding.get_text_embedding(text="foo bar baz")
-        self.bedrock_stubber.deactivate()
+        bedrock_stubber.activate()
+        embedding = bedrock_embedding.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
 
-        self.bedrock_stubber.assert_no_pending_responses()
+        bedrock_stubber.assert_no_pending_responses()
         self.assertEqual(embedding, mock_response["embeddings"][0])
 
     def test_get_text_embedding_batch_cohere(self) -> None:
-        mock_response = {
-            "embeddings": [
-                [0.017410278, 0.040924072, -0.007507324, 0.09429932, 0.015304565],
-                [0.017410278, 0.040924072, -0.007507324, 0.09429932, 0.015304565],
-            ]
-        }
-        mock_request = ["foo bar baz", "foo baz bar"]
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        mock_response = {"embeddings": [exp_embed, exp_embed]}
+        mock_request = [self.exp_query, self.exp_query]
 
         mock_stream = BytesIO(json.dumps(mock_response).encode())
 
-        self.bedrock_stubber.add_response(
+        bedrock_stubber.add_response(
             "invoke_model",
             {
                 "contentType": "application/json",
@@ -112,12 +141,15 @@ class TestBedrockEmbedding(TestCase):
             client=self.bedrock_client,
         )
 
-        self.bedrock_stubber.activate()
+        bedrock_stubber.activate()
         embedding = bedrock_embedding.get_text_embedding_batch(texts=mock_request)
 
-        self.bedrock_stubber.deactivate()
+        bedrock_stubber.deactivate()
 
         self.assertEqual(len(embedding), 2)
 
         for i in range(2):
             self.assertEqual(embedding[i], mock_response["embeddings"][i])
+
+    def test_list_supported_models(self):
+        pass
