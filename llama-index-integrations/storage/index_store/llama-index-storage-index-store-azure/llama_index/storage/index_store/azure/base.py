@@ -27,6 +27,7 @@ class AzureIndexStore(KVIndexStore):
         connection_string: str,
         namespace: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureIndexStore":
         """Load an AzureIndexStore from an Azure connection string.
 
@@ -36,7 +37,7 @@ class AzureIndexStore(KVIndexStore):
             service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
         azure_kvstore = AzureKVStore.from_connection_string(
-            connection_string, service_mode
+            connection_string, service_mode, partition_key
         )
         return cls(azure_kvstore, namespace)
 
@@ -48,6 +49,7 @@ class AzureIndexStore(KVIndexStore):
         namespace: Optional[str] = None,
         endpoint: str | None = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureIndexStore":
         """Load an AzureIndexStore from an account name and key.
 
@@ -58,7 +60,7 @@ class AzureIndexStore(KVIndexStore):
             service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
         azure_kvstore = AzureKVStore.from_account_and_key(
-            account_name, account_key, endpoint, service_mode
+            account_name, account_key, endpoint, service_mode, partition_key
         )
         return cls(azure_kvstore, namespace)
 
@@ -69,6 +71,7 @@ class AzureIndexStore(KVIndexStore):
         sas_token: str,
         namespace: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureIndexStore":
         """Load an AzureIndexStore from a SAS token.
 
@@ -78,7 +81,9 @@ class AzureIndexStore(KVIndexStore):
             namespace (Optional[str]): namespace for the AzureIndexStore
             service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
-        azure_kvstore = AzureKVStore.from_sas_token(endpoint, sas_token, service_mode)
+        azure_kvstore = AzureKVStore.from_sas_token(
+            endpoint, sas_token, service_mode, partition_key
+        )
         return cls(azure_kvstore, namespace)
 
     @classmethod
@@ -87,6 +92,7 @@ class AzureIndexStore(KVIndexStore):
         endpoint: str,
         namespace: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureIndexStore":
         """Load an AzureIndexStore from an AAD token.
 
@@ -95,5 +101,7 @@ class AzureIndexStore(KVIndexStore):
             namespace (Optional[str]): namespace for the AzureIndexStore
             service_mode (ServiceMode): CosmosDB or Azure Table service mode
         """
-        azure_kvstore = AzureKVStore.from_aad_token(endpoint, service_mode)
+        azure_kvstore = AzureKVStore.from_aad_token(
+            endpoint, service_mode, partition_key
+        )
         return cls(azure_kvstore, namespace)

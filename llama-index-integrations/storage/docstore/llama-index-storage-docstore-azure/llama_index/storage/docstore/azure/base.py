@@ -6,7 +6,7 @@ from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.core.storage.docstore.types import DEFAULT_BATCH_SIZE, RefDocInfo
 from llama_index.storage.kvstore.azure import AzureKVStore
-from llama_index.storage.kvstore.azure.base import DEFAULT_PARTITION_KEY, ServiceMode
+from llama_index.storage.kvstore.azure.base import ServiceMode
 
 # https://learn.microsoft.com/en-us/azure/cosmos-db/concepts-limits#per-item-limits
 # Azure Table Storage has a size limit of 64KiB for a "Property" and 1MiB for an "Item".
@@ -60,10 +60,13 @@ class AzureDocumentStore(KVDocumentStore):
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an Azure connection string."""
         azure_kvstore = AzureKVStore.from_connection_string(
-            connection_string, service_mode=service_mode
+            connection_string,
+            service_mode=service_mode,
+            partition_key=partition_key,
         )
         return cls(
             azure_kvstore,
@@ -83,10 +86,14 @@ class AzureDocumentStore(KVDocumentStore):
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an account name and key."""
         azure_kvstore = AzureKVStore.from_account_and_key(
-            account_name, account_key, service_mode=service_mode
+            account_name,
+            account_key,
+            service_mode=service_mode,
+            partition_key=partition_key,
         )
         return cls(
             azure_kvstore,
@@ -106,10 +113,14 @@ class AzureDocumentStore(KVDocumentStore):
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from a SAS token."""
         azure_kvstore = AzureKVStore.from_sas_token(
-            endpoint, sas_token, service_mode=service_mode
+            endpoint,
+            sas_token,
+            service_mode=service_mode,
+            partition_key=partition_key,
         )
         return cls(
             azure_kvstore,
@@ -128,9 +139,14 @@ class AzureDocumentStore(KVDocumentStore):
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an AAD token."""
-        azure_kvstore = AzureKVStore.from_aad_token(endpoint, service_mode=service_mode)
+        azure_kvstore = AzureKVStore.from_aad_token(
+            endpoint,
+            service_mode=service_mode,
+            partition_key=partition_key,
+        )
         return cls(
             azure_kvstore,
             namespace,
@@ -224,7 +240,7 @@ class AzureDocumentStore(KVDocumentStore):
     def get_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
         """Get the RefDocInfo for a given ref_doc_id."""
         ref_doc_infos = self._kvstore.query(
-            f"PartitionKey eq '{DEFAULT_PARTITION_KEY}' and ref_doc_id eq '{ref_doc_id}'",
+            f"PartitionKey eq '{self._kvstore.partition_key}' and ref_doc_id eq '{ref_doc_id}'",
             self._metadata_collection,
             select="RowKey",
         )
@@ -249,7 +265,7 @@ class AzureDocumentStore(KVDocumentStore):
         """Get the RefDocInfo for a given ref_doc_id."""
         ref_doc_infos, doc_metadata = await asyncio.gather(
             self._kvstore.aquery(
-                f"PartitionKey eq '{DEFAULT_PARTITION_KEY}' and ref_doc_id eq '{ref_doc_id}'",
+                f"PartitionKey eq '{self._kvstore.partition_key}' and ref_doc_id eq '{ref_doc_id}'",
                 self._metadata_collection,
                 select="RowKey",
             ),
@@ -275,7 +291,7 @@ class AzureDocumentStore(KVDocumentStore):
         Get a mapping of ref_doc_id -> RefDocInfo for all ingested documents.
         """
         ref_doc_infos = self._kvstore.query(
-            f"PartitionKey eq '{DEFAULT_PARTITION_KEY}'",
+            f"PartitionKey eq '{self._kvstore.partition_key}'",
             self._metadata_collection,
             select=["RowKey", "ref_doc_id"],
         )
@@ -303,7 +319,7 @@ class AzureDocumentStore(KVDocumentStore):
         Get a mapping of ref_doc_id -> RefDocInfo for all ingested documents.
         """
         ref_doc_infos = await self._kvstore.aquery(
-            f"PartitionKey eq '{DEFAULT_PARTITION_KEY}'",
+            f"PartitionKey eq '{self._kvstore.partition_key}'",
             self._metadata_collection,
             select=["RowKey", "ref_doc_id"],
         )

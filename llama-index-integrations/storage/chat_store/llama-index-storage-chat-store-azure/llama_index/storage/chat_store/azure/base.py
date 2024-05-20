@@ -1,7 +1,6 @@
 from itertools import chain
 from typing import Any, List, Optional
 
-# try:
 from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import (
@@ -76,25 +75,7 @@ class AzureChatStore(BaseChatStore):
         metadata_partition_key: str = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
     ):
-        """
-        Creates an instance of AzureChatStore using a connection string.
-
-        This class method initializes the AzureChatStore using a connection string that provides credentials
-        and the necessary configuration to connect to an Azure Table Storage or Cosmos DB.
-
-        Args:
-            connection_string (str): The connection string that includes credentials and other connection details.
-            chat_table_name (str): The name of the table to store chat messages.
-            metadata_table_name (str): The name of the table to store metadata.
-            metadata_partition_key (str): The partition key for the metadata table.
-            service_mode (ServiceMode): Specifies the service mode, either Azure Table Storage or Cosmos DB. Default is STORAGE.
-
-        Returns:
-            AzureChatStore: An initialized AzureChatStore instance.
-
-        Raises:
-            ImportError: If the required Azure SDK libraries are not installed.
-        """
+        """Creates an instance of AzureChatStore using a connection string."""
         table_service_client = TableServiceClient.from_connection_string(
             connection_string
         )
@@ -122,27 +103,7 @@ class AzureChatStore(BaseChatStore):
         metadata_partition_key: str = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureChatStore":
-        """
-        Initializes AzureChatStore from an account name and key.
-
-        Provides a method to create an instance of AzureChatStore using the Azure Storage Account name and key,
-        with an optional endpoint specification. Suitable for scenarios where a connection string is not available.
-
-        Args:
-            account_name (str): The Azure Storage Account name.
-            account_key (str): The Azure Storage Account key.
-            endpoint (Optional[str]): The specific endpoint URL for the Azure Table service. If not provided, a default is constructed.
-            chat_table_name (str): The name of the table to store chat messages.
-            metadata_table_name (str): The name of the table to store metadata.
-            metadata_partition_key (str): The partition key for the metadata table.
-            service_mode (ServiceMode): Specifies whether to use Azure Table Storage or Cosmos DB. Default is STORAGE.
-
-        Returns:
-            AzureChatStore: A configured instance of AzureChatStore.
-
-        Raises:
-            ImportError: If necessary Azure SDK components are not installed.
-        """
+        """Initializes AzureChatStore from an account name and key."""
         if endpoint is None:
             endpoint = f"https://{account_name}.table.core.windows.net"
         credential = AzureNamedKeyCredential(account_name, account_key)
@@ -165,26 +126,7 @@ class AzureChatStore(BaseChatStore):
         metadata_partition_key: str = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureChatStore":
-        """
-        Creates an AzureChatStore instance using a SAS token.
-
-        This method allows initializing the store with a Shared Access Signature (SAS) token, which provides
-        restricted access to the storage service without exposing account keys.
-
-        Args:
-            endpoint (str): The Azure Table service endpoint URL.
-            sas_token (str): The Shared Access Signature token providing limited permissions.
-            chat_table_name (str): The name of the table to store chat messages.
-            metadata_table_name (str): The name of the table to store metadata.
-            metadata_partition_key (str): The partition key for the metadata table.
-            service_mode (ServiceMode): Determines if the store operates on Azure Table Storage or Cosmos DB. Default is STORAGE.
-
-        Returns:
-            AzureChatStore: An instance of AzureChatStore configured with a SAS token.
-
-        Raises:
-            ImportError: If the required libraries are not installed.
-        """
+        """Creates an AzureChatStore instance using a SAS token."""
         credential = AzureSasCredential(sas_token)
         return cls._from_clients(
             endpoint,
@@ -204,25 +146,7 @@ class AzureChatStore(BaseChatStore):
         metadata_partition_key: str = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureChatStore":
-        """
-        Initializes AzureChatStore using Azure Active Directory (AAD) tokens.
-
-        This constructor is suited for environments where AAD authentication is preferred for interacting with Azure services.
-        It uses the default credentials obtained through the environment or managed identity.
-
-        Args:
-            endpoint (str): The endpoint URL for the Azure Table service.
-            chat_table_name (str): The name of the table to store chat messages.
-            metadata_table_name (str): The name of the table to store metadata.
-            metadata_partition_key (str): The partition key for the metadata table.
-            service_mode (ServiceMode): Specifies the operational mode, either Azure Table Storage or Cosmos DB. Default is STORAGE.
-
-        Returns:
-            AzureChatStore: A new AzureChatStore instance authenticated via AAD.
-
-        Raises:
-            ImportError: If necessary Azure SDK components are not installed.
-        """
+        """Creates an AzureChatStore using an Azure Active Directory token."""
         credential = DefaultAzureCredential()
         return cls._from_clients(
             endpoint,
@@ -414,15 +338,7 @@ class AzureChatStore(BaseChatStore):
         metadata_partition_key: str = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureChatStore":
-        """Private method to create synchronous and asynchronous table service clients.
-
-        Args:
-            endpoint (str): The service endpoint.
-            credential (Any): Credentials used to authenticate requests.
-
-        Returns:
-            AzureChatStore: An instance of AzureChatStore with initialized clients.
-        """
+        """Create table service clients."""
         table_service_client = TableServiceClient(
             endpoint=endpoint, credential=credential
         )
@@ -440,25 +356,11 @@ class AzureChatStore(BaseChatStore):
         )
 
     def _to_row_key(self, idx: int) -> str:
-        """Generate a row key from an index.
-
-        Args:
-            idx (int): The index to convert to a row key.
-
-        Returns:
-            str: The row key generated from the index.
-        """
+        """Generate a row key from an index."""
         return f"{idx:010}"
 
     def _get_default_metadata(self, key: str) -> dict:
-        """Generate default metadata for a key.
-
-        Args:
-            key (str): The partition key for which to generate default metadata.
-
-        Returns:
-            dict: A dictionary containing the default metadata structure.
-        """
+        """Generate default metadata for a key."""
         return {
             "PartitionKey": self.metadata_partition_key,
             "RowKey": key,
@@ -467,14 +369,9 @@ class AzureChatStore(BaseChatStore):
         }
 
     def _get_or_default_metadata(self, metadata_client: TableClient, key: str) -> dict:
-        """Retrieve metadata if it exists, otherwise return default metadata structure.
-
-        Args:
-            metadata_client (TableClient): The client for accessing the metadata table.
-            key (str): The partition key for which to retrieve or initialize metadata.
-
-        Returns:
-            dict: A dictionary containing the metadata or a default structure if not found.
+        """
+        Retrieve metadata if it exists, otherwise return default metadata
+        structure.
         """
         try:
             return metadata_client.get_entity(

@@ -27,11 +27,14 @@ class AzureKVStore(BaseKVStore):
     serialization to conform to the storage requirements.
     """
 
+    partition_key: str
+
     def __init__(
         self,
         table_client: Any,
         atable_client: Optional[Any] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -45,6 +48,9 @@ class AzureKVStore(BaseKVStore):
             raise ImportError(IMPORT_ERROR_MSG)
 
         self.service_mode = service_mode
+        self.partition_key = (
+            DEFAULT_PARTITION_KEY if partition_key is None else partition_key
+        )
 
         super().__init__(*args, **kwargs)
 
@@ -58,6 +64,7 @@ class AzureKVStore(BaseKVStore):
         cls,
         connection_string: str,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
@@ -80,6 +87,7 @@ class AzureKVStore(BaseKVStore):
             table_service_client,
             atable_service_client,
             service_mode,
+            partition_key,
             *args,
             **kwargs,
         )
@@ -91,6 +99,7 @@ class AzureKVStore(BaseKVStore):
         account_key: str,
         endpoint: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
@@ -103,7 +112,9 @@ class AzureKVStore(BaseKVStore):
         if endpoint is None:
             endpoint = f"https://{account_name}.table.core.windows.net"
         credential = AzureNamedKeyCredential(account_name, account_key)
-        return cls._from_clients(endpoint, credential, service_mode, *args, **kwargs)
+        return cls._from_clients(
+            endpoint, credential, service_mode, partition_key, *args, **kwargs
+        )
 
     @classmethod
     def from_sas_token(
@@ -111,6 +122,7 @@ class AzureKVStore(BaseKVStore):
         endpoint: str,
         sas_token: str,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
@@ -121,13 +133,16 @@ class AzureKVStore(BaseKVStore):
             raise ImportError(IMPORT_ERROR_MSG)
 
         credential = AzureSasCredential(sas_token)
-        return cls._from_clients(endpoint, credential, service_mode, *args, **kwargs)
+        return cls._from_clients(
+            endpoint, credential, service_mode, partition_key, *args, **kwargs
+        )
 
     @classmethod
     def from_aad_token(
         cls,
         endpoint: str,
         service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> "AzureKVStore":
@@ -141,14 +156,15 @@ class AzureKVStore(BaseKVStore):
             raise ImportError(IMPORT_ERROR_MSG)
 
         credential = DefaultAzureCredential()
-        return cls._from_clients(endpoint, credential, service_mode, *args, **kwargs)
+        return cls._from_clients(
+            endpoint, credential, service_mode, partition_key, *args, **kwargs
+        )
 
     def put(
         self,
         key: str,
         val: dict,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> None:
         """Inserts or replaces a key-value pair in the specified table."""
         try:
@@ -161,7 +177,7 @@ class AzureKVStore(BaseKVStore):
         )
         self._table_client.create_table_if_not_exists(table_name).upsert_entity(
             {
-                "PartitionKey": partition_key,
+                "PartitionKey": self.partition_key,
                 "RowKey": key,
                 **serialize(self.service_mode, val),
             },
@@ -173,7 +189,6 @@ class AzureKVStore(BaseKVStore):
         key: str,
         val: dict,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> None:
         """Inserts or replaces a key-value pair in the specified table."""
         try:
@@ -191,7 +206,7 @@ class AzureKVStore(BaseKVStore):
             table_name
         ).upsert_entity(
             {
-                "PartitionKey": partition_key,
+                "PartitionKey": self.partition_key,
                 "RowKey": key,
                 **serialize(self.service_mode, val),
             },
@@ -202,7 +217,6 @@ class AzureKVStore(BaseKVStore):
         self,
         kv_pairs: List[Tuple[str, Optional[dict]]],
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """
@@ -221,7 +235,7 @@ class AzureKVStore(BaseKVStore):
         entities = []
         for key, val in kv_pairs:
             entity = {
-                "PartitionKey": partition_key,
+                "PartitionKey": self.partition_key,
                 "RowKey": key,
             }
 
@@ -242,7 +256,6 @@ class AzureKVStore(BaseKVStore):
         self,
         kv_pairs: List[Tuple[str, Optional[dict]]],
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """
@@ -267,7 +280,7 @@ class AzureKVStore(BaseKVStore):
         entities = []
         for key, val in kv_pairs:
             entity = {
-                "PartitionKey": partition_key,
+                "PartitionKey": self.partition_key,
                 "RowKey": key,
             }
 
@@ -288,7 +301,6 @@ class AzureKVStore(BaseKVStore):
         self,
         key: str,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
         select: Optional[str | List[str]] = None,
     ) -> Optional[dict]:
         """Retrieves a value by key from the specified table."""
@@ -304,7 +316,7 @@ class AzureKVStore(BaseKVStore):
         table_client = self._table_client.create_table_if_not_exists(table_name)
         try:
             entity = table_client.get_entity(
-                partition_key=partition_key, row_key=key, select=select
+                partition_key=self.partition_key, row_key=key, select=select
             )
             return deserialize(self.service_mode, entity)
         except ResourceNotFoundError:
@@ -314,7 +326,6 @@ class AzureKVStore(BaseKVStore):
         self,
         key: str,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
         select: Optional[str | List[str]] = None,
     ) -> Optional[dict]:
         """Retrieves a value by key from the specified table."""
@@ -334,7 +345,7 @@ class AzureKVStore(BaseKVStore):
         )
         try:
             entity = await atable_client.get_entity(
-                partition_key=partition_key, row_key=key, select=select
+                partition_key=self.partition_key, row_key=key, select=select
             )
             return deserialize(self.service_mode, entity)
         except ResourceNotFoundError:
@@ -343,7 +354,6 @@ class AzureKVStore(BaseKVStore):
     def get_all(
         self,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
         select: Optional[str | List[str]] = None,
     ) -> Dict[str, dict]:
         """
@@ -354,7 +364,7 @@ class AzureKVStore(BaseKVStore):
         )
         table_client = self._table_client.create_table_if_not_exists(table_name)
         entities = table_client.list_entities(
-            filter=f"PartitionKey eq '{partition_key}'",
+            filter=f"PartitionKey eq '{self.partition_key}'",
             select=select,
         )
         return {
@@ -365,7 +375,6 @@ class AzureKVStore(BaseKVStore):
     async def aget_all(
         self,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
         select: Optional[str | List[str]] = None,
     ) -> Dict[str, dict]:
         """
@@ -380,7 +389,7 @@ class AzureKVStore(BaseKVStore):
             table_name
         )
         entities = atable_client.list_entities(
-            filter=f"PartitionKey eq '{partition_key}'",
+            filter=f"PartitionKey eq '{self.partition_key}'",
             select=select,
         )
         return {
@@ -392,7 +401,6 @@ class AzureKVStore(BaseKVStore):
         self,
         key: str,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> bool:
         """
         Deletes a specific key-value pair from the store based on the
@@ -402,14 +410,13 @@ class AzureKVStore(BaseKVStore):
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
         table_client = self._table_client.create_table_if_not_exists(table_name)
-        table_client.delete_entity(partition_key=partition_key, row_key=key)
+        table_client.delete_entity(partition_key=self.partition_key, row_key=key)
         return True
 
     async def adelete(
         self,
         key: str,
         collection: str = None,
-        partition_key: str = DEFAULT_PARTITION_KEY,
     ) -> bool:
         """Asynchronously deletes a specific key-value pair from the store."""
         if self._atable_service_client is None:
@@ -420,7 +427,7 @@ class AzureKVStore(BaseKVStore):
         atable_client = await self._atable_service_client.create_table_if_not_exists(
             table_name
         )
-        await atable_client.delete_entity(partition_key=partition_key, row_key=key)
+        await atable_client.delete_entity(partition_key=self.partition_key, row_key=key)
         return True
 
     def query(
