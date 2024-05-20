@@ -31,7 +31,16 @@ from llama_index.llms.gemini.utils import (
 # This lists the multi-modal models - see also llms.gemini for text models.
 GEMINI_MM_MODELS = (
     "models/gemini-pro-vision",
+    "models/gemini-pro-vision-latest",
     "models/gemini-ultra-vision",
+    "models/gemini-ultra-vision-latest",
+    "models/gemini-1.5-pro",
+    "models/gemini-1.5-pro-latest",
+    "models/gemini-1.5-flash",
+    "models/gemini-1.5-flash-latest",
+    # for some reason, google lists this without the models prefix
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
 )
 
 

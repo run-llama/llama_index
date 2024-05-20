@@ -33,7 +33,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        return self.get_nodes_from_elements(elements, node)
 
     def extract_elements(
         self,
