@@ -64,7 +64,9 @@ query_engine = index.as_query_engine()
 response = query_engine.query("What did the author do growing up?")
 ```
 
-Note that if the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specifying them in your call and the VectaraIndex class will read them from the environment. For example this should be equivalent to the above, if these variables are in the environment already:
+Note that if the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specifying them in your call and the VectaraIndex class will read them from the environment. To connect to multiple Vectara corpora, you can set `VECTARA_CORPUS_ID` to a comma-separated list, for example: `1,5`.
+
+For example this should be equivalent to the above, if these variables are in the environment already:
 
 ```python
 from llama_index.core import ManagedIndex, SimpleDirectoryReade
