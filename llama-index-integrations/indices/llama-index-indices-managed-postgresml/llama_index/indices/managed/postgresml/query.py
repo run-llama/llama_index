@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Dict
+from typing import Any, Optional, Dict
 from copy import deepcopy
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -92,46 +92,6 @@ class PostgresMLQueryEngine(BaseQueryEngine):
     def with_retriever(self, retriever: PostgresMLRetriever) -> "PostgresMLQueryEngine":
         return PostgresMLQueryEngine(
             retriever=retriever,
-        )
-
-    def _retrieve(
-        self,
-        query_bundle: Optional[QueryBundle] = None,
-        query: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = 5,
-        **kwargs: Any,
-    ) -> List[NodeWithScore]:
-        """Retrieve top limit most similar nodes.
-
-        Either query or query_bundle must be provided.
-
-        Args:
-            query_bundle: Optional[QueryBundle] = None
-            query: Optional[Dict[str, Any]] = None
-            limit: Optional[int] = 5
-        """
-        return self._retriever._retrieve(
-            query_bundle=query_bundle, query=query, limit=limit, **kwargs
-        )
-
-    async def _aretrieve(
-        self,
-        query_bundle: Optional[QueryBundle] = None,
-        query: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = 5,
-        **kwargs: Any,
-    ) -> List[NodeWithScore]:
-        """Retrieve top limit most similar nodes.
-
-        Either query or query_bundle must be provided.
-
-        Args:
-            query_bundle: Optional[QueryBundle] = None
-            query: Optional[Dict[str, Any]] = None
-            limit: Optional[int] = 5
-        """
-        return await self._retriever._aretrieve(
-            query_bundle=query_bundle, query=query, limit=limit, **kwargs
         )
 
     def _query(self, query_bundle: QueryBundle, **kwargs) -> RESPONSE_TYPE:
