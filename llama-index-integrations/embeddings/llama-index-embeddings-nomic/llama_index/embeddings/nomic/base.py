@@ -23,6 +23,12 @@ class NomicTaskType(str, Enum):
     CLASSIFICATION = "classification"
 
 
+class NomicInferenceMode(str, Enum):
+    REMOTE = "remote"
+    LOCAL = "local"
+    DYNAMIC = "dynamic"
+
+
 class NomicEmbedding(BaseEmbedding):
     """NomicEmbedding uses the Nomic API to generate embeddings."""
 
@@ -36,6 +42,10 @@ class NomicEmbedding(BaseEmbedding):
         description="Embedding dimension, for use with Matryoshka-capable models",
     )
     model_name: str = Field(description="Embedding model name")
+    inference_mode: NomicInferenceMode = Field(
+        description="Whether to generate embeddings locally",
+    )
+    device: Optional[str] = Field(description="Device to use for local embeddings")
 
     def __init__(
         self,
@@ -46,6 +56,8 @@ class NomicEmbedding(BaseEmbedding):
         query_task_type: Optional[str] = "search_query",
         document_task_type: Optional[str] = "search_document",
         dimensionality: Optional[int] = 768,
+        inference_mode: str = "remote",
+        device: Optional[str] = None,
     ):
         if api_key is not None:
             nomic.login(api_key)
@@ -57,6 +69,8 @@ class NomicEmbedding(BaseEmbedding):
             query_task_type=query_task_type,
             document_task_type=document_task_type,
             dimensionality=dimensionality,
+            inference_mode=inference_mode,
+            device=device,
         )
 
     @classmethod
@@ -71,6 +85,8 @@ class NomicEmbedding(BaseEmbedding):
             model=self.model_name,
             task_type=task_type,
             dimensionality=self.dimensionality,
+            inference_mode=self.inference_mode,
+            device=self.device,
         )
         return result["embeddings"]
 
