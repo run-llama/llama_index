@@ -64,7 +64,11 @@ class LPGVectorRetriever(BaseLPGRetriever):
         kg_ids = []
         new_scores = []
         if self._graph_store.supports_vector_queries:
-            kg_nodes, scores = self._graph_store.vector_query(vector_store_query)
+            result = self._graph_store.vector_query(vector_store_query)
+            if len(result) != 2:
+                raise ValueError("No nodes returned by vector_query")
+            kg_nodes, scores = result
+
             kg_ids = [node.id for node in kg_nodes]
             triplets = self._graph_store.get_rel_map(kg_nodes, depth=self._triple_depth)
 
@@ -113,7 +117,11 @@ class LPGVectorRetriever(BaseLPGRetriever):
         kg_ids = []
         new_scores = []
         if self._graph_store.supports_vector_queries:
-            kg_nodes, scores = await self._graph_store.avector_query(vector_store_query)
+            result = await self._graph_store.avector_query(vector_store_query)
+            if len(result) != 2:
+                raise ValueError("No nodes returned by vector_query")
+
+            kg_nodes, scores = result
             kg_ids = [node.id for node in kg_nodes]
             triplets = await self._graph_store.aget_rel_map(
                 kg_nodes, depth=self._triple_depth
