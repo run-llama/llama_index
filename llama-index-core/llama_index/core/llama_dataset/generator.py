@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from typing import List, Optional
 
 from llama_index.core import Document, ServiceContext, SummaryIndex
@@ -186,6 +187,14 @@ class RagDatasetGenerator(PromptMixin):
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
             ][: self.num_questions_per_chunk]
+
+            num_questions_generated = len(cleaned_questions)
+            if num_questions_generated < self.num_questions_per_chunk:
+                warnings.warn(
+                    f"Fewer questions generated ({num_questions_generated}) "
+                    f"than requested ({self.num_questions_per_chunk})."
+                )
+
             index = summary_indices[idx]
             reference_context = nodes[idx].text
             model_name = self._llm.metadata.model_name
