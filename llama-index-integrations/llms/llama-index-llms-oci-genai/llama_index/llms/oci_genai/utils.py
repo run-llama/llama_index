@@ -22,9 +22,9 @@ COMPLETION_MODELS = {
 }
 
 CHAT_MODELS = {
-    "cohere.command-r": 128000,
-    "cohere.command-r-plus": 128000,
-    "meta.llama-3-70b-instruct": 8192,
+    "cohere.command-r": 128000, # placeholder for future support
+    "cohere.command-r-plus": 128000, # placeholder for future support
+    "meta.llama-3-70b-instruct": 8192, # placeholder for future support
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -197,7 +197,7 @@ class CohereProvider(Provider):
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if "text" in event_data:
+        if "text" in event_data and "finishReason" not in event_data:
             return event_data["text"]
         else:
             return ""
