@@ -306,6 +306,32 @@ set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])
 
 - [PromptLayer](../../examples/callbacks/PromptLayerHandler.ipynb)
 
+### Langtrace
+
+[Langtrace](https://github.com/Scale3-Labs/langtrace) is a robust open-source tool that supports OpenTelemetry and is designed to trace, evaluate, and manage LLM applications seamlessly. Langtrace integrates directly with LlamaIndex, offering detailed, real-time insights into performance metrics such as accuracy, evaluations, and latency.
+
+#### Install
+
+```shell
+pip install langtrace-python-sdk
+```
+
+#### Usage Pattern
+
+```python
+from langtrace_python_sdk import (
+    langtrace,
+)  # Must precede any llm module imports
+
+langtrace.init(api_key="<LANGTRACE_API_KEY>")
+```
+
+![](../../_static/integrations/langtrace.gif)
+
+#### Guides
+
+- [Langtrace](https://docs.langtrace.ai/supported-integrations/llm-frameworks/llamaindex)
+
 ## More observability
 
 - [Callbacks Guide](./callbacks/index.md)
