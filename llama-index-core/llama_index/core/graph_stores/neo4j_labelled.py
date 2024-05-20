@@ -104,8 +104,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         MERGE (source:`__Entity__` {name: row.source_id})
         MERGE (target:`__Entity__` {name: row.target_id})
         WITH source, target, row
-        //CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
-        CALL apoc.merge.relationship(source, row.label, {}, {}, target) YIELD rel
+        CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
         RETURN count(*)        
         """, param_map={"data": params})
 
@@ -115,7 +114,6 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        print(properties, ids)
         cypher_statement = "MATCH (e:`__Entity__`) "
         params = {}
         if properties or ids:
@@ -147,7 +145,6 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             relation_names: Optional[List[str]] = None,
             properties: Optional[dict] = None,
             ids: Optional[List[str]] = None) -> List[Triplet]:
-        print(entity_names, properties, ids)
         # TODO: Handle ids
         cypher_statement = "MATCH (e:`__Entity__`) "
         params = {}
@@ -164,8 +161,6 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                 params[f"property_{i}"] = properties[prop]
             cypher_statement += " AND ".join(prop_list)
 
-
-        # TODO: Add node properties?
         return_statement = f"""
         WITH e
         CALL {{
@@ -231,10 +226,10 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             return [d.data() for d in result]
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> List[Tuple[LabelledNode, float]]:
+    ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
         data = self.database_query("""MATCH (e:`__Entity__`)
-        WHERE e.embedding IS NOT NULL AND size(e.embedding) =
+        WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension
         WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
         ORDER BY score DESC LIMIT toInteger($limit)
         RETURN e.name AS name,
@@ -243,11 +238,13 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                score""", param_map={"embedding": query.query_embedding, 
                                     "dimension": len(query.query_embedding),
                                     "limit": query.similarity_top_k})
-        nodes_with_score = []
+        nodes = []
+        scores = []
         for record in data:
             node = EntityNode(name=record["name"], type=record["type"], properties=remove_empty_values(record['properties']))
-            nodes_with_score.append((node, record['score']))
-        return nodes_with_score
+            nodes.append(node)
+            scores.append(record['score'])
+        return (nodes, scores)
 
     def delete(
         self,
