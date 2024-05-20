@@ -14,7 +14,7 @@ import logging
 import traceback
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from langchain_core.documents import Document
+from llama_index.core.schema import Document
 
 if TYPE_CHECKING:
     from oracledb import Connection
@@ -143,7 +143,7 @@ class OracleSummary:
                                 input := :data;
                                 :summ := dbms_vector_chain.utl_to_summary(input, json(:params));
                             end;""",
-                            data=doc.page_content,
+                            data=doc.text,
                             params=json.dumps(self.summary_params),
                             summ=summary,
                         )

@@ -106,7 +106,7 @@ class OracleDocReader:
             params: ONNX file name.
 
         Returns:
-            Plain text and metadata as Langchain Document.
+            Plain text and metadata as Document.
         """
         metadata = {}
 
@@ -186,7 +186,7 @@ class OracleReader(BaseReader):
         self.params = json.loads(json.dumps(params))
 
     def load(self) -> List[Document]:
-        """Load data into LangChain Document objects..."""
+        """Load data into Document objects..."""
         try:
             import oracledb
         except ImportError as e:
