@@ -351,10 +351,11 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         self._synthesize_response = synthesize_response
         self._verbose = verbose
+        self._streaming = kwargs["streaming"] if "streaming" in kwargs else False
         super().__init__(
             callback_manager=callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context),
-            **kwargs,
+            # **kwargs,
         )
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -397,6 +398,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 text_qa_template=partial_synthesis_prompt,
                 refine_template=self._refine_synthesis_prompt,
                 verbose=self._verbose,
+                streaming=self._streaming
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
