@@ -60,7 +60,7 @@ In this example, we’ll use the `project_id` and Dallas url.
 You need to specify `model_id` that will be used for inferencing.
 
 ```python
-from langchain_ibm import WatsonxEmbeddings
+from llama_index.embeddings.ibm import WatsonxEmbeddings
 
 watsonx_embedding = WatsonxEmbeddings(
     model_id="ibm/slate-125m-english-rtrvr",
