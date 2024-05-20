@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    pull_request:
+      branches: [main]
+      paths:
+        - "llama-index-integrations/**"
 
 env:
   POETRY_VERSION: "1.6.1"
@@ -11,7 +15,7 @@ env:
 
 jobs:
   publish_subpackage_if_needed:
-    if: github.repository == 'run-llama/llama_index'
+    # if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -30,14 +34,11 @@ jobs:
         run: |
           echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -v llama-index-core | grep llama-index | grep pyproject | xargs)" >> $GITHUB_OUTPUT
       - name: Publish changed packages
-        env:
-          PYPI_TOKEN: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
         run: |
-          for file in ${{ steps.changed-files.outputs.changed_files }}; do
+          for file in llama-index-integrations/llms/llama-index-llms-ipex-llm/pyproject.toml; do
               cd `echo $file | sed 's/\/pyproject.toml//g'`
               poetry lock
               pip install -e .
-              poetry config pypi-token.pypi $PYPI_TOKEN
-              poetry publish --build
+              poetry publish --build --dry-run
               cd -
           done
