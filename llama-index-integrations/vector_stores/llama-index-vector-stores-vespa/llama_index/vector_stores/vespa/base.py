@@ -2,10 +2,10 @@
 
 from typing import Any, List, Optional, Callable
 
-
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -45,7 +45,7 @@ def callback(response: VespaResponse, id: str):
         )
 
 
-class VespaVectorStore(VectorStore):
+class VespaVectorStore(BasePydanticVectorStore):
     """
     Vespa vector store.
 
@@ -104,6 +104,23 @@ class VespaVectorStore(VectorStore):
     is_embedding_query: bool = False
     flat_metadata: bool = True
 
+    application_package: ApplicationPackage
+    deployment_target: str
+    default_schema_name: str
+    namespace: str
+    embeddings_outside_vespa: bool
+    port: int
+    url: Optional[str]
+    groupname: Optional[str]
+    tenant: Optional[str]
+    application: Optional[str]
+    key_location: Optional[str]
+    key_content: Optional[str]
+    auth_client_token_id: Optional[str]
+    kwargs: dict
+
+    _app: Vespa = PrivateAttr()
+
     def __init__(
         self,
         application_package: ApplicationPackage = hybrid_template,
@@ -131,29 +148,36 @@ class VespaVectorStore(VectorStore):
                 "Using default hybrid template. Please make sure that the Vespa application is set up with the correct schema and rank profile."
             )
         # Initialize all parameters
-        self.application_package = application_package
-        self.deployment_target = deployment_target
-        self.default_schema_name = default_schema_name
-        self.namespace = namespace
-        self.embeddings_outside_vespa = embeddings_outside_vespa
-        self.port = port
-        self.url = url
-        self.groupname = groupname
-        self.tenant = tenant
-        self.application = application
-        self.key_location = key_location
-        self.key_content = key_content
-        self.auth_client_token_id = auth_client_token_id
-        self.kwargs = kwargs
+        super().__init__(
+            application_package=application_package,
+            namespace=namespace,
+            default_schema_name=default_schema_name,
+            deployment_target=deployment_target,
+            port=port,
+            embeddings_outside_vespa=embeddings_outside_vespa,
+            url=url,
+            groupname=groupname,
+            tenant=tenant,
+            application=application,
+            key_location=key_location,
+            key_content=key_content,
+            auth_client_token_id=auth_client_token_id,
+            kwargs=kwargs,
+        )
+
         if self.url is None:
-            self.app = self._deploy()
+            self._app = self._deploy()
         else:
-            self.app = self._try_get_running_app()
+            self._app = self._try_get_running_app()
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "VespaVectorStore"
 
     @property
     def client(self) -> Vespa:
         """Get client."""
-        return self.app
+        return self._app
 
     def _try_get_running_app(self) -> Vespa:
         app = Vespa(url=f"{self.url}:{self.port}")
@@ -226,7 +250,7 @@ class VespaVectorStore(VectorStore):
             data_to_insert.append(entry)
             ids.append(node.node_id)
 
-        self.app.feed_iterable(
+        self._app.feed_iterable(
             data_to_insert,
             schema=schema or self.default_schema_name,
             namespace=self.namespace,
@@ -256,7 +280,7 @@ class VespaVectorStore(VectorStore):
             total_timeout (int): Total timeout for all requests
             kwargs (Any): Additional kwargs for Vespa application
         """
-        semaphore = asyncio.Semaphore(max_concurrent_requests)
+        semaphore = asyncio.Semaphore(num_concurrent_requests)
         ids = []
         data_to_insert = []
         for node in nodes:
@@ -277,9 +301,10 @@ class VespaVectorStore(VectorStore):
             data_to_insert.append(entry)
             ids.append(node.node_id)
 
-        async with self.app.asyncio(
+        async with self._app.asyncio(
             connections=max_connections, total_timeout=total_timeout
         ) as async_app:
+            tasks = []
             for doc in data_to_insert:
                 async with semaphore:
                     task = asyncio.create_task(
@@ -308,7 +333,7 @@ class VespaVectorStore(VectorStore):
         """
         Delete nodes using with ref_doc_id.
         """
-        response: VespaResponse = self.app.delete_data(
+        response: VespaResponse = self._app.delete_data(
             schema=self.default_schema_name,
             namespace=namespace or self.namespace,
             data_id=ref_doc_id,
@@ -449,7 +474,7 @@ class VespaVectorStore(VectorStore):
             vector_top_k=vector_top_k,
         )
         logger.info(f"Vespa Query body:\n {body}")
-        with self.app.syncio() as session:
+        with self._app.syncio() as session:
             response = session.query(
                 body=body,
             )

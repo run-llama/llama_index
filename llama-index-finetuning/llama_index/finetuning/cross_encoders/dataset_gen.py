@@ -1,5 +1,6 @@
 """Dataset Generator for Cross Encoder Finetuning."""
 import re
+import warnings
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -72,6 +73,15 @@ def generate_synthetic_queries_over_documents(
             response.message.content if response.message.content is not None else ""
         )
         response_questions = re.split(";|\n", response_content)
+        response_questions = response_questions[:num_questions_per_chunk]
+
+        num_questions_generated = len(response_questions)
+        if num_questions_generated < num_questions_per_chunk:
+            warnings.warn(
+                f"Fewer questions generated ({num_questions_generated}) "
+                f"than requested ({num_questions_per_chunk})."
+            )
+
         questions.extend(response_questions)
 
     return questions

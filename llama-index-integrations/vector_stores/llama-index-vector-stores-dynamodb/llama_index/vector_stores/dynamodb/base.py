@@ -5,13 +5,14 @@ from __future__ import annotations
 from logging import getLogger
 from typing import Any, Dict, List, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
 )
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -29,7 +30,7 @@ LEARNER_MODES = {
 }
 
 
-class DynamoDBVectorStore(VectorStore):
+class DynamoDBVectorStore(BasePydanticVectorStore):
     """DynamoDB Vector Store.
 
     In this vector store, embeddings are stored within dynamodb table.
@@ -51,10 +52,17 @@ class DynamoDBVectorStore(VectorStore):
 
     stores_text: bool = False
 
+    _kvstore: DynamoDBKVStore = PrivateAttr()
+    _collection_embedding: str = PrivateAttr()
+    _collection_text_id_to_doc_id: str = PrivateAttr()
+    _key_value: str = PrivateAttr()
+
     def __init__(
         self, dynamodb_kvstore: DynamoDBKVStore, namespace: str | None = None
     ) -> None:
         """Initialize params."""
+        super().__init__()
+
         self._kvstore = dynamodb_kvstore
         namespace = namespace or DEFAULT_NAMESPACE
         self._collection_embedding = f"{namespace}/embedding"
@@ -68,6 +76,10 @@ class DynamoDBVectorStore(VectorStore):
         """Load from DynamoDB table name."""
         dynamodb_kvstore = DynamoDBKVStore.from_table_name(table_name=table_name)
         return cls(dynamodb_kvstore=dynamodb_kvstore, namespace=namespace)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "DynamoDBVectorStore"
 
     @property
     def client(self) -> None:
