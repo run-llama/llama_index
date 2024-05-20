@@ -185,11 +185,12 @@ def deserialize_or_fallback(value: str) -> Union[Any, str]:
 
 def concatenate_large_values(parts_to_assemble: dict) -> dict:
     """Concatenate split parts of large properties back into a single value."""
-    deserialized_values = {}
-    for base_key, parts in parts_to_assemble.items():
-        concatenated_value = "".join(parts[i] for i in sorted(parts.keys()))
-        deserialized_values[base_key] = deserialize_or_fallback(concatenated_value)
-    return deserialized_values
+    return {
+        base_key: deserialize_or_fallback(
+            "".join(parts[i] for i in sorted(parts.keys()))
+        )
+        for base_key, parts in parts_to_assemble.items()
+    }
 
 
 def deserialize(service_mode: ServiceMode, item: dict) -> dict:
