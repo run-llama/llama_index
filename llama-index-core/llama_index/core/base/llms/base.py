@@ -256,6 +256,10 @@ class BaseLLM(ChainableMixin, BaseComponent):
         """
 
     def __init_subclass__(cls, **kwargs) -> None:
+        """
+        Decorate the abstract methods' implementations for each subclass.
+        `__init_subclass__` is analogous to `__init__` because classes are also objects.
+        """
         super().__init_subclass__(**kwargs)
         dispatcher = instrumentation.get_dispatcher(cls.__module__)
         for attr in (
