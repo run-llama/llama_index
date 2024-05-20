@@ -114,7 +114,7 @@ def serialize_and_encode(value: Any) -> Tuple[str, bytes, int]:
     return serialized_val, bytes_val, val_length
 
 
-def split_large_property_value(num_parts: int, bytes_val: str, key: str) -> None:
+def split_large_property_value(num_parts: int, bytes_val: str, key: str) -> dict:
     """Split a large property value into multiple parts."""
     parts = {}
     for i in range(num_parts):
@@ -183,11 +183,13 @@ def deserialize_or_fallback(value: str) -> Union[Any, str]:
         return value
 
 
-def concatenate_large_values(parts_to_assemble: dict, deserialized_item: dict) -> None:
+def concatenate_large_values(parts_to_assemble: dict) -> dict:
     """Concatenate split parts of large properties back into a single value."""
+    deserialized_values = {}
     for base_key, parts in parts_to_assemble.items():
         concatenated_value = "".join(parts[i] for i in sorted(parts.keys()))
-        deserialized_item[base_key] = deserialize_or_fallback(concatenated_value)
+        deserialized_values[base_key] = deserialize_or_fallback(concatenated_value)
+    return deserialized_values
 
 
 def deserialize(service_mode: ServiceMode, item: dict) -> dict:
@@ -224,6 +226,7 @@ def deserialize(service_mode: ServiceMode, item: dict) -> dict:
         # Assign non-serialized values
         deserialized_item[key] = val
 
-    concatenate_large_values(parts_to_assemble, deserialized_item)
+    deserialized_property_values = concatenate_large_values(parts_to_assemble)
+    deserialized_item.update(deserialized_property_values)
 
     return deserialized_item
