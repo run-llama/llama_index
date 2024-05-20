@@ -6,24 +6,10 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
     retry_if_exception_type,
-    retry_if_result,
 )
 
 from requests.exceptions import Timeout, ConnectionError
 from llama_index.core.base.llms.types import ChatMessage
-
-
-def is_server_error(response: Any) -> bool:
-    """
-    Check if the response is a 500x error.
-
-    Args:
-        response: The response object.
-
-    Returns:
-        bool: True if the response is a 500x error, False otherwise.
-    """
-    return response.status_code >= 500 and response.status_code < 600
 
 
 def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
@@ -79,9 +65,7 @@ def create_retry_decorator(retry_limit: int) -> Callable[[Any], Any]:
         stop=stop_after_attempt(retry_limit),
         wait=wait_exponential(multiplier=1, min=initial_delay, max=max_delay),
         retry=(
-            retry_if_exception_type(Timeout)
-            | retry_if_exception_type(ConnectionError)
-            | retry_if_result(is_server_error)
+            retry_if_exception_type(Timeout) | retry_if_exception_type(ConnectionError)
         ),
     )
 
