@@ -87,7 +87,7 @@ class LMStudio(CustomLLM):
         default_factory=dict, description=("Additional kwargs to pass to the model.")
     )
 
-    def __create_payload_from_messages(
+    def _create_payload_from_messages(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> Dict[str, Any]:
         return {
@@ -109,7 +109,7 @@ class LMStudio(CustomLLM):
             **kwargs,
         }
 
-    def __create_chat_response_from_http_response(
+    def _create_chat_response_from_http_response(
         self, response: httpx.Response
     ) -> ChatResponse:
         raw = response.json()
@@ -126,27 +126,27 @@ class LMStudio(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        payload = self.__create_payload_from_messages(messages, **kwargs)
+        payload = self._create_payload_from_messages(messages, **kwargs)
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
                 url=f"{self.base_url}/chat/completions",
                 json=payload,
             )
             response.raise_for_status()
-            return self.__create_chat_response_from_http_response(response)
+            return self._create_chat_response_from_http_response(response)
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        payload = self.__create_payload_from_messages(messages, **kwargs)
+        payload = self._create_payload_from_messages(messages, **kwargs)
         async with httpx.AsyncClient(timeout=Timeout(self.request_timeout)) as client:
             response = await client.post(
                 url=f"{self.base_url}/chat/completions",
                 json=payload,
             )
             response.raise_for_status()
-            return self.__create_chat_response_from_http_response(response)
+            return self._create_chat_response_from_http_response(response)
 
     @llm_completion_callback()
     def complete(
@@ -166,7 +166,7 @@ class LMStudio(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        payload = self.__create_payload_from_messages(messages, stream=True, **kwargs)
+        payload = self._create_payload_from_messages(messages, stream=True, **kwargs)
 
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             with client.stream(
