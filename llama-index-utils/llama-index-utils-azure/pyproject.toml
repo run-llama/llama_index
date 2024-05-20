@@ -7,12 +7,7 @@ check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
-[tool.llamahub]
-contains_example = false
-import_path = "llama_index.storage.kvstore.azure"
-
 [tool.llamahub.class_authors]
-AzureKVStore = "Falven"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,18 +17,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Fran Aguilera <falven2000@hotmail.com>"]
-description = "llama-index kvstore azure integration"
+description = "llama-index utils azure"
 exclude = ["**/BUILD"]
+keywords = ["azure", "utils"]
 license = "MIT"
-name = "llama-index-storage-kvstore-azure"
+maintainers = ["falven"]
+name = "llama-index-utils-azure"
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-azure-data-tables = "^12.5.0"
-llama-index-utils-azure = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -61,4 +55,5 @@ extras = ["toml"]
 version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
-include = "llama_index/"
+from = "llama-index-utils-azure/llama_index/utils/azure"
+include = "llama_index.utils.azure"
