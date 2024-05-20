@@ -1,5 +1,9 @@
 # LlamaIndex Llms Integration: Lmstudio
 
+```bash
+pip install llama-index-llms-lmstudio
+```
+
 ## Usage Steps
 
 1. Open LM Studio App and go to the Local Server Tab
