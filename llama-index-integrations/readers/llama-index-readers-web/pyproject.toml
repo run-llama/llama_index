@@ -14,6 +14,7 @@ import_path = "llama_index.readers.web"
 [tool.llamahub.class_authors]
 AsyncWebPageReader = "Hironsan"
 BeautifulSoupWebReader = "thejessezhang"
+BrowserbaseWebReader = "llama-index"
 KnowledgeBaseWebReader = "jasonwcfan"
 MainContentExtractorReader = "HawkClaws"
 NewsArticleReader = "ruze00"
