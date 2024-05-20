@@ -31,9 +31,13 @@ nltk.download("stopwords")
 
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
-#TODO add more models
+#TODO test more languages
 LANGUAGES : list[str] = ["english"]
-LANGUAGE_MODELS : dict[str, list[str]] = {"english" : ["en_core_web_md"]}
+LANGUAGE_MODELS : dict[str, list[str]] ={
+                                        "english" : ["en_core_web_md", "en_core_web_lg"],
+                                        "german" : ["de_core_news_md", "de_core_news_lg"],
+                                        "spanish" : ["es_core_news_md", "es_core_news_lg"]
+                                        }
 
 
 
@@ -319,6 +323,6 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         text = text.translate(str.maketrans("", "", string.punctuation))
         # Remove stopwords
         tokens = word_tokenize(text)
-        filtered_words = [w for w in tokens if w not in self.stop_words]
+        filtered_words = [w for w in tokens if w not in self.language_config.stopwords]
 
         return " ".join(filtered_words)
