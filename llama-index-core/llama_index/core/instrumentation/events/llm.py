@@ -1,5 +1,4 @@
 from typing import Any, List, Optional
-
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -138,7 +137,7 @@ class LLMChatInProgressEvent(BaseEvent):
 
     Args:
         messages (List[ChatMessage]): List of chat messages.
-        response (ChatResponse): Chat response currently beiung streamed.
+        response (ChatResponse): Chat response currently being streamed.
     """
 
     messages: List[ChatMessage]
@@ -155,11 +154,11 @@ class LLMChatEndEvent(BaseEvent):
 
     Args:
         messages (List[ChatMessage]): List of chat messages.
-        response (ChatResponse): Chat response.
+        response (Optional[ChatResponse]): Last chat response.
     """
 
     messages: List[ChatMessage]
-    response: ChatResponse
+    response: Optional[ChatResponse]
 
     @classmethod
     def class_name(cls):

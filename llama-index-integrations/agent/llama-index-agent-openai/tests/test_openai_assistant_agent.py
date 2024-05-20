@@ -34,6 +34,48 @@ def test_from_existing_no_tools() -> None:
     assert isinstance(agent, OpenAIAssistantAgent)
 
 
+def test_from_new():
+    name = "Math Tutor"
+    instructions = (
+        "You are a personal math tutor. Write and run code to answer math questions."
+    )
+    openai_tools = [{"type": "code_interpreter"}]
+    instructions_prefix = (
+        "Please address the user as Jane Doe. The user has a premium account."
+    )
+    run_retrieve_sleep_time = 0.5
+    verbose = True
+    api_key = "test-api-key"
+
+    mock_assistant = MagicMock()
+    with patch.object(openai, "OpenAI") as mock_openai:
+        mock_openai.return_value.beta.assistants.create.return_value = mock_assistant
+        agent = OpenAIAssistantAgent.from_new(
+            name=name,
+            instructions=instructions,
+            openai_tools=openai_tools,
+            instructions_prefix=instructions_prefix,
+            run_retrieve_sleep_time=run_retrieve_sleep_time,
+            verbose=verbose,
+            api_key=api_key,
+        )
+
+    assert isinstance(agent, OpenAIAssistantAgent)
+    assert agent.assistant == mock_assistant
+    assert agent.client == mock_openai.return_value
+    assert agent._instructions_prefix == instructions_prefix
+    assert agent._run_retrieve_sleep_time == run_retrieve_sleep_time
+    assert agent._verbose == verbose
+
+    mock_openai.assert_called_once_with(api_key=api_key)
+    mock_openai.return_value.beta.assistants.create.assert_called_once_with(
+        model="gpt-4-1106-preview",
+        name=name,
+        instructions=instructions,
+        tools=openai_tools,
+    )
+
+
 @pytest.fixture()
 def add_tool() -> FunctionTool:
     def add(a: int, b: int) -> int:

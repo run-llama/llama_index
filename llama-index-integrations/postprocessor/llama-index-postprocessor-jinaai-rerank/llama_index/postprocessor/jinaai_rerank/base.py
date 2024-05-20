@@ -10,7 +10,7 @@ from llama_index.core.instrumentation.events.rerank import (
     ReRankStartEvent,
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 API_URL = "https://api.jina.ai/v1/rerank"
 
@@ -75,7 +75,10 @@ class JinaRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            texts = [node.node.get_content() for node in nodes]
+            texts = [
+                node.node.get_content(metadata_mode=MetadataMode.EMBED)
+                for node in nodes
+            ]
             resp = self._session.post(  # type: ignore
                 API_URL,
                 json={
