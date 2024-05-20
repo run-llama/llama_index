@@ -27,7 +27,7 @@ from llama_index.core.schema import (
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
 )
 from llama_index.packs.raptor.clustering import get_clusters
 
@@ -112,7 +112,7 @@ class RaptorRetriever(BaseRetriever):
         similarity_top_k: int = 2,
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         transformations: Optional[List[TransformComponent]] = None,
         summary_module: Optional[SummaryModule] = None,
         existing_index: Optional[VectorStoreIndex] = None,
@@ -338,7 +338,7 @@ class RaptorPack(BaseLlamaPack):
         documents: List[BaseNode],
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         similarity_top_k: int = 2,
         mode: QueryModes = "collapsed",
         verbose: bool = True,

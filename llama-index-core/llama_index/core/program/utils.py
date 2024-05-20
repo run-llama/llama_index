@@ -44,7 +44,7 @@ def get_program_for_llm(
         # we fall back to the LLM program
 
         try:
-            from llama_index.llms.openai import OpenAI
+            from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
             if isinstance(llm, OpenAI):
                 from llama_index.program.openai import (

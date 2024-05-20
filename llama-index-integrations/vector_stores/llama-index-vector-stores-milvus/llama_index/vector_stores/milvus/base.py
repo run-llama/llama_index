@@ -72,7 +72,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     Args:
         uri (str, optional): The URI to connect to, comes in the form of
-            "http://address:port".
+            "https://address:port" for Milvus or Zilliz Cloud service,
+            or "path/to/local/milvus.db" for the lite local Milvus. Defaults to
+            "./milvus_llamaindex.db".
         token (str, optional): The token for log in. Empty if not using rbac, if
             using rbac it will most likely be "username:password".
         collection_name (str, optional): The name of the collection where data will be
@@ -146,7 +148,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     stores_node: bool = True
 
-    uri: str = "http://localhost:19530"
+    uri: str = "./milvus_llamaindex.db"
     token: str = ""
     collection_name: str = "llamacollection"
     dim: Optional[int]
@@ -171,7 +173,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        uri: str = "http://localhost:19530",
+        uri: str = "./milvus_llamaindex.db",
         token: str = "",
         collection_name: str = "llamacollection",
         dim: Optional[int] = None,
@@ -263,7 +265,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
         else:
             host, port = extract_host_port(uri)
-            connections.connect("default", host, port)
+            connections.connect("default", host=host, port=port)
             self._collection = Collection(collection_name)
 
         self._create_index_if_required()

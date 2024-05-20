@@ -2,10 +2,11 @@ import logging
 import math
 from typing import Any, List
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -28,7 +29,7 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-class BagelVectorStore(VectorStore):
+class BagelVectorStore(BasePydanticVectorStore):
     """Vector store for Bagel.
 
     Examples:
@@ -56,6 +57,8 @@ class BagelVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
+    _collection: Any = PrivateAttr()
+
     def __init__(self, collection: Any, **kwargs: Any) -> None:
         """
         Initialize BagelVectorStore.
@@ -64,6 +67,8 @@ class BagelVectorStore(VectorStore):
             collection: Bagel collection.
             **kwargs: Additional arguments.
         """
+        super().__init__()
+
         try:
             from bagel.api.Cluster import Cluster
         except ImportError:
@@ -73,6 +78,10 @@ class BagelVectorStore(VectorStore):
             raise ValueError("Collection must be a bagel Cluster.")
 
         self._collection = collection
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "BagelVectorStore"
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """

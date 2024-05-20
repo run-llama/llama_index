@@ -20,7 +20,7 @@ Here's an example usage of the MultionToolSpec.
 from llama_index.tools.multion import MultionToolSpec
 from llama_index.agent.openai import OpenAIAgent
 
-multion_tool = MultionToolSpec()
+multion_tool = MultionToolSpec(api_key="your-multion-key")
 
 agent = OpenAIAgent.from_tools(multion_tool.to_tool_list())
 

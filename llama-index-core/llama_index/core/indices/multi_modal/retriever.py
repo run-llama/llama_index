@@ -25,7 +25,7 @@ from llama_index.core.settings import (
 )
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -225,7 +225,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
         similarity_top_k: int,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(
             query_bundle_with_embeddings, similarity_top_k
@@ -347,7 +347,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
         similarity_top_k: int,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(
             query_bundle_with_embeddings, similarity_top_k
