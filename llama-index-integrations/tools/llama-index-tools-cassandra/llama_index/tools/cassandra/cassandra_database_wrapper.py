@@ -6,7 +6,7 @@ import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from cassandra.cluster import ResultSet, Session
-from pydantic import BaseModel, Field, root_validator
+from llama_index.core.bridge.pydantic import BaseModel, Field, root_validator
 
 IGNORED_KEYSPACES = [
     "system",
