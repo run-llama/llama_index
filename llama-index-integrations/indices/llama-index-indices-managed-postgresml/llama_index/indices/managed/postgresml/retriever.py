@@ -8,17 +8,7 @@ from typing import Any, List, Optional, Dict
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.indices.managed.types import ManagedIndexQueryMode
-from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
-    VectorIndexAutoRetriever,
-)
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.vector_stores.types import (
-    FilterCondition,
-    MetadataFilters,
-    VectorStoreInfo,
-    VectorStoreQuerySpec,
-)
 from llama_index.indices.managed.postgresml.base import PostgresMLIndex
 
 _logger = logging.getLogger(__name__)
@@ -57,7 +47,9 @@ class PostgresMLRetriever(BaseRetriever):
             query: Optional[Dict[str, Any]] = None
             limit: Optional[int] = 5
         """
-        return run_async_tasks([self._aretrieve(query_bundle, query, limit)])[0]
+        return run_async_tasks([self._aretrieve(query_bundle, query, limit, **kwargs)])[
+            0
+        ]
 
     async def _aretrieve(
         self,
@@ -106,7 +98,11 @@ class PostgresMLRetriever(BaseRetriever):
         results = await do_vector_search()
         nodes = [
             NodeWithScore(
-                node=TextNode(text=r["chunk"], metadata=r["document"]["metadata"]),
+                node=TextNode(
+                    id_=r["document"]["id"],
+                    text=r["chunk"],
+                    metadata=r["document"]["metadata"],
+                ),
                 score=r["score"],
             )
             for r in results

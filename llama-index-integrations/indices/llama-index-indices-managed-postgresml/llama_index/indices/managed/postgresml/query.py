@@ -1,8 +1,7 @@
-from typing import Any, List, Optional, Dict
+from typing import Any, Optional, Dict
 from copy import deepcopy
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
     Response,
@@ -11,8 +10,6 @@ from llama_index.core.base.response.schema import (
 )
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import ChatPromptTemplate, BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
@@ -66,11 +63,7 @@ class AsyncJsonGenerator:
 
 
 class PostgresMLQueryEngine(BaseQueryEngine):
-    """Retriever query engine for PostgresML.
-
-    Args:
-        retriever (PostgresMLRetriever): A retriever object.
-    """
+    """Retriever query engine for PostgresML."""
 
     def __init__(
         self,
@@ -120,7 +113,7 @@ class PostgresMLQueryEngine(BaseQueryEngine):
         query_bundle: Optional[QueryBundle] = None,
         query: Optional[Dict[str, Any]] = None,
         vector_search_limit: Optional[int] = 4,
-        vector_search_document: Optional[Dict[str, Any]] = {"keys": ["metadata"]},
+        vector_search_document: Optional[Dict[str, Any]] = {"keys": ["id", "metadata"]},
         model: Optional[str] = "meta-llama/Meta-Llama-3-8B-Instruct",
         model_parameters: Optional[Dict[str, Any]] = {"max_tokens": 2048},
     ) -> RESPONSE_TYPE:
@@ -175,7 +168,11 @@ class PostgresMLQueryEngine(BaseQueryEngine):
             )
             source_nodes = [
                 NodeWithScore(
-                    node=TextNode(text=r["chunk"], metadata=r["document"]["metadata"]),
+                    node=TextNode(
+                        id_=r["document"]["id"],
+                        text=r["chunk"],
+                        metadata=r["document"]["metadata"],
+                    ),
                     score=r["score"],
                 )
                 for r in results["sources"]["CONTEXT"]

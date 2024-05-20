@@ -6,32 +6,18 @@ interfaces a managed service.
 """
 
 import logging
-import asyncio
 from llama_index.core.async_utils import run_async_tasks
-from concurrent.futures import ThreadPoolExecutor
-from hashlib import blake2b
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, Optional, Sequence, Type
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import (
     BaseNode,
     Document,
-    MetadataMode,
     TextNode,
-    TransformComponent,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings
-from llama_index.core.storage.storage_context import StorageContext
-
-from llama_index.core.response_synthesizers import ResponseMode
-from llama_index.core import get_response_synthesizer
-
 from pgml import Collection, Pipeline
 
 _logger = logging.getLogger(__name__)
@@ -55,10 +41,6 @@ class PostgresMLIndex(BaseManagedIndex):
     - Creates the embedding for each chunk (node)
     - Performs the search for the top k most similar nodes to a query
     - Optionally can perform text-generation or chat completion
-
-    Args:
-        show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
-
     """
 
     def __init__(
@@ -67,13 +49,15 @@ class PostgresMLIndex(BaseManagedIndex):
         pipeline_name: Optional[str] = None,
         pipeline_schema: Optional[Dict[str, Any]] = None,
         pgml_database_url: Optional[str] = None,
-        show_progress: bool = False,
+        show_progress: bool = True,
+        upsert_parallel_batches: int = 1,
         nodes: Optional[Sequence[BaseNode]] = None,
-        parallelize_ingest: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize the PostgresML SDK."""
-        self.parallelize_ingest = parallelize_ingest
+        self.show_progress = show_progress
+        self.upsert_parallel_batches = upsert_parallel_batches
+
         index_struct = PostgresMLIndexStruct(
             index_id=collection_name,
             summary="PostgresML Index",
@@ -82,9 +66,6 @@ class PostgresMLIndex(BaseManagedIndex):
         super().__init__(
             show_progress=show_progress,
             index_struct=index_struct,
-            service_context=ServiceContext.from_defaults(
-                llm=None, llm_predictor=None, embed_model=None
-            ),
             **kwargs,
         )
 
@@ -107,6 +88,8 @@ class PostgresMLIndex(BaseManagedIndex):
             }
         self.pipeline = Pipeline(pipeline_name, pipeline_schema)
 
+        # We must wrap self.collection.add_pipeline() with this async function
+        # This is a limitation of the pyo3 async implementation
         async def add_pipeline():
             await self.collection.add_pipeline(self.pipeline)
 
@@ -114,19 +97,6 @@ class PostgresMLIndex(BaseManagedIndex):
 
         if nodes:
             self._insert(nodes)
-
-    # NOTE: Not sure what actually calls this
-    def _delete_doc(self, doc_id: str) -> bool:
-        """
-        Delete a document from the PostgresML Collection.
-
-        Args:
-            doc_id (str): ID of the document to delete.
-
-        Returns:
-            bool: True if deletion was successful, False otherwise.
-        """
-        return True
 
     def _insert(
         self,
@@ -143,32 +113,39 @@ class PostgresMLIndex(BaseManagedIndex):
             for node in nodes
         ]
 
+        args = {"parallel_batches": self.upsert_parallel_batches, **insert_kwargs}
+
+        # We must wrap self.collection.upsert_documents() with this async function
+        # This is a limitation of the pyo3 async implementation
         async def upsert_documents():
-            await self.collection.upsert_documents(documents)
+            await self.collection.upsert_documents(documents, args)
 
         run_async_tasks([upsert_documents()])
 
     def add_documents(
         self,
         docs: Sequence[Document],
-        allow_update: bool = True,
+        **insert_kwargs: Any,
     ) -> None:
         nodes = [
-            TextNode(text=doc.get_content(), metadata=doc.metadata) for doc in docs  # type: ignore
+            TextNode(id_=doc.id_, text=doc.get_content(), metadata=doc.metadata)
+            for doc in docs
         ]
-        self._insert(nodes)
+        self._insert(nodes, **insert_kwargs)
 
-    def delete_ref_doc(
-        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
-    ) -> None:
-        raise NotImplementedError(
-            "PostgresML does not support deleting a reference document"
-        )
+    def delete_ref_doc(self, ref_doc_id: str) -> None:
+        # We must wrap self.collection.delete_documents() with this async function
+        # This is a limitation of the pyo3 async implementation
+        async def delete_documents():
+            await self.collection.delete_documents({"id": {"$eq": ref_doc_id}})
 
-    def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
-        raise NotImplementedError(
-            "PostgresML does not support updating a reference document"
+        run_async_tasks([delete_documents()])
+
+    def update_ref_doc(self, document: Document) -> None:
+        node = TextNode(
+            id_=document.id_, text=document.get_content(), metadata=document.metadata
         )
+        self._insert([node], merge=True)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
@@ -196,22 +173,26 @@ class PostgresMLIndex(BaseManagedIndex):
         pipeline_name: Optional[str] = None,
         pipeline_schema: Optional[Dict[str, Any]] = None,
         pgml_database_url: Optional[str] = None,
-        storage_context: Optional[StorageContext] = None,
         show_progress: bool = False,
-        callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
+        upsert_parallel_batches: int = 1,
         **kwargs: Any,
     ) -> IndexType:
         """Build a PostgresML index from a sequence of documents."""
         nodes = [
-            TextNode(text=document.get_content(), metadata=document.metadata)  # type: ignore
+            TextNode(
+                id_=document.id_,
+                text=document.get_content(),
+                metadata=document.metadata,
+            )
             for document in documents
         ]
         return cls(
             collection_name,
+            pipeline_name=pipeline_name,
+            pipeline_schema=pipeline_schema,
+            pgml_database_url=pgml_database_url,
             nodes=nodes,
             show_progress=show_progress,
+            upsert_parallel_batches=upsert_parallel_batches,
             **kwargs,
         )
