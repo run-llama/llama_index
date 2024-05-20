@@ -15,6 +15,8 @@ DEFAULT_PERSIST_FNAME = "graph_store.json"
 DEFUALT_LPG_PERSIST_FNAME = "lpg_graph_store.json"
 
 TRIPLET_SOURCE_KEY = "triplet_source_id"
+KG_NODES_KEY = "nodes"
+KG_RELATIONS_KEY = "relations"
 
 
 class LabelledNode(BaseModel):

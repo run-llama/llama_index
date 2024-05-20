@@ -7,6 +7,7 @@ from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
+from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMTripletExtractor,
@@ -158,8 +159,8 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
 
         # ensure all nodes have nodes and/or relations in metadata
         assert all(
-            node.metadata.get("nodes") is not None
-            or node.metadata.get("relations") is not None
+            node.metadata.get(KG_NODES_KEY) is not None
+            or node.metadata.get(KG_RELATIONS_KEY) is not None
             for node in nodes
         )
 
@@ -167,8 +168,8 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
         kg_rels_to_insert: List[Relation] = []
         for node in nodes:
             # remove nodes and relations from metadata
-            kg_nodes = node.metadata.pop("nodes", [])
-            kg_rels = node.metadata.pop("relations", [])
+            kg_nodes = node.metadata.pop(KG_NODES_KEY, [])
+            kg_rels = node.metadata.pop(KG_RELATIONS_KEY, [])
 
             # add source id to properties
             for kg_node in kg_nodes:

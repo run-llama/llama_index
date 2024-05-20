@@ -1,7 +1,7 @@
 from typing import Any, List
 
 from llama_index.core.schema import TransformComponent, BaseNode, NodeRelationship
-from llama_index.core.graph_stores.types import Relation
+from llama_index.core.graph_stores.types import Relation, KG_NODES_KEY, KG_RELATIONS_KEY
 
 
 def get_node_rel_string(relationship: NodeRelationship) -> str:
@@ -12,8 +12,8 @@ class ImplicitTripletExtractor(TransformComponent):
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
         """Extract edges from node relationships."""
         for node in nodes:
-            existing_relations = node.metadata.pop("relations", [])
-            existing_nodes = node.metadata.pop("nodes", [])
+            existing_relations = node.metadata.pop(KG_RELATIONS_KEY, [])
+            existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
 
             edges = []
             metadata = node.metadata.copy()
