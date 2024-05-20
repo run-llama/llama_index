@@ -398,7 +398,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 text_qa_template=partial_synthesis_prompt,
                 refine_template=self._refine_synthesis_prompt,
                 verbose=self._verbose,
-                streaming=self._streaming
+                streaming=self._streaming,
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
