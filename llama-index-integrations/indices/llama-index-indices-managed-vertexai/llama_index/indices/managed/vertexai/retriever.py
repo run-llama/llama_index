@@ -1,5 +1,5 @@
-"""Vectara index.
-An index that is built on top of Vectara.
+"""Vertex AI retriever.
+An retriever that is built on top of Vertex AI.
 """
 
 import json
@@ -19,22 +19,22 @@ from llama_index.core.vector_stores.types import (
     VectorStoreInfo,
     VectorStoreQuerySpec,
 )
-from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.indices.managed.vectara.prompts import (
-    DEFAULT_VECTARA_QUERY_PROMPT_TMPL,
+from llama_index.indices.managed.vertexai.base import VertexAIIndex
+from llama_index.indices.managed.vertexai.prompts import (
+    DEFAULT_VERTEXAI_QUERY_PROMPT_TMPL,
 )
 
 _logger = logging.getLogger(__name__)
 
 
-class VectaraRetriever(BaseRetriever):
-    """Vectara Retriever.
+class VertexAIRetriever(BaseRetriever):
+    """VertexAI Retriever.
 
     Args:
-        index (VectaraIndex): the Vectara Index
+        index (VertexAIIndex): the VertexAI Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
-        vectara_query_mode (str): vector store query mode
-            See reference for vectara_query_mode for full list of supported modes.
+        vertexai_query_mode (str): vector store query mode
+            See reference for vertexai_query_mode for full list of supported modes.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -57,9 +57,9 @@ class VectaraRetriever(BaseRetriever):
 
     def __init__(
         self,
-        index: VectaraIndex,
+        index: VertexAIIndex,
         similarity_top_k: int = 5,
-        vectara_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
+        vertexai_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
         lambda_val: float = 0.025,
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
@@ -69,7 +69,7 @@ class VectaraRetriever(BaseRetriever):
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
-        summary_prompt_name: str = "vectara-experimental-summary-ext-2023-10-23-small",
+        summary_prompt_name: str = "vertexai-experimental-summary-ext-2023-10-23-small",
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -81,7 +81,7 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_after = n_sentences_after
         self._filter = filter
 
-        if vectara_query_mode == ManagedIndexQueryMode.MMR:
+        if vertexai_query_mode == ManagedIndexQueryMode.MMR:
             self._mmr = True
             self._mmr_k = mmr_k
             self._mmr_diversity_bias = mmr_diversity_bias
@@ -96,15 +96,6 @@ class VectaraRetriever(BaseRetriever):
         else:
             self._summary_enabled = False
         super().__init__(callback_manager)
-
-    def _get_post_headers(self) -> dict:
-        """Returns headers that should be attached to each post request."""
-        return {
-            "x-api-key": self._index._vectara_api_key,
-            "customer-id": self._index._vectara_customer_id,
-            "Content-Type": "application/json",
-            "X-Source": "llama_index",
-        }
 
     @property
     def similarity_top_k(self) -> int:
@@ -126,100 +117,21 @@ class VectaraRetriever(BaseRetriever):
         Args:
             query: Query Bundle
         """
-        return self._vectara_query(query_bundle, **kwargs)[0]  # return top_nodes only
+        return self._vertexai_query(query_bundle, **kwargs)[0]  # return top_nodes only
 
-    def _vectara_query(
+    def _vertexai_query(
         self,
         query_bundle: QueryBundle,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], str]:
-        """Query Vectara index to get for top k most similar nodes.
+        """Query VertexAI index to get for top k most similar nodes.
 
         Args:
             query: Query Bundle
         """
-        corpus_key = {
-            "customerId": self._index._vectara_customer_id,
-            "corpusId": self._index._vectara_corpus_id,
-            "lexicalInterpolationConfig": {"lambda": self._lambda_val},
-        }
-        if len(self._filter) > 0:
-            corpus_key["metadataFilter"] = self._filter
+        return None
 
-        data = {
-            "query": [
-                {
-                    "query": query_bundle.query_str,
-                    "start": 0,
-                    "numResults": self._mmr_k if self._mmr else self._similarity_top_k,
-                    "contextConfig": {
-                        "sentencesBefore": self._n_sentences_before,
-                        "sentencesAfter": self._n_sentences_after,
-                    },
-                    "corpusKey": [corpus_key],
-                }
-            ]
-        }
-        if self._mmr:
-            data["query"][0]["rerankingConfig"] = {
-                "rerankerId": 272725718,
-                "mmrConfig": {"diversityBias": self._mmr_diversity_bias},
-            }
-
-        if self._summary_enabled:
-            data["query"][0]["summary"] = [
-                {
-                    "responseLang": self._summary_response_lang,
-                    "maxSummarizedResults": self._summary_num_results,
-                    "summarizerPromptName": self._summary_prompt_name,
-                }
-            ]
-
-        response = self._index._session.post(
-            headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/query",
-            data=json.dumps(data),
-            timeout=self._index.vectara_api_timeout,
-        )
-
-        if response.status_code != 200:
-            _logger.error(
-                "Query failed %s",
-                f"(code {response.status_code}, reason {response.reason}, details "
-                f"{response.text})",
-            )
-            return [], ""
-
-        result = response.json()
-
-        responses = result["responseSet"][0]["response"]
-        documents = result["responseSet"][0]["document"]
-        summary = (
-            result["responseSet"][0]["summary"][0]["text"]
-            if self._summary_enabled
-            else None
-        )
-
-        metadatas = []
-        for x in responses:
-            md = {m["name"]: m["value"] for m in x["metadata"]}
-            doc_num = x["documentIndex"]
-            doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
-            md.update(doc_md)
-            metadatas.append(md)
-
-        top_nodes = []
-        for x, md in zip(responses, metadatas):
-            doc_inx = x["documentIndex"]
-            doc_id = documents[doc_inx]["id"]
-            node = NodeWithScore(
-                node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]  # type: ignore
-            )
-            top_nodes.append(node)
-
-        return top_nodes[: self._similarity_top_k], summary
-
-    async def _avectara_query(
+    async def _avertexai_query(
         self, query_bundle: QueryBundle
     ) -> Tuple[List[NodeWithScore], str]:
         """Asynchronously retrieve nodes given query.
@@ -227,33 +139,33 @@ class VectaraRetriever(BaseRetriever):
         Implemented by the user.
 
         """
-        return self._vectara_query(query_bundle)
+        return self._vertexai_query(query_bundle)
 
 
-class VectaraAutoRetriever(VectorIndexAutoRetriever):
+class VertexAIAutoRetriever(VectorIndexAutoRetriever):
     """Managed Index auto retriever.
 
-    A retriever for a Vectara index that uses an LLM to automatically set
+    A retriever for a VertexAI index that uses an LLM to automatically set
     filtering query parameters.
     Based on VectorStoreAutoRetriever, and uses some of the vector_store
     types that are associated with auto retrieval.
 
     Args:
-        index (VectaraIndex): Vectara Index instance
+        index (VertexAIIndex): VertexAI Index instance
         vector_store_info (VectorStoreInfo): additional information about
             vector store content and supported metadata filters. The natural language
             description is used by an LLM to automatically set vector store query
             parameters.
-        Other variables are the same as VectorStoreAutoRetriever or VectaraRetriever
+        Other variables are the same as VectorStoreAutoRetriever or VertexAIRetriever
     """
 
     def __init__(
         self,
-        index: VectaraIndex,
+        index: VertexAIIndex,
         vector_store_info: VectorStoreInfo,
         **kwargs: Any,
     ) -> None:
-        super().__init__(index, vector_store_info, prompt_template_str=DEFAULT_VECTARA_QUERY_PROMPT_TMPL, **kwargs)  # type: ignore
+        super().__init__(index, vector_store_info, prompt_template_str=DEFAULT_VERTEXAI_QUERY_PROMPT_TMPL, **kwargs)  # type: ignore
         self._index = index  # type: ignore
         self._kwargs = kwargs
         self._verbose = self._kwargs.get("verbose", False)
@@ -261,7 +173,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
 
     def _build_retriever_from_spec(
         self, spec: VectorStoreQuerySpec
-    ) -> Tuple[VectaraRetriever, QueryBundle]:
+    ) -> Tuple[VertexAIRetriever, QueryBundle]:
         query_bundle = self._get_query_bundle(spec.query)
 
         filter_list = [
@@ -297,7 +209,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
             print(f"final filter string: {filter_str}")
 
         return (
-            VectaraRetriever(
+            VertexAIRetriever(
                 index=self._index,  # type: ignore
                 filter=filter_str,
                 **self._kwargs,
@@ -305,15 +217,15 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
             query_bundle,
         )
 
-    def _vectara_query(
+    def _vertexai_query(
         self,
         query_bundle: QueryBundle,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], str]:
         spec = self.generate_retrieval_spec(query_bundle)
-        vectara_retriever, new_query = self._build_retriever_from_spec(
+        vertexai_retriever, new_query = self._build_retriever_from_spec(
             VectorStoreQuerySpec(
                 query=spec.query, filters=spec.filters, top_k=self._similarity_top_k
             )
         )
-        return vectara_retriever._vectara_query(new_query, **kwargs)
+        return vertexai_retriever._vertexai_query(new_query, **kwargs)

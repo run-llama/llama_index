@@ -146,14 +146,14 @@ User Query:
 Structured Request:
 """
 
-DEFAULT_VECTARA_QUERY_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
+DEFAULT_VERTEXAI_QUERY_PROMPT_TMPL = PREFIX + EXAMPLES + SUFFIX
 
 
 # deprecated, kept for backwards compatibility
 """Vector store query prompt."""
 VectorStoreQueryPrompt = PromptTemplate
 
-DEFAULT_VECTARA_QUERY_PROMPT = PromptTemplate(
-    template=DEFAULT_VECTARA_QUERY_PROMPT_TMPL,
+DEFAULT_VERTEXAI_QUERY_PROMPT = PromptTemplate(
+    template=DEFAULT_VERTEXAI_QUERY_PROMPT_TMPL,
     prompt_type=PromptType.VECTOR_STORE_QUERY,
 )

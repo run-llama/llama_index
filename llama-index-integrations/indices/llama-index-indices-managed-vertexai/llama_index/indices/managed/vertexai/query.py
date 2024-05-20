@@ -8,14 +8,14 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.indices.managed.vectara.retriever import VectaraRetriever
+from llama_index.indices.managed.vertexai.retriever import VertexAIRetriever
 
 
-class VectaraQueryEngine(BaseQueryEngine):
-    """Retriever query engine for Vectara.
+class VertexAIQueryEngine(BaseQueryEngine):
+    """Retriever query engine for VertexAI.
 
     Args:
-        retriever (VectaraRetriever): A retriever object.
+        retriever (VertexAIRetriever): A retriever object.
         summary_response_lang: response language for summary (ISO 639-2 code)
         summary_num_results: number of results to use for summary generation.
         summary_prompt_name: name of the prompt to use for summary generation.
@@ -23,13 +23,13 @@ class VectaraQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        retriever: VectaraRetriever,
+        retriever: VertexAIRetriever,
         summary_enabled: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
-        summary_prompt_name: str = "vectara-experimental-summary-ext-2023-10-23-small",
+        summary_prompt_name: str = "vertexai-experimental-summary-ext-2023-10-23-small",
     ) -> None:
         self._retriever = retriever
         self._summary_enabled = summary_enabled
@@ -42,17 +42,17 @@ class VectaraQueryEngine(BaseQueryEngine):
     @classmethod
     def from_args(
         cls,
-        retriever: VectaraRetriever,
+        retriever: VertexAIRetriever,
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
-        summary_prompt_name: str = "vectara-experimental-summary-ext-2023-10-23-small",
+        summary_prompt_name: str = "vertexai-experimental-summary-ext-2023-10-23-small",
         **kwargs: Any,
-    ) -> "VectaraQueryEngine":
-        """Initialize a VectaraQueryEngine object.".
+    ) -> "VertexAIQueryEngine":
+        """Initialize a VertexAIQueryEngine object.".
 
         Args:
-            retriever (VectaraRetriever): A Vectara retriever object.
+            retriever (VertexAIRetriever): A VertexAI retriever object.
             summary_response_lang: response language for summary (ISO 639-2 code)
             summary_num_results: number of results to use for summary generation.
             summary_prompt_name: name of the prompt to use for summary generation.
@@ -83,8 +83,8 @@ class VectaraQueryEngine(BaseQueryEngine):
         nodes = await self._retriever.aretrieve(query_bundle)
         return self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
-    def with_retriever(self, retriever: VectaraRetriever) -> "VectaraQueryEngine":
-        return VectaraQueryEngine(
+    def with_retriever(self, retriever: VertexAIRetriever) -> "VertexAIQueryEngine":
+        return VertexAIQueryEngine(
             retriever=retriever,
             summary_enabled=self._summary_enabled,
             summary_response_lang=self._summary_response_lang,
@@ -106,7 +106,7 @@ class VectaraQueryEngine(BaseQueryEngine):
                 if self._summary_enabled
                 else {}
             )
-            nodes, response = self._retriever._vectara_query(query_bundle, **kwargs)
+            nodes, response = self._retriever._vertexai_query(query_bundle, **kwargs)
             query_event.on_end(payload={EventPayload.RESPONSE: response})
         return Response(response=response, source_nodes=nodes)
 
