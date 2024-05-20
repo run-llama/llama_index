@@ -62,14 +62,14 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
     """Semantic double merging text splitter.
 
     Splits a document into Nodes, with each node being a group of semantically related sentences.
-    TODO
     Args:
-        # buffer_size (int): number of sentences to group together when evaluating semantic similarity
-        # embed_model: (BaseEmbedding): embedding model to use
+        language_config (LanguageConfig): chooses language and spacy language model to be used
+        initial_treshold (float): sets treshold for initializing new chunk
+        appending_treshold (float): sets treshold for appending new sentences to chunk
+        merging_treshold (float): sets treshold for merging whole chunks
+        max_chunk_size (int): maximum size of chunk (in characters)
+        merging_range (int): How many chunks 'ahead' beyond the nearest neighborto be merged if similar (1 or 2 avaiable)
         sentence_splitter (Optional[Callable]): splits text into sentences
-        include_metadata (bool): whether to include metadata in nodes
-        include_prev_next_rel (bool): whether to include prev/next relationships
-        connecting_range (int): How many chunks "ahead" beyond the nearest neighbor should the algorithm check during the second pass (possible options are 1 or 2)
     """
 
     language_config: LanguageConfig = Field(
@@ -251,11 +251,6 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 new = True
         initial_chunks.append(chunk)
 
-        # if self.debug:
-        #     print("Chunks after 1st pass:")
-        #     for c in res:
-        #         print(c)
-        
         return initial_chunks
 
 
