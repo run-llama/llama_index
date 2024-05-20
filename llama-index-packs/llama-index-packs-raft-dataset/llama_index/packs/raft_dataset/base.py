@@ -109,7 +109,7 @@ class RAFTDatasetPack(BaseLlamaPack):
 
         queries = str(self.llm.chat(messages)).split("\n")
         queries = [self.strip_str(q) for q in queries]
-        return [q for q in queries if any(c.isalpha() for c in q)]
+        return [q for q in queries if any(c.isalpha() for c in q)][:x]
 
     def get_chunks(self, file_path: str, chunk_size: int) -> List[str]:
         """

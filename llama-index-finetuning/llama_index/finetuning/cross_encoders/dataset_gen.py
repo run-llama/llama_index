@@ -72,6 +72,7 @@ def generate_synthetic_queries_over_documents(
             response.message.content if response.message.content is not None else ""
         )
         response_questions = re.split(";|\n", response_content)
+        response_questions = response_questions[:num_questions_per_chunk]
         questions.extend(response_questions)
 
     return questions

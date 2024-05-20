@@ -89,7 +89,9 @@ def generate_qa_embedding_pairs(
         questions = [
             re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
         ]
-        questions = [question for question in questions if len(question) > 0]
+        questions = [question for question in questions if len(question) > 0][
+            :num_questions_per_chunk
+        ]
 
         for question in questions:
             question_id = str(uuid.uuid4())
