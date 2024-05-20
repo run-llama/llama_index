@@ -64,7 +64,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                 # Or raise an error?
                 pass
         if chunk_nodes:
-            self.database_query("""
+            self.structured_query("""
             UNWIND $data AS row 
             MERGE (c:Chunk {id: row.id_}) 
             SET c.text = row.text
@@ -76,7 +76,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             RETURN count(*)
             """, param_map={"data": [el.dict() for el in chunk_nodes]})
         if entity_nodes:
-            self.database_query("""
+            self.structured_query("""
             UNWIND $data AS row
             MERGE (e:`__Entity__` {name: row.name})
             SET e += apoc.map.clean(row.properties, ['triplet_source_id'], [])
@@ -99,7 +99,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
-        self.database_query("""
+        self.structured_query("""
         UNWIND $data AS row
         MERGE (source:`__Entity__` {name: row.source_id})
         MERGE (target:`__Entity__` {name: row.target_id})
@@ -134,7 +134,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                e{.* , embedding: Null, name: Null} AS properties
         """
         cypher_statement += return_statement
-        response = self.database_query(cypher_statement, param_map=params)
+        response = self.structured_query(cypher_statement, param_map=params)
         nodes = []
         for record in response:
             nodes.append(EntityNode(name=record["name"], type=record["type"], properties=remove_empty_values(record['properties'])))
@@ -182,7 +182,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         }}
         RETURN source_id, source_type, type, target_id, target_type, source_properties, target_properties"""
         cypher_statement += return_statement
-        data = self.database_query(cypher_statement, param_map=params)
+        data = self.structured_query(cypher_statement, param_map=params)
         triples = []
         for record in data:
             source = EntityNode(name=record["source_id"], type=record["source_type"], properties=remove_empty_values(record['source_properties']))
@@ -197,7 +197,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         triples = []
         names = [node.name for node in graph_nodes]
         # Needs some optimization / atm only outgoing rels
-        response = self.database_query(f"""
+        response = self.structured_query(f"""
         MATCH (e:`__Entity__`)
         WHERE e.name in $names
         MATCH p=(e)-[:!MENTIONS]->{{1,{depth}}}()
@@ -220,7 +220,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             triples.append([source, rel, target])
         return triples
     
-    def database_query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    def structured_query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         with self._driver.session(database=self._database) as session:
             result = session.run(query, param_map)
             return [d.data() for d in result]
@@ -228,7 +228,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
-        data = self.database_query("""MATCH (e:`__Entity__`)
+        data = self.structured_query("""MATCH (e:`__Entity__`)
         WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension
         WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
         ORDER BY score DESC LIMIT toInteger($limit)
@@ -254,11 +254,25 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> None:
         """Delete matching data."""
+        if entity_names:
+            self.structured_query("MATCH (n:`__Entity__`) WHERE n.name IN $entity_names DETACH DELETE n", param_map={"entity_names": entity_names})
+        if relation_names:
+            for rel in relation_names:
+                self.structured_query(f"MATCH ()-[r:`{rel}`]->() DELETE r")
+        if properties:
+            cypher = "MATCH (e:`__Entity__`) WHERE "
+            prop_list = []
+            params = {}
+            for i, prop in enumerate(properties):
+                prop_list.append(f"e.`{prop}` = $property_{i}")
+                params[f"property_{i}"] = properties[prop]
+            cypher += " AND ".join(prop_list)
+            self.structured_query(cypher + " DETACH DELETE e", param_map=params)
+
+
     def get_schema(self):
         pass
     def persist(self):
-        pass
-    def structured_query(self):
         pass
     def upsert_triplets(self):
         pass
