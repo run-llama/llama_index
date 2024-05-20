@@ -33,11 +33,20 @@ if __name__ == "__main__":
         choices=["sym_int4", "asym_int4", "sym_int5", "asym_int5", "sym_int8"],
         help="The quantization type the model will convert to.",
     )
+    parser.add_argument(
+        "--device",
+        "-d",
+        type=str,
+        default="xpu",
+        choices=["cpu", "xpu", "auto"],
+        help="The device the model will run on.",
+    )
 
     args = parser.parse_args()
     model_name = args.model_name
     tokenizer_name = args.tokenizer_name
     low_bit = args.low_bit
+    device = args.device
 
     # load the model using low-bit format specified
     llm = IpexLLM.from_model_id(
@@ -48,6 +57,7 @@ if __name__ == "__main__":
         load_in_low_bit=low_bit,
         completion_to_prompt=completion_to_prompt,
         generate_kwargs={"do_sample": False},
+        device_map=device,
     )
 
     print(
