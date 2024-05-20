@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-    pull_request:
-      branches: [main, ipex-llm-llm-gpu]
-      paths:
-        - ".github/workflows/publish_sub_package.yml"
-        - "llama-index-integrations/**"
+  pull_request:
+    branches: [main, ipex-llm-llm-gpu]
+    paths:
+      - ".github/workflows/publish_sub_package.yml"
+      - "llama-index-integrations/**"
 
 env:
   POETRY_VERSION: "1.6.1"
