@@ -51,6 +51,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [Solar](../../../examples/llm/solar.ipynb)
 - [Together.ai](../../../examples/llm/together.ipynb)
 - [Unify AI](../../../examples/llm/unify.ipynb)
+- [Upstage](../../../examples/llm/upstage.ipynb)
 - [Vertex](../../../examples/llm/vertex.ipynb)
 - [vLLM](../../../examples/llm/vllm.ipynb)
 - [Xorbits Inference](../../../examples/llm/xinference_local_deployment.ipynb)

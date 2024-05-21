@@ -339,11 +339,15 @@ class CodeHierarchyNodeParser(NodeParser):
         # Capture any whitespace before parent.start_byte
         # Very important for space sensitive languages like python
         start_byte = parent.start_byte
-        while start_byte > 0 and text[start_byte - 1] in (" ", "\t"):
+        text_bytes = bytes(text, "utf-8")
+        while start_byte > 0 and text_bytes[start_byte - 1 : start_byte] in (
+            b" ",
+            b"\t",
+        ):
             start_byte -= 1
 
         # Create this node
-        current_chunk = text[start_byte : parent.end_byte]
+        current_chunk = text_bytes[start_byte : parent.end_byte].decode()
 
         # Return early if the chunk is too small
         if len(current_chunk) < self.min_characters and not _root:
@@ -825,7 +829,15 @@ class CodeHierarchyNodeParser(NodeParser):
 
         # Now do the replacement
         replacement_text = cls._get_replacement_text(child_node=child_node)
-        parent_node.text = parent_node.text.replace(child_node.text, replacement_text)
+
+        index = parent_node.text.find(child_node.text)
+        # If the text is found, replace only the first occurrence
+        if index != -1:
+            parent_node.text = (
+                parent_node.text[:index]
+                + replacement_text
+                + parent_node.text[index + len(child_node.text) :]
+            )
 
     @classmethod
     def _skeletonize_list(cls, nodes: List[TextNode]) -> None:

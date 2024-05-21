@@ -22,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Dhruv Chawla <dhruv@uptrain.ai>"]
-description = "llama-index callbacks uptrain integration"
+description = "UpTrain Callback for performing evaluations on the LlamaIndex pipeline"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-callbacks-uptrain"
 readme = "README.md"
-version = "0.1.2"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = ">=0.10.0"
-uptrain = ">=0.6.6"
+uptrain = ">=0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

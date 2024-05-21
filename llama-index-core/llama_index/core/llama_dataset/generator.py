@@ -1,12 +1,12 @@
 """Dataset generation from documents."""
 from __future__ import annotations
 
-import asyncio
 import re
+import warnings
 from typing import List, Optional
 
 from llama_index.core import Document, ServiceContext, SummaryIndex
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llama_dataset import (
@@ -79,6 +79,7 @@ class RagDatasetGenerator(PromptMixin):
     ) -> None:
         """Init params."""
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self.num_questions_per_chunk = num_questions_per_chunk
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -185,7 +186,15 @@ class RagDatasetGenerator(PromptMixin):
             ]
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
-            ]
+            ][: self.num_questions_per_chunk]
+
+            num_questions_generated = len(cleaned_questions)
+            if num_questions_generated < self.num_questions_per_chunk:
+                warnings.warn(
+                    f"Fewer questions generated ({num_questions_generated}) "
+                    f"than requested ({self.num_questions_per_chunk})."
+                )
+
             index = summary_indices[idx]
             reference_context = nodes[idx].text
             model_name = self._llm.metadata.model_name
@@ -239,11 +248,11 @@ class RagDatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self) -> LabelledRagDataset:
         """Generates questions but not the reference answers."""
-        return asyncio.run(self.agenerate_questions_from_nodes())
+        return asyncio_run(self.agenerate_questions_from_nodes())
 
     def generate_dataset_from_nodes(self) -> LabelledRagDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes())
+        return asyncio_run(self.agenerate_dataset_from_nodes())
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

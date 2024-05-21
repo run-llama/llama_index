@@ -8,7 +8,8 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
-    from weaviate import Client
+    from weaviate import WeaviateClient
+
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.utils import (
@@ -47,16 +48,15 @@ NODE_SCHEMA: List[Dict] = [
 def validate_client(client: Any) -> None:
     """Validate client and import weaviate library."""
     try:
-        import weaviate  # noqa
-        from weaviate import Client
+        import weaviate
 
-        client = cast(Client, client)
+        client = cast(weaviate.WeaviateClient, client)
     except ImportError:
         raise ImportError(
             "Weaviate is not installed. "
             "Please install it with `pip install weaviate-client`."
         )
-    cast(Client, client)
+    cast(weaviate.WeaviateClient, client)
 
 
 def parse_get_response(response: Dict) -> Dict:
@@ -73,10 +73,7 @@ def parse_get_response(response: Dict) -> Dict:
 def class_schema_exists(client: Any, class_name: str) -> bool:
     """Check if class schema exists."""
     validate_client(client)
-    schema = client.schema.get()
-    classes = schema["classes"]
-    existing_class_names = {c["class"] for c in classes}
-    return class_name in existing_class_names
+    return client.collections.exists(class_name)
 
 
 def create_default_schema(client: Any, class_name: str) -> None:
@@ -87,24 +84,22 @@ def create_default_schema(client: Any, class_name: str) -> None:
         "description": f"Class for {class_name}",
         "properties": NODE_SCHEMA,
     }
-    client.schema.create_class(class_schema)
+    client.collections.create_from_dict(class_schema)
 
 
 def get_all_properties(client: Any, class_name: str) -> List[str]:
     """Get all properties of a class."""
     validate_client(client)
-    schema = client.schema.get()
-    classes = schema["classes"]
-    classes_by_name = {c["class"]: c for c in classes}
-    if class_name not in classes_by_name:
+    if not client.collections.exists(class_name):
         raise ValueError(f"{class_name} schema does not exist.")
-    schema = classes_by_name[class_name]
-    return [p["name"] for p in schema["properties"]]
+
+    properties = client.collections.get(class_name).config.get().properties
+    return [p.name for p in properties]
 
 
 def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
     """Get converted node similarity from distance."""
-    distance = entry["_additional"].get(similarity_key, 0.0)
+    distance = getattr(entry["metadata"], similarity_key)
 
     if distance is None:
         return 1.0
@@ -115,11 +110,13 @@ def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
 
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     """Convert to Node."""
-    additional = entry.pop("_additional")
-    text = entry.pop(text_key, "")
-    embedding = additional.pop("vector", None)
+    additional = entry["metadata"].__dict__
+    text = entry["properties"].pop(text_key, "")
+
+    embedding = entry["vector"].pop("default", None)
+
     try:
-        node = metadata_dict_to_node(entry)
+        node = metadata_dict_to_node(entry["properties"])
         node.text = text
         node.embedding = embedding
     except Exception as e:
@@ -139,7 +136,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
 
 
 def add_node(
-    client: "Client",
+    client: "WeaviateClient",
     node: BaseNode,
     class_name: str,
     batch: Optional[Any] = None,
@@ -159,6 +156,10 @@ def add_node(
 
     # if batch object is provided (via a context manager), use that instead
     if batch is not None:
-        batch.add_data_object(metadata, class_name, id, vector)
+        batch.add_object(
+            properties=metadata, collection=class_name, uuid=id, vector=vector
+        )
     else:
-        client.batch.add_data_object(metadata, class_name, id, vector)
+        client.collections.get(class_name).data.insert(
+            properties=metadata, uuid=id, vector=vector
+        )

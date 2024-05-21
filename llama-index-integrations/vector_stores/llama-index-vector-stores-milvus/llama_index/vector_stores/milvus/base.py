@@ -6,10 +6,16 @@ An index that is built within Milvus.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+from urllib.parse import urlparse
 
 import pymilvus  # noqa
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.utils import iter_batch
+from llama_index.vector_stores.milvus.utils import (
+    get_defualt_sparse_embedding_function,
+    BaseSparseEmbeddingFunction,
+)
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -23,14 +29,28 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from pymilvus import Collection, MilvusClient
+from pymilvus import Collection, MilvusClient, DataType, AnnSearchRequest, connections
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_BATCH_SIZE = 100
 MILVUS_ID_FIELD = "id"
 
+try:
+    from pymilvus import WeightedRanker, RRFRanker
+except Exception as e:
+    WeightedRanker = None
+    RRFRanker = None
 
-def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
+
+def extract_host_port(url):
+    parsed_url = urlparse(url)
+    host = parsed_url.hostname
+    port = parsed_url.port
+    return host, port
+
+
+def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
     """Translate standard metadata filters to Milvus specific spec."""
     filters = []
     for filter in standard_filters.legacy_filters():
@@ -38,7 +58,8 @@ def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
             filters.append(str(filter.key) + " == " + '"' + str(filter.value) + '"')
         else:
             filters.append(str(filter.key) + " == " + str(filter.value))
-    return filters
+    joined_filters = f" {standard_filters.condition.value} ".join(filters)
+    return f"({joined_filters})" if len(filters) > 1 else joined_filters
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
@@ -52,7 +73,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     Args:
         uri (str, optional): The URI to connect to, comes in the form of
-            "http://address:port".
+            "https://address:port" for Milvus or Zilliz Cloud service,
+            or "path/to/local/milvus.db" for the lite local Milvus. Defaults to
+            "./milvus_llamaindex.db".
         token (str, optional): The token for log in. Empty if not using rbac, if
             using rbac it will most likely be "username:password".
         collection_name (str, optional): The name of the collection where data will be
@@ -76,6 +99,27 @@ class MilvusVectorStore(BasePydanticVectorStore):
         search_config (dict, optional): The configuration used for searching
             the Milvus index. Note that this must be compatible with the index
             type specified by `index_config`. Defaults to None.
+        batch_size (int): Configures the number of documents processed in one
+            batch when inserting data into Milvus. Defaults to DEFAULT_BATCH_SIZE.
+        enable_sparse (bool): A boolean flag indicating whether to enable support
+            for sparse embeddings for hybrid retrieval. Defaults to False.
+        sparse_embedding_function (BaseSparseEmbeddingFunction, optional): If enable_sparse
+             is True, this object should be provided to convert text to a sparse embedding.
+        hybrid_ranker (str): Specifies the type of ranker used in hybrid search queries.
+            Currently only supports ['RRFRanker','WeightedRanker']. Defaults to "RRFRanker".
+        hybrid_ranker_params (dict, optional): Configuration parameters for the hybrid ranker.
+            The structure of this dictionary depends on the specific ranker being used:
+            - For "RRFRanker", it should include:
+                - 'k' (int): A parameter used in Reciprocal Rank Fusion (RRF). This value is used
+                             to calculate the rank scores as part of the RRF algorithm, which combines
+                             multiple ranking strategies into a single score to improve search relevance.
+            - For "WeightedRanker", it expects:
+                - 'weights' (list of float): A list of exactly two weights:
+                     1. The weight for the dense embedding component.
+                     2. The weight for the sparse embedding component.
+                  These weights are used to adjust the importance of the dense and sparse components of the embeddings
+                  in the hybrid retrieval process.
+            Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -105,7 +149,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     stores_node: bool = True
 
-    uri: str = "http://localhost:19530"
+    uri: str = "./milvus_llamaindex.db"
     token: str = ""
     collection_name: str = "llamacollection"
     dim: Optional[int]
@@ -118,13 +162,19 @@ class MilvusVectorStore(BasePydanticVectorStore):
     output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
     search_config: Optional[dict]
+    batch_size: int = DEFAULT_BATCH_SIZE
+    enable_sparse: bool = False
+    sparse_embedding_field: str = "sparse_embedding"
+    sparse_embedding_function: Any
+    hybrid_ranker: str
+    hybrid_ranker_params: dict = {}
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
 
     def __init__(
         self,
-        uri: str = "http://localhost:19530",
+        uri: str = "./milvus_llamaindex.db",
         token: str = "",
         collection_name: str = "llamacollection",
         dim: Optional[int] = None,
@@ -137,6 +187,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        enable_sparse: bool = False,
+        sparse_embedding_function: Optional[BaseSparseEmbeddingFunction] = None,
+        hybrid_ranker: str = "RRFRanker",
+        hybrid_ranker_params: dict = {},
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -151,6 +206,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields or [],
             index_config=index_config if index_config else {},
             search_config=search_config if search_config else {},
+            batch_size=batch_size,
+            enable_sparse=enable_sparse,
+            sparse_embedding_function=sparse_embedding_function,
+            hybrid_ranker=hybrid_ranker,
+            hybrid_ranker_params=hybrid_ranker_params,
         )
 
         # Select the similarity metric
@@ -163,7 +223,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.similarity_metric = similarity_metrics_map.get(
             similarity_metric.lower(), "L2"
         )
-
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
             uri=uri,
@@ -178,19 +237,48 @@ class MilvusVectorStore(BasePydanticVectorStore):
         if collection_name not in self.client.list_collections():
             if dim is None:
                 raise ValueError("Dim argument required for collection creation.")
-            self._milvusclient.create_collection(
-                collection_name=collection_name,
-                dimension=dim,
-                primary_field_name=MILVUS_ID_FIELD,
-                vector_field_name=embedding_field,
-                id_type="string",
-                metric_type=self.similarity_metric,
-                max_length=65_535,
-                consistency_level=consistency_level,
-            )
+            if self.enable_sparse is False:
+                self._milvusclient.create_collection(
+                    collection_name=collection_name,
+                    dimension=dim,
+                    primary_field_name=MILVUS_ID_FIELD,
+                    vector_field_name=embedding_field,
+                    id_type="string",
+                    metric_type=self.similarity_metric,
+                    max_length=65_535,
+                    consistency_level=consistency_level,
+                )
+            else:
+                try:
+                    _ = DataType.SPARSE_FLOAT_VECTOR
+                except Exception as e:
+                    logger.error(
+                        "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
+                    )
+                    raise NotImplementedError(
+                        "Hybrid retrieval requires Milvus 2.4.0 or later."
+                    ) from e
+                self._create_hybrid_index(collection_name)
 
-        self._collection = Collection(collection_name, using=self._milvusclient._using)
+        if self.enable_sparse is False:
+            self._collection = Collection(
+                collection_name, using=self._milvusclient._using
+            )
+        else:
+            host, port = extract_host_port(uri)
+            connections.connect("default", host=host, port=port)
+            self._collection = Collection(collection_name)
+
         self._create_index_if_required()
+
+        self.enable_sparse = enable_sparse
+        if self.enable_sparse is True and sparse_embedding_function is None:
+            logger.warning("Sparse embedding function is not provided, using default.")
+            self.sparse_embedding_function = get_defualt_sparse_embedding_function()
+        elif self.enable_sparse is True and sparse_embedding_function is not None:
+            self.sparse_embedding_function = sparse_embedding_function
+        else:
+            pass
 
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
 
@@ -215,17 +303,28 @@ class MilvusVectorStore(BasePydanticVectorStore):
         insert_list = []
         insert_ids = []
 
+        if self.enable_sparse is True and self.sparse_embedding_function is None:
+            logger.fatal(
+                "sparse_embedding_function is None when enable_sparse is True."
+            )
+
         # Process that data we are going to insert
         for node in nodes:
             entry = node_to_metadata_dict(node)
             entry[MILVUS_ID_FIELD] = node.node_id
             entry[self.embedding_field] = node.embedding
 
+            if self.enable_sparse is True:
+                entry[
+                    self.sparse_embedding_field
+                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
         # Insert the data into milvus
-        self._collection.insert(insert_list)
+        for insert_batch in iter_batch(insert_list, self.batch_size):
+            self._collection.insert(insert_batch)
         if add_kwargs.get("force_flush", False):
             self._collection.flush()
         self._create_index_if_required()
@@ -274,7 +373,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields (Optional[List[str]]): list of fields to return
             embedding_field (Optional[str]): name of embedding field
         """
-        if query.mode != VectorStoreQueryMode.DEFAULT:
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            pass
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            if self.enable_sparse is False:
+                raise ValueError(f"QueryMode is HYBRID, but enable_sparse is False.")
+        else:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
 
         expr = []
@@ -282,7 +386,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Parse the filter
         if query.filters is not None:
-            expr.extend(_to_milvus_filter(query.filters))
+            expr.append(_to_milvus_filter(query.filters))
 
         # Parse any docs we are filtering on
         if query.doc_ids is not None and len(query.doc_ids) != 0:
@@ -303,51 +407,139 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # Convert to string expression
         string_expr = ""
         if len(expr) != 0:
-            string_expr = f" {query.filters.condition.value} ".join(expr)
+            string_expr = f" and ".join(expr)
 
         # Perform the search
-        res = self._milvusclient.search(
-            collection_name=self.collection_name,
-            data=[query.query_embedding],
-            filter=string_expr,
-            limit=query.similarity_top_k,
-            output_fields=output_fields,
-            search_params=self.search_config,
-        )
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            # Perform default search
+            res = self._milvusclient.search(
+                collection_name=self.collection_name,
+                data=[query.query_embedding],
+                filter=string_expr,
+                limit=query.similarity_top_k,
+                output_fields=output_fields,
+                search_params=self.search_config,
+                anns_field=self.embedding_field,
+            )
+            logger.debug(
+                f"Successfully searched embedding in collection: {self.collection_name}"
+                f" Num Results: {len(res[0])}"
+            )
 
-        logger.debug(
-            f"Successfully searched embedding in collection: {self.collection_name}"
-            f" Num Results: {len(res[0])}"
-        )
-
-        nodes = []
-        similarities = []
-        ids = []
-
-        # Parse the results
-        for hit in res[0]:
-            if not self.text_key:
-                node = metadata_dict_to_node(
-                    {
-                        "_node_content": hit["entity"].get("_node_content", None),
-                        "_node_type": hit["entity"].get("_node_type", None),
-                    }
-                )
-            else:
-                try:
-                    text = hit["entity"].get(self.text_key)
-                except Exception:
-                    raise ValueError(
-                        "The passed in text_key value does not exist "
-                        "in the retrieved entity."
+            nodes = []
+            similarities = []
+            ids = []
+            # Parse the results
+            for hit in res[0]:
+                if not self.text_key:
+                    node = metadata_dict_to_node(
+                        {
+                            "_node_content": hit["entity"].get("_node_content", None),
+                            "_node_type": hit["entity"].get("_node_type", None),
+                        }
                     )
+                else:
+                    try:
+                        text = hit["entity"].get(self.text_key)
+                    except Exception:
+                        raise ValueError(
+                            "The passed in text_key value does not exist "
+                            "in the retrieved entity."
+                        )
 
-                metadata = {key: hit["entity"].get(key) for key in self.output_fields}
-                node = TextNode(text=text, metadata=metadata)
+                    metadata = {
+                        key: hit["entity"].get(key) for key in self.output_fields
+                    }
+                    node = TextNode(text=text, metadata=metadata)
 
-            nodes.append(node)
-            similarities.append(hit["distance"])
-            ids.append(hit["id"])
+                nodes.append(node)
+                similarities.append(hit["distance"])
+                ids.append(hit["id"])
+
+        else:
+            # Perform hybrid search
+            sparse_emb = self.sparse_embedding_function.encode_queries(
+                [query.query_str]
+            )[0]
+            sparse_search_params = {"metric_type": "IP"}
+
+            sparse_req = AnnSearchRequest(
+                [sparse_emb],
+                self.sparse_embedding_field,
+                sparse_search_params,
+                limit=query.similarity_top_k,
+            )
+
+            dense_search_params = {
+                "metric_type": self.similarity_metric,
+                "params": self.search_config,
+            }
+            dense_emb = query.query_embedding
+            dense_req = AnnSearchRequest(
+                [dense_emb],
+                self.embedding_field,
+                dense_search_params,
+                limit=query.similarity_top_k,
+            )
+            ranker = None
+
+            if WeightedRanker is None or RRFRanker is None:
+                logger.error(
+                    "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
+                )
+                raise ValueError(
+                    "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
+                )
+            if self.hybrid_ranker == "WeightedRanker":
+                if self.hybrid_ranker_params == {}:
+                    self.hybrid_ranker_params = {"weights": [1.0, 1.0]}
+                ranker = WeightedRanker(*self.hybrid_ranker_params["weights"])
+            elif self.hybrid_ranker == "RRFRanker":
+                if self.hybrid_ranker_params == {}:
+                    self.hybrid_ranker_params = {"k": 60}
+                ranker = RRFRanker(self.hybrid_ranker_params["k"])
+            else:
+                raise ValueError(f"Unsupported ranker: {self.hybrid_ranker}")
+
+            res = self._collection.hybrid_search(
+                [dense_req, sparse_req],
+                rerank=ranker,
+                limit=query.similarity_top_k,
+                output_fields=output_fields,
+            )
+
+            logger.debug(
+                f"Successfully searched embedding in collection: {self.collection_name}"
+                f" Num Results: {len(res[0])}"
+            )
+
+            nodes = []
+            similarities = []
+            ids = []
+            # Parse the results
+            for hit in res[0]:
+                if not self.text_key:
+                    node = metadata_dict_to_node(
+                        {
+                            "_node_content": hit.entity.get("_node_content"),
+                            "_node_type": hit.entity.get("_node_type"),
+                        }
+                    )
+                else:
+                    try:
+                        text = hit.entity.get(self.text_key)
+                    except Exception:
+                        raise ValueError(
+                            "The passed in text_key value does not exist "
+                            "in the retrieved entity."
+                        )
+
+                    metadata = {key: hit.entity.get(key) for key in self.output_fields}
+                    node = TextNode(text=text, metadata=metadata)
+
+                nodes.append(node)
+                similarities.append(hit.distance)
+                ids.append(hit.id)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
@@ -357,17 +549,66 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # provided to ensure that the index is created in the constructor even
         # if self.overwrite is false. In the `add` method, the index is
         # recreated only if self.overwrite is true.
-        if (self._collection.has_index() and self.overwrite) or force:
-            self._collection.release()
-            self._collection.drop_index()
-            base_params: Dict[str, Any] = self.index_config.copy()
-            index_type: str = base_params.pop("index_type", "FLAT")
-            index_params: Dict[str, Union[str, Dict[str, Any]]] = {
-                "params": base_params,
-                "metric_type": self.similarity_metric,
-                "index_type": index_type,
-            }
-            self._collection.create_index(
-                self.embedding_field, index_params=index_params
-            )
-            self._collection.load()
+        if self.enable_sparse is False:
+            if (self._collection.has_index() and self.overwrite) or force:
+                self._collection.release()
+                self._collection.drop_index()
+                base_params: Dict[str, Any] = self.index_config.copy()
+                index_type: str = base_params.pop("index_type", "FLAT")
+                index_params: Dict[str, Union[str, Dict[str, Any]]] = {
+                    "params": base_params,
+                    "metric_type": self.similarity_metric,
+                    "index_type": index_type,
+                }
+                self._collection.create_index(
+                    self.embedding_field, index_params=index_params
+                )
+                self._collection.load()
+        else:
+            if (
+                self._collection.has_index(index_name=self.embedding_field)
+                and self.overwrite
+            ) or force:
+                if self._collection.has_index(index_name=self.embedding_field) is True:
+                    self._collection.release()
+                    self._collection.drop_index(index_name=self.embedding_field)
+                if (
+                    self._collection.has_index(index_name=self.sparse_embedding_field)
+                    is True
+                ):
+                    self._collection.drop_index(index_name=self.sparse_embedding_field)
+                self._create_hybrid_index(self.collection_name)
+                self._collection.load()
+
+    def _create_hybrid_index(self, collection_name):
+        schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
+
+        schema.add_field(
+            field_name="id",
+            datatype=DataType.VARCHAR,
+            max_length=65535,
+            is_primary=True,
+        )
+        schema.add_field(
+            field_name=self.embedding_field,
+            datatype=DataType.FLOAT_VECTOR,
+            dim=self.dim,
+        )
+        schema.add_field(
+            field_name=self.sparse_embedding_field,
+            datatype=DataType.SPARSE_FLOAT_VECTOR,
+        )
+        self._collection = Collection(
+            collection_name, schema=schema, using=self._milvusclient._using
+        )
+
+        sparse_index = {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "IP"}
+        self._collection.create_index(self.sparse_embedding_field, sparse_index)
+        base_params = self.index_config.copy()
+        index_type = base_params.pop("index_type", "FLAT")
+        dense_index = {
+            "params": base_params,
+            "metric_type": self.similarity_metric,
+            "index_type": index_type,
+        }
+        self._collection.create_index(self.embedding_field, dense_index)

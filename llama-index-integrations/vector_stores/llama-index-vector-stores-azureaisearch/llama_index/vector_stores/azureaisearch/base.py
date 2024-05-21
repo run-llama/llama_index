@@ -51,7 +51,8 @@ class IndexManagement(int, enum.Enum):
 
 
 class AzureAISearchVectorStore(BasePydanticVectorStore):
-    """Azure AI Search vector store.
+    """
+    Azure AI Search vector store.
 
     Examples:
         `pip install llama-index-vector-stores-azureaisearch`
@@ -495,7 +496,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index associated with the configured search client.
+        """
+        Add nodes to index associated with the configured search client.
 
         Args:
             nodes: List[BaseNode]: nodes with embeddings
@@ -597,7 +599,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             index_field = metadata_mapping[0]
 
             if len(odata_filter) > 0:
-                odata_filter.append(" and ")
+                odata_filter.append(f" {metadata_filters.condition.value} ")
             if isinstance(f.value, str):
                 escaped_value = "".join([("''" if s == "'" else s) for s in f.value])
                 odata_filter.append(f"{index_field} eq '{escaped_value}'")
@@ -678,7 +680,8 @@ class AzureQueryResultSearchBase:
         score_result = []
         for result in results:
             node_id = result[self._field_mapping["id"]]
-            metadata = json.loads(result[self._field_mapping["metadata"]])
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
             score = result["@search.score"]
             chunk = result[self._field_mapping["chunk"]]
 
@@ -795,7 +798,8 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         score_result = []
         for result in results:
             node_id = result[self._field_mapping["id"]]
-            metadata = json.loads(result[self._field_mapping["metadata"]])
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
             # use reranker_score instead of score
             score = result["@search.reranker_score"]
             chunk = result[self._field_mapping["chunk"]]
