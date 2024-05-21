@@ -1,5 +1,6 @@
-"""Test OCI Generative AI LLM service"""
+###Test OCI Generative AI LLM service
 from unittest.mock import MagicMock
+from typing import Any
 
 import pytest
 from pytest import MonkeyPatch
@@ -9,7 +10,7 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):  # type: ignore[no-untyped-def]
+    def __getattr__(self, val) -> Any:  # type: ignore[no-untyped-def]
         return self[val]
 
 
@@ -47,8 +48,7 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     ),
                 }
             )
-
-        if provider == "MetaProvider":
+        elif provider == "MetaProvider":
             return MockResponseDict(
                 {
                     "status": 200,
@@ -69,11 +69,14 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     ),
                 }
             )
+        else:
+            return None
 
     monkeypatch.setattr(llm._client, "generate_text", mocked_response)
 
     output = llm.complete("This is a prompt.", temperature=0.2)
     assert output.text == "This is the completion."
+
 
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command-r", "meta.llama-3-70b-instruct"]
@@ -87,25 +90,24 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 
     def mocked_response(*args):  # type: ignore[no-untyped-def]
         response_text = "Assistant chat reply."
-
+        response = None
         if provider == "CohereProvider":
-            return MockResponseDict(
+            response = MockResponseDict(
                 {
                     "status": 200,
                     "data": MockResponseDict(
                         {
                             "chat_response": MockResponseDict(
                                 {
-                                    "text": response_text,                                    
+                                    "text": response_text,
                                 }
                             )
                         }
                     ),
                 }
             )
-
-        if provider == "MetaProvider":
-            return MockResponseDict(
+        elif provider == "MetaProvider":
+            response = MockResponseDict(
                 {
                     "status": 200,
                     "data": MockResponseDict(
@@ -135,6 +137,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     ),
                 }
             )
+        return response
 
     monkeypatch.setattr(llm._client, "chat", mocked_response)
 
@@ -143,7 +146,9 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     ]
 
     expected = ChatResponse(
-        message=ChatMessage(role=MessageRole.ASSISTANT, content="Assistant chat reply."),
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT, content="Assistant chat reply."
+        ),
         raw=llm._client.chat.__dict__,
     )
 

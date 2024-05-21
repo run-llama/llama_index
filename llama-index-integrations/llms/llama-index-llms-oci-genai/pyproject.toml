@@ -24,13 +24,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-name = "llama-index-llms-oci-genai"
-version = "0.1.0"
+authors = ["Arthur Cheng <arthur.cheng@oracle.com>", "Rave Harpaz <rave.harpaz@oracle.com>"]
 description = "llama-index llms OCI GenAI integration"
-authors = ["Rave Harpaz <rave.harpaz@oracle.com>", "Arthur Cheng <arthur.cheng@oracle.com>"]
 license = "MIT"
-readme = "README.md"
+name = "llama-index-llms-oci-genai"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
