@@ -71,9 +71,9 @@ class PostgresMLIndex(BaseManagedIndex):
 
         # Create our Collection and Pipeline
         self.collection = Collection(collection_name, pgml_database_url)
-        if pipeline_name == None:
+        if pipeline_name is None:
             pipeline_name = "v1"
-        if pipeline_schema == None:
+        if pipeline_schema is None:
             pipeline_schema = {
                 "content": {
                     "splitter": {

@@ -25,7 +25,7 @@ PROMPTS = {
 ---------------------
 {context_str}
 ---------------------
-Given the context information and not prior knowledge, 
+Given the context information and not prior knowledge,
 Query: {query_str}
 Answer: """,
                 role=MessageRole.USER,
@@ -36,23 +36,23 @@ Answer: """,
 
 
 class AsyncJsonGenerator:
-    def __init__(self, rag_stream_results):
+    def __init__(self, rag_stream_results) -> None:
         self.rag_stream_results = rag_stream_results
         self.rag_stream = None
 
-    def __iter__(self):
+    def __iter__(self) -> "AsyncJsonGenerator":
         return self
 
-    def __aiter__(self):
+    def __aiter__(self) -> "AsyncJsonGenerator":
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         try:
             return run_async_tasks([self.__anext__()])[0]
         except StopAsyncIteration:
             raise StopIteration
 
-    async def __anext__(self):
+    async def __anext__(self) -> str:
         if not self.rag_stream:
             self.rag_stream = self.rag_stream_results.stream()
         result = await self.rag_stream.__anext__()

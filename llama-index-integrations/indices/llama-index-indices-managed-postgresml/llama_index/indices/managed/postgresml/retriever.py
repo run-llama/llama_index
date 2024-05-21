@@ -96,7 +96,7 @@ class PostgresMLRetriever(BaseRetriever):
                 )
 
         results = await do_vector_search()
-        nodes = [
+        return [
             NodeWithScore(
                 node=TextNode(
                     id_=r["document"]["id"],
@@ -107,4 +107,3 @@ class PostgresMLRetriever(BaseRetriever):
             )
             for r in results
         ]
-        return nodes
