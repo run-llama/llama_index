@@ -7,6 +7,7 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type,
 )
+from asyncio import iscoroutinefunction
 
 from requests.exceptions import Timeout, ConnectionError
 from llama_index.core.base.llms.types import ChatMessage
@@ -115,6 +116,9 @@ async def aretry_request(
     async def retry_func(
         request_func: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> Any:
-        return await request_func(*args, **kwargs)
+        if iscoroutinefunction(request_func):
+            return await request_func(*args, **kwargs)
+        else:
+            return request_func(*args, **kwargs)
 
     return await retry_func(request_func, *args, **kwargs)

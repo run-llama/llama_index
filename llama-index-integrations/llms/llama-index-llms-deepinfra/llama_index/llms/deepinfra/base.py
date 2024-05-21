@@ -292,15 +292,18 @@ class DeepInfraLLM(LLM):
         """
         payload = self._build_payload(input=prompt, model=self.model, **kwargs)
 
-        content = ""
-        async for response_dict in self._arequest_stream(
-            self.get_model_endpoint(), payload
-        ):
-            content_delta = response_dict["token"]["text"]
-            content += content_delta
-            yield CompletionResponse(
-                text=content, delta=content_delta, raw=response_dict
-            )
+        async def gen():
+            content = ""
+            async for response_dict in self._arequest_stream(
+                self.get_model_endpoint(), payload
+            ):
+                content_delta = response_dict["token"]["text"]
+                content += content_delta
+                yield CompletionResponse(
+                    text=content, delta=content_delta, raw=response_dict
+                )
+
+        return gen()
 
     @llm_chat_callback()
     async def achat(
@@ -345,22 +348,27 @@ class DeepInfraLLM(LLM):
         messages = chat_messages_to_list(chat_messages)
         payload = self._build_payload(messages=messages, model=self.model, **kwargs)
 
-        content = ""
-        role = MessageRole.ASSISTANT
-        async for response_dict in self._arequest_stream(CHAT_API_ENDPOINT, payload):
-            delta = response_dict["choices"][-1]["delta"]
-            """
-            Check if the delta contains content.
-            """
-            if delta.get("content", None):
-                content_delta = delta["content"]
-                content += delta["content"]
-                message = ChatMessage(
-                    role=role,
-                    content=content,
-                    delta=content_delta,
-                )
-                yield ChatResponse(message=message, raw=response_dict)
+        async def gen():
+            content = ""
+            role = MessageRole.ASSISTANT
+            async for response_dict in self._arequest_stream(
+                CHAT_API_ENDPOINT, payload
+            ):
+                delta = response_dict["choices"][-1]["delta"]
+                """
+                Check if the delta contains content.
+                """
+                if delta.get("content", None):
+                    content_delta = delta["content"]
+                    content += delta["content"]
+                    message = ChatMessage(
+                        role=role,
+                        content=content,
+                        delta=content_delta,
+                    )
+                    yield ChatResponse(message=message, raw=response_dict)
+
+        return gen()
 
     # Private Methods
     def _request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -429,7 +437,8 @@ class DeepInfraLLM(LLM):
                 if resp := maybe_decode_sse_data(line):
                     yield resp
 
-        return retry_request(perform_request, max_retries=self.max_retries)
+        response = retry_request(perform_request, max_retries=self.max_retries)
+        yield from response
 
     async def _arequest(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -497,10 +506,9 @@ class DeepInfraLLM(LLM):
                         if resp := maybe_decode_sse_data(line):
                             yield resp
 
-        async for result in aretry_request(
-            perform_request, max_retries=self.max_retries
-        ):
-            yield result
+        response = await aretry_request(perform_request, max_retries=self.max_retries)
+        async for resp in response:
+            yield resp
 
     # Utility Method
     def get_model_endpoint(self) -> str:
