@@ -16,11 +16,16 @@ from llama_index.core.bridge.pydantic import (
     Field,
     PrivateAttr,
 )
+
+# Import SecretStr directly from pydantic
+# since there is not one in llama_index.core.bridge.pydantic
+try:
+    from pydantic.v1 import SecretStr
+except ImportError:
+    from pydantic import SecretStr
+
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.constants import (
-    DEFAULT_TEMPERATURE,
-)
 from llama_index.core.base.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
@@ -30,8 +35,6 @@ from llama_index.llms.ibm.utils import (
     retrive_attributes_from_model,
     resolve_watsonx_credentials,
 )
-
-DEFAULT_MAX_TOKENS = 20
 
 
 class WatsonxLLM(CustomLLM):
@@ -60,19 +63,16 @@ class WatsonxLLM(CustomLLM):
         default=None, description="Id of deployed model to use.", allow_mutation=False
     )
 
-    temperature: float = Field(
-        default=DEFAULT_TEMPERATURE,
+    temperature: Optional[float] = Field(
+        default=None,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=2.0,
     )
-    max_new_tokens: int = Field(
-        default=DEFAULT_MAX_TOKENS,
+    max_new_tokens: Optional[int] = Field(
+        default=None,
         description="The maximum number of tokens to generate.",
-        gt=0,
     )
-    additional_params: Dict[str, Any] = Field(
-        default_factory=dict,
+    additional_params: Optional[Dict[str, Any]] = Field(
+        default_factory=None,
         description="Additional generation params for the watsonx.ai models.",
     )
 
@@ -86,35 +86,35 @@ class WatsonxLLM(CustomLLM):
         default=None, description="ID of the Watson Studio space.", allow_mutation=False
     )
 
-    url: Optional[str] = Field(
+    url: Optional[SecretStr] = Field(
         default=None,
         description="Url to Watson Machine Learning or CPD instance",
         allow_mutation=False,
     )
 
-    apikey: Optional[str] = Field(
+    apikey: Optional[SecretStr] = Field(
         default=None,
         description="Apikey to Watson Machine Learning or CPD instance",
         allow_mutation=False,
     )
 
-    token: Optional[str] = Field(
+    token: Optional[SecretStr] = Field(
         default=None, description="Token to CPD instance", allow_mutation=False
     )
 
-    password: Optional[str] = Field(
+    password: Optional[SecretStr] = Field(
         default=None, description="Password to CPD instance", allow_mutation=False
     )
 
-    username: Optional[str] = Field(
+    username: Optional[SecretStr] = Field(
         default=None, description="Username to CPD instance", allow_mutation=False
     )
 
-    instance_id: Optional[str] = Field(
+    instance_id: Optional[SecretStr] = Field(
         default=None, description="Instance_id of CPD instance", allow_mutation=False
     )
 
-    version: Optional[str] = Field(
+    version: Optional[SecretStr] = Field(
         default=None, description="Version of CPD instance", allow_mutation=False
     )
 
@@ -132,24 +132,24 @@ class WatsonxLLM(CustomLLM):
 
     _model: ModelInference = PrivateAttr()
     _model_info: Optional[Dict[str, Any]] = PrivateAttr()
-    _text_generation_params: Dict[str, Any] = PrivateAttr()
+    _text_generation_params: Dict[str, Any] | None = PrivateAttr()
 
     def __init__(
         self,
         model_id: Optional[str] = None,
         deployment_id: Optional[str] = None,
-        temperature: float = DEFAULT_TEMPERATURE,
-        max_new_tokens: int = DEFAULT_MAX_TOKENS,
+        temperature: Optional[float] = None,
+        max_new_tokens: Optional[int] = None,
         additional_params: Optional[Dict[str, Any]] = None,
         project_id: Optional[str] = None,
         space_id: Optional[str] = None,
-        url: Optional[str] = None,
-        apikey: Optional[str] = None,
-        token: Optional[str] = None,
-        password: Optional[str] = None,
-        username: Optional[str] = None,
-        instance_id: Optional[str] = None,
-        version: Optional[str] = None,
+        url: Optional[SecretStr] = None,
+        apikey: Optional[SecretStr] = None,
+        token: Optional[SecretStr] = None,
+        password: Optional[SecretStr] = None,
+        username: Optional[SecretStr] = None,
+        instance_id: Optional[SecretStr] = None,
+        version: Optional[SecretStr] = None,
         verify: Union[str, bool, None] = None,
         watsonx_model: Optional[ModelInference] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -196,13 +196,20 @@ class WatsonxLLM(CustomLLM):
             **kwargs,
         )
 
-        self._text_generation_params, _ = self._split_generation_params(
-            {
-                "temperature": self.temperature,
-                "max_new_tokens": self.max_new_tokens,
-                **additional_params,
-            }
-        )
+        generation_params = {}
+        if self.temperature is not None:
+            generation_params["temperature"] = self.temperature
+        if self.max_new_tokens is not None:
+            generation_params["max_new_tokens"] = self.max_new_tokens
+
+        generation_params = {**generation_params, **additional_params}
+
+        if generation_params:
+            self._text_generation_params, _ = self._split_generation_params(
+                generation_params
+            )
+        else:
+            self._text_generation_params = None
 
         if watsonx_model is not None:
             self._model = watsonx_model
@@ -211,7 +218,11 @@ class WatsonxLLM(CustomLLM):
                 model_id=model_id,
                 deployment_id=deployment_id,
                 credentials=Credentials.from_dict(
-                    self._get_credential_kwargs(), _verify=self.verify
+                    {
+                        key: value.get_secret_value() if value else None
+                        for key, value in self._get_credential_kwargs().items()
+                    },
+                    _verify=self.verify,
                 ),
                 params=self._text_generation_params,
                 project_id=self.project_id,
@@ -233,7 +244,7 @@ class WatsonxLLM(CustomLLM):
         """Get Class Name."""
         return "WatsonxLLM"
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self) -> Dict[str, SecretStr | None]:
         return {
             "url": self.url,
             "apikey": self.apikey,
@@ -266,7 +277,7 @@ class WatsonxLLM(CustomLLM):
 
     def _split_generation_params(
         self, data: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> Tuple[Dict[str, Any] | None, Dict[str, Any]]:
         params = {}
         kwargs = {}
         sample_generation_kwargs_keys = set(self.sample_generation_text_params.keys())
@@ -276,7 +287,7 @@ class WatsonxLLM(CustomLLM):
                 params.update({key: value})
             else:
                 kwargs.update({key: value})
-        return params, kwargs
+        return params if params else None, kwargs
 
     @llm_completion_callback()
     def complete(
@@ -285,7 +296,7 @@ class WatsonxLLM(CustomLLM):
         params, generation_kwargs = self._split_generation_params(kwargs)
         response = self._model.generate(
             prompt=prompt,
-            params=self._text_generation_params | params,
+            params=self._text_generation_params or params,
             **generation_kwargs,
         )
 
@@ -302,7 +313,7 @@ class WatsonxLLM(CustomLLM):
 
         stream_response = self._model.generate_text_stream(
             prompt=prompt,
-            params=self._text_generation_params | params,
+            params=self._text_generation_params or params,
             **generation_kwargs,
         )
 

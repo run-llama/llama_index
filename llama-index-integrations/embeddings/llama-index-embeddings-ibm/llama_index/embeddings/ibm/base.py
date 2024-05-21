@@ -5,6 +5,13 @@ from llama_index.core.base.embeddings.base import (
     BaseEmbedding,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+
+# Import SecretStr directly from pydantic
+# since there is not one in llama_index.core.bridge.pydantic
+try:
+    from pydantic.v1 import SecretStr
+except ImportError:
+    from pydantic import SecretStr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.embeddings.ibm.utils import (
     resolve_watsonx_credentials,
@@ -26,7 +33,7 @@ class WatsonxEmbeddings(BaseEmbedding):
         ```python
 
         from llama_index.embeddings.ibm import WatsonxEmbeddings
-        watsonx_llm = WatsonxLLM(
+        watsonx_llm = WatsonxEmbeddings(
             model_id="ibm/slate-125m-english-rtrvr",
             url="https://us-south.ml.cloud.ibm.com",
             apikey="*****",
@@ -43,8 +50,7 @@ class WatsonxEmbeddings(BaseEmbedding):
 
     truncate_input_tokens: Optional[int] = Field(
         default=None,
-        description="""Represents the maximum number of input tokens accepted.
-        If the text is truncated, then it truncates from the left.""",
+        description="""Represents the maximum number of input tokens accepted.""",
     )
     additional_kwargs: Optional[Dict[str, Any]] = Field(
         default_factory=None,
@@ -63,37 +69,37 @@ class WatsonxEmbeddings(BaseEmbedding):
         allow_mutation=False,
     )
 
-    url: Optional[str] = Field(
+    url: Optional[SecretStr] = Field(
         default=None,
         description="""Url to Watson Machine Learning or CPD instance""",
         allow_mutation=False,
     )
 
-    apikey: Optional[str] = Field(
+    apikey: Optional[SecretStr] = Field(
         default=None,
         description="""Apikey to Watson Machine Learning or CPD instance""",
         allow_mutation=False,
     )
 
-    token: Optional[str] = Field(
+    token: Optional[SecretStr] = Field(
         default=None, description="""Token to CPD instance""", allow_mutation=False
     )
 
-    password: Optional[str] = Field(
+    password: Optional[SecretStr] = Field(
         default=None, description="""Password to CPD instance""", allow_mutation=False
     )
 
-    username: Optional[str] = Field(
+    username: Optional[SecretStr] = Field(
         default=None, description="""Username to CPD instance""", allow_mutation=False
     )
 
-    instance_id: Optional[str] = Field(
+    instance_id: Optional[SecretStr] = Field(
         default=None,
         description="""Instance_id of CPD instance""",
         allow_mutation=False,
     )
 
-    version: Optional[str] = Field(
+    version: Optional[SecretStr] = Field(
         default=None, description="""Version of CPD instance""", allow_mutation=False
     )
 
@@ -112,18 +118,18 @@ class WatsonxEmbeddings(BaseEmbedding):
     def __init__(
         self,
         model_id: str,
-        truncate_input_tokens: Optional[None] = None,
+        truncate_input_tokens: Optional[int] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         project_id: Optional[str] = None,
         space_id: Optional[str] = None,
-        url: Optional[str] = None,
-        apikey: Optional[str] = None,
-        token: Optional[str] = None,
-        password: Optional[str] = None,
-        username: Optional[str] = None,
-        instance_id: Optional[str] = None,
-        version: Optional[str] = None,
+        url: Optional[SecretStr] = None,
+        apikey: Optional[SecretStr] = None,
+        token: Optional[SecretStr] = None,
+        password: Optional[SecretStr] = None,
+        username: Optional[SecretStr] = None,
+        instance_id: Optional[SecretStr] = None,
+        version: Optional[SecretStr] = None,
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -167,7 +173,13 @@ class WatsonxEmbeddings(BaseEmbedding):
         self._embed_model = Embeddings(
             model_id=model_id,
             params=self.params,
-            credentials=Credentials.from_dict(creds) if creds else None,
+            credentials=Credentials.from_dict(
+                {
+                    key: value.get_secret_value() if value else None
+                    for key, value in self._get_credential_kwargs().items()
+                },
+                _verify=self.verify,
+            ),
             project_id=self.project_id,
             space_id=self.space_id,
             api_client=api_client,
@@ -180,9 +192,24 @@ class WatsonxEmbeddings(BaseEmbedding):
     def class_name(cls) -> str:
         return "WatsonxEmbedding"
 
+    def _get_credential_kwargs(self) -> Dict[str, SecretStr | None]:
+        return {
+            "url": self.url,
+            "apikey": self.apikey,
+            "token": self.token,
+            "password": self.password,
+            "username": self.username,
+            "instance_id": self.instance_id,
+            "version": self.version,
+        }
+
     @property
-    def params(self):
-        return {"truncate_input_tokens": self.truncate_input_tokens}
+    def params(self) -> Dict[str, int] | None:
+        return (
+            {"truncate_input_tokens": self.truncate_input_tokens}
+            if self.truncate_input_tokens
+            else None
+        )
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
