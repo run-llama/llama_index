@@ -1,13 +1,7 @@
 from typing import Any, List, Optional
 
-from llama_index_client import TextNodeWithScore
-from llama_index_client.resources.pipeline.client import OMIT, PipelineType
-
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.constants import DEFAULT_PROJECT_NAME
-from llama_index.core.ingestion.api_utils import get_aclient, get_client
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.vector_stores.types import MetadataFilters
 
 from vertexai.preview import rag
 

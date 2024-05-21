@@ -5,13 +5,9 @@ interfaces a managed service.
 
 """
 
-import json
-import logging
-import os
-from concurrent.futures import ThreadPoolExecutor
-from hashlib import blake2b
-from typing import Any, Dict, List, Optional, Sequence, Type, Tuple
+from typing import Any, Optional, Sequence
 
+from google.cloud.aiplatform_v1beta1 import ImportRagFilesResponse
 import vertexai
 from vertexai.preview import rag
 
@@ -19,23 +15,7 @@ import re
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
-from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
-from llama_index.core.llms.utils import LLMType, resolve_llm
-from llama_index.core.schema import (
-    BaseNode,
-    Document,
-    MetadataMode,
-    TextNode,
-    TransformComponent,
-)
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings
-from llama_index.core.storage.storage_context import StorageContext
-
-from llama_index.core.response_synthesizers import ResponseMode
-from llama_index.core import get_response_synthesizer
+from llama_index.core.indices.managed.base import BaseManagedIndex
 
 
 class VertexAIIndex(BaseManagedIndex):
@@ -91,7 +71,7 @@ class VertexAIIndex(BaseManagedIndex):
         chunk_overlap: Optional[int] = None,
         timeout: Optional[int] = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> ImportRagFilesResponse:
         """Import Google Cloud Storage or Google Drive files into the index."""
         # Convert https://storage.googleapis.com URLs to gs:// format
         uris = [
@@ -143,19 +123,8 @@ class VertexAIIndex(BaseManagedIndex):
         )
 
         similarity_top_k = kwargs.pop("similarity_top_k", None)
-        dense_similarity_top_k = kwargs.pop("dense_similarity_top_k", None)
-        if similarity_top_k is not None:
-            dense_similarity_top_k = similarity_top_k
+        vector_distance_threshold = kwargs.pop("vector_distance_threshold", None)
 
-        # return LlamaCloudRetriever(
-        #     self.name,
-        #     project_name=self.project_name,
-        #     api_key=self._api_key,
-        #     base_url=self._base_url,
-        #     app_url=self._app_url,
-        #     timeout=self._timeout,
-        #     dense_similarity_top_k=dense_similarity_top_k,
-        #     **kwargs,
-        # )
-
-        return VertexAIRetriever(self.corpus_name, **kwargs)
+        return VertexAIRetriever(
+            self.corpus_name, similarity_top_k, vector_distance_threshold, **kwargs
+        )
