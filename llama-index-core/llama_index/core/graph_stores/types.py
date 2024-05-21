@@ -247,7 +247,6 @@ class LabelledPropertyGraphStore(ABC):
         delete: Callable[[str, str, str], None]: Delete a triplet.
         persist: Callable[[str, Optional[fsspec.AbstractFileSystem]], None]:
             Persist the graph store to a file.
-        get_schema: Callable[[bool], str]: Get the schema of the graph store.
     """
 
     supports_structured_queries: bool = False
@@ -291,8 +290,6 @@ class LabelledPropertyGraphStore(ABC):
         nodes = self.get(ids=node_ids)
         converted_nodes = []
         for node in nodes:
-            if not isinstance(node, ChunkNode):
-                continue
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
                 converted_nodes[-1].set_content(node.text)
@@ -325,11 +322,6 @@ class LabelledPropertyGraphStore(ABC):
                 )
             )
         self.upsert_nodes(converted_nodes)
-
-    @abstractmethod
-    def upsert_triplets(self, triplets: List[Triplet]) -> None:
-        """Upsert triplets."""
-        ...
 
     @abstractmethod
     def delete(
@@ -384,7 +376,6 @@ class LabelledPropertyGraphStore(ABC):
         """Query the graph store with a vector store query."""
         ...
 
-    @abstractmethod
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
@@ -394,7 +385,7 @@ class LabelledPropertyGraphStore(ABC):
     @abstractmethod
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
-        ...
+        return self.schema
 
     ### ----- Async Methods ----- ###
 
@@ -424,7 +415,16 @@ class LabelledPropertyGraphStore(ABC):
 
     async def aget_llama_nodes(self, node_ids: List[str]) -> List[BaseNode]:
         """Asynchronously get nodes."""
-        return self.get_llama_nodes(node_ids)
+        nodes = await self.aget(ids=node_ids)
+        converted_nodes = []
+        for node in nodes:
+            try:
+                converted_nodes.append(metadata_dict_to_node(node.properties))
+                converted_nodes[-1].set_content(node.text)
+            except Exception:
+                continue
+
+        return converted_nodes
 
     async def aupsert_nodes(self, nodes: List[LabelledNode]) -> None:
         """Asynchronously add nodes."""
@@ -433,10 +433,6 @@ class LabelledPropertyGraphStore(ABC):
     async def aupsert_relations(self, relations: List[Relation]) -> None:
         """Asynchronously add relations."""
         return self.upsert_relations(relations)
-
-    async def aupsert_triplets(self, triplets: List[Triplet]) -> None:
-        """Asynchronously upsert triplets."""
-        return self.upsert_triplets(triplets)
 
     async def adelete(
         self,

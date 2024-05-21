@@ -131,11 +131,6 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         for relation in relations:
             self.graph.add_relation(relation)
 
-    def upsert_triplets(self, triplets: List[Triplet]) -> None:
-        """Add triplets."""
-        for triplet in triplets:
-            self.graph.add_triplet(triplet)
-
     def delete(
         self,
         entity_names: Optional[List[str]] = None,
