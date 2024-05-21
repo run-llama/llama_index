@@ -44,6 +44,11 @@ class DashScopeParse(BasePydanticReader):
         description="The Workspace  for the DashScope API.If not set, "
         "it will use the default workspace.",
     )
+    category_id: str = Field(
+        default=DASHSCOPE_DEFAULT_DC_CATEGORY,
+        description="The dc category for the DashScope API.If not set, "
+        "it will use the default dc category.",
+    )
     base_url: str = Field(
         default=DASHSCOPE_DEFAULT_BASE_URL,
         description="The base URL of the DashScope Parsing API.",
@@ -104,6 +109,15 @@ class DashScopeParse(BasePydanticReader):
 
         return v
 
+    @validator("category_id", pre=True, always=True)
+    def validate_category_id(cls, v: str) -> str:
+        """Validate the category."""
+        if not v:
+            import os
+
+            return os.getenv("DASHSCOPE_CATEGORY_ID", DASHSCOPE_DEFAULT_DC_CATEGORY)
+        return v
+
     @validator("base_url", pre=True, always=True)
     def validate_base_url(cls, v: str) -> str:
         """Validate the base URL."""
@@ -143,7 +157,7 @@ class DashScopeParse(BasePydanticReader):
 
             upload_file_lease_result.upload(file_path, f)
 
-            url = f"{self.base_url}/api/v1/datacenter/category/{DASHSCOPE_DEFAULT_DC_CATEGORY}/add_file"
+            url = f"{self.base_url}/api/v1/datacenter/category/{self.category_id}/add_file"
             async with httpx.AsyncClient(timeout=self.max_timeout) as client:
                 response = await client.post(
                     url,
@@ -168,7 +182,7 @@ class DashScopeParse(BasePydanticReader):
         retry=retry_if_exception_type(RetryException),
     )
     def __upload_lease(self, file_path, headers):
-        url = f"{self.base_url}/api/v1/datacenter/category/{DASHSCOPE_DEFAULT_DC_CATEGORY}/upload_lease"
+        url = f"{self.base_url}/api/v1/datacenter/category/{self.category_id}/upload_lease"
         try:
             with httpx.Client(timeout=self.max_timeout) as client:
                 response = client.post(
@@ -198,8 +212,8 @@ class DashScopeParse(BasePydanticReader):
     async def _get_job_result(
         self, data_id: str, result_type: str, verbose: bool = False
     ) -> dict:
-        result_url = f"{self.base_url}/api/v1/datacenter/category/{DASHSCOPE_DEFAULT_DC_CATEGORY}/file/{data_id}/download_lease"
-        status_url = f"{self.base_url}/api/v1/datacenter/category/{DASHSCOPE_DEFAULT_DC_CATEGORY}/file/{data_id}/query"
+        result_url = f"{self.base_url}/api/v1/datacenter/category/{self.category_id}/file/{data_id}/download_lease"
+        status_url = f"{self.base_url}/api/v1/datacenter/category/{self.category_id}/file/{data_id}/query"
 
         headers = self._get_dashscope_header()
 

@@ -1,4 +1,4 @@
-from llama_index.node_parser.relational.dashscope import DashScopeJsonNodeParser
+from llama_index.node_parser.dashscope import DashScopeJsonNodeParser
 from llama_index.core.node_parser.relational.base_element import BaseElementNodeParser
 
 

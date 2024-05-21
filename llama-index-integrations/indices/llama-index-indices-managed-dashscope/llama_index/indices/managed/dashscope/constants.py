@@ -6,3 +6,5 @@ CHECK_INGESTION_ENDPOINT = (
 )
 RETRIEVE_PIPELINE_ENDPOINT = "/api/v1/indices/pipeline/{pipeline_id}/retrieve"
 PIPELINE_SIMPLE_ENDPOINT = "/api/v1/indices/pipeline_simple"
+INSERT_DOC_ENDPOINT = "/api/v1/indices/pipeline/{pipeline_id}/documents"
+DELETE_DOC_ENDPOINT = "/api/v1/indices/pipeline/{pipeline_id}/delete"

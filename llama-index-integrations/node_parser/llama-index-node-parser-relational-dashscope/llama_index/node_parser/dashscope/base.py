@@ -72,7 +72,8 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
 
         return self.parse_result(response_text, node)
 
-    def post_service(self, my_input):
+    # def post_service(self, my_input):
+    def post_service(self, my_input: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", None)
         if DASHSCOPE_API_KEY is None:
             logging.error("DASHSCOPE_API_KEY is not set")
@@ -104,7 +105,9 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
             logging.error(f"{e}, try again.")
             return None
 
-    def parse_result(self, content_json, document):
+    def parse_result(
+        self, content_json: List[Dict[str, Any]], document: TextNode
+    ) -> List[BaseNode]:
         nodes = []
         for data in content_json:
             text = "\n".join(

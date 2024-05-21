@@ -1,5 +1,11 @@
 # LlamaIndex Indices Integration: Managed-Dashscope
 
+## Installation
+
+```shell
+pip install llama-index-indices-managed-dashscope
+```
+
 ## Usage
 
 ```python

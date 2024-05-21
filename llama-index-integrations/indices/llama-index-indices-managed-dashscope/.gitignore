@@ -151,3 +151,6 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
+
+# local test file
+tests/test_local.py

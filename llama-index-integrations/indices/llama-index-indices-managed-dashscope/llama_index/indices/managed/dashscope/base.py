@@ -5,10 +5,8 @@ interfaces a managed service.
 
 """
 import os
-import time
-from typing import Any, List, Optional, Sequence, Type
+from typing import Any, List, Optional, Type, Union
 from enum import Enum
-import time
 import requests
 import json
 
@@ -22,13 +20,21 @@ from llama_index.core.settings import Settings
 from llama_index.indices.managed.dashscope.api_utils import (
     get_pipeline_create,
     default_transformations,
+    get_doc_insert,
+    get_doc_delete,
 )
-
+from llama_index.indices.managed.dashscope.utils import (
+    run_ingestion,
+    get_pipeline_id,
+)
 from llama_index.indices.managed.dashscope.constants import (
     DASHSCOPE_DEFAULT_BASE_URL,
     UPSERT_PIPELINE_ENDPOINT,
     START_PIPELINE_ENDPOINT,
     CHECK_INGESTION_ENDPOINT,
+    PIPELINE_SIMPLE_ENDPOINT,
+    INSERT_DOC_ENDPOINT,
+    DELETE_DOC_ENDPOINT,
 )
 
 
@@ -70,6 +76,13 @@ class DashScopeCloudIndex(BaseManagedIndex):
         self.workspace_id = workspace_id or os.environ.get("DASHSCOPE_WORKSPACE_ID")
         self._api_key = api_key or os.environ.get("DASHSCOPE_API_KEY")
         self._base_url = os.environ.get("DASHSCOPE_BASE_URL", None) or base_url
+        self._headers = {
+            "Content-Type": "application/json",
+            "Accept-Encoding": "utf-8",
+            "X-DashScope-WorkSpace": self.workspace_id,
+            "Authorization": "Bearer " + self._api_key,
+            "X-DashScope-OpenAPISource": "CloudSDK",
+        }
         self._timeout = timeout
         self._show_progress = show_progress
         self._service_context = None
@@ -92,10 +105,6 @@ class DashScopeCloudIndex(BaseManagedIndex):
         pipeline_create = get_pipeline_create(
             name, transformations or default_transformations(), documents
         )
-        # for debug
-        json.dump(
-            pipeline_create, open("pipeline_create.json", "w"), ensure_ascii=False
-        )
 
         workspace_id = workspace_id or os.environ.get("DASHSCOPE_WORKSPACE_ID")
         api_key = api_key or os.environ.get("DASHSCOPE_API_KEY")
@@ -110,13 +119,8 @@ class DashScopeCloudIndex(BaseManagedIndex):
             "X-DashScope-WorkSpace": workspace_id,
             "Authorization": "Bearer " + api_key,
             "X-DashScope-OpenAPISource": "CloudSDK",
-            # for debug
-            # 'X-DashScope-ApiKeyId': 'test_api_key_id_123456',
-            # 'X-DashScope-Uid': "test_uid_123456",
-            # "X-DashScope-SubUid": "test_sub_uid_123456"
         }
-        print(base_url + UPSERT_PIPELINE_ENDPOINT)
-        print(json.dumps(pipeline_create))
+
         response = requests.put(
             base_url + UPSERT_PIPELINE_ENDPOINT,
             data=json.dumps(pipeline_create),
@@ -131,8 +135,6 @@ class DashScopeCloudIndex(BaseManagedIndex):
             )
         if verbose:
             print(f"Starting creating index {name}, pipeline_id: {pipeline_id}")
-
-        print(base_url + START_PIPELINE_ENDPOINT.format(pipeline_id=pipeline_id))
 
         response = requests.post(
             base_url + START_PIPELINE_ENDPOINT.format(pipeline_id=pipeline_id),
@@ -151,41 +153,14 @@ class DashScopeCloudIndex(BaseManagedIndex):
         if verbose:
             print(f"Starting ingestion for index {name}, ingestion_id: {ingestion_id}")
 
-        ingestion_status = ""
-        failed_docs = []
-
-        while True:
-            print(
-                base_url
-                + CHECK_INGESTION_ENDPOINT.format(
-                    pipeline_id=pipeline_id, ingestion_id=ingestion_id
-                )
-            )
-            response = requests.get(
-                base_url
-                + CHECK_INGESTION_ENDPOINT.format(
-                    pipeline_id=pipeline_id, ingestion_id=ingestion_id
-                ),
-                headers=headers,
-            )
-            try:
-                response_text = response.json()
-            except Exception as e:
-                print(f"Failed to get response: \n{response.text}\nretrying...")
-                continue
-
-            if response_text.get("code", "") != Status.SUCCESS.value:
-                print(
-                    f"Failed to get ingestion status: {response_text.get('message', '')}\n{response_text}\nretrying..."
-                )
-                continue
-            ingestion_status = response_text.get("ingestion_status", "")
-            failed_docs = response_text.get("failed_docs", "")
-            if verbose:
-                print(f"Current status: {ingestion_status}")
-            if ingestion_status in ["COMPLETED", "FAILED"]:
-                break
-            time.sleep(5)
+        ingestion_status, failed_docs = run_ingestion(
+            base_url
+            + CHECK_INGESTION_ENDPOINT.format(
+                pipeline_id=pipeline_id, ingestion_id=ingestion_id
+            ),
+            headers,
+            verbose,
+        )
 
         if verbose:
             print(f"ingestion_status {ingestion_status}")
@@ -227,15 +202,78 @@ class DashScopeCloudIndex(BaseManagedIndex):
         kwargs["retriever"] = self.as_retriever(**kwargs)
         return RetrieverQueryEngine.from_args(**kwargs)
 
-    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+    def _insert(
+        self,
+        documents: List[Document],
+        transformations: Optional[List[TransformComponent]] = None,
+        verbose: bool = True,
+        **insert_kwargs: Any,
+    ) -> None:
         """Insert a set of documents (each a node)."""
-        raise NotImplementedError("_insert not implemented.")
+        pipeline_id = get_pipeline_id(
+            self._base_url + PIPELINE_SIMPLE_ENDPOINT,
+            self._headers,
+            {"pipeline_name": self.name},
+        )
+        doc_insert = get_doc_insert(
+            transformations or default_transformations(),
+            documents,
+        )
+        response = requests.put(
+            self._base_url + INSERT_DOC_ENDPOINT.format(pipeline_id=pipeline_id),
+            data=json.dumps(doc_insert),
+            headers=self._headers,
+        )
+        response_text = response.json()
+        ingestion_id = response_text.get("ingestionId", None)
+        if (
+            response_text.get("code", "") != Status.SUCCESS.value
+            or ingestion_id is None
+        ):
+            raise ValueError(
+                f"Failed to insert documents: {response_text.get('message', '')}\n{response_text}"
+            )
+
+        ingestion_status, failed_docs = run_ingestion(
+            self._base_url
+            + CHECK_INGESTION_ENDPOINT.format(
+                pipeline_id=pipeline_id, ingestion_id=ingestion_id
+            ),
+            self._headers,
+            verbose,
+        )
+
+        if verbose:
+            print(f"ingestion_status {ingestion_status}")
+            print(f"failed_docs: {failed_docs}")
 
     def delete_ref_doc(
-        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+        self,
+        ref_doc_ids: Union[str, List[str]],
+        verbose: bool = True,
+        **delete_kwargs: Any,
     ) -> None:
-        """Delete a document and it's nodes by using ref_doc_id."""
-        raise NotImplementedError("delete_ref_doc not implemented.")
+        """Delete documents in index."""
+        if isinstance(ref_doc_ids, str):
+            ref_doc_ids = [ref_doc_ids]
+        pipeline_id = get_pipeline_id(
+            self._base_url + PIPELINE_SIMPLE_ENDPOINT,
+            self._headers,
+            {"pipeline_name": self.name},
+        )
+        doc_delete = get_doc_delete(ref_doc_ids)
+        response = requests.post(
+            self._base_url + DELETE_DOC_ENDPOINT.format(pipeline_id=pipeline_id),
+            json=doc_delete,
+            headers=self._headers,
+        )
+        response_text = response.json()
+        if response_text.get("code", "") != Status.SUCCESS.value:
+            raise ValueError(
+                f"Failed to delete documents: {response_text.get('message', '')}\n{response_text}"
+            )
+        if verbose:
+            print(f"Delete documents {ref_doc_ids} successfully!")
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document and it's corresponding nodes."""

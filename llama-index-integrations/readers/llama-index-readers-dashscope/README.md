@@ -1,5 +1,11 @@
 # LlamaIndex Readers Integration: Dashscope
 
+## Installation
+
+```shelll
+pip install llama-index-readers-dashscope
+```
+
 ## Usage
 
 ```python
@@ -27,8 +33,8 @@ A full list of retriever settings/kwargs is below:
 - result_type: Optional[ResultType] -- The result type for the parser. The default value is ResultType.DASHCOPE_DOCMIND.
 - num_workers: Optional[int] -- The number of workers to use sending API requests for parsing. The default value is 4,
   greater than 0, less than 10.
-- check_interval: Optional[int] -- The interval in seconds to check if the parsing is done. The default value is 2.
-- max_timeout: Optional[int] -- The maximum timeout in seconds to wait for the parsing to finish. The default value is 20000.
+- check_interval: Optional[int] -- The interval in seconds to check if the parsing is done. The default value is 5.
+- max_timeout: Optional[int] -- The maximum timeout in seconds to wait for the parsing to finish. The default value is 3600.
 - verbose: Optional[bool] -- Whether to print the progress of the parsing. The default value is True.
 - show_progress: Optional[bool] -- Show progress when parsing multiple files. The default value is True.
 - ignore_errors: Optional[bool] -- Whether or not to ignore and skip errors raised during parsing. The default value is

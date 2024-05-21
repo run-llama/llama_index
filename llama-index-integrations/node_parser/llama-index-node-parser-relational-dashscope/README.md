@@ -2,6 +2,12 @@
 
 Transform your documents into nodes with ease using the Dashscope integration for LlamaIndex. This tool allows for precise control over chunk size, overlap size, and more, tailored for the Dashscope reader output format.
 
+## Installation
+
+```shell
+pip install llama-index-node-parser-dashscope
+```
+
 ## Quick Start
 
 Get up and running with just a few lines of code:
