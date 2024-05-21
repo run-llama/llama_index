@@ -60,7 +60,7 @@ class VectaraRetriever(BaseRetriever):
         index: VectaraIndex,
         similarity_top_k: int = 5,
         vectara_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
-        lambda_val: float = 0.025,
+        lambda_val: float = 0.005,
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",

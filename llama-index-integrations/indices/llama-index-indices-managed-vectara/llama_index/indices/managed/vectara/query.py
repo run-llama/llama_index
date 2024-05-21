@@ -46,6 +46,7 @@ class VectaraQueryEngine(BaseQueryEngine):
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
         summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        **kwargs: Any,
     ) -> None:
         self._retriever = retriever
         self._streaming = streaming
@@ -160,6 +161,7 @@ class VectaraChatEngine(BaseChatEngine):
         summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         self._retriever = retriever
         self._streaming = streaming
