@@ -205,7 +205,7 @@ class CohereProvider(Provider):
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
             "user": "USER",
-            "system": "SYSTEM",
+            "system": "USER",
             "chatbot": "CHATBOT",
             "assistant": "CHATBOT",
         }
