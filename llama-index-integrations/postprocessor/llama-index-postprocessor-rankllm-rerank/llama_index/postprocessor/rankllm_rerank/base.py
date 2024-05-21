@@ -8,7 +8,7 @@ from llama_index.core.instrumentation.events.rerank import (
     ReRankStartEvent,
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
@@ -102,7 +102,10 @@ class RankLLMRerank(BaseNodePostprocessor):
             )
         )
 
-        docs = [(node.get_content(), node.get_score()) for node in nodes]
+        docs = [
+            (node.get_content(metadata_mode=MetadataMode.EMBED), node.get_score())
+            for node in nodes
+        ]
 
         if self.with_retrieval:
             hits = [
