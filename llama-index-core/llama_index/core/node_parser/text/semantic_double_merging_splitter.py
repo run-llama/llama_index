@@ -1,19 +1,16 @@
 import re
 import string
-from typing import Any, Callable, List, Optional, Sequence, TypedDict
+from typing import Any, Callable, List, Optional, Sequence
 
-import nltk
+
 import spacy
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
 
-from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.node_parser.interface import NodeParser
 
 
-import numpy as np
-from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import NodeParser
@@ -26,55 +23,61 @@ from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
 from llama_index.core.schema import BaseNode, Document
 from llama_index.core.utils import get_tqdm_iterable
 
-nltk.download("punkt")
-nltk.download("stopwords")
-
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
-#TODO test more languages
-LANGUAGES : list[str] = ["english"]
-LANGUAGE_MODELS : dict[str, list[str]] ={
-                                        "english" : ["en_core_web_md", "en_core_web_lg"],
-                                        "german" : ["de_core_news_md", "de_core_news_lg"],
-                                        "spanish" : ["es_core_news_md", "es_core_news_lg"]
-                                        }
+# import nltk
+# nltk.download("punkt")
+# nltk.download("stopwords")
 
+# TODO test more languages
+LANGUAGES: list[str] = ["english", "german", "spanish"]
+LANGUAGE_MODELS: dict[str, list[str]] = {
+    "english": ["en_core_web_md", "en_core_web_lg"],
+    "german": ["de_core_news_md", "de_core_news_lg"],
+    "spanish": ["es_core_news_md", "es_core_news_lg"],
+}
 
 
 class LanguageConfig:
-
-    def __init__(self, language : str = "english", spacy_model : str = "en_core_web_md", model_validation : bool = True):
-
+    def __init__(
+        self,
+        language: str = "english",
+        spacy_model: str = "en_core_web_md",
+        model_validation: bool = True,
+    ):
         if language not in LANGUAGES:
-            raise ValueError(f"{language} language is not supported yet! Avaiable languages: {LANGUAGES}")
-        
+            raise ValueError(
+                f"{language} language is not supported yet! Available languages: {LANGUAGES}"
+            )
+
         if spacy_model not in LANGUAGE_MODELS[language] and model_validation:
-            raise ValueError(f"{spacy_model} model is not avaiable")
-        
+            raise ValueError(
+                f"{spacy_model} model is not matching your language: {language}"
+            )
+
         self.language = language
         self.nlp = spacy.load(spacy_model)
         self.stopwords = set(stopwords.words(language))
-            
 
 
 class SemanticDoubleMergingSplitterNodeParser(NodeParser):
-
     """Semantic double merging text splitter.
 
     Splits a document into Nodes, with each node being a group of semantically related sentences.
+
     Args:
         language_config (LanguageConfig): chooses language and spacy language model to be used
-        initial_treshold (float): sets treshold for initializing new chunk
-        appending_treshold (float): sets treshold for appending new sentences to chunk
-        merging_treshold (float): sets treshold for merging whole chunks
+        initial_threshold (float): sets threshold for initializing new chunk
+        appending_threshold (float): sets threshold for appending new sentences to chunk
+        merging_threshold (float): sets threshold for merging whole chunks
         max_chunk_size (int): maximum size of chunk (in characters)
-        merging_range (int): How many chunks 'ahead' beyond the nearest neighborto be merged if similar (1 or 2 avaiable)
+        merging_range (int): How many chunks 'ahead' beyond the nearest neighbor to be merged if similar (1 or 2 available)
         sentence_splitter (Optional[Callable]): splits text into sentences
     """
 
     language_config: LanguageConfig = Field(
         default=LanguageConfig(),
-        description="Config that selects language and spacy model for chunking"
+        description="Config that selects language and spacy model for chunking",
     )
 
     initial_threshold: float = Field(
@@ -106,16 +109,17 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
     max_chunk_size: int = Field(
         default=1000,
-        description="Maximum size of returned chunk (number of characters)"
+        description="Maximum length of chunk that can be subjected to verification (number of characters)",
     )
 
     merging_range: int = Field(
         default=1,
-        description=("How many chunks 'ahead' beyond the nearest neighbor"
-                    "should the algorithm check during the second pass"
-                    "(possible options are 1 or 2")
+        description=(
+            "How many chunks 'ahead' beyond the nearest neighbor"
+            "should the algorithm check during the second pass"
+            "(possible options are 1 or 2"
+        ),
     )
-
 
     sentence_splitter: Callable[[str], List[str]] = Field(
         default_factory=split_by_sentence_tokenizer,
@@ -126,8 +130,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
     @classmethod
     def class_name(cls) -> str:
         return "SemanticDoubleMergingSplitterNodeParser"
-    
-    
+
     @classmethod
     def from_defaults(
         cls,
@@ -165,7 +168,6 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             id_func=id_func,
         )
 
-
     def _parse_nodes(
         self,
         nodes: Sequence[BaseNode],
@@ -181,17 +183,15 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             all_nodes.extend(nodes)
 
         return all_nodes
-    
+
     def build_semantic_nodes_from_documents(
         self,
         documents: Sequence[Document],
     ) -> List[BaseNode]:
-        
         """Build window nodes from documents."""
         all_nodes: List[BaseNode] = []
 
         for doc in documents:
-
             text = doc.text
             sentences = self.sentence_splitter(text)
             initial_chunks = self._create_initial_chunks(sentences)
@@ -203,9 +203,8 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 id_func=self.id_func,
             )
             all_nodes.extend(nodes)
-        
+
         return all_nodes
-    
 
     def _create_initial_chunks(self, sentences: List[str]) -> List[str]:
         initial_chunks: list[str] = []
@@ -217,12 +216,14 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 # check if 2 sentences got anything in common
 
                 if (
-                    self.language_config.nlp(self._clean_text_advanced(chunk)).similarity(
+                    self.language_config.nlp(
+                        self._clean_text_advanced(chunk)
+                    ).similarity(
                         self.language_config.nlp(self._clean_text_advanced(sentence))
                     )
                     < self.initial_threshold
-                ):  
-                    #if not then leave first sentence as separate chunk
+                ):
+                    # if not then leave first sentence as separate chunk
                     initial_chunks.append(chunk)
                     chunk = sentence
                     continue
@@ -234,14 +235,17 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
                 last_sentences = " ".join(chunk_sentences[-2:])
                 new = False
-            
+
             elif (
-                self.language_config.nlp(self._clean_text_advanced(last_sentences)).similarity(
+                self.language_config.nlp(
+                    self._clean_text_advanced(last_sentences)
+                ).similarity(
                     self.language_config.nlp(self._clean_text_advanced(sentence))
                 )
-                > self.appending_threshold and not len(chunk) > self.max_chunk_size
-            ):  
-                # elif nlp(last_sentences).similarity(nlp(sentence)) > self.treshold:
+                > self.appending_threshold
+                and not len(chunk) > self.max_chunk_size
+            ):
+                # elif nlp(last_sentences).similarity(nlp(sentence)) > self.threshold:
                 chunk_sentences.append(sentence)
                 last_sentences = " ".join(chunk_sentences[-2:])
                 chunk += " " + sentence
@@ -252,7 +256,6 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         initial_chunks.append(chunk)
 
         return initial_chunks
-
 
     def _merge_initial_chunks(self, initial_chunks: list[str]) -> List[str]:
         chunks: list[str] = []
@@ -273,43 +276,58 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 chunks.append(current)
                 current = initial_chunks[i]
 
-            #check if 1st and 2nd chunk should be connected
+            # check if 1st and 2nd chunk should be connected
             elif (
-                current_nlp.similarity(self.language_config.nlp(self._clean_text_advanced(initial_chunks[i])))
+                current_nlp.similarity(
+                    self.language_config.nlp(
+                        self._clean_text_advanced(initial_chunks[i])
+                    )
+                )
                 > self.merging_threshold
             ):
                 current += " " + initial_chunks[i]
 
-            #check if 1st and 3rd chunk are similar, if yes then merge 1st, 2nd, 3rd together
+            # check if 1st and 3rd chunk are similar, if yes then merge 1st, 2nd, 3rd together
             elif (
                 i <= len(initial_chunks) - 2
                 and current_nlp.similarity(
-                    self.language_config.nlp(self._clean_text_advanced(initial_chunks[i + 1]))
+                    self.language_config.nlp(
+                        self._clean_text_advanced(initial_chunks[i + 1])
+                    )
                 )
                 > self.merging_threshold
             ):
                 current += " " + initial_chunks[i] + " " + initial_chunks[i + 1]
                 skip = 1
-            
-            #check if 1st and 4th chunk are smilar, if yes then merge 1st, 2nd, 3rd and 4th together
+
+            # check if 1st and 4th chunk are smilar, if yes then merge 1st, 2nd, 3rd and 4th together
             elif (
                 i < len(initial_chunks) - 2
                 and current_nlp.similarity(
-                    self.language_config.nlp(self._clean_text_advanced(initial_chunks[i + 2]))
+                    self.language_config.nlp(
+                        self._clean_text_advanced(initial_chunks[i + 2])
+                    )
                 )
-                > self.merging_threshold and self.merging_range == 2
+                > self.merging_threshold
+                and self.merging_range == 2
             ):
-                current += " " + initial_chunks[i] + " " + initial_chunks[i + 1] + " " + initial_chunks[i + 2]
+                current += (
+                    " "
+                    + initial_chunks[i]
+                    + " "
+                    + initial_chunks[i + 1]
+                    + " "
+                    + initial_chunks[i + 2]
+                )
                 skip = 2
-            
+
             else:
                 chunks.append(current)
                 current = initial_chunks[i]
-        
+
         chunks.append(current)
         return chunks
 
-    
     def _clean_text_advanced(self, text: str) -> str:
         text = text.lower()
         # Remove urls

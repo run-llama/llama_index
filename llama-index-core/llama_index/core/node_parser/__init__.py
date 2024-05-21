@@ -32,7 +32,7 @@ from llama_index.core.node_parser.text.semantic_splitter import (
 )
 from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
     SemanticDoubleMergingSplitterNodeParser,
-    LanguageConfig
+    LanguageConfig,
 )
 from llama_index.core.node_parser.text.sentence import SentenceSplitter
 from llama_index.core.node_parser.text.sentence_window import (

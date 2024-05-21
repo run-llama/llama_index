@@ -194,6 +194,8 @@
   "JSONNodeParser": "llama_index.core.node_parser",
   "SentenceWindowNodeParser": "llama_index.core.node_parser",
   "SemanticSplitterNodeParser": "llama_index.core.node_parser",
+  "SemanticDoubleMergingSplitterNodeParser": "llama_index.core.node_parser",
+  "LanguageConfig": "llama_index.core.node_parser",
   "NodeParser": "llama_index.core.node_parser",
   "HierarchicalNodeParser": "llama_index.core.node_parser",
   "TextSplitter": "llama_index.core.node_parser",
