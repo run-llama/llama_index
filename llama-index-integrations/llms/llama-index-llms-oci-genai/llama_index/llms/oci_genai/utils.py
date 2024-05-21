@@ -40,7 +40,7 @@ STREAMING_MODELS = {
 
 
 def create_client(auth_type, auth_profile, service_endpoint):
-    """OCI Gen AI client
+    """OCI Gen AI client.
 
     Args:
         auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL.
@@ -214,13 +214,12 @@ class CohereProvider(Provider):
             self.oci_chat_message(role=role_map[msg.role.value], message=msg.content)
             for msg in messages[:-1]
         ]
-        oci_params = {
+
+        return {
             "message": messages[-1].content,
             "chat_history": oci_chat_history,
             "api_format": self.chat_api_format,
         }
-
-        return oci_params
 
 
 class MetaProvider(Provider):
@@ -270,13 +269,12 @@ class MetaProvider(Provider):
             )
             for msg in messages
         ]
-        oci_params = {
+
+        return {
             "messages": oci_messages,
             "api_format": self.chat_api_format,
             "top_k": -1,
         }
-
-        return oci_params
 
 
 PROVIDERS = {
