@@ -12,7 +12,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
-DEFUALT_LPG_PERSIST_FNAME = "lpg_graph_store.json"
+DEFUALT_LPG_PERSIST_FNAME = "property_graph_store.json"
 
 TRIPLET_SOURCE_KEY = "triplet_source_id"
 
@@ -230,7 +230,7 @@ class GraphStore(Protocol):
         ...
 
 
-class LabelledPropertyGraphStore(ABC):
+class PropertyGraphStore(ABC):
     """Abstract labelled graph store protocol.
 
     This protocol defines the interface for a graph store, which is responsible

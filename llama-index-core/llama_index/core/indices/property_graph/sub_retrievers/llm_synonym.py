@@ -2,9 +2,9 @@ from typing import List, Optional, Union
 
 from llama_index.core.llms.llm import LLM
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
-    BaseLPGRetriever,
+    BasePGRetriever,
 )
-from llama_index.core.graph_stores.types import LabelledPropertyGraphStore, Triplet
+from llama_index.core.graph_stores.types import PropertyGraphStore, Triplet
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.schema import (
@@ -24,16 +24,16 @@ DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
 )
 
 
-class LLMSynonymRetriever(BaseLPGRetriever):
+class LLMSynonymRetriever(BasePGRetriever):
     def __init__(
         self,
-        graph_store: LabelledPropertyGraphStore,
+        graph_store: PropertyGraphStore,
         include_text: bool = True,
         synonym_prompt: Union[
             BasePromptTemplate, str
         ] = DEFAULT_SYNONYM_EXPAND_TEMPLATE,
         max_keywords: int = 10,
-        triple_depth: int = 1,
+        path_depth: int = 1,
         output_parsing_fn: Optional[callable] = None,
         llm: Optional[LLM] = None,
         **kwargs,
@@ -44,7 +44,7 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         self._synonym_prompt = synonym_prompt
         self._output_parsing_fn = output_parsing_fn
         self._max_keywords = max_keywords
-        self._triple_depth = triple_depth
+        self._path_depth = path_depth
         super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
 
     def _parse_llm_output(self, output: str) -> List[str]:
@@ -60,7 +60,7 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         kg_nodes = self._graph_store.get(ids=matches)
         triplets = self._graph_store.get_rel_map(
             kg_nodes,
-            depth=self._triple_depth,
+            depth=self._path_depth,
         )
 
         return self._get_nodes_with_score(triplets)
@@ -69,7 +69,7 @@ class LLMSynonymRetriever(BaseLPGRetriever):
         kg_nodes = await self._graph_store.aget(ids=matches)
         triplets = await self._graph_store.aget_rel_map(
             kg_nodes,
-            depth=self._triple_depth,
+            depth=self._path_depth,
         )
 
         return self._get_nodes_with_score(triplets)

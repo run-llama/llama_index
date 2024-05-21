@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.graph_stores.types import LabelledPropertyGraphStore, Triplet
+from llama_index.core.graph_stores.types import PropertyGraphStore, Triplet
 from llama_index.core.indices.property_graph.base import (
     TRIPLET_SOURCE_KEY,
 )
@@ -19,10 +19,10 @@ from llama_index.core.schema import (
 DEFAULT_PREAMBLE = "Here are some facts extracted from the provided text:\n\n"
 
 
-class BaseLPGRetriever(BaseRetriever):
+class BasePGRetriever(BaseRetriever):
     def __init__(
         self,
-        graph_store: LabelledPropertyGraphStore,
+        graph_store: PropertyGraphStore,
         include_text: bool = True,
         include_text_preamble: Optional[str] = None,
         **kwargs: Any,

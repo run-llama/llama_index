@@ -3,7 +3,7 @@ import os
 from typing import Any, List, Dict, Tuple, Optional
 
 from llama_index.core.graph_stores.types import (
-    LabelledPropertyGraphStore,
+    PropertyGraphStore,
     Triplet,
     LabelledNode,
     LabelledPropertyGraph,
@@ -14,7 +14,7 @@ from llama_index.core.graph_stores.types import (
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
 
-class SimpleLPGStore(LabelledPropertyGraphStore):
+class SimplePropertyGraphStore(PropertyGraphStore):
     """Simple Labelled Property Graph Store.
 
     This class implements a simple in-memory labelled property graph store.
@@ -168,7 +168,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         cls,
         persist_path: str,
         fs: Optional[fsspec.AbstractFileSystem] = None,
-    ) -> "SimpleLPGStore":
+    ) -> "SimplePropertyGraphStore":
         """Load from persist path."""
         if fs is None:
             fs = fsspec.filesystem("file")
@@ -181,7 +181,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
-    ) -> "SimpleLPGStore":
+    ) -> "SimplePropertyGraphStore":
         """Load from persist dir."""
         persist_path = os.path.join(persist_dir, DEFUALT_LPG_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
@@ -190,7 +190,7 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
     def from_dict(
         cls,
         data: dict,
-    ) -> "SimpleLPGStore":
+    ) -> "SimplePropertyGraphStore":
         """Load from dict."""
         graph = LabelledPropertyGraph.parse_obj(data)
         return cls(graph)
@@ -199,30 +199,30 @@ class SimpleLPGStore(LabelledPropertyGraphStore):
         """Convert to dict."""
         return self.graph.dict()
 
-    # NOTE: Unimplemented methods for SimpleLPGStore
+    # NOTE: Unimplemented methods for SimplePropertyGraphStore
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
-        raise NotImplementedError("Schema not implemented for SimpleLPGStore.")
+        raise NotImplementedError("Schema not implemented for SimplePropertyGraphStore.")
 
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Query the graph store with statement and parameters."""
         raise NotImplementedError(
-            "Structured query not implemented for SimpleLPGStore."
+            "Structured query not implemented for SimplePropertyGraphStore."
         )
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> List[Tuple[LabelledNode, float]]:
         """Query the graph store with a vector store query."""
-        raise NotImplementedError("Vector query not implemented for SimpleLPGStore.")
+        raise NotImplementedError("Vector query not implemented for SimplePropertyGraphStore.")
 
     @property
     def client(self) -> Any:
         """Get client."""
-        raise NotImplementedError("Client not implemented for SimpleLPGStore.")
+        raise NotImplementedError("Client not implemented for SimplePropertyGraphStore.")
 
     def save_networkx_graph(self) -> None:
         """Display the graph store."""

@@ -2,13 +2,13 @@ from typing import Any, List, Dict, Optional
 import neo4j
 
 from llama_index.core.graph_stores.types import (
-    LabelledPropertyGraphStore,
+    PropertyGraphStore,
     LabelledNode,
     Relation,
 )
 
 
-class Neo4jLPGStore(LabelledPropertyGraphStore):
+class Neo4jLPGStore(PropertyGraphStore):
     """Simple Labelled Property Graph Store.
 
     This class implements a simple in-memory labelled property graph store.

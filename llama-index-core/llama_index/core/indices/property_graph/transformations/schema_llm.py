@@ -92,17 +92,17 @@ DEFAULT_VALIDATION_SCHEMA: Dict[str, Any] = {
     ),
 }
 
-DEFAULT_SCHEMA_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
+DEFAULT_SCHEMA_PATH_EXTRACT_PROMPT = PromptTemplate(
     "Give the following text, extract the knowledge graph according to the provided schema. "
-    "Try to limit to the output {max_triplets_per_chunk} extracted triplets.s\n"
+    "Try to limit to the output {max_triplets_per_chunk} extracted paths.s\n"
     "-------\n"
     "{text}\n"
     "-------\n"
 )
 
 
-class SchemaLLMTripletExtractor(TransformComponent):
-    """Extract triplets from a graph using a schema."""
+class SchemaLLMPathExtractor(TransformComponent):
+    """Extract paths from a graph using a schema."""
 
     llm: LLM
     extract_prompt: PromptTemplate
@@ -200,7 +200,7 @@ class SchemaLLMTripletExtractor(TransformComponent):
 
         super().__init__(
             llm=llm,
-            extract_prompt=extract_prompt or DEFAULT_SCHEMA_TRIPLET_EXTRACT_PROMPT,
+            extract_prompt=extract_prompt or DEFAULT_SCHEMA_PATH_EXTRACT_PROMPT,
             kg_schema_cls=kg_schema_cls,
             kg_validation_schema=kg_validation_schema or DEFAULT_VALIDATION_SCHEMA,
             num_workers=num_workers,

@@ -3,33 +3,33 @@ from typing import Any, List, Callable, Optional, Union
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.indices.property_graph.utils import (
-    default_parse_triplets_fn,
+    default_parse_triples_fn,
 )
 from llama_index.core.graph_stores.types import EntityNode, Relation
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.prompts.default_prompts import (
-    DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
+    DEFAULT_KG_TRIPLE_EXTRACT_PROMPT,
 )
 from llama_index.core.schema import TransformComponent, BaseNode
 
 
-class SimpleLLMTripletExtractor(TransformComponent):
-    """Extract triplets from a graph."""
+class SimpleLLMPathExtractor(TransformComponent):
+    """Extract triples from a graph."""
 
     llm: LLM
     extract_prompt: PromptTemplate
     parse_fn: Callable
     num_workers: int
-    max_triplets_per_chunk: int
+    max_paths_per_chunk: int
     show_progress: bool
 
     def __init__(
         self,
         llm: Optional[LLM] = None,
         extract_prompt: Optional[Union[str, PromptTemplate]] = None,
-        parse_fn: Callable = default_parse_triplets_fn,
-        max_triplets_per_chunk: int = 10,
+        parse_fn: Callable = default_parse_triples_fn,
+        max_paths_per_chunk: int = 10,
         num_workers: int = 4,
         show_progress: bool = False,
     ) -> None:
@@ -41,23 +41,23 @@ class SimpleLLMTripletExtractor(TransformComponent):
 
         super().__init__(
             llm=llm or Settings.llm,
-            extract_prompt=extract_prompt or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
+            extract_prompt=extract_prompt or DEFAULT_KG_TRIPLE_EXTRACT_PROMPT,
             parse_fn=parse_fn,
             num_workers=num_workers,
-            max_triplets_per_chunk=max_triplets_per_chunk,
+            max_paths_per_chunk=max_paths_per_chunk,
             show_progress=show_progress,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        return "ExtractTripletsFromText"
+        return "ExtractTriplesFromText"
 
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        """Extract triplets from nodes."""
+        """Extract triples from nodes."""
         return asyncio.run(self.acall(nodes, **kwargs))
 
     async def _aextract(self, node: BaseNode) -> BaseNode:
-        """Extract triplets from a node."""
+        """Extract triples from a node."""
         assert hasattr(node, "text")
 
         text = node.get_content(metadata_mode="llm")
@@ -65,17 +65,17 @@ class SimpleLLMTripletExtractor(TransformComponent):
             llm_response = await self.llm.apredict(
                 self.extract_prompt,
                 text=text,
-                max_knowledge_triplets=self.max_triplets_per_chunk,
+                max_knowledge_triples=self.max_paths_per_chunk,
             )
-            triplets = self.parse_fn(llm_response)
+            triples = self.parse_fn(llm_response)
         except ValueError:
-            triplets = []
+            triples = []
 
         existing_nodes = node.metadata.pop("nodes", [])
         existing_relations = node.metadata.pop("relations", [])
 
         metadata = node.metadata.copy()
-        for subj, rel, obj in triplets:
+        for subj, rel, obj in triples:
             subj_node = EntityNode(name=subj, properties=metadata)
             obj_node = EntityNode(name=obj, properties=metadata)
             rel_node = Relation(
@@ -94,7 +94,7 @@ class SimpleLLMTripletExtractor(TransformComponent):
         return node
 
     async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        """Extract triplets from nodes async."""
+        """Extract triples from nodes async."""
         jobs = []
         for node in nodes:
             jobs.append(self._aextract(node))
