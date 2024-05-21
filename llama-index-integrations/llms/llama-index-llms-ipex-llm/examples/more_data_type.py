@@ -30,7 +30,21 @@ if __name__ == "__main__":
         "-l",
         type=str,
         default="asym_int4",
-        choices=["sym_int4", "asym_int4", "sym_int5", "asym_int5", "sym_int8"],
+        choices=[
+            "sym_int4",
+            "asym_int4",
+            "sym_int5",
+            "asym_int5",
+            "sym_int8",
+            "fp4",
+            "fp8",
+            "fp16",
+            "bf16",
+            "fp8_e4m3",
+            "fp8_e5m2",
+            "nf3",
+            "nf4",
+        ],
         help="The quantization type the model will convert to.",
     )
     parser.add_argument(
