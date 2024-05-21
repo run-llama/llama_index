@@ -27,10 +27,7 @@ from llama_index.core.schema import (
     TextNode,
     TransformComponent,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
-from llama_index.core.storage.storage_context import StorageContext
-
 from llama_index.core.response_synthesizers import ResponseMode
 from llama_index.core import get_response_synthesizer
 
@@ -83,9 +80,6 @@ class VectaraIndex(BaseManagedIndex):
         super().__init__(
             show_progress=show_progress,
             index_struct=index_struct,
-            service_context=ServiceContext.from_defaults(
-                llm=None, llm_predictor=None, embed_model=None
-            ),
             **kwargs,
         )
         self._vectara_customer_id = vectara_customer_id or os.environ.get(
@@ -264,6 +258,7 @@ class VectaraIndex(BaseManagedIndex):
                         _logger.error(
                             f"Error indexing document in Vectara with error code {ecode}"
                         )
+            self.doc_ids.extend([doc["documentId"] for doc in docs])
         else:
             for doc in docs:
                 ecode = self._index_doc(doc, valid_corpus_id)
@@ -271,7 +266,7 @@ class VectaraIndex(BaseManagedIndex):
                     _logger.error(
                         f"Error indexing document in Vectara with error code {ecode}"
                     )
-                self.doc_ids.append(doc_id)
+                self.doc_ids.append(doc["documentId"])
 
     def add_documents(
         self,
@@ -330,23 +325,25 @@ class VectaraIndex(BaseManagedIndex):
             timeout=self.vectara_api_timeout,
         )
 
+        res = response.json()
         if response.status_code == 409:
-            doc_id = response.json()["document"]["documentId"]
+            doc_id = res["document"]["documentId"]
             _logger.info(
                 f"File {file_path} already exists on Vectara "
                 f"(doc_id={doc_id}), skipping"
             )
             return None
         elif response.status_code == 200:
-            res = response.json()
-            quota = res["status"]["quotaConsumed"]["numChars"]
+            quota = res["response"]["quotaConsumed"]["numChars"]
             if quota == 0:
                 _logger.warning(
                     f"File Upload for {file_path} returned 0 quota consumed, please check your Vectara account quota"
                 )
-            return res["document"]["documentId"]
+            doc_id = res["document"]["documentId"]
+            self.doc_ids.append(doc_id)
+            return doc_id
         else:
-            _logger.info(f"Error indexing file {file_path}: {response.json()}")
+            _logger.info(f"Error indexing file {file_path}: {res}")
             return None
 
     def delete_ref_doc(
@@ -415,12 +412,9 @@ class VectaraIndex(BaseManagedIndex):
     def from_documents(
         cls: Type[IndexType],
         documents: Sequence[Document],
-        storage_context: Optional[StorageContext] = None,
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""

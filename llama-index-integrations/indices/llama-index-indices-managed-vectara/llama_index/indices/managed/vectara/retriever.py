@@ -152,7 +152,8 @@ class VectaraRetriever(BaseRetriever):
             for corpus_id in self._index._vectara_corpus_id.split(",")
         ]
         if len(self._filter) > 0:
-            corpus_keys["metadataFilter"] = self._filter
+            for k in corpus_keys:
+                k["metadataFilter"] = self._filter
 
         data = {
             "query": [
@@ -337,21 +338,24 @@ class VectaraRetriever(BaseRetriever):
 
         responses = result["responseSet"][0]["response"]
         documents = result["responseSet"][0]["document"]
-        summaryJson = result["responseSet"][0]["summary"][0]
-        if len(summaryJson["status"]) > 0:
-            print(
-                f"Summary generation failed with error: '{summaryJson['status'][0]['statusDetail']}'"
-            )
-            return [], {"text": ""}, ""
+        if self._summary_enabled:
+            summaryJson = result["responseSet"][0]["summary"][0]
+            if len(summaryJson["status"]) > 0:
+                print(
+                    f"Summary generation failed with error: '{summaryJson['status'][0]['statusDetail']}'"
+                )
+                return [], {"text": ""}, ""
 
-        summary = {
-            "text": (summaryJson["text"] if self._summary_enabled else None),
-            "fcs": summaryJson["factualConsistency"]["score"],
-        }
-        if summaryJson.get("chat", None):
-            conv_id = summaryJson["chat"]["conversationId"]
+            summary = {
+                "text": (summaryJson["text"] if self._summary_enabled else None),
+                "fcs": summaryJson["factualConsistency"]["score"],
+            }
+            if summaryJson.get("chat", None):
+                conv_id = summaryJson["chat"]["conversationId"]
+            else:
+                conv_id = None
         else:
-            conv_id = None
+            summary = None
 
         metadatas = []
         for x in responses:
