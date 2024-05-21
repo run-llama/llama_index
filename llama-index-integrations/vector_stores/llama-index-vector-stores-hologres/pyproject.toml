@@ -11,6 +11,9 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 contains_example = false
 import_path = "llama_index.vector_stores.hologres"
 
+[tool.llamahub.class_authors]
+HologresVectorStore = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
