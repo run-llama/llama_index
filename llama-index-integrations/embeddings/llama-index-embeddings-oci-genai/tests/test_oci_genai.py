@@ -12,7 +12,6 @@ class MockResponseDict(dict):
         return self[val]
 
 
-@pytest.mark.requires("oci")
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.embed-english-light-v3.0", "cohere.embed-english-v3.0"]
 )
