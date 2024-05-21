@@ -234,6 +234,7 @@ _K2 = TypeVar("_K2", bound=str)
 _K3 = TypeVar("_K3", bound=str)
 _K4 = TypeVar("_K4", bound=str)
 _K5 = TypeVar("_K5", bound=str)
+_T = TypeVar("_T")
 
 
 class ModalityBundle(Mapping[K, Modality[K, Any, object]]):
@@ -320,11 +321,13 @@ class ModalityBundle(Mapping[K, Modality[K, Any, object]]):
 
     @overload
     def get(
-        self, key: K, /, default: Modality[K, Any, object]
-    ) -> Modality[K, Any, object]:
+        self, key: K, /, default: Union[Modality[K, Any, object], _T]
+    ) -> Union[Modality[K, Any, object], _T]:
         ...
 
-    def get(self, key: K, /, default: Optional[Modality[K, Any, object]] = None):
+    def get(
+        self, key: K, /, default: Optional[Union[Modality[K, Any, object], _T]] = None
+    ) -> Optional[Union[Modality[K, Any, object], _T]]:
         return self._modalities_by_key.get(key, default)
 
     def items(self):
@@ -1011,7 +1014,7 @@ class OmniModalEmbeddingBundle(
     def __bool__(self) -> bool:
         return bool(self._embed_models)
 
-    def __eq__(self, other: object, /) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, OmniModalEmbeddingBundle)
             and other._embed_model_by_document_modality
