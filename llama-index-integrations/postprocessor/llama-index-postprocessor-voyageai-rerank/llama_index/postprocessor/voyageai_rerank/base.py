@@ -39,7 +39,7 @@ class VoyageAIRerank(BaseNodePostprocessor):
             )
 
         self._client = Client(api_key=api_key)
-        super().__init__(top_n=top_k, model=model, truncation=truncation)
+        super().__init__(top_k=top_k, model=model, truncation=truncation)
 
     @classmethod
     def class_name(cls) -> str:
@@ -81,7 +81,7 @@ class VoyageAIRerank(BaseNodePostprocessor):
                 query=query_bundle.query_str,
                 documents=texts,
                 truncation=self.truncation,
-            )
+            ).results
 
             new_nodes = []
             for result in results:
