@@ -10,9 +10,13 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import blake2b
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Type, Tuple
 
-import requests
+import vertexai
+from vertexai.preview import rag
+
+import re
+
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -33,17 +37,6 @@ from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.response_synthesizers import ResponseMode
 from llama_index.core import get_response_synthesizer
 
-_logger = logging.getLogger(__name__)
-
-
-class VertexAIIndexStruct(IndexDict):
-    """Vertex AI Index Struct."""
-
-    @classmethod
-    def get_type(cls) -> IndexStructType:
-        """Get index struct type."""
-        return IndexStructType.VERTEX_AI
-
 
 class VertexAIIndex(BaseManagedIndex):
     """Vertex AI Index.
@@ -62,58 +55,86 @@ class VertexAIIndex(BaseManagedIndex):
     def __init__(
         self,
         project_id: str,
-        location: str,
-        corpus_id: str,
-        nodes: Optional[Sequence[BaseNode]] = None,
+        location: Optional[str] = None,
+        corpus_id: Optional[str] = None,
+        corpus_display_name: Optional[str] = None,
+        corpus_description: Optional[str] = None,
         show_progress: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize the Vertex AI API."""
-        corpus_name = (
-            f"projects/{project_id}/locations/{location}/ragCorpora/{corpus_id}"
-        )
-        index_struct = VertexAIIndexStruct(
-            index_id=corpus_name,
-            summary="Vertex AI Index",
-        )
 
-        super().__init__(
-            show_progress=show_progress,
-            index_struct=index_struct,
-            service_context=ServiceContext.from_defaults(
-                llm=None, llm_predictor=None, embed_model=None
-            ),
+        if corpus_id and (corpus_display_name or corpus_description):
+            raise ValueError(
+                "Cannot specify both corpus_id and corpus_display_name or corpus_description"
+            )
+
+        self.project_id = project_id
+        self.location = location
+        self.show_progress = show_progress
+
+        vertexai.init(project=self.project_id, location=self.location)
+
+        # If a corpus is not specified, create a new one.
+        if corpus_id:
+            # Make sure corpus exists
+            self.corpus_name = rag.get_corpus(name=corpus_id).name
+        else:
+            self.corpus_name = rag.create_corpus(
+                display_name=corpus_display_name, description=corpus_description
+            ).name
+
+    def import_files(
+        self,
+        uris: Sequence[str],
+        chunk_size: Optional[int] = None,
+        chunk_overlap: Optional[int] = None,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Import Google Cloud Storage or Google Drive files into the index."""
+        # Convert https://storage.googleapis.com URLs to gs:// format
+        uris = [
+            re.sub(r"^https://storage\.googleapis\.com/", "gs://", uri) for uri in uris
+        ]
+
+        return rag.import_files(
+            corpus=self.corpus_name,
+            uris=uris,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            timeout=timeout,
             **kwargs,
         )
 
-        # if nodes is specified, consider each node as a single document
-        # and use _build_index_from_nodes() to add them to the index
-        if nodes is not None:
-            self._build_index_from_nodes(nodes)
-
-    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
-        """Insert a set of documents (each a node)."""
-
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
-        docs = [
-            Document(
-                text=node.get_content(metadata_mode=MetadataMode.NONE),
-                metadata=node.metadata,  # type: ignore
-                id_=node.id_,  # type: ignore
-            )
-            for node in nodes
-        ]
-        self.add_documents(docs)
-        return self.index_struct
-
-    def add_documents(
+    def insert_file(
         self,
-        docs: Sequence[Document],
-    ) -> None:
-        nodes = [
-            TextNode(text=doc.get_content(), metadata=doc.metadata) for doc in docs  # type: ignore
-        ]
-        self._insert(nodes)
+        file_path: str,
+        metadata: Optional[dict] = None,
+        **insert_kwargs: Any,
+    ) -> Optional[str]:
+        """Insert a local file into the index."""
+        if metadata:
+            display_name = metadata.get("display_name")
+            description = metadata.get("description")
+
+        rag_file = rag.upload_file(
+            corpus_name=self.corpus_name,
+            path=file_path,
+            display_name=display_name,
+            description=description,
+            **insert_kwargs,
+        )
+
+        return rag_file.name if rag_file else None
+
+    def as_query_engine(self, **kwargs: Any) -> BaseQueryEngine:
+        from llama_index.core.query_engine.retriever_query_engine import (
+            RetrieverQueryEngine,
+        )
+
+        kwargs["retriever"] = self.as_retriever(**kwargs)
+        return RetrieverQueryEngine.from_args(**kwargs)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
@@ -121,59 +142,20 @@ class VertexAIIndex(BaseManagedIndex):
             VertexAIRetriever,
         )
 
-        return VertexAIRetriever(self, **kwargs)
+        similarity_top_k = kwargs.pop("similarity_top_k", None)
+        dense_similarity_top_k = kwargs.pop("dense_similarity_top_k", None)
+        if similarity_top_k is not None:
+            dense_similarity_top_k = similarity_top_k
 
-    def as_query_engine(
-        self, llm: Optional[LLMType] = None, **kwargs: Any
-    ) -> BaseQueryEngine:
-        if kwargs.get("summary_enabled", True):
-            from llama_index.indices.managed.vertexai.query import (
-                VertexAIQueryEngine,
-            )
+        # return LlamaCloudRetriever(
+        #     self.name,
+        #     project_name=self.project_name,
+        #     api_key=self._api_key,
+        #     base_url=self._base_url,
+        #     app_url=self._app_url,
+        #     timeout=self._timeout,
+        #     dense_similarity_top_k=dense_similarity_top_k,
+        #     **kwargs,
+        # )
 
-            kwargs["summary_enabled"] = True
-            retriever = self.as_retriever(**kwargs)
-            return VertexAIQueryEngine.from_args(retriever, **kwargs)  # type: ignore
-        else:
-            from llama_index.core.query_engine.retriever_query_engine import (
-                RetrieverQueryEngine,
-            )
-
-            llm = (
-                resolve_llm(llm, callback_manager=self._callback_manager)
-                or Settings.llm
-            )
-
-            retriever = self.as_retriever(**kwargs)
-            response_synthesizer = get_response_synthesizer(
-                response_mode=ResponseMode.COMPACT,
-                llm=llm,
-            )
-            return RetrieverQueryEngine.from_args(
-                retriever=retriever,
-                response_synthesizer=response_synthesizer,
-                **kwargs,
-            )
-
-    @classmethod
-    def from_documents(
-        cls: Type[IndexType],
-        documents: Sequence[Document],
-        storage_context: Optional[StorageContext] = None,
-        show_progress: bool = False,
-        callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
-        **kwargs: Any,
-    ) -> IndexType:
-        """Build a Vertex AI index from a sequence of documents."""
-        nodes = [
-            TextNode(text=document.get_content(), metadata=document.metadata)  # type: ignore
-            for document in documents
-        ]
-        return cls(
-            nodes=nodes,
-            show_progress=show_progress,
-            **kwargs,
-        )
+        return VertexAIRetriever(self.corpus_name, **kwargs)

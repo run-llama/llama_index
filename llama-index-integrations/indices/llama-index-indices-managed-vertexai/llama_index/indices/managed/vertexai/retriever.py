@@ -1,231 +1,44 @@
-"""Vertex AI retriever.
-An retriever that is built on top of Vertex AI.
-"""
+from typing import Any, List, Optional
 
-import json
-import logging
-from typing import Any, List, Optional, Tuple
+from llama_index_client import TextNodeWithScore
+from llama_index_client.resources.pipeline.client import OMIT, PipelineType
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.indices.managed.types import ManagedIndexQueryMode
-from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
-    VectorIndexAutoRetriever,
-)
+from llama_index.core.constants import DEFAULT_PROJECT_NAME
+from llama_index.core.ingestion.api_utils import get_aclient, get_client
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.vector_stores.types import (
-    FilterCondition,
-    MetadataFilters,
-    VectorStoreInfo,
-    VectorStoreQuerySpec,
-)
-from llama_index.indices.managed.vertexai.base import VertexAIIndex
-from llama_index.indices.managed.vertexai.prompts import (
-    DEFAULT_VERTEXAI_QUERY_PROMPT_TMPL,
-)
+from llama_index.core.vector_stores.types import MetadataFilters
 
-_logger = logging.getLogger(__name__)
+from vertexai.preview import rag
 
 
 class VertexAIRetriever(BaseRetriever):
-    """VertexAI Retriever.
-
-    Args:
-        index (VertexAIIndex): the VertexAI Index
-        similarity_top_k (int): number of top k results to return, defaults to 5.
-        vertexai_query_mode (str): vector store query mode
-            See reference for vertexai_query_mode for full list of supported modes.
-        lambda_val (float): for hybrid search.
-            0 = neural search only.
-            1 = keyword match only.
-            In between values are a linear interpolation
-        n_sentences_before (int):
-            number of sentences before the matched sentence to return in the node
-        n_sentences_after (int):
-             number of sentences after the matched sentence to return in the node
-        filter: metadata filter (if specified)
-        mmr_k: number of results to fetch for MMR, defaults to 50
-        mmr_diversity_bias: number between 0 and 1 that determines the degree
-            of diversity among the results with 0 corresponding
-            to minimum diversity and 1 to maximum diversity.
-            Defaults to 0.3.
-        summary_enabled: whether to generate summaries or not. Defaults to False.
-        summary_response_lang: language to use for summary generation.
-        summary_num_results: number of results to use for summary generation.
-        summary_prompt_name: name of the prompt to use for summary generation.
-    """
-
     def __init__(
         self,
-        index: VertexAIIndex,
-        similarity_top_k: int = 5,
-        vertexai_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
-        lambda_val: float = 0.025,
-        n_sentences_before: int = 2,
-        n_sentences_after: int = 2,
-        filter: str = "",
-        mmr_k: int = 50,
-        mmr_diversity_bias: float = 0.3,
-        summary_enabled: bool = False,
-        summary_response_lang: str = "eng",
-        summary_num_results: int = 7,
-        summary_prompt_name: str = "vertexai-experimental-summary-ext-2023-10-23-small",
-        callback_manager: Optional[CallbackManager] = None,
+        corpus_name: str,
+        similarity_top_k: Optional[int] = None,
+        vector_distance_threshold: Optional[float] = 0.3,
         **kwargs: Any,
     ) -> None:
-        """Initialize params."""
-        self._index = index
+        """Initialize the Vertex AI Retriever."""
+        self.rag_resources = [rag.RagResource(rag_corpus=corpus_name)]
         self._similarity_top_k = similarity_top_k
-        self._lambda_val = lambda_val
-        self._n_sentences_before = n_sentences_before
-        self._n_sentences_after = n_sentences_after
-        self._filter = filter
+        self._vector_distance_threshold = vector_distance_threshold
 
-        if vertexai_query_mode == ManagedIndexQueryMode.MMR:
-            self._mmr = True
-            self._mmr_k = mmr_k
-            self._mmr_diversity_bias = mmr_diversity_bias
-        else:
-            self._mmr = False
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Retrieve from the platform."""
+        response = rag.retrieval_query(
+            text=query_bundle.query_str,
+            rag_resources=self.rag_resources,
+            similarity_top_k=self._similarity_top_k,
+            vector_distance_threshold=self._vector_distance_threshold,
+        )
 
-        if summary_enabled:
-            self._summary_enabled = True
-            self._summary_response_lang = summary_response_lang
-            self._summary_num_results = summary_num_results
-            self._summary_prompt_name = summary_prompt_name
-        else:
-            self._summary_enabled = False
-        super().__init__(callback_manager)
-
-    @property
-    def similarity_top_k(self) -> int:
-        """Return similarity top k."""
-        return self._similarity_top_k
-
-    @similarity_top_k.setter
-    def similarity_top_k(self, similarity_top_k: int) -> None:
-        """Set similarity top k."""
-        self._similarity_top_k = similarity_top_k
-
-    def _retrieve(
-        self,
-        query_bundle: QueryBundle,
-        **kwargs: Any,
-    ) -> List[NodeWithScore]:
-        """Retrieve top k most similar nodes.
-
-        Args:
-            query: Query Bundle
-        """
-        return self._vertexai_query(query_bundle, **kwargs)[0]  # return top_nodes only
-
-    def _vertexai_query(
-        self,
-        query_bundle: QueryBundle,
-        **kwargs: Any,
-    ) -> Tuple[List[NodeWithScore], str]:
-        """Query VertexAI index to get for top k most similar nodes.
-
-        Args:
-            query: Query Bundle
-        """
-        return None
-
-    async def _avertexai_query(
-        self, query_bundle: QueryBundle
-    ) -> Tuple[List[NodeWithScore], str]:
-        """Asynchronously retrieve nodes given query.
-
-        Implemented by the user.
-
-        """
-        return self._vertexai_query(query_bundle)
-
-
-class VertexAIAutoRetriever(VectorIndexAutoRetriever):
-    """Managed Index auto retriever.
-
-    A retriever for a VertexAI index that uses an LLM to automatically set
-    filtering query parameters.
-    Based on VectorStoreAutoRetriever, and uses some of the vector_store
-    types that are associated with auto retrieval.
-
-    Args:
-        index (VertexAIIndex): VertexAI Index instance
-        vector_store_info (VectorStoreInfo): additional information about
-            vector store content and supported metadata filters. The natural language
-            description is used by an LLM to automatically set vector store query
-            parameters.
-        Other variables are the same as VectorStoreAutoRetriever or VertexAIRetriever
-    """
-
-    def __init__(
-        self,
-        index: VertexAIIndex,
-        vector_store_info: VectorStoreInfo,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(index, vector_store_info, prompt_template_str=DEFAULT_VERTEXAI_QUERY_PROMPT_TMPL, **kwargs)  # type: ignore
-        self._index = index  # type: ignore
-        self._kwargs = kwargs
-        self._verbose = self._kwargs.get("verbose", False)
-        self._explicit_filter = self._kwargs.pop("filter", "")
-
-    def _build_retriever_from_spec(
-        self, spec: VectorStoreQuerySpec
-    ) -> Tuple[VertexAIRetriever, QueryBundle]:
-        query_bundle = self._get_query_bundle(spec.query)
-
-        filter_list = [
-            (filter.key, filter.operator.value, filter.value) for filter in spec.filters
+        return [
+            NodeWithScore(node=TextNode(text=context.text), score=context.distance)
+            for context in response.rag_contexts.contexts
         ]
-        if self._verbose:
-            print(f"Using query str: {spec.query}")
-            print(f"Using implicit filters: {filter_list}")
 
-        # create filter string from implicit filters
-        if len(spec.filters) == 0:
-            filter_str = ""
-        else:
-            filters = MetadataFilters(
-                filters=[*spec.filters, *self._extra_filters.filters]
-            )
-            condition = " and " if filters.condition == FilterCondition.AND else " or "
-            filter_str = condition.join(
-                [
-                    f"(doc.{f.key} {f.operator.value} '{f.value}')"
-                    for f in filters.filters
-                ]
-            )
-
-        # add explicit filter if specified
-        if self._explicit_filter:
-            if len(filter_str) > 0:
-                filter_str = f"({filter_str}) and ({self._explicit_filter})"
-            else:
-                filter_str = self._explicit_filter
-
-        if self._verbose:
-            print(f"final filter string: {filter_str}")
-
-        return (
-            VertexAIRetriever(
-                index=self._index,  # type: ignore
-                filter=filter_str,
-                **self._kwargs,
-            ),
-            query_bundle,
-        )
-
-    def _vertexai_query(
-        self,
-        query_bundle: QueryBundle,
-        **kwargs: Any,
-    ) -> Tuple[List[NodeWithScore], str]:
-        spec = self.generate_retrieval_spec(query_bundle)
-        vertexai_retriever, new_query = self._build_retriever_from_spec(
-            VectorStoreQuerySpec(
-                query=spec.query, filters=spec.filters, top_k=self._similarity_top_k
-            )
-        )
-        return vertexai_retriever._vertexai_query(new_query, **kwargs)
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Asynchronously retrieve from the platform."""
+        return self._retrieve(query_bundle=query_bundle)
