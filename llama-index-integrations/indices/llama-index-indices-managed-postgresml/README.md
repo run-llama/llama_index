@@ -15,6 +15,7 @@ pip install llama-index-indices-managed-postgresml
 # Usage
 
 Getting started is easy!
+
 ```python
 import os
 
@@ -26,13 +27,16 @@ from llama_index.core import Document
 from llama_index.indices.managed.postgresml import PostgresMLIndex
 
 # Create an index
-index = PostgresMLIndex.from_documents("llama-index-test-1", [Document.example()])
+index = PostgresMLIndex.from_documents(
+    "llama-index-test-1", [Document.example()]
+)
 
 # Connext to an index
 index = PostgresMLIndex("llama-index-test-1")
 ```
 
 You can use the index as a retriever
+
 ```python
 # Create a retriever from an index
 retriever = index.as_retriever()
@@ -42,6 +46,7 @@ print(results)
 ```
 
 You can also use the index as a query engine
+
 ```python
 # Create an engine from an index
 query_engine = index.as_query_engine()
