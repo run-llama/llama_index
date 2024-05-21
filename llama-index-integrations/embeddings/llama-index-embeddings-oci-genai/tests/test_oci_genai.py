@@ -1,5 +1,6 @@
 """Test OCI Generative AI embedding service."""
 from unittest.mock import MagicMock
+from typing import Any
 
 import pytest
 from pytest import MonkeyPatch
@@ -8,7 +9,7 @@ from llama_index.embeddings.oci_genai import OCIGenAIEmbeddings
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):  # type: ignore[no-untyped-def]
+    def __getattr__(self, val) -> Any:  # type: ignore[no-untyped-def]
         return self[val]
 
 

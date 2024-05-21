@@ -15,16 +15,20 @@ SUPPORTED_MODELS = {
     "cohere.embed-multilingual-v3.0",
     "cohere.embed-multilingual-light-v3.0",
     "cohere.embed-english-light-v2.0",
-    }
+}
+
 
 class OCIAuthType(Enum):
     """OCI authentication types as enumerator."""
+
     API_KEY = 1
     SECURITY_TOKEN = 2
     INSTANCE_PRINCIPAL = 3
     RESOURCE_PRINCIPAL = 4
 
+
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
+
 
 class OCIGenAIEmbeddings(BaseEmbedding):
     """OCI embedding models.
@@ -54,18 +58,21 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 compartment_id="MY_OCID"
             )
     """
-    model: str = Field(description="Id of the OCI Generative AI embedding model to use.")
-    
+
+    model: str = Field(
+        description="Id of the OCI Generative AI embedding model to use."
+    )
+
     truncate: str = Field(
         description="Truncate embeddings that are too long from start or end, values START/ END/ NONE",
         default="END",
-        )
-    
+    )
+
     input_type: Optional[str] = Field(
         description="Model Input type. If not provided, search_document and search_query are used when needed.",
         default=None,
     )
-    
+
     service_endpoint: str = Field(
         description="service endpoint url.",
         default=None,
@@ -85,9 +92,9 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         description="The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used",
         default="DEFAULT",
     )
-       
+
     _client: Any = PrivateAttr()
-    
+
     def __init__(
         self,
         model: str,
@@ -100,7 +107,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         client: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
-   ):
+    ):
         """
         Initializes the OCIGenAIEmbeddings class.
 
@@ -113,7 +120,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
             input_type (Optional[str]): An optional string that specifies the type of input provided to the model.
                                         This is model-dependent and could be one of the following: "search_query",
                                         "search_document", "classification", or "clustering".
-            
+
             service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
 
             compartment_id (str): OCID of the compartment.
@@ -123,8 +130,8 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
 
-            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the 
-                                    provided service endpoint and authentifcation method.            
+            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
+                                    provided service endpoint and authentifcation method.
         """
         if client is not None:
             self._client = client
@@ -137,7 +144,10 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                     "signer": None,
                     "service_endpoint": service_endpoint,
                     "retry_strategy": oci.retry.DEFAULT_RETRY_STRATEGY,
-                    "timeout": (10, 240),  # default timeout config for OCI Gen AI service
+                    "timeout": (
+                        10,
+                        240,
+                    ),  # default timeout config for OCI Gen AI service
                 }
 
                 if auth_type == OCIAuthType(1).name:
@@ -172,10 +182,14 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                         "signer"
                     ] = oci.auth.signers.get_resource_principals_signer()
                 else:
-                    raise ValueError(f"Please provide valid value to auth_type, {auth_type} is not valid.")
-        
-                self._client = oci.generative_ai_inference.GenerativeAiInferenceClient(**client_kwargs)
-                
+                    raise ValueError(
+                        f"Please provide valid value to auth_type, {auth_type} is not valid."
+                    )
+
+                self._client = oci.generative_ai_inference.GenerativeAiInferenceClient(
+                    **client_kwargs
+                )
+
             except ImportError as ex:
                 raise ModuleNotFoundError(
                     "Could not import oci python package. "
@@ -183,20 +197,20 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 ) from ex
             except Exception as e:
                 raise ValueError(
-                    """Could not authenticate with OCI client. Please check if ~/.oci/config exists. 
-                    If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified 
+                    """Could not authenticate with OCI client. Please check if ~/.oci/config exists.
+                    If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified
                     auth_profile and auth_type are valid.""",
-                    e
+                    e,
                 ) from e
 
         super().__init__(
             model=model,
             truncate=truncate,
             input_type=input_type,
-            service_endpoint = service_endpoint,
-            compartment_id = compartment_id,
-            auth_type = auth_type,
-            auth_profile = auth_profile,
+            service_endpoint=service_endpoint,
+            compartment_id=compartment_id,
+            auth_type=auth_type,
+            auth_profile=auth_profile,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
         )
@@ -204,13 +218,12 @@ class OCIGenAIEmbeddings(BaseEmbedding):
     @classmethod
     def class_name(self) -> str:
         return "OCIGenAIEmbeddings"
-    
+
     @staticmethod
     def list_supported_models() -> List[str]:
         return list(SUPPORTED_MODELS)
 
-    
-    def  _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
+    def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         try:
             from oci.generative_ai_inference import models
 
@@ -242,12 +255,12 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         return self._embed([text], input_type="SEARCH_DOCUMENT")[0]
-    
+
     def _get_text_embeddings(self, text: str) -> List[List[float]]:
         return self._embed(text, input_type="SEARCH_DOCUMENT")
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         return self._get_text_embedding(text)
-    
+
     async def _aget_query_embedding(self, query: str) -> List[float]:
         return self._get_query_embedding(query)
