@@ -175,9 +175,9 @@ class VectaraRetriever(BaseRetriever):
                 "rerankerId": self._reranker_id,
             }
             if self._reranker_id == MMR_RERANKER_ID:
-                reranking_config["mmrConfig"] = (
-                    {"diversityBias": self._mmr_diversity_bias},
-                )
+                reranking_config["mmrConfig"] = {
+                    "diversityBias": self._mmr_diversity_bias
+                }
             data["query"][0]["rerankingConfig"] = reranking_config
 
         if self._summary_enabled:
