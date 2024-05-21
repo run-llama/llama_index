@@ -195,6 +195,11 @@ class VectorMemory(BaseMemory):
 
         if override_last:
             # delete the last node
+            # This is needed since we're updating the last node in the vector
+            # index as its being updated. When a new user-message batch starts
+            # we already will have the last user message group committed to the
+            # vector store index and so we don't need to override_last (i.e. see
+            # logic in self.put().)
             last_node_id = self.chat_store.delete_last_message(
                 self.chat_store_key
             ).content
@@ -211,7 +216,7 @@ class VectorMemory(BaseMemory):
             self.chat_store.add_message(self.cur_user_msg_key, message)
             self._commit_node()
         else:
-            # if not user message, add to holding queue
+            # if not user message, add to holding queue i.e. the chat_store
             self.chat_store.add_message(self.cur_user_msg_key, message)
             self._commit_node(override_last=True)
 
