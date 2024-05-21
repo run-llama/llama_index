@@ -24,12 +24,12 @@ class BaseLPGRetriever(BaseRetriever):
         self,
         graph_store: LabelledPropertyGraphStore,
         include_text: bool = True,
-        include_text_preamble: Optional[str] = None,
+        include_text_preamble: Optional[str] = DEFAULT_PREAMBLE,
         **kwargs: Any,
     ) -> None:
         self._graph_store = graph_store
         self.include_text = include_text
-        self._include_text_preamble = include_text_preamble or DEFAULT_PREAMBLE
+        self._include_text_preamble = include_text_preamble
         super().__init__(callback_manager=kwargs.get("callback_manager", None))
 
     def _get_nodes_with_score(
@@ -79,9 +79,8 @@ class BaseLPGRetriever(BaseRetriever):
                     cur_content = node.get_content()
                     new_content = (
                         self._include_text_preamble
-                        + graph_content_str
-                        + "\n\n"
-                        + cur_content
+                        if self._include_text_preamble
+                        else "" + graph_content_str + "\n\n" + cur_content
                     )
                     node = TextNode(**node.dict())
                     node.text = new_content
@@ -91,6 +90,8 @@ class BaseLPGRetriever(BaseRetriever):
                         score=node_with_score.score,
                     )
                 )
+            else:
+                result_nodes.append(node_with_score)
 
         return result_nodes
 

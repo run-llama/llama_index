@@ -17,7 +17,7 @@ class LPGVectorRetriever(BaseLPGRetriever):
         include_text: bool = True,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
-        similarity_top_k: int = 2,
+        similarity_top_k: int = 4,
         triple_depth: int = 1,
         **kwargs: Any
     ) -> None:
@@ -75,7 +75,7 @@ class LPGVectorRetriever(BaseLPGRetriever):
         elif self._vector_store is not None:
             query_result = self._vector_store.query(vector_store_query)
             if query_result.nodes is not None and query_result.similarities is not None:
-                kg_ids = [node.node_id for node in query_result.nodes]
+                kg_ids = [node.node_id for node in query_result.nodes if node.node_id]
                 scores = query_result.similarities
                 kg_nodes = self._graph_store.get(ids=kg_ids)
                 triplets = self._graph_store.get_rel_map(
@@ -101,10 +101,8 @@ class LPGVectorRetriever(BaseLPGRetriever):
 
         assert len(triplets) == len(new_scores)
 
-        # get the top-k
-        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)[
-            : self._similarity_top_k
-        ]
+        # sort by score
+        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
 
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
 
@@ -156,9 +154,7 @@ class LPGVectorRetriever(BaseLPGRetriever):
 
         assert len(triplets) == len(new_scores)
 
-        # get the top-k
-        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)[
-            : self._similarity_top_k
-        ]
+        # sort by score
+        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
 
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
