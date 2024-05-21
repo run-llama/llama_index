@@ -5,6 +5,8 @@
 from typing import Any, List
 import random
 import logging
+import warnings
+
 from datasets import Dataset
 
 # Configure logging to output to the console, with messages of level DEBUG and above
@@ -108,8 +110,17 @@ class RAFTDatasetPack(BaseLlamaPack):
         ]
 
         queries = str(self.llm.chat(messages)).split("\n")
-        queries = [self.strip_str(q) for q in queries]
-        return [q for q in queries if any(c.isalpha() for c in q)]
+        questions = [self.strip_str(q) for q in queries]
+        questions = [q for q in questions if any(c.isalpha() for c in q)][:x]
+
+        num_questions_generated = len(questions)
+        if num_questions_generated < x:
+            warnings.warn(
+                f"Fewer questions generated ({num_questions_generated}) "
+                f"than requested ({x})."
+            )
+
+        return questions
 
     def get_chunks(self, file_path: str, chunk_size: int) -> List[str]:
         """

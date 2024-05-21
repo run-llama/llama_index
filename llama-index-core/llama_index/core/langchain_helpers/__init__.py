@@ -1,7 +1,7 @@
 """Init file for langchain helpers."""
 
 try:
-    import langchain  # noqa
+    import langchain  # noqa  # pants: no-infer-dep
 except ImportError:
     raise ImportError(
         "langchain not installed. "

@@ -33,7 +33,7 @@ If the files are present in the `Test` folder in SharePoint Site under `root` di
 ```python
 from llama_index.readers.microsoft_sharepoint import SharePointReader
 
-loader = SharePointLoader(
+loader = SharePointReader(
     client_id="<Client ID of the app>",
     client_secret="<Client Secret of the app>",
     tenant_id="<Tenant ID of the Microsoft Azure Directory>",

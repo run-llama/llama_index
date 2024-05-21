@@ -67,7 +67,7 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        nodes = self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(elements, node)
 
         source_document = node.source_node or node.as_related_node_info()
         for n in nodes:
