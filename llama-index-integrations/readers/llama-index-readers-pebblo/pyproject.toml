@@ -30,12 +30,12 @@ license = "MIT"
 name = "llama-index-readers-pebblo"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
-llama-index = "^0.10.20"
+langchain = ">=0.0.303"
 requests = "^2"
 
 [tool.poetry.group.dev.dependencies]

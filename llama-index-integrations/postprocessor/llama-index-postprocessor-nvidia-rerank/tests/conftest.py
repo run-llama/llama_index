@@ -1,12 +1,25 @@
 import pytest
 import os
 
-from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
+from llama_index.postprocessor.nvidia_rerank import NVIDIARerank as Interface
 from llama_index.postprocessor.nvidia_rerank.base import DEFAULT_MODEL
 
 from typing import Generator
 
-from contextlib import contextmanager
+
+# this fixture is used to mask the NVIDIA_API_KEY environment variable and restore it
+# after the test. it also returns the value of the NVIDIA_API_KEY environment variable
+# before it was masked so that it can be used in the test.
+@pytest.fixture()
+def masked_env_var() -> Generator[str, None, None]:
+    var = "NVIDIA_API_KEY"
+    try:
+        if val := os.environ.get(var, None):
+            del os.environ[var]
+        yield val
+    finally:
+        if val:
+            os.environ[var] = val
 
 
 def pytest_collection_modifyitems(config, items):
@@ -54,23 +67,10 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
         elif metafunc.config.getoption("--all-models"):
-            models = [
-                model.id for model in NVIDIARerank().mode(**mode).available_models
-            ]
+            models = [model.id for model in Interface(**mode).available_models]
         metafunc.parametrize("model", models, ids=models)
 
 
 @pytest.fixture()
 def mode(request: pytest.FixtureRequest) -> dict:
     return get_mode(request.config)
-
-
-@contextmanager
-def no_env_var(var: str) -> Generator[None, None, None]:
-    try:
-        if val := os.environ.get(var, None):
-            del os.environ[var]
-        yield
-    finally:
-        if val:
-            os.environ[var] = val

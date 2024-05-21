@@ -739,6 +739,7 @@
   "PineconeReader": "llama_index.readers.pinecone",
   "PandasAIReader": "llama_index.readers.pandas_ai",
   "AirtableReader": "llama_index.readers.airtable",
+  "BrowserbaseWebReader": "llama_index.readers.web",
   "ZulipReader": "llama_index.readers.zulip",
   "ReadmeReader": "llama_index.readers.readme",
   "ZendeskReader": "llama_index.readers.zendesk",

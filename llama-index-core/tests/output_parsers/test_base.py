@@ -5,7 +5,7 @@ import pytest
 from llama_index.core.output_parsers.langchain import LangchainOutputParser
 
 try:
-    import langchain
+    import langchain  # pants: no-infer-dep
     from llama_index.core.bridge.langchain import (
         BaseOutputParser as LCOutputParser,
     )

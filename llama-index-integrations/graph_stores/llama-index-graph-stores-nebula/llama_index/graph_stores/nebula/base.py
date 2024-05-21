@@ -224,8 +224,8 @@ class NebulaGraphStore(GraphStore):
             [(graphd_host, int(graphd_port))],
         )
 
-        seesion_pool_config = SessionPoolConfig()
-        session_pool.init(seesion_pool_config)
+        session_pool_config = SessionPoolConfig()
+        session_pool.init(session_pool_config)
         self._session_pool = session_pool
         return self._session_pool
 
