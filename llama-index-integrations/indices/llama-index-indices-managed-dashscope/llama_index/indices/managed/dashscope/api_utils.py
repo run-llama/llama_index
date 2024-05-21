@@ -9,7 +9,7 @@ from llama_index.core.schema import BaseNode, TransformComponent
 
 def default_transformations() -> List[TransformComponent]:
     """Default transformations."""
-    from llama_index.node_parser.relational.dashscope import DashScopeJsonNodeParser
+    from llama_index.node_parser.dashscope import DashScopeJsonNodeParser
     from llama_index.embeddings.dashscope import (
         DashScopeEmbedding,
         DashScopeTextEmbeddingModels,
