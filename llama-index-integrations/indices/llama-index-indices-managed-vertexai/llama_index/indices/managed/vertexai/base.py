@@ -43,7 +43,6 @@ class VertexAIIndex(BaseManagedIndex):
         **kwargs: Any,
     ) -> None:
         """Initialize the Vertex AI API."""
-
         if corpus_id and (corpus_display_name or corpus_description):
             raise ValueError(
                 "Cannot specify both corpus_id and corpus_display_name or corpus_description"

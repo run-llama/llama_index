@@ -111,5 +111,4 @@ class IndexStructType(str, Enum):
 
     # Managed
     VECTARA = "vectara"
-    VERTEX_AI = "vertex_ai"
     ZILLIZ_CLOUD_PIPELINE = "zilliz_cloud_pipeline"
