@@ -241,7 +241,7 @@ class SECExtractor:
             _type_: all texts of sections and filing type of the document
         """
         text = self.get_filing(
-            url, company="Unstructured Technologies", email="support@unstructured.io"
+            url, "Unstructured Technologies", "support@unstructured.io"
         )
         all_narratives, filing_type = self.pipeline_api(text, m_section=self.sections)
         all_narrative_dict = dict.fromkeys(all_narratives.keys())
@@ -332,6 +332,7 @@ class SECExtractor:
             {
                 "User-Agent": f"{company} {email}",
                 "Content-Type": "text/html",
+                "Host": "www.sec.gov",
             }
         )
         return session

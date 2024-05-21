@@ -18,7 +18,7 @@ BRANCH_JSON = '{"name":"main","commit":{"sha":"a11a953e738cbda93335ede83f012914d
 
 TREE_JSON = '{"sha":"01d1b2024af28c7d5abf2a66108e7ed5611c6308","url":"https://api.github.com/repos/run-llama/llama_index/git/trees/01d1b2024af28c7d5abf2a66108e7ed5611c6308","tree":[{"path":"README.md","mode":"100644","type":"blob","sha":"0bbd4e1720494e30e267c11dc9967c100b86bad8","size":10101,"url":"https://api.github.com/repos/run-llama/llama_index/git/blobs/0bbd4e1720494e30e267c11dc9967c100b86bad8"}],"truncated":false}'
 
-github_token = os.environ.get("GITHUB_TOKEN", None)
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 
 @pytest.fixture()
@@ -47,10 +47,8 @@ def mock_error(monkeypatch):
     monkeypatch.setattr(GithubClient, "get_tree", mock_get_tree)
 
 
-@pytest.mark.skipif(not github_token, reason="No github token")
 def test_fail_on_http_error_true(mock_error):
-    token = os.getenv("GITHUB_TOKEN")
-    gh_client = GithubClient(token, fail_on_http_error=True)
+    gh_client = GithubClient(GITHUB_TOKEN, fail_on_http_error=True)
     reader = GithubRepositoryReader(gh_client, "run-llama", "llama_index")
     # test for branch
     with pytest.raises(HTTPError):
@@ -60,10 +58,8 @@ def test_fail_on_http_error_true(mock_error):
         reader.load_data(commit_sha="a11a953e738cbda93335ede83f012914d53dc4f7")
 
 
-@pytest.mark.skipif(not github_token, reason="No github token")
 def test_fail_on_http_error_false(mock_error):
-    token = os.getenv("GITHUB_TOKEN")
-    gh_client = GithubClient(token, fail_on_http_error=False)
+    gh_client = GithubClient(GITHUB_TOKEN, fail_on_http_error=False)
     reader = GithubRepositoryReader(gh_client, "run-llama", "llama_index")
     # test for branch
     documents = reader.load_data(branch="main")

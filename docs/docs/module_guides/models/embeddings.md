@@ -225,6 +225,7 @@ We support integrations with OpenAI, Azure, and anything LangChain offers.
 - [Sagemaker](../../examples/embeddings/sagemaker_embedding_endpoint.ipynb)
 - [Text Embedding Inference](../../examples/embeddings/text_embedding_inference.ipynb)
 - [TogetherAI](../../examples/embeddings/together.ipynb)
+- [Upstage](../../examples/embeddings/upstage.ipynb)
 - [VoyageAI](../../examples/embeddings/voyageai.ipynb)
 - [Nomic](../../examples/embeddings/nomic.ipynb)
 - [Fireworks AI](../../examples/embeddings/fireworks.ipynb)

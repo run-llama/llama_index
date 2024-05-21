@@ -2,63 +2,63 @@ import os
 
 import pytest
 
-from llama_index.embeddings.nvidia import NVIDIAEmbedding
+from llama_index.embeddings.nvidia import NVIDIAEmbedding as Interface
 
 from typing import Any
-from .conftest import no_env_var
 
 
 def get_api_key(instance: Any) -> str:
     return instance._client.api_key
 
 
-def test_create_without_api_key() -> None:
-    with no_env_var("NVIDIA_API_KEY"):
-        NVIDIAEmbedding()
+def test_create_default_url_without_api_key(masked_env_var: str) -> None:
+    with pytest.warns(UserWarning):
+        Interface()
+
+
+def test_create_unknown_url_without_api_key(masked_env_var: str) -> None:
+    Interface(base_url="https://test_url/v1")
 
 
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_create_with_api_key(param: str) -> None:
-    with no_env_var("NVIDIA_API_KEY"):
-        instance = NVIDIAEmbedding(**{param: "just testing no failure"})
-        assert get_api_key(instance) == "just testing no failure"
+def test_create_with_api_key(param: str, masked_env_var: str) -> None:
+    instance = Interface(**{param: "just testing no failure"})
+    assert get_api_key(instance) == "just testing no failure"
 
 
-def test_api_key_priority() -> None:
-    with no_env_var("NVIDIA_API_KEY"):
+def test_api_key_priority(masked_env_var: str) -> None:
+    try:
         os.environ["NVIDIA_API_KEY"] = "ENV"
-        assert get_api_key(NVIDIAEmbedding()) == "ENV"
-        assert get_api_key(NVIDIAEmbedding(nvidia_api_key="PARAM")) == "PARAM"
-        assert get_api_key(NVIDIAEmbedding(api_key="PARAM")) == "PARAM"
-        assert (
-            get_api_key(NVIDIAEmbedding(api_key="LOW", nvidia_api_key="HIGH")) == "HIGH"
-        )
+        assert get_api_key(Interface()) == "ENV"
+        assert get_api_key(Interface(nvidia_api_key="PARAM")) == "PARAM"
+        assert get_api_key(Interface(api_key="PARAM")) == "PARAM"
+        assert get_api_key(Interface(api_key="LOW", nvidia_api_key="HIGH")) == "HIGH"
+    finally:
+        # we must clean up environ or it may impact other tests
+        del os.environ["NVIDIA_API_KEY"]
 
 
 @pytest.mark.integration()
-def test_missing_api_key_error() -> None:
-    with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIAEmbedding()
-        with pytest.raises(Exception) as exc_info:
-            client.get_query_embedding("Hello, world!")
-        message = str(exc_info.value)
-        assert "401" in message
+def test_missing_api_key_error(masked_env_var: str) -> None:
+    with pytest.warns(UserWarning):
+        client = Interface()
+    with pytest.raises(Exception) as exc_info:
+        client.get_query_embedding("Hello, world!")
+    message = str(exc_info.value)
+    assert "401" in message
 
 
 @pytest.mark.integration()
-def test_bogus_api_key_error() -> None:
-    with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIAEmbedding(nvidia_api_key="BOGUS")
-        with pytest.raises(Exception) as exc_info:
-            client.get_query_embedding("Hello, world!")
-        message = str(exc_info.value)
-        assert "401" in message
+def test_bogus_api_key_error(masked_env_var: str) -> None:
+    client = Interface(nvidia_api_key="BOGUS")
+    with pytest.raises(Exception) as exc_info:
+        client.get_query_embedding("Hello, world!")
+    message = str(exc_info.value)
+    assert "401" in message
 
 
 @pytest.mark.integration()
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_api_key(param: str, model: str, mode: dict) -> None:
-    api_key = os.environ.get("NVIDIA_API_KEY")
-    with no_env_var("NVIDIA_API_KEY"):
-        client = NVIDIAEmbedding(**{"model": model, param: api_key}).mode(**mode)
-        assert client.get_query_embedding("Hello, world!")
+def test_api_key(model: str, mode: dict, param: str, masked_env_var: str) -> None:
+    client = Interface(model=model, **{**mode, **{param: masked_env_var}})
+    client.get_query_embedding("Hello, world!")

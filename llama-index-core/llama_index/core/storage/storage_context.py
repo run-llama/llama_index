@@ -38,7 +38,6 @@ from llama_index.core.vector_stores.simple import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    VectorStore,
 )
 
 DEFAULT_PERSIST_DIR = "./storage"
@@ -54,14 +53,14 @@ class StorageContext:
     indices, and vectors. It contains the following:
     - docstore: BaseDocumentStore
     - index_store: BaseIndexStore
-    - vector_store: VectorStore
+    - vector_store: BasePydanticVectorStore
     - graph_store: GraphStore
 
     """
 
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
-    vector_stores: Dict[str, VectorStore]
+    vector_stores: Dict[str, BasePydanticVectorStore]
     graph_store: GraphStore
 
     @classmethod
@@ -69,11 +68,9 @@ class StorageContext:
         cls,
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
-        vector_store: Optional[Union[VectorStore, BasePydanticVectorStore]] = None,
-        image_store: Optional[VectorStore] = None,
-        vector_stores: Optional[
-            Dict[str, Union[VectorStore, BasePydanticVectorStore]]
-        ] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
+        image_store: Optional[BasePydanticVectorStore] = None,
+        vector_stores: Optional[Dict[str, BasePydanticVectorStore]] = None,
         graph_store: Optional[GraphStore] = None,
         persist_dir: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
@@ -83,9 +80,9 @@ class StorageContext:
         Args:
             docstore (Optional[BaseDocumentStore]): document store
             index_store (Optional[BaseIndexStore]): index store
-            vector_store (Optional[VectorStore]): vector store
+            vector_store (Optional[BasePydanticVectorStore]): vector store
             graph_store (Optional[GraphStore]): graph store
-            image_store (Optional[VectorStore]): image store
+            image_store (Optional[BasePydanticVectorStore]): image store
 
         """
         if persist_dir is None:
@@ -214,7 +211,7 @@ class StorageContext:
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
 
-        vector_stores: Dict[str, VectorStore] = {}
+        vector_stores: Dict[str, BasePydanticVectorStore] = {}
         for key, vector_store_dict in save_dict[VECTOR_STORE_KEY].items():
             vector_stores[key] = SimpleVectorStore.from_dict(vector_store_dict)
 
@@ -226,10 +223,12 @@ class StorageContext:
         )
 
     @property
-    def vector_store(self) -> VectorStore:
+    def vector_store(self) -> BasePydanticVectorStore:
         """Backwrds compatibility for vector_store property."""
         return self.vector_stores[DEFAULT_VECTOR_STORE]
 
-    def add_vector_store(self, vector_store: VectorStore, namespace: str) -> None:
+    def add_vector_store(
+        self, vector_store: BasePydanticVectorStore, namespace: str
+    ) -> None:
         """Add a vector store to the storage context."""
         self.vector_stores[namespace] = vector_store
