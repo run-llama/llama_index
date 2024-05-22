@@ -50,7 +50,7 @@ def extract_host_port(url):
     return host, port
 
 
-def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
+def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
     """Translate standard metadata filters to Milvus specific spec."""
     filters = []
     for filter in standard_filters.legacy_filters():
@@ -58,7 +58,8 @@ def _to_milvus_filter(standard_filters: MetadataFilters) -> List[str]:
             filters.append(str(filter.key) + " == " + '"' + str(filter.value) + '"')
         else:
             filters.append(str(filter.key) + " == " + str(filter.value))
-    return filters
+    joined_filters = f" {standard_filters.condition.value} ".join(filters)
+    return f"({joined_filters})" if len(filters) > 1 else joined_filters
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
@@ -385,7 +386,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Parse the filter
         if query.filters is not None:
-            expr.extend(_to_milvus_filter(query.filters))
+            expr.append(_to_milvus_filter(query.filters))
 
         # Parse any docs we are filtering on
         if query.doc_ids is not None and len(query.doc_ids) != 0:
@@ -406,7 +407,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # Convert to string expression
         string_expr = ""
         if len(expr) != 0:
-            string_expr = f" {query.filters.condition.value} ".join(expr)
+            string_expr = f" and ".join(expr)
 
         # Perform the search
         if query.mode == VectorStoreQueryMode.DEFAULT:

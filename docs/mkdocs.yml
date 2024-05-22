@@ -202,6 +202,7 @@ nav:
           - ./examples/embeddings/ipex_llm_gpu.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/deepinfra.ipynb
+          - ./examples/embeddings/upstage.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -318,6 +319,7 @@ nav:
           - ./examples/llm/mistral_rs.ipynb
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/mlx.ipynb
+          - ./examples/llm/upstage.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -727,6 +729,7 @@ nav:
           - ./api_reference/embeddings/gradient.md
           - ./api_reference/embeddings/huggingface.md
           - ./api_reference/embeddings/huggingface_itrex.md
+          - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
           - ./api_reference/embeddings/index.md
@@ -742,11 +745,11 @@ nav:
           - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
-          - ./api_reference/embeddings/openvino.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
           - ./api_reference/embeddings/text_embeddings_inference.md
           - ./api_reference/embeddings/together.md
+          - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
       - Evaluation:
@@ -842,6 +845,7 @@ nav:
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/together.md
+          - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
           - ./api_reference/llms/watsonx.md
@@ -955,6 +959,7 @@ nav:
           - ./api_reference/postprocessor/auto_prev_next.md
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
+          - ./api_reference/postprocessor/dashscope_rerank.md
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
           - ./api_reference/postprocessor/flag_embedding_reranker.md
@@ -1887,6 +1892,9 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-deepinfra
             - ../llama-index-integrations/readers/llama-index-readers-pebblo
             - ../llama-index-integrations/llms/llama-index-llms-mlx
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-upstage
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-dashscope-rerank
+            - ../llama-index-integrations/llms/llama-index-llms-upstage
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
