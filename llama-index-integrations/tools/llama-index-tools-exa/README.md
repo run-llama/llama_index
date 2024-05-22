@@ -7,7 +7,7 @@ To begin, you need to obtain an API key on the [Exa developer dashboard](https:/
 
 ## Usage
 
-This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/exa.ipynb)
+This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-exa/examples/exa.ipynb)
 
 Here's an example usage of the ExaToolSpec.
 
