@@ -8,5 +8,13 @@ def test_llm_class():
 
 
 def test_deepinfra_llm_class():
+    model = DeepInfraLLM(api_key="test")
+    assert isinstance(model, LLM)
+
+
+def test_deepinfra_llm_from_env():
+    import os
+
+    os.environ["DEEPINFRA_API_TOKEN"] = "test"
     model = DeepInfraLLM()
     assert isinstance(model, LLM)
