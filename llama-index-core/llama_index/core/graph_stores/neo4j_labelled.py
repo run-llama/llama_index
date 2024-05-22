@@ -26,6 +26,7 @@ def remove_empty_values(input_dict):
     # Create a new dictionary excluding empty values
     return {key: value for key, value in input_dict.items() if value}
 
+
 BASE_ENTITY_LABEL = "__Entity__"
 EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
 EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
@@ -36,7 +37,7 @@ DISTINCT_VALUE_LIMIT = 10
 node_properties_query = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "node" 
+WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
   AND NOT label IN $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
@@ -126,13 +127,13 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
     @property
     def client(self):
         return self._driver
-    
+
     def refresh_schema(self) -> None:
         node_properties = [
             el["output"]
             for el in self.structured_query(
                 node_properties_query,
-                param_map={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
+                param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
             )
         ]
         rel_properties = [
@@ -145,7 +146,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
             el["output"]
             for el in self.structured_query(
                 rel_query,
-                param_map={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]},
+                param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
             )
         ]
         # Get constraints & indexes
@@ -536,7 +537,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                 params[f"property_{i}"] = properties[prop]
             cypher += " AND ".join(prop_list)
             self.structured_query(cypher + " DETACH DELETE e", param_map=params)
-    
+
     def _enhanced_schema_cypher(
         self,
         label_or_type: str,
@@ -558,16 +559,12 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                 prop_type = prop["type"]
                 if prop_type == "STRING":
                     with_clauses.append(
-                        (
-                            f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
-                            f"AS `{prop_name}_values`"
-                        )
+                        f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
+                        f"AS `{prop_name}_values`"
                     )
                     return_clauses.append(
-                        (
-                            f"values:`{prop_name}_values`[..{DISTINCT_VALUE_LIMIT}],"
-                            f" distinct_count: size(`{prop_name}_values`)"
-                        )
+                        f"values:`{prop_name}_values`[..{DISTINCT_VALUE_LIMIT}],"
+                        f" distinct_count: size(`{prop_name}_values`)"
                     )
                 elif prop_type in [
                     "INTEGER",
@@ -582,18 +579,14 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                         f"count(distinct n.`{prop_name}`) AS `{prop_name}_distinct`"
                     )
                     return_clauses.append(
-                        (
-                            f"min: toString(`{prop_name}_min`), "
-                            f"max: toString(`{prop_name}_max`), "
-                            f"distinct_count: `{prop_name}_distinct`"
-                        )
+                        f"min: toString(`{prop_name}_min`), "
+                        f"max: toString(`{prop_name}_max`), "
+                        f"distinct_count: `{prop_name}_distinct`"
                     )
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        (
-                            f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                            f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
-                        )
+                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
+                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
@@ -628,17 +621,13 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                             f"'{label_or_type}', '{prop_name}') YIELD value"
                         )[0]["value"]
                         return_clauses.append(
-                            (
-                                f"values: {distinct_values},"
-                                f" distinct_count: {len(distinct_values)}"
-                            )
+                            f"values: {distinct_values},"
+                            f" distinct_count: {len(distinct_values)}"
                         )
                     else:
                         with_clauses.append(
-                            (
-                                f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
-                                f"AS `{prop_name}_values`"
-                            )
+                            f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
+                            f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
                 elif prop_type in [
@@ -665,25 +654,19 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
                             f"count(distinct n.`{prop_name}`) AS `{prop_name}_distinct`"
                         )
                         return_clauses.append(
-                            (
-                                f"min: toString(`{prop_name}_min`), "
-                                f"max: toString(`{prop_name}_max`), "
-                                f"distinct_count: `{prop_name}_distinct`"
-                            )
+                            f"min: toString(`{prop_name}_min`), "
+                            f"max: toString(`{prop_name}_max`), "
+                            f"distinct_count: `{prop_name}_distinct`"
                         )
 
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        (
-                            f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                            f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
-                        )
+                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
+                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
-                        (
-                            f"min_size: `{prop_name}_size_min`, "
-                            f"max_size: `{prop_name}_size_max`"
-                        )
+                        f"min_size: `{prop_name}_size_min`, "
+                        f"max_size: `{prop_name}_size_max`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
@@ -698,8 +681,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         )
 
         # Combine all parts of the Cypher query
-        cypher_query = "\n".join([match_clause, with_clause, return_clause])
-        return cypher_query
+        return f"{match_clause}\n{with_clause}\n{return_clause}"
 
     def get_schema(self) -> Any:
         return self.structured_schema
