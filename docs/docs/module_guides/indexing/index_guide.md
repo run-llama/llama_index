@@ -69,9 +69,9 @@ Response Synthesis module.
 
 ![](../../_static/indices/keyword_query.png)
 
-## Labelled Property Graph Index
+## Property Graph Index
 
-The Labelled Property Graph Index works by first building a knowledge graph containing labelled nodes and relations. The construction of this graph is extremely customizable, ranging from letting the LLM extract whatever it wants, to extracting using a strict schema, to even implementing your own extraction modules.
+The Property Graph Index works by first building a knowledge graph containing labelled nodes and relations. The construction of this graph is extremely customizable, ranging from letting the LLM extract whatever it wants, to extracting using a strict schema, to even implementing your own extraction modules.
 
 Optionally, nodes can also be embedded for retrieval later.
 
@@ -79,8 +79,8 @@ You can also skip creation, and connect to an existing knowledge graph using an 
 
 ### Querying
 
-Querying a Labelled Property Graph Index is also highly flexible. Retrieval works by using several sub-retrievers and combining results. By default, keyword + synoymn expanasion is used, as well as vector retrieval (if your graph was embedded), to retrieve relevant triples.
+Querying a Property Graph Index is also highly flexible. Retrieval works by using several sub-retrievers and combining results. By default, keyword + synoymn expanasion is used, as well as vector retrieval (if your graph was embedded), to retrieve relevant triples.
 
 You can also chose to include the source text in addition to the retrieved triples (unavailble for graphs created outside of LlamaIndex).
 
-See more in the [full guide for Labelled Property Graphs](./lpg_index_guide.md).
+See more in the [full guide for Property Graphs](./lpg_index_guide.md).

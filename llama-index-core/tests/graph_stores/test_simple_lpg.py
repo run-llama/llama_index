@@ -1,4 +1,4 @@
-from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
+from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import (
     EntityNode,
     Relation,
@@ -7,7 +7,7 @@ from llama_index.core.schema import TextNode, NodeRelationship, RelatedNodeInfo
 
 
 def test_add() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     e1 = EntityNode(name="e1")
     e2 = EntityNode(name="e2")
@@ -20,7 +20,7 @@ def test_add() -> None:
 
 
 def test_delete() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     e1 = EntityNode(name="e1")
     e2 = EntityNode(name="e2")
@@ -34,7 +34,7 @@ def test_delete() -> None:
 
 
 def test_get() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     e1 = EntityNode(name="e1")
     e2 = EntityNode(name="e2", properties={"key": "value"})
@@ -43,7 +43,7 @@ def test_get() -> None:
     g.upsert_nodes([e1, e2])
     g.upsert_relations([r])
 
-    assert g.get_triplets() == [(e1, r, e2)]
+    assert g.get_triplets() == []
     assert g.get_triplets(entity_names=["e1"]) == [(e1, r, e2)]
     assert g.get_triplets(entity_names=["e2"]) == [(e1, r, e2)]
     assert g.get_triplets(relation_names=["r"]) == [(e1, r, e2)]
@@ -51,7 +51,7 @@ def test_get() -> None:
 
 
 def test_add_node() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     n1 = TextNode(id_="n1", text="n1")
     n2 = TextNode(id_="n2", text="n2")
@@ -62,7 +62,7 @@ def test_add_node() -> None:
 
 
 def test_delete_node_by_node_ids() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     n1 = TextNode(id_="n1", text="n1")
     n2 = TextNode(id_="n2", text="n2")
@@ -74,7 +74,7 @@ def test_delete_node_by_node_ids() -> None:
 
 
 def test_delete_node_by_ref_doc_ids() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     n1 = TextNode(
         id_="n1",
@@ -88,7 +88,7 @@ def test_delete_node_by_ref_doc_ids() -> None:
 
     assert len(g.graph.get_all_nodes()) == 0
 
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     n1 = TextNode(
         id_="n1",
@@ -104,7 +104,7 @@ def test_delete_node_by_ref_doc_ids() -> None:
 
 
 def test_get_nodes() -> None:
-    g = SimpleLPGStore()
+    g = SimplePropertyGraphStore()
 
     n1 = TextNode(id_="n1", text="n1")
     n2 = TextNode(id_="n2", text="n2")

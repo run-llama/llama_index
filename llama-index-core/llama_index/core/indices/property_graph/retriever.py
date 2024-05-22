@@ -5,15 +5,15 @@ from typing import Any, List
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
-    BaseLPGRetriever,
+    BasePGRetriever,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
-class LPGRetriever(BaseRetriever):
+class PGRetriever(BaseRetriever):
     def __init__(
         self,
-        sub_retrievers: List[BaseLPGRetriever],
+        sub_retrievers: List[BasePGRetriever],
         num_workers: int = 4,
         use_async: bool = True,
         show_progress: bool = False,

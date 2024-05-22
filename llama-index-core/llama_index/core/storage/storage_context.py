@@ -9,15 +9,15 @@ from llama_index.core.constants import (
     GRAPH_STORE_KEY,
     INDEX_STORE_KEY,
     VECTOR_STORE_KEY,
-    LPG_STORE_KEY,
+    PG_STORE_KEY,
 )
 from llama_index.core.graph_stores.simple import (
     DEFAULT_PERSIST_FNAME as GRAPH_STORE_FNAME,
 )
 from llama_index.core.graph_stores.simple import SimpleGraphStore
-from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
-from llama_index.core.graph_stores.types import DEFUALT_LPG_PERSIST_FNAME as LPG_FNAME
-from llama_index.core.graph_stores.types import GraphStore, LabelledPropertyGraphStore
+from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
+from llama_index.core.graph_stores.types import DEFUALT_PG_PERSIST_FNAME as PG_FNAME
+from llama_index.core.graph_stores.types import GraphStore, PropertyGraphStore
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.docstore.types import (
     DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME,
@@ -59,7 +59,7 @@ class StorageContext:
     - index_store: BaseIndexStore
     - vector_store: VectorStore
     - graph_store: GraphStore
-    - lpg_graph_store: LabelledPropertyGraphStore (lazily initialized)
+    - property_graph_store: PropertyGraphStore (lazily initialized)
 
     """
 
@@ -67,7 +67,7 @@ class StorageContext:
     index_store: BaseIndexStore
     vector_stores: Dict[str, VectorStore]
     graph_store: GraphStore
-    lpg_graph_store: Optional[LabelledPropertyGraphStore] = None
+    property_graph_store: Optional[PropertyGraphStore] = None
 
     @classmethod
     def from_defaults(
@@ -80,7 +80,7 @@ class StorageContext:
             Dict[str, Union[VectorStore, BasePydanticVectorStore]]
         ] = None,
         graph_store: Optional[GraphStore] = None,
-        lpg_graph_store: Optional[LabelledPropertyGraphStore] = None,
+        property_graph_store: Optional[PropertyGraphStore] = None,
         persist_dir: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "StorageContext":
@@ -121,11 +121,12 @@ class StorageContext:
             )
 
             try:
-                lpg_graph_store = lpg_graph_store or SimpleLPGStore.from_persist_dir(
-                    persist_dir, fs=fs
+                property_graph_store = (
+                    property_graph_store
+                    or SimplePropertyGraphStore.from_persist_dir(persist_dir, fs=fs)
                 )
             except FileNotFoundError:
-                lpg_graph_store = None
+                property_graph_store = None
 
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
@@ -144,7 +145,7 @@ class StorageContext:
             index_store=index_store,
             vector_stores=vector_stores,  # type: ignore
             graph_store=graph_store,
-            lpg_graph_store=lpg_graph_store,
+            property_graph_store=property_graph_store,
         )
 
     def persist(
@@ -155,7 +156,7 @@ class StorageContext:
         vector_store_fname: str = VECTOR_STORE_FNAME,
         image_store_fname: str = IMAGE_STORE_FNAME,
         graph_store_fname: str = GRAPH_STORE_FNAME,
-        lpg_graph_store_fname: str = LPG_FNAME,
+        pg_graph_store_fname: str = PG_FNAME,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the storage context.
@@ -168,20 +169,20 @@ class StorageContext:
             docstore_path = concat_dirs(persist_dir, docstore_fname)
             index_store_path = concat_dirs(persist_dir, index_store_fname)
             graph_store_path = concat_dirs(persist_dir, graph_store_fname)
-            lpg_graph_store_path = concat_dirs(persist_dir, lpg_graph_store_fname)
+            pg_graph_store_path = concat_dirs(persist_dir, pg_graph_store_fname)
         else:
             persist_dir = Path(persist_dir)
             docstore_path = str(persist_dir / docstore_fname)
             index_store_path = str(persist_dir / index_store_fname)
             graph_store_path = str(persist_dir / graph_store_fname)
-            lpg_graph_store_path = str(persist_dir / lpg_graph_store_fname)
+            pg_graph_store_path = str(persist_dir / pg_graph_store_fname)
 
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
         self.graph_store.persist(persist_path=graph_store_path, fs=fs)
 
-        if self.lpg_graph_store:
-            self.lpg_graph_store.persist(persist_path=lpg_graph_store_path, fs=fs)
+        if self.property_graph_store:
+            self.property_graph_store.persist(persist_path=pg_graph_store_path, fs=fs)
 
         # save each vector store under it's namespace
         for vector_store_name, vector_store in self.vector_stores.items():
@@ -203,7 +204,9 @@ class StorageContext:
             isinstance(self.docstore, SimpleDocumentStore)
             and isinstance(self.index_store, SimpleIndexStore)
             and isinstance(self.graph_store, SimpleGraphStore)
-            and isinstance(self.lpg_graph_store, (SimpleLPGStore, type(None)))
+            and isinstance(
+                self.property_graph_store, (SimplePropertyGraphStore, type(None))
+            )
             and all(
                 isinstance(vs, SimpleVectorStore) for vs in self.vector_stores.values()
             )
@@ -216,7 +219,9 @@ class StorageContext:
         assert isinstance(self.docstore, SimpleDocumentStore)
         assert isinstance(self.index_store, SimpleIndexStore)
         assert isinstance(self.graph_store, SimpleGraphStore)
-        assert isinstance(self.lpg_graph_store, (SimpleLPGStore, type(None)))
+        assert isinstance(
+            self.property_graph_store, (SimplePropertyGraphStore, type(None))
+        )
 
         return {
             VECTOR_STORE_KEY: {
@@ -227,8 +232,8 @@ class StorageContext:
             DOC_STORE_KEY: self.docstore.to_dict(),
             INDEX_STORE_KEY: self.index_store.to_dict(),
             GRAPH_STORE_KEY: self.graph_store.to_dict(),
-            LPG_STORE_KEY: self.lpg_graph_store.to_dict()
-            if self.lpg_graph_store
+            PG_STORE_KEY: self.property_graph_store.to_dict()
+            if self.property_graph_store
             else None,
         }
 
@@ -238,9 +243,9 @@ class StorageContext:
         docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
-        lpg_graph_store = (
-            SimpleLPGStore.from_dict(save_dict[LPG_STORE_KEY])
-            if save_dict[LPG_STORE_KEY]
+        property_graph_store = (
+            SimplePropertyGraphStore.from_dict(save_dict[PG_STORE_KEY])
+            if save_dict[PG_STORE_KEY]
             else None
         )
 
@@ -253,7 +258,7 @@ class StorageContext:
             index_store=index_store,
             vector_stores=vector_stores,
             graph_store=graph_store,
-            lpg_graph_store=lpg_graph_store,
+            property_graph_store=property_graph_store,
         )
 
     @property
