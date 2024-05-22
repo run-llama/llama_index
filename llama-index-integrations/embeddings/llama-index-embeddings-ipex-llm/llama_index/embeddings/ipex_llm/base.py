@@ -57,8 +57,14 @@ class IpexLLMEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **model_kwargs,
     ):
-        # Make default device be cpu
+        # Set "cpu" as default device
         self._device = device or "cpu"
+
+        if self._device not in ["cpu", "xpu"]:
+            logger.warning(
+                "IpexLLMEmbedding currently only supports device to be 'cpu' or 'xpu',"
+                f"but you have: {self._device}; Use 'cpu' instead."
+            )
 
         cache_folder = cache_folder or get_cache_dir()
 
