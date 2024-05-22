@@ -4,6 +4,7 @@ from voyageai.api_resources import VoyageResponse
 
 from llama_index.postprocessor.voyageai_rerank import VoyageAIRerank
 from voyageai.object.reranking import RerankingObject
+from pytest_mock import MockerFixture
 
 rerank_sample_response = {
     "object": "list",
@@ -21,7 +22,7 @@ def test_class():
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
 
 
-def test_rerank(mocker):
+def test_rerank(mocker: MockerFixture) -> None:
     # Mocked client with the desired behavior for embed_documents
     mock_client = mocker.MagicMock()
     mock_client.rerank.return_value = RerankingObject(
