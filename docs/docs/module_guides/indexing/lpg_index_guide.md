@@ -16,18 +16,17 @@ from llama_index.core import PropertyGraphIndex
 
 index = PropertyGraphIndex.from_documents(
     documents,
-    embed_kg_nodes=True,
 )
 
 retriever = index.as_retriever(
     include_text=True,  # include source chunk with matching paths
-    similarity_top_k=2,  # top k for node retrieval
+    similarity_top_k=2,  # top k for vector kg node retrieval
 )
 nodes = retriever.retrieve("Test")
 
 query_engine = index.as_query_engine(
     include_text=True,  # include source chunk with matching paths
-    similarity_top_k=2,  # top k for node retrieval
+    similarity_top_k=2,  # top k for vector kg node retrieval
 )
 response = query_engine.query("Test")
 ```
@@ -93,7 +92,7 @@ kg_extractor = SimpleLLMPathExtractor(
 
 #### (default) `ImplicitPathExtractor`
 
-Extract paths using the `relations` attribute on each llama-index node object.
+Extract paths using the `node.relationships` attribute on each llama-index node object.
 
 This extractor does not need an LLM or embedding model to run, since it's merely parsing properties that already exist on llama-index node objects.
 
@@ -418,6 +417,8 @@ class MyGraphExtractor(TransformComponent):
                     properties={},
                 )
             )
+
+            # add back to the metadata
 
             llama_node.metadata["nodes"] = existing_nodes
             llama_node.metadata["relations"] = existing_relations
