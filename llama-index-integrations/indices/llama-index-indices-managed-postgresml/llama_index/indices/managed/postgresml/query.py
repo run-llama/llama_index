@@ -40,8 +40,8 @@ class AsyncJsonGenerator(Generator, AsyncGenerator):
         self.rag_stream_results = rag_stream_results
         self.rag_stream = None
 
-    def asend(self):  # codespell:ignore
-        raise Exception("asend is not implemented")  # codespell:ignore
+    def asend(self):
+        raise Exception("asend is not implemented")
 
     def send(self):
         raise Exception("send is not implemented")
