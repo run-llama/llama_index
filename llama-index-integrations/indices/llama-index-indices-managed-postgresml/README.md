@@ -31,7 +31,7 @@ index = PostgresMLIndex.from_documents(
     "llama-index-test-1", [Document.example()]
 )
 
-# Connext to an index
+# Connect to an index
 index = PostgresMLIndex("llama-index-test-1")
 ```
 
