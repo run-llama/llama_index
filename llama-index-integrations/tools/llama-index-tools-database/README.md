@@ -4,7 +4,7 @@ This tool connects to a database (using SQLAlchemy under the hood) and allows an
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/database.ipynb) and [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/intro_to_tools.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-database/examples/database.ipynb).
 
 Here's an example usage of the DatabaseToolSpec.
 

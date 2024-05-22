@@ -4,7 +4,7 @@ This tool connects to a Zapier account and allows access to the natural language
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/zapier.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-zapier/examples/zapier.ipynb)
 
 Here's an example usage of the ZapierToolSpec.
 
