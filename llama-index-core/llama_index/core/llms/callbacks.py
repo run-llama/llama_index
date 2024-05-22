@@ -209,6 +209,22 @@ def llm_chat_callback() -> Callable:
         if not is_wrapped:
             f.__wrapped__ = True  # type: ignore
 
+        # Update the wrapper function to look like the wrapped function.
+        # See e.g. https://github.com/python/cpython/blob/0abf997e75bd3a8b76d920d33cc64d5e6c2d380f/Lib/functools.py#L57
+        for attr in (
+            "__module__",
+            "__name__",
+            "__qualname__",
+            "__doc__",
+            "__annotations__",
+            "__type_params__",
+        ):
+            if v := getattr(f, attr, None):
+                setattr(async_dummy_wrapper, attr, v)
+                setattr(wrapped_async_llm_chat, attr, v)
+                setattr(dummy_wrapper, attr, v)
+                setattr(wrapped_llm_chat, attr, v)
+
         if asyncio.iscoroutinefunction(f):
             if is_wrapped:
                 return async_dummy_wrapper
@@ -393,6 +409,22 @@ def llm_completion_callback() -> Callable:
         is_wrapped = getattr(f, "__wrapped__", False)
         if not is_wrapped:
             f.__wrapped__ = True  # type: ignore
+
+        # Update the wrapper function to look like the wrapped function.
+        # See e.g. https://github.com/python/cpython/blob/0abf997e75bd3a8b76d920d33cc64d5e6c2d380f/Lib/functools.py#L57
+        for attr in (
+            "__module__",
+            "__name__",
+            "__qualname__",
+            "__doc__",
+            "__annotations__",
+            "__type_params__",
+        ):
+            if v := getattr(f, attr, None):
+                setattr(async_dummy_wrapper, attr, v)
+                setattr(wrapped_async_llm_predict, attr, v)
+                setattr(dummy_wrapper, attr, v)
+                setattr(wrapped_llm_predict, attr, v)
 
         if asyncio.iscoroutinefunction(f):
             if is_wrapped:
