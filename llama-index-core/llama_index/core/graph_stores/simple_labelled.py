@@ -1,15 +1,18 @@
 import fsspec
+import json
 import os
 from typing import Any, List, Dict, Tuple, Optional
 
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
+    ChunkNode,
+    EntityNode,
     Triplet,
     LabelledNode,
     LabelledPropertyGraph,
     Relation,
     DEFAULT_PERSIST_DIR,
-    DEFUALT_LPG_PERSIST_FNAME,
+    DEFUALT_PG_PERSIST_FNAME,
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
@@ -128,11 +131,6 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         for relation in relations:
             self.graph.add_relation(relation)
 
-    def upsert_triplets(self, triplets: List[Triplet]) -> None:
-        """Add triplets."""
-        for triplet in triplets:
-            self.graph.add_triplet(triplet)
-
     def delete(
         self,
         entity_names: Optional[List[str]] = None,
@@ -172,9 +170,11 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         """Load from persist path."""
         if fs is None:
             fs = fsspec.filesystem("file")
+
         with fs.open(persist_path, "r") as f:
-            graph = LabelledPropertyGraph.parse_raw(f.read())
-        return cls(graph)
+            data = json.loads(f.read())
+
+        return cls.from_dict(data)
 
     @classmethod
     def from_persist_dir(
@@ -183,7 +183,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimplePropertyGraphStore":
         """Load from persist dir."""
-        persist_path = os.path.join(persist_dir, DEFUALT_LPG_PERSIST_FNAME)
+        persist_path = os.path.join(persist_dir, DEFUALT_PG_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @classmethod
@@ -192,7 +192,27 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         data: dict,
     ) -> "SimplePropertyGraphStore":
         """Load from dict."""
+        # need to load nodes manually
+        node_dicts = data["nodes"]
+
+        kg_nodes = {}
+        for id, node_dict in node_dicts.items():
+            if "name" in node_dict:
+                kg_nodes[id] = EntityNode.parse_obj(node_dict)
+            elif "text" in node_dict:
+                kg_nodes[id] = ChunkNode.parse_obj(node_dict)
+            else:
+                raise ValueError(f"Could not infer node type for data: {node_dict!s}")
+
+        # clear the nodes, to load later
+        data["nodes"] = {}
+
+        # load the graph
         graph = LabelledPropertyGraph.parse_obj(data)
+
+        # add the node back
+        graph.nodes = kg_nodes
+
         return cls(graph)
 
     def to_dict(self) -> dict:
@@ -203,7 +223,9 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the graph store."""
-        raise NotImplementedError("Schema not implemented for SimplePropertyGraphStore.")
+        raise NotImplementedError(
+            "Schema not implemented for SimplePropertyGraphStore."
+        )
 
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = None
@@ -215,17 +237,21 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> List[Tuple[LabelledNode, float]]:
+    ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
-        raise NotImplementedError("Vector query not implemented for SimplePropertyGraphStore.")
+        raise NotImplementedError(
+            "Vector query not implemented for SimplePropertyGraphStore."
+        )
 
     @property
     def client(self) -> Any:
         """Get client."""
-        raise NotImplementedError("Client not implemented for SimplePropertyGraphStore.")
+        raise NotImplementedError(
+            "Client not implemented for SimplePropertyGraphStore."
+        )
 
-    def save_networkx_graph(self) -> None:
-        """Display the graph store."""
+    def save_networkx_graph(self, name: str = "kg.html") -> None:
+        """Display the graph store, useful for debugging."""
         import networkx as nx
 
         G = nx.DiGraph()
@@ -239,4 +265,4 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
         net = Network(notebook=False, directed=True)
         net.from_nx(G)
-        net.write_html("kg.html")
+        net.write_html(name)

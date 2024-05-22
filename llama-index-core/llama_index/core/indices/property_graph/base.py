@@ -1,12 +1,13 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence, TYPE_CHECKING
 
-from llama_index.core.data_structs import IndexList
+from llama_index.core.data_structs import IndexLPG
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
+from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMPathExtractor,
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
     )
 
 
-class PropertyGraphIndex(BaseIndex[IndexList]):
+class PropertyGraphIndex(BaseIndex[IndexLPG]):
     """An index for a property graph.
 
     Args:
@@ -67,7 +68,7 @@ class PropertyGraphIndex(BaseIndex[IndexList]):
             Whether to show progress bars for transformations. Defaults to `False`.
     """
 
-    index_struct_cls = IndexList
+    index_struct_cls = IndexLPG
 
     def __init__(
         self,
@@ -102,7 +103,8 @@ class PropertyGraphIndex(BaseIndex[IndexList]):
             storage_context.vector_store = vector_store
 
         if embed_kg_nodes and (
-            storage_context.property_graph_store.supports_vector_queries or embed_kg_nodes
+            storage_context.property_graph_store.supports_vector_queries
+            or embed_kg_nodes
         ):
             self._embed_model = (
                 resolve_embed_model(embed_model)
@@ -120,7 +122,10 @@ class PropertyGraphIndex(BaseIndex[IndexList]):
         self._llm = llm
 
         # if we aren't embedding kg nodes, don't use the vector store
-        if embed_kg_nodes and not property_graph_store.supports_vector_queries:
+        if (
+            embed_kg_nodes
+            and not storage_context.property_graph_store.supports_vector_queries
+        ):
             self.vector_store = storage_context.vector_store
         else:
             self.vector_store = None
@@ -155,8 +160,8 @@ class PropertyGraphIndex(BaseIndex[IndexList]):
 
         # ensure all nodes have nodes and/or relations in metadata
         assert all(
-            node.metadata.get("nodes") is not None
-            or node.metadata.get("relations") is not None
+            node.metadata.get(KG_NODES_KEY) is not None
+            or node.metadata.get(KG_RELATIONS_KEY) is not None
             for node in nodes
         )
 
@@ -164,8 +169,8 @@ class PropertyGraphIndex(BaseIndex[IndexList]):
         kg_rels_to_insert: List[Relation] = []
         for node in nodes:
             # remove nodes and relations from metadata
-            kg_nodes = node.metadata.pop("nodes", [])
-            kg_rels = node.metadata.pop("relations", [])
+            kg_nodes = node.metadata.pop(KG_NODES_KEY, [])
+            kg_rels = node.metadata.pop(KG_RELATIONS_KEY, [])
 
             # add source id to properties
             for kg_node in kg_nodes:
@@ -245,12 +250,12 @@ class PropertyGraphIndex(BaseIndex[IndexList]):
 
         self.vector_store.add(llama_nodes)
 
-    def _build_index_from_nodes(self, nodes: Optional[Sequence[BaseNode]]) -> IndexList:
+    def _build_index_from_nodes(self, nodes: Optional[Sequence[BaseNode]]) -> IndexLPG:
         """Build index from nodes."""
         nodes = self._insert_nodes(nodes or [])
 
         # this isn't really used or needed
-        return IndexList(nodes=[])
+        return IndexLPG()
 
     def as_retriever(
         self,

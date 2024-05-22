@@ -209,7 +209,7 @@ If your graph store supports vectors, then you only need to manage that graph st
 ```python
 from llama_index.core.indices.property_graph import VectorContextRetriever
 
-vector_retriever = LLMSynonymRetriever(
+vector_retriever = LPGVectorRetriever(
     graph_store=index.property_graph_store,
     # only needed when the graph store doesn't support vector queries
     # vector_store=index.vector_store,
@@ -306,7 +306,11 @@ The base storage class for property graphs is the `PropertyGraphStore`. These pr
 We can create these ourselves, and also insert ourselves!
 
 ```python
-from llama_index.core.graph_stores import SimplePropertyGraphStore, EntityNode, Relation
+from llama_index.core.graph_stores import (
+    SimplePropertyGraphStore,
+    EntityNode,
+    Relation,
+)
 from llama_index.core.schema import TextNode
 
 graph_store = SimplePropertyGraphStore()
@@ -372,7 +376,12 @@ The requirement for extractors is that the insert graph data into the metadata o
 Here is a small example of sub-classing to create a custom extractor:
 
 ```python
-from llama_index.core.graph_store.types import EntityNode, Relation
+from llama_index.core.graph_store.types import (
+    EntityNode,
+    Relation,
+    KG_NODES_KEY,
+    KG_RELATIONS_KEY,
+)
 from llama_index.core.schema import BaseNode, TransformComponent
 
 
@@ -387,8 +396,8 @@ class MyGraphExtractor(TransformComponent):
         for llama_node in llama_nodes:
             # be sure to not overwrite existing entities/relations
 
-            existing_nodes = llama_node.metadata.pop("nodes", [])
-            existing_relations = llama_node.metadata.pop("relations", [])
+            existing_nodes = llama_node.metadata.pop(KG_NODES_KEY, [])
+            existing_relations = llama_node.metadata.pop(KG_RELATIONS_KEY, [])
 
             existing_nodes.append(
                 EntityNode(

@@ -3,7 +3,13 @@ from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, validator, Field
-from llama_index.core.graph_stores.types import EntityNode, Relation, Triplet
+from llama_index.core.graph_stores.types import (
+    EntityNode,
+    Relation,
+    Triplet,
+    KG_NODES_KEY,
+    KG_RELATIONS_KEY,
+)
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import TransformComponent, BaseNode
 from llama_index.core.llms.llm import LLM
@@ -266,8 +272,8 @@ class SchemaLLMPathExtractor(TransformComponent):
         except ValueError:
             triplets = []
 
-        existing_nodes = node.metadata.pop("nodes", [])
-        existing_relations = node.metadata.pop("relations", [])
+        existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
+        existing_relations = node.metadata.pop(KG_RELATIONS_KEY, [])
 
         metadata = node.metadata.copy()
         for subj, rel, obj in triplets:

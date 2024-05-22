@@ -17,7 +17,7 @@ class VectorContextRetriever(BasePGRetriever):
         include_text: bool = True,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[VectorStore] = None,
-        similarity_top_k: int = 2,
+        similarity_top_k: int = 4,
         path_depth: int = 1,
         **kwargs: Any
     ) -> None:
@@ -64,14 +64,18 @@ class VectorContextRetriever(BasePGRetriever):
         kg_ids = []
         new_scores = []
         if self._graph_store.supports_vector_queries:
-            kg_nodes, scores = self._graph_store.vector_query(vector_store_query)
+            result = self._graph_store.vector_query(vector_store_query)
+            if len(result) != 2:
+                raise ValueError("No nodes returned by vector_query")
+            kg_nodes, scores = result
+
             kg_ids = [node.id for node in kg_nodes]
             triplets = self._graph_store.get_rel_map(kg_nodes, depth=self._path_depth)
 
         elif self._vector_store is not None:
             query_result = self._vector_store.query(vector_store_query)
             if query_result.nodes is not None and query_result.similarities is not None:
-                kg_ids = [node.node_id for node in query_result.nodes]
+                kg_ids = [node.node_id for node in query_result.nodes if node.node_id]
                 scores = query_result.similarities
                 kg_nodes = self._graph_store.get(ids=kg_ids)
                 triplets = self._graph_store.get_rel_map(
@@ -97,10 +101,8 @@ class VectorContextRetriever(BasePGRetriever):
 
         assert len(triplets) == len(new_scores)
 
-        # get the top-k
-        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)[
-            : self._similarity_top_k
-        ]
+        # sort by score
+        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
 
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
 
@@ -113,7 +115,11 @@ class VectorContextRetriever(BasePGRetriever):
         kg_ids = []
         new_scores = []
         if self._graph_store.supports_vector_queries:
-            kg_nodes, scores = await self._graph_store.avector_query(vector_store_query)
+            result = await self._graph_store.avector_query(vector_store_query)
+            if len(result) != 2:
+                raise ValueError("No nodes returned by vector_query")
+
+            kg_nodes, scores = result
             kg_ids = [node.id for node in kg_nodes]
             triplets = await self._graph_store.aget_rel_map(
                 kg_nodes, depth=self._path_depth
@@ -148,9 +154,7 @@ class VectorContextRetriever(BasePGRetriever):
 
         assert len(triplets) == len(new_scores)
 
-        # get the top-k
-        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)[
-            : self._similarity_top_k
-        ]
+        # sort by score
+        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
 
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])

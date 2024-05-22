@@ -1,7 +1,7 @@
 from typing import Any, List
 
 from llama_index.core.schema import TransformComponent, BaseNode, NodeRelationship
-from llama_index.core.graph_stores.types import Relation
+from llama_index.core.graph_stores.types import Relation, KG_NODES_KEY, KG_RELATIONS_KEY
 
 
 def get_node_rel_string(relationship: NodeRelationship) -> str:
@@ -12,10 +12,11 @@ class ImplicitPathExtractor(TransformComponent):
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
         """Extract edges from node relationships."""
         for node in nodes:
-            existing_relations = node.metadata.pop("relations", [])
+            existing_relations = node.metadata.pop(KG_RELATIONS_KEY, [])
+            existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
+
             edges = []
             metadata = node.metadata.copy()
-
             if node.source_node:
                 edges.append(
                     Relation(
@@ -67,7 +68,18 @@ class ImplicitPathExtractor(TransformComponent):
                         )
                     )
 
+            # link all existing kg_nodes to the current text chunk
+            for kg_node in existing_nodes:
+                edges.append(
+                    Relation(
+                        target_id=node.id_,
+                        source_id=kg_node.id,
+                        label="SOURCE_CHUNK",
+                    )
+                )
+
             existing_relations.extend(edges)
             node.metadata["relations"] = existing_relations
+            node.metadata["nodes"] = existing_nodes
 
         return nodes
