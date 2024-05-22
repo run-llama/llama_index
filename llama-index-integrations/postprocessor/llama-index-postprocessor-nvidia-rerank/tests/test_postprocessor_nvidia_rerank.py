@@ -34,13 +34,9 @@ def nodes(documents: List[Document]) -> List[NodeWithScore]:
 @pytest.mark.integration()
 def test_basic(model: str, mode: dict) -> None:
     text = "Testing leads to failure, and failure leads to understanding."
-    result = (
-        NVIDIARerank(model=model)
-        .mode(**mode)
-        .postprocess_nodes(
-            [NodeWithScore(node=Document(text=text))],
-            query_str=text,
-        )
+    result = NVIDIARerank(model=model, **mode).postprocess_nodes(
+        [NodeWithScore(node=Document(text=text))],
+        query_str=text,
     )
     assert result
     assert isinstance(result, list)
@@ -55,13 +51,9 @@ def test_basic(model: str, mode: dict) -> None:
 def test_accuracy(model: str, mode: dict) -> None:
     texts = ["first", "last"]
     query = "last"
-    result = (
-        NVIDIARerank(model=model)
-        .mode(**mode)
-        .postprocess_nodes(
-            [NodeWithScore(node=Document(text=text)) for text in texts],
-            query_str=query,
-        )
+    result = NVIDIARerank(model=model, **mode).postprocess_nodes(
+        [NodeWithScore(node=Document(text=text)) for text in texts],
+        query_str=query,
     )
     assert result
     assert isinstance(result, list)
@@ -74,7 +66,7 @@ def test_accuracy(model: str, mode: dict) -> None:
 
 @pytest.mark.integration()
 def test_direct_empty_docs(query: str, model: str, mode: dict) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     result_docs = ranker.postprocess_nodes(nodes=[], query_str=query)
     assert len(result_docs) == 0
 
@@ -85,7 +77,7 @@ def test_direct_top_n_negative(
 ) -> None:
     orig = NVIDIARerank.Config.validate_assignment
     NVIDIARerank.Config.validate_assignment = False
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = -100
     NVIDIARerank.Config.validate_assignment = orig
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
@@ -96,7 +88,7 @@ def test_direct_top_n_negative(
 def test_direct_top_n_zero(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = 0
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
     assert len(result) == 0
@@ -106,7 +98,7 @@ def test_direct_top_n_zero(
 def test_direct_top_n_one(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = 1
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
     assert len(result) == 1
@@ -116,7 +108,7 @@ def test_direct_top_n_one(
 def test_direct_top_n_equal_len_docs(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = len(nodes)
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
     assert len(result) == len(nodes)
@@ -126,7 +118,7 @@ def test_direct_top_n_equal_len_docs(
 def test_direct_top_n_greater_len_docs(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = len(nodes) * 2
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
     assert len(result) == len(nodes)
@@ -134,13 +126,13 @@ def test_direct_top_n_greater_len_docs(
 
 @pytest.mark.parametrize("batch_size", [-10, 0])
 def test_invalid_max_batch_size(model: str, mode: dict, batch_size: int) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     with pytest.raises(ValueError):
         ranker.max_batch_size = batch_size
 
 
 def test_invalid_top_n(model: str, mode: dict) -> None:
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     with pytest.raises(ValueError):
         ranker.top_n = -10
 
@@ -167,7 +159,7 @@ def test_rerank_batching(
 ) -> None:
     assert len(nodes) > batch_size, "test requires more nodes"
 
-    ranker = NVIDIARerank(model=model).mode(**mode)
+    ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = top_n
     ranker.max_batch_size = batch_size
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)

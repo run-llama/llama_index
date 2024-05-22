@@ -99,7 +99,7 @@ class SimpleMongoReader(BaseReader):
                 yield Document(text=text)
             else:
                 try:
-                    metadata = {name: item[name] for name in metadata_names}
+                    metadata = {name: item.get(name) for name in metadata_names}
                 except KeyError as err:
                     raise ValueError(
                         f"{err.args[0]} field not found in Mongo document."

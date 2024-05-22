@@ -1,5 +1,118 @@
 # ChangeLog
 
+## [2024-05-21]
+
+### `llama-index-core` [0.10.38]
+
+- Enabling streaming in BaseSQLTableQueryEngine (#13599)
+- Fix nonetype errors in relational node parsers (#13615)
+- feat(instrumentation): new spans for ALL llms (#13565)
+- Properly Limit the number of generated questions (#13596)
+- Pass 'exclude_llm_metadata_keys' and 'exclude_embed_metadata_keys' in element Node Parsers (#13567)
+- Add batch mode to QueryPipeline (#13203)
+- Improve SentenceEmbeddingOptimizer to respect Settings.embed_model (#13514)
+- ReAct output parser robustness changes (#13459)
+- fix for pydantic tool calling with a single argument (#13522)
+- Avoid unexpected error when stream chat doesn't yield (#13422)
+
+### `llama-index-embeddings-nomic` [0.2.0]
+
+- Implement local Nomic Embed with the inference_mode parameter (#13607)
+
+### `llama-index-embeddings-nvidia` [0.1.3]
+
+- Deprecate `mode()` in favor of `__init__(base_url=...)` (#13572)
+- add snowflake/arctic-embed-l support (#13555)
+
+### `llama-index-embeddings-openai` [0.1.10]
+
+- update how retries get triggered for openai (#13608)
+
+### `llama-index-embeddings-upstage` [0.1.0]
+
+- Integrations: upstage LLM and Embeddings (#13193)
+
+### `llama-index-llms-gemini` [0.1.8]
+
+- feat: add gemini new models to multimodal LLM and regular (#13539)
+
+### `llama-index-llms-groq` [0.1.4]
+
+- fix: enable tool use (#13566)
+
+### `llama-index-llms-lmstudio` [0.1.0]
+
+- Add support for lmstudio integration (#13557)
+
+### `llama-index-llms-nvidia` [0.1.3]
+
+- Deprecate `mode()` in favor of `__init__(base_url=...)` (#13572)
+
+### `llama-index-llms-openai` [0.1.20]
+
+- update how retries get triggered for openai (#13608)
+
+### `llama-index-llms-unify` [0.1.0]
+
+- Add Unify LLM Support (#12921)
+
+### `llama-index-llms-upstage` [0.1.0]
+
+- Integrations: upstage LLM and Embeddings (#13193)
+
+### `llama-index-llms-vertex` [0.1.6]
+
+- Adding Support for MedLM Models (#11911)
+
+### `llama_index.postprocessor.dashscope_rerank` [0.1.0]
+
+- Add dashscope rerank for postprocessor (#13353)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.1.2]
+
+- Deprecate `mode()` in favor of `__init__(base_url=...)` (#13572)
+
+### `llama-index-readers-mongodb` [0.1.5]
+
+- SimpleMongoReader should allow optional fields in metadata (#13575)
+
+### `llama-index-readers-papers` [0.1.5]
+
+- fix: (ArxivReader) set exclude_hidden to False when reading data from hidden directory (#13578)
+
+### `llama-index-readers-sec-filings` [0.1.5]
+
+- fix: sec_filings header when making requests to sec.gov #13548
+
+### `llama-index-readers-web` [0.1.16]
+
+- Added firecrawl search mode (#13560)
+- Updated Browserbase web reader (#13535)
+
+### `llama-index-tools-cassandra` [0.1.0]
+
+- added Cassandra database tool spec for agents (#13423)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.7]
+
+- Allow querying AzureAISearch without non-null metadata field (#13531)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.0]
+
+- Integrate VectorStore from Elasticsearch client (#13291)
+
+### `llama-index-vector-stores-milvus` [0.1.14]
+
+- Fix the filter expression construction of Milvus vector store (#13591)
+
+### `llama-index-vector-stores-supabase` [0.1.4]
+
+- Disconnect when deleted (#13611)
+
+### `llama-index-vector-stores-wordlift` [0.1.0]
+
+- Added the WordLift Vector Store (#13028)
+
 ## [2024-05-14]
 
 ### `llama-index-core` [0.10.37]

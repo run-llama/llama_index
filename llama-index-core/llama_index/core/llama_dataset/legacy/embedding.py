@@ -2,6 +2,7 @@
 import json
 import re
 import uuid
+import warnings
 from typing import Dict, List, Tuple
 
 from llama_index.core.bridge.pydantic import BaseModel
@@ -89,7 +90,16 @@ def generate_qa_embedding_pairs(
         questions = [
             re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
         ]
-        questions = [question for question in questions if len(question) > 0]
+        questions = [question for question in questions if len(question) > 0][
+            :num_questions_per_chunk
+        ]
+
+        num_questions_generated = len(questions)
+        if num_questions_generated < num_questions_per_chunk:
+            warnings.warn(
+                f"Fewer questions generated ({num_questions_generated}) "
+                f"than requested ({num_questions_per_chunk})."
+            )
 
         for question in questions:
             question_id = str(uuid.uuid4())

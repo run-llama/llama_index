@@ -1,3 +1,4 @@
+import warnings
 from typing import (
     Any,
     Callable,
@@ -90,6 +91,12 @@ class Solar(OpenAI):
         output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any,
     ) -> None:
+        # add warning for this class is deprecated
+        warnings.warn(
+            """Solar LLM is deprecated. Please use Upstage LLM instead.
+            Install the package using `pip install llama-index-llms-upstage`
+            """,
+        )
         api_key, api_base = resolve_solar_credentials(
             api_key=api_key,
             api_base=api_base,

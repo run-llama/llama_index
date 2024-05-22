@@ -16,4 +16,4 @@ loader = RTFReader()
 documents = RTFReader().load_data(file=Path("./example.rtf"))
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/). See [here](https://github.com/run-llama/llama-hub/tree/main/llama_hub) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

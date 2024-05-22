@@ -33,7 +33,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         nodes = self.get_nodes_from_elements(
-            elements, node.metadata, ref_doc_text=node.get_content()
+            elements, node, ref_doc_text=node.get_content()
         )
         source_document = node.source_node or node.as_related_node_info()
         for n in nodes:

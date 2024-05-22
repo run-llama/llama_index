@@ -49,16 +49,26 @@ class FireCrawlWebReader(BasePydanticReader):
     def class_name(cls) -> str:
         return "Firecrawl_reader"
 
-    def load_data(self, url: str) -> List[Document]:
+    def load_data(
+        self, url: Optional[str] = None, query: Optional[str] = None
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
-            urls (List[str]): List of URLs to scrape.
+            url (Optional[str]): URL to scrape or crawl.
+            query (Optional[str]): Query to search for.
 
         Returns:
             List[Document]: List of documents.
 
+        Raises:
+            ValueError: If neither or both url and query are provided.
         """
+        if url is None and query is None:
+            raise ValueError("Either url or query must be provided.")
+        if url is not None and query is not None:
+            raise ValueError("Only one of url or query must be provided.")
+
         documents = []
 
         if self.mode == "scrape":
@@ -69,7 +79,7 @@ class FireCrawlWebReader(BasePydanticReader):
                     metadata=firecrawl_docs.get("metadata", {}),
                 )
             )
-        else:
+        elif self.mode == "crawl":
             firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
             for doc in firecrawl_docs:
                 documents.append(
@@ -78,5 +88,18 @@ class FireCrawlWebReader(BasePydanticReader):
                         metadata=doc.get("metadata", {}),
                     )
                 )
+        elif self.mode == "search":
+            firecrawl_docs = self.firecrawl.search(query, params=self.params)
+            for doc in firecrawl_docs:
+                documents.append(
+                    Document(
+                        page_content=doc.get("markdown", ""),
+                        metadata=doc.get("metadata", {}),
+                    )
+                )
+        else:
+            raise ValueError(
+                "Invalid mode. Please choose 'scrape', 'crawl' or 'search'."
+            )
 
         return documents
