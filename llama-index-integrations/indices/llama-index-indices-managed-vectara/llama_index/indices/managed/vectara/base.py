@@ -1,4 +1,5 @@
-"""Managed index.
+"""
+Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.
@@ -45,7 +46,8 @@ class VectaraIndexStruct(IndexDict):
 
 
 class VectaraIndex(BaseManagedIndex):
-    """Vectara Index.
+    """
+    Vectara Index.
 
     The Vectara index implements a managed index that uses Vectara as the backend.
     Vectara performs a lot of the functions in traditional indexes in the backend:
@@ -287,7 +289,8 @@ class VectaraIndex(BaseManagedIndex):
         corpus_id: Optional[str] = None,
         **insert_kwargs: Any,
     ) -> Optional[str]:
-        """Vectara provides a way to add files (binary or text) directly via our API
+        """
+        Vectara provides a way to add files (binary or text) directly via our API
         where pre-processing and chunking occurs internally in an optimal way
         This method provides a way to use that API in Llama_index.
 
@@ -327,10 +330,8 @@ class VectaraIndex(BaseManagedIndex):
 
         res = response.json()
         if response.status_code == 409:
-            doc_id = res["document"]["documentId"]
             _logger.info(
-                f"File {file_path} already exists on Vectara "
-                f"(doc_id={doc_id}), skipping"
+                f"File {file_path} already exists on Vectara, skipping indexing"
             )
             return None
         elif response.status_code == 200:
