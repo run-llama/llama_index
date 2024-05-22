@@ -62,9 +62,10 @@ class IpexLLMEmbedding(BaseEmbedding):
 
         if self._device not in ["cpu", "xpu"]:
             logger.warning(
-                "IpexLLMEmbedding currently only supports device to be 'cpu' or 'xpu',"
+                "IpexLLMEmbedding currently only supports device to be 'cpu' or 'xpu', "
                 f"but you have: {self._device}; Use 'cpu' instead."
             )
+            self._device = "cpu"
 
         cache_folder = cache_folder or get_cache_dir()
 
