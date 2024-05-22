@@ -11,7 +11,8 @@ from typing import Any, Dict, Optional, Sequence, Type
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
+
+# from llama_index.core.data_structs.data_structs import IndexDict, IndexStructType
 from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.core.schema import (
     BaseNode,
@@ -31,7 +32,8 @@ class PostgresMLIndexStruct(IndexDict):
     @classmethod
     def get_type(cls) -> IndexStructType:
         """Get index struct type."""
-        return IndexStructType.POSTGRESML
+        # return IndexStructType.POSTGRESML
+        return "POSTGRESML"
 
 
 class PostgresMLIndex(BaseManagedIndex):
