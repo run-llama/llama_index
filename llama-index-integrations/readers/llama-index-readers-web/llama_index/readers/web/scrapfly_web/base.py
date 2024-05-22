@@ -7,6 +7,7 @@ from llama_index.core.schema import Document
 
 logger = logging.getLogger(__file__)
 
+
 class ScrapflyReader(BasePydanticReader):
     """Turn a url to llm accessible markdown with `Scrapfly.io`.
 
@@ -23,11 +24,7 @@ class ScrapflyReader(BasePydanticReader):
     ignore_scrape_failures: bool = True
     scrapfly: Optional["ScrapflyClient"] = None  # Declare the scrapfly attribute
 
-    def __init__(
-        self,
-        api_key: str,
-        ignore_scrape_failures: bool = True
-    ) -> None:
+    def __init__(self, api_key: str, ignore_scrape_failures: bool = True) -> None:
         """Initialize client."""
         super().__init__(api_key=api_key, ignore_scrape_failures=ignore_scrape_failures)
         try:
@@ -43,8 +40,10 @@ class ScrapflyReader(BasePydanticReader):
         return "Scrapfly_reader"
 
     def load_data(
-        self, urls: List[str], scrape_format: Literal["markdown", "text"] = "markdown", 
-        scrape_config: Optional[dict] = None
+        self,
+        urls: List[str],
+        scrape_format: Literal["markdown", "text"] = "markdown",
+        scrape_config: Optional[dict] = None,
     ) -> List[Document]:
         """Load data from the urls.
 
@@ -59,6 +58,7 @@ class ScrapflyReader(BasePydanticReader):
             ValueError: If URLs aren't provided.
         """
         from scrapfly import ScrapeApiResponse, ScrapeConfig
+
         if urls is None:
             raise ValueError("URLs must be provided.")
         scrape_config = scrape_config if scrape_config is not None else {}
@@ -71,14 +71,13 @@ class ScrapflyReader(BasePydanticReader):
                 )
                 documents.append(
                     Document(
-                        text=response.scrape_result['content'],
-                        extra_info={"url": url}
+                        text=response.scrape_result["content"], extra_info={"url": url}
                     )
-                )                
+                )
             except Exception as e:
                 if self.ignore_scrape_failures:
                     logger.error(f"Error fetching data from {url}, exception: {e}")
                 else:
-                    raise e
-                
+                    raise e  # noqa: TRY201
+
         return documents
