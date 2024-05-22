@@ -320,6 +320,8 @@ nav:
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/mlx.ipynb
           - ./examples/llm/upstage.ipynb
+          - ./examples/llm/lmstudio.ipynb
+          - ./examples/llm/unify.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -474,6 +476,7 @@ nav:
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/azure_dynamic_sessions.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
+          - ./examples/tools/casssandra.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -816,6 +819,7 @@ nav:
           - ./api_reference/llms/llama_api.md
           - ./api_reference/llms/llama_cpp.md
           - ./api_reference/llms/llamafile.md
+          - ./api_reference/llms/lmstudio.md
           - ./api_reference/llms/localai.md
           - ./api_reference/llms/maritalk.md
           - ./api_reference/llms/mistral_rs.md
@@ -845,6 +849,7 @@ nav:
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/together.md
+          - ./api_reference/llms/unify.md
           - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
@@ -1320,6 +1325,7 @@ nav:
               - ./api_reference/storage/vector_store/vertexaivectorsearch.md
               - ./api_reference/storage/vector_store/vespa.md
               - ./api_reference/storage/vector_store/weaviate.md
+              - ./api_reference/storage/vector_store/wordlift.md
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
           - ./api_reference/tools/arxiv.md
@@ -1329,6 +1335,7 @@ nav:
           - ./api_reference/tools/azure_translate.md
           - ./api_reference/tools/bing_search.md
           - ./api_reference/tools/brave_search.md
+          - ./api_reference/tools/cassandra.md
           - ./api_reference/tools/chatgpt_plugin.md
           - ./api_reference/tools/code_interpreter.md
           - ./api_reference/tools/cogniswitch.md
@@ -1895,6 +1902,10 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-upstage
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-dashscope-rerank
             - ../llama-index-integrations/llms/llama-index-llms-upstage
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-wordlift
+            - ../llama-index-integrations/tools/llama-index-tools-cassandra
+            - ../llama-index-integrations/llms/llama-index-llms-unify
+            - ../llama-index-integrations/llms/llama-index-llms-lmstudio
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
