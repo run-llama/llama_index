@@ -204,7 +204,9 @@ class StorageContext:
             isinstance(self.docstore, SimpleDocumentStore)
             and isinstance(self.index_store, SimpleIndexStore)
             and isinstance(self.graph_store, SimpleGraphStore)
-            and isinstance(self.lpg_graph_store, (SimplePropertyGraphStore, type(None)))
+            and isinstance(
+                self.property_graph_store, (SimplePropertyGraphStore, type(None))
+            )
             and all(
                 isinstance(vs, SimpleVectorStore) for vs in self.vector_stores.values()
             )
@@ -241,7 +243,7 @@ class StorageContext:
         docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
-        lpg_graph_store = (
+        property_graph_store = (
             SimplePropertyGraphStore.from_dict(save_dict[PG_STORE_KEY])
             if save_dict[PG_STORE_KEY]
             else None
@@ -256,7 +258,7 @@ class StorageContext:
             index_store=index_store,
             vector_stores=vector_stores,
             graph_store=graph_store,
-            lpg_graph_store=lpg_graph_store,
+            property_graph_store=property_graph_store,
         )
 
     @property

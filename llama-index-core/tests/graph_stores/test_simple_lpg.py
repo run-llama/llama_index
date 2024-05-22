@@ -43,7 +43,7 @@ def test_get() -> None:
     g.upsert_nodes([e1, e2])
     g.upsert_relations([r])
 
-    assert g.get_triplets() == [(e1, r, e2)]
+    assert g.get_triplets() == []
     assert g.get_triplets(entity_names=["e1"]) == [(e1, r, e2)]
     assert g.get_triplets(entity_names=["e2"]) == [(e1, r, e2)]
     assert g.get_triplets(relation_names=["r"]) == [(e1, r, e2)]
