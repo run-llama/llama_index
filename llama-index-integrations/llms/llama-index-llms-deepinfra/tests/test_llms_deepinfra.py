@@ -1,5 +1,5 @@
 from llama_index.llms.deepinfra import DeepInfraLLM
-from llama_index.llms.base import LLM
+from llama_index.core.llms.llm import LLM
 
 
 def test_llm_class():
