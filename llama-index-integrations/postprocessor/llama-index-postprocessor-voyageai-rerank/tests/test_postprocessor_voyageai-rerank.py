@@ -33,7 +33,7 @@ def test_rerank(mocker):
     mocker.patch.object(VoyageAIRerank, "_client", return_value=mock_client)
 
     voyageai_rerank = VoyageAIRerank(
-        api_key="api_key", top_k=2, model="rerank-lite-1", truncation=True
+        api_key="api_key", top_n=2, model="rerank-lite-1", truncation=True
     )
     voyageai_rerank._postprocess_nodes(
         nodes=[NodeWithScore(node=TextNode(text="text"))],
