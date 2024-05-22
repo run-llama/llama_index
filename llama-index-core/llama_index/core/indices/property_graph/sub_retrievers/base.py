@@ -77,10 +77,13 @@ class BasePGRetriever(BaseRetriever):
                 if len(graph_content) > 0:
                     graph_content_str = "\n".join(graph_content)
                     cur_content = node.get_content()
-                    new_content = (
+                    preamble_text = (
                         self._include_text_preamble
                         if self._include_text_preamble
-                        else "" + graph_content_str + "\n\n" + cur_content
+                        else ""
+                    )
+                    new_content = (
+                        preamble_text + graph_content_str + "\n\n" + cur_content
                     )
                     node = TextNode(**node.dict())
                     node.text = new_content

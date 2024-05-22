@@ -43,7 +43,7 @@ class Neo4jPGStore(PropertyGraphStore):
         `pip install llama-index-graph-stores-neo4j`
 
         ```python
-        from llama_index.core.indices.property_graph import LabelledPropertyGraphIndex
+        from llama_index.core.indices.property_graph import PropertyGraphIndex
         from llama_index.graph_stores.neo4j import Neo4jLPGStore
 
         # Create a Neo4jLPGStore instance
@@ -55,9 +55,9 @@ class Neo4jPGStore(PropertyGraphStore):
         )
 
         # create the index
-        index = LabelledPropertyGraphIndex.from_documents(
+        index = PropertyGraphIndex.from_documents(
             documents,
-            lpg_graph_store=graph_store,
+            property_graph_store=graph_store,
         )
         ```
     """
