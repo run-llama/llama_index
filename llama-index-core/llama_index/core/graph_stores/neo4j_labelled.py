@@ -4,7 +4,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery
 
 
 from llama_index.core.graph_stores.types import (
-    LabelledPropertyGraphStore,
+    PropertyGraphStore,
     Triplet,
     LabelledNode,
     Relation,
@@ -27,11 +27,11 @@ def remove_empty_values(input_dict):
     return {key: value for key, value in input_dict.items() if value}
 
 
-class Neo4jLPGStore(LabelledPropertyGraphStore):
+class Neo4jPGStore(PropertyGraphStore):
     """
-    Neo4j Labelled Property Graph Store.
+    Neo4j Property Graph Store.
 
-    This class implements a Neo4j labelled property graph store.
+    This class implements a Neo4j property graph store.
 
     Args:
         username (str): The username for the Neo4j database.
@@ -43,7 +43,7 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         `pip install llama-index-graph-stores-neo4j`
 
         ```python
-        from llama_index.core.indices.property_graph import LabelledPropertyGraphIndex
+        from llama_index.core.indices.property_graph import PropertyGraphIndex
         from llama_index.graph_stores.neo4j import Neo4jLPGStore
 
         # Create a Neo4jLPGStore instance
@@ -55,9 +55,9 @@ class Neo4jLPGStore(LabelledPropertyGraphStore):
         )
 
         # create the index
-        index = LabelledPropertyGraphIndex.from_documents(
+        index = PropertyGraphIndex.from_documents(
             documents,
-            lpg_graph_store=graph_store,
+            property_graph_store=graph_store,
         )
         ```
     """

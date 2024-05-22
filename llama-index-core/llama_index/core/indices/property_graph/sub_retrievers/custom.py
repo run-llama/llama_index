@@ -1,15 +1,15 @@
 from abc import abstractmethod
 from typing import Any, List
 
-from llama_index.core.graph_stores.types import LabelledPropertyGraphStore
-from llama_index.core.indices.property_graph.sub_retrievers.base import BaseLPGRetriever
+from llama_index.core.graph_stores.types import PropertyGraphStore
+from llama_index.core.indices.property_graph.sub_retrievers.base import BasePGRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 
-class CustomLPGRetriever(BaseLPGRetriever):
+class CustomPGRetriever(BasePGRetriever):
     def __init__(
         self,
-        graph_store: LabelledPropertyGraphStore,
+        graph_store: PropertyGraphStore,
         **kwargs: Any,
     ) -> None:
         self.init(**kwargs)

@@ -1,8 +1,8 @@
-# Using a Labeled Property Index
+# Using a Property Graph Index
 
-A labeled property graph is a knowledge collection of labeled nodes (i.e. entity categories, text labels, etc.) with properties (i.e. metadata), linked together by relationships into structured paths.
+A property graph is a knowledge collection of labeled nodes (i.e. entity categories, text labels, etc.) with properties (i.e. metadata), linked together by relationships into structured paths.
 
-In LlamaIndex, the `LabeledPropertyGraphIndex` provides key orchestration around
+In LlamaIndex, the `PropertyGraphIndex` provides key orchestration around
 
 - constructing a graph
 - querying a graph
@@ -12,69 +12,68 @@ In LlamaIndex, the `LabeledPropertyGraphIndex` provides key orchestration around
 Basic usage can be found by simply importing the class and using it:
 
 ```python
-from llama_index.core import LabeledPropertyGraphIndex
+from llama_index.core import PropertyGraphIndex
 
-index = LabeledPropertyGraphIndex.from_documents(
+index = PropertyGraphIndex.from_documents(
     documents,
-    embed_kg_nodes=True,
 )
 
 retriever = index.as_retriever(
     include_text=True,  # include source chunk with matching paths
-    similarity_top_k=2,  # top k for node retrieval
+    similarity_top_k=2,  # top k for vector kg node retrieval
 )
 nodes = retriever.retrieve("Test")
 
 query_engine = index.as_query_engine(
     include_text=True,  # include source chunk with matching paths
-    similarity_top_k=2,  # top k for node retrieval
+    similarity_top_k=2,  # top k for vector kg node retrieval
 )
 response = query_engine.query("Test")
 ```
 
 ### Construction
 
-Property graph construction in LlamaIndex works by performing a series of `kg_extractors` on each chunk, and attaching entities and relations as metadata to each node. You can use as many as you like here, and they will all get applied.
+Property graph construction in LlamaIndex works by performing a series of `kg_extractors` on each chunk, and attaching entities and relations as metadata to each llama-index node. You can use as many as you like here, and they will all get applied.
 
 If you've used transformations or metadata extractors with the [ingestion pipeline](../loading/ingestion_pipeline/index.md), then this will be very familiar (and these `kg_extractors` are compatible with the ingestion pipeline)!
 
 Extractors are set using the appropriate kwarg:
 
 ```python
-index = LabeledPropertyGraphIndex.from_documents(
+index = PropertyGraphIndex.from_documents(
     documents,
     kg_extractors=[extractor1, extractor2, ...],
 )
 ```
 
-If not provided, the defaults are `SimpleLLMTripletExtractor` and `ImplicitTripletExtractor`.
+If not provided, the defaults are `SimpleLLMPathExtractor` and `ImplicitPathExtractor`.
 
 All `kg_extractors` are detailed below.
 
-#### (default) `SimpleLLMTripletExtractor`
+#### (default) `SimpleLLMPathExtractor`
 
-Extract triples using an LLM to prompt and parse triples in the format (`entity1`, `relation`, `entity2`)
+Extract short statements using an LLM to prompt and parse single-hop paths in the format (`entity1`, `relation`, `entity2`)
 
 ```python
-from llama_index.core.indices.property_graph import SimpleLLMTripletExtractor
+from llama_index.core.indices.property_graph import SimpleLLMPathExtractor
 
-kg_extractor = SimpleLLMTripletExtractor(
+kg_extractor = SimpleLLMPathExtractor(
     llm=llm,
-    max_triplets_per_chunk=10,
+    max_paths_per_chunk=10,
     num_workers=4,
     show_progress=False,
 )
 ```
 
-If you want, you can also customize the prompt and the function used to parse triples.
+If you want, you can also customize the prompt and the function used to parse the paths.
 
 Here's a simple (but naive) example:
 
 ```python
 prompt = (
     "Some text is provided below. Given the text, extract up to "
-    "{max_knowledge_triplets} "
-    "knowledge triplets in the form of `subject,predicate,object` on each line. Avoid stopwords.\n"
+    "{max_paths_per_chunk} "
+    "knowledge triples in the form of `subject,predicate,object` on each line. Avoid stopwords.\n"
 )
 
 
@@ -84,34 +83,34 @@ def parse_fn(response_str: str) -> List[Tuple[str, str, str]]:
     return triples
 
 
-kg_extractor = SimpleLLMTripletExtractor(
+kg_extractor = SimpleLLMPathExtractor(
     llm=llm,
     extract_prompt=prompt,
     parse_fn=parse_fn,
 )
 ```
 
-#### (default) `ImplicitTripletExtractor`
+#### (default) `ImplicitPathExtractor`
 
-Extract triples using the `relationships` attribute on each llama-index node object.
+Extract paths using the `node.relationships` attribute on each llama-index node object.
 
-This extractor does not need an LLM or embedding model to run, since its merely parsing properties that already exist on llama-index node objects.
+This extractor does not need an LLM or embedding model to run, since it's merely parsing properties that already exist on llama-index node objects.
 
 ```python
-from llama_index.core.indices.property_graph import ImplicitTripletExtractor
+from llama_index.core.indices.property_graph import ImplicitPathExtractor
 
-kg_extractor = ImplicitTripletExtractor()
+kg_extractor = ImplicitPathExtractor()
 ```
 
-#### `SchemaLLMTripletExtractor`
+#### `SchemaLLMPathExtractor`
 
-Extract triples following a strict schema of allowed entities, relationships, and which entities can be connected to which relationships.
+Extract paths following a strict schema of allowed entities, relationships, and which entities can be connected to which relationships.
 
-Using pydantic, structured outputs from LLMs, and some clever validation, we can dynamically specify a schema and verify the extractions per-triple.
+Using pydantic, structured outputs from LLMs, and some clever validation, we can dynamically specify a schema and verify the extractions per-path.
 
 ```python
 from typing import Literal
-from llama_index.core.indices.property_graph import SchemaLLMTripletExtractor
+from llama_index.core.indices.property_graph import SchemaLLMPathExtractor
 
 # recommended uppercase, underscore separated
 entities = Literal["PERSON", "PLACE", "THING"]
@@ -122,14 +121,14 @@ schema = {
     "THING": ["IS_A"],
 }
 
-kg_extractor = SchemaLLMTripletExtractor(
+kg_extractor = SchemaLLMPathExtractor(
     llm=llm,
     possible_entities=entities,
     possible_relations=relations,
     kg_validation_schema=schema,
     strict=True,  # if false, will allow triples outside of the schema
     num_workers=4,
-    max_triplets_per_chunk=10,
+    max_paths_per_chunk=10,
     show_progres=False,
 )
 ```
@@ -155,7 +154,7 @@ query_engine = index.as_query_engine(
 ```
 
 If no sub-retrievers are provided, the defaults are
-`LLMSynonymRetriever` and `LPGVectorRetriever` (if embeddings are enabled).
+`LLMSynonymRetriever` and `VectorContextRetriever` (if embeddings are enabled).
 
 #### (default) `LLMSynonymRetriever`
 
@@ -186,7 +185,7 @@ def parse_fn(self, output: str) -> list[str]:
 
 
 synonym_retriever = LLMSynonymRetriever(
-    graph_store=index.lpg_graph_store,
+    graph_store=index.property_graph_store,
     llm=llm,
     # include source chunk text with retrieved paths
     include_text=False,
@@ -194,23 +193,23 @@ synonym_retriever = LLMSynonymRetriever(
     output_parsing_fn=parse_fn,
     max_keywords=10,
     # the depth of relations to follow after node retrieval
-    triple_depth=1,
+    path_depth=1,
 )
 
 retriever = index.as_retriever(sub_retrievers=[synonym_retriever])
 ```
 
-#### (default, if supported) `LPGVectorRetriever`
+#### (default, if supported) `VectorContextRetriever`
 
-The `LPGVectorRetriever` retrieves nodes based on their vector similarity, and then fetches the paths connected to those nodes.
+The `VectorContextRetriever` retrieves nodes based on their vector similarity, and then fetches the paths connected to those nodes.
 
 If your graph store supports vectors, then you only need to manage that graph store for storage. Otherwise, you will need to provide a vector store in addition to the graph store (by default, uses the in-memory `SimpleVectorStore`).
 
 ```python
-from llama_index.core.indices.property_graph import LPGVectorRetriever
+from llama_index.core.indices.property_graph import VectorContextRetriever
 
 vector_retriever = LPGVectorRetriever(
-    graph_store=index.lpg_graph_store,
+    graph_store=index.property_graph_store,
     # only needed when the graph store doesn't support vector queries
     # vector_store=index.vector_store,
     embed_model=embed_model,
@@ -219,7 +218,7 @@ vector_retriever = LPGVectorRetriever(
     # the number of nodes to fetch
     similarity_top_k=2,
     # the depth of relations to follow after node retrieval
-    triple_depth=1,
+    path_depth=1,
     # can provide any other kwargs for the VectorStoreQuery class
     ...,
 )
@@ -233,21 +232,21 @@ Currently, supported graph stores for property graphs include:
 
 |                     | In-Memory | Native Embedding Support | Async | Server or disk based? |
 |---------------------|-----------|--------------------------|-------|-----------------------|
-| SimpleLPGGraphStore | ✅         | ❌                        | ❌     | Disk                  |
-| Neo4jLPGGraphStore  | ❌         | ✅                        | ❌     | Server                |
+| SimplePropertyGraphStore | ✅         | ❌                        | ❌     | Disk                  |
+| Neo4jPropertyGraphStore  | ❌         | ✅                        | ❌     | Server                |
 
 ### Saving to/from disk
 
-The default property graph store, `SimpleLPGStore`, stores everything in memory and persists and loads from disk.
+The default property graph store, `SimplePropertyGraphStore`, stores everything in memory and persists and loads from disk.
 
 Here's an example of saving/loading an index with the default graph store:
 
 ```python
 from llama_index.core import StorageContext, load_index_from_storage
-from llama_index.core.indices import LabeledPropertyGraphIndex
+from llama_index.core.indices import PropertyGraphIndex
 
 # create
-index = LabeledPropertyGraphIndex.from_documents(documents)
+index = PropertyGraphIndex.from_documents(documents)
 
 # save
 index.storage_context.persist("./storage")
@@ -269,7 +268,7 @@ This example shows how you might save/load a property graph index using Neo4J an
 
 ```python
 from llama_index.core import StorageContext, load_index_from_storage
-from llama_index.core.indices import LabeledPropertyGraphIndex
+from llama_index.core.indices import PropertyGraphIndex
 from llama_index.graph_stores.neo4j import Neo4JLPGStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient, AsyncQdrantClient
@@ -283,17 +282,17 @@ vector_store = QdrantVectorStore(
 graph_store = Neo4JLPGStore(...)
 
 # creates an index
-index = LabeledPropertyGraphIndex.from_documents(
+index = PropertyGraphIndex.from_documents(
     documents,
-    lpg_graph_store=graph_store,
+    property_graph_store=graph_store,
     vector_store=vector_store,
     embed_kg_nodes=True,
 )
 
 # load from existing graph/vector store
-index = LabeledPropertyGraphIndex(
+index = PropertyGraphIndex(
     nodes=[],
-    lpg_graph_store=graph_store,
+    property_graph_store=graph_store,
     vector_store=vector_store,
     embed_kg_nodes=True,
 )
@@ -301,15 +300,19 @@ index = LabeledPropertyGraphIndex(
 
 ### Using the LPG Graph Store Directly
 
-The base storage class for property graphs is the `LabelledPropertyGraphStore`. These property graph stores are constructured using different types of `LabeledNode` objects, and connected using `Relation` objects.
+The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructured using different types of `LabeledNode` objects, and connected using `Relation` objects.
 
 We can create these ourselves, and also insert ourselves!
 
 ```python
-from llama_index.core.graph_stores import SimpleLPGStore, EntityNode, Relation
+from llama_index.core.graph_stores import (
+    SimplePropertyGraphStore,
+    EntityNode,
+    Relation,
+)
 from llama_index.core.schema import TextNode
 
-graph_store = SimpleLPGStore()
+graph_store = SimplePropertyGraphStore()
 
 entities = [
     EntityNode(name="llama", label="ANIMAL", properties={"key": "val"}),
@@ -415,6 +418,8 @@ class MyGraphExtractor(TransformComponent):
                 )
             )
 
+            # add back to the metadata
+
             llama_node.metadata["nodes"] = existing_nodes
             llama_node.metadata["relations"] = existing_relations
 
@@ -432,10 +437,10 @@ The retriever is a bit more complicated than the extractors, and has it's own sp
 Here is a small example of sub-classing to create a custom retriever:
 
 ```python
-from llama_index.core.indices.property_graph import CustomLPGRetriever
+from llama_index.core.indices.property_graph import CustomPGRetriever
 
 
-class MyCustomRetriever(CustomLPGRetriever):
+class MyCustomRetriever(CustomPGRetriever):
     def init(my_option_1: bool = False, **kwargs) -> None:
         """Uses any kwargs passed in from class constructor."""
         self.my_option_1 = my_option_1
@@ -456,4 +461,4 @@ custom_retriever = MyCustomRetriever(
 retriever = index.as_retriever(sub_retrievers=[custom_retriever])
 ```
 
-For more complicated customization and use-cases, it is recommended to check out the source code and directly sub-class `BaseLPGRetriever`.
+For more complicated customization and use-cases, it is recommended to check out the source code and directly sub-class `BasePGRetriever`.

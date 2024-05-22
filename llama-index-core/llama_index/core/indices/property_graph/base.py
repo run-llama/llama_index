@@ -6,12 +6,12 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.graph_stores.simple_labelled import SimpleLPGStore
+from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
-    SimpleLLMTripletExtractor,
-    ImplicitTripletExtractor,
+    SimpleLLMPathExtractor,
+    ImplicitPathExtractor,
 )
 from llama_index.core.ingestion.pipeline import (
     run_transformations,
@@ -20,7 +20,7 @@ from llama_index.core.ingestion.pipeline import (
 from llama_index.core.graph_stores.types import (
     LabelledNode,
     Relation,
-    LabelledPropertyGraphStore,
+    PropertyGraphStore,
     TRIPLET_SOURCE_KEY,
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
@@ -31,12 +31,12 @@ from llama_index.core.vector_stores.types import VectorStore
 
 if TYPE_CHECKING:
     from llama_index.core.indices.property_graph.sub_retrievers.base import (
-        BaseLPGRetriever,
+        BasePGRetriever,
     )
 
 
-class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
-    """An index for a labelled property graph.
+class PropertyGraphIndex(BaseIndex[IndexLPG]):
+    """An index for a property graph.
 
     Args:
         nodes (Optional[Sequence[BaseNode]]):
@@ -45,9 +45,9 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
             The language model to use for extracting triplets. Defaults to `Settings.llm`.
         kg_extractors (Optional[List[TransformComponent]]):
             A list of transformations to apply to the nodes to extract triplets.
-            Defaults to `[SimpleLLMTripletExtractor(llm=llm), ImplicitEdgeExtractor()]`.
-        lpg_graph_store (Optional[LabelledPropertyGraphStore]):
-            The labelled property graph store to use. If not provided, a new `SimpleLPGStore` will be created.
+            Defaults to `[SimpleLLMPathExtractor(llm=llm), ImplicitEdgeExtractor()]`.
+        property_graph_store (Optional[PropertyGraphStore]):
+            The property graph store to use. If not provided, a new `SimplePropertyGraphStore` will be created.
         vector_store (Optional[VectorStore]):
             The vector store index to use, if the graph store does not support vector queries.
         use_async (bool):
@@ -75,7 +75,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
         nodes: Optional[Sequence[BaseNode]] = None,
         llm: Optional[BaseLLM] = None,
         kg_extractors: Optional[List[TransformComponent]] = None,
-        lpg_graph_store: Optional[LabelledPropertyGraphStore] = None,
+        property_graph_store: Optional[PropertyGraphStore] = None,
         # vector related params
         vector_store: Optional[VectorStore] = None,
         use_async: bool = True,
@@ -90,20 +90,21 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
     ) -> None:
         """Init params."""
         storage_context = storage_context or StorageContext.from_defaults(
-            lpg_graph_store=lpg_graph_store
+            property_graph_store=property_graph_store
         )
 
         # lazily initialize the graph store on the storage context
-        if lpg_graph_store is not None:
-            storage_context.lpg_graph_store = lpg_graph_store
-        elif storage_context.lpg_graph_store is None:
-            storage_context.lpg_graph_store = SimpleLPGStore()
+        if property_graph_store is not None:
+            storage_context.property_graph_store = property_graph_store
+        else:
+            storage_context.property_graph_store = SimplePropertyGraphStore()
 
         if vector_store is not None:
             storage_context.vector_store = vector_store
 
         if embed_kg_nodes and (
-            storage_context.lpg_graph_store.supports_vector_queries or embed_kg_nodes
+            storage_context.property_graph_store.supports_vector_queries
+            or embed_kg_nodes
         ):
             self._embed_model = (
                 resolve_embed_model(embed_model)
@@ -114,8 +115,8 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
             self._embed_model = None
 
         self._kg_extractors = kg_extractors or [
-            SimpleLLMTripletExtractor(llm=llm or Settings.llm),
-            ImplicitTripletExtractor(),
+            SimpleLLMPathExtractor(llm=llm or Settings.llm),
+            ImplicitPathExtractor(),
         ]
         self._use_async = use_async
         self._llm = llm
@@ -123,7 +124,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
         # if we aren't embedding kg nodes, don't use the vector store
         if (
             embed_kg_nodes
-            and not storage_context.lpg_graph_store.supports_vector_queries
+            and not storage_context.property_graph_store.supports_vector_queries
         ):
             self.vector_store = storage_context.vector_store
         else:
@@ -139,9 +140,9 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
         )
 
     @property
-    def lpg_graph_store(self) -> LabelledPropertyGraphStore:
+    def property_graph_store(self) -> PropertyGraphStore:
         """Get the labelled property graph store."""
-        return self.storage_context.lpg_graph_store
+        return self.storage_context.property_graph_store
 
     def _insert_nodes(self, nodes: Sequence[BaseNode]) -> Sequence[BaseNode]:
         """Insert nodes to the index struct."""
@@ -183,7 +184,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
 
         # embed nodes (if needed)
         if self._embed_model and (
-            self.lpg_graph_store.supports_vector_queries or self.vector_store
+            self.property_graph_store.supports_vector_queries or self.vector_store
         ):
             # embed llama-index nodes
             node_texts = [
@@ -217,16 +218,16 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
 
         # if graph store doesn't support vectors, or the vector index was provided, use it
         if (
-            not self.lpg_graph_store.supports_vector_queries
+            not self.property_graph_store.supports_vector_queries
             or self.vector_store is not None
         ):
             self._insert_nodes_to_vector_index(kg_nodes_to_insert)
 
-        self.lpg_graph_store.upsert_llama_nodes(nodes)
-        self.lpg_graph_store.upsert_nodes(kg_nodes_to_insert)
+        self.property_graph_store.upsert_llama_nodes(nodes)
+        self.property_graph_store.upsert_nodes(kg_nodes_to_insert)
 
         # important: upsert relations after nodes
-        self.lpg_graph_store.upsert_relations(kg_rels_to_insert)
+        self.property_graph_store.upsert_relations(kg_rels_to_insert)
 
         return nodes
 
@@ -258,26 +259,26 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
 
     def as_retriever(
         self,
-        sub_retrievers: Optional[List["BaseLPGRetriever"]] = None,
+        sub_retrievers: Optional[List["BasePGRetriever"]] = None,
         include_text: bool = True,
         **kwargs: Any,
     ) -> BaseRetriever:
         """Return a retriever for the index.
 
         Args:
-            sub_retrievers (Optional[List[BaseLPGRetriever]]):
+            sub_retrievers (Optional[List[BasePGRetriever]]):
                 A list of sub-retrievers to use. If not provided, a default list will be used:
-                `[LLMSynonymRetriever, LPGVectorRetriever]` if the graph store supports vector queries.
+                `[LLMSynonymRetriever, VectorContextRetriever]` if the graph store supports vector queries.
             include_text (bool):
                 Whether to include source-text in the retriever results.
             **kwargs:
                 Additional kwargs to pass to the retriever.
         """
         from llama_index.core.indices.property_graph.retriever import (
-            LPGRetriever,
+            PGRetriever,
         )
         from llama_index.core.indices.property_graph.sub_retrievers.vector import (
-            LPGVectorRetriever,
+            VectorContextRetriever,
         )
         from llama_index.core.indices.property_graph.sub_retrievers.llm_synonym import (
             LLMSynonymRetriever,
@@ -286,7 +287,7 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
         if sub_retrievers is None:
             sub_retrievers = [
                 LLMSynonymRetriever(
-                    graph_store=self.lpg_graph_store,
+                    graph_store=self.property_graph_store,
                     include_text=include_text,
                     llm=self._llm,
                     **kwargs,
@@ -294,22 +295,22 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
             ]
 
             if self._embed_model and (
-                self.lpg_graph_store.supports_vector_queries or self.vector_store
+                self.property_graph_store.supports_vector_queries or self.vector_store
             ):
                 sub_retrievers.append(
-                    LPGVectorRetriever(
-                        graph_store=self.lpg_graph_store,
+                    VectorContextRetriever(
+                        graph_store=self.property_graph_store,
                         vector_store=self.vector_store,
                         include_text=include_text,
                         **kwargs,
                     )
                 )
 
-        return LPGRetriever(sub_retrievers, use_async=self._use_async, **kwargs)
+        return PGRetriever(sub_retrievers, use_async=self._use_async, **kwargs)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
-        self.lpg_graph_store.delete(ids=[node_id])
+        self.property_graph_store.delete(ids=[node_id])
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Index-specific logic for inserting nodes to the index struct."""
@@ -318,6 +319,6 @@ class LabelledPropertyGraphIndex(BaseIndex[IndexLPG]):
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
         """Retrieve a dict mapping of ingested documents and their nodes+metadata."""
         raise NotImplementedError(
-            "Ref doc info not implemented for LabelledPropertyGraphIndex. "
+            "Ref doc info not implemented for PropertyGraphIndex. "
             "All inserts are already upserts."
         )

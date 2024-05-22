@@ -50,7 +50,7 @@ from llama_index.core.indices.vector_store import (
 )
 
 from llama_index.core.indices.property_graph.base import (
-    LabelledPropertyGraphIndex,
+    PropertyGraphIndex,
 )
 
 __all__ = [
@@ -70,7 +70,7 @@ __all__ = [
     "MultiModalVectorStoreIndex",
     "EmptyIndex",
     "ComposableGraph",
-    "LabelledPropertyGraphIndex",
+    "PropertyGraphIndex",
     # legacy
     "GPTKnowledgeGraphIndex",
     "GPTKeywordTableIndex",
