@@ -136,6 +136,8 @@ class VectorMemory(BaseMemory):
         # retrieve from index
         retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
         nodes = retriever.retrieve(input or "")
+        print(f"retrieved nodes: {nodes}", flush=True)
+        print()
 
         # retrieve underlying messages
         messages = [
@@ -143,12 +145,16 @@ class VectorMemory(BaseMemory):
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
+        print(f"underlying messages: {messages}", flush=True)
+        print()
 
         # add system message
         if self.system_message:
-            messages = [
-                ChatMessage.from_str(self.system_message, role=MessageRole.SYSTEM)
-            ].extend(messages)
+            messages.insert(
+                0, ChatMessage.from_str(self.system_message, role=MessageRole.SYSTEM)
+            )
+        print(f"with system message: {messages}", flush=True)
+        print()
 
         if self.return_single_message:
             # condense all messages into a single message
