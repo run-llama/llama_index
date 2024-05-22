@@ -31,6 +31,7 @@ from llama_index.core.llms.callbacks import (
 
 from llama_index.llms.deepinfra.utils import (
     chat_messages_to_list,
+    maybe_extract_text_from_json,
 )
 
 from llama_index.llms.deepinfra.constants import (
@@ -168,11 +169,9 @@ class DeepInfraLLM(LLM):
         Returns:
             str: The generated text completion.
         """
-        payload = self._build_payload(input=prompt, **kwargs)
-        result = self._client.request(self.get_model_endpoint(), payload)
-        return CompletionResponse(
-            text=result["results"][0]["generated_text"], raw=result
-        )
+        payload = self._build_payload(prompt=prompt, **kwargs)
+        result = self._client.request(INFERENCE_ENDPOINT, payload)
+        return CompletionResponse(text=maybe_extract_text_from_json(result), raw=result)
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs) -> CompletionResponseGen:
@@ -186,13 +185,11 @@ class DeepInfraLLM(LLM):
         Yields:
             CompletionResponseGen: The streaming text completion.
         """
-        payload = self._build_payload(input=prompt, **kwargs)
+        payload = self._build_payload(prompt=prompt, **kwargs)
 
         content = ""
-        for response_dict in self._client.request_stream(
-            self.get_model_endpoint(), payload
-        ):
-            content_delta = response_dict["token"]["text"]
+        for response_dict in self._client.request_stream(INFERENCE_ENDPOINT, payload):
+            content_delta = maybe_extract_text_from_json(response_dict)
             content += content_delta
             yield CompletionResponse(
                 text=content, delta=content_delta, raw=response_dict
@@ -211,7 +208,7 @@ class DeepInfraLLM(LLM):
             ChatResponse: The chat response containing a sequence of messages.
         """
         messages = chat_messages_to_list(messages)
-        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
+        payload = self._build_payload(messages=messages, **kwargs)
         result = self._client.request(CHAT_API_ENDPOINT, payload)
 
         return ChatResponse(
@@ -237,7 +234,7 @@ class DeepInfraLLM(LLM):
             ChatResponseGen: The chat response containing a sequence of messages.
         """
         messages = chat_messages_to_list(chat_messages)
-        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
+        payload = self._build_payload(messages=messages, **kwargs)
 
         content = ""
         role = MessageRole.ASSISTANT
@@ -269,12 +266,10 @@ class DeepInfraLLM(LLM):
         Returns:
             CompletionResponse: The generated text completion.
         """
-        payload = self._build_payload(input=prompt, **kwargs)
+        payload = self._build_payload(prompt=prompt, **kwargs)
 
-        result = await self._client.arequest(self.get_model_endpoint(), payload)
-        return CompletionResponse(
-            text=result["results"][0]["generated_text"], raw=result
-        )
+        result = await self._client.arequest(INFERENCE_ENDPOINT, payload)
+        return CompletionResponse(text=maybe_extract_text_from_json(result), raw=result)
 
     @llm_completion_callback()
     async def astream_complete(
@@ -290,14 +285,14 @@ class DeepInfraLLM(LLM):
         Yields:
             CompletionResponseAsyncGen: The streaming text completion.
         """
-        payload = self._build_payload(input=prompt, model=self.model, **kwargs)
+        payload = self._build_payload(prompt=prompt, **kwargs)
 
         async def gen():
             content = ""
             async for response_dict in self._client.arequest_stream(
-                self.get_model_endpoint(), payload
+                INFERENCE_ENDPOINT, payload
             ):
-                content_delta = response_dict["token"]["text"]
+                content_delta = maybe_extract_text_from_json(response_dict)
                 content += content_delta
                 yield CompletionResponse(
                     text=content, delta=content_delta, raw=response_dict
@@ -320,7 +315,7 @@ class DeepInfraLLM(LLM):
             ChatResponse: The chat response containing a sequence of messages.
         """
         messages = chat_messages_to_list(chat_messages)
-        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
+        payload = self._build_payload(messages=messages, **kwargs)
 
         result = await self._client.arequest(CHAT_API_ENDPOINT, payload)
         return ChatResponse(
@@ -346,7 +341,7 @@ class DeepInfraLLM(LLM):
             ChatResponseAsyncGen: The chat response containing a sequence of messages.
         """
         messages = chat_messages_to_list(chat_messages)
-        payload = self._build_payload(messages=messages, model=self.model, **kwargs)
+        payload = self._build_payload(messages=messages, **kwargs)
 
         async def gen():
             content = ""
@@ -396,5 +391,6 @@ class DeepInfraLLM(LLM):
             **self.generate_kwargs,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
+            "model": self.model,
             **kwargs,
         }

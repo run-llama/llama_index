@@ -35,6 +35,25 @@ def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
         return None
 
 
+def maybe_extract_text_from_json(data: dict) -> Union[str, None]:
+    """
+    Extract text from a JSON response.
+
+    Args:
+        data (dict): The JSON response.
+
+    Returns:
+        Union[str, None]: The extracted text or None.
+    """
+    if "choices" in data:
+        if len(data["choices"]) > 0 and "text" in data["choices"][0]:
+            return data["choices"][0]["text"]
+        else:
+            return None
+    else:
+        return None
+
+
 def chat_messages_to_list(messages: Sequence[ChatMessage]) -> Sequence[Dict[str, Any]]:
     """
     Convert a sequence of chat messages to a list of dictionaries.
