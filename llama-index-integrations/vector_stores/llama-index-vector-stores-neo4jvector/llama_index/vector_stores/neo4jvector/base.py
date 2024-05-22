@@ -2,9 +2,11 @@ from typing import Any, Dict, List, Optional, Tuple
 import logging
 
 import neo4j
+
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
     FilterOperator,
@@ -178,7 +180,7 @@ def construct_metadata_filter(filters: MetadataFilters):
         return (" AND ".join(collected_snippets[0]), collected_snippets[1])
 
 
-class Neo4jVectorStore(VectorStore):
+class Neo4jVectorStore(BasePydanticVectorStore):
     """Neo4j Vector Store.
 
     Examples:
@@ -200,6 +202,21 @@ class Neo4jVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata = True
 
+    distance_strategy: str
+    index_name: str
+    keyword_index_name: str
+    hybrid_search: bool
+    node_label: str
+    embedding_node_property: str
+    text_node_property: str
+    retrieval_query: str
+    embedding_dimension: int
+
+    _driver: neo4j.GraphDatabase.driver = PrivateAttr()
+    _database: str = PrivateAttr()
+    _support_metadata_filter: bool = PrivateAttr()
+    _is_enterprise: bool = PrivateAttr()
+
     def __init__(
         self,
         username: str,
@@ -217,6 +234,18 @@ class Neo4jVectorStore(VectorStore):
         retrieval_query: str = "",
         **kwargs: Any,
     ) -> None:
+        super().__init__(
+            distance_strategy=distance_strategy,
+            index_name=index_name,
+            keyword_index_name=keyword_index_name,
+            hybrid_search=hybrid_search,
+            node_label=node_label,
+            embedding_node_property=embedding_node_property,
+            text_node_property=text_node_property,
+            retrieval_query=retrieval_query,
+            embedding_dimension=embedding_dimension,
+        )
+
         if distance_strategy not in ["cosine", "euclidean"]:
             raise ValueError("distance_strategy must be either 'euclidean' or 'cosine'")
 
@@ -250,16 +279,6 @@ class Neo4jVectorStore(VectorStore):
             ],
             [index_name, node_label, embedding_node_property, text_node_property],
         )
-
-        self.distance_strategy = distance_strategy
-        self.index_name = index_name
-        self.keyword_index_name = keyword_index_name
-        self.hybrid_search = hybrid_search
-        self.node_label = node_label
-        self.embedding_node_property = embedding_node_property
-        self.text_node_property = text_node_property
-        self.retrieval_query = retrieval_query
-        self.embedding_dimension = embedding_dimension
 
         index_already_exists = self.retrieve_existing_index()
         if not index_already_exists:
@@ -301,9 +320,9 @@ class Neo4jVectorStore(VectorStore):
         # Flag for metadata filtering
         metadata_target_version = (5, 18, 0)
         if version_tuple < metadata_target_version:
-            self.support_metadata_filter = False
+            self._support_metadata_filter = False
         else:
-            self.support_metadata_filter = True
+            self._support_metadata_filter = True
         # Flag for enterprise
         self._is_enterprise = db_data[0]["edition"] == "enterprise"
 
@@ -458,7 +477,7 @@ class Neo4jVectorStore(VectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.filters:
             # Verify that 5.18 or later is used
-            if not self.support_metadata_filter:
+            if not self._support_metadata_filter:
                 raise ValueError(
                     "Metadata filtering is only supported in "
                     "Neo4j version 5.18 or greater"

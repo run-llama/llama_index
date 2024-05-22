@@ -15,6 +15,7 @@ We are actively adding more integrations and improving feature coverage for each
 
 | Vector Store             | Type                    | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 | ------------------------ | ----------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
+| Alibaba Cloud OpenSearch | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
 | Apache Cassandra®       | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Astra DB                 | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Azure AI Search          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
@@ -56,6 +57,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Typesense                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Upstash                  | cloud                   |                    |               |        | ✓               |       |
 | Vearch                   | self-hosted             | ✓                  |               | ✓      | ✓               |       |
+| Vespa                    | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | Vertex AI Vector Search  | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 
@@ -63,6 +65,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 
 ## Example Notebooks
 
+- [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
 - [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)
@@ -106,6 +109,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
 - [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
 - [Vearch](../../examples/vector_stores/VearchDemo.ipynb)
+- [Vespa](../../examples/vector_stores/VespaIndexDemo.ipynb)
 - [Vertex AI Vector Search](../../examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)

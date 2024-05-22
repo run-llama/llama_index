@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
@@ -6,7 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 import pandas as pd
 from tqdm import tqdm
 
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import PydanticResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
@@ -172,7 +171,7 @@ class BaseElementNodeParser(NodeParser):
             try:
                 response = await query_engine.aquery(summary_query_str)
                 return cast(PydanticResponse, response).response
-            except ValidationError:
+            except (ValidationError, ValueError):
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
                 query_engine = index.as_query_engine(llm=llm)
@@ -183,11 +182,10 @@ class BaseElementNodeParser(NodeParser):
             _get_table_output(table_context, self.summary_query_str)
             for table_context in table_context_list
         ]
-        summary_outputs = asyncio.run(
-            run_jobs(
-                summary_jobs, show_progress=self.show_progress, workers=self.num_workers
-            )
+        summary_co = run_jobs(
+            summary_jobs, show_progress=self.show_progress, workers=self.num_workers
         )
+        summary_outputs = asyncio_run(summary_co)
         for element, summary_output in zip(elements, summary_outputs):
             element.table_output = summary_output
 
@@ -247,7 +245,8 @@ class BaseElementNodeParser(NodeParser):
     def get_nodes_from_elements(
         self,
         elements: List[Element],
-        metadata_inherited: Optional[Dict[str, Any]] = None,
+        node_inherited: Optional[TextNode] = None,
+        ref_doc_text: Optional[str] = None,
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
         from llama_index.core.node_parser import SentenceSplitter
@@ -302,13 +301,31 @@ class BaseElementNodeParser(NodeParser):
                 for col in table_output.columns:
                     table_summary += f"- {col.col_name}: {col.summary}\n"
 
+                # attempt to find start_char_idx for table
+                # raw table string regardless if perfect or not is stored in element.element
+
+                if ref_doc_text:
+                    start_char_idx = ref_doc_text.find(str(element.element))
+                    if start_char_idx >= 0:
+                        end_char_idx = start_char_idx + len(str(element.element))
+                    else:
+                        start_char_idx = None
+                        end_char_idx = None
+                else:
+                    start_char_idx = None
+                    end_char_idx = None
+
                 # shared index_id and node_id
                 node_id = str(uuid.uuid4())
                 index_node = IndexNode(
                     text=table_summary,
-                    metadata={"col_schema": col_schema},
+                    metadata={
+                        "col_schema": col_schema,
+                    },
                     excluded_embed_metadata_keys=["col_schema"],
                     index_id=node_id,
+                    start_char_idx=start_char_idx,
+                    end_char_idx=end_char_idx,
                 )
 
                 table_str = table_summary + "\n" + table_md
@@ -328,6 +345,8 @@ class BaseElementNodeParser(NodeParser):
                     },
                     excluded_embed_metadata_keys=["table_df", "table_summary"],
                     excluded_llm_metadata_keys=["table_df", "table_summary"],
+                    start_char_idx=start_char_idx,
+                    end_char_idx=end_char_idx,
                 )
                 nodes.extend([index_node, text_node])
             else:
@@ -343,8 +362,14 @@ class BaseElementNodeParser(NodeParser):
 
         # remove empty nodes and keep node original metadata inherited from parent nodes
         for node in nodes:
-            if metadata_inherited:
-                node.metadata.update(metadata_inherited)
+            if node_inherited and node_inherited.metadata:
+                node.metadata.update(node_inherited.metadata)
+                node.excluded_embed_metadata_keys = (
+                    node_inherited.excluded_embed_metadata_keys
+                )
+                node.excluded_llm_metadata_keys = (
+                    node_inherited.excluded_llm_metadata_keys
+                )
         return [node for node in nodes if len(node.text) > 0]
 
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:

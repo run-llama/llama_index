@@ -113,6 +113,8 @@ nav:
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/llama3_cookbook.ipynb
+          - ./examples/cookbooks/llama3_cookbook_groq.ipynb
+          - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
       - Customization:
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
@@ -153,6 +155,7 @@ nav:
           - ./examples/data_connectors/GoogleSheetsDemo.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
           - ./examples/data_connectors/GoogleDriveDemo.ipynb
+          - ./examples/data_connectors/upstage.ipynb
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
@@ -197,6 +200,9 @@ nav:
           - ./examples/embeddings/ipex_llm.ipynb
           - ./examples/embeddings/octoai.ipynb
           - ./examples/embeddings/ipex_llm_gpu.ipynb
+          - ./examples/embeddings/nvidia.ipynb
+          - ./examples/embeddings/deepinfra.ipynb
+          - ./examples/embeddings/upstage.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -311,6 +317,11 @@ nav:
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/octoai.ipynb
           - ./examples/llm/mistral_rs.ipynb
+          - ./examples/llm/nvidia.ipynb
+          - ./examples/llm/mlx.ipynb
+          - ./examples/llm/upstage.ipynb
+          - ./examples/llm/lmstudio.ipynb
+          - ./examples/llm/unify.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -350,6 +361,7 @@ nav:
           - ./examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
+          - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
       - Multi-Tenancy:
           - ./examples/multi_tenancy/multi_tenancy_rag.ipynb
       - Node Parsers & Text Splitters:
@@ -373,6 +385,7 @@ nav:
           - ./examples/node_postprocessor/JinaRerank.ipynb
           - ./examples/node_postprocessor/rankLLM.ipynb
           - ./examples/node_postprocessor/openvino_rerank.ipynb
+          - ./examples/node_postprocessor/NVIDIARerank.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
@@ -461,6 +474,9 @@ nav:
       - Tools:
           - ./examples/tools/OnDemandLoaderTool.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
+          - ./examples/tools/azure_dynamic_sessions.ipynb
+          - ./examples/tools/azure_code_interpreter.ipynb
+          - ./examples/tools/casssandra.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -547,6 +563,10 @@ nav:
           - ./examples/vector_stores/AWSDocDBDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/FirestoreVectorStore.ipynb
+          - ./examples/vector_stores/VespaIndexDemo.ipynb
+          - ./examples/vector_stores/VertexAIVectorSearchDemo.ipynb
+          - ./examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb
+          - ./examples/vector_stores/RelytDemo.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -703,6 +723,7 @@ nav:
           - ./api_reference/embeddings/cloudflare_workersai.md
           - ./api_reference/embeddings/cohere.md
           - ./api_reference/embeddings/dashscope.md
+          - ./api_reference/embeddings/deepinfra.md
           - ./api_reference/embeddings/elasticsearch.md
           - ./api_reference/embeddings/fastembed.md
           - ./api_reference/embeddings/fireworks.md
@@ -711,6 +732,7 @@ nav:
           - ./api_reference/embeddings/gradient.md
           - ./api_reference/embeddings/huggingface.md
           - ./api_reference/embeddings/huggingface_itrex.md
+          - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
           - ./api_reference/embeddings/index.md
@@ -722,14 +744,15 @@ nav:
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/nomic.md
+          - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
-          - ./api_reference/embeddings/openvino.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
           - ./api_reference/embeddings/text_embeddings_inference.md
           - ./api_reference/embeddings/together.md
+          - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
       - Evaluation:
@@ -796,14 +819,17 @@ nav:
           - ./api_reference/llms/llama_api.md
           - ./api_reference/llms/llama_cpp.md
           - ./api_reference/llms/llamafile.md
+          - ./api_reference/llms/lmstudio.md
           - ./api_reference/llms/localai.md
           - ./api_reference/llms/maritalk.md
           - ./api_reference/llms/mistral_rs.md
           - ./api_reference/llms/mistralai.md
+          - ./api_reference/llms/mlx.md
           - ./api_reference/llms/modelscope.md
           - ./api_reference/llms/monsterapi.md
           - ./api_reference/llms/mymagic.md
           - ./api_reference/llms/neutrino.md
+          - ./api_reference/llms/nvidia.md
           - ./api_reference/llms/nvidia_tensorrt.md
           - ./api_reference/llms/nvidia_triton.md
           - ./api_reference/llms/octoai.md
@@ -823,6 +849,8 @@ nav:
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/together.md
+          - ./api_reference/llms/unify.md
+          - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
           - ./api_reference/llms/watsonx.md
@@ -936,6 +964,7 @@ nav:
           - ./api_reference/postprocessor/auto_prev_next.md
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
+          - ./api_reference/postprocessor/dashscope_rerank.md
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
           - ./api_reference/postprocessor/flag_embedding_reranker.md
@@ -946,6 +975,7 @@ nav:
           - ./api_reference/postprocessor/long_context_reorder.md
           - ./api_reference/postprocessor/longllmlingua.md
           - ./api_reference/postprocessor/metadata_replacement.md
+          - ./api_reference/postprocessor/nvidia_rerank.md
           - ./api_reference/postprocessor/openvino_rerank.md
           - ./api_reference/postprocessor/presidio.md
           - ./api_reference/postprocessor/prev_next.md
@@ -1121,6 +1151,7 @@ nav:
           - ./api_reference/readers/pathway.md
           - ./api_reference/readers/pdb.md
           - ./api_reference/readers/pdf_table.md
+          - ./api_reference/readers/pebblo.md
           - ./api_reference/readers/pinecone.md
           - ./api_reference/readers/preprocess.md
           - ./api_reference/readers/psychic.md
@@ -1236,6 +1267,7 @@ nav:
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
+              - ./api_reference/storage/vector_store/alibabacloud_opensearch.md
               - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
@@ -1277,6 +1309,7 @@ nav:
               - ./api_reference/storage/vector_store/postgres.md
               - ./api_reference/storage/vector_store/qdrant.md
               - ./api_reference/storage/vector_store/redis.md
+              - ./api_reference/storage/vector_store/relyt.md
               - ./api_reference/storage/vector_store/rocksetdb.md
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
@@ -1289,15 +1322,20 @@ nav:
               - ./api_reference/storage/vector_store/typesense.md
               - ./api_reference/storage/vector_store/upstash.md
               - ./api_reference/storage/vector_store/vearch.md
+              - ./api_reference/storage/vector_store/vertexaivectorsearch.md
+              - ./api_reference/storage/vector_store/vespa.md
               - ./api_reference/storage/vector_store/weaviate.md
+              - ./api_reference/storage/vector_store/wordlift.md
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
           - ./api_reference/tools/arxiv.md
+          - ./api_reference/tools/azure_code_interpreter.md
           - ./api_reference/tools/azure_cv.md
           - ./api_reference/tools/azure_speech.md
           - ./api_reference/tools/azure_translate.md
           - ./api_reference/tools/bing_search.md
           - ./api_reference/tools/brave_search.md
+          - ./api_reference/tools/cassandra.md
           - ./api_reference/tools/chatgpt_plugin.md
           - ./api_reference/tools/code_interpreter.md
           - ./api_reference/tools/cogniswitch.md
@@ -1850,6 +1888,24 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-youtube-metadata
             - ../llama-index-integrations/llms/llama-index-llms-mistral-rs
             - ../llama-index-integrations/agent/llama-index-agent-introspective
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vertexaivectorsearch
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vespa
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-nvidia
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-nvidia-rerank
+            - ../llama-index-integrations/llms/llama-index-llms-nvidia
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-alibabacloud-opensearch
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-relyt
+            - ../llama-index-integrations/tools/llama-index-tools-azure-code-interpreter
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-deepinfra
+            - ../llama-index-integrations/readers/llama-index-readers-pebblo
+            - ../llama-index-integrations/llms/llama-index-llms-mlx
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-upstage
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-dashscope-rerank
+            - ../llama-index-integrations/llms/llama-index-llms-upstage
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-wordlift
+            - ../llama-index-integrations/tools/llama-index-tools-cassandra
+            - ../llama-index-integrations/llms/llama-index-llms-unify
+            - ../llama-index-integrations/llms/llama-index-llms-lmstudio
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
