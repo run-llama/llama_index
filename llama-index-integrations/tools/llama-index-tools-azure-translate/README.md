@@ -6,7 +6,7 @@ You will need to set up an api key and translate instance using Azure, learn mor
 
 For a full list of supported languages see here: https://learn.microsoft.com/en-us/azure/ai-services/translator/language-support
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/azure_speech.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-azure-speech/examples/azure_speech.ipynb)
 
 ## Usage
 
