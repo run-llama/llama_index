@@ -1,14 +1,9 @@
-import aiohttp
-import requests
-
 from typing import (
     Any,
     Callable,
     Dict,
     Optional,
     Sequence,
-    AsyncGenerator,
-    Generator,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
@@ -35,22 +30,18 @@ from llama_index.core.llms.callbacks import (
 )
 
 from llama_index.llms.deepinfra.utils import (
-    maybe_decode_sse_data,
     chat_messages_to_list,
-    retry_request,
-    aretry_request,
 )
 
-"""DeepInfra API base URL."""
-API_BASE = "https://api.deepinfra.com/v1"
-"""DeepInfra Inference API endpoint."""
-INFERENCE_ENDPOINT = "inference"
-"""Chat API endpoint for DeepInfra."""
-CHAT_API_ENDPOINT = "openai/chat/completions"
-"""Environment variable name of DeepInfra API token."""
-ENV_VARIABLE = "DEEPINFRA_API_TOKEN"
-"""Default model name for DeepInfra embeddings."""
-DEFAULT_MODEL_NAME = "mistralai/Mixtral-8x22B-Instruct-v0.1"
+from llama_index.llms.deepinfra.constants import (
+    API_BASE,
+    INFERENCE_ENDPOINT,
+    CHAT_API_ENDPOINT,
+    ENV_VARIABLE,
+    DEFAULT_MODEL_NAME,
+)
+
+from llama_index.llms.deepinfra.client import DeepInfraClient
 
 
 class DeepInfraLLM(LLM):
@@ -103,6 +94,8 @@ class DeepInfraLLM(LLM):
         default_factory=dict, description="Additional keyword arguments for generation."
     )
 
+    _client: DeepInfraClient = PrivateAttr()
+
     def __init__(
         self,
         model: str = DEFAULT_MODEL_NAME,
@@ -122,8 +115,13 @@ class DeepInfraLLM(LLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-
         self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
+        self._client = DeepInfraClient(
+            api_key=self._api_key,
+            api_base=api_base,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
         super().__init__(
             model=model,
             api_base=api_base,
@@ -171,7 +169,7 @@ class DeepInfraLLM(LLM):
             str: The generated text completion.
         """
         payload = self._build_payload(input=prompt, **kwargs)
-        result = self._request(self.get_model_endpoint(), payload)
+        result = self._client.request(self.get_model_endpoint(), payload)
         return CompletionResponse(
             text=result["results"][0]["generated_text"], raw=result
         )
@@ -191,7 +189,9 @@ class DeepInfraLLM(LLM):
         payload = self._build_payload(input=prompt, **kwargs)
 
         content = ""
-        for response_dict in self._request_stream(self.get_model_endpoint(), payload):
+        for response_dict in self._client.request_stream(
+            self.get_model_endpoint(), payload
+        ):
             content_delta = response_dict["token"]["text"]
             content += content_delta
             yield CompletionResponse(
@@ -212,7 +212,7 @@ class DeepInfraLLM(LLM):
         """
         messages = chat_messages_to_list(messages)
         payload = self._build_payload(messages=messages, model=self.model, **kwargs)
-        result = self._request(CHAT_API_ENDPOINT, payload)
+        result = self._client.request(CHAT_API_ENDPOINT, payload)
 
         return ChatResponse(
             message=ChatMessage(
@@ -241,7 +241,7 @@ class DeepInfraLLM(LLM):
 
         content = ""
         role = MessageRole.ASSISTANT
-        for response_dict in self._request_stream(CHAT_API_ENDPOINT, payload):
+        for response_dict in self._client.request_stream(CHAT_API_ENDPOINT, payload):
             delta = response_dict["choices"][-1]["delta"]
             """
             Check if the delta contains content.
@@ -271,7 +271,7 @@ class DeepInfraLLM(LLM):
         """
         payload = self._build_payload(input=prompt, **kwargs)
 
-        result = await self._arequest(self.get_model_endpoint(), payload)
+        result = await self._client.arequest(self.get_model_endpoint(), payload)
         return CompletionResponse(
             text=result["results"][0]["generated_text"], raw=result
         )
@@ -294,7 +294,7 @@ class DeepInfraLLM(LLM):
 
         async def gen():
             content = ""
-            async for response_dict in self._arequest_stream(
+            async for response_dict in self._client.arequest_stream(
                 self.get_model_endpoint(), payload
             ):
                 content_delta = response_dict["token"]["text"]
@@ -322,7 +322,7 @@ class DeepInfraLLM(LLM):
         messages = chat_messages_to_list(chat_messages)
         payload = self._build_payload(messages=messages, model=self.model, **kwargs)
 
-        result = await self._arequest(CHAT_API_ENDPOINT, payload)
+        result = await self._client.arequest(CHAT_API_ENDPOINT, payload)
         return ChatResponse(
             message=ChatMessage(
                 role=result["choices"][-1]["message"]["role"],
@@ -351,7 +351,7 @@ class DeepInfraLLM(LLM):
         async def gen():
             content = ""
             role = MessageRole.ASSISTANT
-            async for response_dict in self._arequest_stream(
+            async for response_dict in self._client.arequest_stream(
                 CHAT_API_ENDPOINT, payload
             ):
                 delta = response_dict["choices"][-1]["delta"]
@@ -370,158 +370,12 @@ class DeepInfraLLM(LLM):
 
         return gen()
 
-    # Private Methods
-    def _request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Private method to perform a synchronous request to the DeepInfra API.
-
-        Args:
-            endpoint (str): The API endpoint to send the request to.
-            payload (Dict[str, Any]): The request payload.
-
-        Returns:
-                Dict[str, Any]: The API response.
-        """
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-
-        def perform_request():
-            response = requests.post(
-                self.get_url(endpoint),
-                json={
-                    **payload,
-                    "stream": False,
-                },
-                headers=headers,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            return response.json()
-
-        return retry_request(perform_request, max_retries=self.max_retries)
-
-    def _request_stream(
-        self, endpoint: str, payload: Dict[str, Any]
-    ) -> Generator[str, None, None]:
-        """
-        Private method to perform a synchronous streaming request to the DeepInfra API.
-
-        Args:
-            endpoint (str): The API endpoint to send the request to.
-            payload (Dict[str, Any]): The request payload.
-
-        Yields:
-            str: The streaming response from the API.
-        """
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-
-        def perform_request():
-            response = requests.post(
-                self.get_url(endpoint),
-                json={
-                    **payload,
-                    "stream": True,
-                },
-                headers=headers,
-                stream=True,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-
-            for line in response.iter_lines():
-                if resp := maybe_decode_sse_data(line):
-                    yield resp
-
-        response = retry_request(perform_request, max_retries=self.max_retries)
-        yield from response
-
-    async def _arequest(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Private method to perform an asynchronous request to the DeepInfra API.
-
-        Args:
-            endpoint (str): The API endpoint to send the request to.
-            payload (Dict[str, Any]): The request payload.
-
-        Returns:
-            Dict[str, Any]: The API response.
-        """
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-
-        async def perform_request():
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.get_url(endpoint),
-                    json={
-                        **payload,
-                        "stream": False,
-                    },
-                    headers=headers,
-                    timeout=self.timeout,
-                ) as response:
-                    response.raise_for_status()
-                    return await response.json()
-
-        return await aretry_request(perform_request, max_retries=self.max_retries)
-
-    async def _arequest_stream(
-        self, endpoint: str, payload: Dict[str, Any]
-    ) -> AsyncGenerator[str, None]:
-        """
-        Private method to perform an asynchronous streaming request to the DeepInfra API.
-
-        Args:
-            endpoint (str): The API endpoint to send the request to.
-            payload (Dict[str, Any]): The request payload.
-
-        Yields:
-            str: The streaming response from the API.
-        """
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-
-        async def perform_request():
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.get_url(endpoint),
-                    json={
-                        **payload,
-                        "stream": True,
-                    },
-                    headers=headers,
-                    timeout=self.timeout,
-                ) as response:
-                    response.raise_for_status()
-                    async for line in response.content:
-                        if resp := maybe_decode_sse_data(line):
-                            yield resp
-
-        response = await aretry_request(perform_request, max_retries=self.max_retries)
-        async for resp in response:
-            yield resp
-
-    # Utility Method
+    # Utility Methods
     def get_model_endpoint(self) -> str:
         """
         Get DeepInfra model endpoint.
         """
         return f"{INFERENCE_ENDPOINT}/{self.model}"
-
-    def get_url(self, endpoint: str) -> str:
-        """
-        Get DeepInfra API URL.
-        """
-        return f"{API_BASE}/{endpoint}"
 
     def _build_payload(self, **kwargs) -> Dict[str, Any]:
         """
