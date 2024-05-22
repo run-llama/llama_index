@@ -18,7 +18,9 @@ from llama_index.core.schema import (
     Document,
     TextNode,
 )
-from pgml import Collection, Pipeline
+from pgml import Collection, Pipeline, init_logger
+
+init_logger()
 
 _logger = logging.getLogger(__name__)
 
@@ -127,10 +129,7 @@ class PostgresMLIndex(BaseManagedIndex):
         docs: Sequence[Document],
         **insert_kwargs: Any,
     ) -> None:
-        nodes = [
-            TextNode(id_=doc.id_, text=doc.get_content(), metadata=doc.metadata)
-            for doc in docs
-        ]
+        nodes = [TextNode(**doc.dict()) for doc in docs]
         self._insert(nodes, **insert_kwargs)
 
     def delete_ref_doc(self, ref_doc_id: str) -> None:
@@ -142,9 +141,7 @@ class PostgresMLIndex(BaseManagedIndex):
         run_async_tasks([delete_documents()])
 
     def update_ref_doc(self, document: Document) -> None:
-        node = TextNode(
-            id_=document.id_, text=document.get_content(), metadata=document.metadata
-        )
+        node = TextNode(**document.dict())
         self._insert([node], merge=True)
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
@@ -180,14 +177,7 @@ class PostgresMLIndex(BaseManagedIndex):
         """Build a PostgresML index from a sequence of documents."""
         if collection_name is None:
             raise Exception("collection_name is a required argument")
-        nodes = [
-            TextNode(
-                id_=document.id_,
-                text=document.get_content(),
-                metadata=document.metadata,
-            )
-            for document in documents
-        ]
+        nodes = [TextNode(**doc.dict()) for doc in documents]
         return cls(
             collection_name,
             pipeline_name=pipeline_name,

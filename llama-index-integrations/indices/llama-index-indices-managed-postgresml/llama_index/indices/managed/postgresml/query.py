@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Generator, AsyncGenerator
 from copy import deepcopy
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -35,10 +35,22 @@ Answer: """,
 }
 
 
-class AsyncJsonGenerator:
+class AsyncJsonGenerator(Generator, AsyncGenerator):
     def __init__(self, rag_stream_results) -> None:
         self.rag_stream_results = rag_stream_results
         self.rag_stream = None
+
+    def asend(self):  # codespell:ignore
+        raise Exception("asend is not implemented")  # codespell:ignore
+
+    def send(self):
+        raise Exception("send is not implemented")
+
+    def athrow(self):
+        raise Exception("athrow is not implemented")
+
+    def throw(self):
+        raise Exception("throw is not implemented")
 
     def __iter__(self) -> "AsyncJsonGenerator":
         return self
