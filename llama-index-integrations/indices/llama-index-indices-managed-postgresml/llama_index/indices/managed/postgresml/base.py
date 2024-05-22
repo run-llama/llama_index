@@ -168,8 +168,8 @@ class PostgresMLIndex(BaseManagedIndex):
     @classmethod
     def from_documents(
         cls: Type[IndexType],
-        collection_name: str,
         documents: Sequence[Document],
+        collection_name: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         pipeline_schema: Optional[Dict[str, Any]] = None,
         pgml_database_url: Optional[str] = None,
@@ -178,6 +178,8 @@ class PostgresMLIndex(BaseManagedIndex):
         **kwargs: Any,
     ) -> IndexType:
         """Build a PostgresML index from a sequence of documents."""
+        if collection_name is None:
+            raise Exception("collection_name is a required argument")
         nodes = [
             TextNode(
                 id_=document.id_,
