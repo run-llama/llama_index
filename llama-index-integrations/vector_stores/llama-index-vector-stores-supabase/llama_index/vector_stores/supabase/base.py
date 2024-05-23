@@ -81,6 +81,11 @@ class SupabaseVectorStore(BasePydanticVectorStore):
                 name=collection_name, dimension=dimension
             )
 
+    def __del__(self) -> None:
+        """Close the client when the object is deleted."""
+        if self._client is not None:
+            self._client.disconnect()
+
     @property
     def client(self) -> None:
         """Get client."""
