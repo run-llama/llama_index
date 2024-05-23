@@ -131,7 +131,7 @@ class VectorMemory(BaseMemory):
     ) -> List[ChatMessage]:
         """Get chat history."""
         if input is None:
-            raise ValueError("Input must be provided to get chat history.")
+            return []
 
         # retrieve from index
         retriever = self.vector_index.as_retriever(**self.retriever_kwargs)

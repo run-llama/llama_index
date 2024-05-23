@@ -73,6 +73,7 @@ class BaseComposableMemory(BaseMemory):
     def from_defaults(
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
+        memory_sources: Optional[List[BaseMemory]] = None,
         llm: Optional[LLM] = None,
     ) -> "BaseMemory":
         """Create a chat memory from defaults."""

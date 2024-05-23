@@ -66,7 +66,7 @@ class SimpleComposableMemory(BaseComposableMemory):
 
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
-        return self._primary_memory.get(input)
+        return self._compose_message_histories(input, **kwargs)
 
     def _compose_message_histories(
         self, input: Optional[str] = None, **kwargs: Any
@@ -78,29 +78,34 @@ class SimpleComposableMemory(BaseComposableMemory):
         # get from secondary
         secondary_histories = []
         for mem in self._secondary_memory_sources:
-            secondary_histories.append(mem.get(input, **kwargs))
+            secondary_history = mem.get(input, **kwargs)
+            if len(secondary_history) > 0:
+                secondary_histories.append(secondary_history)
 
         # format secondary memory
-        single_secondary_memory_str = self._format_secondary_messages(
-            secondary_histories
-        )
+        if len(secondary_histories) > 0:
+            single_secondary_memory_str = self._format_secondary_messages(
+                secondary_histories
+            )
 
-        # add single_secondary_memory_str to chat_history
-        if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
-            system_message = messages[0].content.split(DEFAULT_INTRO_HISTORY_MESSAGE)[0]
-            messages[0] = ChatMessage(
-                content=system_message.strip() + single_secondary_memory_str,
-                role=MessageRole.SYSTEM,
-            )
-        else:
-            messages.insert(
-                0,
-                ChatMessage(
-                    content="You are a helpful assistant."
-                    + single_secondary_memory_str,
+            # add single_secondary_memory_str to chat_history
+            if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
+                system_message = messages[0].content.split(
+                    DEFAULT_INTRO_HISTORY_MESSAGE
+                )[0]
+                messages[0] = ChatMessage(
+                    content=system_message.strip() + single_secondary_memory_str,
                     role=MessageRole.SYSTEM,
-                ),
-            )
+                )
+            else:
+                messages.insert(
+                    0,
+                    ChatMessage(
+                        content="You are a helpful assistant."
+                        + single_secondary_memory_str,
+                        role=MessageRole.SYSTEM,
+                    ),
+                )
         return messages
 
     def get_and_set(
