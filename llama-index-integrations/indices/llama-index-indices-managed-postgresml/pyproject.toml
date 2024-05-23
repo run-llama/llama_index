@@ -24,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["PostgresML team@postgresml.org"]
+authors = ["PostgresML <team@postgresml.org>"]
 description = "llama-index managed postgresml integration"
 exclude = ["**/BUILD"]
 license = "MIT"
