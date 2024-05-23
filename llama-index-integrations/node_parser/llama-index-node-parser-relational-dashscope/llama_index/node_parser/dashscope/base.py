@@ -72,7 +72,6 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
 
         return self.parse_result(response_text, node)
 
-    # def post_service(self, my_input):
     def post_service(self, my_input: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", None)
         if DASHSCOPE_API_KEY is None:
