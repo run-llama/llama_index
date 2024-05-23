@@ -21,6 +21,7 @@ logger = logging.getLogger()
 class HologresVectorStore(BasePydanticVectorStore):
     """Hologres Vector Store.
 
+    Hologres is a one-stop real-time data warehouse, which can support high performance OLAP analysis and high QPS online services.
     Hologres supports vector processing and allows you to use vector data
     to show the characteristics of unstructured data.
     https://www.alibabacloud.com/help/en/hologres/user-guide/introduction-to-vector-processing
