@@ -43,7 +43,7 @@ if __name__ == "__main__":
         type=str,
         default="cpu",
         choices=["cpu", "xpu"],
-        help="The device (Intel CPU or Intel GPU) the embedding model runs on",
+        help="The device (Intel CPU or Intel GPU) the LLM model runs on",
     )
     parser.add_argument(
         "--query",

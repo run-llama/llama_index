@@ -199,7 +199,7 @@ class IpexLLM(CustomLLM):
             )
         if device_map not in ["cpu", "xpu"]:
             raise ValueError(
-                "IpexLLMEmbedding currently only supports device to be 'cpu' or 'xpu', "
+                "IpexLLM currently only supports device to be 'cpu' or 'xpu', "
                 f"but you have: {device_map}."
             )
         if "xpu" in device_map:
@@ -292,7 +292,7 @@ class IpexLLM(CustomLLM):
         load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Optional[str] = "cpu",
+        device_map: Literal["cpu", "xpu"] = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -338,7 +338,7 @@ class IpexLLM(CustomLLM):
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Optional[str] = "cpu",
+        device_map: Literal["cpu", "xpu"] = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,

@@ -36,14 +36,14 @@ if __name__ == "__main__":
             "sym_int5",
             "asym_int5",
             "sym_int8",
-            "fp4",
-            "fp8",
-            "fp16",
-            "bf16",
-            "fp8_e4m3",
-            "fp8_e5m2",
-            "nf3",
-            "nf4",
+            "fp4",  # only available on GPU
+            "fp8",  # only available on GPU
+            "fp16",  # only available on GPU
+            "bf16",  # only available on GPU
+            "fp8_e4m3",  # only available on GPU
+            "fp8_e5m2",  # only available on GPU
+            "nf3",  # only available on GPU
+            "nf4",  # only available on GPU
         ],
         help="The quantization type the model will convert to.",
     )

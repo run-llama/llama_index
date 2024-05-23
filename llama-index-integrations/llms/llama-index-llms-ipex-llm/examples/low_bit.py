@@ -42,7 +42,7 @@ if __name__ == "__main__":
         type=str,
         default="cpu",
         choices=["cpu", "xpu"],
-        help="The device (Intel CPU or Intel GPU) the embedding model runs on",
+        help="The device (Intel CPU or Intel GPU) the LLM model runs on",
     )
     parser.add_argument(
         "--query",
@@ -51,11 +51,19 @@ if __name__ == "__main__":
         default="What is IPEX-LLM?",
         help="The sentence you prefer for query the LLM",
     )
+    parser.add_argument(
+        "--save-lowbit-dir",
+        "-s",
+        type=str,
+        default="./lowbit",
+        help="The directory to save the low bit model",
+    )
 
     args = parser.parse_args()
     model_name = args.model_name
     device = args.device
     query = args.query
+    saved_lowbit_model_path = args.save_lowbit_dir
 
     llm = IpexLLM.from_model_id(
         model_name=model_name,
@@ -67,8 +75,6 @@ if __name__ == "__main__":
         messages_to_prompt=messages_to_prompt,
         device_map=device,
     )
-
-    saved_lowbit_model_path = "./zephyr-7b-alpha-low-bit"  # path to save low-bit model
 
     llm._model.save_low_bit(saved_lowbit_model_path)
     del llm
