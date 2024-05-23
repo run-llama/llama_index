@@ -22,6 +22,7 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     FilterCondition,
+    FilterOperator,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -54,28 +55,49 @@ def _build_metadata_filter_fn(
     filter_condition = cast(MetadataFilters, metadata_filters.condition)
 
     def filter_fn(node_id: str) -> bool:
+        def _process_filter_match(
+            operator: FilterOperator, value: Any, metadata_value: Any
+        ) -> bool:
+            if metadata_value is None:
+                return False
+            if operator == FilterOperator.EQ:
+                return metadata_value == value
+            if operator == FilterOperator.NE:
+                return metadata_value != value
+            if operator == FilterOperator.GT:
+                return metadata_value > value
+            if operator == FilterOperator.GTE:
+                return metadata_value >= value
+            if operator == FilterOperator.LT:
+                return metadata_value < value
+            if operator == FilterOperator.LTE:
+                return metadata_value <= value
+            if operator == FilterOperator.IN:
+                return value in metadata_value
+            if operator == FilterOperator.NIN:
+                return value not in metadata_value
+            if operator == FilterOperator.CONTAINS:
+                return value in metadata_value
+            if operator == FilterOperator.TEXT_MATCH:
+                return value.lower() in metadata_value.lower()
+            if operator == FilterOperator.ALL:
+                return all(val in metadata_value for val in value)
+            if operator == FilterOperator.ANY:
+                return any(val in metadata_value for val in value)
+            raise ValueError(f"Invalid operator: {operator}")
+
         metadata = metadata_lookup_fn(node_id)
 
         filter_matches_list = []
         for filter_ in filter_list:
             filter_matches = True
-            metadata_value = metadata.get(filter_.key, None)
-            if metadata_value is None:
-                filter_matches = False
-            elif isinstance(metadata_value, list):
-                if filter_.operator == "any":
-                    if not any(value in metadata_value for value in filter_.value):
-                        filter_matches = False
-                elif filter_.operator == "all":
-                    for value in filter_.value:
-                        if value not in metadata_value:
-                            filter_matches = False
-                else:
-                    if filter_.value not in metadata_value:
-                        filter_matches = False
-            elif isinstance(metadata_value, (int, float, str, bool)):
-                if metadata_value != filter_.value:
-                    filter_matches = False
+
+            filter_matches = _process_filter_match(
+                operator=filter_.operator,
+                value=filter_.value,
+                metadata_value=metadata.get(filter_.key, None),
+            )
+
             filter_matches_list.append(filter_matches)
 
         if filter_condition == FilterCondition.AND:
