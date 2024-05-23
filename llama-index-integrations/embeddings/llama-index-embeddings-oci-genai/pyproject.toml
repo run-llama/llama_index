@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.embeddings.oci_genai"
 
 [tool.llamahub.class_authors]
-OCIGenAIEmbeddings = "llama-index"
+OCIGenAIEmbeddings = "raveharpaz"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,6 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Arthur Cheng <arthur.cheng@oracle.com>", "Rave Harpaz <rave.harpaz@oracle.com>"]
 description = "llama-index embeddings oci-genai integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-oci-genai"
 packages = [{include = "llama_index/"}]
