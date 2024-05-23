@@ -18,6 +18,7 @@ class BrowserbaseWebReader(BaseReader):
     def __init__(
         self,
         api_key: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> None:
         try:
             from browserbase import Browserbase
@@ -26,13 +27,17 @@ class BrowserbaseWebReader(BaseReader):
                 "`browserbase` package not found, please run `pip install browserbase`"
             )
 
-        self.browserbase = Browserbase(api_key=api_key)
+        self.browserbase = Browserbase(api_key, project_id)
 
     def lazy_load_data(
-        self, urls: Sequence[str], text_content: bool = False
+        self,
+        urls: Sequence[str],
+        text_content: bool = False,
+        session_id: Optional[str] = None,
+        proxy: Optional[bool] = None,
     ) -> Iterator[Document]:
         """Load pages from URLs."""
-        pages = self.browserbase.load_urls(urls, text_content)
+        pages = self.browserbase.load_urls(urls, text_content, session_id, proxy)
 
         for i, page in enumerate(pages):
             yield Document(

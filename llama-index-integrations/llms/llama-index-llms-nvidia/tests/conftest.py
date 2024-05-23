@@ -55,7 +55,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def get_mode(config: pytest.Config) -> dict:
     nim_endpoint = config.getoption("--nim-endpoint")
     if nim_endpoint:
-        return {"mode": "nim", "base_url": nim_endpoint}
+        return {"base_url": nim_endpoint}
     return {}
 
 
@@ -67,7 +67,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
         elif metafunc.config.getoption("--all-models"):
-            models = [model.id for model in NVIDIA().mode(**mode).available_models]
+            models = [model.id for model in NVIDIA(**mode).available_models]
         metafunc.parametrize("chat_model", models, ids=models)
 
 
