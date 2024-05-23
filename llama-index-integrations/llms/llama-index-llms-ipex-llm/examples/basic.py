@@ -69,20 +69,20 @@ if __name__ == "__main__":
         device_map=device,
     )
 
-    print("----------------- Complete ------------------")
+    print("\n----------------- Complete ------------------")
     completion_response = llm.complete(query)
     print(completion_response.text)
-    print("----------------- Stream Complete ------------------")
+    print("\n----------------- Stream Complete ------------------")
     response_iter = llm.stream_complete(query)
     for response in response_iter:
         print(response.delta, end="", flush=True)
-    print("----------------- Chat ------------------")
+    print("\n----------------- Chat ------------------")
     from llama_index.core.llms import ChatMessage
 
     message = ChatMessage(role="user", content=query)
     resp = llm.chat([message])
     print(resp)
-    print("----------------- Stream Chat ------------------")
+    print("\n----------------- Stream Chat ------------------")
     message = ChatMessage(role="user", content=query)
     resp = llm.stream_chat([message], max_tokens=256)
     for r in resp:
