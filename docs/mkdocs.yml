@@ -476,7 +476,7 @@ nav:
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/azure_dynamic_sessions.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
-          - ./examples/tools/casssandra.ipynb
+          - ./examples/tools/cassandra.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
