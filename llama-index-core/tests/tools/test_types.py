@@ -8,5 +8,7 @@ def test_toolmetadata_openai_tool_description_max_length() -> None:
     invalid_description = "a" * (1 + openai_tool_description_limit)
 
     ToolMetadata(valid_description).to_openai_tool()
+    ToolMetadata(invalid_description).to_openai_tool(skip_length_check=True)
+
     with pytest.raises(ValueError):
         ToolMetadata(invalid_description).to_openai_tool()
