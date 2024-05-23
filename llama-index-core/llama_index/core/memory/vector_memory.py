@@ -21,11 +21,6 @@ DEFAULT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
 
 
-DEFAULT_SYSTEM_MESSAGE = (
-    "This is a set of relevant messages retrieved from longer-term history: "
-)
-
-
 def _stringify_obj(d: Any):
     """Utility function to convert all keys in a dictionary to strings."""
     if isinstance(d, list):
@@ -51,11 +46,6 @@ class VectorMemory(BaseMemory):
 
     vector_index: Any
     retriever_kwargs: Dict[str, Any] = Field(default_factory=dict)
-
-    system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE
-
-    # whether to condense all memory into a single message
-    return_single_message: bool = True
 
     # Whether to combine a user message with all subsequent messages
     # until the next user message into a single message
