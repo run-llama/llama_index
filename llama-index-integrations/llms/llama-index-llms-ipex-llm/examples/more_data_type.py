@@ -55,12 +55,20 @@ if __name__ == "__main__":
         choices=["cpu", "xpu"],
         help="The device the model will run on.",
     )
+    parser.add_argument(
+        "--query",
+        "-q",
+        type=str,
+        default="What is AI?",
+        help="The sentence you prefer for query the LLM",
+    )
 
     args = parser.parse_args()
     model_name = args.model_name
     tokenizer_name = args.tokenizer_name
     low_bit = args.low_bit
     device = args.device
+    query = args.query
 
     # load the model using low-bit format specified
     llm = IpexLLM.from_model_id(
@@ -77,6 +85,6 @@ if __name__ == "__main__":
     print(
         "\n----------------------- Text Stream Completion ---------------------------"
     )
-    response_iter = llm.stream_complete("Explain what is AI?")
+    response_iter = llm.stream_complete(query)
     for response in response_iter:
         print(response.delta, end="", flush=True)

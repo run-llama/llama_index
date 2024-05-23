@@ -27,7 +27,7 @@ pip install llama-index-llms-ipex-llm[xpu] --extra-index-url https://pytorch-ext
 The example [basic.py](./basic.py) shows how to run `IpexLLM` on Intel CPU or GPU and conduct tasks such as text completion. Run the example as following:
 
 ```bash
-python basic.py -m <path_to_model> -d <cpu_or_xpu> -t <text_to_embed> -q <query_to_embed>
+python basic.py -m <path_to_model> -d <cpu_or_xpu> -q <query_to_LLM>
 ```
 
 > Please note that in this example we'll use [HuggingFaceH4/zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha) model for demonstration. It requires updating `transformers` and `tokenizers` packages.
@@ -43,7 +43,7 @@ By default, `IpexLLM` loads the model in int4 format. To load a model in differe
 The example [more_data_type.py](./more_data_type.py) shows how to use the `load_in_low_bit` option and `device_map` option. Run the example as following:
 
 ```bash
-python more_data_type.py -m <path_to_model> -t <path_to_tokenizer> -l <low_bit_format> -d <device>
+python more_data_type.py -m <path_to_model> -t <path_to_tokenizer> -l <low_bit_format> -d <device> -q <query_to_LLM>
 ```
 
 > Note: If you're using [meta-llama/Llama-2-7b-hf](https://huggingface.co/meta-llama/Llama-2-7b-hf) model in this example, it is recommended to use transformers version
