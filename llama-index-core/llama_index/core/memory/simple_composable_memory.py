@@ -34,7 +34,18 @@ class SimpleComposableMemory(BaseComposableMemory):
 
     @classmethod
     def class_name(cls) -> str:
+        """Class name."""
         return "SimpleComposableMemory"
+
+    @property
+    def primary_memory(self) -> BaseMemory:
+        """The primary memory getter."""
+        return self._primary_memory
+
+    @property
+    def secondary_memory_sources(self) -> List[BaseMemory]:
+        """Getter for secondary memory sources."""
+        return self._secondary_memory_sources
 
     @classmethod
     def from_defaults(
@@ -50,6 +61,7 @@ class SimpleComposableMemory(BaseComposableMemory):
         self, secondary_chat_histories: List[List[ChatMessage]]
     ) -> str:
         """Formats retrieved historical messages into a single string."""
+        # TODO: use PromptTemplate for this
         formatted_history = "\n\n" + DEFAULT_INTRO_HISTORY_MESSAGE + "\n"
         for ix, chat_history in enumerate(secondary_chat_histories):
             formatted_history += (
@@ -107,14 +119,6 @@ class SimpleComposableMemory(BaseComposableMemory):
                     ),
                 )
         return messages
-
-    def get_and_set(
-        self, input: Optional[str] = None, **kwargs: Any
-    ) -> List[ChatMessage]:
-        """Invokes get() and sets the primary memory's messages."""
-        messages = self._compose_message_histories(input, **kwargs)
-        self._primary_memory.set(messages)
-        return self.get()
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history.
