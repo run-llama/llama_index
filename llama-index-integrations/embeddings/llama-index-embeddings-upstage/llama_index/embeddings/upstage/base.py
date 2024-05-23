@@ -45,10 +45,6 @@ def get_engine(model) -> Tuple[Any, Any]:
 class UpstageEmbedding(OpenAIEmbedding):
     """
     Class for Upstage embeddings.
-
-    Args:
-        model_name (str): Model for embedding.
-        Defaults to "solar-1-mini-embedding".
     """
 
     additional_kwargs: Dict[str, Any] = Field(
@@ -57,7 +53,7 @@ class UpstageEmbedding(OpenAIEmbedding):
 
     api_key: str = Field(description="The Upstage API key.")
     api_base: Optional[str] = Field(
-        default=DEFAULT_UPSTAGE_API_BASE, description="The base URL for OpenAI API."
+        default=DEFAULT_UPSTAGE_API_BASE, description="The base URL for Upstage API."
     )
     dimensions: Optional[int] = Field(
         None,
