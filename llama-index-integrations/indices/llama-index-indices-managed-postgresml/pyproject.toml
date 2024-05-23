@@ -12,10 +12,8 @@ contains_example = false
 import_path = "llama_index.indices.managed.postgresml"
 
 [tool.llamahub.class_authors]
-PostgresmlIndex = "llama-index"
-
-[tool.llamahub.secondary_class_authors]
-PostgresMLRetriever = "llama-index"
+PostgresMLRetriever = "postgresml"
+PostgresmlIndex = "postgresml"
 
 [tool.mypy]
 disallow_untyped_defs = true
