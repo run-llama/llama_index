@@ -2,7 +2,7 @@
 # https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/embeddings/llama-index-embeddings-huggingface/llama_index/embeddings/huggingface/base.py
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Literal
 from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
 
 from llama_index.core.base.embeddings.base import (
@@ -53,19 +53,16 @@ class IpexLLMEmbedding(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         cache_folder: Optional[str] = None,
         trust_remote_code: bool = False,
-        device: Optional[str] = None,
+        device: Literal["cpu", "xpu"] = "cpu",
         callback_manager: Optional[CallbackManager] = None,
         **model_kwargs,
     ):
-        # Set "cpu" as default device
-        self._device = device or "cpu"
-
-        if self._device not in ["cpu", "xpu"]:
-            logger.warning(
+        if device not in ["cpu", "xpu"]:
+            raise ValueError(
                 "IpexLLMEmbedding currently only supports device to be 'cpu' or 'xpu', "
-                f"but you have: {self._device}; Use 'cpu' instead."
+                f"but you have: {device}."
             )
-            self._device = "cpu"
+        self._device = device
 
         cache_folder = cache_folder or get_cache_dir()
 
