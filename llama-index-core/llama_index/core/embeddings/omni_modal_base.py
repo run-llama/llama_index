@@ -27,7 +27,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Self, assert_never
+from typing_extensions import LiteralString, Self, assert_never
 
 from llama_index.core.base.embeddings.base import (
     BaseEmbedding,
@@ -162,6 +162,11 @@ class QueryProcessors:
     )
 
 
+_K = TypeVar("_K", bound=LiteralString)
+_N = TypeVar("_N", bound=BaseNode)
+_D = TypeVar("_D")
+
+
 @dataclass(frozen=True)
 class Modality(Generic[K_co, N, D_co]):
     key: K_co
@@ -173,6 +178,20 @@ class Modality(Generic[K_co, N, D_co]):
     query_processor: QueryProcessor[D_co] = field(repr=False)
     """Defines how to process queries belonging to this modality."""
 
+    @staticmethod
+    def const(
+        *,
+        key: _K,
+        node_processor: NodeProcessor[_N, _D],
+        query_processor: QueryProcessor[_D],
+    ) -> "Modality[_K, _N, _D]":
+        """Enables a literal value to be assigned to the type parameter ``K``."""
+        return Modality(
+            key=key,
+            node_processor=node_processor,
+            query_processor=query_processor,
+        )
+
     def __hash__(self) -> int:
         return hash(self.key)
 
@@ -183,12 +202,12 @@ M = TypeVar("M", bound="Modality")
 class Modalities:
     """Modalities used by the core library."""
 
-    TEXT: Modality[Literal["text"], TextNode, str] = Modality(
+    TEXT = Modality.const(
         key="text",
         node_processor=NodeProcessors.TEXT,
         query_processor=QueryProcessors.TEXT,
     )
-    IMAGE: Modality[Literal["image"], ImageNode, ImageType] = Modality(
+    IMAGE = Modality.const(
         key="image",
         node_processor=NodeProcessors.IMAGE,
         query_processor=QueryProcessors.IMAGE,
