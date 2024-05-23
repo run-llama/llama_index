@@ -36,6 +36,14 @@ python basic.py -m <path_to_model> -d <cpu_or_xpu> -q <query_to_LLM>
 > pip install -U transformers==4.37.0 tokenizers==0.15.2
 > ```
 
+### Low Bit Example
+
+The example [low_bit.py](./low_bit.py) shows how to save and load low_bit model by `IpexLLM` on Intel CPU or GPU and conduct tasks such as text completion. Run the example as following:
+
+```bash
+python low_bit.py -m <path_to_model> -d <cpu_or_xpu> -q <query_to_LLM>
+```
+
 ### More Data Types Example
 
 By default, `IpexLLM` loads the model in int4 format. To load a model in different data formats like `sym_int5`, `sym_int8`, etc., you can use the `load_in_low_bit` option in `IpexLLM`. To load a model on different device like `cpu` or `xpu`, you can use the `device_map` option in `IpexLLM`.
