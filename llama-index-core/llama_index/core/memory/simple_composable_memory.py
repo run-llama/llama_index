@@ -30,6 +30,7 @@ class SimpleComposableMemory(BaseComposableMemory):
 
         self._primary_memory = sources[0]
         self._secondary_memory_sources = sources[1:]
+        super().__init__(sources=sources)
 
     @classmethod
     def class_name(cls) -> str:
@@ -49,7 +50,7 @@ class SimpleComposableMemory(BaseComposableMemory):
         self, secondary_chat_histories: List[List[ChatMessage]]
     ) -> str:
         """Formats retrieved historical messages into a single string."""
-        formatted_history = "\n\n" + DEFAULT_INTRO_HISTORY_MESSAGE
+        formatted_history = "\n\n" + DEFAULT_INTRO_HISTORY_MESSAGE + "\n"
         for ix, chat_history in enumerate(secondary_chat_histories):
             formatted_history += (
                 f"\n=====Relevant messages from memory source {ix + 1}=====\n\n"
@@ -65,13 +66,19 @@ class SimpleComposableMemory(BaseComposableMemory):
 
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
+        return self._primary_memory.get(input)
+
+    def _compose_message_histories(
+        self, input: Optional[str] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
         # get from primary
-        chat_history = self._primary_memory.get(input, **kwargs)
+        messages = self._primary_memory.get(input=input, **kwargs)
 
         # get from secondary
         secondary_histories = []
         for mem in self._secondary_memory_sources:
-            secondary_histories += mem.get(input, **kwargs)
+            secondary_histories.append(mem.get(input, **kwargs))
 
         # format secondary memory
         single_secondary_memory_str = self._format_secondary_messages(
@@ -79,12 +86,14 @@ class SimpleComposableMemory(BaseComposableMemory):
         )
 
         # add single_secondary_memory_str to chat_history
-        old_first_message = chat_history[0]
-        if old_first_message.role == MessageRole.SYSTEM:
-            system_message = old_first_message.split(DEFAULT_INTRO_HISTORY_MESSAGE)[0]
-            chat_history[0] = system_message.strip() + single_secondary_memory_str
+        if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
+            system_message = messages[0].content.split(DEFAULT_INTRO_HISTORY_MESSAGE)[0]
+            messages[0] = ChatMessage(
+                content=system_message.strip() + single_secondary_memory_str,
+                role=MessageRole.SYSTEM,
+            )
         else:
-            chat_history.insert(
+            messages.insert(
                 0,
                 ChatMessage(
                     content="You are a helpful assistant."
@@ -92,6 +101,15 @@ class SimpleComposableMemory(BaseComposableMemory):
                     role=MessageRole.SYSTEM,
                 ),
             )
+        return messages
+
+    def get_and_set(
+        self, input: Optional[str] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Invokes get() and sets the primary memory's messages."""
+        messages = self._compose_message_histories(input, **kwargs)
+        self._primary_memory.set(messages)
+        return self.get()
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history.
@@ -114,6 +132,10 @@ class SimpleComposableMemory(BaseComposableMemory):
 
     def reset(self) -> None:
         """Reset chat history."""
+        self._primary_memory.reset()
+
+    def reset_all(self) -> None:
+        """Reset all chat histories."""
         self._primary_memory.reset()
         for mem in self._secondary_memory_sources:
             mem.reset()
