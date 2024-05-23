@@ -11,10 +11,3 @@ sql_operator_mapper = {
     FilterOperator.NE: " NOT LIKE ",
     FilterOperator.IN: " IN ",
 }
-
-reranker_mapper = {
-    "default": "LinearCombinationReranker",
-    "cohere": "CohereReranker",
-    "colbert": "ColbertReranker",
-    "crossencoder": "CrossEncoderReranker",
-}
