@@ -35,16 +35,7 @@ import lancedb
 
 _logger = logging.getLogger(__name__)
 
-
-sql_operator_mapper = {
-    FilterOperator.EQ: " = ",
-    FilterOperator.GT: " > ",
-    FilterOperator.GTE: " >= ",
-    FilterOperator.LTE: " <= ",
-    FilterOperator.TEXT_MATCH: " LIKE ",
-    FilterOperator.NE: " NOT LIKE ",
-    FilterOperator.IN: " IN ",
-}
+from .util import sql_operator_mapper, reranker_mapper
 
 
 def _to_lance_filter(standard_filters: MetadataFilters, metadata_keys: list) -> Any:
@@ -269,9 +260,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 self._metadata_keys = list(metadata.keys())
             append_data = {
                 "id": node.node_id,
-                "doc_id": node.ref_doc_id,
-                "vector": node.get_embedding(),
-                "text": node.get_content(metadata_mode=MetadataMode.NONE),
+                self.doc_id_key: node.ref_doc_id,
+                self.vector_column_name: node.get_embedding(),
+                self.text_key: node.get_content(metadata_mode=MetadataMode.NONE),
                 "metadata": metadata,
             }
             data.append(append_data)
@@ -297,9 +288,25 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         table = self._connection.open_table(self._table_name)
         table.delete('document_id = "' + ref_doc_id + '"')
 
+    def _init_reranker(self, **kwargs: Any) -> None:
+        """Returns lancedb supported reranker object."""
+        reranker = kwargs.get("reranker")
+        if reranker:
+            reranker_cls = reranker_mapper.get(reranker)
+            mod = __import__("lancedb.rerankers", fromlist=["rerankers"])
+            _reranker = getattr(mod, reranker_cls)
+
+            if "reranker_kwargs" in kwargs:
+                return _reranker(**kwargs["reranker_kwargs"])
+            else:
+                return _reranker()
+        else:
+            raise NotImplementedError(f"Reranker {reranker} not implemented.")
+
     def query(
         self,
         query: VectorStoreQuery,
+        reranker: Optional[lancedb.rerankers.Reranker] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
@@ -314,15 +321,31 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             where = kwargs.pop("where", None)
 
+        query_type = kwargs.pop("query_type", "vector")
+
+        if query_type == "vector":
+            _query = query.query_embedding
+        else:
+            self._table.create_fts_index(self.text_key, replace=True)
+            if query_type == "hybrid":
+                _query = (query.query_embedding, query.query_str)
+            else:
+                _query = query.query_str
+
         lance_query = (
             self._table.search(
-                query=query.query_embedding,
+                query=_query,
                 vector_column_name=self.vector_column_name,
+                query_type=query_type,
             )
             .limit(query.similarity_top_k)
             .where(where)
             .nprobes(self.nprobes)
         )
+
+        if "reranker" in kwargs:
+            _reranker = self._init_reranker(**kwargs)
+            lance_query.rerank(reranker=_reranker)
 
         if self.refine_factor is not None:
             lance_query.refine_factor(self.refine_factor)
@@ -333,10 +356,11 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             raise Warning("query results are empty..")
 
         nodes = []
+
         for _, item in results.iterrows():
             try:
                 node = metadata_dict_to_node(item.metadata)
-                node.embedding = None
+                node.embedding = list(item[self.vector_column_name])
             except Exception:
                 # deprecated legacy logic for backward compatibility
                 _logger.debug(
