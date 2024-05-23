@@ -54,7 +54,7 @@ class CassandraDatabaseToolSpec(BaseToolSpec):
         Returns:
             List[Document]: A list of Document objects, each containing a table description.
         """
-        return [Document(text=self.db.get_keyspace_tables_str_no_throw(keyspace))]
+        return [Document(text=self.db.get_keyspace_tables_str(keyspace))]
 
     def cassandra_db_select_table_data(
         self, keyspace: str, table: str, predicate: str, limit: int
@@ -75,7 +75,5 @@ class CassandraDatabaseToolSpec(BaseToolSpec):
             List[Document]: A list of Document objects, each containing a row of data.
         """
         return [
-            Document(
-                text=self.db.get_table_data_no_throw(keyspace, table, predicate, limit)
-            )
+            Document(text=self.db.get_table_data(keyspace, table, predicate, limit))
         ]
