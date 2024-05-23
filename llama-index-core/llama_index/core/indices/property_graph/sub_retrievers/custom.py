@@ -7,6 +7,18 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 
 class CustomPGRetriever(BasePGRetriever):
+    """A retriever meant to be easily subclassed to implement custom retrieval logic.
+
+    The user only has to implement:
+    - `init` to initialize the retriever and assign any necessary attributes.
+    - `custom_retrieve` to implement the custom retrieval logic.
+    - `aretrieve_custom` (optional) to implement asynchronous retrieval logic.
+
+    Args:
+        graph_store (PropertyGraphStore):
+            The graph store to retrieve data from.
+    """
+
     def __init__(
         self,
         graph_store: PropertyGraphStore,

@@ -1,8 +1,7 @@
-import asyncio
 from tqdm import tqdm
 from typing import Any, List
 
-from llama_index.core.async_utils import run_jobs
+from llama_index.core.async_utils import asyncio_run, run_jobs
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BasePGRetriever,
@@ -11,6 +10,19 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class PGRetriever(BaseRetriever):
+    """A retriever that uses multiple sub-retrievers to retrieve nodes from a property graph.
+
+    Args:
+        sub_retrievers (List[BasePGRetriever]):
+            The sub-retrievers to use.
+        num_workers (int, optional):
+            The number of workers to use for async retrieval. Defaults to 4.
+        use_async (bool, optional):
+            Whether to use async retrieval. Defaults to True.
+        show_progress (bool, optional):
+            Whether to show progress bars. Defaults to False.
+    """
+
     def __init__(
         self,
         sub_retrievers: List[BasePGRetriever],
@@ -37,7 +49,7 @@ class PGRetriever(BaseRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         results = []
         if self.use_async:
-            return asyncio.run(self._aretrieve(query_bundle))
+            return asyncio_run(self._aretrieve(query_bundle))
 
         for sub_retriever in tqdm(self.sub_retrievers, disable=not self.show_progress):
             results.extend(sub_retriever.retrieve(query_bundle))

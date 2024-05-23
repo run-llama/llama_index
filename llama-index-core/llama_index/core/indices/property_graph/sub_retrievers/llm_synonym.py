@@ -25,6 +25,27 @@ DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
 
 
 class LLMSynonymRetriever(BasePGRetriever):
+    """A retriever that uses a language model to expand a query with synonyms.
+    The synonyms are then used to retrieve nodes from a property graph.
+
+    Args:
+        graph_store (PropertyGraphStore):
+            The graph store to retrieve data from.
+        include_text (bool, optional):
+            Whether to include source text in the retrieved nodes. Defaults to True.
+        synonym_prompt (Union[BasePromptTemplate, str], optional):
+            The template to use for the synonym expansion query.
+            Defaults to DEFAULT_SYNONYM_EXPAND_TEMPLATE.
+        max_keywords (int, optional):
+            The maximum number of synonyms to generate. Defaults to 10.
+        path_depth (int, optional):
+            The depth of the path to retrieve for each node. Defaults to 1 (i.e. a triple).
+        output_parsing_fn (Optional[callable], optional):
+            A callable function to parse the output of the language model. Defaults to None.
+        llm (Optional[LLM], optional):
+            The language model to use. Defaults to Settings.llm.
+    """
+
     def __init__(
         self,
         graph_store: PropertyGraphStore,

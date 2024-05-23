@@ -11,6 +11,24 @@ from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStore
 
 
 class VectorContextRetriever(BasePGRetriever):
+    """A retriever that uses a vector store to retrieve nodes based on a query.
+
+    Args:
+        graph_store (PropertyGraphStore):
+            The graph store to retrieve data from.
+        include_text (bool, optional):
+            Whether to include source text in the retrieved nodes. Defaults to True.
+        embed_model (Optional[BaseEmbedding], optional):
+            The embedding model to use. Defaults to Settings.embed_model.
+        vector_store (Optional[VectorStore], optional):
+            The vector store to use. Defaults to None.
+            Should be supplied if the graph store does not support vector queries.
+        similarity_top_k (int, optional):
+            The number of top similar kg nodes to retrieve. Defaults to 4.
+        path_depth (int, optional):
+            The depth of the path to retrieve for each node. Defaults to 1 (i.e. a triple).
+    """
+
     def __init__(
         self,
         graph_store: PropertyGraphStore,

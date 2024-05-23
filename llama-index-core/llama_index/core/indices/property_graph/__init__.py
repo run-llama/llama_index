@@ -4,8 +4,14 @@ from llama_index.core.indices.property_graph.sub_retrievers.base import BasePGRe
 from llama_index.core.indices.property_graph.sub_retrievers.custom import (
     CustomPGRetriever,
 )
+from llama_index.core.indices.property_graph.sub_retrievers.cypher_template import (
+    CypherTemplateRetriever,
+)
 from llama_index.core.indices.property_graph.sub_retrievers.llm_synonym import (
     LLMSynonymRetriever,
+)
+from llama_index.core.indices.property_graph.sub_retrievers.text_to_cypher import (
+    TextToCypherRetriever,
 )
 from llama_index.core.indices.property_graph.sub_retrievers.vector import (
     VectorContextRetriever,
@@ -22,14 +28,20 @@ from llama_index.core.indices.property_graph.transformations.simple_llm import (
 from llama_index.core.indices.property_graph.utils import default_parse_triplets_fn
 
 __all__ = [
+    # Index
     "PropertyGraphIndex",
+    # Retrievers
     "PGRetriever",
     "BasePGRetriever",
     "CustomPGRetriever",
+    "CypherTemplateRetriever",
     "LLMSynonymRetriever",
+    "TextToCypherRetriever",
     "VectorContextRetriever",
+    # Transformations / Extractors
     "ImplicitPathExtractor",
     "SchemaLLMPathExtractor",
     "SimpleLLMPathExtractor",
+    # Utils
     "default_parse_triplets_fn",
 ]

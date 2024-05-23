@@ -20,6 +20,19 @@ DEFAULT_PREAMBLE = "Here are some facts extracted from the provided text:\n\n"
 
 
 class BasePGRetriever(BaseRetriever):
+    """The base class for property graph retrievers.
+
+    By default, will retrieve nodes from the graph store and add source text to the nodes if needed.
+
+    Args:
+        graph_store (PropertyGraphStore):
+            The graph store to retrieve data from.
+        include_text (bool, optional):
+            Whether to include source text in the retrieved nodes. Defaults to True.
+        include_text_preamble (Optional[str], optional):
+            The preamble to include before the source text. Defaults to DEFAULT_PREAMBLE.
+    """
+
     def __init__(
         self,
         graph_store: PropertyGraphStore,

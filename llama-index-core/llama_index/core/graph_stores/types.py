@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Set, Protocol, runtime_checkable
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -251,7 +253,7 @@ class PropertyGraphStore(ABC):
 
     supports_structured_queries: bool = False
     supports_vector_queries: bool = False
-    schema: str = ""
+    text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
 
     @property
     def client(self) -> Any:
@@ -382,10 +384,13 @@ class PropertyGraphStore(ABC):
         """Persist the graph store to a file."""
         return
 
-    @abstractmethod
-    def get_schema(self, refresh: bool = False) -> str:
+    def get_schema(self, refresh: bool = False) -> Any:
         """Get the schema of the graph store."""
-        return self.schema
+        return None
+
+    def get_schema_str(self, refresh: bool = False) -> str:
+        """Get the schema of the graph store as a string."""
+        return str(self.get_schema(refresh=refresh))
 
     ### ----- Async Methods ----- ###
 
@@ -467,3 +472,7 @@ class PropertyGraphStore(ABC):
     async def aget_schema(self, refresh: bool = False) -> str:
         """Asynchronously get the schema of the graph store."""
         return self.get_schema(refresh=refresh)
+
+    async def aget_schema_str(self, refresh: bool = False) -> str:
+        """Asynchronously get the schema of the graph store as a string."""
+        return str(await self.aget_schema(refresh=refresh))

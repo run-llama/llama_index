@@ -20,7 +20,24 @@ from llama_index.core.schema import TransformComponent, BaseNode
 
 
 class SimpleLLMPathExtractor(TransformComponent):
-    """Extract triples from a graph."""
+    """Extract triples from a graph.
+
+    Uses an LLM and a simple prompt + output parsing to extract paths (i.e. triples) from text.
+
+    Args:
+        llm (LLM):
+            The language model to use.
+        extract_prompt (Union[str, PromptTemplate]):
+            The prompt to use for extracting triples.
+        parse_fn (callable):
+            A function to parse the output of the language model.
+        num_workers (int):
+            The number of workers to use for parallel processing.
+        max_paths_per_chunk (int):
+            The maximum number of paths to extract per chunk.
+        show_progress (bool):
+            Whether to show progress bars.
+    """
 
     llm: LLM
     extract_prompt: PromptTemplate

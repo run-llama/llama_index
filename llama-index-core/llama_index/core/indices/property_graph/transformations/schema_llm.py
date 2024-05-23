@@ -108,7 +108,29 @@ DEFAULT_SCHEMA_PATH_EXTRACT_PROMPT = PromptTemplate(
 
 
 class SchemaLLMPathExtractor(TransformComponent):
-    """Extract paths from a graph using a schema."""
+    """Extract paths from a graph using a schema.
+
+    Args:
+        llm (LLM):
+            The language model to use.
+        extract_prompt (Union[PromptTemplate, str], optional):
+            The template to use for the extraction query. Defaults to None.
+        possible_entities (Optional[TypeAlias], optional):
+            The possible entities to extract. Defaults to None.
+        possible_relations (Optional[TypeAlias], optional):
+            The possible relations to extract. Defaults to None.
+        strict (bool, optional):
+            Whether to enforce strict validation of entities and relations. Defaults to True.
+            If false, values outside of the schema will be allowed.
+        kg_schema_cls (Any, optional):
+            The schema class to use. Defaults to None.
+        kg_validation_schema (Dict[str, str], optional):
+            The validation schema to use. Defaults to None.
+        max_triplets_per_chunk (int, optional):
+            The maximum number of triplets to extract per chunk. Defaults to 10.
+        num_workers (int, optional):
+            The number of workers to use. Defaults to 4.
+    """
 
     llm: LLM
     extract_prompt: PromptTemplate

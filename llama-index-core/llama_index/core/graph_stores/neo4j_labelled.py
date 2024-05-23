@@ -1,8 +1,6 @@
 from typing import Any, List, Dict, Optional, Tuple
-import neo4j
-from llama_index.core.vector_stores.types import VectorStoreQuery
 
-
+from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
     Triplet,
@@ -11,6 +9,14 @@ from llama_index.core.graph_stores.types import (
     EntityNode,
     ChunkNode,
 )
+from llama_index.core.graph_stores.utils import (
+    clean_string_values,
+    value_sanitize,
+    LIST_LIMIT,
+)
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.vector_stores.types import VectorStoreQuery
+import neo4j
 
 
 def remove_empty_values(input_dict):
@@ -101,6 +107,7 @@ class Neo4jPGStore(PropertyGraphStore):
 
     supports_structured_queries: bool = True
     supports_vector_queries: bool = True
+    text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
 
     def __init__(
         self,
@@ -109,8 +116,12 @@ class Neo4jPGStore(PropertyGraphStore):
         url: str,
         database: Optional[str] = "neo4j",
         refresh_schema: bool = True,
+        sanitize_query_output: bool = True,
+        enhanced_schema: bool = False,
         **neo4j_kwargs: Any,
     ) -> None:
+        self.sanitize_query_output = sanitize_query_output
+        self.enhcnaced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password), **neo4j_kwargs
         )
@@ -176,7 +187,7 @@ class Neo4jPGStore(PropertyGraphStore):
             " AS relationships"
         )
         # Update node info
-        for node in schema_counts[0]["nodes"]:
+        for node in schema_counts[0].get("nodes", []):
             # Skip bloom labels
             if node["name"] in EXCLUDED_LABELS:
                 continue
@@ -191,7 +202,7 @@ class Neo4jPGStore(PropertyGraphStore):
                 if prop["property"] in enhanced_info:
                     prop.update(enhanced_info[prop["property"]])
         # Update rel info
-        for rel in schema_counts[0]["relationships"]:
+        for rel in schema_counts[0].get("relationships", []):
             # Skip bloom labels
             if rel["name"] in EXCLUDED_RELS:
                 continue
@@ -469,7 +480,12 @@ class Neo4jPGStore(PropertyGraphStore):
 
         with self._driver.session(database=self._database) as session:
             result = session.run(query, param_map)
-            return [d.data() for d in result]
+            full_result = [d.data() for d in result]
+
+        if self.sanitize_query_output:
+            return value_sanitize(full_result)
+
+        return full_result
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -683,5 +699,137 @@ class Neo4jPGStore(PropertyGraphStore):
         # Combine all parts of the Cypher query
         return f"{match_clause}\n{with_clause}\n{return_clause}"
 
-    def get_schema(self) -> Any:
+    def get_schema(self, refresh: bool = False) -> Any:
+        if refresh:
+            self.refresh_schema()
+
         return self.structured_schema
+
+    def get_schema_str(self, refresh: bool = False) -> str:
+        schema = self.get_schema(refresh=refresh)
+
+        formatted_node_props = []
+        formatted_rel_props = []
+
+        if self.enhcnaced_schema:
+            # Enhanced formatting for nodes
+            for node_type, properties in schema["node_props"].items():
+                formatted_node_props.append(f"- **{node_type}**")
+                for prop in properties:
+                    example = ""
+                    if prop["type"] == "STRING" and prop.get("values"):
+                        if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
+                            example = (
+                                f'Example: "{clean_string_values(prop["values"][0])}"'
+                                if prop["values"]
+                                else ""
+                            )
+                        else:  # If less than 10 possible values return all
+                            example = (
+                                (
+                                    "Available options: "
+                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                )
+                                if prop["values"]
+                                else ""
+                            )
+
+                    elif prop["type"] in [
+                        "INTEGER",
+                        "FLOAT",
+                        "DATE",
+                        "DATE_TIME",
+                        "LOCAL_DATE_TIME",
+                    ]:
+                        if prop.get("min") is not None:
+                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
+                        else:
+                            example = (
+                                f'Example: "{prop["values"][0]}"'
+                                if prop.get("values")
+                                else ""
+                            )
+                    elif prop["type"] == "LIST":
+                        # Skip embeddings
+                        if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
+                            continue
+                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                    formatted_node_props.append(
+                        f"  - `{prop['property']}`: {prop['type']} {example}"
+                    )
+
+            # Enhanced formatting for relationships
+            for rel_type, properties in schema["rel_props"].items():
+                formatted_rel_props.append(f"- **{rel_type}**")
+                for prop in properties:
+                    example = ""
+                    if prop["type"] == "STRING":
+                        if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
+                            example = (
+                                f'Example: "{clean_string_values(prop["values"][0])}"'
+                                if prop.get("values")
+                                else ""
+                            )
+                        else:  # If less than 10 possible values return all
+                            example = (
+                                (
+                                    "Available options: "
+                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                )
+                                if prop.get("values")
+                                else ""
+                            )
+                    elif prop["type"] in [
+                        "INTEGER",
+                        "FLOAT",
+                        "DATE",
+                        "DATE_TIME",
+                        "LOCAL_DATE_TIME",
+                    ]:
+                        if prop.get("min"):  # If we have min/max
+                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
+                        else:  # return a single value
+                            example = (
+                                f'Example: "{prop["values"][0]}"'
+                                if prop.get("values")
+                                else ""
+                            )
+                    elif prop["type"] == "LIST":
+                        # Skip embeddings
+                        if prop["min_size"] > LIST_LIMIT:
+                            continue
+                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                    formatted_rel_props.append(
+                        f"  - `{prop['property']}: {prop['type']}` {example}"
+                    )
+        else:
+            # Format node properties
+            for label, props in schema["node_props"].items():
+                props_str = ", ".join(
+                    [f"{prop['property']}: {prop['type']}" for prop in props]
+                )
+                formatted_node_props.append(f"{label} {{{props_str}}}")
+
+            # Format relationship properties using structured_schema
+            for type, props in schema["rel_props"].items():
+                props_str = ", ".join(
+                    [f"{prop['property']}: {prop['type']}" for prop in props]
+                )
+                formatted_rel_props.append(f"{type} {{{props_str}}}")
+
+        # Format relationships
+        formatted_rels = [
+            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+            for el in schema["relationships"]
+        ]
+
+        return "\n".join(
+            [
+                "Node properties:",
+                "\n".join(formatted_node_props),
+                "Relationship properties:",
+                "\n".join(formatted_rel_props),
+                "The relationships:",
+                "\n".join(formatted_rels),
+            ]
+        )
