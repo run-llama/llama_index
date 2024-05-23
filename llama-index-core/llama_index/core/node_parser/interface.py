@@ -156,6 +156,9 @@ class NodeParser(TransformComponent, ABC):
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
         return self.get_nodes_from_documents(nodes, **kwargs)
 
+    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        return await self.aget_nodes_from_documents(nodes, **kwargs)
+
 
 class TextSplitter(NodeParser):
     @abstractmethod
