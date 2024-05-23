@@ -87,10 +87,6 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
             os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com")
             + "/api/v1/indices/component/configed_transformations/spliter"
         )
-        response = requests.post(
-            service_url, data=json.dumps(my_input), headers=headers
-        )
-        response_text = response.json()
         try:
             response = requests.post(
                 service_url, data=json.dumps(my_input), headers=headers
