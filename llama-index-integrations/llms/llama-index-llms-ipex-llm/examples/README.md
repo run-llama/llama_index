@@ -41,7 +41,7 @@ python basic.py -m <path_to_model> -d <cpu_or_xpu> -q <query_to_LLM>
 The example [low_bit.py](./low_bit.py) shows how to save and load low_bit model by `IpexLLM` on Intel CPU or GPU and conduct tasks such as text completion. Run the example as following:
 
 ```bash
-python low_bit.py -m <path_to_model> -d <cpu_or_xpu> -q <query_to_LLM>
+python low_bit.py -m <path_to_model> -d <cpu_or_xpu> -q <query_to_LLM> -s <save_low_bit_dir>
 ```
 
 ### More Data Types Example
