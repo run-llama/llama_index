@@ -1,13 +1,26 @@
 import asyncio
 import inspect
-from asyncio import CancelledError
+import time
+from asyncio import (
+    CancelledError,
+    get_event_loop,
+    Queue,
+    gather,
+    sleep,
+    AbstractEventLoop,
+)
 from collections import Counter
+from threading import Lock
+from typing import Callable, Optional, Any, Dict, List
 
 import pytest
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation.dispatcher import Dispatcher
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.instrumentation.span import BaseSpan
+from llama_index.core.instrumentation.span_handlers import BaseSpanHandler
+from llama_index.core.types import Thread
 from unittest.mock import patch, MagicMock
 
 dispatcher = instrument.get_dispatcher("test")
@@ -61,18 +74,14 @@ async def async_func_exc(a, b=3, c=4, **kwargs):
 
 @dispatcher.span
 def func_with_event(a, b=3, **kwargs):
-    dispatch_event = dispatcher.get_dispatch_event()
-
-    dispatch_event(_TestStartEvent())
+    dispatcher.event(_TestStartEvent())
 
 
 @dispatcher.span
 async def async_func_with_event(a, b=3, **kwargs):
-    dispatch_event = dispatcher.get_dispatch_event()
-
-    dispatch_event(_TestStartEvent())
+    dispatcher.event(_TestStartEvent())
     await asyncio.sleep(0.1)
-    dispatch_event(_TestEndEvent())
+    dispatcher.event(_TestEndEvent())
 
 
 class _TestObject:
@@ -94,19 +103,15 @@ class _TestObject:
 
     @dispatcher.span
     def func_with_event(self, a, b=3, **kwargs):
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(_TestStartEvent())
+        dispatcher.event(_TestStartEvent())
 
     @dispatcher.span
     async def async_func_with_event(self, a, b=3, **kwargs):
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(_TestStartEvent())
+        dispatcher.event(_TestStartEvent())
         await asyncio.sleep(0.1)
         await self.async_func(1)  # this should create a new span_id
         # that is fine because we have dispatch_event
-        dispatch_event(_TestEndEvent())
+        dispatcher.event(_TestEndEvent())
 
 
 @patch.object(Dispatcher, "span_exit")
@@ -544,3 +549,113 @@ async def test_dispatcher_async_fire_event_with_instance(
 
     # span_exit
     mock_span_exit.call_count == 2
+
+
+def test_context_nesting():
+    # arrange
+    # A binary tree of parent-child spans
+    h = 7  # height of binary tree
+    s = 2 ** (h + 1) - 1  # number of spans
+    # Below is a tree with h=3 (s=15).
+    # Tn: n-th span run in thread
+    # An: n-th span run in async
+    #               T1
+    #       ┌───────┴───────┐
+    #       A2              A3
+    #   ┌───┴───┐       ┌───┴───┐
+    #   T4      T5      A6      A7
+    # ┌─┴─┐   ┌─┴─┐   ┌─┴─┐   ┌─┴─┐
+    # T8  T9  A10 A11 T12 T13 A14 A15
+    # Note that child.n // 2 == parent.n, e.g. 11 // 2 == 5.
+    # We'll check that the parent-child associations are correct.
+
+    class Span(BaseSpan):
+        n: int
+
+    class Event(BaseEvent):
+        n: int
+
+    lock = Lock()
+    spans: Dict[str, Span] = {}
+    events: List[Event] = []
+
+    class SpanHandler(BaseSpanHandler):
+        def new_span(
+            self,
+            id_: str,
+            bound_args: inspect.BoundArguments,
+            instance: Optional[Any] = None,
+            parent_span_id: Optional[str] = None,
+            **kwargs: Any,
+        ) -> None:
+            n = bound_args.args[0]
+            span = Span(n=n, id_=id_, parent_id=parent_span_id)
+            with lock:
+                spans[id_] = span
+
+        def prepare_to_drop_span(self, *args: Any, **kwargs: Any) -> None:
+            ...
+
+        def prepare_to_exit_span(self, *args: Any, **kwargs: Any) -> None:
+            ...
+
+    class EventHandler(BaseEventHandler):
+        def handle(self, event: Event, **kwargs) -> None:
+            with lock:
+                events.append(event)
+
+    dispatcher = Dispatcher(
+        event_handlers=[EventHandler()],
+        span_handlers=[SpanHandler()],
+        propagate=False,
+    )
+
+    @dispatcher.span
+    def foo(n: int, callback: Callable[[], None] = lambda: None) -> None:
+        dispatcher.event(Event(n=n))
+        if n > 2**h - 1:
+            callback()
+            return
+        if n % 2:
+            asyncio.run(_bar(n))
+        else:
+            t0 = Thread(target=foo, args=(n * 2,))
+            t1 = Thread(target=foo, args=(n * 2 + 1,))
+            t0.start(), t1.start()
+            time.sleep(0.01)
+            t0.join(), t1.join()
+        callback()
+
+    @dispatcher.span
+    async def bar(n: int) -> None:
+        dispatcher.event(Event(n=n))
+        if n > 2**h - 1:
+            return
+        if n % 2:
+            await _bar(n)
+        else:
+            q, loop = Queue(), get_event_loop()
+            Thread(target=foo, args=(n * 2, _callback(q, loop))).start()
+            Thread(target=foo, args=(n * 2 + 1, _callback(q, loop))).start()
+            await gather(q.get(), q.get())
+
+    def _callback(q: Queue, loop: AbstractEventLoop) -> Callable[[], None]:
+        return lambda: loop.call_soon_threadsafe(q.put_nowait(1))
+
+    async def _bar(n: int) -> None:
+        await gather(bar(n * 2), bar(n * 2 + 1), sleep(0.01))
+
+    # act
+    foo(1)
+
+    # assert
+    # parent-child associations should be correct
+    assert sorted(span.n for span in spans.values()) == list(range(1, s + 1))
+    for span in spans.values():
+        if span.n > 1:
+            assert span.n // 2 == spans[span.parent_id].n
+
+    # event-span associations should be correct
+    assert sorted(event.n for event in events) == list(range(1, s + 1))
+    for event in events:
+        assert event.n == spans[event.span_id].n

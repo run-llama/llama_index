@@ -1,5 +1,4 @@
 import logging
-from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import torch
@@ -42,7 +41,7 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 from llama_index.core.prompts.base import PromptTemplate
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools.types import BaseTool
 from llama_index.llms.huggingface.utils import (
