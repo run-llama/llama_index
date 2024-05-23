@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.deepinfra"
 
 [tool.llamahub.class_authors]
-DeepInfraLLM = "llama-index"
+DeepInfraLLM = "Oğuz Vuruşkaner <https://github.com/ovuruska>"
 
 [tool.mypy]
 disallow_untyped_defs = true
