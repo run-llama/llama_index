@@ -67,7 +67,7 @@ Notes:
 
 If you already have documents in your corpus, you can just access the data directly by constructing the `VectaraIndex` as follows:
 
-```
+```python
 index = VectaraIndex()
 ```
 
@@ -75,15 +75,15 @@ And the index will connect to the existing corpus without loading any new docume
 
 To query the index, simply construct a query engine as follows:
 
-```
+```python
 query_engine = index.as_query_engine(summary_enabled=True)
 print(query_engine.query("What did the author do growing up?"))
 ```
 
 Or you can use the chat functionality:
 
-```
-Chat_engine = index.as_chat_engine()
+```python
+chat_engine = index.as_chat_engine()
 print(chat_engine.chat("What did the author do growing up?").response)
 ```
 

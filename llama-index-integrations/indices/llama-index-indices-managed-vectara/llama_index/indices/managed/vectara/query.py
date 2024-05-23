@@ -26,7 +26,8 @@ from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 
 
 class VectaraQueryEngine(BaseQueryEngine):
-    """Retriever query engine for Vectara.
+    """
+    Retriever query engine for Vectara.
 
     Args:
         retriever (VectaraRetriever): A retriever object.
@@ -65,7 +66,8 @@ class VectaraQueryEngine(BaseQueryEngine):
         summary_enabled: bool = False,
         **kwargs: Any,
     ) -> "VectaraQueryEngine":
-        """Initialize a VectaraQueryEngine object.".
+        """
+        Initialize a VectaraQueryEngine object.".
 
         Args:
             retriever (VectaraRetriever): A Vectara retriever object.
