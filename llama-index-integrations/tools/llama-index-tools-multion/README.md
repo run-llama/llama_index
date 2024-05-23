@@ -12,7 +12,7 @@ to use this integration
 
 ## Usage
 
-This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/multion.ipynb)
+This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-multion/examples/multion.ipynb).
 
 Here's an example usage of the MultionToolSpec.
 

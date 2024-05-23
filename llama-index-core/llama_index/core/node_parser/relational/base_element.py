@@ -245,7 +245,7 @@ class BaseElementNodeParser(NodeParser):
     def get_nodes_from_elements(
         self,
         elements: List[Element],
-        metadata_inherited: Optional[Dict[str, Any]] = None,
+        node_inherited: Optional[TextNode] = None,
         ref_doc_text: Optional[str] = None,
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
@@ -303,9 +303,14 @@ class BaseElementNodeParser(NodeParser):
 
                 # attempt to find start_char_idx for table
                 # raw table string regardless if perfect or not is stored in element.element
-                start_char_idx = ref_doc_text.find(str(element.element))
-                if start_char_idx >= 0:
-                    end_char_idx = start_char_idx + len(str(element.element))
+
+                if ref_doc_text:
+                    start_char_idx = ref_doc_text.find(str(element.element))
+                    if start_char_idx >= 0:
+                        end_char_idx = start_char_idx + len(str(element.element))
+                    else:
+                        start_char_idx = None
+                        end_char_idx = None
                 else:
                     start_char_idx = None
                     end_char_idx = None
@@ -357,8 +362,14 @@ class BaseElementNodeParser(NodeParser):
 
         # remove empty nodes and keep node original metadata inherited from parent nodes
         for node in nodes:
-            if metadata_inherited:
-                node.metadata.update(metadata_inherited)
+            if node_inherited and node_inherited.metadata:
+                node.metadata.update(node_inherited.metadata)
+                node.excluded_embed_metadata_keys = (
+                    node_inherited.excluded_embed_metadata_keys
+                )
+                node.excluded_llm_metadata_keys = (
+                    node_inherited.excluded_llm_metadata_keys
+                )
         return [node for node in nodes if len(node.text) > 0]
 
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:

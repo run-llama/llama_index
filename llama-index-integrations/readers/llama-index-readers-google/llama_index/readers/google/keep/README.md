@@ -28,7 +28,7 @@ This loader is designed to be used as a way to load data into [LlamaIndex](https
 
 ```python
 from llama_index import VectorStoreIndex
-from llama_hub.google_keep import GoogleKeepReader
+from llama_index.readers.google import GoogleKeepReader
 
 gkeep_ids = ["1wf-y2pd9C878Oh-FmLH7Q_BQkljdm6TQal-c1pUfrec"]
 loader = GoogleKeepReader()

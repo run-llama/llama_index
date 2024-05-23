@@ -1,4 +1,5 @@
-"""Data Connectors for LlamaIndex.
+"""
+Data Connectors for LlamaIndex.
 
 This module contains the data connectors for LlamaIndex. Each connector inherits
 from a `BaseReader` class, connects to a data source, and loads Document objects
@@ -14,12 +15,16 @@ from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.readers.download import download_loader
 
 # readers
-from llama_index.core.readers.file.base import SimpleDirectoryReader
+from llama_index.core.readers.file.base import (
+    SimpleDirectoryReader,
+    FileSystemReaderMixin,
+)
 from llama_index.core.readers.string_iterable import StringIterableReader
 from llama_index.core.schema import Document
 
 __all__ = [
     "SimpleDirectoryReader",
+    "FileSystemReaderMixin",
     "ReaderConfig",
     "Document",
     "StringIterableReader",

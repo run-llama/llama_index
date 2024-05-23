@@ -4,7 +4,7 @@ This tool allows Agents to use Microsoft Azure speech services to transcribe aud
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/azure_speech.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-azure-speech/examples/azure_speech.ipynb)
 
 ```python
 from llama_index.tools.azure_speech import AzureSpeechToolSpec
