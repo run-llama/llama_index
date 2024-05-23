@@ -303,9 +303,14 @@ class BaseElementNodeParser(NodeParser):
 
                 # attempt to find start_char_idx for table
                 # raw table string regardless if perfect or not is stored in element.element
-                start_char_idx = ref_doc_text.find(str(element.element))
-                if start_char_idx >= 0:
-                    end_char_idx = start_char_idx + len(str(element.element))
+
+                if ref_doc_text:
+                    start_char_idx = ref_doc_text.find(str(element.element))
+                    if start_char_idx >= 0:
+                        end_char_idx = start_char_idx + len(str(element.element))
+                    else:
+                        start_char_idx = None
+                        end_char_idx = None
                 else:
                     start_char_idx = None
                     end_char_idx = None
