@@ -31,7 +31,7 @@ from llama_index.core.llms.callbacks import (
 
 from llama_index.llms.deepinfra.utils import (
     chat_messages_to_list,
-    maybe_extract_text_from_json,
+    maybe_extract_from_json,
 )
 
 from llama_index.llms.deepinfra.constants import (
@@ -171,7 +171,7 @@ class DeepInfraLLM(LLM):
         """
         payload = self._build_payload(prompt=prompt, **kwargs)
         result = self._client.request(INFERENCE_ENDPOINT, payload)
-        return CompletionResponse(text=maybe_extract_text_from_json(result), raw=result)
+        return CompletionResponse(text=maybe_extract_from_json(result), raw=result)
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs) -> CompletionResponseGen:
@@ -189,7 +189,7 @@ class DeepInfraLLM(LLM):
 
         content = ""
         for response_dict in self._client.request_stream(INFERENCE_ENDPOINT, payload):
-            content_delta = maybe_extract_text_from_json(response_dict)
+            content_delta = maybe_extract_from_json(response_dict)
             content += content_delta
             yield CompletionResponse(
                 text=content, delta=content_delta, raw=response_dict
@@ -249,9 +249,10 @@ class DeepInfraLLM(LLM):
                 message = ChatMessage(
                     role=role,
                     content=content,
-                    delta=content_delta,
                 )
-                yield ChatResponse(message=message, raw=response_dict)
+                yield ChatResponse(
+                    message=message, raw=response_dict, delta=content_delta
+                )
 
     # Asynchronous Methods
     @llm_completion_callback()
@@ -269,7 +270,7 @@ class DeepInfraLLM(LLM):
         payload = self._build_payload(prompt=prompt, **kwargs)
 
         result = await self._client.arequest(INFERENCE_ENDPOINT, payload)
-        return CompletionResponse(text=maybe_extract_text_from_json(result), raw=result)
+        return CompletionResponse(text=maybe_extract_from_json(result), raw=result)
 
     @llm_completion_callback()
     async def astream_complete(
@@ -292,7 +293,7 @@ class DeepInfraLLM(LLM):
             async for response_dict in self._client.arequest_stream(
                 INFERENCE_ENDPOINT, payload
             ):
-                content_delta = maybe_extract_text_from_json(response_dict)
+                content_delta = maybe_extract_from_json(response_dict)
                 content += content_delta
                 yield CompletionResponse(
                     text=content, delta=content_delta, raw=response_dict
@@ -359,9 +360,10 @@ class DeepInfraLLM(LLM):
                     message = ChatMessage(
                         role=role,
                         content=content,
-                        delta=content_delta,
                     )
-                    yield ChatResponse(message=message, raw=response_dict)
+                    yield ChatResponse(
+                        message=message, raw=response_dict, delta=content_delta
+                    )
 
         return gen()
 

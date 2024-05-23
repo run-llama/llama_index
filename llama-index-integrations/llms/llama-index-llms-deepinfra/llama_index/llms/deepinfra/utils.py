@@ -35,7 +35,7 @@ def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
         return None
 
 
-def maybe_extract_text_from_json(data: dict) -> Union[str, None]:
+def maybe_extract_from_json(data: dict, key: str = "text") -> Union[str, None]:
     """
     Extract text from a JSON response.
 
@@ -46,8 +46,8 @@ def maybe_extract_text_from_json(data: dict) -> Union[str, None]:
         Union[str, None]: The extracted text or None.
     """
     if "choices" in data:
-        if len(data["choices"]) > 0 and "text" in data["choices"][0]:
-            return data["choices"][0]["text"]
+        if len(data["choices"]) > 0 and key in data["choices"][0]:
+            return data["choices"][0][key]
         else:
             return None
     else:
