@@ -55,7 +55,7 @@ class VectorMemory(BaseMemory):
     system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE
 
     # whether to condense all memory into a single message
-    return_single_message: bool = False
+    return_single_message: bool = True
 
     # Whether to combine a user message with all subsequent messages
     # until the next user message into a single message
@@ -138,27 +138,11 @@ class VectorMemory(BaseMemory):
         nodes = retriever.retrieve(input or "")
 
         # retrieve underlying messages
-        messages = [
+        return [
             ChatMessage.parse_obj(sub_dict)
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
-
-        # add system message
-        if self.system_message:
-            messages.insert(
-                0, ChatMessage.from_str(self.system_message, role=MessageRole.SYSTEM)
-            )
-
-        if self.return_single_message:
-            # condense all messages into a single message
-            messages = [
-                ChatMessage.from_str(
-                    " ".join([m.content for m in messages]), role=MessageRole.USER
-                )
-            ]
-
-        return messages
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""

@@ -56,6 +56,28 @@ class BaseMemory(BaseComponent):
         """Reset chat history."""
 
 
+class BaseComposableMemory(BaseMemory):
+    """Base class for a composing various memory sources."""
+
+    sources: List[BaseMemory] = Field(
+        default_factory=list, description="Memory modules."
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "BaseComposableMemory"
+
+    @classmethod
+    @abstractmethod
+    def from_defaults(
+        cls,
+        chat_history: Optional[List[ChatMessage]] = None,
+        llm: Optional[LLM] = None,
+    ) -> "BaseMemory":
+        """Create a chat memory from defaults."""
+
+
 class BaseChatStoreMemory(BaseMemory):
     """Base class for any .
 
