@@ -156,6 +156,15 @@ query_engine = index.as_query_engine(
 If no sub-retrievers are provided, the defaults are
 `LLMSynonymRetriever` and `VectorContextRetriever` (if embeddings are enabled).
 
+All retrievers currently include:
+- `LLMSynonymRetriever` - retrieve based on LLM generated keywords/synonyms
+- `VectorContextRetriever` - retrieve based on embedded graph nodes
+- `TextToCypherRetriever` - ask the LLM to generate cypher based on the schema of the property graph
+- `CypherTemplateRetriever` - use a cypher template with params inferred by the LLM
+- `CustomPGRetriever` - easy to subclass and implement custom retrieval logic
+
+Read on below for more details on all retrievers.
+
 #### (default) `LLMSynonymRetriever`
 
 The `LLMSynonymRetriever` takes the query, and tries to generate keywords and synonyms to retrieve nodes (and therefore the paths connected to those nodes).
@@ -185,7 +194,7 @@ def parse_fn(self, output: str) -> list[str]:
 
 
 synonym_retriever = LLMSynonymRetriever(
-    graph_store=index.property_graph_store,
+    index.property_graph_store,
     llm=llm,
     # include source chunk text with retrieved paths
     include_text=False,
@@ -209,7 +218,7 @@ If your graph store supports vectors, then you only need to manage that graph st
 from llama_index.core.indices.property_graph import VectorContextRetriever
 
 vector_retriever = LPGVectorRetriever(
-    graph_store=index.property_graph_store,
+    index.property_graph_store,
     # only needed when the graph store doesn't support vector queries
     # vector_store=index.vector_store,
     embed_model=embed_model,
@@ -224,6 +233,80 @@ vector_retriever = LPGVectorRetriever(
 )
 
 retriever = index.as_retriever(sub_retrievers=[vector_retriever])
+```
+
+#### `TextToCypherRetriever`
+
+The `TextToCypherRetriever` uses a graph store schema, your query, and a prompt template for text-to-cypher in order to generate and execute a cypher query.
+
+**NOTE:** Since the `SimplePropertyGraphStore` is not actually a graph database, it does not support cypher queries.
+
+You can inspect the schema by using `index.property_graph_store.get_schema_str()`.
+
+```python
+from llama_index.core.indices.property_graph import TextToCypherRetriever
+
+DEFAULT_RESPONSE_TEMPLATE = (
+    "Generated Cypher query:\n{query}\n\n" "Cypher Response:\n{response}"
+)
+DEFAULT_ALLOWED_FIELDS = ["text", "label", "type"]
+
+DEFAULT_TEXT_TO_CYPHER_TEMPLATE = (
+    index.property_graph_store.text_to_cypher_template,
+)
+
+
+cypher_retriever = TextToCypherRetriever(
+    index.property_graph_store,
+    # customize the LLM, defaults to Settings.llm
+    llm=llm,
+    # customize the text-to-cypher template.
+    # Requires `schema` and `question` template args
+    text_to_cypher_template=DEFAULT_TEXT_TO_CYPHER_TEMPLATE,
+    # customize how the cypher result is inserted into
+    # a text node. Requires `query` and `response` template args
+    response_template=DEFAULT_RESPONSE_TEMPLAT,
+    # an optional callable that can clean/verify generated cypher
+    cypher_validator=None,
+    # allowed fields in the resulting
+    allowed_output_field=DEFAULT_ALLOWED_FIELDS,
+)
+```
+
+**NOTE:** Executing arbitrary cypher has its risks. Ensure you take the needed measures (read-only roles, sandboxed env, etc.) to ensure safe usage in a production environment.
+
+#### `CypherTemplateRetriever`
+
+This is a more constrained version of the `TextToCypherRetriever`. Rather than letting the LLM have free-range of generating any cypher statement, we can instead provide a cypher template and have the LLM fill in the blanks.
+
+To illustrate how this works, here is a small example:
+
+```python
+# NOTE: current v1 is needed
+from pydantic.v1 import BaseModel, Field
+from llama_index.core.indices.property_graph import CypherTemplateRetriever
+
+# write a query with template params
+cypher_query = """
+MATCH (c:Chunk)-[:MENTIONS]->(o)
+WHERE o.name IN $names
+RETURN c.text, o.name, o.label;
+"""
+
+
+# create a pydantic class to represent the params for our query
+# the class fields are directly used as params for running the cypher query
+class TemplateParams(BaseModel):
+    """Template params for a cypher query."""
+
+    names: list[str] = Field(
+        description="A list of entity names or keywords to use for lookup in a knowledge graph."
+    )
+
+
+template_retriever = CypherTemplateRetriever(
+    index.property_graph_store, TemplateParams, cypher_query
+)
 ```
 
 ## Storage
@@ -454,9 +537,7 @@ class MyCustomRetriever(CustomPGRetriever):
     #     ...
 
 
-custom_retriever = MyCustomRetriever(
-    graph_store, my_option_1=True  # always required
-)
+custom_retriever = MyCustomRetriever(graph_store, my_option_1=True)
 
 retriever = index.as_retriever(sub_retrievers=[custom_retriever])
 ```

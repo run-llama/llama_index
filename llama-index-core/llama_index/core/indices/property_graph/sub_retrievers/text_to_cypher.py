@@ -16,6 +16,9 @@ DEFAULT_ALLOWED_FIELDS = ["text", "label", "type"]
 class TextToCypherRetriever(BasePGRetriever):
     """A Text-to-Cypher retriever that uses a language model to generate Cypher queries.
 
+    NOTE: Executing arbitrary cypher has its risks. Ensure you take the needed measures
+    (read-only roles, sandboxed env, etc.) to ensure safe usage in a production environment.
+
     Args:
         graph_store (PropertyGraphStore):
             The graph store to retrieve data from.
