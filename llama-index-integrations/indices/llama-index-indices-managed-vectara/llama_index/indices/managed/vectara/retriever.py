@@ -6,10 +6,10 @@ An index that is built on top of Vectara.
 import json
 import logging
 from typing import Any, List, Optional, Tuple, Dict
+from enum import Enum
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.indices.managed.types import ManagedIndexQueryMode
 from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
     VectorIndexAutoRetriever,
 )
@@ -33,6 +33,13 @@ from llama_index.indices.managed.vectara.prompts import (
 _logger = logging.getLogger(__name__)
 
 MMR_RERANKER_ID = 272725718
+SLINGSHOT_RERANKER_ID = 272725719
+
+
+class VectaraReranker(str, Enum):
+    NONE = "none"
+    MMR = "mmr"
+    SLINGSHOT = "slingshot"
 
 
 class VectaraRetriever(BaseRetriever):
@@ -42,8 +49,8 @@ class VectaraRetriever(BaseRetriever):
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
-        vectara_query_mode (str): vector store query mode
-            See reference for vectara_query_mode for full list of supported modes.
+        reranker (str): reranker to use: none, mmr or slingshot.
+            Note that "slingshot" is a Vectara Scale feature only.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -53,7 +60,7 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
             number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
-        rerank_k: number of results to fetch for Reranking (with MMR), defaults to 50.
+        rerank_k: number of results to fetch for Reranking, defaults to 50.
         mmr_diversity_bias: number between 0 and 1 that determines the degree
             of diversity among the results with 0 corresponding
             to minimum diversity and 1 to maximum diversity.
@@ -68,11 +75,11 @@ class VectaraRetriever(BaseRetriever):
         self,
         index: VectaraIndex,
         similarity_top_k: int = 10,
-        vectara_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
         lambda_val: float = 0.005,
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
+        reranker: VectaraReranker = VectaraReranker.NONE,
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.3,
         summary_enabled: bool = False,
@@ -90,11 +97,15 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_after = n_sentences_after
         self._filter = filter
 
-        if vectara_query_mode == ManagedIndexQueryMode.MMR:
+        if reranker == VectaraReranker.MMR:
             self._rerank = True
             self._rerank_k = rerank_k
             self._mmr_diversity_bias = mmr_diversity_bias
             self._reranker_id = MMR_RERANKER_ID
+        elif reranker == VectaraReranker.SLINGSHOT:
+            self._rerank = True
+            self._rerank_k = rerank_k
+            self._reranker_id = SLINGSHOT_RERANKER_ID
         else:
             self._rerank = False
 

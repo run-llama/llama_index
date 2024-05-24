@@ -79,7 +79,7 @@ def test_mmr_retrieval(vectara1) -> None:
         similarity_top_k=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        vectara_query_mode="mmr",
+        reranker="mmr",
         mmr_k=10,
         mmr_diversity_bias=0.0,
     )
@@ -93,7 +93,7 @@ def test_mmr_retrieval(vectara1) -> None:
         similarity_top_k=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        vectara_query_mode="mmr",
+        reranker="mmr",
         mmr_k=10,
         mmr_diversity_bias=1.0,
     )
@@ -120,7 +120,7 @@ def vectara2():
     except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
 
-    file_path = "../../../docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
+    file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
     id = vectara2.insert_file(file_path)
 
     yield vectara2
