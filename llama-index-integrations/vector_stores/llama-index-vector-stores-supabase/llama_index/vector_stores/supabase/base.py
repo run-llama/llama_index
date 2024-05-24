@@ -83,7 +83,7 @@ class SupabaseVectorStore(BasePydanticVectorStore):
 
     def __del__(self) -> None:
         """Close the client when the object is deleted."""
-        try: # try-catch in case the attribute is not present
+        try:  # try-catch in case the attribute is not present
             self._client.disconnect()
         except AttributeError:
             pass
