@@ -6,15 +6,19 @@
 > custom models based on your own data on dedicated AI clusters.
 
 ## Installation
+
 ```bash
 pip install llama-index-embeddings-oci-genai
 ```
+
 You will also need to install the OCI sdk
 
 ```bash
 pip install -U oci
 ```
+
 ## Usage
+
 ```bash
 from llama_index.embeddings.oci_genai import OCIGenAIEmbeddings
 
