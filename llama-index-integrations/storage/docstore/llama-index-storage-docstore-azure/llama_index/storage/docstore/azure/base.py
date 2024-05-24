@@ -204,7 +204,7 @@ class AzureDocumentStore(KVDocumentStore):
         self,
         nodes: Sequence[BaseNode],
         allow_update: bool = True,
-        batch_size: int | None = None,
+        batch_size: Optional[int] = None,
         store_text: bool = True,
     ) -> None:
         """Add documents to the store."""

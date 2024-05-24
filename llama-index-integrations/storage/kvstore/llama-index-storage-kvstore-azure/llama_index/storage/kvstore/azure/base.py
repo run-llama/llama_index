@@ -1,4 +1,14 @@
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Tuple, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -301,7 +311,7 @@ class AzureKVStore(BaseKVStore):
         self,
         key: str,
         collection: str = None,
-        select: Optional[str | List[str]] = None,
+        select: Optional[Union[str, List[str]]] = None,
     ) -> Optional[dict]:
         """Retrieves a value by key from the specified table."""
         try:
@@ -326,7 +336,7 @@ class AzureKVStore(BaseKVStore):
         self,
         key: str,
         collection: str = None,
-        select: Optional[str | List[str]] = None,
+        select: Optional[Union[str, List[str]]] = None,
     ) -> Optional[dict]:
         """Retrieves a value by key from the specified table."""
         try:
@@ -354,7 +364,7 @@ class AzureKVStore(BaseKVStore):
     def get_all(
         self,
         collection: str = None,
-        select: Optional[str | List[str]] = None,
+        select: Optional[Union[str, List[str]]] = None,
     ) -> Dict[str, dict]:
         """
         Retrieves all key-value pairs from a specified partition in the table.
@@ -375,7 +385,7 @@ class AzureKVStore(BaseKVStore):
     async def aget_all(
         self,
         collection: str = None,
-        select: Optional[str | List[str]] = None,
+        select: Optional[Union[str, List[str]]] = None,
     ) -> Dict[str, dict]:
         """
         Retrieves all key-value pairs from a specified partition in the table.
@@ -434,7 +444,7 @@ class AzureKVStore(BaseKVStore):
         self,
         query_filter: str,
         collection: str = None,
-        select: Optional[str | List[str]] = None,
+        select: Optional[Union[str, List[str]]] = None,
     ) -> Generator[dict, None, None]:
         """Retrieves a value by key from the specified table."""
         try:
@@ -460,7 +470,7 @@ class AzureKVStore(BaseKVStore):
         self,
         query_filter: str,
         collection: str = None,
-        select: Optional[str | List[str]] = None,
+        select: Optional[Union[str, List[str]]] = None,
     ) -> Optional[AsyncGenerator[dict, None]]:
         """Asynchronously retrieves a value by key from the specified table."""
         try:

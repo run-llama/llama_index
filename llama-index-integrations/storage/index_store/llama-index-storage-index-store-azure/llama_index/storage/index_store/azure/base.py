@@ -47,7 +47,7 @@ class AzureIndexStore(KVIndexStore):
         account_name: str,
         account_key: str,
         namespace: Optional[str] = None,
-        endpoint: str | None = None,
+        endpoint: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
     ) -> "AzureIndexStore":
