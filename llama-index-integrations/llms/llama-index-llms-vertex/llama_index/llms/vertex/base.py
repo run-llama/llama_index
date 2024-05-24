@@ -30,6 +30,7 @@ from llama_index.llms.vertex.utils import (
     completion_with_retry,
     init_vertexai,
 )
+from vertexai.generative_models._generative_models import SafetySettingsType
 
 
 class Vertex(LLM):
@@ -67,7 +68,9 @@ class Vertex(LLM):
         description="Example messages for the chat model."
     )
     max_retries: int = Field(default=10, description="The maximum number of retries.")
-
+    safety_settings: Optional[SafetySettingsType] = Field(
+        default=None, description="Safety settings for the Vertex AI model."
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Vertex."
     )
@@ -90,6 +93,7 @@ class Vertex(LLM):
         max_tokens: int = 512,
         max_retries: int = 10,
         iscode: bool = False,
+        safety_settings: Optional[SafetySettingsType] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -100,6 +104,7 @@ class Vertex(LLM):
     ) -> None:
         init_vertexai(project=project, location=location, credentials=credentials)
 
+        safety_settings = safety_settings or {}
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
@@ -126,7 +131,7 @@ class Vertex(LLM):
 
             self._client = TextGenerationModel.from_pretrained(model)
         elif is_gemini_model(model):
-            self._client = create_gemini_client(model)
+            self._client = create_gemini_client(model, safety_settings)
             self._chat_client = self._client
             self._is_gemini = True
             self._is_chat_model = True
@@ -141,6 +146,7 @@ class Vertex(LLM):
             model=model,
             examples=examples,
             iscode=iscode,
+            safety_settings=safety_settings,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
