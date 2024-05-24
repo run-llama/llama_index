@@ -38,4 +38,4 @@ The toolkit leverages the Cassandra Query Language (CQL) and integrates with LLM
 
 ## Example Usage
 
-Initialize the CassandraDatabase and set up the agent with the tools provided. Query the database by interacting with the agent as shown in the example [notebook](https://docs.llamaindex.ai/en/latest/examples/tools/cassandra/).
+Initialize the CassandraDatabase and set up the agent with the tools provided. Query the database by interacting with the agent as shown in the example [notebook](https://docs.llamaindex.ai/en/stable/examples/tools/cassandra/).
