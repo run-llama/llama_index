@@ -106,16 +106,22 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         `pip install llama-index-vector-stores-weaviate`
 
         ```python
+        from llama_index.vector_stores.weaviate import WeaviateVectorStore
         import weaviate
 
-        resource_owner_config = weaviate.AuthClientPassword(
+        resource_owner_config = weaviate.auth.AuthClientPassword(
             username="<username>",
             password="<password>",
         )
+        connection_params = weaviate.connect.ConnectionParams.from_url(
+            url="https://llama-test-ezjahb4m.weaviate.network",
+            grpc_port=50051,
+        )
         client = weaviate.WeaviateClient(
-            "https://llama-test-ezjahb4m.weaviate.network",
+            connection_params=connection_params,
             auth_client_secret=resource_owner_config,
         )
+        client.connect()
 
         vector_store = WeaviateVectorStore(
             weaviate_client=client, index_name="LlamaIndex"
