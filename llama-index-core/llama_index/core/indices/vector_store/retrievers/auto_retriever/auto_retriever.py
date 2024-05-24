@@ -40,7 +40,8 @@ _logger = logging.getLogger(__name__)
 
 
 class VectorIndexAutoRetriever(BaseAutoRetriever):
-    """Vector store auto retriever.
+    """
+    Vector store auto retriever.
 
     A retriever for vector store index that uses an LLM to automatically set
     vector store query parameters.
