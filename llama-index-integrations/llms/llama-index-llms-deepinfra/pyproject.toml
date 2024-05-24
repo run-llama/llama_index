@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Oğuz Vuruşkaner <https://github.com/ovuruska>"]
+authors = ["Your Name <you@example.com>"]
 description = "llama-index llms deepinfra integration"
 exclude = ["**/BUILD"]
 license = "MIT"
