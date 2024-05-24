@@ -31,6 +31,7 @@ from llama_index.vector_stores.weaviate.utils import (
 import weaviate
 import weaviate.classes as wvc
 
+
 _logger = logging.getLogger(__name__)
 _WEAVIATE_DEFAULT_GRPC_PORT = 50051
 
@@ -263,29 +264,17 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        where_filter = {
-            "path": ["ref_doc_id"],
-            "operator": "Equal",
-            "valueText": ref_doc_id,
-        }
+        filters = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
         if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
-            where_filter = {
-                "operator": "And",
-                "operands": [where_filter, delete_kwargs["filter"]],  # type: ignore
-            }
+            filters = wvc.query.Filter.all_of(
+                [filters, _to_weaviate_filter(delete_kwargs["filter"])]
+            )
 
-        query = (
-            self._client.query.get(self.index_name)
-            .with_additional(["id"])
-            .with_where(where_filter)
-            .with_limit(10000)  # 10,000 is the max weaviate can fetch
-        )
+        collection = self._client.collections.get(self.index_name)
+        query_result = collection.query.fetch_objects(filters=filters, limit=1000)
 
-        query_result = query.do()
-        parsed_result = parse_get_response(query_result)
-        entries = parsed_result[self.index_name]
-        for entry in entries:
-            self._client.data_object.delete(entry["_additional"]["id"], self.index_name)
+        for entry in query_result.objects:
+            collection.data.delete_by_id(uuid=entry.uuid)
 
     def delete_index(self) -> None:
         """Delete the index associated with the client.
