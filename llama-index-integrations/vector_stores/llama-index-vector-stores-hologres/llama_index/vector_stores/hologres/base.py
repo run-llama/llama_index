@@ -76,7 +76,7 @@ class HologresVectorStore(BasePydanticVectorStore):
         port: int,
         user: str,
         password: str,
-        database_name: str,
+        database: str,
         table_name: str,
         table_schema: Dict[str, str] = {"document": "text"},
         embedding_dimension: int = 1536,
@@ -90,14 +90,14 @@ class HologresVectorStore(BasePydanticVectorStore):
             port: port number
             user: hologres user
             password: hologres password
-            database_name: hologres database name
+            database: hologres database
             table_name: hologres table name
             table_schema: table column schemam
             embedding_dimension: dimension size of embedding vector
             pre_delete_table: whether to erase data from table on creation
         """
         connection_string = HologresVector.connection_string_from_db_params(
-            host, port, database_name, user, password
+            host, port, database, user, password
         )
         return cls.from_connection_string(
             connection_string=connection_string,

@@ -12,12 +12,12 @@ def _get_hologres_vector_store():
         "port": 80,
         "user": "<user>",
         "password": "<password>",
-        "database_name": "<database_name>",
+        "database": "<database>",
         "table_name": "<table_name>",
     }
     if (
         "<" in test_hologres_config["host"]
-        or "<" in test_hologres_config["database_name"]
+        or "<" in test_hologres_config["database"]
         or "<" in test_hologres_config["table_name"]
     ):
         return None
@@ -27,7 +27,7 @@ def _get_hologres_vector_store():
         port=test_hologres_config["port"],
         user=test_hologres_config["user"],
         password=test_hologres_config["password"],
-        database_name=test_hologres_config["database_name"],
+        database=test_hologres_config["database"],
         embedding_dimension=5,
         table_name=test_hologres_config["table_name"],
         pre_delete_table=True,
