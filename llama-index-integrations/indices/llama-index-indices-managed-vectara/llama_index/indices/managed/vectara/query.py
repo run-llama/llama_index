@@ -133,7 +133,7 @@ class VectaraQueryEngine(BaseQueryEngine):
         return query_response
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        return await self._query(query_bundle)
+        return self._query(query_bundle)
 
     @property
     def retriever(self) -> BaseRetriever:
