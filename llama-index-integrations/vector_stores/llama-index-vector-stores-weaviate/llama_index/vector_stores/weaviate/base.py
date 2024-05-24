@@ -121,7 +121,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             connection_params=connection_params,
             auth_client_secret=resource_owner_config,
         )
-        client.connect()
 
         vector_store = WeaviateVectorStore(
             weaviate_client=client, index_name="LlamaIndex"
@@ -161,6 +160,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             )
         else:
             self._client = weaviate_client
+
+        if not self._client.is_connected():
+            self._client.connect()
 
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
