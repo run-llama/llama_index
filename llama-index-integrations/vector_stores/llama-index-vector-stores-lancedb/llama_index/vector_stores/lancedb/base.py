@@ -253,6 +253,40 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     def _table_exists(self, tbl_name: Optional[str] = None) -> bool:
         return (tbl_name or self._table_name) in self._connection.table_names()
 
+    def create_index(
+        self,
+        col_name: Optional[str] = None,
+        vector_col: Optional[str] = None,
+        num_partitions: Optional[int] = 256,
+        num_sub_vectors: Optional[int] = 96,
+        index_cache_size: Optional[int] = None,
+        metric: Optional[str] = "L2",
+    ) -> None:
+        """
+        Create a scalar(for non-vector cols) or a vector index on a table.
+        Make sure your vector column has enough data before creating an index on it.
+
+        Args:
+            vector_col: Provide if you want to create index on a vector column.
+            col_name: Provide if you want to create index on a non-vector column.
+            metric: Provide the metric to use for vector index. Defaults to 'L2'
+                    choice of metrics: 'L2', 'dot', 'cosine'
+        Returns:
+            None
+        """
+        if vector_col:
+            self._table.create_index(
+                metric=metric,
+                vector_column_name=vector_col,
+                num_partitions=num_partitions,
+                num_sub_vectors=num_sub_vectors,
+                index_cache_size=index_cache_size,
+            )
+        elif col_name:
+            self._table.create_scalar_index(col_name)
+        else:
+            raise ValueError("Provide either vector_col or col_name")
+
     def add(
         self,
         nodes: List[BaseNode],
