@@ -11,7 +11,7 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.core.schema import ImageNode, NodeWithScore
+from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
 
 
 def _get_image_and_text_nodes(
@@ -110,7 +110,9 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-        context_str = "\n\n".join([r.get_content() for r in text_nodes])
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
@@ -151,7 +153,9 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-        context_str = "\n\n".join([r.get_content() for r in text_nodes])
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
