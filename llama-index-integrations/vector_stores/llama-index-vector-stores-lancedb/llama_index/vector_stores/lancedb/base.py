@@ -138,18 +138,19 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     _connection: Any = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
+    _fts_index: Any = PrivateAttr()
 
     def __init__(
         self,
-        connection: Optional[Any] = None,
         uri: Optional[str] = "/tmp/lancedb",
-        table: Optional[Any] = None,
         table_name: Optional[str] = "vectors",
         vector_column_name: str = "vector",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         doc_id_key: str = DEFAULT_DOC_ID_KEY,
+        connection: Optional[Any] = None,
+        table: Optional[Any] = None,
         api_key: Optional[str] = None,
         region: Optional[str] = None,
         **kwargs: Any,
@@ -157,6 +158,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         """Init params."""
         self._table_name = table_name
         self._metadata_keys = None
+        self._fts_index = None
 
         if isinstance(connection, lancedb.db.LanceDBConnection):
             self._connection = connection
@@ -181,7 +183,10 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 )
 
         if table:
-            assert isinstance(table, lancedb.db.LanceTable)
+            try:
+                assert isinstance(table, lancedb.db.LanceTable)
+            except AssertionError:
+                raise ValueError("`table` has to be a lancedb.db.LanceTable object.")
             self._table = table
             self._table_name = table.name
         else:
@@ -223,12 +228,14 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         refine_factor: Optional[int] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         doc_id_key: str = DEFAULT_DOC_ID_KEY,
+        connection: Optional[Any] = None,
+        table: Optional[Any] = None,
+        api_key: Optional[str] = None,
+        region: Optional[str] = None,
         **kwargs: Any,
     ) -> "LanceDBVectorStore":
         """Create instance from params."""
-        _connection_ = cls._connection
         return cls(
-            _connection=_connection_,
             uri=uri,
             table_name=table_name,
             vector_column_name=vector_column_name,
@@ -236,6 +243,10 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             refine_factor=refine_factor,
             text_key=text_key,
             doc_id_key=doc_id_key,
+            connection=connection or cls._connection,
+            table=table,
+            api_key=api_key,
+            region=region,
             **kwargs,
         )
 
@@ -252,6 +263,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             return []
         data = []
         ids = []
+
         for node in nodes:
             metadata = node_to_metadata_dict(
                 node, remove_text=False, flat_metadata=self.flat_metadata
@@ -274,6 +286,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 )
 
             self._table.add(data, mode=add_kwargs.pop("mode", "overwrite"))
+            self._fts_index = None  # reset fts index
 
         return ids
 
@@ -310,11 +323,17 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         if query_type == "vector":
             _query = query.query_embedding
         else:
-            self._table.create_fts_index(self.text_key, replace=True)
+            if self._fts_index is None:
+                self._fts_index = self._table.create_fts_index(
+                    self.text_key, replace=True
+                )
+
             if query_type == "hybrid":
                 _query = (query.query_embedding, query.query_str)
-            else:
+            elif query_type == "fts":
                 _query = query.query_str
+            else:
+                raise ValueError(f"Invalid query type: {query_type}")
 
         lance_query = (
             self._table.search(
