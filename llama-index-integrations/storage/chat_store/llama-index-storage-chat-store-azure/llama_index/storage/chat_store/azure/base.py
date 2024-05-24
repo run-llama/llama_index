@@ -10,7 +10,6 @@ from azure.data.tables import (
     UpdateMode,
 )
 from azure.data.tables.aio import TableServiceClient as AsyncTableServiceClient
-from azure.identity import DefaultAzureCredential
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
@@ -147,6 +146,8 @@ class AzureChatStore(BaseChatStore):
         service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureChatStore":
         """Creates an AzureChatStore using an Azure Active Directory token."""
+        from azure.identity import DefaultAzureCredential
+
         credential = DefaultAzureCredential()
         return cls._from_clients(
             endpoint,
