@@ -142,9 +142,5 @@ class SimpleComposableMemory(BaseComposableMemory):
     def reset(self) -> None:
         """Reset chat history."""
         self._primary_memory.reset()
-
-    def reset_all(self) -> None:
-        """Reset all chat histories."""
-        self._primary_memory.reset()
         for mem in self._secondary_memory_sources:
             mem.reset()

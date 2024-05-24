@@ -12,13 +12,8 @@ from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import VectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field
-from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
-from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
+from llama_index.core.memory.types import BaseMemory
 from llama_index.core.embeddings.utils import EmbedType
-
-
-DEFAULT_TOKEN_LIMIT_RATIO = 0.75
-DEFAULT_TOKEN_LIMIT = 3000
 
 
 def _stringify_obj(d: Any):
@@ -55,14 +50,16 @@ class VectorMemory(BaseMemory):
     # in the vector store.
     batch_by_user_message: bool = True
 
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
-    # NOTE/TODO: we need this to store id's for the messages
-    # This is not needed once vector stores implement delete_all capabilities
-    chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
-    # NOTE: this is to store the current user message batch (if `batch_by_user_message` is True)
-    # allows us to keep track of the current user message batch
-    # so we can delete it when we commit a new node
     cur_user_msg_key: str = Field(default=CUR_USER_MSG_KEY)
+    cur_batch_textnode: TextNode = Field(
+        default=TextNode(
+            id_=CUR_USER_MSG_KEY,
+            text="",
+            metadata={"sub_dicts": []},
+            excluded_embed_metadata_keys=["sub_dicts"],
+            excluded_llm_metadata_keys=["sub_dicts"],
+        )
+    )
 
     @validator("vector_index")
     def validate_vector_index(cls, value: Any) -> Any:
@@ -144,28 +141,8 @@ class VectorMemory(BaseMemory):
 
     def _commit_node(self, override_last: bool = False) -> None:
         """Commit new node to vector store."""
-        # commit to vector store
-        node_id = str(uuid.uuid4())
-        # create subnodes for each message
-        sub_dicts = []
-        for msg in self.chat_store.get_messages(self.cur_user_msg_key):
-            sub_dicts.append(_stringify_chat_message(msg))
-
-        if not sub_dicts:
+        if self.cur_batch_textnode.text == "":
             return
-
-        # now create a "super" node that contains all subnodes as metadata
-        # this metadata is excluded from embedding and LLM synthesis
-        # the concatenated text is put into the super node text field
-        super_node = TextNode(
-            text=" ".join(
-                [str(sub_dicts[i]["content"]) for i in range(len(sub_dicts))]
-            ),
-            id_=node_id,
-            metadata={"sub_dicts": sub_dicts},
-            excluded_embed_metadata_keys=["sub_dicts"],
-            excluded_llm_metadata_keys=["sub_dicts"],
-        )
 
         if override_last:
             # delete the last node
@@ -174,25 +151,33 @@ class VectorMemory(BaseMemory):
             # we already will have the last user message group committed to the
             # vector store index and so we don't need to override_last (i.e. see
             # logic in self.put().)
-            last_node_id = self.chat_store.delete_last_message(
-                self.chat_store_key
-            ).content
-            self.vector_index.delete_nodes([last_node_id])
+            self.vector_index.delete_nodes([CUR_USER_MSG_KEY])
+        else:
+            # the batch has ended, finalize current node with a proper node id
+            # and commit
+            node_id = str(uuid.uuid4())
+            self.cur_batch_textnode.id_ = node_id
 
-        self.vector_index.insert_nodes([super_node])
-        self.chat_store.add_message(self.chat_store_key, ChatMessage(content=node_id))
+        self.vector_index.insert_nodes([self.cur_batch_textnode])
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
+        sub_dict = _stringify_chat_message(message)
         if not self.batch_by_user_message or message.role == MessageRole.USER:
             # if not batching by user message, commit to vector store immediately after adding
-            self.chat_store.delete_messages(self.cur_user_msg_key)
-            self.chat_store.add_message(self.cur_user_msg_key, message)
             self._commit_node()
+            self.cur_batch_textnode = TextNode(
+                id_=CUR_USER_MSG_KEY,
+                text=sub_dict["content"],
+                metadata={"sub_dicts": [sub_dict]},
+                excluded_embed_metadata_keys=["sub_dicts"],
+                excluded_llm_metadata_keys=["sub_dicts"],
+            )
         else:
-            # if not user message, add to holding queue i.e. the chat_store
-            self.chat_store.add_message(self.cur_user_msg_key, message)
-            self._commit_node(override_last=True)
+            # update current batch textnode
+            self.cur_batch_textnode.text += sub_dict["content"]
+            self.cur_batch_textnode.metadata["sub_dicts"].append(sub_dict)
+        self._commit_node(override_last=True)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
@@ -202,12 +187,7 @@ class VectorMemory(BaseMemory):
 
     def reset(self) -> None:
         """Reset chat history."""
-        node_id_msgs = self.chat_store.get_messages(self.chat_store_key)
-        node_ids = [msg.content for msg in node_id_msgs]
-        self.vector_index.delete_nodes(node_ids)
-
-        # delete from chat history
-        self.chat_store.delete_messages(self.chat_store_key)
+        self.vector_index.vector_store.clear()
 
 
 VectorMemory.update_forward_refs()
