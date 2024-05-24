@@ -553,6 +553,11 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.types import UserDefinedType
 
         class REGCONFIG(UserDefinedType):
+            # The TypeDecorator.cache_ok class-level flag indicates if this custom TypeDecorator is safe to be used as part of a cache key.
+            # If the TypeDecorator is not guaranteed to produce the same bind/result behavior and SQL generation every time,
+            # this flag should be set to False; otherwise if the class produces the same behavior each time, it may be set to True.
+            cache_ok = True
+
             def get_col_spec(self, **kw: Any) -> str:
                 return "regconfig"
 
@@ -750,16 +755,15 @@ class PGVectorStore(BasePydanticVectorStore):
         return self._db_rows_to_query_result(results)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        import sqlalchemy
+        from sqlalchemy import delete
 
         self._initialize()
         with self._session() as session, session.begin():
-            stmt = sqlalchemy.text(
-                f"DELETE FROM {self.schema_name}.data_{self.table_name} where "
-                f"(metadata_->>'doc_id')::text = :ref_doc_id"
+            stmt = delete(self._table_class).where(
+                self._table_class.metadata_["doc_id"].astext == ref_doc_id
             )
 
-            session.execute(stmt, {"ref_doc_id": ref_doc_id})
+            session.execute(stmt)
             session.commit()
 
 

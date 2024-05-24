@@ -206,7 +206,7 @@ class FirestoreKVStore(BaseKVStore):
         output = {}
         async for doc in docs:
             key = doc.id
-            data = doc.get().to_dict()
+            data = (await doc.get()).to_dict()
             if data is None:
                 continue
             val = self.replace_field_name_get(data)

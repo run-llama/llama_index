@@ -12,7 +12,7 @@ to use this integration
 
 ## Usage
 
-This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/multion.ipynb)
+This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-multion/examples/multion.ipynb).
 
 Here's an example usage of the MultionToolSpec.
 
@@ -20,7 +20,7 @@ Here's an example usage of the MultionToolSpec.
 from llama_index.tools.multion import MultionToolSpec
 from llama_index.agent.openai import OpenAIAgent
 
-multion_tool = MultionToolSpec()
+multion_tool = MultionToolSpec(api_key="your-multion-key")
 
 agent = OpenAIAgent.from_tools(multion_tool.to_tool_list())
 

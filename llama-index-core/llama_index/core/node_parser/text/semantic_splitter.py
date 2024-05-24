@@ -56,7 +56,7 @@ class SemanticSplitterNodeParser(NodeParser):
         ),
     )
 
-    breakpoint_percentile_threshold = Field(
+    breakpoint_percentile_threshold: int = Field(
         default=95,
         description=(
             "The percentile of cosine dissimilarity that must be exceeded between a "
