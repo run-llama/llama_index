@@ -159,7 +159,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 auth_client_secret=auth_config, **client_kwargs
             )
         else:
-            self._client = weaviate_client
+            self._client = cast(weaviate.WeaviateClient, weaviate_client)
 
         if not self._client.is_connected():
             self._client.connect()
