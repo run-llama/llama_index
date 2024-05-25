@@ -1,9 +1,8 @@
 from typing import Any, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.memory.types import (
-    BaseComposableMemory,
     BaseMemory,
 )
 from llama_index.core.memory import ChatMemoryBuffer
@@ -12,50 +11,46 @@ DEFAULT_INTRO_HISTORY_MESSAGE = "Below are a set of relevant dialogues retrieved
 DEFAULT_OUTRO_HISTORY_MESSAGE = "This is the end of the of retrieved message dialogues."
 
 
-class SimpleComposableMemory(BaseComposableMemory):
+class SimpleComposableMemory(BaseMemory):
     """A simple composition of potentially several memory sources.
 
     This composable memory considers one of the memory sources as the main
     one and the others as secondary. The secondary memory sources get added to
     the chat history only in either the system prompt or to the first user
     message within the chat history.
+
+    Args:
+        primary_memory: (BaseMemory) The main memory buffer for agent.
+        secondary_memory_sources: (List(BaseMemory)) Secondary memory sources.
+            Retrieved messages from these sources get added to the system prompt message.
     """
 
-    _primary_memory: BaseMemory = PrivateAttr()
-    _secondary_memory_sources: List[BaseMemory] = PrivateAttr()
-
-    def __init__(self, sources: List[BaseMemory]) -> None:
-        if len(sources) == 0:
-            raise ValueError("Must supply at least one memory source.")
-
-        self._primary_memory = sources[0]
-        self._secondary_memory_sources = sources[1:]
-        super().__init__(sources=sources)
+    primary_memory: BaseMemory = Field(
+        description="Primary memory source for chat agent.",
+    )
+    secondary_memory_sources: List[BaseMemory] = Field(
+        default_factory=list, description="Secondary memory sources."
+    )
 
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
         return "SimpleComposableMemory"
 
-    @property
-    def primary_memory(self) -> BaseMemory:
-        """The primary memory getter."""
-        return self._primary_memory
-
-    @property
-    def secondary_memory_sources(self) -> List[BaseMemory]:
-        """Getter for secondary memory sources."""
-        return self._secondary_memory_sources
-
     @classmethod
     def from_defaults(
         cls,
-        sources: Optional[List[BaseMemory]] = None,
+        primary_memory: Optional[BaseMemory] = None,
+        secondary_memory_sources: Optional[List[BaseMemory]] = None,
     ) -> "SimpleComposableMemory":
         """Create a simple composable memory from an LLM."""
-        sources = sources or [ChatMemoryBuffer.from_defaults()]
+        primary_memory = primary_memory or ChatMemoryBuffer.from_defaults()
+        secondary_memory_sources = secondary_memory_sources or []
 
-        return cls(sources=sources)
+        return cls(
+            primary_memory=primary_memory,
+            secondary_memory_sources=secondary_memory_sources,
+        )
 
     def _format_secondary_messages(
         self, secondary_chat_histories: List[List[ChatMessage]]
@@ -85,11 +80,11 @@ class SimpleComposableMemory(BaseComposableMemory):
     ) -> List[ChatMessage]:
         """Get chat history."""
         # get from primary
-        messages = self._primary_memory.get(input=input, **kwargs)
+        messages = self.primary_memory.get(input=input, **kwargs)
 
         # get from secondary
         secondary_histories = []
-        for mem in self._secondary_memory_sources:
+        for mem in self.secondary_memory_sources:
             secondary_history = mem.get(input, **kwargs)
             if len(secondary_history) > 0:
                 secondary_histories.append(secondary_history)
@@ -125,26 +120,25 @@ class SimpleComposableMemory(BaseComposableMemory):
 
         Uses primary memory get_all only.
         """
-        return self._primary_memory.get_all()
+        return self.primary_memory.get_all()
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
-        self._primary_memory.put(message)
-        for mem in self._secondary_memory_sources:
+        self.primary_memory.put(message)
+        for mem in self.secondary_memory_sources:
             mem.put(message)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
-        self._primary_memory.set(messages)
-        for mem in self._secondary_memory_sources:
-            mem.set(messages)
+        self.primary_memory.set(messages)
+        for mem in self.secondary_memory_sources:
+            # finalize task often sets, but secondary memory is meant for
+            # long-term memory rather than main chat memory buffer
+            # so use put_messages instead
+            mem.put_messages(messages)
 
     def reset(self) -> None:
         """Reset chat history."""
-        self._primary_memory.reset()
-
-    def reset_all(self) -> None:
-        """Reset all chat histories."""
-        self._primary_memory.reset()
-        for mem in self._secondary_memory_sources:
+        self.primary_memory.reset()
+        for mem in self.secondary_memory_sources:
             mem.reset()

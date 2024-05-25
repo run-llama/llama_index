@@ -45,14 +45,14 @@ def test_vector_memory(
     """Test vector memory."""
     # arrange
     composable_memory = SimpleComposableMemory.from_defaults(
-        sources=[
-            ChatMemoryBuffer.from_defaults(),
+        primary_memory=ChatMemoryBuffer.from_defaults(),
+        secondary_memory_sources=[
             VectorMemory.from_defaults(
                 vector_store=None,
                 embed_model=MockEmbedding(embed_dim=5),
                 retriever_kwargs={"similarity_top_k": 1},
             ),
-        ]
+        ],
     )
     msgs = [
         ChatMessage.from_str("Jerry likes juice.", "user"),
