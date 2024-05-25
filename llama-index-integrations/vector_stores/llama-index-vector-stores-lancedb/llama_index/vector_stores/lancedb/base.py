@@ -5,6 +5,7 @@ import logging
 from typing import Any, List, Optional
 import warnings
 
+import lancedb.rerankers
 import numpy as np
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
@@ -101,9 +102,21 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         refine_factor: (int, optional): Refine the results by reading extra elements
             and re-ranking them in memory.
             Defaults to None
+        text_key (str, optional): The key in the table that contains the text.
+            Defaults to "text".
+        doc_id_key (str, optional): The key in the table that contains the document id.
+            Defaults to "doc_id".
+        connection (Any, optional): The connection to use for LanceDB.
+            Defaults to None.
+        table (Any, optional): The table to use for LanceDB.
+            Defaults to None.
         api_key (str, optional): The API key to use LanceDB cloud.
             Defaults to None. You can also set the `LANCE_API_KEY` environment variable.
         region (str, optional): The region to use for your LanceDB cloud db.
+            Defaults to None.
+        mode (str, optional): The mode to use for LanceDB.
+            Defaults to "overwrite".
+        reranker (Any, optional): The reranker to use for LanceDB.
             Defaults to None.
 
     Raises:
@@ -133,12 +146,14 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     doc_id_key: Optional[str]
     api_key: Optional[str]
     region: Optional[str]
+    mode: Optional[str]
 
     _table_name: Optional[str] = PrivateAttr()
     _connection: Any = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
     _fts_index: Any = PrivateAttr()
+    _reranker: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -153,12 +168,23 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         table: Optional[Any] = None,
         api_key: Optional[str] = None,
         region: Optional[str] = None,
+        mode: str = "overwrite",
+        reranker: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
         self._table_name = table_name
         self._metadata_keys = None
         self._fts_index = None
+
+        if isinstance(reranker, lancedb.rerankers.Reranker):
+            self._reranker = reranker
+        elif reranker is None:
+            self._reranker = None
+        else:
+            raise ValueError(
+                "`reranker` has to be a lancedb.rerankers.Reranker object."
+            )
 
         if isinstance(connection, lancedb.db.LanceDBConnection):
             self._connection = connection
@@ -182,13 +208,22 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     uri, api_key=api_key or os.getenv("LANCE_API_KEY"), region=region
                 )
 
-        if table:
+        if table is not None:
             try:
+                # TODO : The below throws error if table object is not remote table
+                # assert isinstance(
+                #     table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
+                # )
                 assert isinstance(table, lancedb.db.LanceTable)
+                self._table = table
             except AssertionError:
-                raise ValueError("`table` has to be a lancedb.db.LanceTable object.")
-            self._table = table
-            self._table_name = table.name
+                if uri.startswith("db://"):
+                    self._table = table
+                else:
+                    raise ValueError(
+                        "`table` has to be a lancedb.db.LanceTable or lancedb.remote.table.RemoteTable object."
+                    )
+            self._table_name = table.name if hasattr(table, "name") else "remote_table"
         else:
             if self._table_exists():
                 self._table = self._connection.open_table(table_name)
@@ -203,6 +238,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             refine_factor=refine_factor,
             text_key=text_key,
             doc_id_key=doc_id_key,
+            mode=mode,
             **kwargs,
         )
 
@@ -212,51 +248,31 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         return self._connection
 
     @classmethod
-    def from_table(cls, table: lancedb.db.LanceTable) -> "LanceDBVectorStore":
+    def from_table(cls, table: Any) -> "LanceDBVectorStore":
         """Create instance from table."""
-        if not isinstance(table, lancedb.db.LanceTable):
-            raise Exception("argument is not lancdb table instance")
+        # if not isinstance(
+        #     table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
+        # ):
+        if not isinstance(table, lancedb.db.LanceTable) and not hasattr(table, "name"):
+            raise Exception("argument is not lancedb table instance")
         return cls(table=table)
 
-    @classmethod
-    def from_params(
-        cls,
-        uri: Optional[str],
-        table_name: str = "vectors",
-        vector_column_name: str = "vector",
-        nprobes: int = 20,
-        refine_factor: Optional[int] = None,
-        text_key: str = DEFAULT_TEXT_KEY,
-        doc_id_key: str = DEFAULT_DOC_ID_KEY,
-        connection: Optional[Any] = None,
-        table: Optional[Any] = None,
-        api_key: Optional[str] = None,
-        region: Optional[str] = None,
-        **kwargs: Any,
-    ) -> "LanceDBVectorStore":
-        """Create instance from params."""
-        return cls(
-            uri=uri,
-            table_name=table_name,
-            vector_column_name=vector_column_name,
-            nprobes=nprobes,
-            refine_factor=refine_factor,
-            text_key=text_key,
-            doc_id_key=doc_id_key,
-            connection=connection or cls._connection,
-            table=table,
-            api_key=api_key,
-            region=region,
-            **kwargs,
-        )
+    def _add_reranker(self, reranker: lancedb.rerankers.Reranker) -> None:
+        """Add a reranker to an existing vector store."""
+        if reranker is None:
+            raise ValueError(
+                "`reranker` has to be a lancedb.rerankers.Reranker object."
+            )
+        self._reranker = reranker
 
     def _table_exists(self, tbl_name: Optional[str] = None) -> bool:
         return (tbl_name or self._table_name) in self._connection.table_names()
 
+    @classmethod
     def create_index(
         self,
+        scalar: Optional[bool] = False,
         col_name: Optional[str] = None,
-        vector_col: Optional[str] = None,
         num_partitions: Optional[int] = 256,
         num_sub_vectors: Optional[int] = 96,
         index_cache_size: Optional[int] = None,
@@ -267,25 +283,28 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         Make sure your vector column has enough data before creating an index on it.
 
         Args:
-            vector_col: Provide if you want to create index on a vector column.
-            col_name: Provide if you want to create index on a non-vector column.
+            scalar: Create a scalar index on a column. Defaults to False
+            col_name: The column name to create the scalar index on. Defaults to None
+            num_partitions: Number of partitions to use for the index. Defaults to 256
+            num_sub_vectors: Number of sub-vectors to use for the index. Defaults to 96
+            index_cache_size: The size of the index cache. Defaults to None
             metric: Provide the metric to use for vector index. Defaults to 'L2'
                     choice of metrics: 'L2', 'dot', 'cosine'
         Returns:
             None
         """
-        if vector_col:
+        if scalar is None:
             self._table.create_index(
                 metric=metric,
-                vector_column_name=vector_col,
+                vector_column_name=self.vector_column_name,
                 num_partitions=num_partitions,
                 num_sub_vectors=num_sub_vectors,
                 index_cache_size=index_cache_size,
             )
-        elif col_name:
-            self._table.create_scalar_index(col_name)
         else:
-            raise ValueError("Provide either vector_col or col_name")
+            if col_name is None:
+                raise ValueError("Column name is required for scalar index creation.")
+            self._table.create_scalar_index(col_name)
 
     def add(
         self,
@@ -316,10 +335,10 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
             if self._table is None:
                 self._table = self._connection.create_table(
-                    self._table_name, data, mode=add_kwargs.pop("mode", "overwrite")
+                    self._table_name, data, mode=self.mode
                 )
 
-            self._table.add(data, mode=add_kwargs.pop("mode", "overwrite"))
+            self._table.add(data, mode=self.mode)
             self._fts_index = None  # reset fts index
 
         return ids
@@ -354,9 +373,16 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         query_type = kwargs.pop("query_type", "vector")
 
+        _logger.info("query_type :", query_type)
+
         if query_type == "vector":
             _query = query.query_embedding
         else:
+            if not isinstance(self._table, lancedb.db.LanceTable):
+                raise ValueError(
+                    "creating FTS index is not supported for remote tables yet. "
+                    "Please use a local table for FTS/Hybrid search."
+                )
             if self._fts_index is None:
                 self._fts_index = self._table.create_fts_index(
                     self.text_key, replace=True
@@ -373,15 +399,15 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             self._table.search(
                 query=_query,
                 vector_column_name=self.vector_column_name,
-                query_type=query_type,
             )
             .limit(query.similarity_top_k)
             .where(where)
             .nprobes(self.nprobes)
         )
 
-        if "reranker" in kwargs and query_type == "hybrid":
-            lance_query.rerank(reranker=kwargs["reranker"])
+        if query_type == "hybrid" and self._reranker is not None:
+            _logger.info(f"using {self._reranker} for reranking results.")
+            lance_query.rerank(reranker=self._reranker)
 
         if self.refine_factor is not None:
             lance_query.refine_factor(self.refine_factor)
@@ -428,3 +454,35 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             similarities=_to_llama_similarities(results),
             ids=results["id"].tolist(),
         )
+
+    # @classmethod
+    # def from_params(
+    #     cls,
+    #     uri: Optional[str],
+    #     table_name: str = "vectors",
+    #     vector_column_name: str = "vector",
+    #     nprobes: int = 20,
+    #     refine_factor: Optional[int] = None,
+    #     text_key: str = DEFAULT_TEXT_KEY,
+    #     doc_id_key: str = DEFAULT_DOC_ID_KEY,
+    #     connection: Optional[Any] = None,
+    #     table: Optional[Any] = None,
+    #     api_key: Optional[str] = None,
+    #     region: Optional[str] = None,
+    #     **kwargs: Any,
+    # ) -> "LanceDBVectorStore":
+    #     """Create instance from params."""
+    #     return cls(
+    #         uri=uri,
+    #         table_name=table_name,
+    #         vector_column_name=vector_column_name,
+    #         nprobes=nprobes,
+    #         refine_factor=refine_factor,
+    #         text_key=text_key,
+    #         doc_id_key=doc_id_key,
+    #         connection=connection or cls._connection,
+    #         table=table,
+    #         api_key=api_key,
+    #         region=region,
+    #         **kwargs,
+    #     )
