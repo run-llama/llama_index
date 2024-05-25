@@ -80,8 +80,8 @@ class MockAgentWorkerWithMemory(MockAgentWorker):
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
         # counter will be set to the last value in memory
-        if len(task.memory.get()) > 0:
-            start = int(cast(Any, task.memory.get()[-1].content))
+        if len(task.memory.get_all()) > 0:
+            start = int(cast(Any, task.memory.get_all()[-1].content))
         else:
             start = 0
         task.extra_state["counter"] = 0
@@ -228,11 +228,11 @@ def test_agent_with_reset() -> None:
         if idx % 2 == 0:
             assert str(response) == "counter: 10"
             assert len(agent_runner.state.task_dict) == 1
-            assert len(agent_runner.memory.get()) == 1
+            assert len(agent_runner.memory.get_all()) == 1
         elif idx % 2 == 1:
             assert str(response) == "counter: 20"
             assert len(agent_runner.state.task_dict) == 2
-            assert len(agent_runner.memory.get()) == 2
+            assert len(agent_runner.memory.get_all()) == 2
 
 
 def test_dag_agent() -> None:

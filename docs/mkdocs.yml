@@ -933,6 +933,8 @@ nav:
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
+          - ./api_reference/memory/simple_composable_memory.md
+          - ./api_reference/memory/vector_memory.md
       - Metadata Extractors:
           - ./api_reference/extractors/entity.md
           - ./api_reference/extractors/index.md
