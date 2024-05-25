@@ -184,7 +184,10 @@ class VectorMemory(BaseMemory):
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
-        if not self.batch_by_user_message or message.role == MessageRole.USER:
+        if not self.batch_by_user_message or message.role in [
+            MessageRole.USER,
+            MessageRole.SYSTEM,
+        ]:
             # if not batching by user message, commit to vector store immediately after adding
             self.chat_store.delete_messages(self.cur_user_msg_key)
             self.chat_store.add_message(self.cur_user_msg_key, message)
