@@ -87,6 +87,9 @@ nav:
           - ./examples/agent/llm_compiler.ipynb
           - ./examples/agent/structured_planner.ipynb
           - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
+          - Memory:
+              - ./examples/agent/memory/vector_memory.ipynb
+              - ./examples/agent/memory/composable_memory.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -926,6 +929,8 @@ nav:
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
+          - ./api_reference/memory/simple_composable_memory.md
+          - ./api_reference/memory/vector_memory.md
       - Metadata Extractors:
           - ./api_reference/extractors/entity.md
           - ./api_reference/extractors/index.md
