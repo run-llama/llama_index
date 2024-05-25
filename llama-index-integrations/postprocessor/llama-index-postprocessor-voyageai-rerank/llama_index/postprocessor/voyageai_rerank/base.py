@@ -30,6 +30,8 @@ class VoyageAIRerank(BaseNodePostprocessor):
         model: str,
         top_n: Optional[int] = None,
         truncation: Optional[bool] = None,
+        # deprecated
+        top_k: Optional[int] = None,
     ):
         try:
             from voyageai import Client
@@ -39,6 +41,8 @@ class VoyageAIRerank(BaseNodePostprocessor):
             )
 
         self._client = Client(api_key=api_key)
+
+        top_n = top_n or top_k
         super().__init__(top_n=top_n, model=model, truncation=truncation)
 
     @classmethod
