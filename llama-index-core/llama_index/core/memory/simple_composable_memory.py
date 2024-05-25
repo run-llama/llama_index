@@ -83,6 +83,7 @@ class SimpleComposableMemory(BaseMemory):
         messages = self.primary_memory.get(input=input, **kwargs)
 
         # get from secondary
+        # TODO: remove any repeated messages in secondary and primary memory
         secondary_histories = []
         for mem in self.secondary_memory_sources:
             secondary_history = mem.get(input, **kwargs)
