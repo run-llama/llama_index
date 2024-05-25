@@ -4,6 +4,7 @@
 
 ### `llama-index-core` [0.10.39]
 
+- Add VectorMemory and SimpleComposableMemory (#13352)
 - Improve MarkdownReader to ignore headers in code blocks (#13694)
 - proper async element node parsers (#13698)
 - return only the message content in function calling worker (#13677)

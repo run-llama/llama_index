@@ -88,6 +88,8 @@ nav:
           - ./examples/agent/structured_planner.ipynb
           - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
+          - ./examples/agent/memory/vector_memory.ipynb
+          - ./examples/agent/memory/composable_memory.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb

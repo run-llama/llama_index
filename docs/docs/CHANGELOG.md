@@ -61,7 +61,7 @@
 
 ### `llama-index-vector-stores-supabase` [0.1.5]
 
-- Try-catch in case the ._client attribute is not present (#13681)
+- Try-catch in case the .\_client attribute is not present (#13681)
 
 ## [2024-05-21]
 
