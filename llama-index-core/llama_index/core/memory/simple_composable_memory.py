@@ -81,16 +81,15 @@ class SimpleComposableMemory(BaseMemory):
         """Get chat history."""
         # get from primary
         messages = self.primary_memory.get(input=input, **kwargs)
-        messages_text = " ".join(m.content or "" for m in messages)
 
         # get from secondary
         # TODO: remove any repeated messages in secondary and primary memory
         secondary_histories = []
         for mem in self.secondary_memory_sources:
             secondary_history = mem.get(input, **kwargs)
-            secondary_text = " ".join(m.content or "" for m in secondary_history)
+            secondary_history = [m for m in secondary_history if m not in messages]
 
-            if len(secondary_history) > 0 and secondary_text not in messages_text:
+            if len(secondary_history) > 0:
                 secondary_histories.append(secondary_history)
 
         # format secondary memory
