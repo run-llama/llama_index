@@ -272,6 +272,10 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         # important: upsert relations after nodes
         self.property_graph_store.upsert_relations(kg_rels_to_insert)
 
+        # refresh schema if needed
+        if self.property_graph_store.supports_structured_queries:
+            self.property_graph_store.get_schema(refresh=True)
+
         return nodes
 
     def _insert_nodes_to_vector_index(self, nodes: List[LabelledNode]) -> None:

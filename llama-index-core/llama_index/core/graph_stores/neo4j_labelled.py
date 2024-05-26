@@ -436,12 +436,13 @@ class Neo4jPGStore(PropertyGraphStore):
         triples = []
 
         ids = [node.id for node in graph_nodes]
-        # Needs some optimization / atm only outgoing rels
+        # Needs some optimization
         response = self.structured_query(
             f"""
             MATCH (e:`__Entity__`)
             WHERE e.id in $ids
-            MATCH p=(e)-[:!MENTIONS]->{{1,{depth}}}()
+            MATCH p=(e)-[r*1..{depth}]-(other)
+            WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel
             WITH distinct rel
             WITH startNode(rel) AS source,
