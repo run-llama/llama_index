@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Sequence, Union, Tuple
 
-from ibm_watsonx_ai import Credentials
+from ibm_watsonx_ai import Credentials, APIClient
 from ibm_watsonx_ai.foundation_models import ModelInference
 from ibm_watsonx_ai.metanames import GenTextParamsMetaNames
 
@@ -32,7 +32,6 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.llms.ibm.utils import (
-    retrive_attributes_from_model,
     resolve_watsonx_credentials,
 )
 
@@ -131,6 +130,7 @@ class WatsonxLLM(CustomLLM):
     )
 
     _model: ModelInference = PrivateAttr()
+    _client: Optional[APIClient] = PrivateAttr()
     _model_info: Optional[Dict[str, Any]] = PrivateAttr()
     _text_generation_params: Dict[str, Any] | None = PrivateAttr()
 
@@ -151,7 +151,7 @@ class WatsonxLLM(CustomLLM):
         instance_id: Optional[SecretStr] = None,
         version: Optional[SecretStr] = None,
         verify: Union[str, bool, None] = None,
-        watsonx_model: Optional[ModelInference] = None,
+        api_client: Optional[APIClient] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -161,7 +161,6 @@ class WatsonxLLM(CustomLLM):
         callback_manager = callback_manager or CallbackManager([])
         additional_params = additional_params or {}
 
-        attrs = retrive_attributes_from_model(watsonx_model) or {}
         creds = (
             resolve_watsonx_credentials(
                 url=url,
@@ -171,18 +170,18 @@ class WatsonxLLM(CustomLLM):
                 password=password,
                 instance_id=instance_id,
             )
-            if not attrs
+            if not isinstance(api_client, APIClient)
             else {}
         )
 
         super().__init__(
-            model_id=(attrs.get("model_id") or model_id),
-            deployment_id=(attrs.get("deployment_id") or deployment_id),
-            temperature=(attrs.get("temperature") or temperature),
-            max_new_tokens=(attrs.get("max_new_tokens") or max_new_tokens),
-            additional_params=(attrs.get("additional_params") or additional_params),
-            project_id=(attrs.get("project_id") or project_id),
-            space_id=(attrs.get("space_id") or space_id),
+            model_id=model_id,
+            deployment_id=deployment_id,
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+            additional_params=additional_params,
+            project_id=project_id,
+            space_id=space_id,
             url=creds.get("url"),
             apikey=creds.get("apikey"),
             token=creds.get("token"),
@@ -191,7 +190,7 @@ class WatsonxLLM(CustomLLM):
             instance_id=creds.get("instance_id"),
             version=version,
             verify=verify,
-            _model=watsonx_model,
+            _client=api_client,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -211,23 +210,26 @@ class WatsonxLLM(CustomLLM):
         else:
             self._text_generation_params = None
 
-        if watsonx_model is not None:
-            self._model = watsonx_model
-        else:
-            self._model = ModelInference(
-                model_id=model_id,
-                deployment_id=deployment_id,
-                credentials=Credentials.from_dict(
+        self._client = api_client
+        self._model = ModelInference(
+            model_id=model_id,
+            deployment_id=deployment_id,
+            credentials=(
+                Credentials.from_dict(
                     {
                         key: value.get_secret_value() if value else None
                         for key, value in self._get_credential_kwargs().items()
                     },
                     _verify=self.verify,
-                ),
-                params=self._text_generation_params,
-                project_id=self.project_id,
-                space_id=self.space_id,
-            )
+                )
+                if creds
+                else None
+            ),
+            params=self._text_generation_params,
+            project_id=self.project_id,
+            space_id=self.space_id,
+            api_client=api_client,
+        )
         self._model_info = None
 
     class Config:

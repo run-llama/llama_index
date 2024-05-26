@@ -1,7 +1,6 @@
 import os
-from typing import Dict, Any, Union, Optional
+from typing import Dict, Union, Optional
 
-from ibm_watsonx_ai.foundation_models import ModelInference, Model
 
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
@@ -13,33 +12,6 @@ try:
     from pydantic.v1 import SecretStr
 except ImportError:
     from pydantic import SecretStr
-
-
-def retrive_attributes_from_model(
-    model: Union[ModelInference, Model, None]
-) -> Dict[str, Any] | None:
-    """
-    Retrieves following attributes: `model_id`, 'deployment_id`, `project_id`,
-    `space_id` and model text generation params, from the model interface object.
-
-    :param model: watsonx.ai model interface
-    :type model: Union[ModelInference, Model, None]
-    :return: Returns dict with the values of mentioned attributes or None if model is None
-    :rtype: Dict[str, Any] | None
-    """
-    attributes = {}
-    if isinstance(model, (ModelInference, Model)):
-        attributes["model_id"] = model.model_id
-        attributes["deployment_id"] = getattr(model, "deployment_id", None)
-        attributes["project_id"] = model._client.default_project_id
-        attributes["space_id"] = model._client.default_space_id
-        params = model.params or {}
-        params.pop("return_options", None)
-        attributes["temperature"] = params.pop("temperature", None)
-        attributes["max_new_tokens"] = params.pop("max_new_tokens", None)
-        attributes["additional_pxarams"] = params
-
-    return attributes
 
 
 def resolve_watsonx_credentials(

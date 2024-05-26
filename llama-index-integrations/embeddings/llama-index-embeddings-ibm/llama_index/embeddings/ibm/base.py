@@ -173,12 +173,16 @@ class WatsonxEmbeddings(BaseEmbedding):
         self._embed_model = Embeddings(
             model_id=model_id,
             params=self.params,
-            credentials=Credentials.from_dict(
-                {
-                    key: value.get_secret_value() if value else None
-                    for key, value in self._get_credential_kwargs().items()
-                },
-                _verify=self.verify,
+            credentials=(
+                Credentials.from_dict(
+                    {
+                        key: value.get_secret_value() if value else None
+                        for key, value in self._get_credential_kwargs().items()
+                    },
+                    _verify=self.verify,
+                )
+                if creds
+                else None
             ),
             project_id=self.project_id,
             space_id=self.space_id,

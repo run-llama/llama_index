@@ -1,4 +1,4 @@
-# LlamaIndex Llms Integration: Ibm
+# LlamaIndex Llms Integration: IBM
 
 This package provides the integration between LlamaIndex and IBM watsonx.ai through the `ibm-watsonx-ai` SDK.
 
