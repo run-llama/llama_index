@@ -8,7 +8,7 @@ from llama_index.core.memory.types import (
 from llama_index.core.memory import ChatMemoryBuffer
 
 DEFAULT_INTRO_HISTORY_MESSAGE = "Below are a set of relevant dialogues retrieved from potentially several memory sources:"
-DEFAULT_OUTRO_HISTORY_MESSAGE = "This is the end of the of retrieved message dialogues."
+DEFAULT_OUTRO_HISTORY_MESSAGE = "This is the end of the retrieved message dialogues."
 
 
 class SimpleComposableMemory(BaseMemory):
