@@ -87,6 +87,8 @@ class SimpleComposableMemory(BaseMemory):
         secondary_histories = []
         for mem in self.secondary_memory_sources:
             secondary_history = mem.get(input, **kwargs)
+            secondary_history = [m for m in secondary_history if m not in messages]
+
             if len(secondary_history) > 0:
                 secondary_histories.append(secondary_history)
 
