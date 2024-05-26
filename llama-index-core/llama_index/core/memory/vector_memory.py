@@ -16,9 +16,6 @@ from llama_index.core.memory.types import BaseMemory
 from llama_index.core.embeddings.utils import EmbedType
 
 
-CUR_USER_MSG_KEY = "cur_user_msg"
-
-
 def _stringify_obj(d: Any):
     """Utility function to convert all keys in a dictionary to strings."""
     if isinstance(d, list):
@@ -61,7 +58,6 @@ class VectorMemory(BaseMemory):
     # in the vector store.
     batch_by_user_message: bool = True
 
-    cur_user_msg_key: str = Field(default=CUR_USER_MSG_KEY)
     cur_batch_textnode: TextNode = Field(
         default_factory=_get_starter_node_for_new_batch,
         description="The super node for the current active user-message batch.",
