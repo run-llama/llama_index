@@ -163,7 +163,6 @@ class VectorMemory(BaseMemory):
 
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
-        sub_dict = _stringify_chat_message(message)
         if not self.batch_by_user_message or message.role in [
             MessageRole.USER,
             MessageRole.SYSTEM,
@@ -172,6 +171,7 @@ class VectorMemory(BaseMemory):
             self.cur_batch_textnode = _get_starter_node_for_new_batch()
 
         # update current batch textnode
+        sub_dict = _stringify_chat_message(message)
         if self.cur_batch_textnode.text == "":
             self.cur_batch_textnode.text += sub_dict["content"] or ""
         else:
