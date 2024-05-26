@@ -50,6 +50,7 @@ def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
     the '!r' modifier to add single quotes for string values if necessary.
 
     References:
+    - https://milvus.io/docs/boolean.md
     - https://github.com/milvus-io/milvus/pull/24386
     - https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals
     """
