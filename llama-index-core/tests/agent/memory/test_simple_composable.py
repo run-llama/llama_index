@@ -79,7 +79,7 @@ def test_simple_composable_memory(
     # assert
     assert len(retrieved_msgs) == 3
     assert retrieved_msgs[0].role == "system"
-    expected_system_string = """You are a helpful assistant.\n\nBelow are a set of relevant dialogues retrieved from potentially several memory sources:\n\n=====Relevant messages from memory source 1=====\n\n\tUSER: Jerry likes juice.\n\tASSISTANT: That's nice.\n\n=====End of relevant messages from memory source 1======\n\nThis is the end of the of retrieved message dialogues."""
+    expected_system_string = """You are a helpful assistant.\n\nBelow are a set of relevant dialogues retrieved from potentially several memory sources:\n\n=====Relevant messages from memory source 1=====\n\n\tUSER: Jerry likes juice.\n\tASSISTANT: That's nice.\n\n=====End of relevant messages from memory source 1======\n\nThis is the end of the retrieved message dialogues."""
     assert expected_system_string == retrieved_msgs[0].content
 
     assert retrieved_msgs[1:] == msgs
