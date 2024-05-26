@@ -45,7 +45,12 @@ def _get_starter_node_for_new_batch() -> TextNode:
 
 
 class VectorMemory(BaseMemory):
-    """Memory backed by a vector index."""
+    """Memory backed by a vector index.
+
+    NOTE: This class requires the `delete_nodes` method to be implemented
+    by the vector store underlying the vector index. At time of writing (May 2024),
+    Chroma, Qdrant and SimpleVectorStore all support delete_nodes.
+    """
 
     vector_index: Any
     retriever_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -92,7 +97,9 @@ class VectorMemory(BaseMemory):
         """Create vector memory.
 
         Args:
-            vector_store (Optional[VectorStore]): vector store
+            vector_store (Optional[VectorStore]): vector store (note: delete_nodes must
+                be implemented. At time of writing (May 2024), Chroma, Qdrant and
+                SimpleVectorStore all support delete_nodes.
             embed_model (Optional[EmbedType]): embedding model
             index_kwargs (Optional[Dict]): kwargs for initializing the index
             retriever_kwargs (Optional[Dict]): kwargs for initializing the retriever
