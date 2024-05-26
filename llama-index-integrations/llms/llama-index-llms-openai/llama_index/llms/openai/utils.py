@@ -34,6 +34,7 @@ GPT4_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-4-0314 before 2023-06-27,
     #   resolves to gpt-4-0613 after
+    "gpt-4o": 128000,
     "gpt-4": 8192,
     "gpt-4-32k": 32768,
     # turbo models (Turbo, JSON mode)
@@ -291,7 +292,7 @@ def from_openai_token_logprobs(
 
 
 def from_openai_completion_logprob(
-    openai_completion_logprob: Dict[str, float]
+    openai_completion_logprob: Dict[str, float],
 ) -> List[LogProb]:
     """Convert openai completion logprobs to generic list of LogProb."""
     return [
