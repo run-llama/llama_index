@@ -14,10 +14,12 @@ Basic usage can be found by simply importing the class and using it:
 ```python
 from llama_index.core import PropertyGraphIndex
 
+# create
 index = PropertyGraphIndex.from_documents(
     documents,
 )
 
+# use
 retriever = index.as_retriever(
     include_text=True,  # include source chunk with matching paths
     similarity_top_k=2,  # top k for vector kg node retrieval
@@ -29,6 +31,21 @@ query_engine = index.as_query_engine(
     similarity_top_k=2,  # top k for vector kg node retrieval
 )
 response = query_engine.query("Test")
+
+# save and load
+index.storage_context.persist(persist_dir="./storage")
+
+from llama_index.core import StorageContext, load_index_from_storage
+
+index = load_index_from_storage(
+    StorageContext.from_defaults(persist_dir="./storage")
+)
+
+# loading from existing graph store (and optional vector store)
+# load from existing graph/vector store
+index = PropertyGraphIndex.from_existing(
+    property_graph_store=graph_store, vector_store=vector_store, ...
+)
 ```
 
 ### Construction
@@ -44,6 +61,10 @@ index = PropertyGraphIndex.from_documents(
     documents,
     kg_extractors=[extractor1, extractor2, ...],
 )
+
+# insert additional documents / nodes
+index.insert(document)
+index.insert_nodes(nodes)
 ```
 
 If not provided, the defaults are `SimpleLLMPathExtractor` and `ImplicitPathExtractor`.
@@ -373,8 +394,7 @@ index = PropertyGraphIndex.from_documents(
 )
 
 # load from existing graph/vector store
-index = PropertyGraphIndex(
-    nodes=[],
+index = PropertyGraphIndex.from_existing(
     property_graph_store=graph_store,
     vector_store=vector_store,
     embed_kg_nodes=True,
@@ -543,3 +563,11 @@ retriever = index.as_retriever(sub_retrievers=[custom_retriever])
 ```
 
 For more complicated customization and use-cases, it is recommended to check out the source code and directly sub-class `BasePGRetriever`.
+
+# Examples
+
+Below, you can find some example notebooks showcasing the `PropertyGraphIndex`
+
+- [Basic Usage](../../examples/property_graph/property_graph_basic.ipynb)
+- [Using Neo4j](../../examples/property_graph/property_graph_neo4j.ipynb)
+- [Advanced Usage with Neo4j and local models](../../examples/property_graph/property_graph_advanced.ipynb)
