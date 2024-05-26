@@ -71,10 +71,25 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 
 
 class Neo4jPGStore(PropertyGraphStore):
-    """
+    r"""
     Neo4j Property Graph Store.
 
     This class implements a Neo4j property graph store.
+
+    If you are using local Neo4j instead of aura, here's a helpful
+    command for launching the docker container:
+
+    ```bash
+    docker run \
+        -p 7474:7474 -p 7687:7687 \
+        -v $PWD/data:/data -v $PWD/plugins:/plugins \
+        --name neo4j-apoc \
+        -e NEO4J_apoc_export_file_enabled=true \
+        -e NEO4J_apoc_import_file_enabled=true \
+        -e NEO4J_apoc_import_file_use__neo4j__config=true \
+        -e NEO4JLABS_PLUGINS=\\[\"apoc\"\\] \
+        neo4j:latest
+    ```
 
     Args:
         username (str): The username for the Neo4j database.
