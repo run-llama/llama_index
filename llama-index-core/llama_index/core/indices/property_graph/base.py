@@ -139,6 +139,42 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             **kwargs,
         )
 
+    @classmethod
+    def from_existing(
+        cls: "PropertyGraphIndex",
+        property_graph_store: PropertyGraphStore,
+        vector_store: Optional[VectorStore] = None,
+        # general params
+        llm: Optional[BaseLLM] = None,
+        kg_extractors: Optional[List[TransformComponent]] = None,
+        # vector related params
+        use_async: bool = True,
+        embed_model: Optional[EmbedType] = None,
+        embed_kg_nodes: bool = True,
+        # parent class params
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
+        storage_context: Optional[StorageContext] = None,
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> "PropertyGraphIndex":
+        """Create an index from an existing property graph store (and optional vector store)."""
+        return cls(
+            nodes=[],  # no nodes to insert
+            property_graph_store=property_graph_store,
+            vector_store=vector_store,
+            llm=llm,
+            kg_extractors=kg_extractors,
+            use_async=use_async,
+            embed_model=embed_model,
+            embed_kg_nodes=embed_kg_nodes,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            **kwargs,
+        )
+
     @property
     def property_graph_store(self) -> PropertyGraphStore:
         """Get the labelled property graph store."""
@@ -193,10 +229,14 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
             if self._use_async:
                 embeddings = asyncio.run(
-                    self._embed_model.aget_text_embedding_batch(node_texts)
+                    self._embed_model.aget_text_embedding_batch(
+                        node_texts, show_progress=self._show_progress
+                    )
                 )
             else:
-                embeddings = self._embed_model.get_text_embedding_batch(node_texts)
+                embeddings = self._embed_model.get_text_embedding_batch(
+                    node_texts, show_progress=self._show_progress
+                )
 
             for node, embedding in zip(nodes, embeddings):
                 node.embedding = embedding
@@ -206,11 +246,14 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
             if self._use_async:
                 kg_embeddings = asyncio.run(
-                    self._embed_model.aget_text_embedding_batch(kg_node_texts)
+                    self._embed_model.aget_text_embedding_batch(
+                        kg_node_texts, show_progress=self._show_progress
+                    )
                 )
             else:
                 kg_embeddings = self._embed_model.get_text_embedding_batch(
-                    kg_node_texts
+                    kg_node_texts,
+                    show_progress=self._show_progress,
                 )
 
             for kg_node, embedding in zip(kg_nodes_to_insert, kg_embeddings):

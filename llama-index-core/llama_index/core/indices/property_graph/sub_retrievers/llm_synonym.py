@@ -4,7 +4,11 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
     BasePGRetriever,
 )
-from llama_index.core.graph_stores.types import PropertyGraphStore, Triplet
+from llama_index.core.graph_stores.types import (
+    PropertyGraphStore,
+    Triplet,
+    KG_SOURCE_REL,
+)
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.schema import (
@@ -82,6 +86,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         triplets = self._graph_store.get_rel_map(
             kg_nodes,
             depth=self._path_depth,
+            ignore_rels=[KG_SOURCE_REL],
         )
 
         return self._get_nodes_with_score(triplets)
@@ -91,6 +96,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         triplets = await self._graph_store.aget_rel_map(
             kg_nodes,
             depth=self._path_depth,
+            ignore_rels=[KG_SOURCE_REL],
         )
 
         return self._get_nodes_with_score(triplets)

@@ -19,6 +19,7 @@ DEFUALT_PG_PERSIST_FNAME = "property_graph_store.json"
 TRIPLET_SOURCE_KEY = "triplet_source_id"
 KG_NODES_KEY = "nodes"
 KG_RELATIONS_KEY = "relations"
+KG_SOURCE_REL = "SOURCE"
 
 
 class LabelledNode(BaseModel):
@@ -282,7 +283,11 @@ class PropertyGraphStore(ABC):
 
     @abstractmethod
     def get_rel_map(
-        self, graph_nodes: List[LabelledNode], depth: int = 2, limit: int = 30
+        self,
+        graph_nodes: List[LabelledNode],
+        depth: int = 2,
+        limit: int = 30,
+        ignore_rels: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get depth-aware rel map."""
         ...
@@ -413,10 +418,14 @@ class PropertyGraphStore(ABC):
         return self.get_triplets(entity_names, relation_names, properties, ids)
 
     async def aget_rel_map(
-        self, graph_nodes: List[LabelledNode], depth: int = 2, limit: int = 30
+        self,
+        graph_nodes: List[LabelledNode],
+        depth: int = 2,
+        limit: int = 30,
+        ignore_rels: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Asynchronously get depth-aware rel map."""
-        return self.get_rel_map(graph_nodes, depth, limit)
+        return self.get_rel_map(graph_nodes, depth, limit, ignore_rels)
 
     async def aget_llama_nodes(self, node_ids: List[str]) -> List[BaseNode]:
         """Asynchronously get nodes."""

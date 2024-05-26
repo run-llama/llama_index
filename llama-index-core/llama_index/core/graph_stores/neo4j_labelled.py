@@ -426,7 +426,11 @@ class Neo4jPGStore(PropertyGraphStore):
         return triples
 
     def get_rel_map(
-        self, graph_nodes: List[LabelledNode], depth: int = 2, limit: int = 30
+        self,
+        graph_nodes: List[LabelledNode],
+        depth: int = 2,
+        limit: int = 30,
+        ignore_rels: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get depth-aware rel map."""
         triples = []
@@ -453,7 +457,11 @@ class Neo4jPGStore(PropertyGraphStore):
             param_map={"ids": ids, "limit": limit},
         )
 
+        ignore_rels = ignore_rels or []
         for record in response:
+            if record["type"] in ignore_rels:
+                continue
+
             source = EntityNode(
                 name=record["source_id"],
                 label=record["source_type"],

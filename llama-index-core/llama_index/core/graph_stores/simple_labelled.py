@@ -99,7 +99,11 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         return triplets
 
     def get_rel_map(
-        self, graph_nodes: List[LabelledNode], depth: int = 2, limit: int = 30
+        self,
+        graph_nodes: List[LabelledNode],
+        depth: int = 2,
+        limit: int = 30,
+        ignore_rels: Optional[List[str]] = None,
     ) -> List[Triplet]:
         """Get depth-aware rel map."""
         triplets = []
@@ -118,6 +122,9 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             graph_triplets = [t for t in graph_triplets if str(t) not in seen_triplets]
             seen_triplets.update([str(t) for t in graph_triplets])
             depth += 1
+
+        ignore_rels = ignore_rels or []
+        triplets = [t for t in triplets if t[1].id not in ignore_rels]
 
         return triplets[:limit]
 

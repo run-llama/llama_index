@@ -67,10 +67,6 @@ class CypherTemplateRetriever(BasePGRetriever):
     async def aretrieve_from_graph(
         self, query_bundle: QueryBundle
     ) -> List[NodeWithScore]:
-        import pdb
-
-        pdb.set_trace()
-
         question = query_bundle.query_str
 
         response = await self.llm.astructured_predict(

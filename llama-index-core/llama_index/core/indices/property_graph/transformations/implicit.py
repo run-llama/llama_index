@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from typing import Any, List
 
 from llama_index.core.schema import TransformComponent, BaseNode, NodeRelationship
@@ -14,8 +15,13 @@ class ImplicitPathExtractor(TransformComponent):
     Uses `node.relationships` to extract relations between nodes.
     """
 
-    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    def __call__(
+        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
         """Extract edges from node relationships."""
+        if show_progress:
+            nodes = tqdm(nodes, desc="Extracting implicit paths")
+
         for node in nodes:
             existing_relations = node.metadata.pop(KG_RELATIONS_KEY, [])
             existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
@@ -72,16 +78,6 @@ class ImplicitPathExtractor(TransformComponent):
                             properties=metadata,
                         )
                     )
-
-            # link all existing kg_nodes to the current text chunk
-            for kg_node in existing_nodes:
-                edges.append(
-                    Relation(
-                        target_id=node.id_,
-                        source_id=kg_node.id,
-                        label="SOURCE_CHUNK",
-                    )
-                )
 
             existing_relations.extend(edges)
             node.metadata["relations"] = existing_relations

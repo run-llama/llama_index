@@ -343,7 +343,7 @@ index = load_index_from_storage(storage_context)
 
 Integrations typically save automatically. Some graph stores will support vectors, others might not. You can always combine a graph store with an external vector db as well.
 
-This example shows how you might save/load a property graph index using Neo4J and Qdrant.
+This example shows how you might save/load a property graph index using Neo4j and Qdrant.
 
 **Note:** If qdrant wasn't passed in, neo4j would store and use the embeddings on its own. This example illustrates the flexibility beyond that.
 
@@ -352,7 +352,7 @@ This example shows how you might save/load a property graph index using Neo4J an
 ```python
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.indices import PropertyGraphIndex
-from llama_index.graph_stores.neo4j import Neo4JLPGStore
+from llama_index.graph_stores.neo4j import Neo4jLPGStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient, AsyncQdrantClient
 
@@ -362,7 +362,7 @@ vector_store = QdrantVectorStore(
     aclient=AsyncQdrantClient(...),
 )
 
-graph_store = Neo4JLPGStore(...)
+graph_store = Neo4jLPGStore(...)
 
 # creates an index
 index = PropertyGraphIndex.from_documents(

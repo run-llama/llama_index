@@ -113,9 +113,6 @@ class BasePGRetriever(BaseRetriever):
 
     def add_source_text(self, nodes: List[NodeWithScore]) -> List[NodeWithScore]:
         """Combine retrieved nodes/triplets with their source text."""
-        if not self.include_text:
-            return nodes
-
         og_nodes = self._graph_store.get_llama_nodes([x.node.ref_doc_id for x in nodes])
         node_map = {node.node_id: node for node in og_nodes}
 
@@ -125,9 +122,6 @@ class BasePGRetriever(BaseRetriever):
         self, nodes: List[NodeWithScore]
     ) -> List[NodeWithScore]:
         """Combine retrieved nodes/triplets with their source text."""
-        if not self.include_text:
-            return nodes
-
         og_nodes = await self._graph_store.aget_llama_nodes(
             [x.node.ref_doc_id for x in nodes]
         )

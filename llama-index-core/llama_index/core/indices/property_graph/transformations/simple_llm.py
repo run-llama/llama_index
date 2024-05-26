@@ -35,8 +35,6 @@ class SimpleLLMPathExtractor(TransformComponent):
             The number of workers to use for parallel processing.
         max_paths_per_chunk (int):
             The maximum number of paths to extract per chunk.
-        show_progress (bool):
-            Whether to show progress bars.
     """
 
     llm: LLM
@@ -44,7 +42,6 @@ class SimpleLLMPathExtractor(TransformComponent):
     parse_fn: Callable
     num_workers: int
     max_paths_per_chunk: int
-    show_progress: bool
 
     def __init__(
         self,
@@ -53,7 +50,6 @@ class SimpleLLMPathExtractor(TransformComponent):
         parse_fn: Callable = default_parse_triplets_fn,
         max_paths_per_chunk: int = 10,
         num_workers: int = 4,
-        show_progress: bool = False,
     ) -> None:
         """Init params."""
         from llama_index.core import Settings
@@ -67,16 +63,17 @@ class SimpleLLMPathExtractor(TransformComponent):
             parse_fn=parse_fn,
             num_workers=num_workers,
             max_paths_per_chunk=max_paths_per_chunk,
-            show_progress=show_progress,
         )
 
     @classmethod
     def class_name(cls) -> str:
         return "ExtractTriplesFromText"
 
-    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    def __call__(
+        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
         """Extract triples from nodes."""
-        return asyncio.run(self.acall(nodes, **kwargs))
+        return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
     async def _aextract(self, node: BaseNode) -> BaseNode:
         """Extract triples from a node."""
@@ -115,12 +112,17 @@ class SimpleLLMPathExtractor(TransformComponent):
 
         return node
 
-    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    async def acall(
+        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
         """Extract triples from nodes async."""
         jobs = []
         for node in nodes:
             jobs.append(self._aextract(node))
 
         return await run_jobs(
-            jobs, workers=self.num_workers, show_progress=self.show_progress
+            jobs,
+            workers=self.num_workers,
+            show_progress=show_progress,
+            desc="Extracting paths from text",
         )

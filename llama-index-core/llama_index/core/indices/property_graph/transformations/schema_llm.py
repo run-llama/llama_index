@@ -139,7 +139,6 @@ class SchemaLLMPathExtractor(TransformComponent):
     num_workers: int
     max_triplets_per_chunk: int
     strict: bool
-    show_progress: bool
 
     def __init__(
         self,
@@ -152,7 +151,6 @@ class SchemaLLMPathExtractor(TransformComponent):
         kg_validation_schema: Dict[str, str] = None,
         max_triplets_per_chunk: int = 10,
         num_workers: int = 4,
-        show_progress: bool = False,
     ) -> None:
         """Init params."""
         if isinstance(extract_prompt, str):
@@ -234,16 +232,17 @@ class SchemaLLMPathExtractor(TransformComponent):
             num_workers=num_workers,
             max_triplets_per_chunk=max_triplets_per_chunk,
             strict=strict,
-            show_progress=show_progress,
         )
 
     @classmethod
     def class_name(cls) -> str:
         return "ExtractTripletsFromText"
 
-    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    def __call__(
+        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
         """Extract triplets from nodes."""
-        return asyncio.run(self.acall(nodes, **kwargs))
+        return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
     def _prune_invalid_triplets(self, kg_schema: Any) -> List[Triplet]:
         """Prune invalid triplets."""
@@ -312,12 +311,17 @@ class SchemaLLMPathExtractor(TransformComponent):
 
         return node
 
-    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    async def acall(
+        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> List[BaseNode]:
         """Extract triplets from nodes async."""
         jobs = []
         for node in nodes:
             jobs.append(self._aextract(node))
 
         return await run_jobs(
-            jobs, workers=self.num_workers, show_progress=self.show_progress
+            jobs,
+            workers=self.num_workers,
+            show_progress=show_progress,
+            desc="Extracting paths from text with schema",
         )
