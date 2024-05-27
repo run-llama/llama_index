@@ -184,6 +184,25 @@ All retrievers currently include:
 - `CypherTemplateRetriever` - use a cypher template with params inferred by the LLM
 - `CustomPGRetriever` - easy to subclass and implement custom retrieval logic
 
+Generally, you would define one or more of these sub-retrievers and pass them to the `PGRetriever`:
+
+```python
+from llama_index.core.indices.property_graph import (
+    PGRetriever, 
+    VectorContextRetriever, 
+    LLMSynonymRetriever,
+)
+
+sub_retrievers = [
+    VectorContextRetriever(index.property_graph_store, ...),
+    LLMSynonymRetriever(index.property_graph_store, ...),
+]
+
+retriever = PGRetriever(sub_retrievers=sub_retrievers)
+
+nodes = retriever.retrieve("<query>")
+```
+
 Read on below for more details on all retrievers.
 
 #### (default) `LLMSynonymRetriever`
