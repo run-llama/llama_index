@@ -238,7 +238,7 @@ If your graph store supports vectors, then you only need to manage that graph st
 ```python
 from llama_index.core.indices.property_graph import VectorContextRetriever
 
-vector_retriever = LPGVectorRetriever(
+vector_retriever = VectorContextRetriever(
     index.property_graph_store,
     # only needed when the graph store doesn't support vector queries
     # vector_store=index.vector_store,
@@ -373,7 +373,7 @@ This example shows how you might save/load a property graph index using Neo4j an
 ```python
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.indices import PropertyGraphIndex
-from llama_index.graph_stores.neo4j import Neo4jLPGStore
+from llama_index.graph_stores.neo4j import Neo4jPGStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient, AsyncQdrantClient
 
@@ -383,25 +383,31 @@ vector_store = QdrantVectorStore(
     aclient=AsyncQdrantClient(...),
 )
 
-graph_store = Neo4jLPGStore(...)
+graph_store = Neo4jPGStore(
+    username="neo4j",
+    password="<password>",
+    url="bolt://localhost:7687",
+)
 
 # creates an index
 index = PropertyGraphIndex.from_documents(
     documents,
     property_graph_store=graph_store,
-    vector_store=vector_store,
+    # optonal, neo4j also supports vectors directly
+    vector_store=vector_store,  
     embed_kg_nodes=True,
 )
 
 # load from existing graph/vector store
 index = PropertyGraphIndex.from_existing(
     property_graph_store=graph_store,
+    # optonal, neo4j also supports vectors directly
     vector_store=vector_store,
     embed_kg_nodes=True,
 )
 ```
 
-### Using the LPG Graph Store Directly
+### Using the Property Graph Store Directly
 
 The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructured using different types of `LabeledNode` objects, and connected using `Relation` objects.
 
