@@ -18,7 +18,7 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import MetadataMode, NodeWithScore
 
 
 class OmniModalQueryEngine(BaseQueryEngine, Generic[KD, KQ]):
@@ -126,7 +126,9 @@ class OmniModalQueryEngine(BaseQueryEngine, Generic[KD, KQ]):
         text_nodes = nodes_by_modality.pop(Modalities.TEXT, [])
         image_nodes = nodes_by_modality.pop(Modalities.IMAGE, [])
 
-        context_str = "\n\n".join([r.get_content() for r in text_nodes])
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
@@ -170,7 +172,9 @@ class OmniModalQueryEngine(BaseQueryEngine, Generic[KD, KQ]):
         text_nodes = nodes_by_modality.pop(Modalities.TEXT, [])
         image_nodes = nodes_by_modality.pop(Modalities.IMAGE, [])
 
-        context_str = "\n\n".join([r.get_content() for r in text_nodes])
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
