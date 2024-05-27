@@ -560,13 +560,13 @@ class Neo4jPGStore(PropertyGraphStore):
         """Delete matching data."""
         if entity_names:
             self.structured_query(
-                "MATCH (n:`__Entity__`) WHERE n.name IN $entity_names DETACH DELETE n",
+                "MATCH (n) WHERE n.name IN $entity_names DETACH DELETE n",
                 param_map={"entity_names": entity_names},
             )
 
         if ids:
             self.structured_query(
-                "MATCH (n:`__Entity__`) WHERE n.id IN $ids DETACH DELETE n",
+                "MATCH (n) WHERE n.id IN $ids DETACH DELETE n",
                 param_map={"ids": ids},
             )
 
@@ -575,7 +575,7 @@ class Neo4jPGStore(PropertyGraphStore):
                 self.structured_query(f"MATCH ()-[r:`{rel}`]->() DELETE r")
 
         if properties:
-            cypher = "MATCH (e:`__Entity__`) WHERE "
+            cypher = "MATCH (e) WHERE "
             prop_list = []
             params = {}
             for i, prop in enumerate(properties):
