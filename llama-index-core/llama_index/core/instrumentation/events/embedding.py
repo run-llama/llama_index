@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List
 
 from llama_index.core.instrumentation.events.base import BaseEvent
 
@@ -22,12 +22,12 @@ class EmbeddingEndEvent(BaseEvent):
     """EmbeddingEndEvent.
 
     Args:
-        chunks (Sequence[object]): List of chunks.
+        chunks (List[str]): List of chunks.
         embeddings (List[List[float]]): List of embeddings.
 
     """
 
-    chunks: Sequence[object]
+    chunks: List[str]
     embeddings: List[List[float]]
 
     @classmethod

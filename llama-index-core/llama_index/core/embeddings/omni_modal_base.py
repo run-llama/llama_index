@@ -608,7 +608,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
             )
         dispatch_event(
             EmbeddingEndEvent(
-                chunks=[data],
+                chunks=[str(data)],
                 embeddings=[embedding],
             )
         )
@@ -640,7 +640,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
             )
         dispatch_event(
             EmbeddingEndEvent(
-                chunks=[data],
+                chunks=[str(data)],
                 embeddings=[embedding],
             )
         )
@@ -740,7 +740,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
             )
         dispatch_event(
             EmbeddingEndEvent(
-                chunks=[data],
+                chunks=[str(data)],
                 embeddings=[embedding],
             )
         )
@@ -774,7 +774,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
             )
         dispatch_event(
             EmbeddingEndEvent(
-                chunks=[data],
+                chunks=[str(data)],
                 embeddings=[embedding],
             )
         )
@@ -820,7 +820,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
                     )
                 dispatch_event(
                     EmbeddingEndEvent(
-                        chunks=cur_batch,
+                        chunks=[str(data) for data in cur_batch],
                         embeddings=embeddings,
                     )
                 )
@@ -886,7 +886,7 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
         ):
             dispatch_event(
                 EmbeddingEndEvent(
-                    chunks=data_batch,
+                    chunks=[str(data) for data in data_batch],
                     embeddings=embeddings,
                 )
             )
