@@ -309,8 +309,8 @@ class Neo4jPGStore(PropertyGraphStore):
         self.structured_query(
             """
             UNWIND $data AS row
-            MERGE (source:`__Entity__` {id: row.source_id})
-            MERGE (target:`__Entity__` {id: row.target_id})
+            MERGE (source {id: row.source_id})
+            MERGE (target {id: row.target_id})
             WITH source, target, row
             CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
             RETURN count(*)

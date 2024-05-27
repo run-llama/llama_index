@@ -606,3 +606,4 @@ Below, you can find some example notebooks showcasing the `PropertyGraphIndex`
 - [Basic Usage](../../examples/property_graph/property_graph_basic.ipynb)
 - [Using Neo4j](../../examples/property_graph/property_graph_neo4j.ipynb)
 - [Advanced Usage with Neo4j and local models](../../examples/property_graph/property_graph_advanced.ipynb)
+- [Using a Property Graph Store](../../examples/property_graph/graph_store.ipynb)
