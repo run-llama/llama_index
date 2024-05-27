@@ -16,10 +16,12 @@ from llama_index.core.embeddings.omni_modal_base import (
 )
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.multi_modal.base import MultiModalVectorStoreIndex
+from llama_index.core.ingestion import run_transformations
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.schema import (
     BaseNode,
+    Document,
     IndexNode,
     MetadataMode,
     TransformComponent,
@@ -28,6 +30,7 @@ from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
+    transformations_from_settings_or_context,
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
@@ -90,7 +93,7 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
         # base index params
         objects: Optional[Sequence[IndexNode]] = None,
         callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
+        transformations: Optional[Sequence[TransformComponent]] = None,
         show_progress: bool = False,
         # vector store index params
         use_async: bool = False,
@@ -131,7 +134,7 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[MultiModelIndexDict] = None,
         callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
+        transformations: Optional[Sequence[TransformComponent]] = None,
         show_progress: bool = False,
         # vector store index params
         use_async: bool = False,
@@ -139,7 +142,7 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
         insert_batch_size: int = 2048,
         **kwargs: Any,
     ) -> "OmniModalVectorStoreIndex[KD, KQ]":
-        return OmniModalVectorStoreIndex(
+        return cls(
             embed_model=embed_model,
             vector_stores=vector_stores,
             nodes=None,
@@ -155,6 +158,63 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
             **kwargs,
         )
 
+    @classmethod
+    def from_documents(
+        cls,
+        documents: Sequence[Document],
+        embed_model: OmniModalEmbeddingBundle[KD, KQ],
+        vector_stores: Optional[Mapping[KD, BasePydanticVectorStore]] = None,
+        # base index params
+        objects: Optional[Sequence[IndexNode]] = None,
+        storage_context: Optional[StorageContext] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        # The default settings use SentenceSplitter which may not be applicable
+        # in multi-modal contexts, so we set the default to no transformations
+        transformations: Optional[Sequence[TransformComponent]] = (),
+        show_progress: bool = False,
+        # vector store index params
+        use_async: bool = False,
+        store_nodes_override: bool = False,
+        insert_batch_size: int = 2048,
+        **kwargs: Any,
+    ) -> "OmniModalVectorStoreIndex[KD, KQ]":
+        storage_context = storage_context or StorageContext.from_defaults()
+        docstore = storage_context.docstore
+
+        if callback_manager is None:
+            callback_manager = callback_manager_from_settings_or_context(Settings, None)
+
+        # Distinguish from the case where an empty sequence is provided.
+        if transformations is None:
+            transformations = transformations_from_settings_or_context(Settings, None)
+
+        with callback_manager.as_trace("index_construction"):
+            for doc in documents:
+                docstore.set_document_hash(doc.get_doc_id(), doc.hash)
+
+            nodes = run_transformations(
+                documents,  # type: ignore
+                transformations,
+                show_progress=show_progress,
+                **kwargs,
+            )
+
+            return cls(
+                embed_model=embed_model,
+                vector_stores=vector_stores,
+                nodes=nodes,
+                objects=objects,
+                index_struct=None,
+                storage_context=storage_context,
+                callback_manager=callback_manager,
+                transformations=transformations,
+                show_progress=show_progress,
+                use_async=use_async,
+                store_nodes_override=store_nodes_override,
+                insert_batch_size=insert_batch_size,
+                **kwargs,
+            )
+
     _index_struct: MultiModelIndexDict
 
     def __init__(
@@ -168,7 +228,7 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
         index_struct: Optional[MultiModelIndexDict] = None,
         storage_context: Optional[StorageContext] = None,
         callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
+        transformations: Optional[Sequence[TransformComponent]] = None,
         show_progress: bool = False,
         # vector store index params
         use_async: bool = False,
