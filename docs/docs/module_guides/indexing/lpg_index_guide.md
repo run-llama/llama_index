@@ -357,6 +357,7 @@ Currently, supported graph stores for property graphs include:
 |---------------------|-----------|--------------------------|-------|-----------------------|
 | SimplePropertyGraphStore | ✅         | ❌                        | ❌     | Disk                  |
 | Neo4jPropertyGraphStore  | ❌         | ✅                        | ❌     | Server                |
+| NebulaPropertyGraphStore | ❌         | ❌                        | ❌     | Server                |
 
 ### Saving to/from disk
 
