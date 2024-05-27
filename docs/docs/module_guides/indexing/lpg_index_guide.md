@@ -562,18 +562,28 @@ class MyGraphExtractor(TransformComponent):
 
 The retriever is a bit more complicated than the extractors, and has it's own special class to help make sub-classing easier.
 
+The return type of the retrieval is extremely flexible. It could be
+- a string
+- a `TextNode`
+- a `NodeWithScore`
+- a list of one of the above
+
 Here is a small example of sub-classing to create a custom retriever:
 
 ```python
-from llama_index.core.indices.property_graph import CustomPGRetriever
+from llama_index.core.indices.property_graph import (
+    CustomPGRetriever,
+    CUSTOM_RETRIEVE_TYPE,
+)
 
 
 class MyCustomRetriever(CustomPGRetriever):
     def init(my_option_1: bool = False, **kwargs) -> None:
         """Uses any kwargs passed in from class constructor."""
         self.my_option_1 = my_option_1
+        # optionally do something with self.graph_store
 
-    def custom_retrieve(self, query_str: str) -> str:
+    def custom_retrieve(self, query_str: str) -> CUSTOM_RETRIEVE_TYPE:
         # some some operation with self.graph_store
         return "result"
 

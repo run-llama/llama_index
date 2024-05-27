@@ -3,6 +3,7 @@ from llama_index.core.indices.property_graph.retriever import PGRetriever
 from llama_index.core.indices.property_graph.sub_retrievers.base import BasePGRetriever
 from llama_index.core.indices.property_graph.sub_retrievers.custom import (
     CustomPGRetriever,
+    CUSTOM_RETRIEVE_TYPE,
 )
 from llama_index.core.indices.property_graph.sub_retrievers.cypher_template import (
     CypherTemplateRetriever,
@@ -44,4 +45,5 @@ __all__ = [
     "SimpleLLMPathExtractor",
     # Utils
     "default_parse_triplets_fn",
+    "CUSTOM_RETRIEVE_TYPE",
 ]
