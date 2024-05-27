@@ -2,15 +2,10 @@ import re
 import string
 from typing import Any, Callable, List, Optional, Sequence
 
-
-import spacy
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
-
 from llama_index.core.node_parser.interface import NodeParser
-
-
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import NodeParser
@@ -56,8 +51,19 @@ class LanguageConfig:
             )
 
         self.language = language
-        self.nlp = spacy.load(spacy_model)
-        self.stopwords = set(stopwords.words(language))
+        self.spacy_model = spacy_model
+        self.nlp = None
+        self.stopwords: list[str] = []
+
+    def load_model(self) -> None:
+        try:
+            import spacy
+        except ImportError:
+            raise ImportError(
+                "Spacy is not installed, please install it with `pip install spacy`."
+            )
+        self.nlp = spacy.load(self.spacy_model)
+        self.stopwords = set(stopwords.words(self.language))
 
 
 class SemanticDoubleMergingSplitterNodeParser(NodeParser):
@@ -175,6 +181,9 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         **kwargs: Any,
     ) -> List[BaseNode]:
         """Parse document into nodes."""
+        # Load model
+        self.language_config.load_model()
+
         all_nodes: List[BaseNode] = []
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
