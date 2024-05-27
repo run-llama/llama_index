@@ -156,22 +156,30 @@ class Neo4jPGStore(PropertyGraphStore):
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
-
         node_query_results = self.structured_query(
             node_properties_query,
             param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
         )
-        node_properties = [el["output"] for el in node_query_results] if node_query_results else []
+        node_properties = (
+            [el["output"] for el in node_query_results] if node_query_results else []
+        )
 
         rels_query_result = self.structured_query(
             rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
         )
-        rel_properties = [el["output"] for el in rels_query_result] if rels_query_result else []
+        rel_properties = (
+            [el["output"] for el in rels_query_result] if rels_query_result else []
+        )
 
         rel_objs_query_result = self.structured_query(
-            rel_query, param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]}
+            rel_query,
+            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
         )
-        relationships = [el["output"] for el in rel_objs_query_result] if rel_objs_query_result else []
+        relationships = (
+            [el["output"] for el in rel_objs_query_result]
+            if rel_objs_query_result
+            else []
+        )
 
         # Get constraints & indexes
         try:

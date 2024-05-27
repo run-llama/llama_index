@@ -188,8 +188,8 @@ Generally, you would define one or more of these sub-retrievers and pass them to
 
 ```python
 from llama_index.core.indices.property_graph import (
-    PGRetriever, 
-    VectorContextRetriever, 
+    PGRetriever,
+    VectorContextRetriever,
     LLMSynonymRetriever,
 )
 
@@ -412,15 +412,15 @@ graph_store = Neo4jPGStore(
 index = PropertyGraphIndex.from_documents(
     documents,
     property_graph_store=graph_store,
-    # optonal, neo4j also supports vectors directly
-    vector_store=vector_store,  
+    # optional, neo4j also supports vectors directly
+    vector_store=vector_store,
     embed_kg_nodes=True,
 )
 
 # load from existing graph/vector store
 index = PropertyGraphIndex.from_existing(
     property_graph_store=graph_store,
-    # optonal, neo4j also supports vectors directly
+    # optional, neo4j also supports vectors directly
     vector_store=vector_store,
     embed_kg_nodes=True,
 )

@@ -121,7 +121,10 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         self._use_async = use_async
         self._llm = llm
         self._embed_kg_nodes = embed_kg_nodes
-        self._override_vector_store = vector_store is not None or not storage_context.property_graph_store.supports_vector_queries
+        self._override_vector_store = (
+            vector_store is not None
+            or not storage_context.property_graph_store.supports_vector_queries
+        )
 
         super().__init__(
             nodes=nodes,
@@ -172,7 +175,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
     def property_graph_store(self) -> PropertyGraphStore:
         """Get the labelled property graph store."""
         return self.storage_context.property_graph_store
-    
+
     @property
     def vector_store(self) -> Optional[BasePydanticVectorStore]:
         if self._embed_kg_nodes and self._override_vector_store:
