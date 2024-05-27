@@ -1,7 +1,7 @@
 import os
 from importlib.util import find_spec
 from typing import List
-
+import time
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
@@ -126,6 +126,7 @@ def test_upstash_vector_query(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
     upstash_vector_store.add(nodes=text_nodes)
+    time.sleep(1)
     res = upstash_vector_store.query(
         VectorStoreQuery(
             query_embedding=[1.0, 0.0, 0.0] * 512,
@@ -196,6 +197,7 @@ def test_upstash_vector_filtering_in(
         ],
     )
     upstash_vector_store.add(nodes=text_nodes)
+    print("SENDING!!!!\n")
     res = upstash_vector_store.query(
         VectorStoreQuery(
             query_embedding=[0.1] * 1536,
