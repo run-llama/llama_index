@@ -180,7 +180,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
@@ -224,7 +224,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
@@ -280,7 +280,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -324,7 +324,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)

@@ -63,3 +63,37 @@ chat_memory = ChatMemoryBuffer.from_defaults(
     chat_store_key="user1",
 )
 ```
+
+## AzureChatStore
+
+Using `AzureChatStore`, you can store your chat history remotely in Azure Table Storage or CosmosDB, without having to worry about manually persisting and loading the chat history.
+
+```
+pip install llama-index
+pip install llama-index-llms-azure-openai
+pip install llama-index-storage-chat-store-azure
+```
+
+```python
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.storage.chat_store.azure import AzureChatStore
+
+chat_store = AzureChatStore.from_account_and_key(
+    account_name="",
+    account_key="",
+    chat_table_name="ChatUser",
+)
+
+memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="conversation1",
+)
+
+chat_engine = SimpleChatEngine(
+    memory=memory, llm=Settings.llm, prefix_messages=[]
+)
+
+response = chat_engine.chat("Hello.")
+```

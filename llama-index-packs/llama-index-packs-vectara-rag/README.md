@@ -56,7 +56,7 @@ Additional optional arguments to VectaraRAG:
 - `similarity_top_k`: determines the number of results to return. Defaults to 5.
 - `n_sentences_before` and `n_sentences_after`: determine the number of sentences before/after the
   matching fact to use with the summarization LLM. defaults to 2.
-- `vectara_query_mode`: 'default' or 'mmr'
+- `reranker`: 'none' or 'mmr' or 'slingshot' (slingshot is Scale only)
 - `summary_enabled`: whether to generate summaries or not. Defaults to True.
 - When summary_enabled is True, you can set the following:
   - `summary_response_lang`: language to use (ISO 639-2 code) for summary generation. defaults to "eng".
