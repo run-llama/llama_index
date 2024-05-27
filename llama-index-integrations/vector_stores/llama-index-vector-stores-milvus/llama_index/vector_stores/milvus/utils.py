@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict
-from FlagEmbedding import BGEM3FlagModel
+import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSparseEmbeddingFunction(ABC):
@@ -15,7 +18,18 @@ class BaseSparseEmbeddingFunction(ABC):
 
 class BGEM3SparseEmbeddingFunction(BaseSparseEmbeddingFunction):
     def __init__(self) -> None:
-        self.model = BGEM3FlagModel("BAAI/bge-m3", use_fp16=False)
+        try:
+            from FlagEmbedding import BGEM3FlagModel
+
+            self.model = BGEM3FlagModel("BAAI/bge-m3", use_fp16=False)
+        except Exception as ImportError:
+            error_info = (
+                "Cannot import BGEM3FlagModel from FlagEmbedding. It seems it is not installed. "
+                "Please install it using:\n"
+                "pip install FlagEmbedding\n"
+            )
+            logger.fatal(error_info)
+            sys.exit(1)
 
     def encode_queries(self, queries: List[str]):
         outputs = self.model.encode(
