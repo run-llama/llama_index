@@ -67,7 +67,7 @@ class SimpleLLMPathExtractor(TransformComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        return "ExtractTriplesFromText"
+        return "SimpleLLMPathExtractor"
 
     def __call__(
         self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any

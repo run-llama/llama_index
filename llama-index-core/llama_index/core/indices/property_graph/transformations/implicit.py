@@ -15,6 +15,10 @@ class ImplicitPathExtractor(TransformComponent):
     Uses `node.relationships` to extract relations between nodes.
     """
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "ImplicitPathExtractor"
+
     def __call__(
         self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:

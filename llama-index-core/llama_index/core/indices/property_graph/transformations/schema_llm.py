@@ -242,7 +242,7 @@ class SchemaLLMPathExtractor(TransformComponent):
 
     @classmethod
     def class_name(cls) -> str:
-        return "ExtractTripletsFromText"
+        return "SchemaLLMPathExtractor"
 
     def __call__(
         self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
