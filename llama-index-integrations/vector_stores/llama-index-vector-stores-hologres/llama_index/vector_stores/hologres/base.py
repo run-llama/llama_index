@@ -178,7 +178,10 @@ class HologresVectorStore(BasePydanticVectorStore):
 
         for result in query_results:
             node = TextNode(
-                text=result["document"], id_=result["id"], embedding=result["vector"]
+                text=result["document"],
+                id_=result["id"],
+                embedding=result["vector"],
+                metadata=result["metadata"],
             )
             nodes.append(node)
             ids.append(result["id"])
@@ -194,4 +197,4 @@ class HologresVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._storage.delete_vectors(schema_data_filters={"id": ref_doc_id})
+        self._storage.delete_vectors(metadata_filters={"doc_id": ref_doc_id})

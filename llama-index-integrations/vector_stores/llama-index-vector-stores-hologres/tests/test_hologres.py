@@ -49,7 +49,7 @@ def test_add_and_query_and_delete():
         node = TextNode()
         node.set_content(texts[i])
         node.embedding = vectors[i]
-        node.metadata = {"id": node.node_id, "number": i}
+        node.metadata = {"id": node.node_id, "number": i, "doc_id": f"{i % 2}"}
         nodes.append(node)
         ids.append(node.node_id)
 
@@ -64,10 +64,11 @@ def test_add_and_query_and_delete():
     assert len(response.nodes) == 2
 
     # Test delete
-    vector_store.delete(response.nodes[0].node_id)
-    vector_store.delete(response.nodes[1].node_id)
+    vector_store.delete("0")
     query = VectorStoreQuery(
         query_embedding=[0.1, 0.1, 0.1, 0.1, 0.1], similarity_top_k=2
     )
     response = vector_store.query(query)
     assert len(response.nodes) == 1
+    node = response.nodes[0]
+    assert node.metadata["doc_id"] == "1"
