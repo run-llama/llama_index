@@ -107,8 +107,8 @@ class SimpleLLMPathExtractor(TransformComponent):
             existing_nodes.extend([subj_node, obj_node])
             existing_relations.append(rel_node)
 
-        node.metadata["nodes"] = existing_nodes
-        node.metadata["relations"] = existing_relations
+        node.metadata[KG_NODES_KEY] = existing_nodes
+        node.metadata[KG_RELATIONS_KEY] = existing_relations
 
         return node
 

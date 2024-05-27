@@ -312,8 +312,8 @@ class SchemaLLMPathExtractor(TransformComponent):
             existing_nodes.append(subj)
             existing_nodes.append(obj)
 
-        node.metadata["nodes"] = existing_nodes
-        node.metadata["relations"] = existing_relations
+        node.metadata[KG_NODES_KEY] = existing_nodes
+        node.metadata[KG_RELATIONS_KEY] = existing_relations
 
         return node
 

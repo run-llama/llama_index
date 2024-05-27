@@ -529,8 +529,8 @@ class MyGraphExtractor(TransformComponent):
 
             # add back to the metadata
 
-            llama_node.metadata["nodes"] = existing_nodes
-            llama_node.metadata["relations"] = existing_relations
+            llama_node.metadata[KG_NODES_KEY] = existing_nodes
+            llama_node.metadata[KG_RELATIONS_KEY] = existing_relations
 
         return llama_nodes
 
