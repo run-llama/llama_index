@@ -3,12 +3,14 @@
       members:
         - AsyncWebPageReader
         - BeautifulSoupWebReader
+        - BrowserbaseWebReader
         - KnowledgeBaseWebReader
         - MainContentExtractorReader
         - NewsArticleReader
         - ReadabilityWebPageReader
         - RssNewsReader
         - RssReader
+        - ScrapflyReader
         - SimpleWebPageReader
         - SitemapReader
         - SpiderReader

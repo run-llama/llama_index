@@ -1,5 +1,4 @@
 """Vector store index types."""
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -69,8 +68,10 @@ class FilterOperator(str, Enum):
     NE = "!="  # not equal to (string, int, float)
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
-    IN = "in"  # metadata in value array (string or number)
-    NIN = "nin"  # metadata not in value array (string or number)
+    IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
+    ANY = "any"  # Contains any (array of strings)
+    ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
     CONTAINS = "contains"  # metadata array contains value (string or number)
 
@@ -93,12 +94,7 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[
-        StrictInt,
-        StrictFloat,
-        StrictStr,
-        List[Union[StrictInt, StrictFloat, StrictStr]],
-    ]
+    value: Union[StrictInt, StrictFloat, StrictStr, List[StrictStr]]
     operator: FilterOperator = FilterOperator.EQ
 
     @classmethod
@@ -316,10 +312,29 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     stores_text: bool
     is_embedding_query: bool = True
 
+    class Config:
+        arbitrary_types_allowed = True
+
     @property
     @abstractmethod
     def client(self) -> Any:
         """Get client."""
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        raise NotImplementedError("get_nodes not implemented")
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Asynchronously get nodes from vector store."""
+        return self.get_nodes(node_ids, filters)
 
     @abstractmethod
     def add(
@@ -352,6 +367,32 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         it will just call delete synchronously.
         """
         self.delete(ref_doc_id, **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete nodes from vector store."""
+        raise NotImplementedError("delete_nodes not implemented")
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronously delete nodes from vector store."""
+        self.delete_nodes(node_ids, filters)
+
+    def clear(self) -> None:
+        """Clear all nodes from configured vector store."""
+        raise NotImplementedError("clear not implemented")
+
+    async def aclear(self) -> None:
+        """Asynchronously clear all nodes from configured vector store."""
+        self.clear()
 
     @abstractmethod
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:

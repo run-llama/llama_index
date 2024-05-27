@@ -8,14 +8,14 @@ from llama_index.core.instrumentation.events.rerank import (
     ReRankStartEvent,
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
 
 class VoyageAIRerank(BaseNodePostprocessor):
     model: str = Field(description="Name of the model to use.")
-    top_k: int = Field(
+    top_n: int = Field(
         description="The number of most relevant documents to return. If not specified, the reranking results of all documents will be returned."
     )
     truncation: bool = Field(
@@ -28,8 +28,10 @@ class VoyageAIRerank(BaseNodePostprocessor):
         self,
         api_key: str,
         model: str,
-        top_k: Optional[int] = None,
+        top_n: Optional[int] = None,
         truncation: Optional[bool] = None,
+        # deprecated
+        top_k: Optional[int] = None,
     ):
         try:
             from voyageai import Client
@@ -39,7 +41,9 @@ class VoyageAIRerank(BaseNodePostprocessor):
             )
 
         self._client = Client(api_key=api_key)
-        super().__init__(top_n=top_k, model=model, truncation=truncation)
+
+        top_n = top_n or top_k
+        super().__init__(top_n=top_n, model=model, truncation=truncation)
 
     @classmethod
     def class_name(cls) -> str:
@@ -53,7 +57,7 @@ class VoyageAIRerank(BaseNodePostprocessor):
         dispatch_event = dispatcher.get_dispatch_event()
         dispatch_event(
             ReRankStartEvent(
-                query=query_bundle, nodes=nodes, top_n=self.top_k, model_name=self.model
+                query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
             )
         )
 
@@ -68,17 +72,20 @@ class VoyageAIRerank(BaseNodePostprocessor):
                 EventPayload.NODES: nodes,
                 EventPayload.MODEL_NAME: self.model,
                 EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_k,
+                EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            texts = [node.node.get_content() for node in nodes]
+            texts = [
+                node.node.get_content(metadata_mode=MetadataMode.EMBED)
+                for node in nodes
+            ]
             results = self._client.rerank(
                 model=self.model,
-                top_k=self.top_k,
+                top_k=self.top_n,
                 query=query_bundle.query_str,
                 documents=texts,
                 truncation=self.truncation,
-            )
+            ).results
 
             new_nodes = []
             for result in results:

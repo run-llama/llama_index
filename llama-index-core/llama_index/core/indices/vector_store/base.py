@@ -26,7 +26,7 @@ from llama_index.core.settings import Settings, embed_model_from_settings_or_con
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import iter_batch
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     @classmethod
     def from_vector_store(
         cls,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
@@ -110,7 +110,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         )
 
     @property
-    def vector_store(self) -> VectorStore:
+    def vector_store(self) -> BasePydanticVectorStore:
         return self._vector_store
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
@@ -345,10 +345,15 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
-        raise NotImplementedError(
-            "Vector indices currently only support delete_ref_doc, which "
-            "deletes nodes using the ref_doc_id of ingested documents."
-        )
+        # delete nodes from vector store
+        self._vector_store.delete_nodes(node_ids, **delete_kwargs)
+
+        # delete from docstore only if needed
+        if (
+            not self._vector_store.stores_text or self._store_nodes_override
+        ) and delete_from_docstore:
+            for node_id in node_ids:
+                self._docstore.delete_document(node_id, raise_error=False)
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
