@@ -4,7 +4,7 @@
 pip install llama-index-readers-upstage
 ```
 
-This reader loads document files and detects elements such as text, tables, and figures using the Upstage Layout Analysis API. Users wishing to utilize this reader must obtain an API access token from the [Upstage developers document](https://developers.upstage.ai/docs/getting-started/quick-start).
+This reader loads document files and detects elements such as text, tables, and figures using the Upstage Layout Analysis API. Users wishing to utilize this reader must obtain an API key from the [Upstage console](https://console.upstage.ai).
 
 ### Construction
 
