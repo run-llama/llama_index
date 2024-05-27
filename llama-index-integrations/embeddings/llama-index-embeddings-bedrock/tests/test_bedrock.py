@@ -1,5 +1,6 @@
-import json
 from io import BytesIO
+import json
+import pytest
 from unittest import TestCase
 
 import boto3
@@ -55,6 +56,28 @@ class TestBedrockEmbedding(TestCase):
         bedrock_stubber.assert_no_pending_responses()
         self.assertEqual(embedding, self.exp_titan_response["embedding"])
 
+    def test_get_text_embedding_titan_v1_bad_params(self) -> None:
+        bedrock_stubber = Stubber(self.bedrock_client)
+
+        bedrock_embedding_dim = BedrockEmbedding(
+            model_name=Models.TITAN_EMBEDDING,
+            client=self.bedrock_client,
+            additional_kwargs={"dimensions": 512},
+        )
+        bedrock_embedding_norm = BedrockEmbedding(
+            model_name=Models.TITAN_EMBEDDING,
+            client=self.bedrock_client,
+            additional_kwargs={"normalize": False},
+        )
+
+        bedrock_stubber.activate()
+        for embedder in [bedrock_embedding_dim, bedrock_embedding_norm]:
+            with pytest.raises(ValueError):
+                embedder.get_text_embedding(text=self.exp_query)
+        bedrock_stubber.deactivate()
+
+        bedrock_stubber.assert_no_pending_responses()
+
     def test_get_text_embedding_titan_v2(self) -> None:
         bedrock_stubber = Stubber(self.bedrock_client)
 
@@ -82,7 +105,7 @@ class TestBedrockEmbedding(TestCase):
         bedrock_embedding = BedrockEmbedding(
             model_name=Models.TITAN_EMBEDDING_V2_0,
             client=self.bedrock_client,
-            titan_body_kwargs={"dimensions": 512, "normalize": True},
+            additional_kwargs={"dimensions": 512, "normalize": True},
         )
         assert bedrock_embedding.model_name == Models.TITAN_EMBEDDING_V2_0
 
