@@ -15,6 +15,14 @@ from llama_index.core.indices.list.retrievers import (
     SummaryIndexLLMRetriever,
     SummaryIndexRetriever,
 )
+from llama_index.core.indices.property_graph import (
+    CustomPGRetriever,
+    CypherTemplateRetriever,
+    LLMSynonymRetriever,
+    PGRetriever,
+    TextToCypherRetriever,
+    VectorContextRetriever,
+)
 from llama_index.core.indices.struct_store.sql_retriever import (
     NLSQLRetriever,
     SQLParserMode,
@@ -59,6 +67,13 @@ __all__ = [
     "RouterRetriever",
     "BM25Retriever",
     "QueryFusionRetriever",
+    # property graph
+    "PGRetriever",
+    "CustomPGRetriever",
+    "LLMSynonymRetriever",
+    "CypherTemplateRetriever",
+    "TextToCypherRetriever",
+    "VectorContextRetriever",
     # SQL
     "SQLRetriever",
     "NLSQLRetriever",
