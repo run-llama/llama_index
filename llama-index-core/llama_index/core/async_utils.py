@@ -26,6 +26,7 @@ def asyncio_run(coro: Coroutine) -> Any:
     If there is no existing event loop, creates a new one.
     """
     try:
+        # this will fail if the event loop is already running
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(coro)
     except RuntimeError:

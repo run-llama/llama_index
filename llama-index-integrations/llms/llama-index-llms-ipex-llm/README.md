@@ -10,6 +10,12 @@
 pip install llama-index-llms-ipex-llm
 ```
 
+### On GPU
+
+```bash
+pip install llama-index-llms-ipex-llm[xpu] --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/
+```
+
 ## Usage
 
 ```python

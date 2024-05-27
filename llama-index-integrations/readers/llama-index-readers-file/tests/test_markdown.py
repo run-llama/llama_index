@@ -36,6 +36,22 @@ def test_parse_markdown_with_only_headers() -> None:
     assert reader.markdown_to_tups(markdown_text) == expected_tups
 
 
+def test_parse_markdown_with_headers_in_code_block() -> None:
+    reader = MarkdownReader()
+    markdown_text = """# ABC
+```python
+# This is a comment
+print("hello")
+```
+# DEF
+"""
+    expected_tups = [
+        ("ABC", '```python\n# This is a comment\nprint("hello")\n```'),
+        ("DEF", ""),
+    ]
+    assert reader.markdown_to_tups(markdown_text) == expected_tups
+
+
 def test_parse_empty_markdown() -> None:
     reader = MarkdownReader()
     markdown_text = ""

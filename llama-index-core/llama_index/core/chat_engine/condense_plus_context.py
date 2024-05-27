@@ -196,7 +196,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get()
+        chat_history = self._memory.get(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = self._condense_question(chat_history, message)  # type: ignore
@@ -243,7 +243,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get()
+        chat_history = self._memory.get(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)  # type: ignore

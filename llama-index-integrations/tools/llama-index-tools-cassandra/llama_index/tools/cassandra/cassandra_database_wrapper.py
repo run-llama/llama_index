@@ -42,7 +42,6 @@ class CassandraDatabase:
         self,
         query: str,
         fetch: str = "all",
-        include_columns: bool = False,
         **kwargs: Any,
     ) -> Union[str, Sequence[Dict[str, Any]], ResultSet]:
         """Execute a CQL query and return the results."""
@@ -56,6 +55,18 @@ class CassandraDatabase:
             return result
         else:
             raise ValueError("Fetch parameter must be either 'one', 'all', or 'cursor'")
+
+    def run_no_throw(
+        self,
+        query: str,
+        fetch: str = "all",
+        **kwargs: Any,
+    ) -> Union[str, Sequence[Dict[str, Any]], ResultSet]:
+        """Execute a CQL query and return the results."""
+        try:
+            return self.run(query, fetch, **kwargs)
+        except Exception as e:
+            return str(e)
 
     def get_keyspace_tables_str(self, keyspace: str) -> str:
         """Get the tables for the specified keyspace."""

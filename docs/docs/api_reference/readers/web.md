@@ -10,6 +10,7 @@
         - ReadabilityWebPageReader
         - RssNewsReader
         - RssReader
+        - ScrapflyReader
         - SimpleWebPageReader
         - SitemapReader
         - SpiderReader
