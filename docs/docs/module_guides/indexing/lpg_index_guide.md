@@ -578,7 +578,7 @@ from llama_index.core.indices.property_graph import (
 
 
 class MyCustomRetriever(CustomPGRetriever):
-    def init(my_option_1: bool = False, **kwargs) -> None:
+    def init(self, my_option_1: bool = False, **kwargs) -> None:
         """Uses any kwargs passed in from class constructor."""
         self.my_option_1 = my_option_1
         # optionally do something with self.graph_store
