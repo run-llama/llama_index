@@ -75,15 +75,11 @@ class BedrockEmbedding(BaseEmbedding):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the bedrock client."
     )
-    titan_body_kwargs: Dict[str, Any] = Field(
-        description="Additional kwargs for the Titan embed model request body.",
-        exclude=True,
-    )
     _client: Any = PrivateAttr()
 
     def __init__(
         self,
-        model: str = Models.TITAN_EMBEDDING,
+        model_name: str = Models.TITAN_EMBEDDING,
         profile_name: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -106,7 +102,6 @@ class BedrockEmbedding(BaseEmbedding):
         **kwargs: Any,
     ):
         additional_kwargs = additional_kwargs or {}
-        titan_body_kwargs = titan_body_kwargs or {}
 
         session_kwargs = {
             "profile_name": profile_name,
@@ -148,7 +143,7 @@ class BedrockEmbedding(BaseEmbedding):
             self._client = session.client("bedrock", config=config)
 
         super().__init__(
-            model=model,
+            model_name=model_name,
             max_retries=max_retries,
             timeout=timeout,
             botocore_config=config,
@@ -159,7 +154,6 @@ class BedrockEmbedding(BaseEmbedding):
             region_name=region_name,
             botocore_session=botocore_session,
             additional_kwargs=additional_kwargs,
-            titan_body_kwargs=titan_body_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
@@ -399,13 +393,30 @@ class BedrockEmbedding(BaseEmbedding):
         if provider == PROVIDERS.AMAZON:
             if isinstance(payload, list):
                 raise ValueError("Amazon provider does not support list of texts")
-            # Titan Embedding V2.0 has additional body parameters
-            if self.model_name == Models.TITAN_EMBEDDING_V2_0:
-                request_body = json.dumps(
-                    {"inputText": payload, **self.titan_body_kwargs}
-                )
-            else:
-                request_body = json.dumps({"inputText": payload})
+
+            titan_body_request = {"inputText": payload}
+
+            # Titan Embedding V2.0 has additional body parameters to check.
+            if "dimensions" in self.additional_kwargs:
+                if self.model_name == Models.TITAN_EMBEDDING_V2_0:
+                    titan_body_request["dimensions"] = self.additional_kwargs[
+                        "dimensions"
+                    ]
+                else:
+                    raise ValueError(
+                        "'dimensions' param not supported outside of 'titan-embed-text-v2:0' model."
+                    )
+            if "normalize" in self.additional_kwargs:
+                if self.model_name == Models.TITAN_EMBEDDING_V2_0:
+                    titan_body_request["normalize"] = self.additional_kwargs[
+                        "normalize"
+                    ]
+                else:
+                    raise ValueError(
+                        "'normalize' param not supported outside of 'titan-embed-text-v2:0' model."
+                    )
+
+            request_body = json.dumps(titan_body_request)
 
         elif provider == PROVIDERS.COHERE:
             input_types = {
