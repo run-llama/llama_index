@@ -1,5 +1,11 @@
 import asyncio
-from typing import Any, Dict, List, Literal, Optional, TypeAlias, Union
+from typing import Any, Dict, List, Literal, Optional, Union
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    # python 3.8 and 3.9 compatibility
+    TypeAlias = Any
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, validator, Field
