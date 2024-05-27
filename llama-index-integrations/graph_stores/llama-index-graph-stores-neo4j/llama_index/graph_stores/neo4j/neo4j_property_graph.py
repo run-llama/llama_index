@@ -155,26 +155,24 @@ class Neo4jPGStore(PropertyGraphStore):
         return self._driver
 
     def refresh_schema(self) -> None:
-        node_properties = [
-            el["output"]
-            for el in self.structured_query(
-                node_properties_query,
-                param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
-            )
-        ]
-        rel_properties = [
-            el["output"]
-            for el in self.structured_query(
-                rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
-            )
-        ]
-        relationships = [
-            el["output"]
-            for el in self.structured_query(
-                rel_query,
-                param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
-            )
-        ]
+        """Refresh the schema."""
+
+        node_query_results = self.structured_query(
+            node_properties_query,
+            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+        )
+        node_properties = [el["output"] for el in node_query_results] if node_query_results else []
+
+        rels_query_result = self.structured_query(
+            rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
+        )
+        rel_properties = [el["output"] for el in rels_query_result] if rels_query_result else []
+
+        rel_objs_query_result = self.structured_query(
+            rel_query, param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]}
+        )
+        relationships = [el["output"] for el in rel_objs_query_result] if rel_objs_query_result else []
+
         # Get constraints & indexes
         try:
             constraint = self.structured_query("SHOW CONSTRAINTS")
