@@ -140,7 +140,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
         Raises:
             ImportError: If the upstash-vector python package is not installed.
         """
-        super().__init__(batch_size=batch_size)
+        super().__init__(batch_size=batch_size, namespace=namespace)
         self._index = Index(url=url, token=token)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
