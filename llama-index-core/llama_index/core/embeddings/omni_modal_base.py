@@ -553,6 +553,18 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
         """The supported modalities for query embeddings."""
         raise NotImplementedError
 
+    def _embedding_end_event(
+        self,
+        data_items: List[object],
+        embeddings: List[Embedding],
+    ) -> EmbeddingEndEvent:
+        return EmbeddingEndEvent.construct(
+            # You can override __str__ for more user-friendly output
+            chunks=[str(data) for data in data_items],
+            # Very expensive to validate all items in the embedding vector
+            embeddings=embeddings,
+        )
+
     @abstractmethod
     def _get_query_embedding(
         self, modality: Modality[KQ, Any, object], data: object
@@ -607,8 +619,8 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
                 },
             )
         dispatch_event(
-            EmbeddingEndEvent(
-                chunks=[str(data)],
+            self._embedding_end_event(
+                data_items=[data],
                 embeddings=[embedding],
             )
         )
@@ -639,8 +651,8 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
                 },
             )
         dispatch_event(
-            EmbeddingEndEvent(
-                chunks=[str(data)],
+            self._embedding_end_event(
+                data_items=[data],
                 embeddings=[embedding],
             )
         )
@@ -739,8 +751,8 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
                 },
             )
         dispatch_event(
-            EmbeddingEndEvent(
-                chunks=[str(data)],
+            self._embedding_end_event(
+                data_items=[data],
                 embeddings=[embedding],
             )
         )
@@ -773,8 +785,8 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
                 },
             )
         dispatch_event(
-            EmbeddingEndEvent(
-                chunks=[str(data)],
+            self._embedding_end_event(
+                data_items=[data],
                 embeddings=[embedding],
             )
         )
@@ -819,8 +831,8 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
                         },
                     )
                 dispatch_event(
-                    EmbeddingEndEvent(
-                        chunks=[str(data) for data in cur_batch],
+                    self._embedding_end_event(
+                        data_items=cur_batch,
                         embeddings=embeddings,
                     )
                 )
@@ -885,8 +897,8 @@ class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
             callback_payloads, nested_embeddings
         ):
             dispatch_event(
-                EmbeddingEndEvent(
-                    chunks=[str(data) for data in data_batch],
+                self._embedding_end_event(
+                    data_items=data_batch,
                     embeddings=embeddings,
                 )
             )
