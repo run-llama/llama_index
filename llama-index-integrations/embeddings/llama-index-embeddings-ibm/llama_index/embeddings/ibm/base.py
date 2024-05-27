@@ -52,10 +52,6 @@ class WatsonxEmbeddings(BaseEmbedding):
         default=None,
         description="""Represents the maximum number of input tokens accepted.""",
     )
-    additional_kwargs: Optional[Dict[str, Any]] = Field(
-        default_factory=None,
-        description="Additional kwargs for the embeddings generation.",
-    )
 
     project_id: Optional[str] = Field(
         default=None,
@@ -120,7 +116,6 @@ class WatsonxEmbeddings(BaseEmbedding):
         model_id: str,
         truncate_input_tokens: Optional[int] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        additional_kwargs: Optional[Dict[str, Any]] = None,
         project_id: Optional[str] = None,
         space_id: Optional[str] = None,
         url: Optional[SecretStr] = None,
@@ -154,7 +149,6 @@ class WatsonxEmbeddings(BaseEmbedding):
         super().__init__(
             model_id=model_id,
             truncate_input_tokens=truncate_input_tokens,
-            additional_kwargs=additional_kwargs,
             project_id=project_id,
             space_id=space_id,
             url=creds.get("url"),

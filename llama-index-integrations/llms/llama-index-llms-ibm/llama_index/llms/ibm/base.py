@@ -129,6 +129,10 @@ class WatsonxLLM(CustomLLM):
         allow_mutation=False,
     )
 
+    validate_model: bool = Field(
+        default=True, description="Model id validation", allow_mutation=False
+    )
+
     _model: ModelInference = PrivateAttr()
     _client: Optional[APIClient] = PrivateAttr()
     _model_info: Optional[Dict[str, Any]] = PrivateAttr()
@@ -152,6 +156,7 @@ class WatsonxLLM(CustomLLM):
         version: Optional[SecretStr] = None,
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
+        validate_model: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -191,6 +196,7 @@ class WatsonxLLM(CustomLLM):
             version=version,
             verify=verify,
             _client=api_client,
+            validate_model=validate_model,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -229,6 +235,7 @@ class WatsonxLLM(CustomLLM):
             project_id=self.project_id,
             space_id=self.space_id,
             api_client=api_client,
+            validate=validate_model,
         )
         self._model_info = None
 
@@ -322,15 +329,13 @@ class WatsonxLLM(CustomLLM):
         def gen() -> CompletionResponseGen:
             content = ""
             if kwargs.get("raw_response"):
-                raw_stream_deltas: Dict[str, Any] = {"stream_deltas": []}
                 for stream_delta in stream_response:
                     stream_delta_text = self._model._return_guardrails_stats(
                         stream_delta
                     ).get("generated_text", "")
                     content += stream_delta_text
-                    raw_stream_deltas["stream_deltas"].append(stream_delta)
                     yield CompletionResponse(
-                        text=content, delta=stream_delta_text, raw=raw_stream_deltas
+                        text=content, delta=stream_delta_text, raw=stream_delta
                     )
             else:
                 for stream_delta in stream_response:
