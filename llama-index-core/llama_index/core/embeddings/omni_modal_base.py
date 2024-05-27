@@ -118,7 +118,8 @@ class NodeProcessors:
 
                 if not processor_by_mro_idx:
                     raise ValueError(
-                        f"Cannot find compatible processor for node ({node})"
+                        f"Cannot find compatible processor for node (type: {node_type}). "
+                        f"Available processors: {list(processors)}"
                     )
 
                 matched_processor = processor_by_mro_idx[min(processor_by_mro_idx)]
