@@ -38,6 +38,26 @@ from llama_index.core.retrievers.recursive_retriever import RecursiveRetriever
 from llama_index.core.retrievers.router_retriever import RouterRetriever
 from llama_index.core.retrievers.transform_retriever import TransformRetriever
 
+
+# property graph
+from llama_index.core.indices.property_graph.retriever import PGRetriever
+from llama_index.core.indices.property_graph.sub_retrievers.base import BasePGRetriever
+from llama_index.core.indices.property_graph.sub_retrievers.custom import (
+    CustomPGRetriever,
+)
+from llama_index.core.indices.property_graph.sub_retrievers.cypher_template import (
+    CypherTemplateRetriever,
+)
+from llama_index.core.indices.property_graph.sub_retrievers.llm_synonym import (
+    LLMSynonymRetriever,
+)
+from llama_index.core.indices.property_graph.sub_retrievers.text_to_cypher import (
+    TextToCypherRetriever,
+)
+from llama_index.core.indices.property_graph.sub_retrievers.vector import (
+    VectorContextRetriever,
+)
+
 __all__ = [
     "VectorIndexRetriever",
     "VectorIndexAutoRetriever",
@@ -53,6 +73,15 @@ __all__ = [
     "TreeRootRetriever",
     "TransformRetriever",
     "KeywordTableSimpleRetriever",
+    # property graph
+    "PGRetriever",
+    "BasePGRetriever",
+    "CustomPGRetriever",
+    "CypherTemplateRetriever",
+    "LLMSynonymRetriever",
+    "TextToCypherRetriever",
+    "VectorContextRetriever",
+    # standalone retrievers
     "BaseRetriever",
     "RecursiveRetriever",
     "AutoMergingRetriever",
