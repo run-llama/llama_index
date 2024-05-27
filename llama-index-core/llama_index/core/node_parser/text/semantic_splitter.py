@@ -1,6 +1,5 @@
 from typing import Any, Callable, List, Optional, Sequence, TypedDict
 
-
 import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field
