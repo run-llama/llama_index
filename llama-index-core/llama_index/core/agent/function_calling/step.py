@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Any, List, Optional, cast
+from typing import Any, Callable, List, Optional, cast
 import asyncio
 
 from llama_index.core.agent.types import (
@@ -13,6 +13,7 @@ from llama_index.core.agent.types import (
     TaskStepOutput,
 )
 from llama_index.core.agent.utils import add_user_step_to_memory
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -34,7 +35,7 @@ from llama_index.core.tools.calling import (
     acall_tool_with_selection,
 )
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -42,12 +43,42 @@ logger.setLevel(logging.WARNING)
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
+def get_function_by_name(tools: List[BaseTool], name: str) -> Optional[BaseTool]:
+    """Get function by name. If the function is not found, None is returned."""
     name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
+    return name_to_tool.get(name, None)
+
+
+def build_missing_tool_message(missing_tool_name: str) -> str:
+    """
+    Build an error message for the case where a tool is not found. This message
+    instructs the LLM to double check the tool name, since it was hallucinated.
+    """
+    return f"Tool with name {missing_tool_name} not found, please double check."
+
+
+def build_error_tool_output(tool_name: str, tool_args: Any, err_msg: str) -> ToolOutput:
+    """Build a ToolOutput for an error that has occurred."""
+    return ToolOutput(
+        content=err_msg,
+        tool_name=tool_name,
+        raw_input={"args": str(tool_args)},
+        raw_output=err_msg,
+        is_error=True,
+    )
+
+
+def build_missing_tool_output(bad_tool_call: ToolSelection) -> ToolOutput:
+    """
+    Build a ToolOutput for the case where a tool is not found. This output contains
+    instructions that ask the LLM to double check the tool name, along with the
+    hallucinated tool name itself.
+    """
+    return build_error_tool_output(
+        bad_tool_call.tool_name,
+        bad_tool_call.tool_kwargs,
+        build_missing_tool_message(bad_tool_call.tool_name),
+    )
 
 
 class FunctionCallingAgentWorker(BaseAgentWorker):
@@ -163,8 +194,10 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             + task.extra_state["new_memory"].get_all()
         )
 
-    def _call_function(
+    async def _call_function_handler(
         self,
+        call_fn: Callable,
+        use_async: bool,
         tools: List[BaseTool],
         tool_call: ToolSelection,
         memory: BaseMemory,
@@ -177,44 +210,21 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: tool.metadata,
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=tool_call.tool_name)
+                ),
             },
         ) as event:
-            tool_output = call_tool_with_selection(tool_call, tools, verbose=verbose)
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
-
-        function_message = ChatMessage(
-            content=str(tool_output),
-            role=MessageRole.TOOL,
-            additional_kwargs={
-                "name": tool_call.tool_name,
-                "tool_call_id": tool_call.tool_id,
-            },
-        )
-        sources.append(tool_output)
-        memory.put(function_message)
-
-        return tool.metadata.return_direct
-
-    async def _acall_function(
-        self,
-        tools: List[BaseTool],
-        tool_call: ToolSelection,
-        memory: BaseMemory,
-        sources: List[ToolOutput],
-        verbose: bool = False,
-    ) -> bool:
-        tool = get_function_by_name(tools, tool_call.tool_name)
-
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: tool.metadata,
-            },
-        ) as event:
-            tool_output = await acall_tool_with_selection(
-                tool_call, tools, verbose=verbose
+            tool_output = (
+                (
+                    await call_fn(tool_call, tools, verbose=verbose)
+                    if use_async
+                    else call_fn(tool_call, tools, verbose=verbose)
+                )
+                if tool is not None
+                else build_missing_tool_output(tool_call)
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
@@ -229,7 +239,50 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct
+        return tool.metadata.return_direct if tool is not None else False
+
+    def _call_function(
+        self,
+        tools: List[BaseTool],
+        tool_call: ToolSelection,
+        memory: BaseMemory,
+        sources: List[ToolOutput],
+        verbose: bool = False,
+    ) -> bool:
+        return asyncio_run(
+            self._call_function_handler(
+                lambda tool_call, tools, verbose: call_tool_with_selection(
+                    tool_call, tools, verbose=verbose
+                ),
+                False,
+                tools,
+                tool_call,
+                memory,
+                sources,
+                verbose,
+            )
+        )
+
+    async def _acall_function(
+        self,
+        tools: List[BaseTool],
+        tool_call: ToolSelection,
+        memory: BaseMemory,
+        sources: List[ToolOutput],
+        verbose: bool = False,
+    ) -> bool:
+        async def async_call_fn(tool_call, tools, verbose):
+            return await acall_tool_with_selection(tool_call, tools, verbose=verbose)
+
+        return await self._call_function_handler(
+            async_call_fn,
+            True,
+            tools,
+            tool_call,
+            memory,
+            sources,
+            verbose,
+        )
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:

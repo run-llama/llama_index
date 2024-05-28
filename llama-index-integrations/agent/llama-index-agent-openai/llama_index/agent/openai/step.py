@@ -6,10 +6,15 @@ import logging
 import uuid
 from functools import partial
 from threading import Thread
-from typing import Any, Dict, List, Callable, Optional, Tuple, Union, cast, get_args
+from typing import Any, Dict, List, Callable, Optional, Union, cast, get_args
 import re
 
 from llama_index.agent.openai.utils import resolve_tool_choice
+from llama_index.core.agent.function_calling.step import (
+    build_error_tool_output,
+    build_missing_tool_message,
+    get_function_by_name,
+)
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -17,6 +22,7 @@ from llama_index.core.agent.types import (
     TaskStepOutput,
 )
 from llama_index.core.agent.utils import add_user_step_to_memory
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -36,6 +42,7 @@ from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools.types import ToolMetadata
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
 
@@ -43,14 +50,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
-
-
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
-    name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
 
 
 def call_tool_with_error_handling(
@@ -119,135 +118,6 @@ def advanced_tool_call_parser(tool_call: OpenAIToolCall) -> Dict:
         raise ValueError(
             f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"
         )
-
-
-def call_function(
-    tools: List[BaseTool],
-    tool_call: OpenAIToolCall,
-    verbose: bool = False,
-    tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
-) -> Tuple[ChatMessage, ToolOutput]:
-    """Call a function and return the output as a string."""
-    # validations to get passed mypy
-    assert tool_call.id is not None
-    assert tool_call.function is not None
-    assert tool_call.function.name is not None
-    assert tool_call.function.arguments is not None
-    tool_call_parser = tool_call_parser or default_tool_call_parser
-
-    id_ = tool_call.id
-    _function_call = tool_call.function
-    name = tool_call.function.name
-    arguments_str = tool_call.function.arguments
-    if verbose:
-        print("=== Calling Function ===")
-        print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
-    error_message: Optional[str] = None
-    try:
-        argument_dict = tool_call_parser(tool_call)
-    except ValueError as e:
-        error_message = str(e)
-        return (
-            ChatMessage(
-                content=error_message,
-                role=MessageRole.TOOL,
-                additional_kwargs={
-                    "name": name,
-                    "tool_call_id": id_,
-                },
-            ),
-            ToolOutput(
-                content=error_message,
-                tool_name=name,
-                raw_input={"args": arguments_str},
-                raw_output=error_message,
-                is_error=True,
-            ),
-        )
-
-    # Call tool
-    # Use default error message except if json parsing fails
-    output = call_tool_with_error_handling(
-        tool, argument_dict, error_message=error_message
-    )
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================\n")
-    return (
-        ChatMessage(
-            content=str(output),
-            role=MessageRole.TOOL,
-            additional_kwargs={
-                "name": name,
-                "tool_call_id": id_,
-            },
-        ),
-        output,
-    )
-
-
-async def acall_function(
-    tools: List[BaseTool],
-    tool_call: OpenAIToolCall,
-    verbose: bool = False,
-    tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
-) -> Tuple[ChatMessage, ToolOutput]:
-    """Call a function and return the output as a string."""
-    # validations to get passed mypy
-    assert tool_call.id is not None
-    assert tool_call.function is not None
-    assert tool_call.function.name is not None
-    assert tool_call.function.arguments is not None
-    tool_call_parser = tool_call_parser or default_tool_call_parser
-
-    id_ = tool_call.id
-    _function_call = tool_call.function
-    name = tool_call.function.name
-    arguments_str = tool_call.function.arguments
-    if verbose:
-        print("=== Calling Function ===")
-        print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
-    async_tool = adapt_to_async_tool(tool)
-    error_message: Optional[str] = None
-    try:
-        argument_dict = tool_call_parser(tool_call)
-    except ValueError as e:
-        error_message = str(e)
-        return (
-            ChatMessage(
-                content=error_message,
-                role=MessageRole.TOOL,
-                additional_kwargs={
-                    "name": name,
-                    "tool_call_id": id_,
-                },
-            ),
-            ToolOutput(
-                content=error_message,
-                tool_name=name,
-                raw_input={"args": arguments_str},
-                raw_output=error_message,
-                is_error=True,
-            ),
-        )
-
-    output = await async_tool.acall(**argument_dict)
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================\n")
-    return (
-        ChatMessage(
-            content=str(output),
-            role=MessageRole.TOOL,
-            additional_kwargs={
-                "name": name,
-                "tool_call_id": id_,
-            },
-        ),
-        output,
-    )
 
 
 class OpenAIAgentWorker(BaseAgentWorker):
@@ -441,6 +311,108 @@ class OpenAIAgentWorker(BaseAgentWorker):
         else:
             raise NotImplementedError
 
+    async def _call_function_handler(
+        self,
+        use_async: bool,
+        tools: List[BaseTool],
+        tool_call: OpenAIToolCall,
+        memory: BaseMemory,
+        sources: List[ToolOutput],
+    ) -> bool:
+        # validations to get past mypy
+        assert tool_call.id is not None
+        assert tool_call.function is not None
+        assert tool_call.function.name is not None
+        assert tool_call.function.arguments is not None
+
+        function_id = tool_call.id
+        function_name = tool_call.function.name
+        function_args_str = tool_call.function.arguments
+
+        tool = get_function_by_name(tools, function_name)
+
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: function_args_str,
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=function_name)
+                ),
+            },
+        ) as event:
+            """Call a function and return the output as a string."""
+            tool_call_parser = self.tool_call_parser or default_tool_call_parser
+
+            if self._verbose:
+                print("=== Calling Function ===")
+                print(
+                    f"Calling function: {function_name} with args: {function_args_str}"
+                )
+
+            tool = get_function_by_name(tools, function_name)
+            error_message: Optional[str] = None
+
+            # Verify that tool arguments can be parsed into dict
+            try:
+                argument_dict = tool_call_parser(tool_call)
+            except ValueError as e:
+                error_message = str(e)
+
+            # Verify that the requested tool actually exists
+            if tool is None:
+                error_message = build_missing_tool_message(function_name)
+
+            # Call tool, or wrap error into output objects
+            if error_message is not None:
+                if self._verbose:
+                    print(error_message)
+                    print("========================\n")
+
+                function_message = ChatMessage(
+                    content=error_message,
+                    role=MessageRole.TOOL,
+                    additional_kwargs={
+                        "name": function_name,
+                        "tool_call_id": function_id,
+                    },
+                )
+                tool_output = build_error_tool_output(
+                    function_name, function_args_str, error_message
+                )
+            else:
+                if use_async:
+                    async_tool = adapt_to_async_tool(tool)
+                    tool_output = await async_tool.acall(**argument_dict)
+                else:
+                    tool_output = call_tool_with_error_handling(
+                        tool, argument_dict, error_message=error_message
+                    )
+
+                if self._verbose:
+                    print(f"Got output: {tool_output!s}")
+                    print("========================\n")
+
+                function_message = ChatMessage(
+                    content=str(tool_output),
+                    role=MessageRole.TOOL,
+                    additional_kwargs={
+                        "name": function_name,
+                        "tool_call_id": function_id,
+                    },
+                )
+
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+        sources.append(tool_output)
+        memory.put(function_message)
+
+        return (
+            tool.metadata.return_direct and not tool_output.is_error
+            if tool is not None
+            else False
+        )
+
     def _call_function(
         self,
         tools: List[BaseTool],
@@ -448,32 +420,15 @@ class OpenAIAgentWorker(BaseAgentWorker):
         memory: BaseMemory,
         sources: List[ToolOutput],
     ) -> bool:
-        function_call = tool_call.function
-        # validations to get passed mypy
-        assert function_call is not None
-        assert function_call.name is not None
-        assert function_call.arguments is not None
-
-        tool = get_function_by_name(tools, function_call.name)
-
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: tool.metadata,
-            },
-        ) as event:
-            function_message, tool_output = call_function(
+        return asyncio_run(
+            self._call_function_handler(
+                False,
                 tools,
                 tool_call,
-                verbose=self._verbose,
-                tool_call_parser=self.tool_call_parser,
+                memory,
+                sources,
             )
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
-        sources.append(tool_output)
-        memory.put(function_message)
-
-        return tool.metadata.return_direct and not tool_output.is_error
+        )
 
     async def _acall_function(
         self,
@@ -482,32 +437,13 @@ class OpenAIAgentWorker(BaseAgentWorker):
         memory: BaseMemory,
         sources: List[ToolOutput],
     ) -> bool:
-        function_call = tool_call.function
-        # validations to get passed mypy
-        assert function_call is not None
-        assert function_call.name is not None
-        assert function_call.arguments is not None
-
-        tool = get_function_by_name(tools, function_call.name)
-
-        with self.callback_manager.event(
-            CBEventType.FUNCTION_CALL,
-            payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: tool.metadata,
-            },
-        ) as event:
-            function_message, tool_output = await acall_function(
-                tools,
-                tool_call,
-                verbose=self._verbose,
-                tool_call_parser=self.tool_call_parser,
-            )
-            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
-        sources.append(tool_output)
-        memory.put(function_message)
-
-        return tool.metadata.return_direct and not tool_output.is_error
+        return await self._call_function_handler(
+            True,
+            tools,
+            tool_call,
+            memory,
+            sources,
+        )
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""

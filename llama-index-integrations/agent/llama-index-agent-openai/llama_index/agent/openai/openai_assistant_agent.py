@@ -4,10 +4,14 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
-
-from llama_index.agent.openai.utils import get_function_by_name
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from llama_index.core.agent.function_calling.step import (
+    build_error_tool_output,
+    build_missing_tool_message,
+    get_function_by_name,
+)
 from llama_index.core.agent.types import BaseAgent
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -59,8 +63,12 @@ def from_openai_thread_messages(thread_messages: List[Any]) -> List[ChatMessage]
     ]
 
 
-def call_function(
-    tools: List[BaseTool], fn_obj: Any, verbose: bool = False
+async def _call_function_handler(
+    call_fn: Callable,
+    use_async: bool,
+    tools: List[BaseTool],
+    fn_obj: Any,
+    verbose: bool = False,
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call a function and return the output as a string."""
     from openai.types.beta.threads.required_action_function_tool_call import Function
@@ -69,15 +77,31 @@ def call_function(
     # TMP: consolidate with other abstractions
     name = fn_obj.name
     arguments_str = fn_obj.arguments
+
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
+
     tool = get_function_by_name(tools, name)
-    argument_dict = json.loads(arguments_str)
-    output = tool(**argument_dict)
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================")
+    if tool is not None:
+        argument_dict = json.loads(arguments_str)
+        output = (
+            await call_fn(tool, argument_dict)
+            if use_async
+            else call_fn(tool, argument_dict)
+        )
+
+        if verbose:
+            print(f"Got output: {output!s}")
+            print("========================")
+    else:
+        err_msg = build_missing_tool_message(name)
+        output = build_error_tool_output(name, arguments_str, err_msg)
+
+        if verbose:
+            print(err_msg)
+            print("========================")
+
     return (
         ChatMessage(
             content=str(output),
@@ -90,35 +114,36 @@ def call_function(
     )
 
 
+def call_function(
+    tools: List[BaseTool], fn_obj: Any, verbose: bool = False
+) -> Tuple[ChatMessage, ToolOutput]:
+    """Call a function and return the output as a string."""
+    return asyncio_run(
+        _call_function_handler(
+            lambda tool, args: tool(**args),
+            False,
+            tools,
+            fn_obj,
+            verbose,
+        )
+    )
+
+
 async def acall_function(
     tools: List[BaseTool], fn_obj: Any, verbose: bool = False
 ) -> Tuple[ChatMessage, ToolOutput]:
     """Call an async function and return the output as a string."""
-    from openai.types.beta.threads.required_action_function_tool_call import Function
 
-    fn_obj = cast(Function, fn_obj)
-    # TMP: consolidate with other abstractions
-    name = fn_obj.name
-    arguments_str = fn_obj.arguments
-    if verbose:
-        print("=== Calling Function ===")
-        print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
-    argument_dict = json.loads(arguments_str)
-    async_tool = adapt_to_async_tool(tool)
-    output = await async_tool.acall(**argument_dict)
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================")
-    return (
-        ChatMessage(
-            content=str(output),
-            role=MessageRole.FUNCTION,
-            additional_kwargs={
-                "name": fn_obj.name,
-            },
-        ),
-        output,
+    async def async_call_fn(tool, args):
+        async_tool = adapt_to_async_tool(tool)
+        return await async_tool.acall(**args)
+
+    return await _call_function_handler(
+        async_call_fn,
+        True,
+        tools,
+        fn_obj,
+        verbose,
     )
 
 
@@ -353,6 +378,7 @@ class OpenAIAssistantAgent(BaseAgent):
         tool_calls = run.required_action.submit_tool_outputs.tool_calls
         tool_output_dicts = []
         tool_output_objs: List[ToolOutput] = []
+
         for tool_call in tool_calls:
             fn_obj = tool_call.function
             _, tool_output = call_function(self._tools, fn_obj, verbose=self._verbose)
@@ -408,7 +434,6 @@ class OpenAIAssistantAgent(BaseAgent):
         run = cast(Run, run)
 
         sources = []
-
         while run.status in ["queued", "in_progress", "requires_action"]:
             run = self._client.beta.threads.runs.retrieve(
                 thread_id=self._thread_id, run_id=run.id
