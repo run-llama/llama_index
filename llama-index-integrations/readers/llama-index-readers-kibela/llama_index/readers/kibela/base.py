@@ -21,7 +21,7 @@ class PageInfo(BaseModel):
 
 
 class Connection(GenericModel, Generic[NodeType]):
-    nodes: Optional[List[NodeType]]
+    nodes: Optional[List[NodeType]] = None
     edges: Optional[List[Edge[NodeType]]]
     pageInfo: Optional[PageInfo]
     totalCount: Optional[int]
