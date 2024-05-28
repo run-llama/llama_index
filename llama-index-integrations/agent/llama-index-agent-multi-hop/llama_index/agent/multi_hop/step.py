@@ -8,6 +8,7 @@ from llama_index.core.agent.types import (
     BaseAgentWorker,
 )
 from llama_index.core.base.agent.types import Task, TaskStep, TaskStepOutput
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
 )
@@ -28,6 +29,19 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
     if name not in name_to_tool:
         raise ValueError(f"Tool with name {name} not found")
     return name_to_tool[name]
+
+
+class DataRequirements(BaseModel):
+    """Data class for holding the data requirements for answering the query."""
+
+    data_field_names: List[str] = Field(
+        default_factory=list,
+        description="List of data field names required to answer the query.",
+    )
+    data_field_descriptions: List[str] = Field(
+        default_factory=list,
+        description="Corresponding descriptions of each data field name.",
+    )
 
 
 class MultiHopAgentWorker(BaseAgentWorker):
@@ -92,6 +106,13 @@ class MultiHopAgentWorker(BaseAgentWorker):
         )
 
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        # generate structured data model to get data requirements based on input
+
+        # retrieve relevant documents from index
+
+        # perform data extraction using retrieved context from RAG
+
+        # perform final response synthesi
         return super().run_step(step, task, **kwargs)
 
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
