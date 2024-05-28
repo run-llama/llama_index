@@ -283,6 +283,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
+    response_mode: ResponseMode = Field(default=ResponseMode.REFINE)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -327,7 +328,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
                 service_context=self.service_context,
                 text_qa_template=infer_prev_next_prompt,
                 refine_template=refine_infer_prev_next_prompt,
-                response_mode=ResponseMode.TREE_SUMMARIZE,
+                response_mode=self.response_mode,
             )
             raw_pred = response_builder.get_response(
                 text_chunks=[node.node.get_content()],
