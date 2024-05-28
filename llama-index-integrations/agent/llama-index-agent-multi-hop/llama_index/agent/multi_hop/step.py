@@ -1,6 +1,7 @@
 """Multi-Hop agent worker."""
 
 import logging
+import uuid
 from typing import Any, Coroutine, List, Optional, Sequence
 
 from llama_index.core.agent.types import (
@@ -12,6 +13,7 @@ from llama_index.core.callbacks import (
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool
 from llama_index.core.tools.query_engine import QueryEngineTool
@@ -73,7 +75,21 @@ class MultiHopAgentWorker(BaseAgentWorker):
         )
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
-        return super().initialize_step(task, **kwargs)
+        # temporary memory for new messages
+        new_memory = ChatMemoryBuffer.from_defaults()
+
+        # put current history in new memory
+        messages = task.memory.get(input=task.input)
+        for message in messages:
+            new_memory.put(message)
+
+        # initialize task state
+        task_state = {"new_memory": new_memory}
+        task.extra_state.update(task_state)
+
+        return TaskStep(
+            task_id=task.task_id, step_id=str(uuid.uuid4()), input=task.input
+        )
 
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         return super().run_step(step, task, **kwargs)
