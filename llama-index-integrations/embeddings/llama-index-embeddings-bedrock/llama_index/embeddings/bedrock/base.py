@@ -89,7 +89,6 @@ class BedrockEmbedding(BaseEmbedding):
         botocore_session: Optional[Any] = None,
         botocore_config: Optional[Any] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        titan_body_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
         timeout: float = 60.0,
         callback_manager: Optional[CallbackManager] = None,
