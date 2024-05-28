@@ -224,7 +224,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     @classmethod
     def class_name(cls) -> str:
-        return cls.__name__
+        return "WeaviateVectorStore"
 
     @property
     def client(self) -> Any:
