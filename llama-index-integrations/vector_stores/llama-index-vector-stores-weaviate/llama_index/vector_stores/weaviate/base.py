@@ -24,7 +24,6 @@ from llama_index.vector_stores.weaviate.utils import (
     create_default_schema,
     get_all_properties,
     get_node_similarity,
-    parse_get_response,
     to_node,
 )
 
