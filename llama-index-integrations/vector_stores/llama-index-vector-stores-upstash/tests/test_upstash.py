@@ -1,6 +1,7 @@
 import os
 from importlib.util import find_spec
 from typing import List
+import time
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
@@ -125,6 +126,8 @@ def test_upstash_vector_query(
     upstash_vector_store: UpstashVectorStore, text_nodes: List[TextNode]
 ) -> None:
     upstash_vector_store.add(nodes=text_nodes)
+
+    # This is necessary to wait for the upserted data to be indexed
     time.sleep(1)
     res = upstash_vector_store.query(
         VectorStoreQuery(

@@ -7,7 +7,7 @@ https://upstash.com/docs/vector/overall/getstarted
 """
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, List
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode
@@ -108,7 +108,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
-    namespace: Optional[str]
+    namespace: str = ""
 
     batch_size: int
     _index: Index = PrivateAttr()
@@ -127,7 +127,8 @@ class UpstashVectorStore(BasePydanticVectorStore):
         url: str,
         token: str,
         batch_size: int = DEFAULT_BATCH_SIZE,
-        namespace: Optional[str] = "",
+        # Upstash uses ("") as the default namespace, if not provided
+        namespace: str = "",
     ) -> None:
         """
         Create a UpstashVectorStore. The index can be created using the Upstash console.
