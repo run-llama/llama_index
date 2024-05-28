@@ -44,6 +44,7 @@ pytest = "7.2.1"
 pytest-asyncio = "*"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
+tantivy = {git = "https://github.com/quickwit-oss/tantivy-py#164adc87e1a033117001cf70e38c82a53014d985"}
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
