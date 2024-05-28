@@ -29,6 +29,15 @@ class BaseGitHubIssuesClient(Protocol):
     ) -> Dict:
         ...
 
+    async def get_comments(
+        self,
+        owner: str,
+        repo: str,
+        issue_number: int,
+        page: int = 1,
+    ) -> Dict:
+        ...
+
 
 class GitHubIssuesClient:
     """
@@ -82,6 +91,7 @@ class GitHubIssuesClient:
 
         self._endpoints = {
             "getIssues": "/repos/{owner}/{repo}/issues",
+            "getIssueComments": "/repos/{owner}/{repo}/issues/{issue_number}/comments",
         }
 
         self._headers = {
@@ -187,6 +197,41 @@ class GitHubIssuesClient:
                 },
                 owner=owner,
                 repo=repo,
+            )
+        ).json()
+
+    async def get_comments(
+        self,
+        owner: str,
+        repo: str,
+        issue_number: int,
+        page: int = 1,
+    ) -> Dict:
+        """
+        List comments in an issue.
+
+        Args:
+            - `owner (str)`: Owner of the repository.
+            - `repo (str)`: Name of the repository.
+            - `issue_number (int)`: The number that identifies the issue..
+
+        Returns:
+            - See https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments
+
+        Examples:
+            >>> repo_issues = client.get_comments("owner", "repo", "123")
+        """
+        return (
+            await self.request(
+                endpoint="getIssueComments",
+                method="GET",
+                params={
+                    "per_page": 100,
+                    "page": page,
+                },
+                owner=owner,
+                repo=repo,
+                issue_number=issue_number,
             )
         ).json()
 

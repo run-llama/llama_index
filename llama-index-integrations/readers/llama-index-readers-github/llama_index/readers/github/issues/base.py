@@ -84,6 +84,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
         github_client: BaseGitHubIssuesClient,
         owner: str,
         repo: str,
+        include_comments: bool = False,
         verbose: bool = False,
     ):
         """
@@ -93,6 +94,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
             - github_client (BaseGitHubIssuesClient): GitHub client.
             - owner (str): Owner of the repository.
             - repo (str): Name of the repository.
+            - include_comments (bool): Whether to fetch issue comments and merge them with the text.
             - verbose (bool): Whether to print verbose messages.
 
         Raises:
@@ -103,6 +105,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
 
         self._owner = owner
         self._repo = repo
+        self._include_comments = include_comments
         self._verbose = verbose
 
         # Set up the event loop
@@ -125,7 +128,8 @@ class GitHubRepositoryIssuesReader(BaseReader):
 
         Each issue is converted to a document by doing the following:
 
-        - The text of the document is the concatenation of the title and the body of the issue.
+        - The text of the document is the concatenation of the title, the body of the issue, and optionally,
+          issue comments bodies.
         - The title of the document is the title of the issue.
         - The doc_id of the document is the issue number.
         - The extra_info of the document is a dictionary with the following keys:
@@ -187,6 +191,34 @@ class GitHubRepositoryIssuesReader(BaseReader):
                 if issue["labels"] is not None:
                     extra_info["labels"] = [label["name"] for label in issue["labels"]]
                 document.extra_info = extra_info
+                if self._include_comments and issue["comments"] > 0:
+                    all_comments_text = ""
+                    comment_page = 1
+                    while True:
+                        # Loop until there are no more comments
+                        comments: Dict = self._loop.run_until_complete(
+                            self._github_client.get_comments(
+                                self._owner,
+                                self._repo,
+                                issue_number=issue["number"],
+                                page=comment_page,
+                            )
+                        )
+                        if len(comments) == 0:
+                            print_if_verbose(
+                                self._verbose, "No more comments found, stopping"
+                            )
+                            break
+                        print_if_verbose(
+                            self._verbose,
+                            f"Found {len(comments)} comments in the issue page {comment_page}",
+                        )
+                        comment_page += 1
+                        all_comments_text += "\n".join(
+                            [comment["body"] for comment in comments]
+                        )
+                    if len(all_comments_text) > 0:
+                        document.text += "\n" + all_comments_text
                 documents.append(document)
 
             print_if_verbose(self._verbose, f"Resulted in {len(documents)} documents")
