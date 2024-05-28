@@ -116,8 +116,12 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             Defaults to None.
         mode (str, optional): The mode to use for LanceDB.
             Defaults to "overwrite".
+        query_type (str, optional): The type of query to use for LanceDB.
+            Defaults to "vector".
         reranker (Any, optional): The reranker to use for LanceDB.
             Defaults to None.
+        overfetch_factor (int, optional): The factor by which to fetch more results.
+            Defaults to 1.
 
     Raises:
         ImportError: Unable to import `lancedb`.
@@ -147,6 +151,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     api_key: Optional[str]
     region: Optional[str]
     mode: Optional[str]
+    query_type: Optional[str]
+    overfetch_factor: Optional[int]
 
     _table_name: Optional[str] = PrivateAttr()
     _connection: Any = PrivateAttr()
@@ -169,7 +175,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         api_key: Optional[str] = None,
         region: Optional[str] = None,
         mode: str = "overwrite",
+        query_type: str = "vector",
         reranker: Optional[Any] = None,
+        overfetch_factor: int = 1,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -239,6 +247,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             text_key=text_key,
             doc_id_key=doc_id_key,
             mode=mode,
+            query_type=query_type,
+            overfetch_factor=overfetch_factor,
             **kwargs,
         )
 
@@ -351,8 +361,17 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        table = self._connection.open_table(self._table_name)
-        table.delete('document_id = "' + ref_doc_id + '"')
+        self._table.delete(f'{self.doc_id_key} = "' + ref_doc_id + '"')
+
+    def delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with node_ids.
+
+        Args:
+            node_ids (List[str]): The list of node_ids to delete.
+
+        """
+        self._table.delete('id in ("' + '","'.join(node_ids) + '")')
 
     def query(
         self,
@@ -371,7 +390,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             where = kwargs.pop("where", None)
 
-        query_type = kwargs.pop("query_type", "vector")
+        query_type = kwargs.pop("query_type", self.query_type)
 
         _logger.info("query_type :", query_type)
 
@@ -400,14 +419,15 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 query=_query,
                 vector_column_name=self.vector_column_name,
             )
-            .limit(query.similarity_top_k)
+            .limit(query.similarity_top_k * self.overfetch_factor)
             .where(where)
-            .nprobes(self.nprobes)
         )
 
-        if query_type == "hybrid" and self._reranker is not None:
-            _logger.info(f"using {self._reranker} for reranking results.")
-            lance_query.rerank(reranker=self._reranker)
+        if query_type != "fts":
+            lance_query.nprobes(self.nprobes)
+            if query_type == "hybrid" and self._reranker is not None:
+                _logger.info(f"using {self._reranker} for reranking results.")
+                lance_query.rerank(reranker=self._reranker)
 
         if self.refine_factor is not None:
             lance_query.refine_factor(self.refine_factor)
@@ -454,35 +474,3 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             similarities=_to_llama_similarities(results),
             ids=results["id"].tolist(),
         )
-
-    # @classmethod
-    # def from_params(
-    #     cls,
-    #     uri: Optional[str],
-    #     table_name: str = "vectors",
-    #     vector_column_name: str = "vector",
-    #     nprobes: int = 20,
-    #     refine_factor: Optional[int] = None,
-    #     text_key: str = DEFAULT_TEXT_KEY,
-    #     doc_id_key: str = DEFAULT_DOC_ID_KEY,
-    #     connection: Optional[Any] = None,
-    #     table: Optional[Any] = None,
-    #     api_key: Optional[str] = None,
-    #     region: Optional[str] = None,
-    #     **kwargs: Any,
-    # ) -> "LanceDBVectorStore":
-    #     """Create instance from params."""
-    #     return cls(
-    #         uri=uri,
-    #         table_name=table_name,
-    #         vector_column_name=vector_column_name,
-    #         nprobes=nprobes,
-    #         refine_factor=refine_factor,
-    #         text_key=text_key,
-    #         doc_id_key=doc_id_key,
-    #         connection=connection or cls._connection,
-    #         table=table,
-    #         api_key=api_key,
-    #         region=region,
-    #         **kwargs,
-    #     )
