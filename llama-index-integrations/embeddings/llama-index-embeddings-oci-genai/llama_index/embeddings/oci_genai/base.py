@@ -53,14 +53,14 @@ class OCIGenAIEmbeddings(BaseEmbedding):
             from llama_index.embeddings.oci_genai import OCIGenAIEmbeddings
 
             embeddings = OCIGenAIEmbeddings(
-                model="MY_EMBEDDING_MODEL",
+                model_name="MY_EMBEDDING_MODEL",
                 service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
                 compartment_id="MY_OCID"
             )
     """
 
-    model: str = Field(
-        description="Id of the OCI Generative AI embedding model to use."
+    model_name: str = Field(
+        description="ID or Name of the OCI Generative AI embedding model to use."
     )
 
     truncate: str = Field(
@@ -97,7 +97,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
     def __init__(
         self,
-        model: str,
+        model_name: str,
         truncate: str = "END",
         input_type: Optional[str] = None,
         service_endpoint: str = None,
@@ -112,7 +112,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         Initializes the OCIGenAIEmbeddings class.
 
         Args:
-            model (str): The Id of the model to be used for generating embeddings, e.g., "cohere.embed-english-light-v3.0".
+            model_name (str): The name or ID of the model to be used for generating embeddings, e.g., "cohere.embed-english-light-v3.0".
 
             truncate (str): A string indicating the truncation strategy for long input text. Possible values
                             are 'START', 'END', or 'NONE'.
@@ -204,7 +204,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 ) from e
 
         super().__init__(
-            model=model,
+            model_name=model_name,
             truncate=truncate,
             input_type=input_type,
             service_endpoint=service_endpoint,
@@ -233,10 +233,10 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 "Please make sure you have the oci package installed."
             ) from ex
 
-        if self.model.startswith(CUSTOM_ENDPOINT_PREFIX):
-            serving_mode = models.DedicatedServingMode(endpoint_id=self.model)
+        if self.model_name.startswith(CUSTOM_ENDPOINT_PREFIX):
+            serving_mode = models.DedicatedServingMode(endpoint_id=self.model_name)
         else:
-            serving_mode = models.OnDemandServingMode(model_id=self.model)
+            serving_mode = models.OnDemandServingMode(model_id=self.model_name)
 
         request = models.EmbedTextDetails(
             serving_mode=serving_mode,

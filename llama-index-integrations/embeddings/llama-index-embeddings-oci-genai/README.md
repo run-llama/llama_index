@@ -23,7 +23,7 @@ pip install -U oci
 from llama_index.embeddings.oci_genai import OCIGenAIEmbeddings
 
 embedding = OCIGenAIEmbeddings(
-    model="MY_MODEL",
+    model_name="MY_MODEL",
     service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
     compartment_id="MY_OCID",
 )
