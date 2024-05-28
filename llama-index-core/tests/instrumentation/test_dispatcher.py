@@ -554,12 +554,13 @@ async def test_dispatcher_async_fire_event_with_instance(
 def test_context_nesting():
     # arrange
     # A binary tree of parent-child spans
-    h = 7  # height of binary tree
-    s = 2 ** (h + 1) - 1  # number of spans
-    # Below is a tree with h=3 (s=15).
+    h = 5  # height of binary tree
+    s = 2 ** (h + 1) - 1  # number of spans per tree
+    runs = 2  # number of trees (in parallel)
+    # Below is a tree (r=1) with h=3 (s=15).
     # Tn: n-th span run in thread
     # An: n-th span run in async
-    #               T1
+    #               A1
     #       ┌───────┴───────┐
     #       A2              A3
     #   ┌───┴───┐       ┌───┴───┐
@@ -570,10 +571,12 @@ def test_context_nesting():
     # We'll check that the parent-child associations are correct.
 
     class Span(BaseSpan):
-        n: int
+        r: int  # tree id
+        n: int  # span id (per tree)
 
     class Event(BaseEvent):
-        n: int
+        r: int  # tree id
+        n: int  # span id (per tree)
 
     lock = Lock()
     spans: Dict[str, Span] = {}
@@ -588,8 +591,8 @@ def test_context_nesting():
             parent_span_id: Optional[str] = None,
             **kwargs: Any,
         ) -> None:
-            n = bound_args.args[0]
-            span = Span(n=n, id_=id_, parent_id=parent_span_id)
+            r, n = bound_args.args[:2]
+            span = Span(r=r, n=n, id_=id_, parent_id=parent_span_id)
             with lock:
                 spans[id_] = span
 
@@ -611,51 +614,58 @@ def test_context_nesting():
     )
 
     @dispatcher.span
-    def foo(n: int, callback: Callable[[], None] = lambda: None) -> None:
-        dispatcher.event(Event(n=n))
+    def bar(r: int, n: int, callback: Callable[[], None] = lambda: None) -> None:
+        dispatcher.event(Event(r=r, n=n))
         if n > 2**h - 1:
             callback()
             return
         if n % 2:
-            asyncio.run(_bar(n))
+            asyncio.run(_foo(r, n))
         else:
-            t0 = Thread(target=foo, args=(n * 2,))
-            t1 = Thread(target=foo, args=(n * 2 + 1,))
+            t0 = Thread(target=bar, args=(r, n * 2))
+            t1 = Thread(target=bar, args=(r, n * 2 + 1))
             t0.start(), t1.start()
             time.sleep(0.01)
             t0.join(), t1.join()
         callback()
 
     @dispatcher.span
-    async def bar(n: int) -> None:
-        dispatcher.event(Event(n=n))
+    async def foo(r: int, n: int) -> None:
+        dispatcher.event(Event(r=r, n=n))
         if n > 2**h - 1:
             return
         if n % 2:
-            await _bar(n)
+            await _foo(r, n)
         else:
             q, loop = Queue(), get_event_loop()
-            Thread(target=foo, args=(n * 2, _callback(q, loop))).start()
-            Thread(target=foo, args=(n * 2 + 1, _callback(q, loop))).start()
+            Thread(target=bar, args=(r, n * 2, _callback(q, loop))).start()
+            Thread(target=bar, args=(r, n * 2 + 1, _callback(q, loop))).start()
             await gather(q.get(), q.get())
+
+    async def _foo(r: int, n: int) -> None:
+        await gather(foo(r, n * 2), foo(r, n * 2 + 1), sleep(0.01))
 
     def _callback(q: Queue, loop: AbstractEventLoop) -> Callable[[], None]:
         return lambda: loop.call_soon_threadsafe(q.put_nowait(1))
 
-    async def _bar(n: int) -> None:
-        await gather(bar(n * 2), bar(n * 2 + 1), sleep(0.01))
+    async def forest(runs: int) -> None:
+        await gather(*(foo(r, 1) for r in range(runs)))
 
     # act
-    foo(1)
+    asyncio.run(forest(runs))
 
     # assert
     # parent-child associations should be correct
-    assert sorted(span.n for span in spans.values()) == list(range(1, s + 1))
+    assert sorted(span.n for span in spans.values()) == sorted(
+        list(range(1, s + 1)) * runs
+    )
     for span in spans.values():
         if span.n > 1:
+            assert span.r == spans[span.parent_id].r  # same tree
             assert span.n // 2 == spans[span.parent_id].n
 
     # event-span associations should be correct
-    assert sorted(event.n for event in events) == list(range(1, s + 1))
+    assert sorted(event.n for event in events) == sorted(list(range(1, s + 1)) * runs)
     for event in events:
-        assert event.n == spans[event.span_id].n
+        assert event.r == spans[event.span_id].r  # same tree
+        assert event.n == spans[event.span_id].n  # same span
