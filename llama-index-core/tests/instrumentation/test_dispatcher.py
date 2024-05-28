@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import threading
 import time
 from asyncio import (
     CancelledError,
@@ -648,11 +649,16 @@ def test_context_nesting():
     def _callback(q: Queue, loop: AbstractEventLoop) -> Callable[[], None]:
         return lambda: loop.call_soon_threadsafe(q.put_nowait(1))
 
-    async def forest(runs: int) -> None:
-        await gather(*(foo(r, 1) for r in range(runs)))
-
     # act
-    asyncio.run(forest(runs))
+    # Use regular thread to ensure that `Token.MISSING` is being handled.
+    regular_threads = [
+        threading.Thread(target=asyncio.run, args=(foo(r, 1),))
+        if r % 2
+        else threading.Thread(target=bar, args=(r, 1))
+        for r in range(runs)
+    ]
+    [t.start() for t in regular_threads]
+    [t.join() for t in regular_threads]
 
     # assert
     # parent-child associations should be correct

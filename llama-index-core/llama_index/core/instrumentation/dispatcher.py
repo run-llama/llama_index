@@ -1,3 +1,4 @@
+from contextvars import Token
 from typing import Any, List, Optional, Dict
 import inspect
 import uuid
@@ -177,7 +178,7 @@ class Dispatcher(BaseModel):
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
 
             token = active_span_id.set(id_)
-            parent_id = token.old_value
+            parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
             )
@@ -202,7 +203,7 @@ class Dispatcher(BaseModel):
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
 
             token = active_span_id.set(id_)
-            parent_id = token.old_value
+            parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
             )
