@@ -6,7 +6,6 @@ An index that is built within Milvus.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urlparse
 
 import pymilvus  # noqa
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -29,7 +28,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from pymilvus import Collection, MilvusClient, DataType, AnnSearchRequest, connections
+from pymilvus import Collection, MilvusClient, DataType, AnnSearchRequest
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +40,6 @@ try:
 except Exception as e:
     WeightedRanker = None
     RRFRanker = None
-
-
-def extract_host_port(url):
-    parsed_url = urlparse(url)
-    host = parsed_url.hostname
-    port = parsed_url.port
-    return host, port
 
 
 def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
@@ -260,15 +252,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     ) from e
                 self._create_hybrid_index(collection_name)
 
-        if self.enable_sparse is False:
-            self._collection = Collection(
-                collection_name, using=self._milvusclient._using
-            )
-        else:
-            host, port = extract_host_port(uri)
-            connections.connect("default", host=host, port=port)
-            self._collection = Collection(collection_name)
-
+        self._collection = Collection(collection_name, using=self._milvusclient._using)
         self._create_index_if_required()
 
         self.enable_sparse = enable_sparse
