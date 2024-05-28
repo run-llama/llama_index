@@ -1,11 +1,12 @@
 """Multi-Hop agent worker."""
 
 import logging
-from typing import Any, List, Optional, Sequence
+from typing import Any, Coroutine, List, Optional, Sequence
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
 )
+from llama_index.core.base.agent.types import Task, TaskStep, TaskStepOutput
 from llama_index.core.callbacks import (
     CallbackManager,
 )
@@ -70,3 +71,25 @@ class MultiHopAgentWorker(BaseAgentWorker):
             verbose=verbose,
             callback_manager=callback_manager,
         )
+
+    def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
+        return super().initialize_step(task, **kwargs)
+
+    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        return super().run_step(step, task, **kwargs)
+
+    def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        return super().stream_step(step, task, **kwargs)
+
+    def arun_step(
+        self, step: TaskStep, task: Task, **kwargs: Any
+    ) -> Coroutine[Any, Any, TaskStepOutput]:
+        return super().arun_step(step, task, **kwargs)
+
+    def astream_step(
+        self, step: TaskStep, task: Task, **kwargs: Any
+    ) -> Coroutine[Any, Any, TaskStepOutput]:
+        return super().astream_step(step, task, **kwargs)
+
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        return super().finalize_task(task, **kwargs)
