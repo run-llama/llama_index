@@ -28,6 +28,7 @@ from llama_index.core.indices import (
     GPTVectorStoreIndex,
     KeywordTableIndex,
     KnowledgeGraphIndex,
+    PropertyGraphIndex,
     ListIndex,
     RAKEKeywordTableIndex,
     SimpleKeywordTableIndex,
@@ -95,6 +96,7 @@ __all__ = [
     "TreeIndex",
     "DocumentSummaryIndex",
     "KnowledgeGraphIndex",
+    "PropertyGraphIndex",
     # indices - legacy names
     "GPTKeywordTableIndex",
     "GPTKnowledgeGraphIndex",

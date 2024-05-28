@@ -13,6 +13,7 @@ import_path = "llama_index.graph_stores.neo4j"
 
 [tool.llamahub.class_authors]
 Neo4jGraphStore = "llama-index"
+Neo4jPGStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
