@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.ibm"
 
 [tool.llamahub.class_authors]
-MWatsonxLLM = "llama-index"
+WatsonxLLM = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -47,6 +47,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "0.23.7"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
