@@ -18,60 +18,30 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
 from nebula3.Config import SessionPoolConfig
 from nebula3.gclient.net.SessionPool import SessionPool
+from nebula3.gclient.net.base import BaseExecutor
 from nebula3.data.ResultSet import ResultSet
+
+from llama_index.graph_stores.nebula.utils import (
+    build_param_map,
+    remove_empty_values,
+    url_scheme_parse,
+)
 
 
 QUOTE = '"'
-
-def remove_empty_values(input_dict):
-    """
-    Remove entries with empty values from the dictionary.
-
-    Parameters:
-    input_dict (dict): The dictionary from which empty values need to be removed.
-
-    Returns:
-    dict: A new dictionary with all empty values removed.
-    """
-    # Create a new dictionary excluding empty values
-    return {key: value for key, value in input_dict.items() if value}
-
-def build_param_map(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Build a parameter map with proper binary values.
-    """
-    # TODO
-    # i.e. for List Value ref https://github.com/vesoft-inc/nebula-python/issues/273
-    # for other types, it's basically the reverse version of data_wrapper.cast()
-
-def url_scheme_parse(url)->Tuple[str, int]:
-    """
-    Parse the URL scheme and host from the URL.
-
-    Parameters:
-    url (str): The URL to parse. i.e. nebula://localhost:9669
-
-    Returns:
-    Tuple[str, int]: A tuple containing the address and port.
-    """
-    scheme, address = url.split("://")
-    if scheme not in ["nebula", "nebula3"]:
-        raise ValueError(f"Invalid scheme {scheme}. Expected 'nebula' or 'nebula3'.")
-    host, port = address.split(":")
-    if not host:
-        raise ValueError("Invalid host. Expected a hostname or IP address.")
-    if not port:
-        raise ValueError("Invalid port. Expected a port number.")
-    if not port.isdigit():
-        raise ValueError("Invalid port. Expected a number.")
-    return host, int(port)
-
-
-BASE_ENTITY_LABEL = "__Entity__"
-BASE_RELATION_LABEL = "__Relation__"
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
+
+DDL = """
+CREATE TAG IF NOT EXISTS `Entity__` (`name` STRING);
+CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
+CREATE TAG IF NOT EXISTS `entity` ();
+CREATE TAG IF NOT EXISTS `text_chunk` ();
+
+CREATE TAG INDEX IF NOT EXISTS idx_entity_name ON `Entity__`(`name`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_chunk ON `Chunk__`();
+"""
 
 
 class NebulaPropertyGraphStore(PropertyGraphStore):
@@ -88,7 +58,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         username (str): The username for the NebulaGraph database.
         password (str): The password for the NebulaGraph database.
         url (str): The URL for the NebulaGraph database.
-        database (Optional[str]): The name of the database to connect to. Defaults to "nebula".
+        space (Optional[str]): The name of the space to connect to.
 
     Examples:
         `pip install llama-index-graph-stores-nebula`
@@ -99,16 +69,14 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         ```jupyter
         %load_ext ngql
         %ngql --address 127.0.0.1 --port 9669 --user root --password nebula
-        %ngql CREATE SPACE IF NOT EXISTS nebula(vid_type=FIXED_STRING(256);
+        %ngql CREATE SPACE IF NOT EXISTS llamaindex_nebula_property_graph(vid_type=FIXED_STRING(256));
         sleep 20
-        %ngql USE nebula;
-        %ngql CREATE TAG IF NOT EXISTS `__Entity__` (`name` STRING);
-        %ngql CREATE TAG IF NOT EXISTS `chunk` (`text` STRING);
-        %ngql CREATE EDGE IF NOT EXISTS `__Relation__` (`name` STRING);
+        %ngql USE llamaindex_nebula_property_graph;
+        %ngql CREATE TAG IF NOT EXISTS `Entity__` (`name` STRING);
+        %ngql CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
+        %ngql CREATE EDGE IF NOT EXISTS `Relation` (`name` STRING);
         sleep 20
-        %ngql CREATE TAG INDEX IF NOT EXISTS idx_entity_name ON `__Entity__`(`name`(256));
-        %ngql CREATE TAG INDEX IF NOT EXISTS idx_chunk ON `chunk`();
-        %ngql CREATE EDGE INDEX IF NOT EXISTS idx_relation_name ON `__Relation__`(`name`(256));
+        %ngql
         ```
 
         Then, you could use this store with a simple index and query:
@@ -118,10 +86,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
 
         # Create a NebulaPropertyGraphStore instance
         graph_store = NebulaPropertyGraphStore(
-            username="root",
-            password="nebula",
-            url="nebula://localhost:9669",
-            database="nebula"
+            space="llamaindex_nebula_property_graph"
         )
 
         # create the index
@@ -132,41 +97,54 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         ```
     """
 
-    supports_structured_queries: bool = True
-    supports_vector_queries: bool = False
-    text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
+    _space: str
+    _client: BaseExecutor
+    sanitize_query_output: bool
+    enhanced_schema: bool
 
     def __init__(
         self,
-        username: str,
-        password: str,
-        url: str, # nebula://localhost:9669
-        database: Optional[str] = "nebulagraph", # Default NebulaGraph Space
+        space: str,
+        client: Optional[BaseExecutor] = None,
+        username: str = "root",
+        password: str = "nebula",
+        url: str = "nebula://localhost:9669",
+        overwrite: bool = False,
         refresh_schema: bool = True,
-        sanitize_query_output: bool = False, # We don't put Embedding-Like values as Properties
+        sanitize_query_output: bool = False,  # We don't put Embedding-Like values as Properties
         enhanced_schema: bool = False,
-        **nebula_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
         self.enhcnaced_schema = enhanced_schema
 
-        self._space = database
-        self._client = SessionPool(
-            username, password, self._space, [url_scheme_parse(url)],
-            SessionPoolConfig(**nebula_kwargs)
-        )
-        self._client.init()
+        self._space = space
+        if client:
+            self._client = client
+        else:
+            session_pool = SessionPool(
+                username,
+                password,
+                self._space,
+                [url_scheme_parse(url)],
+            )
+            session_pool.init()
+            self._client = session_pool
+        resp = self._client.execute(DDL)
+        if overwrite:
+            self._client.execute(f"CLEAR SPACE {self._space};")
+
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
 
+        self.supports_structured_queries = True
+
     @property
     def client(self):
-        """Session Pool client of NebulaGraph.
-        """
+        """client of NebulaGraph."""
         return self._client
-    
-    def execute(self, query: str) -> ResultSet:
+
+    def _execute(self, query: str) -> ResultSet:
         return self._client.execute(query)
 
     def refresh_schema(self) -> None:
@@ -202,11 +180,11 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
-        for tag in self.execute("SHOW TAGS").column_values("Name"):
+        for tag in self._execute("SHOW TAGS").column_values("Name"):
             tag_name = tag.cast()
             tags_schema[tag_name] = []
 
-            r = self.execute(f"DESCRIBE TAG `{tag_name}`")
+            r = self._execute(f"DESCRIBE TAG `{tag_name}`")
             props, types, comments = (
                 r.column_values("Field"),
                 r.column_values("Type"),
@@ -220,12 +198,13 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                 if prop_comment:
                     prop["comment"] = prop_comment
                 tags_schema[tag_name].append(prop)
-        
+
         # TODO: Add the sample data for tags(good for Text2cypher)
 
-        for edge_type in self.execute("SHOW EDGES").column_values("Name"):
+        for edge_type in self._execute("SHOW EDGES").column_values("Name"):
             edge_type_name = edge_type.cast()
-            r = self.execute(f"DESCRIBE EDGE `{edge_type_name}`")
+            edge_types_schema[edge_type_name] = []
+            r = self._execute(f"DESCRIBE EDGE `{edge_type_name}`")
             props, types, comments = (
                 r.column_values("Field"),
                 r.column_values("Type"),
@@ -247,7 +226,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
 MATCH ()-[e:`{ edge_type_name }`]->()
 RETURN [src(e), dst(e)] AS sample_edge LIMIT 1
 """
-            sample_edge = self.execute(rel_query_sample_edge).column_values(
+            sample_edge = self._execute(rel_query_sample_edge).column_values(
                 "sample_edge"
             )
             if len(sample_edge) == 0:
@@ -260,10 +239,9 @@ MATCH (m)-[:{ edge_type_name }]->(n)
 RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + ")-[:{ edge_type_name }]->(" + (CASE WHEN size(tags(n)) == 0 THEN "" ELSE ":" + tags(n)[0] END) + ")" AS rels
 """
 
-            r = self.execute(_rel_query_edge_type).column_values("rels")
+            r = self._execute(_rel_query_edge_type).column_values("rels")
             if len(r) > 0:
                 relationships.append(r[0].cast())
-
 
         self.structured_schema = {
             "node_props": tags_schema,
@@ -303,123 +281,93 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         #         if prop["property"] in enhanced_info:
         #             prop.update(enhanced_info[prop["property"]])
 
-        # IF tag schema is empty, we need to Enforce the meta schema
-        # i.e. __Entity__ tag and __Relation__ edge type
-        if not self.structured_schema["node_props"]:
-            self.structured_query(
-                "CREATE TAG `__Entity__` IF NOT EXISTS (`name` STRING);"
-                "CREATE TAG `chunk` IF NOT EXISTS (`text` STRING);"
-            )
-        if not self.structured_schema["rel_props"]:
-            self.structured_query(
-                "CREATE EDGE `__Relation__` IF NOT EXISTS (`name` STRING);"
-            )
-        # TODO: Create Indexes for Meta Tags name property
-
-
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+        # meta tag Entity__ is used to store the entity name
+        # meta tag Chunk__ is used to store the chunk text
+        # other labels are used to store the entity properties
+        # which must be created before upserting the nodes
+
         # Lists to hold separated types
-        entity_dicts: List[dict] = []
-        chunk_dicts: List[dict] = []
+        entity_list: List[EntityNode] = []
+        chunk_list: List[ChunkNode] = []
+        other_list: List[LabelledNode] = []
 
         # Sort by type
         for item in nodes:
             if isinstance(item, EntityNode):
-                entity_dicts.append({**item.dict(), "id": item.id})
+                entity_list.append(item)
             elif isinstance(item, ChunkNode):
-                chunk_dicts.append({**item.dict(), "id": item.id})
+                chunk_list.append(item)
             else:
-                # Log that we do not support these types of nodes
-                # Or raise an error?
-                pass
+                other_list.append(item)
 
-        if chunk_dicts:
+        if chunk_list:
             # TODO: need to double check other properties if any(it seems for now only text is there)
             # model chunk as tag and perform upsert
-            # i.e. INSERT VERTEX chunk (text) VALUES "foo":("hello world"), "baz":("lorem ipsum");
-            chunk_ids, chunk_texts = zip(*[(chunk["id"], chunk["text"]) for chunk in chunk_dicts])
-            chunk_text_param = build_param_map(
-                {
-                    f"chunk_{i}": chunk_text for i, chunk_text in enumerate(chunk_texts)
-                }
-            )
-            insert_query = "INSERT VERTEX `chunk` (`text`) VALUES "
-            for i, chunk_id in enumerate(chunk_ids):
-                insert_query += f'("{chunk_id}", $chunk_{i}),'
+            # i.e. INSERT VERTEX `Chunk__` (`text`) VALUES "foo":("hello world"), "baz":("lorem ipsum");
+            insert_query = "INSERT VERTEX `Chunk__` (`text`) VALUES "
+            for i, chunk in enumerate(chunk_list):
+                insert_query += f'"{chunk.id}":($chunk_{i}),'
             insert_query = insert_query[:-1]  # Remove trailing comma
-            self.structured_query(insert_query, param_map=chunk_text_param)
+            self.structured_query(
+                insert_query,
+                param_map={
+                    f"chunk_{i}": chunk.text for i, chunk in enumerate(chunk_list)
+                },
+            )
 
-        if entity_dicts:
-            # model with tag __Entity__ and other tags(label) if applicable
+        if entity_list:
+            # model with tag Entity__ and other tags(label) if applicable
             # need to add properties as well, for extractors like SchemaLLMPathExtractor there is no properties
             # NebulaGraph is Schema-Full, so we need to be strong schema mindset to abstract this.
-            # i.e. 
-            # INSERT VERTEX __Entity__ (name) VALUES "foo":("bar"), "baz":("qux");
+            # i.e.
+            # INSERT VERTEX Entity__ (name) VALUES "foo":("bar"), "baz":("qux");
             # INSERT VERTEX Person (name) VALUES "foo":("bar"), "baz":("qux");
 
-            # The meta tag __Entity__ is used to store the entity name
-            entity_ids, entity_names = zip(*[(entity["id"], entity["name"]) for entity in entity_dicts])
-            entity_name_param = build_param_map(
-                {
-                    f"entity_{i}": entity_name for i, entity_name in enumerate(entity_names)
-                }
-            )
-            insert_query = "INSERT VERTEX `__Entity__` (`name`) VALUES "
-            for i, entity_id in enumerate(entity_ids):
-                insert_query += f'("{entity_id}", $entity
-                {i}),'
+            # The meta tag Entity__ is used to store the entity name
+            insert_query = "INSERT VERTEX `Entity__` (`name`) VALUES "
+            for i, entity in enumerate(entity_list):
+                insert_query += f'"{entity.id}":($entity_{i}),'
             insert_query = insert_query[:-1]  # Remove trailing comma
-            self.structured_query(insert_query, param_map=entity_name_param)
+            self.structured_query(
+                insert_query,
+                param_map={
+                    f"entity_{i}": entity.name for i, entity in enumerate(entity_list)
+                },
+            )
 
-            # Create tags for each entity
-            # This could be revisted, if we don't have any properties for labels, mapping labels to
-            # Properties of tag: __Entity__ is also feasible.
+        # Create tags for each LabelledNode
+        # This could be revisted, if we don't have any properties for labels, mapping labels to
+        # Properties of tag: Entity__ is also feasible.
+        for i, entity in enumerate(nodes):
+            keys, values_k, values_params = self._construct_property_query(
+                entity.properties
+            )
+            stmt = f'INSERT VERTEX `{entity.label}` ({keys}) VALUES "{entity.id}":({values_k});'
+            self.structured_query(
+                stmt,
+                param_map=values_params,
+            )
 
-            label_entity_map: Dict[str, List[dict]] = {}
-            for entity in entity_dicts:
-                label = entity["label"]
-                if label not in label_entity_map:
-                    label_entity_map[label] = []
-                label_entity_map[label].append(entity)
-            
-            # Create tags for each entity
-            for label, entities in label_entity_map.items():
-                insert_query = f"INSERT VERTEX `{label}` (`name`) VALUES "
-                entity_name_param = build_param_map(
-                    {
-                        f"entity_{i}": entity["name"] for i, entity in enumerate(entities)
-                    }
-                )
-                for i, entity in enumerate(entities):
-                    insert_query += f'("{entity["id"]}", $entity_{i}),'
-                insert_query = insert_query[:-1]  # Remove trailing comma
-                self.structured_query(insert_query, param_map=entity_name_param)
+    def _construct_property_query(self, properties: Dict[str, Any]):
+        keys = ",".join([f"`{k}`" for k in properties.keys()])
+        values_k = ""
+        values_params: Dict[Any] = {}
+        for idx, v in enumerate(properties.values()):
+            values_k += f"$entity_{idx},"
+            values_params[f"entity_{idx}"] = v
+        values_k = values_k[:-1]
+        return keys, values_k, values_params
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
-        edges_per_type_dict: Dict[str, Tuple[str, str]] = {}
-        for relation in relations:
-            if relation.label not in edges_per_type_dict:
-                edges_per_type_dict[relation.label] = (
-                    relation.source_id,
-                    relation.target_id,
-                )
-            else:
-                edges_per_type_dict[relation.label].append(
-                    (
-                        relation.source_id,
-                        relation.target_id,
-                    )
-                )
         # TODO: Handle ad-hoc schema ensuring, now assuming all relations are present in the schema
-        # i.e. INSERT EDGE WORKS_AT () VALUES "foo"->"bar":(), "baz"->"qux":();
-        for edge_type, edge_tuple in edges_per_type_dict.items():
-            insert_query = f"INSERT EDGE `{edge_type}` () VALUES "
-            for source_id, target_id in edge_tuple:
-                insert_query += f'("{source_id}"->"{target_id}"),'
-            insert_query = insert_query[:-1]
-            self.structured_query(insert_query)
-
+        for relation in relations:
+            keys, values_k, values_params = self._construct_property_query(
+                relation.properties
+            )
+            stmt = f'INSERT EDGE `{relation.label}` ({keys}) VALUES "{relation.source_id}"->"{relation.target_id}":({values_k});'
+            self.structured_query(stmt, param_map=values_params)
 
     def get(
         self,
@@ -447,7 +395,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         return_statement = """
         WITH e
         RETURN id(e) AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
+               [l in labels(e) WHERE l <> 'Entity__' | l][0] AS type,
                properties(e) AS properties
         """
         cypher_statement += return_statement
@@ -484,7 +432,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         # TODO: handle ids of chunk nodes
-        cypher_statement = "MATCH (e:`__Entity__`) "
+        cypher_statement = "MATCH (e:`Entity__`) "
 
         params = {}
         if entity_names or properties or ids:
@@ -506,18 +454,11 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
 
         return_statement = f"""
         MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t)
-        RETURN id(e) AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
+        RETURN id(e) AS source_id, [l in labels(e) WHERE l <> 'Entity__' | l][0] AS source_type,
                 properties(e) AS source_properties,
                 type(r) AS type,
-                id(t) AS target_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS target_type,
+                id(t) AS target_id, [l in labels(t) WHERE l <> 'Entity__' | l][0] AS target_type,
                 properties(t) AS target_properties
-            UNION ALL
-        MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t)
-        RETURN id(t) AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
-                properties(t) AS source_properties,
-                type(r) AS type,
-                id(e) AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
-                properties(e) AS target_properties
         """
         cypher_statement += return_statement
 
@@ -557,7 +498,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         # Needs some optimization
         response = self.structured_query(
             f"""
-            MATCH (e:`__Entity__`)
+            MATCH (e:`Entity__`)
             WHERE id(e) in $ids
             MATCH p=(e)-[r*1..{depth}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
@@ -566,10 +507,10 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
             WITH startNode(rel) AS source,
                 type(rel) AS type,
                 endNode(rel) AS endNode
-            RETURN id(source) AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
+            RETURN id(source) AS source_id, [l in labels(source) WHERE l <> 'Entity__' | l][0] AS source_type,
                     properties(source) AS source_properties,
                     type,
-                    id(endNode) AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                    id(endNode) AS target_id, [l in labels(endNode) WHERE l <> 'Entity__' | l][0] AS target_type,
                     properties(endNode) AS target_properties
             LIMIT {limit}
             """,
@@ -603,9 +544,17 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
-        result: ResultSet = self._client.execute_parameter(query, build_param_map(param_map))
+        if not param_map:
+            result = self._client.execute(query)
+        else:
+            result = self._client.execute_parameter(query, build_param_map(param_map))
+        if not result.is_succeeded():
+            raise ValueError(f"Query failed: {result.error_msg()}")
         full_result = [
-            {key: result.row_values(row_index)[i].cast_primitive() for i, key in enumerate(result.keys())}
+            {
+                key: result.row_values(row_index)[i].cast_primitive()
+                for i, key in enumerate(result.keys())
+            }
             for row_index in range(result.row_size())
         ]
         if self.sanitize_query_output:
@@ -624,38 +573,33 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         """Delete matching data."""
         if entity_names:
             self.structured_query(
-                "LOOKUP ON `__Entity__` WHERE name IN $entity_names | DELETE VERTEX $-.VertexID",
-                param_map=build_param_map({"entity_names": entity_names}),
+                "LOOKUP ON `Entity__` WHERE name IN $entity_names | DELETE VERTEX $-.VertexID",
+                param_map={"entity_names": entity_names},
             )
-        
-        if ids:
-            self.structured_query(
-                "DELETE VERTEX $vertex_id WITH EDGE;",
-                param_map=build_param_map({"vertex_id": ids}),
-            )
+
+        for id in ids or []:
+            self.structured_query(f'DELETE VERTEX "{id}" WITH EDGE;')
         if relation_names:
             for relation_name in relation_names:
                 self.structured_query(
                     f"LOOKUP ON `{relation_name}` | DELETE EDGE $-.EdgeID",
                 )
         if properties:
-            cypher = "MATCH (e:`__Entity__`) WHERE "
+            cypher = "MATCH (e:`Entity__`) WHERE "
             prop_list = []
             params = {}
             for i, prop in enumerate(properties):
-                prop_list.append(f"e.`__Entity__`.`{prop}` == $property_{i}")
+                prop_list.append(f"e.`Entity__`.`{prop}` == $property_{i}")
                 params[f"property_{i}"] = properties[prop]
             cypher += " AND ".join(prop_list)
             cypher += " RETURN id(e) AS id"
             ids_dict_list = self.structured_query(
                 cypher,
-                param_map=build_param_map(params),
+                param_map=params,
             )
             ids = [el["id"] for el in ids_dict_list]
-            self.structured_query(
-                "DELETE VERTEX $-.VertexID",
-                param_map=build_param_map({"ids": ids}),
-            )
+            for id in ids or []:
+                self.structured_query(f'DELETE VERTEX "{id}" WITH EDGE;')
 
     def _enhanced_schema_cypher(
         self,
@@ -813,4 +757,11 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
                 "The relationships:",
                 "\n".join(formatted_rels),
             ]
+        )
+
+    def vector_query(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> Tuple[List[LabelledNode] | List[float]]:
+        raise NotImplementedError(
+            "Vector query not implemented for NebulaPropertyGraphStore."
         )
