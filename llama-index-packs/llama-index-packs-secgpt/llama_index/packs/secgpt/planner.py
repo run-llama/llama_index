@@ -9,13 +9,51 @@ from langchain_core.output_parsers import JsonOutputParser
 
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core import ChatPromptTemplate
+from llama_index.core.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 
 
-class HubPlanner:
-    def __init__(self, llm: LLM) -> None:
-        self.llm = llm
+class PromptModule(PromptMixin):
+    """
+    A module for managing prompt templates used by the HubPlanner.
+    """
 
-        # Set up prompt template message for the hub planner
+    def __init__(self) -> None:
+        """
+        Initialize the PromptModule with an empty set of prompts.
+        """
+        self._prompts = {}
+
+    def _get_prompts(self) -> PromptDictType:
+        """
+        Get the current set of prompts.
+
+        Returns:
+            PromptDictType: A dictionary containing the current prompts.
+        """
+        return self._prompts
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """
+        Get sub-modules that are instances of PromptMixin.
+
+        Returns:
+            PromptMixinType: An empty dictionary as there are no sub-modules.
+        """
+        return {}
+
+    def _update_prompts(self, prompts_dict: PromptDictType) -> None:
+        """
+        Update the prompts for the current module.
+
+        Args:
+            prompts_dict (PromptDictType): A dictionary containing the prompts to update.
+        """
+        self._prompts.update(prompts_dict)
+
+    def setup_planner_template(self):
+        """
+        Set up the prompt template messages for the hub planner.
+        """
         template_plan_messages = [
             ChatMessage(
                 role=MessageRole.SYSTEM,
@@ -66,21 +104,52 @@ class HubPlanner:
         """
 
         # Set up prompt template for the hub planner
-        self.template_planner = ChatPromptTemplate(template_plan_messages)
-        self.template_planner = self.template_planner.partial_format(
+        template_planner = ChatPromptTemplate(template_plan_messages)
+        formatted_template_planner = template_planner.partial_format(
             output_format=planner_output_format,
             output_format_empty=planner_output_empty_format,
         )
+        self._prompts["planner"] = formatted_template_planner
+
+
+class HubPlanner:
+    """
+    The HubPlanner class generates plans based on user queries, tool information, and chat history.
+    It utilizes an LLM and custom prompt templates to create structured workflows.
+    """
+
+    def __init__(self, llm: LLM) -> None:
+        """
+        Initialize the HubPlanner with an LLM and set up the prompt module and output parser.
+
+        Args:
+            llm (LLM): The large language model used for generating plans.
+        """
+        self.llm = llm
+
+        prompt_module = PromptModule()
+        prompt_module.setup_planner_template()
+        self.template_planner = prompt_module.get_prompts().get("planner")
 
         lc_output_parser = JsonOutputParser()
         self.output_parser = LangchainOutputParser(lc_output_parser)
 
-        self.query_engine = QueryPipeline(
+        self.query_pipeline = QueryPipeline(
             chain=[self.template_planner, self.llm, self.output_parser], verbose=True
         )
 
-    # Generate a plan based on the user's query
     def plan_generate(self, query, tool_info, chat_history):
-        return self.query_engine.run(
+        """
+        Generate a plan based on the user's query, tool information, and chat history.
+
+        Args:
+            query (str): The user's query.
+            tool_info (str): Information about the available tools.
+            chat_history (str): The chat history.
+
+        Returns:
+            dict: The generated plan in JSON format.
+        """
+        return self.query_pipeline.run(
             input=query, tools=tool_info, chat_history=chat_history
         )

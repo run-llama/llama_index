@@ -14,22 +14,7 @@ contains_example = true
 import_path = "llama_index.packs.secgpt"
 
 [tool.llamahub.class_authors]
-Hub = "Yuhao-W"
-HubOperator = "Yuhao-W"
-HubPlanner = "Yuhao-W"
-Message = "Yuhao-W"
-Socket = "Yuhao-W"
-Spoke = "Yuhao-W"
-SpokeOperator = "Yuhao-W"
-SpokeOutputParser = "Yuhao-W"
-TIMEOUT = "Yuhao-W"
-ToolImporter = "Yuhao-W"
-VanillaSpoke = "Yuhao-W"
-create_function_placeholder = "Yuhao-W"
-create_message_spoke_tool = "Yuhao-W"
-drop_perms = "Yuhao-W"
-get_user_consent = "Yuhao-W"
-set_mem_limit = "Yuhao-W"
+SecGPTPack = "Yuhao-W"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -40,7 +25,7 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Yuhao-W"]
-description = "llama-index packs secgpt pack"
+description = "llama-index packs - secgpt pack"
 license = "MIT"
 name = "llama-index-packs-secgpt"
 packages = [{include = "llama_index/"}]

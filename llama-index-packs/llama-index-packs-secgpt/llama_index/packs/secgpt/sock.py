@@ -6,15 +6,43 @@ import json
 
 
 class Socket:
+    """
+    A class to facilitate communication between isolated processes using sockets.
+
+    Attributes:
+        sock (socket.socket): The socket object used for communication.
+    """
+
     def __init__(self, sock) -> None:
+        """
+        Initialize the Socket with a given socket object.
+
+        Args:
+            sock (socket.socket): The socket object used for communication.
+        """
         self.sock = sock
 
     def send(self, msg):
+        """
+        Send a message through the socket.
+
+        Args:
+            msg (bytes): The message to be sent.
+        """
         self.sock.sendall(msg)
         self.sock.sendall(b"\n")
 
-    # The length parameter can be altered to fit the size of the message
     def recv(self, length=1024):
+        """
+        Receive a message from the socket.
+
+        Args:
+            length (int, optional): The maximum amount of data to be received at once. Default is 1024.
+
+        Returns:
+            dict: The deserialized JSON message received, or None if the message is not well-formed.
+        """
+        # The length parameter can be altered to fit the size of the message
         buffer = ""
         while True:
             msg = self.sock.recv(length).decode("utf-8")
@@ -37,4 +65,7 @@ class Socket:
         return None
 
     def close(self):
+        """
+        Close the socket.
+        """
         self.sock.close()

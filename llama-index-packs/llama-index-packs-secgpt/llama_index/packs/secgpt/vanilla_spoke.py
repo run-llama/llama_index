@@ -13,11 +13,23 @@ from typing import List, Optional
 from llama_index.core.base.llms.types import ChatMessage
 
 
-# Non-collaborative vanilla spoke
 class VanillaSpoke:
+    """
+    A non-collaborative vanilla spoke that operates without awareness of other system functionalities.
+    It is used when a user query can be addressed solely by an LLM without requiring collaboration.
+    """
+
     def __init__(
         self, llm: LLM = None, memory: ChatMemoryBuffer = None, verbose: bool = False
     ) -> None:
+        """
+        Initialize the VanillaSpoke with an LLM and optional memory.
+
+        Args:
+            llm (LLM, optional): A large language model for the spoke. Defaults to None.
+            memory (ChatMemoryBuffer, optional): The chat memory buffer. Defaults to None.
+            verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
+        """
         self.llm = llm or Settings.llm
         self.memory = memory or ChatMemoryBuffer.from_defaults(
             chat_history=[], llm=self.llm
@@ -31,4 +43,14 @@ class VanillaSpoke:
         query: str,
         chat_history: Optional[List[ChatMessage]] = None,
     ):
+        """
+        Perform a chat interaction with the vanilla agent.
+
+        Args:
+            query (str): The query to be processed.
+            chat_history (Optional[List[ChatMessage]], optional): The chat history. Defaults to None.
+
+        Returns:
+            str: The response from the vanilla agent.
+        """
         return self.vanilla_agent.chat(query, chat_history=chat_history)

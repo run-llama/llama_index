@@ -21,17 +21,37 @@ allowed_domains = ["localhost"]
 
 
 def get_root_domain(url):
+    """
+    Extract the root domain from a given URL.
+
+    Args:
+        url (str): The URL to extract the root domain from.
+
+    Returns:
+        str: The root domain of the URL.
+    """
     extracted = tldextract.extract(url)
     return f"{extracted.domain}.{extracted.suffix}"
 
 
 def is_request_allowed(url):
+    """
+    Check if a request to a given URL is allowed based on the root domain.
+
+    Args:
+        url (str): The URL to check.
+
+    Returns:
+        bool: True if the request is allowed, False otherwise.
+    """
     root_domain = get_root_domain(url)
     return root_domain in allowed_domains
 
 
-# Set the CPU time, maximum virtual memory and write limits
 def set_mem_limit():
+    """
+    Set the CPU time, maximum virtual memory, and write limits for the process.
+    """
     # virtual memory
     resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT, MEMORY_LIMIT))
     # cpu time
@@ -44,9 +64,11 @@ def set_mem_limit():
 if platform.system() == "Linux":
     import pyseccomp as seccomp
 
-    # Set restrictions on system calls
-    # The restrictions can be adjusted as needed based on the app's specifications
     def drop_perms():
+        """
+        Set restrictions on system calls using seccomp for Linux.
+        The restrictions can be adjusted as needed based on the app's specifications.
+        """
         # Create a SyscallFilter instance with ALLOW as the default action
         filter = seccomp.SyscallFilter(seccomp.ALLOW)
 
@@ -54,6 +76,8 @@ if platform.system() == "Linux":
         filter.load()
 
 else:
-    # Can define methods to restrict system calls for other platforms
+
     def drop_perms():
-        pass
+        """
+        Define a placeholder function for non-Linux platforms to restrict system calls.
+        """

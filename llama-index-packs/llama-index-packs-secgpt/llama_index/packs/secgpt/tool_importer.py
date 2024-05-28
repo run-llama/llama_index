@@ -6,8 +6,23 @@ from llama_index.core.tools import FunctionTool
 
 
 class ToolImporter:
-    # Initialize the tool importer
+    """
+    A class to manage the importing and usage of tools in SecGPT.
+
+    Attributes:
+        tools (list): A list of tools.
+        tool_name_obj_dict (dict): A dictionary mapping tool names to tool objects.
+        tool_functions (dict): A dictionary mapping tool names to their functions.
+    """
+
     def __init__(self, tools, tool_specs=[]) -> None:
+        """
+        Initialize the ToolImporter with tools and tool specifications.
+
+        Args:
+            tools (list): A list of tools.
+            tool_specs (list, optional): A list of tool specifications. Defaults to [].
+        """
         self.tool_functions = {}
         # Load individual tools
         self.tools = tools
@@ -26,16 +41,34 @@ class ToolImporter:
                 spec_tool_name_obj_dict.keys()
             )
 
-    # Get the list of tool objects
     def get_all_tools(self):
+        """
+        Get the list of all tool objects.
+
+        Returns:
+            list: A list of all tool objects.
+        """
         return self.tools
 
-    # Get the list of available tool names
     def get_tool_names(self):
+        """
+        Get the list of all available tool names.
+
+        Returns:
+            list: A list of available tool names.
+        """
         return [tool.metadata.name for tool in self.tools]
 
-    # Get the list of available functionalities excluding the specified tool
     def get_collab_functions(self, tool_name=None):
+        """
+        Get the list of available functionalities excluding the specified tool.
+
+        Args:
+            tool_name (str, optional): The name of the tool to exclude. Defaults to None.
+
+        Returns:
+            list: A list of available functionalities.
+        """
         if tool_name:
             return [
                 tool.metadata.name
@@ -45,21 +78,47 @@ class ToolImporter:
         else:
             return [tool.metadata.name for tool in self.tools]
 
-    # Get the specification of a specific tool_function
     def get_tool_spec(self, function):
+        """
+        Get the specification of a specific tool function.
+
+        Args:
+            function (str): The name of the tool function.
+
+        Returns:
+            dict: The tool function's specifications.
+        """
         tool_obj = self.tool_name_obj_dict[function]
         return tool_obj.metadata.get_parameters_dict()
 
-    # Get the tool object by name
     def get_tool_by_name(self, tool_name):
+        """
+        Get the tool object by its name.
+
+        Args:
+            tool_name (str): The name of the tool.
+
+        Returns:
+            FunctionTool: The tool object.
+        """
         return self.tool_name_obj_dict[tool_name]
 
-    # Get the tool functions mapping
     def get_tool_functions(self):
+        """
+        Get the mapping of tool functions.
+
+        Returns:
+            dict: A dictionary mapping tool names to their functions.
+        """
         return self.tool_functions
 
-    # Get the tool information
     def get_tool_info(self):
+        """
+        Get the information of all tools.
+
+        Returns:
+            str: A string containing the tool information.
+        """
         return "\n".join(
             [
                 f"{tool.metadata.name}: {tool.metadata.description}"
@@ -68,8 +127,16 @@ class ToolImporter:
         )
 
 
-# Create a placeholder for functions
 def create_function_placeholder(function_names):
+    """
+    Create placeholders for functions.
+
+    Args:
+        function_names (list): A list of function names.
+
+    Returns:
+        list: A list of FunctionTool placeholders.
+    """
     func_placeholders = []
     for func in function_names:
         func_placeholder = FunctionTool.from_defaults(
@@ -79,8 +146,14 @@ def create_function_placeholder(function_names):
     return func_placeholders
 
 
-# Create a tool for messaging between spoke_operator and spoke llm
 def create_message_spoke_tool():
+    """
+    Create a tool for messaging between spoke_operator and spoke LLM.
+
+    Returns:
+        FunctionTool: The message spoke tool.
+    """
+
     def message_spoke(message: str):
         return message
 

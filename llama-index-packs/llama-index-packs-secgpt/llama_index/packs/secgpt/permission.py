@@ -6,12 +6,25 @@ import json
 
 
 class PermissionType:
+    """
+    A class to define different types of permissions.
+    """
+
     ONE_TIME = "one_time"
     SESSION = "session"
     PERMANENT = "permanent"
 
 
 def read_permissions_from_file(perm_path="./permissions.json"):
+    """
+    Read the permissions from a JSON file.
+
+    Args:
+        perm_path (str): The path to the permissions JSON file.
+
+    Returns:
+        dict: A dictionary containing the permissions.
+    """
     try:
         with open(perm_path) as file:
             return json.load(file)
@@ -20,11 +33,21 @@ def read_permissions_from_file(perm_path="./permissions.json"):
 
 
 def write_permissions_to_file(permissions, perm_path="./permissions.json"):
+    """
+    Write the permissions to a JSON file.
+
+    Args:
+        permissions (dict): A dictionary containing the permissions.
+        perm_path (str): The path to the permissions JSON file.
+    """
     with open(perm_path, "w") as file:
         json.dump(permissions, file, indent=4)
 
 
 def clear_temp_permissions():
+    """
+    Clear temporary permissions (one-time and session) from the permissions file.
+    """
     permissions = read_permissions_from_file()
     for user_id in permissions:
         for app in list(permissions[user_id]):
@@ -37,6 +60,15 @@ def clear_temp_permissions():
 
 
 def set_permission(user_id, app, permission_type, perm_category):
+    """
+    Set a specific permission for a user and app.
+
+    Args:
+        user_id (str): The ID of the user.
+        app (str): The name of the app.
+        permission_type (str): The type of permission (one-time, session, permanent).
+        perm_category (str): The category of the permission (exec, data, collab).
+    """
     permissions = read_permissions_from_file()
     permissions[user_id] = permissions.get(user_id, {})
     permissions[user_id][app] = permissions[user_id].get(app, {})
@@ -45,6 +77,17 @@ def set_permission(user_id, app, permission_type, perm_category):
 
 
 def get_permission(user_id, app, perm_category):
+    """
+    Get the permission type for a specific user, app, and permission category.
+
+    Args:
+        user_id (str): The ID of the user.
+        app (str): The name of the app.
+        perm_category (str): The category of the permission (exec, data, collab).
+
+    Returns:
+        str: The type of permission if exists, otherwise None.
+    """
     permissions = read_permissions_from_file()
     app_permissions = permissions.get(user_id, {}).get(app)
     if app_permissions:
@@ -53,6 +96,19 @@ def get_permission(user_id, app, perm_category):
 
 
 def request_permission(user_id, app, action, perm_category, flag):
+    """
+    Request permission from the user for a specific action.
+
+    Args:
+        user_id (str): The ID of the user.
+        app (str): The name of the app.
+        action (str): The action description for which permission is requested.
+        perm_category (str): The category of the permission (exec, data, collab).
+        flag (bool): A flag indicating additional information about the request.
+
+    Returns:
+        bool: True if permission is granted, otherwise False.
+    """
     if perm_category == "exec":
         action_type = "execute"
     elif perm_category == "data":
@@ -98,6 +154,19 @@ def request_permission(user_id, app, action, perm_category, flag):
 
 
 def get_user_consent(user_id, app, action, flag, perm_category="exec"):
+    """
+    Get user consent for a specific action, and set or check permissions.
+
+    Args:
+        user_id (str): The ID of the user.
+        app (str): The name of the app.
+        action (str): The action description for which permission is requested.
+        flag (bool): A flag indicating additional information about the request.
+        perm_category (str): The category of the permission (exec, data, collab).
+
+    Returns:
+        bool: True if user consent is granted, otherwise False.
+    """
     permission_type = get_permission(user_id, app, perm_category)
 
     if perm_category == "exec":

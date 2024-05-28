@@ -15,6 +15,18 @@ from llama_index.core.types import BaseOutputParser
 
 
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
+    """
+    Extract thought, action, and action input from the input text.
+
+    Args:
+        input_text (str): The text from which to extract the components.
+
+    Returns:
+        Tuple[str, str, str]: Extracted thought, action, and action input.
+
+    Raises:
+        ValueError: If the input text does not contain the required information.
+    """
     pattern = (
         r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: .*?(\{.*\})"
     )
@@ -30,6 +42,15 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
 
 
 def action_input_parser(json_str: str) -> dict:
+    """
+    Parse a JSON-like string into a dictionary.
+
+    Args:
+        json_str (str): The JSON-like string to parse.
+
+    Returns:
+        dict: The parsed dictionary.
+    """
     processed_string = re.sub(r"(?<!\w)\'|\'(?!\w)", '"', json_str)
     pattern = r'"(\w+)":\s*"([^"]*)"'
     matches = re.findall(pattern, processed_string)
@@ -37,6 +58,18 @@ def action_input_parser(json_str: str) -> dict:
 
 
 def extract_final_response(input_text: str) -> Tuple[str, str]:
+    """
+    Extract the thought and answer from the input text.
+
+    Args:
+        input_text (str): The text from which to extract the components.
+
+    Returns:
+        Tuple[str, str]: Extracted thought and answer.
+
+    Raises:
+        ValueError: If the input text does not contain the required information.
+    """
     pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
 
     match = re.search(pattern, input_text, re.DOTALL)
@@ -53,6 +86,12 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
 def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
     """
     Parse an action reasoning step from the LLM output.
+
+    Args:
+        output (str): The output text to parse.
+
+    Returns:
+        ActionReasoningStep: The parsed action reasoning step.
     """
     # Weaker LLMs may generate ReActAgent steps whose Action Input are horrible JSON strings.
     # `dirtyjson` is more lenient than `json` in parsing JSON strings.
@@ -71,30 +110,37 @@ def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
 
 
 class SpokeOutputParser(BaseOutputParser):
-    """ReAct Output parser."""
+    """
+    A parser to transform the output of the spoke LLM into a more suitable format and
+    to make the spoke aware of the need for collaboration based on the LLM's output.
+    """
 
     def __init__(self, functionality_list, spoke_operator, *args, **kwargs) -> None:
-        # Initialize the base class
+        """
+        Initialize the SpokeOutputParser.
+
+        Args:
+            functionality_list (list): A list of functionalities supported by the spoke.
+            spoke_operator (SpokeOperator): An instance of SpokeOperator to handle functionality requests.
+        """
         super().__init__(*args, **kwargs)
         self.functionality_list = functionality_list
         self.spoke_operator = spoke_operator
         self.called_functionalities = {}
 
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
-        """Parse output from ReAct agent.
+        """
+        Parse output from the ReAct agent.
 
-        We expect the output to be in one of the following formats:
-        1. If the agent need to use a tool to answer the question:
-            ```
-            Thought: <thought>
-            Action: <action>
-            Action Input: <action_input>
-            ```
-        2. If the agent can answer the question without any tools:
-            ```
-            Thought: <thought>
-            Answer: <answer>
-            ```
+        Args:
+            output (str): The output from the ReAct agent.
+            is_streaming (bool): Whether the output is being streamed.
+
+        Returns:
+            BaseReasoningStep: The parsed reasoning step.
+
+        Raises:
+            ValueError: If the output cannot be parsed.
         """
         if "Thought:" not in output:
             return ResponseReasoningStep(
@@ -168,5 +214,13 @@ class SpokeOutputParser(BaseOutputParser):
         raise ValueError(f"Could not parse output: {output}")
 
     def format(self, output: str) -> str:
-        """Format a query with structured output formatting instructions."""
+        """
+        Format a query with structured output formatting instructions.
+
+        Args:
+            output (str): The output to format.
+
+        Raises:
+            NotImplementedError: As this method is not implemented.
+        """
         raise NotImplementedError
