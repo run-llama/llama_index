@@ -53,7 +53,6 @@ class AzureDevopsReader(BaseReader):
             The Git client object for Azure DevOps.
         """
         try:
-            print("in try")
             from azure.devops.connection import Connection
             from msrest.authentication import BasicAuthentication
         except ImportError:
