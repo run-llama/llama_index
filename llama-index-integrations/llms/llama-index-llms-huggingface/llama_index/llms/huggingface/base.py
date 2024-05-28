@@ -869,9 +869,9 @@ class TextGenerationInference(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
-                additional_kwargs={"tool_calls": tool_calls}
-                if tool_calls is not None
-                else {},
+                additional_kwargs=(
+                    {"tool_calls": tool_calls} if tool_calls is not None else {}
+                ),
             ),
             raw=dict(response),
         )
@@ -929,9 +929,9 @@ class TextGenerationInference(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
-                additional_kwargs={"tool_calls": tool_calls}
-                if tool_calls is not None
-                else {},
+                additional_kwargs=(
+                    {"tool_calls": tool_calls} if tool_calls is not None else {}
+                ),
             ),
             raw=dict(response),
         )
@@ -989,7 +989,9 @@ class TextGenerationInference(FunctionCallingLLM):
     ) -> ChatResponse:
         """Predict and call the tool."""
         # use openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -1019,7 +1021,9 @@ class TextGenerationInference(FunctionCallingLLM):
         **kwargs: Any,
     ) -> ChatResponse:
         # use openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)

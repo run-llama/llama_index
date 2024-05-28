@@ -51,6 +51,7 @@ from llama_index.indices.managed.vectara import VectaraIndex
 vectara_customer_id = os.environ.get("VECTARA_CUSTOMER_ID")
 vectara_corpus_id = os.environ.get("VECTARA_CORPUS_ID")
 vectara_api_key = os.environ.get("VECTARA_API_KEY")
+
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectaraIndex.from_documents(
     documents,
@@ -58,34 +59,37 @@ index = VectaraIndex.from_documents(
     vectara_corpus_id=vectara_corpus_id,
     vectara_api_key=vectara_api_key,
 )
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
 ```
 
-Note that if the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specifying them in your call and the VectaraIndex class will read them from the environment. For example this should be equivalent to the above, if these variables are in the environment already:
+Notes:
+* If the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specify them in your call and the VectaraIndex class will read them from the environment.
+* To connect to multiple Vectara corpora, you can set `VECTARA_CORPUS_ID` to a comma-separated list, for example: `12,51` would connect to corpus `12` and corpus `51`.
+
+If you already have documents in your corpus, you can just access the data directly by constructing the `VectaraIndex` as follows:
 
 ```python
-from llama_index.core import ManagedIndex, SimpleDirectoryReade
-from llama_index.indices.managed.vectara import VectaraIndex
-
-# Load documents and build index
-documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
-index = VectaraIndex.from_documents(documents)
-
-# Query index
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
-```
-
-If you already have documents in your corpus you can just access them directly by constructing the VectaraIndex as follows:
-
-```
 index = VectaraIndex()
 ```
 
 And the index will connect to the existing corpus without loading any new documents.
+
+To query the index, simply construct a query engine as follows:
+
+```python
+query_engine = index.as_query_engine(summary_enabled=True)
+print(query_engine.query("What did the author do growing up?"))
+```
+
+Or you can use the chat functionality:
+
+```python
+chat_engine = index.as_chat_engine()
+print(chat_engine.chat("What did the author do growing up?").response)
+```
+
+Chat works as you expect where subsequent `chat` calls maintain a conversation history. All of this is done on the Vectara platform so you don't have to add any additional logic.
+
+For more examples - please see below:
 
 - [Vectara Demo](../../examples/managed/vectaraDemo.ipynb)
 - [Vectara AutoRetriever](../../examples/retrievers/vectara_auto_retriever.ipynb)

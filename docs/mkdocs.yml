@@ -87,6 +87,9 @@ nav:
           - ./examples/agent/llm_compiler.ipynb
           - ./examples/agent/structured_planner.ipynb
           - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
+          - ./examples/agent/openai_agent_lengthy_tools.ipynb
+          - ./examples/agent/memory/vector_memory.ipynb
+          - ./examples/agent/memory/composable_memory.ipynb
       - Callbacks:
           - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/callbacks/PromptLayerHandler.ipynb
@@ -164,6 +167,7 @@ nav:
           - ./examples/docstore/MongoDocstoreDemo.ipynb
           - ./examples/docstore/FirestoreDemo.ipynb
           - ./examples/docstore/DocstoreDemo.ipynb
+          - ./examples/docstore/AzureDocstoreDemo.ipynb
       - Embeddings:
           - ./examples/embeddings/fastembed.ipynb
           - ./examples/embeddings/text_embedding_inference.ipynb
@@ -322,6 +326,8 @@ nav:
           - ./examples/llm/upstage.ipynb
           - ./examples/llm/lmstudio.ipynb
           - ./examples/llm/unify.ipynb
+          - ./examples/llm/ipex_llm_gpu.ipynb
+          - ./examples/llm/deepinfra.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -336,6 +342,7 @@ nav:
           - ./examples/managed/manage_retrieval_benchmark.ipynb
           - ./examples/managed/GoogleDemo.ipynb
           - ./examples/managed/zcpDemo.ipynb
+          - ./examples/managed/PostgresMLDemo.ipynb
       - Metadata Extractors:
           - ./examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
           - ./examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
@@ -779,6 +786,7 @@ nav:
           - ./api_reference/indices/keyword.md
           - ./api_reference/indices/knowledge_graph.md
           - ./api_reference/indices/llama_cloud.md
+          - ./api_reference/indices/postgresml.md
           - ./api_reference/indices/summary.md
           - ./api_reference/indices/tree.md
           - ./api_reference/indices/vectara.md
@@ -804,6 +812,7 @@ nav:
           - ./api_reference/llms/custom_llm.md
           - ./api_reference/llms/dashscope.md
           - ./api_reference/llms/databricks.md
+          - ./api_reference/llms/deepinfra.md
           - ./api_reference/llms/everlyai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
@@ -926,6 +935,8 @@ nav:
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
+          - ./api_reference/memory/simple_composable_memory.md
+          - ./api_reference/memory/vector_memory.md
       - Metadata Extractors:
           - ./api_reference/extractors/entity.md
           - ./api_reference/extractors/index.md
@@ -1225,10 +1236,12 @@ nav:
           - ./api_reference/schema/index.md
       - Storage:
           - Chat Store:
+              - ./api_reference/storage/chat_store/azure.md
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
           - Docstore:
+              - ./api_reference/storage/docstore/azure.md
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
@@ -1246,6 +1259,7 @@ nav:
               - ./api_reference/storage/graph_stores/neptune.md
               - ./api_reference/storage/graph_stores/simple.md
           - Index Store:
+              - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1255,6 +1269,7 @@ nav:
               - ./api_reference/storage/index_store/redis.md
               - ./api_reference/storage/index_store/simple.md
           - Kvstore:
+              - ./api_reference/storage/kvstore/azure.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -1906,6 +1921,12 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-cassandra
             - ../llama-index-integrations/llms/llama-index-llms-unify
             - ../llama-index-integrations/llms/llama-index-llms-lmstudio
+            - ../llama-index-integrations/indices/llama-index-indices-managed-postgresml
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-azure
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-azure
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azure
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azure
+            - ../llama-index-integrations/llms/llama-index-llms-deepinfra
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

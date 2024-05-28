@@ -1,5 +1,6 @@
 import base64
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
+from vertexai.generative_models._generative_models import SafetySettingsType
 
 from llama_index.core.llms import ChatMessage, MessageRole
 
@@ -8,10 +9,12 @@ def is_gemini_model(model: str) -> bool:
     return model.startswith("gemini")
 
 
-def create_gemini_client(model: str) -> Any:
+def create_gemini_client(
+    model: str, safety_settings: Optional[SafetySettingsType]
+) -> Any:
     from vertexai.preview.generative_models import GenerativeModel
 
-    return GenerativeModel(model_name=model)
+    return GenerativeModel(model_name=model, safety_settings=safety_settings)
 
 
 def convert_chat_message_to_gemini_content(
