@@ -99,7 +99,7 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
             **kwargs,
         )
 
-    async def _aget_retrieved_ids_texts(
+    async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
     ) -> Tuple[List[str], List[str]]:
         """Get retrieved ids."""
