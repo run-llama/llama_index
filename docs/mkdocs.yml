@@ -780,6 +780,7 @@ nav:
           - ./api_reference/evaluation/tonic_validate.md
       - Indexes:
           - ./api_reference/indices/colbert.md
+          - ./api_reference/indices/dashscope.md
           - ./api_reference/indices/document_summary.md
           - ./api_reference/indices/google.md
           - ./api_reference/indices/index.md
@@ -956,6 +957,7 @@ nav:
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
       - Node Parsers & Text Splitters:
+          - ./api_reference/node_parser/dashscope.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
           - ./api_reference/node_parsers/html.md
@@ -1093,6 +1095,7 @@ nav:
           - ./api_reference/readers/couchbase.md
           - ./api_reference/readers/couchdb.md
           - ./api_reference/readers/dad_jokes.md
+          - ./api_reference/readers/dashscope.md
           - ./api_reference/readers/dashvector.md
           - ./api_reference/readers/database.md
           - ./api_reference/readers/deeplake.md
@@ -1927,6 +1930,9 @@ plugins:
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azure
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azure
             - ../llama-index-integrations/llms/llama-index-llms-deepinfra
+            - ../llama-index-integrations/indices/llama-index-indices-managed-dashscope
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-relational-dashscope
+            - ../llama-index-integrations/readers/llama-index-readers-dashscope
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
