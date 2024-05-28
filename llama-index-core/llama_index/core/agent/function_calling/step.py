@@ -159,7 +159,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
             self.prefix_messages
-            + task.memory.get()
+            + task.memory.get(input=task.input)
             + task.extra_state["new_memory"].get_all()
         )
 
@@ -305,7 +305,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             )
 
         agent_response = AgentChatResponse(
-            response=str(response), sources=task.extra_state["sources"]
+            response=str(response.message.content), sources=task.extra_state["sources"]
         )
 
         return TaskStepOutput(
@@ -391,7 +391,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             )
 
         agent_response = AgentChatResponse(
-            response=str(response), sources=task.extra_state["sources"]
+            response=str(response.message.content), sources=task.extra_state["sources"]
         )
 
         return TaskStepOutput(

@@ -44,10 +44,15 @@ class MarkdownReader(BaseReader):
 
         current_header = None
         current_lines = []
+        in_code_block = False
 
         for line in lines:
+            if line.startswith("```"):
+                # This is the end of a code block if we are already in it, and vice versa.
+                in_code_block = not in_code_block
+
             header_match = re.match(r"^#+\s", line)
-            if header_match:
+            if not in_code_block and header_match:
                 # Upon first header, skip if current text chunk is empty
                 if current_header is not None or len(current_lines) > 0:
                     markdown_tups.append((current_header, "\n".join(current_lines)))

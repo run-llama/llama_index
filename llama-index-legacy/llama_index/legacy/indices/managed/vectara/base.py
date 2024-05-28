@@ -75,11 +75,11 @@ class VectaraIndex(BaseManagedIndex):
             ),
             **kwargs,
         )
-        self._vectara_customer_id = vectara_customer_id or os.environ.get(
-            "VECTARA_CUSTOMER_ID"
+        self._vectara_customer_id = vectara_customer_id or str(
+            os.environ.get("VECTARA_CUSTOMER_ID")
         )
-        self._vectara_corpus_id = vectara_corpus_id or os.environ.get(
-            "VECTARA_CORPUS_ID"
+        self._vectara_corpus_id = vectara_corpus_id or str(
+            os.environ.get("VECTARA_CORPUS_ID")
         )
         self._vectara_api_key = vectara_api_key or os.environ.get("VECTARA_API_KEY")
         if (

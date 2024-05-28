@@ -4,13 +4,13 @@ import sys
 from typing import Any, List, Optional
 from urllib.parse import urlparse
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.llms import ChatMessage
-from llama_index.core.storage.chat_store.base import BaseChatStore
-
 import redis
 from redis import Redis
 from redis.cluster import RedisCluster
+
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.llms import ChatMessage
+from llama_index.core.storage.chat_store.base import BaseChatStore
 
 
 # Convert a ChatMessage to a json object for Redis
