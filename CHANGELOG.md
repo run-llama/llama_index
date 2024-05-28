@@ -1,5 +1,68 @@
 # ChangeLog
 
+## [2024-05-24]
+
+### `llama-index-core` [0.10.39]
+
+- Add VectorMemory and SimpleComposableMemory (#13352)
+- Improve MarkdownReader to ignore headers in code blocks (#13694)
+- proper async element node parsers (#13698)
+- return only the message content in function calling worker (#13677)
+- nit: fix multimodal query engine to use metadata (#13712)
+- Add notebook with workaround for lengthy tool descriptions and QueryPlanTool (#13701)
+
+### `llama-index-embeddings-ipex-llm` [0.1.2]
+
+- Improve device selection (#13644)
+
+### `llama-index-indices-managed-postgresml` [0.1.3]
+
+- Add the PostgresML Managed Index (#13623)
+
+### `llama-index-indices-managed-vectara` [0.1.4]
+
+- Added chat engine, streaming, factual consistency score, and more (#13639)
+
+### `llama-index-llms-deepinfra` [0.0.1]
+
+- Add Integration for DeepInfra LLM Models (#13652)
+
+### `llama-index-llm-ipex-llm` [0.1.3]
+
+- add GPU support for llama-index-llm-ipex-llm (#13691)
+
+### `llama-index-llms-lmstudio` [0.1.0]
+
+- lmstudio integration (#13557)
+
+### `llama-index-llms-ollama` [0.1.5]
+
+- Use aiter_lines function to iterate over lines in ollama integration (#13699)
+
+### `llama-index-llms-vertex` [0.1.6]
+
+- Added safety_settings parameter for gemini (#13568)
+
+### `llama-index-postprocessor-voyageai-rerank` [0.1.3]
+
+- VoyageAI reranking bug fix (#13622)
+
+### `llama-index-retrievers-mongodb-atlas-bm25-retriever` [0.1.4]
+
+- Add missing return (#13720)
+
+### `llama-index-readers-web` [0.1.17]
+
+- Add Scrapfly Web Loader (#13654)
+
+### `llama-index-vector-stores-postgres` [0.1.9]
+
+- fix bug with delete and special chars (#13651)
+
+### `llama-index-vector-stores-supabase` [0.1.5]
+
+- Try-catch in case the .\_client attribute is not present (#13681)
+
 ## [2024-05-21]
 
 ### `llama-index-core` [0.10.38]
