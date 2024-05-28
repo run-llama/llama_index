@@ -33,6 +33,7 @@ version = "0.1.3"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 lancedb = "^0.5.1"
+tantivy = {git = "https://github.com/quickwit-oss/tantivy-py#164adc87e1a033117001cf70e38c82a53014d985"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -44,7 +45,6 @@ pytest = "7.2.1"
 pytest-asyncio = "*"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
-tantivy = {git = "https://github.com/quickwit-oss/tantivy-py#164adc87e1a033117001cf70e38c82a53014d985"}
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
