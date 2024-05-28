@@ -20,6 +20,7 @@ from nebula3.Config import SessionPoolConfig
 from nebula3.gclient.net.SessionPool import SessionPool
 from nebula3.gclient.net.base import BaseExecutor
 from nebula3.data.ResultSet import ResultSet
+from jinja2 import Template
 
 from llama_index.graph_stores.nebula.utils import (
     build_param_map,
@@ -33,19 +34,19 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
-DDL = """
+DDL = Template(
+    """
 CREATE TAG IF NOT EXISTS `Entity__` (`name` STRING);
 CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
-CREATE TAG IF NOT EXISTS `entity` ();
-CREATE TAG IF NOT EXISTS `text_chunk` ();
-
-CREATE TAG INDEX IF NOT EXISTS idx_entity_name ON `Entity__`(`name`(256));
-CREATE TAG INDEX IF NOT EXISTS idx_chunk ON `Chunk__`();
+CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
+CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
+CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
 """
+)
 
 
 class NebulaPropertyGraphStore(PropertyGraphStore):
-    r"""
+    """
     NebulaGraph Property Graph Store.
 
     This class implements a NebulaGraph property graph store.
@@ -53,12 +54,6 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
     You could go with NebulaGraph-lite freely on Google Colab.
     - https://github.com/nebula-contrib/nebulagraph-lite
     Or Install with Docker Extension(search in the Docker Extension marketplace) on your local machine.
-
-    Args:
-        username (str): The username for the NebulaGraph database.
-        password (str): The password for the NebulaGraph database.
-        url (str): The URL for the NebulaGraph database.
-        space (Optional[str]): The name of the space to connect to.
 
     Examples:
         `pip install llama-index-graph-stores-nebula`
@@ -70,30 +65,6 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         %load_ext ngql
         %ngql --address 127.0.0.1 --port 9669 --user root --password nebula
         %ngql CREATE SPACE IF NOT EXISTS llamaindex_nebula_property_graph(vid_type=FIXED_STRING(256));
-        sleep 20
-        %ngql USE llamaindex_nebula_property_graph;
-        %ngql CREATE TAG IF NOT EXISTS `Entity__` (`name` STRING);
-        %ngql CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
-        %ngql CREATE EDGE IF NOT EXISTS `Relation` (`name` STRING);
-        sleep 20
-        %ngql
-        ```
-
-        Then, you could use this store with a simple index and query:
-        ```python
-        from llama_index.core.indices.property_graph import PropertyGraphIndex
-        from llama_index.graph_stores.nebula import NebulaPropertyGraphStore
-
-        # Create a NebulaPropertyGraphStore instance
-        graph_store = NebulaPropertyGraphStore(
-            space="llamaindex_nebula_property_graph"
-        )
-
-        # create the index
-        index = PropertyGraphIndex.from_documents(
-            documents,
-            property_graph_store=graph_store,
-        )
         ```
     """
 
@@ -110,6 +81,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         password: str = "nebula",
         url: str = "nebula://localhost:9669",
         overwrite: bool = False,
+        props_schema: str = "",
         refresh_schema: bool = True,
         sanitize_query_output: bool = False,  # We don't put Embedding-Like values as Properties
         enhanced_schema: bool = False,
@@ -129,7 +101,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             )
             session_pool.init()
             self._client = session_pool
-        resp = self._client.execute(DDL)
+        self._client.execute(DDL.render(props_schema=props_schema))
         if overwrite:
             self._client.execute(f"CLEAR SPACE {self._space};")
 
@@ -343,19 +315,23 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
             keys, values_k, values_params = self._construct_property_query(
                 entity.properties
             )
-            stmt = f'INSERT VERTEX `{entity.label}` ({keys}) VALUES "{entity.id}":({values_k});'
+            stmt = f'INSERT VERTEX Props__ ({keys}) VALUES "{entity.id}":({values_k});'
             self.structured_query(
                 stmt,
                 param_map=values_params,
             )
+            stmt = (
+                f'INSERT VERTEX Node__ (label) VALUES "{entity.id}":("{entity.label}");'
+            )
+            self.structured_query(stmt)
 
     def _construct_property_query(self, properties: Dict[str, Any]):
         keys = ",".join([f"`{k}`" for k in properties.keys()])
         values_k = ""
         values_params: Dict[Any] = {}
         for idx, v in enumerate(properties.values()):
-            values_k += f"$entity_{idx},"
-            values_params[f"entity_{idx}"] = v
+            values_k += f"$kv_{idx},"
+            values_params[f"kv_{idx}"] = v
         values_k = values_k[:-1]
         return keys, values_k, values_params
 
@@ -366,7 +342,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
             keys, values_k, values_params = self._construct_property_query(
                 relation.properties
             )
-            stmt = f'INSERT EDGE `{relation.label}` ({keys}) VALUES "{relation.source_id}"->"{relation.target_id}":({values_k});'
+            stmt = f'INSERT EDGE `Relation__` (`label`,{keys}) VALUES "{relation.source_id}"->"{relation.target_id}":("{relation.label}",{values_k});'
             self.structured_query(stmt, param_map=values_params)
 
     def get(
@@ -440,6 +416,10 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
 
         if entity_names:
             raise NotImplementedError("Filtering by entity names is not supported yet.")
+        if relation_names:
+            raise NotImplementedError(
+                "Filtering by relation names is not supported yet."
+            )
 
         if ids:
             cypher_statement += "id(e) in $ids "
@@ -453,12 +433,13 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
             cypher_statement += " AND ".join(prop_list)
 
         return_statement = f"""
-        MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t)
-        RETURN id(e) AS source_id, [l in labels(e) WHERE l <> 'Entity__' | l][0] AS source_type,
-                properties(e) AS source_properties,
-                type(r) AS type,
-                id(t) AS target_id, [l in labels(t) WHERE l <> 'Entity__' | l][0] AS target_type,
-                properties(t) AS target_properties
+        MATCH (e)-[r:Relation__]->(t)
+        RETURN id(e) AS source_id, e.Node__.label AS source_type,
+                properties(e.Props__) AS source_properties,
+                r.label AS type,
+                properties(r) AS rel_properties,
+                id(t) AS target_id, t.Node__.label AS target_type,
+                properties(t.Props__) AS target_properties
         """
         cypher_statement += return_statement
 
@@ -476,10 +457,13 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
                 label=record["target_type"],
                 properties=remove_empty_values(record["target_properties"]),
             )
+            rel_properties = remove_empty_values(record["rel_properties"])
+            rel_properties.pop("label")
             rel = Relation(
                 source_id=record["source_id"],
                 target_id=record["target_id"],
                 label=record["type"],
+                properties=rel_properties,
             )
             triples.append([source, rel, target])
         return triples
@@ -582,7 +566,8 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         if relation_names:
             for relation_name in relation_names:
                 self.structured_query(
-                    f"LOOKUP ON `{relation_name}` | DELETE EDGE $-.EdgeID",
+                    f"LOOKUP ON `Relation__` WHERE label IN $relation_name | DELETE EDGE $-.EdgeID",
+                    param_map={"relation_name": relation_name},
                 )
         if properties:
             cypher = "MATCH (e:`Entity__`) WHERE "

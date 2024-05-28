@@ -7,8 +7,10 @@ from llama_index.graph_stores.nebula import NebulaPropertyGraphStore
 from unittest import TestCase
 
 
-def get_store():
-    g = NebulaPropertyGraphStore(space="test_property_graph_store", overwrite=True)
+def get_store(props_schema: str = ""):
+    g = NebulaPropertyGraphStore(
+        space="test_property_graph_store", overwrite=True, props_schema=props_schema
+    )
     g.structured_query("CREATE EDGE IF NOT EXISTS `r`();")
     return g
 
@@ -29,8 +31,9 @@ class TestPropertyGraphStore(TestCase):
 
         g.upsert_nodes([e1, e2])
         g.upsert_relations([r])
+        triplets = g.get_triplets()
 
-        assert len(g.get_triplets()) == 1
+        assert len(triplets) == 1
 
     def test_delete(self) -> None:
         g = get_store()
