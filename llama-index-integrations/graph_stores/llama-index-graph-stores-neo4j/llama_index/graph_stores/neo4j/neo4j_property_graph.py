@@ -366,7 +366,7 @@ class Neo4jPGStore(PropertyGraphStore):
                 nodes.append(
                     EntityNode(
                         name=record["name"],
-                        type=record["type"],
+                        label=record["type"],
                         properties=remove_empty_values(record["properties"]),
                     )
                 )
