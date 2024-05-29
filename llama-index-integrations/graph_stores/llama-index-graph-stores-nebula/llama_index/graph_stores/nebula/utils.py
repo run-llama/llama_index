@@ -107,3 +107,102 @@ def _cast_value(value: Any) -> Value:
     else:
         raise TypeError(f"Unsupported type: {type(value)}")
     return casted_value
+
+def deduce_property_types_from_values(property_values: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Deduce the data types of properties for NebulaGraph DDL based on the property values.
+
+    Parameters:
+    property_values (dict): The properties of the tag.
+
+    Returns:
+    dict: A dictionary mapping property names to their deduced data types.
+    """
+    property_type_mapping = {}
+    for property_name, value in property_values.items():
+        if isinstance(value, bool):
+            property_type_mapping[property_name] = "bool"
+        elif isinstance(value, int):
+            property_type_mapping[property_name] = "int"
+        elif isinstance(value, float):
+            property_type_mapping[property_name] = "double"
+        elif isinstance(value, str):
+            property_type_mapping[property_name] = "string"
+        else:
+            raise ValueError(f"Unsupported property type: {type(value)}")
+    return property_type_mapping
+
+def generate_ddl_create_tag(tag_name: str, properties: Dict[str, Any]) -> str:
+    """
+    Generate the DDL to create a NebulaGraph tag.
+
+    Parameters:
+    tag_name (str): The name of the tag.
+    properties (dict): The properties of the tag.
+
+    Returns:
+    str: The DDL string.
+    """
+    # infer properties type in NebulaGraph DDL
+    property_type_map = deduce_property_types_from_values(properties)
+
+    # generate DDL
+    ddl_parts = [f"CREATE TAG `{tag_name}` ("]
+    prop_definitions = []
+    for prop, dtype in property_type_map.items():
+        prop_definition = f"`{prop}` {dtype} NULL"
+        prop_definitions.append(prop_definition)
+    ddl_parts.append(", ".join(prop_definitions))
+    ddl_parts.append(");")
+    ddl_statement = " ".join(ddl_parts)
+    return ddl_statement
+
+def generate_ddl_alter_tag(tag_name: str, existing_property_type_map: Dict[str, str], new_properties: Dict[str, Any], perform_prop_drop_if_missing: bool = False) -> Optional[str]:
+    """
+    Generate the DDL to alter a NebulaGraph tag.
+
+    Parameters:
+    tag_name (str): The name of the tag.
+    existing_property_type_map (dict): The existing properties of the tag.
+    new_properties (dict): The new properties to add to the tag.
+    perform_prop_drop_if_missing (bool): Whether to drop properties that are not in the new properties.
+
+    Returns:
+    str: The DDL string.
+    """
+
+    # infer properties type in NebulaGraph DDL
+    new_property_type_map = deduce_property_types_from_values(new_properties)
+
+    # generate DDL
+    ddl_parts = [f"ALTER TAG `{tag_name}` ADD ("]
+    prop_definitions = []
+    for prop, dtype in new_property_type_map.items():
+        if prop not in existing_property_type_map:
+            prop_definition = f"`{prop}` {dtype} NULL"
+            prop_definitions.append(prop_definition)
+        elif existing_property_type_map[prop] != dtype:
+            raise ValueError(f"Property {prop} already exists with a different type {existing_property_type_map[prop]}")
+
+    if prop_definitions:
+        ddl_parts.append(", ".join(prop_definitions))
+        ddl_parts.append(");")
+        ddl_statement = " ".join(ddl_parts)
+    else:
+        ddl_statement = None
+
+    if perform_prop_drop_if_missing:
+        ddl_parts = [f"ALTER TAG `{tag_name}` DROP ("]
+        prop_definitions = []
+        for prop, dtype in new_property_type_map.items():
+            if prop in existing_property_type_map:
+                prop_definition = f"`{prop}`"
+                prop_definitions.append(prop_definition)
+        if prop_definitions:
+            ddl_parts.append(", ".join(prop_definitions))
+            ddl_parts.append(");")
+            if ddl_statement is None:
+                ddl_statement = ""
+            ddl_statement += " ".join(ddl_parts)
+
+    return ddl_statement

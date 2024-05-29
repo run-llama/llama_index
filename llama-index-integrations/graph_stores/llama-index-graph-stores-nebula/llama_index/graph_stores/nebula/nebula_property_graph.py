@@ -14,9 +14,7 @@ from llama_index.core.graph_stores.utils import (
     value_sanitize,
     LIST_LIMIT,
 )
-from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
-from nebula3.Config import SessionPoolConfig
 from nebula3.gclient.net.SessionPool import SessionPool
 from nebula3.gclient.net.base import BaseExecutor
 from nebula3.data.ResultSet import ResultSet
@@ -291,7 +289,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         if entity_list:
             # model with tag Entity__ and other tags(label) if applicable
             # need to add properties as well, for extractors like SchemaLLMPathExtractor there is no properties
-            # NebulaGraph is Schema-Full, so we need to be strong schema mindset to abstract this.
+            # NebulaGraph is Schema-ful, so we need to be strong schema mindset to abstract this.
             # i.e.
             # INSERT VERTEX Entity__ (name) VALUES "foo":("bar"), "baz":("qux");
             # INSERT VERTEX Person (name) VALUES "foo":("bar"), "baz":("qux");
@@ -557,7 +555,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         """Delete matching data."""
         if entity_names:
             self.structured_query(
-                "LOOKUP ON `Entity__` WHERE name IN $entity_names | DELETE VERTEX $-.VertexID",
+                "LOOKUP ON `Entity__` WHERE `Entity__`.name IN $entity_names | DELETE VERTEX $-.VertexID",
                 param_map={"entity_names": entity_names},
             )
 
@@ -566,7 +564,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         if relation_names:
             for relation_name in relation_names:
                 self.structured_query(
-                    f"LOOKUP ON `Relation__` WHERE label IN $relation_name | DELETE EDGE $-.EdgeID",
+                    f"LOOKUP ON `Relation__` WHERE `Relation__`.`label` IN $relation_name | DELETE EDGE $-.EdgeID",
                     param_map={"relation_name": relation_name},
                 )
         if properties:
