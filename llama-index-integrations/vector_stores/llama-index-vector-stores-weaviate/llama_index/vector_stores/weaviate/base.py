@@ -270,7 +270,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             )
 
         collection = self._client.collections.get(self.index_name)
-        query_result = collection.query.fetch_objects(filters=filters, limit=1000)
+        query_result = collection.query.fetch_objects(
+            filters=filters,
+            limit=10000,  # 10,000 is the max weaviate can fetch
+        )
 
         for entry in query_result.objects:
             collection.data.delete_by_id(uuid=entry.uuid)
