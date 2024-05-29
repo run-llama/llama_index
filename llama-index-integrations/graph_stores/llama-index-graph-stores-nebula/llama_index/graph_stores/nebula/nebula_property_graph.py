@@ -75,6 +75,10 @@ CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`
 CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`);
 """
 
+# Hard coded default schema, which is union of
+# document metadata: `file_path` STRING, `file_name` STRING, `file_type` STRING, `file_size` INT, `creation_date` STRING, `last_modified_date` STRING
+# llamaindex_node: `_node_content` STRING, `_node_type` STRING, `document_id` STRING, `doc_id` STRING, `ref_doc_id` STRING
+# introduced by PropertyGraph: `triplet_source_id` STRING
 DEFAULT_PROPS_SCHEMA = "`file_path` STRING, `file_name` STRING, `file_type` STRING, `file_size` INT, `creation_date` STRING, `last_modified_date` STRING, `_node_content` STRING, `_node_type` STRING, `document_id` STRING, `doc_id` STRING, `ref_doc_id` STRING, `triplet_source_id` STRING"
 
 
@@ -707,7 +711,14 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         else:
             result = self._client.execute_parameter(query, build_param_map(param_map))
         if not result.is_succeeded():
-            raise ValueError(f"Query failed: {result.error_msg()}")
+            raise Exception(
+                "NebulaGraph query failed:",
+                result.error_msg(),
+                "Statement:",
+                query,
+                "Params:",
+                param_map,
+            )
         full_result = [
             {
                 key: result.row_values(row_index)[i].cast_primitive()
