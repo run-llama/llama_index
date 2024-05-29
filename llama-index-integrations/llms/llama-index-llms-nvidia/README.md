@@ -1,10 +1,17 @@
 # NVIDIA NIMs
 
-The `llama-index-llms-nvidia` package contains LlamaIndex integrations for chat model powered by the [NVIDIA AI Foundation Model](https://www.nvidia.com/en-us/ai-data-science/foundation-models/) and hosted on [NVIDIA API Catalog.](https://build.nvidia.com/)
+The `llama-index-llms-nvidia` package contains LlamaIndex integrations building applications with models on 
+NVIDIA NIM inference microservice. NIM supports models across domains like chat, embedding, and re-ranking models 
+from the community as well as NVIDIA. These models are optimized by NVIDIA to deliver the best performance on NVIDIA 
+accelerated infrastructure and deployed as a NIM, an easy-to-use, prebuilt containers that deploy anywhere using a single 
+command on NVIDIA accelerated infrastructure.
 
-NVIDIA AI Foundation models are community and NVIDIA-built models and are NVIDIA-optimized to deliver the best performance on NVIDIA accelerated infrastructure.  Using the API, you can query live endpoints available on the NVIDIA API Catalog to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster using NVIDIA NIM which is part of NVIDIA AI Enterprise.
+NVIDIA hosted deployments of NIMs are available to test on the [NVIDIA API catalog](https://build.nvidia.com/). After testing, 
+NIMs can be exported from NVIDIA’s API catalog using the NVIDIA AI Enterprise license and run on-premises or in the cloud, 
+giving enterprises ownership and full control of their IP and AI application.
 
-Models can be exported from NVIDIA’s API catalog with NVIDIA NIM, which is included with the NVIDIA AI Enterprise license, and run them on-premises, giving Enterprises ownership of their customizations and full control of their IP and AI application. NIMs are packaged as container images on a per model/model family basis and are distributed as NGC container images through the NVIDIA NGC Catalog. At their core, NIMs are containers that provide interactive APIs for running inference on an AI Model.
+NIMs are packaged as container images on a per model basis and are distributed as NGC container images through the NVIDIA NGC Catalog. 
+At their core, NIMs provide easy, consistent, and familiar APIs for running inference on an AI model.
 
 # NVIDIA's LLM connector
 
@@ -75,5 +82,5 @@ When ready to deploy, you can self-host models with NVIDIA NIM—which is includ
 from llama_index.llms.nvidia import NVIDIA
 
 # connect to an chat NIM running at localhost:2016
-embedder = NVIDIA(base_url="http://localhost:2016/v1")
+llm = NVIDIA(base_url="http://localhost:2016/v1")
 ```
