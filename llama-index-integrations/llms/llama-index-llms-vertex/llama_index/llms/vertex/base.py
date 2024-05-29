@@ -146,6 +146,7 @@ class Vertex(LLM):
             model=model,
             examples=examples,
             iscode=iscode,
+            safety_settings=safety_settings,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
