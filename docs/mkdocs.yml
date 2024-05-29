@@ -574,6 +574,8 @@ nav:
           - ./examples/vector_stores/VertexAIVectorSearchDemo.ipynb
           - ./examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb
           - ./examples/vector_stores/RelytDemo.ipynb
+          - ./examples/vector_stores/HologresDemo.ipynb
+
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -1928,6 +1930,7 @@ plugins:
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azure
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azure
             - ../llama-index-integrations/llms/llama-index-llms-deepinfra
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-hologres
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
