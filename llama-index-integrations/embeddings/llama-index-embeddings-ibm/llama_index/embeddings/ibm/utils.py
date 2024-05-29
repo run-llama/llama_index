@@ -37,7 +37,7 @@ def resolve_watsonx_credentials(
         get_from_param_or_env("url", url, "WATSONX_URL")
     )
 
-    if "cloud.ibm.com" in creds["url"].get_secret_value():
+    if creds["url"].get_secret_value().endswith("cloud.ibm.com"):
         creds["apikey"] = convert_to_secret_str(
             get_from_param_or_env("apikey", apikey, "WATSONX_APIKEY")
         )
