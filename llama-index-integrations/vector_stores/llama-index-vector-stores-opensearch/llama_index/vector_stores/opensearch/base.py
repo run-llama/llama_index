@@ -239,12 +239,12 @@ class OpensearchVectorClient:
         Returns:
             Up to k docs closest to query_embedding
         """
-        if filters is None or len(filters.filters) == 0:
+        pre_filter = self._parse_filters(filters)
+        if not pre_filter:
             search_query = self._default_approximate_search_query(
                 query_embedding, k, vector_field=embedding_field
             )
         else:
-            pre_filter = self._parse_filters(filters)
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
             search_query = self._default_painless_scripting_query(
                 query_embedding,
