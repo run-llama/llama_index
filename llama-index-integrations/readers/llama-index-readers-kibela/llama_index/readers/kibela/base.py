@@ -3,8 +3,7 @@ from typing import Dict, Generic, List, Optional, TypeVar
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from pydantic import BaseModel, parse_obj_as
-from pydantic.generics import GenericModel
+from llama_index.core.bridge.pydantic import BaseModel, GenericModel, parse_obj_as
 
 NodeType = TypeVar("NodeType")
 
