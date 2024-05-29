@@ -34,11 +34,19 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
+META_NODE_LABEL_PREFIX = "__meta__label__"
+
 # DDL Design
 # - Entity__ is used to store the extracted entity name(readable id)
 # - Chunk__ is used to store the extracted chunk text
 # - Node__ is used to store the node label
 # - Props__ is used to store the LlamaIndex Node Metadata
+# - Relation__ is used to store the relation
+# - __meta__node_label__ is used to store the node labels,
+#     we use EDGE for this due to we could leverage dangling edges to make it mostly invisible
+# - __meta__rel_label__ is used to store the relation labels
+#     the starting and ending vertices will be human-readable from node_label && META_NODE_LABEL_PREFIX
+#     due to they are dangling edges, so they are mostly invisible
 
 
 DDL = Template(
@@ -48,13 +56,21 @@ CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
 CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
 CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
 CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
-
-CREATE TAG INDEX IF NOT EXISTS index_entity_name ON `Entity__`(`name`(256));
-CREATE TAG INDEX IF NOT EXISTS index_chunk_text ON `Chunk__`(`text`(256));
-CREATE TAG INDEX IF NOT EXISTS index_node_label ON `Node__`(`label`(256));
-CRETAE EDGE INDEX IF NOT EXISTS index_relation_label ON `Relation__`(`label`(256));
+CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING);
+CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING);
 """
 )
+
+# TODO: need to define Props__ Indexes based on all the properties
+INDEX_DDL = """
+CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`);
+CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`);
+CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`);
+CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`);
+
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`);
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`);
+"""
 
 
 class NebulaPropertyGraphStore(PropertyGraphStore):
@@ -164,68 +180,23 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
-        for tag in self._execute("SHOW TAGS").column_values("Name"):
-            tag_name = tag.cast()
-            tags_schema[tag_name] = []
-
-            r = self._execute(f"DESCRIBE TAG `{tag_name}`")
-            props, types, comments = (
-                r.column_values("Field"),
-                r.column_values("Type"),
-                r.column_values("Comment"),
+        for node_label in self.structure_query(
+            "MATCH ()-[node_label:idx_meta__node_label__]->() RETURN node_label.label AS name"
+        ):
+            tags_schema[node_label["name"]] = []
+        for rel_label in self.structure_query(
+            "MATCH ()-[rel_label:idx_meta__rel_label__]->() "
+            "RETURN rel_label.label AS name, "
+            "src(rel_label) AS src, dst(rel_label) AS dst"
+        ):
+            edge_types_schema[rel_label["name"]] = []
+            relationships.append(
+                {
+                    "start": rel_label["src"],
+                    "type": rel_label["name"],
+                    "end": rel_label["dst"],
+                }
             )
-            for i in range(r.row_size()):
-                prop_name = props[i].cast()
-                prop_type = types[i].cast()
-                prop_comment = comments[i].cast()
-                prop = {"property": prop_name, "type": prop_type}
-                if prop_comment:
-                    prop["comment"] = prop_comment
-                tags_schema[tag_name].append(prop)
-
-        # TODO: Add the sample data for tags(good for Text2cypher)
-
-        for edge_type in self._execute("SHOW EDGES").column_values("Name"):
-            edge_type_name = edge_type.cast()
-            edge_types_schema[edge_type_name] = []
-            r = self._execute(f"DESCRIBE EDGE `{edge_type_name}`")
-            props, types, comments = (
-                r.column_values("Field"),
-                r.column_values("Type"),
-                r.column_values("Comment"),
-            )
-            for i in range(r.row_size()):
-                prop_name = props[i].cast()
-                prop_type = types[i].cast()
-                prop_comment = comments[i].cast()
-                prop = {"property": prop_name, "type": prop_type}
-                if prop_comment:
-                    prop["comment"] = prop_comment
-                edge_types_schema[edge_type_name].append(prop)
-
-            # build relationships types
-            # TODO: handle dangling vertices in a strategy to Sample more edges with valid vertices
-            # For now, we ignore the tag of dangling vertices by leaving it empty.
-            rel_query_sample_edge = f"""
-MATCH ()-[e:`{ edge_type_name }`]->()
-RETURN [src(e), dst(e)] AS sample_edge LIMIT 1
-"""
-            sample_edge = self._execute(rel_query_sample_edge).column_values(
-                "sample_edge"
-            )
-            if len(sample_edge) == 0:
-                continue
-            src_id, dst_id = sample_edge[0].cast()
-            quote = "" if self.vid_type == "INT64" else QUOTE
-            _rel_query_edge_type = f"""
-MATCH (m)-[:{ edge_type_name }]->(n)
-  WHERE id(m) == { quote }{ src_id }{ quote } AND id(n) == { quote }{ dst_id }{ quote }
-RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + ")-[:{ edge_type_name }]->(" + (CASE WHEN size(tags(n)) == 0 THEN "" ELSE ":" + tags(n)[0] END) + ")" AS rels
-"""
-
-            r = self._execute(_rel_query_edge_type).column_values("rels")
-            if len(r) > 0:
-                relationships.append(r[0].cast())
 
         self.structured_schema = {
             "node_props": tags_schema,
@@ -264,6 +235,140 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         #     for prop in rel_props:
         #         if prop["property"] in enhanced_info:
         #             prop.update(enhanced_info[prop["property"]])
+
+    #     def refresh_schema(self) -> None:
+    #         """
+    #         Example data of self.structured_schema:
+    #         {
+    #             "node_props": {
+    #                 "Person": [
+    #                     {"property": "name", "type": "STRING", "comment": "The name of the person"},
+    #                     {"property": "age", "type": "INTEGER", "comment": "The age of the person"},
+    #                     {"property": "dob", "type": "DATE", "comment": "The date of birth of the person"}
+    #                 ],
+    #                 "Company": [
+    #                     {"property": "name", "type": "STRING", "comment": "The name of the company"},
+    #                     {"property": "founded", "type": "DATE", "comment": "The date of foundation of the company"}
+    #                 ]
+    #             },
+    #             "rel_props": {
+    #                 "WORKS_AT": [
+    #                     {"property": "since", "type": "DATE", "comment": "The date when the person started working at the company"}
+    #                 ],
+    #                 "MANAGES": [
+    #                     {"property": "since", "type": "DATE", "comment": "The date when the person started managing the company"}
+    #                 ]
+    #             },
+    #             "relationships": [
+    #                 {"start": "Person", "type": "WORKS_AT", "end": "Company"},
+    #                 {"start": "Person", "type": "MANAGES", "end": "Company"}
+    #             ]
+    #         }
+    #         """
+
+    #         tags_schema = {}
+    #         edge_types_schema = {}
+    #         relationships = []
+    #         for tag in self._execute("SHOW TAGS").column_values("Name"):
+    #             tag_name = tag.cast()
+    #             tags_schema[tag_name] = []
+
+    #             r = self._execute(f"DESCRIBE TAG `{tag_name}`")
+    #             props, types, comments = (
+    #                 r.column_values("Field"),
+    #                 r.column_values("Type"),
+    #                 r.column_values("Comment"),
+    #             )
+    #             for i in range(r.row_size()):
+    #                 prop_name = props[i].cast()
+    #                 prop_type = types[i].cast()
+    #                 prop_comment = comments[i].cast()
+    #                 prop = {"property": prop_name, "type": prop_type}
+    #                 if prop_comment:
+    #                     prop["comment"] = prop_comment
+    #                 tags_schema[tag_name].append(prop)
+
+    #         # TODO: Add the sample data for tags(good for Text2cypher)
+
+    #         for edge_type in self._execute("SHOW EDGES").column_values("Name"):
+    #             edge_type_name = edge_type.cast()
+    #             edge_types_schema[edge_type_name] = []
+    #             r = self._execute(f"DESCRIBE EDGE `{edge_type_name}`")
+    #             props, types, comments = (
+    #                 r.column_values("Field"),
+    #                 r.column_values("Type"),
+    #                 r.column_values("Comment"),
+    #             )
+    #             for i in range(r.row_size()):
+    #                 prop_name = props[i].cast()
+    #                 prop_type = types[i].cast()
+    #                 prop_comment = comments[i].cast()
+    #                 prop = {"property": prop_name, "type": prop_type}
+    #                 if prop_comment:
+    #                     prop["comment"] = prop_comment
+    #                 edge_types_schema[edge_type_name].append(prop)
+
+    #             # build relationships types
+    #             # TODO: handle dangling vertices in a strategy to Sample more edges with valid vertices
+    #             # For now, we ignore the tag of dangling vertices by leaving it empty.
+    #             rel_query_sample_edge = f"""
+    # MATCH ()-[e:`{ edge_type_name }`]->()
+    # RETURN [src(e), dst(e)] AS sample_edge LIMIT 1
+    # """
+    #             sample_edge = self._execute(rel_query_sample_edge).column_values(
+    #                 "sample_edge"
+    #             )
+    #             if len(sample_edge) == 0:
+    #                 continue
+    #             src_id, dst_id = sample_edge[0].cast()
+    #             quote = "" if self.vid_type == "INT64" else QUOTE
+    #             _rel_query_edge_type = f"""
+    # MATCH (m)-[:{ edge_type_name }]->(n)
+    #   WHERE id(m) == { quote }{ src_id }{ quote } AND id(n) == { quote }{ dst_id }{ quote }
+    # RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + ")-[:{ edge_type_name }]->(" + (CASE WHEN size(tags(n)) == 0 THEN "" ELSE ":" + tags(n)[0] END) + ")" AS rels
+    # """
+
+    #             r = self._execute(_rel_query_edge_type).column_values("rels")
+    #             if len(r) > 0:
+    #                 relationships.append(r[0].cast())
+
+    #         self.structured_schema = {
+    #             "node_props": tags_schema,
+    #             "rel_props": edge_types_schema,
+    #             "relationships": relationships,
+    #             # TODO: need to check necessarity of meta data here
+    #         }
+
+    #         # Update node info
+    #         # TODO need to look into this enhanced schema
+    #         # for node in schema_counts[0].get("nodes", []):
+    #         #     node_props = self.structured_schema["node_props"].get(node["name"])
+    #         #     if not node_props:  # The node has no properties
+    #         #         continue
+    #         #     enhanced_cypher = self._enhanced_schema_cypher(
+    #         #         node["name"], node_props, node["count"] < EXHAUSTIVE_SEARCH_LIMIT
+    #         #     )
+    #         #     enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
+    #         #     for prop in node_props:
+    #         #         if prop["property"] in enhanced_info:
+    #         #             prop.update(enhanced_info[prop["property"]])
+    #         # # Update rel info
+    #         # for rel in schema_counts[0].get("relationships", []):
+
+    #         #     rel_props = self.structured_schema["rel_props"].get(rel["name"])
+    #         #     if not rel_props:  # The rel has no properties
+    #         #         continue
+    #         #     enhanced_cypher = self._enhanced_schema_cypher(
+    #         #         rel["name"],
+    #         #         rel_props,
+    #         #         rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
+    #         #         is_relationship=True,
+    #         #     )
+
+    #         #     enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
+    #         #     for prop in rel_props:
+    #         #         if prop["property"] in enhanced_info:
+    #         #             prop.update(enhanced_info[prop["property"]])
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         # meta tag Entity__ is used to store the entity name
@@ -512,16 +617,16 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
             MATCH (e:`Entity__`)
             WHERE id(e) in $ids
             MATCH p=(e)-[r*1..{depth}]-(other)
-            WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
+            WHERE ALL(rel in relationships(p) WHERE rel.`label` <> 'MENTIONS')
             UNWIND relationships(p) AS rel
             WITH distinct rel
             WITH startNode(rel) AS source,
-                type(rel) AS type,
+                rel.`label` AS type,
                 endNode(rel) AS endNode
-            RETURN id(source) AS source_id, [l in labels(source) WHERE l <> 'Entity__' | l][0] AS source_type,
+            RETURN id(source) AS source_id, source.`Node__`.`label` AS source_type,
                     properties(source) AS source_properties,
                     type,
-                    id(endNode) AS target_id, [l in labels(endNode) WHERE l <> 'Entity__' | l][0] AS target_type,
+                    id(endNode) AS target_id, endNode.`Node__`.`label` AS target_type,
                     properties(endNode) AS target_properties
             LIMIT {limit}
             """,
