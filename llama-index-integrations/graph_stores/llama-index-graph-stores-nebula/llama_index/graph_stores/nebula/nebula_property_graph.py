@@ -56,6 +56,7 @@ CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
 CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
 CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
 CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
+
 CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING);
 CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING);
 """
@@ -130,6 +131,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             session_pool.init()
             self._client = session_pool
         self._client.execute(DDL.render(props_schema=props_schema))
+        self._client.execute(INDEX_DDL)
         if overwrite:
             self._client.execute(f"CLEAR SPACE {self._space};")
 
@@ -180,12 +182,12 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
-        for node_label in self.structure_query(
-            "MATCH ()-[node_label:idx_meta__node_label__]->() RETURN node_label.label AS name"
+        for node_label in self.structured_query(
+            "MATCH ()-[node_label:`__meta__node_label__`]->() RETURN node_label.label AS name"
         ):
             tags_schema[node_label["name"]] = []
-        for rel_label in self.structure_query(
-            "MATCH ()-[rel_label:idx_meta__rel_label__]->() "
+        for rel_label in self.structured_query(
+            "MATCH ()-[rel_label:`__meta__rel_label__`]->() "
             "RETURN rel_label.label AS name, "
             "src(rel_label) AS src, dst(rel_label) AS dst"
         ):
@@ -468,10 +470,19 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        cypher_statement = "MATCH (e:Node__) "
         if not (properties or ids):
             return []
         else:
+            return self._get(properties, ids)
+
+    def _get(
+        self,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
+    ) -> List[LabelledNode]:
+        """Get nodes."""
+        cypher_statement = "MATCH (e:Node__) "
+        if properties or ids:
             cypher_statement += "WHERE "
         params = {}
 
@@ -485,7 +496,6 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             cypher_statement = cypher_statement[:-5]  # Remove trailing AND
 
         return_statement = """
-        WITH e
         RETURN id(e) AS name,
                e.Node__.label AS type,
                properties(e.Props__) AS properties,
@@ -520,6 +530,9 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                 )
             nodes.append(node)
         return nodes
+
+    def get_all_nodes(self) -> List[LabelledNode]:
+        return self._get()
 
     def get_triplets(
         self,
@@ -687,36 +700,31 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> None:
         """Delete matching data."""
+        ans_ids: List[str] = []
         if entity_names:
-            self.structured_query(
-                "LOOKUP ON `Entity__` WHERE name IN $entity_names | DELETE VERTEX $-.VertexID",
-                param_map={"entity_names": entity_names},
+            trips = self.get_triplets(
+                entity_names=entity_names,
             )
-
-        for id in ids or []:
-            self.structured_query(f'DELETE VERTEX "{id}" WITH EDGE;')
+            for trip in trips:
+                if isinstance(trip[0], EntityNode) and trip[0].name in entity_names:
+                    ans_ids.append(trip[0].id)
+                if isinstance(trip[2], EntityNode) and trip[2].name in entity_names:
+                    ans_ids.append(trip[2].id)
         if relation_names:
-            for relation_name in relation_names:
-                self.structured_query(
-                    f"LOOKUP ON `Relation__` WHERE label IN $relation_name | DELETE EDGE $-.EdgeID",
-                    param_map={"relation_name": relation_name},
-                )
-        if properties:
-            cypher = "MATCH (e:`Entity__`) WHERE "
-            prop_list = []
-            params = {}
-            for i, prop in enumerate(properties):
-                prop_list.append(f"e.`Entity__`.`{prop}` == $property_{i}")
-                params[f"property_{i}"] = properties[prop]
-            cypher += " AND ".join(prop_list)
-            cypher += " RETURN id(e) AS id"
-            ids_dict_list = self.structured_query(
-                cypher,
-                param_map=params,
+            trips = self.get_triplets(
+                relation_names=relation_names,
             )
-            ids = [el["id"] for el in ids_dict_list]
-            for id in ids or []:
-                self.structured_query(f'DELETE VERTEX "{id}" WITH EDGE;')
+            for trip in trips:
+                ans_ids += [trip[0].id, trip[2].id, trip[1].source_id]
+        if properties:
+            nodes = self.get(properties=properties)
+            ans_ids += [node.id for node in nodes]
+        if ids:
+            nodes = self.get(ids=ids)
+            ans_ids += [node.id for node in nodes]
+        ans_ids = list(set(ans_ids))
+        for id in ans_ids or []:
+            self.structured_query(f'DELETE VERTEX "{id}" WITH EDGE;')
 
     def _enhanced_schema_cypher(
         self,
