@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from threading import Thread
 from typing import Any, List, Optional, Type
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -32,6 +31,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.tools import ToolOutput
+from llama_index.core.types import Thread
 
 logger = logging.getLogger(__name__)
 
