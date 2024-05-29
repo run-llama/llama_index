@@ -4,6 +4,8 @@ from typing import Any, List, Optional
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.schema import BaseComponent
+from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
+from llama_index.core.bridge.pydantic import Field
 
 DEFAULT_CHAT_STORE_KEY = "chat_history"
 
@@ -29,7 +31,7 @@ class BaseMemory(BaseComponent):
         """Create a chat memory from defaults."""
 
     @abstractmethod
-    def get(self, **kwargs: Any) -> List[ChatMessage]:
+    def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
 
     @abstractmethod
@@ -40,6 +42,11 @@ class BaseMemory(BaseComponent):
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
 
+    def put_messages(self, messages: List[ChatMessage]) -> None:
+        """Put chat history."""
+        for message in messages:
+            self.put(message)
+
     @abstractmethod
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
@@ -47,3 +54,44 @@ class BaseMemory(BaseComponent):
     @abstractmethod
     def reset(self) -> None:
         """Reset chat history."""
+
+
+class BaseChatStoreMemory(BaseMemory):
+    """Base class for any .
+
+    NOTE: The interface for memory is not yet finalized and is subject to change.
+    """
+
+    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
+    chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "BaseChatStoreMemory"
+
+    @classmethod
+    @abstractmethod
+    def from_defaults(
+        cls,
+        chat_history: Optional[List[ChatMessage]] = None,
+        llm: Optional[LLM] = None,
+    ) -> "BaseChatStoreMemory":
+        """Create a chat memory from defaults."""
+
+    def get_all(self) -> List[ChatMessage]:
+        """Get all chat history."""
+        return self.chat_store.get_messages(self.chat_store_key)
+
+    def put(self, message: ChatMessage) -> None:
+        """Put chat history."""
+        # ensure everything is serialized
+        self.chat_store.add_message(self.chat_store_key, message)
+
+    def set(self, messages: List[ChatMessage]) -> None:
+        """Set chat history."""
+        self.chat_store.set_messages(self.chat_store_key, messages)
+
+    def reset(self) -> None:
+        """Reset chat history."""
+        self.chat_store.delete_messages(self.chat_store_key)
