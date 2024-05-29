@@ -31,6 +31,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
+    is_mistralai_code_model,
     mistralai_modelname_to_contextsize,
 )
 
@@ -239,9 +240,9 @@ class MistralAI(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
-                additional_kwargs={"tool_calls": tool_calls}
-                if tool_calls is not None
-                else {},
+                additional_kwargs=(
+                    {"tool_calls": tool_calls} if tool_calls is not None else {}
+                ),
             ),
             raw=dict(response),
         )
@@ -301,9 +302,9 @@ class MistralAI(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
-                additional_kwargs={"tool_calls": tool_calls}
-                if tool_calls is not None
-                else {},
+                additional_kwargs=(
+                    {"tool_calls": tool_calls} if tool_calls is not None else {}
+                ),
             ),
             raw=dict(response),
         )
@@ -360,7 +361,9 @@ class MistralAI(FunctionCallingLLM):
     ) -> ChatResponse:
         """Predict and call the tool."""
         # misralai uses the same openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -389,7 +392,9 @@ class MistralAI(FunctionCallingLLM):
     ) -> ChatResponse:
         """Predict and call the tool."""
         # misralai uses the same openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -440,3 +445,24 @@ class MistralAI(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def fill_in_middle(
+        self, prompt: str, suffix: str, stop: Optional[List[str]] = None
+    ) -> CompletionResponse:
+        if not is_mistralai_code_model(self.model):
+            raise ValueError(
+                "Please provide code model from MistralAI. Currently supported code model is 'codestral-latest'."
+            )
+
+        if stop:
+            response = self._client.completion(
+                model=self.model, prompt=prompt, suffix=suffix, stop=stop
+            )
+        else:
+            response = self._client.completion(
+                model=self.model, prompt=prompt, suffix=suffix
+            )
+
+        return CompletionResponse(
+            text=response.choices[0].message.content, raw=dict(response)
+        )

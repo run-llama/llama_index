@@ -68,8 +68,7 @@ class RankGPTRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        dispatch_event = dispatcher.get_dispatch_event()
-        dispatch_event(
+        dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
                 nodes=nodes,
@@ -105,10 +104,10 @@ class RankGPTRerank(BaseNodePostprocessor):
                     NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
                 )
 
-            dispatch_event(ReRankEndEvent(nodes=initial_results[: self.top_n]))
+            dispatcher.event(ReRankEndEvent(nodes=initial_results[: self.top_n]))
             return initial_results[: self.top_n]
         else:
-            dispatch_event(ReRankEndEvent(nodes=nodes[: self.top_n]))
+            dispatcher.event(ReRankEndEvent(nodes=nodes[: self.top_n]))
             return nodes[: self.top_n]
 
     def _get_prompts(self) -> PromptDictType:
