@@ -56,19 +56,29 @@ def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
     """
     filters = []
     for filter in standard_filters.filters:
-        if filter.operator == FilterOperator.NIN:
+        if filter.operator in (
+            FilterOperator.EQ,
+            FilterOperator.NE,
+            FilterOperator.GT,
+            FilterOperator.LT,
+            FilterOperator.GTE,
+            FilterOperator.LTE,
+            FilterOperator.IN,
+        ):
+            filters.append(f"{filter.key} {filter.operator.value} {filter.value!r}")
+        elif filter.operator == FilterOperator.NIN:
             filters.append(f"{filter.key} not in {filter.value!r}")
         elif filter.operator == FilterOperator.TEXT_MATCH:
             # We assume that "text_match" can only be used for string values.
             filters.append(f"{filter.key} like '%{filter.value}%'")
         elif filter.operator == FilterOperator.CONTAINS:
             filters.append(f"array_contains({filter.key}, {filter.value!r})")
+        elif filter.operator == FilterOperator.ANY:
+            filters.append(f"array_contains_any({filter.key}, {filter.value!r})")
+        elif filter.operator == FilterOperator.ALL:
+            filters.append(f"array_contains_all({filter.key}, {filter.value!r})")
         else:
-            # Other operators are compatible with Milvus.
-            #
-            # Note that if incompatible operators are added in the future,
-            # we will need to handle them separately.
-            filters.append(f"{filter.key} {filter.operator.value} {filter.value!r}")
+            raise ValueError(f"FilterOperator {filter.operator} is not supported.")
     joined_filters = f" {standard_filters.condition.value} ".join(filters)
     return f"({joined_filters})" if len(filters) > 1 else joined_filters
 

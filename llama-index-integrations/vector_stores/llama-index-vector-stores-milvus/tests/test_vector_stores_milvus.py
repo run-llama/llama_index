@@ -77,6 +77,18 @@ def test_to_milvus_filter_with_various_operators():
     expr = _to_milvus_filter(filters)
     assert expr == "array_contains(a, 1)"
 
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="a", value=[1, 2], operator=FilterOperator.ANY)]
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "array_contains_any(a, [1, 2])"
+
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="a", value=[1, 2], operator=FilterOperator.ALL)]
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "array_contains_all(a, [1, 2])"
+
 
 def test_to_milvus_filter_with_string_value():
     filters = MetadataFilters(filters=[MetadataFilter(key="a", value="hello")])
@@ -90,6 +102,22 @@ def test_to_milvus_filter_with_string_value():
     )
     expr = _to_milvus_filter(filters)
     assert expr == "array_contains(a, 'hello')"
+
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="a", value=["you", "me"], operator=FilterOperator.ANY)
+        ]
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "array_contains_any(a, ['you', 'me'])"
+
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="a", value=["you", "me"], operator=FilterOperator.ALL)
+        ]
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "array_contains_all(a, ['you', 'me'])"
 
 
 def test_to_milvus_filter_with_multiple_filters():
