@@ -154,16 +154,15 @@ class StreamingAgentChatResponse:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
-        dispatch_event = dispatcher.get_dispatch_event()
 
         # try/except to prevent hanging on error
-        dispatch_event(StreamChatStartEvent())
+        dispatcher.event(StreamChatStartEvent())
         try:
             final_text = ""
             for chat in self.chat_stream:
                 self.is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatch_event(
+                    dispatcher.event(
                         StreamChatDeltaReceivedEvent(
                             delta=chat.delta,
                         )
@@ -176,7 +175,7 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatch_event(StreamChatErrorEvent(exception=e))
+            dispatcher.event(StreamChatErrorEvent(exception=e))
             self.exception = e
 
             # This act as is_done events for any consumers waiting
@@ -185,7 +184,7 @@ class StreamingAgentChatResponse:
             # force the queue reader to see the exception
             self.put_in_queue("")
             raise
-        dispatch_event(StreamChatEndEvent())
+        dispatcher.event(StreamChatEndEvent())
 
         self.is_done = True
 
@@ -201,7 +200,6 @@ class StreamingAgentChatResponse:
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         self._ensure_async_setup()
-        dispatch_event = dispatcher.get_dispatch_event()
 
         if self.achat_stream is None:
             raise ValueError(
@@ -210,13 +208,13 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        dispatch_event(StreamChatStartEvent())
+        dispatcher.event(StreamChatStartEvent())
         try:
             final_text = ""
             async for chat in self.achat_stream:
                 self.is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatch_event(
+                    dispatcher.event(
                         StreamChatDeltaReceivedEvent(
                             delta=chat.delta,
                         )
@@ -232,7 +230,7 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatch_event(StreamChatErrorEvent(exception=e))
+            dispatcher.event(StreamChatErrorEvent(exception=e))
             self.exception = e
 
             # These act as is_done events for any consumers waiting
@@ -242,7 +240,7 @@ class StreamingAgentChatResponse:
             # force the queue reader to see the exception
             self.aput_in_queue("")
             raise
-        dispatch_event(StreamChatEndEvent())
+        dispatcher.event(StreamChatEndEvent())
         self.is_done = True
 
         # These act as is_done events for any consumers waiting

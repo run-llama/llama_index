@@ -134,8 +134,7 @@ class OpenVINORerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        dispatch_event = dispatcher.get_dispatch_event()
-        dispatch_event(
+        dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
                 nodes=nodes,
@@ -189,5 +188,5 @@ class OpenVINORerank(BaseNodePostprocessor):
             ]
             event.on_end(payload={EventPayload.NODES: reranked_nodes})
 
-        dispatch_event(ReRankEndEvent(nodes=reranked_nodes))
+        dispatcher.event(ReRankEndEvent(nodes=reranked_nodes))
         return reranked_nodes
