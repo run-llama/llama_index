@@ -367,7 +367,7 @@ We would love your help in making the project cleaner, more robust, and more und
 
 ### Repo Structure
 
-The `llama_index` repo is structured as a mono-repo of many packages. For example, `llama-index-core/`, `llama-index-integrations/llms/llama-index-llms-openai`, and `llama-index-integrations/embeddings/llama-index-embeddings-openai` are all separate python packages. This orgnaization should hopefully direct you to where you want to make a change or add a new modules.
+The `llama_index` repo is structured as a mono-repo of many packages. For example, `llama-index-core/`, `llama-index-integrations/llms/llama-index-llms-openai`, and `llama-index-integrations/embeddings/llama-index-embeddings-openai` are all separate python packages. This organization should hopefully direct you to where you want to make a change or add a new modules.
 
 ### Setting up environment
 

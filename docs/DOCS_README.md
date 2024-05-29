@@ -31,7 +31,7 @@ cd docs
 mkdocs serve --dirty
 ```
 
-**NOTE:** The `--dirty` option will mean that only changed files will be re-built, increasing the time it takes to iterate on a page.
+**NOTE:** The `--dirty` option will mean that only changed files will be re-built, decreasing the time it takes to iterate on a page.
 
 And open your browser at http://localhost:8000/ to view the generated docs.
 
