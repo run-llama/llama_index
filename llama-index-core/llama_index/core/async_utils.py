@@ -28,8 +28,7 @@ def asyncio_run(coro: Coroutine) -> Any:
     try:
         loop = asyncio.get_running_loop()
         if loop.is_running():
-            # If the loop is already running, create a new task
-            return asyncio.create_task(coro)
+            raise RuntimeError
         else:
             return loop.run_until_complete(coro)
     except RuntimeError:
