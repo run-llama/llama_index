@@ -16,6 +16,7 @@ from llama_index.core.indices.list.retrievers import (
     SummaryIndexRetriever,
 )
 from llama_index.core.indices.property_graph import (
+    BasePGRetriever,
     CustomPGRetriever,
     CypherTemplateRetriever,
     LLMSynonymRetriever,
@@ -68,6 +69,7 @@ __all__ = [
     "BM25Retriever",
     "QueryFusionRetriever",
     # property graph
+    "BasePGRetriever",
     "PGRetriever",
     "CustomPGRetriever",
     "LLMSynonymRetriever",

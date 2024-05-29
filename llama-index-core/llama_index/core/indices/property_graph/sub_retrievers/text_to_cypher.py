@@ -99,23 +99,25 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
-        parsed_response = self._parse_generated_cyher(response)
+        parsed_cypher_query = self._parse_generated_cyher(response)
 
-        query_output = self._graph_store.structured_query(parsed_response)
+        query_output = self._graph_store.structured_query(parsed_cypher_query)
 
         cleaned_query_output = self._clean_query_output(query_output)
 
         node_text = self.response_template.format(
-            response=parsed_response,
-            query_output=str(cleaned_query_output),
+            query=parsed_cypher_query,
+            response=str(cleaned_query_output),
         )
 
-        return NodeWithScore(
-            node=TextNode(
-                text=node_text,
-            ),
-            score=1.0,
-        )
+        return [
+            NodeWithScore(
+                node=TextNode(
+                    text=node_text,
+                ),
+                score=1.0,
+            )
+        ]
 
     async def aretrieve_from_graph(
         self, query_bundle: QueryBundle
