@@ -14,7 +14,9 @@ from llama_index.core.graph_stores.utils import (
     value_sanitize,
     LIST_LIMIT,
 )
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
+from nebula3.Config import SessionPoolConfig
 from nebula3.gclient.net.SessionPool import SessionPool
 from nebula3.gclient.net.base import BaseExecutor
 from nebula3.data.ResultSet import ResultSet
@@ -39,6 +41,11 @@ CREATE TAG IF NOT EXISTS `Chunk__` (`text` STRING);
 CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
 CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
 CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
+
+CREATE TAG INDEX IF NOT EXISTS index_entity_name ON `Entity__`(`name`(256));
+CREATE TAG INDEX IF NOT EXISTS index_chunk_text ON `Chunk__`(`text`(256));
+CREATE TAG INDEX IF NOT EXISTS index_node_label ON `Node__`(`label`(256));
+CRETAE EDGE INDEX IF NOT EXISTS index_relation_label ON `Relation__`(`label`(256));
 """
 )
 
@@ -289,7 +296,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         if entity_list:
             # model with tag Entity__ and other tags(label) if applicable
             # need to add properties as well, for extractors like SchemaLLMPathExtractor there is no properties
-            # NebulaGraph is Schema-ful, so we need to be strong schema mindset to abstract this.
+            # NebulaGraph is Schema-Full, so we need to be strong schema mindset to abstract this.
             # i.e.
             # INSERT VERTEX Entity__ (name) VALUES "foo":("bar"), "baz":("qux");
             # INSERT VERTEX Person (name) VALUES "foo":("bar"), "baz":("qux");
@@ -349,53 +356,57 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        cypher_statement = "MATCH (e) "
-
-        params = {}
-        if properties or ids:
+        cypher_statement = "MATCH (e:Node__) "
+        if not (properties or ids):
+            return []
+        else:
             cypher_statement += "WHERE "
+        params = {}
 
         if ids:
-            cypher_statement += "id(e) in $ids "
-            params["ids"] = ids
-
+            cypher_statement += f"id(e) in $all_id "
+            params[f"all_id"] = ids
         if properties:
-            prop_list = []
             for i, prop in enumerate(properties):
-                prop_list.append(f"e.`{prop}` = $property_{i}")
+                cypher_statement += f"e.Prop__.`{prop}` == $property_{i} AND "
                 params[f"property_{i}"] = properties[prop]
-            cypher_statement += " AND ".join(prop_list)
+            cypher_statement = cypher_statement[:-5]  # Remove trailing AND
 
         return_statement = """
         WITH e
         RETURN id(e) AS name,
-               [l in labels(e) WHERE l <> 'Entity__' | l][0] AS type,
-               properties(e) AS properties
+               e.Node__.label AS type,
+               properties(e.Props__) AS properties,
+               properties(e) AS all_props
         """
         cypher_statement += return_statement
+        cypher_statement = cypher_statement.replace("\n", " ")
 
         response = self.structured_query(cypher_statement, param_map=params)
 
         nodes = []
         for record in response:
-            if "text" in record["properties"]:
-                text = record["properties"].pop("text")
-                nodes.append(
-                    ChunkNode(
-                        id_=record["name"],
-                        text=text,
-                        properties=remove_empty_values(record["properties"]),
-                    )
+            if "text" in record["all_props"]:
+                node = ChunkNode(
+                    id_=record["name"],
+                    label=record["type"],
+                    text=record["all_props"]["text"],
+                    properties=remove_empty_values(record["properties"]),
+                )
+            elif "name" in record["all_props"]:
+                node = EntityNode(
+                    id_=record["name"],
+                    label=record["type"],
+                    name=record["all_props"]["name"],
+                    properties=remove_empty_values(record["properties"]),
                 )
             else:
-                nodes.append(
-                    EntityNode(
-                        name=record["name"],
-                        type=record["type"],
-                        properties=remove_empty_values(record["properties"]),
-                    )
+                node = EntityNode(
+                    name=record["name"],
+                    type=record["type"],
+                    properties=remove_empty_values(record["properties"]),
                 )
-
+            nodes.append(node)
         return nodes
 
     def get_triplets(
@@ -405,33 +416,43 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         properties: Optional[dict] = None,
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
-        # TODO: handle ids of chunk nodes
-        cypher_statement = "MATCH (e:`Entity__`) "
-
-        params = {}
-        if entity_names or properties or ids:
+        cypher_statement = "MATCH (e:`Entity__`)-[r:`Relation__`]->(t:`Entity__`) "
+        if not (entity_names or relation_names or properties or ids):
+            return []
+        else:
             cypher_statement += "WHERE "
+        params = {}
 
         if entity_names:
-            raise NotImplementedError("Filtering by entity names is not supported yet.")
+            cypher_statement += (
+                f"e.Entity__.name in $entities OR t.Entity__.name in $entities"
+            )
+            params[f"entities"] = entity_names
         if relation_names:
-            raise NotImplementedError(
-                "Filtering by relation names is not supported yet."
+            cypher_statement += f"r.label in $relations "
+            params[f"relations"] = relation_names
+        if properties:
+            pass
+        if ids:
+            cypher_statement += f"id(e) in $all_id OR id(t) in $all_id"
+            params[f"all_id"] = ids
+        if properties:
+            v0_matching = ""
+            v1_matching = ""
+            edge_matching = ""
+            for i, prop in enumerate(properties):
+                v0_matching += f"e.Props__.`{prop}` == $property_{i} AND "
+                v1_matching += f"t.Props__.`{prop}` == $property_{i} AND "
+                edge_matching += f"r.`{prop}` == $property_{i} AND "
+                params[f"property_{i}"] = properties[prop]
+            v0_matching = v0_matching[:-5]  # Remove trailing AND
+            v1_matching = v1_matching[:-5]  # Remove trailing AND
+            edge_matching = edge_matching[:-5]  # Remove trailing AND
+            cypher_statement += (
+                f"({v0_matching}) OR ({edge_matching}) OR ({v1_matching})"
             )
 
-        if ids:
-            cypher_statement += "id(e) in $ids "
-            params["ids"] = ids
-
-        if properties:
-            prop_list = []
-            for i, prop in enumerate(properties):
-                prop_list.append(f"e.`{prop}` = $property_{i}")
-                params[f"property_{i}"] = properties[prop]
-            cypher_statement += " AND ".join(prop_list)
-
         return_statement = f"""
-        MATCH (e)-[r:Relation__]->(t)
         RETURN id(e) AS source_id, e.Node__.label AS source_type,
                 properties(e.Props__) AS source_properties,
                 r.label AS type,
@@ -440,6 +461,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
                 properties(t.Props__) AS target_properties
         """
         cypher_statement += return_statement
+        cypher_statement = cypher_statement.replace("\n", " ")
 
         data = self.structured_query(cypher_statement, param_map=params)
 
@@ -463,7 +485,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
                 label=record["type"],
                 properties=rel_properties,
             )
-            triples.append([source, rel, target])
+            triples.append((source, rel, target))
         return triples
 
     def get_rel_map(
@@ -555,7 +577,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         """Delete matching data."""
         if entity_names:
             self.structured_query(
-                "LOOKUP ON `Entity__` WHERE `Entity__`.name IN $entity_names | DELETE VERTEX $-.VertexID",
+                "LOOKUP ON `Entity__` WHERE name IN $entity_names | DELETE VERTEX $-.VertexID",
                 param_map={"entity_names": entity_names},
             )
 
@@ -564,7 +586,7 @@ RETURN "(" + (CASE WHEN size(tags(m)) == 0 THEN "" ELSE ":" + tags(m)[0] END) + 
         if relation_names:
             for relation_name in relation_names:
                 self.structured_query(
-                    f"LOOKUP ON `Relation__` WHERE `Relation__`.`label` IN $relation_name | DELETE EDGE $-.EdgeID",
+                    f"LOOKUP ON `Relation__` WHERE label IN $relation_name | DELETE EDGE $-.EdgeID",
                     param_map={"relation_name": relation_name},
                 )
         if properties:
