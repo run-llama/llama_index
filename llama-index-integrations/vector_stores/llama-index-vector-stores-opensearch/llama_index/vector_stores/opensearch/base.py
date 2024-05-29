@@ -239,7 +239,7 @@ class OpensearchVectorClient:
         Returns:
             Up to k docs closest to query_embedding
         """
-        if filters is None:
+        if filters is None or len(filters.filters) == 0:
             search_query = self._default_approximate_search_query(
                 query_embedding, k, vector_field=embedding_field
             )
