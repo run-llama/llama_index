@@ -22,6 +22,7 @@ from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayloa
 
 # dispatcher setup
 from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.events.llm import (
     LLMCompletionEndEvent,
     LLMCompletionStartEvent,
@@ -50,7 +51,7 @@ def llm_chat_callback() -> Callable:
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                span_id = dispatcher.root.current_span_id or ""
+                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -126,7 +127,7 @@ def llm_chat_callback() -> Callable:
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                span_id = dispatcher.root.current_span_id or ""
+                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -267,7 +268,7 @@ def llm_completion_callback() -> Callable:
         ) -> Any:
             prompt = extract_prompt(*args, **kwargs)
             with wrapper_logic(_self) as callback_manager:
-                span_id = dispatcher.root.current_span_id or ""
+                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -336,7 +337,7 @@ def llm_completion_callback() -> Callable:
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             prompt = extract_prompt(*args, **kwargs)
             with wrapper_logic(_self) as callback_manager:
-                span_id = dispatcher.root.current_span_id or ""
+                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(

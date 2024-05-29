@@ -1,4 +1,3 @@
-from threading import Thread
 from typing import Any, Callable, Generator, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -19,7 +18,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 
 from langchain.base_language import BaseLanguageModel
 

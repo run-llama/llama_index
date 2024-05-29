@@ -3,7 +3,6 @@
 # llms/llama-index-llms-huggingface/llama_index/llms/huggingface/base.py
 
 import logging
-from threading import Thread
 from typing import Any, Callable, List, Optional, Sequence, Literal
 
 import torch
@@ -32,7 +31,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 from transformers import (
     StoppingCriteria,
     StoppingCriteriaList,
