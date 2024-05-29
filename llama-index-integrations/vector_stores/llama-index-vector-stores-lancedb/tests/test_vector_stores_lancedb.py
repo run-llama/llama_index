@@ -1,3 +1,4 @@
+import tantivy  # noqa
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.core import VectorStoreIndex
