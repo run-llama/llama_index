@@ -22,7 +22,6 @@ from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayloa
 
 # dispatcher setup
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.events.llm import (
     LLMCompletionEndEvent,
     LLMCompletionStartEvent,
@@ -51,7 +50,6 @@ def llm_chat_callback() -> Callable:
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -59,7 +57,6 @@ def llm_chat_callback() -> Callable:
                         model_dict=model_dict,
                         messages=messages,
                         additional_kwargs=kwargs,
-                        span_id=span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -81,7 +78,6 @@ def llm_chat_callback() -> Callable:
                                 LLMChatInProgressEvent(
                                     messages=messages,
                                     response=x,
-                                    span_id=span_id,
                                 )
                             )
                             yield cast(ChatResponse, x)
@@ -99,7 +95,6 @@ def llm_chat_callback() -> Callable:
                             LLMChatEndEvent(
                                 messages=messages,
                                 response=last_response,
-                                span_id=span_id,
                             )
                         )
 
@@ -117,7 +112,6 @@ def llm_chat_callback() -> Callable:
                         LLMChatEndEvent(
                             messages=messages,
                             response=f_return_val,
-                            span_id=span_id,
                         )
                     )
 
@@ -127,7 +121,6 @@ def llm_chat_callback() -> Callable:
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
             with wrapper_logic(_self) as callback_manager:
-                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -135,7 +128,6 @@ def llm_chat_callback() -> Callable:
                         model_dict=model_dict,
                         messages=messages,
                         additional_kwargs=kwargs,
-                        span_id=span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -157,7 +149,6 @@ def llm_chat_callback() -> Callable:
                                 LLMChatInProgressEvent(
                                     messages=messages,
                                     response=x,
-                                    span_id=span_id,
                                 )
                             )
                             yield cast(ChatResponse, x)
@@ -175,7 +166,6 @@ def llm_chat_callback() -> Callable:
                             LLMChatEndEvent(
                                 messages=messages,
                                 response=last_response,
-                                span_id=span_id,
                             )
                         )
 
@@ -193,7 +183,6 @@ def llm_chat_callback() -> Callable:
                         LLMChatEndEvent(
                             messages=messages,
                             response=f_return_val,
-                            span_id=span_id,
                         )
                     )
 
@@ -268,7 +257,6 @@ def llm_completion_callback() -> Callable:
         ) -> Any:
             prompt = extract_prompt(*args, **kwargs)
             with wrapper_logic(_self) as callback_manager:
-                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -276,7 +264,6 @@ def llm_completion_callback() -> Callable:
                         model_dict=model_dict,
                         prompt=prompt,
                         additional_kwargs=kwargs,
-                        span_id=span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -299,7 +286,6 @@ def llm_completion_callback() -> Callable:
                                 LLMCompletionEndEvent(
                                     prompt=prompt,
                                     response=x,
-                                    span_id=span_id,
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -328,7 +314,6 @@ def llm_completion_callback() -> Callable:
                         LLMCompletionEndEvent(
                             prompt=prompt,
                             response=f_return_val,
-                            span_id=span_id,
                         )
                     )
 
@@ -337,7 +322,6 @@ def llm_completion_callback() -> Callable:
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             prompt = extract_prompt(*args, **kwargs)
             with wrapper_logic(_self) as callback_manager:
-                span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
                 dispatcher.event(
@@ -345,7 +329,6 @@ def llm_completion_callback() -> Callable:
                         model_dict=model_dict,
                         prompt=prompt,
                         additional_kwargs=kwargs,
-                        span_id=span_id,
                     )
                 )
                 event_id = callback_manager.on_event_start(
@@ -364,9 +347,7 @@ def llm_completion_callback() -> Callable:
                         last_response = None
                         for x in f_return_val:
                             dispatcher.event(
-                                LLMCompletionEndEvent(
-                                    prompt=prompt, response=x, span_id=span_id
-                                )
+                                LLMCompletionEndEvent(prompt=prompt, response=x)
                             )
                             yield cast(CompletionResponse, x)
                             last_response = x
@@ -394,7 +375,6 @@ def llm_completion_callback() -> Callable:
                         LLMCompletionEndEvent(
                             prompt=prompt,
                             response=f_return_val,
-                            span_id=span_id,
                         )
                     )
 
