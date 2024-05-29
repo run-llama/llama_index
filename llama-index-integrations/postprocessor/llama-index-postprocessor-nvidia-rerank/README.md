@@ -59,8 +59,8 @@ rerank = NVIDIARerank()
 ```python
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 
-# connect to an embedding NIM running at localhost:2016
-rerank = NVIDIARerank(base_url="http://localhost:2016/v1")
+# connect to an reranking NIM running at localhost:1976
+rerank = NVIDIARerank(base_url="http://localhost:1976/v1")
 ```
 
 ## Supported models

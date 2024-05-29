@@ -65,7 +65,7 @@ When ready to deploy, you can self-host models with NVIDIA NIM—which is includ
 ```python
 from llama_index.embeddings.nvidia import NVIDIAEmbedding
 
-# connect to an embedding NIM running at localhost:2016
-embedder = NVIDIAEmbeddings(base_url="http://localhost:2016/v1")
+# connect to an embedding NIM running at localhost:8080
+embedder = NVIDIAEmbeddings(base_url="http://localhost:8080/v1")
 ```
 
