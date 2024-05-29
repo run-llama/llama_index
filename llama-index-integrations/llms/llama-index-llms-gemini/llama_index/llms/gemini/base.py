@@ -89,7 +89,7 @@ class Gemini(CustomLLM):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: Optional[str] = GEMINI_MODELS[0],
+        model: Optional[str] = GEMINI_MODELS[0],
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         generation_config: Optional["genai.types.GenerationConfigDict"] = None,
@@ -125,17 +125,17 @@ class Gemini(CustomLLM):
         final_gen_config = {"temperature": temperature, **base_gen_config}
 
         self._model = genai.GenerativeModel(
-            model_name=model_name,
+            model_name=model,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
         )
 
-        self._model_meta = genai.get_model(model_name)
+        self._model_meta = genai.get_model(model)
 
         supported_methods = self._model_meta.supported_generation_methods
         if "generateContent" not in supported_methods:
             raise ValueError(
-                f"Model {model_name} does not support content generation, only "
+                f"Model {model} does not support content generation, only "
                 f"{supported_methods}."
             )
 
@@ -145,7 +145,7 @@ class Gemini(CustomLLM):
             max_tokens = min(max_tokens, self._model_meta.output_token_limit)
 
         super().__init__(
-            model_name=model_name,
+            model_name=model,
             temperature=temperature,
             max_tokens=max_tokens,
             generate_kwargs=generate_kwargs,
