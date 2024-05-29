@@ -5,7 +5,6 @@ import json
 import logging
 import uuid
 from functools import partial
-from threading import Thread
 from typing import Any, Dict, List, Callable, Optional, Tuple, Union, cast, get_args
 import re
 
@@ -36,6 +35,7 @@ from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.types import Thread
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
 

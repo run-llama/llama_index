@@ -119,11 +119,9 @@ class BaseEmbedding(TransformComponent):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
@@ -139,7 +137,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [query_embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[query],
                 embeddings=[query_embedding],
@@ -150,11 +148,9 @@ class BaseEmbedding(TransformComponent):
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
@@ -170,7 +166,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [query_embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[query],
                 embeddings=[query_embedding],
@@ -247,11 +243,9 @@ class BaseEmbedding(TransformComponent):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
@@ -267,7 +261,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[text],
                 embeddings=[text_embedding],
@@ -278,11 +272,9 @@ class BaseEmbedding(TransformComponent):
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
         model_dict = self.to_dict()
         model_dict.pop("api_key", None)
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=model_dict,
             )
@@ -298,7 +290,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[text],
                 embeddings=[text_embedding],
@@ -314,8 +306,6 @@ class BaseEmbedding(TransformComponent):
         **kwargs: Any,
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
         cur_batch: List[str] = []
         result_embeddings: List[Embedding] = []
 
@@ -329,7 +319,7 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingStartEvent(
                         model_dict=model_dict,
                     )
@@ -346,7 +336,7 @@ class BaseEmbedding(TransformComponent):
                             EventPayload.EMBEDDINGS: embeddings,
                         },
                     )
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingEndEvent(
                         chunks=cur_batch,
                         embeddings=embeddings,
@@ -361,7 +351,6 @@ class BaseEmbedding(TransformComponent):
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
-        dispatch_event = dispatcher.get_dispatch_event()
         num_workers = self.num_workers
 
         model_dict = self.to_dict()
@@ -375,7 +364,7 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingStartEvent(
                         model_dict=model_dict,
                     )
@@ -420,7 +409,7 @@ class BaseEmbedding(TransformComponent):
         for (event_id, text_batch), embeddings in zip(
             callback_payloads, nested_embeddings
         ):
-            dispatch_event(
+            dispatcher.event(
                 EmbeddingEndEvent(
                     chunks=text_batch,
                     embeddings=embeddings,
