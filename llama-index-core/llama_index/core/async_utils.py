@@ -120,10 +120,9 @@ async def run_jobs(
         List[Any]:
             List of results.
     """
-    parent_span_id = dispatcher.current_span_id
     semaphore = asyncio.Semaphore(workers)
 
-    @dispatcher.async_span_with_parent_id(parent_id=parent_span_id)
+    @dispatcher.span
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job
