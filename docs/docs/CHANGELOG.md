@@ -1,5 +1,61 @@
 # ChangeLog
 
+## [2024-05-28]
+
+### `llama-index-core` [0.10.40]
+
+- Added `PropertyGraphIndex` and other supporting abstractions. See the [full guide](https://docs.llamaindex.ai/en/latest/module_guides/indexing/lpg_index_guide/) for more details (#13747)
+- Updated `AutoPrevNextNodePostprocessor` to allow passing in response mode and LLM (#13771)
+- fix type handling with return direct (#13776)
+- Correct the method name to `_aget_retrieved_ids_and_texts` in retrievval evaluator (#13765)
+- fix: QueryTransformComponent incorrect call `self._query_transform` (#13756)
+- implement more filters for `SimpleVectorStoreIndex` (#13365)
+
+### `llama-index-embeddings-bedrock` [0.2.0]
+
+- Added support for Bedrock Titan Embeddings v2 (#13580)
+
+### `llama-index-embeddings-oci-genai` [0.1.0]
+
+- add Oracle Cloud Infrastructure (OCI) Generative AI (#13631)
+
+### `llama-index-embeddings-huggingface` [0.2.1]
+
+- Expose "safe_serialization" parameter from AutoModel (#11939)
+
+### `llama-index-graph-stores-neo4j` [0.2.0]
+
+- Added `Neo4jPGStore` for property graph support (#13747)
+
+### `llama-index-indices-managed-dashscope` [0.1.1]
+
+- Added dashscope managed index (#13378)
+
+### `llama-index-llms-oci-genai` [0.1.0]
+
+- add Oracle Cloud Infrastructure (OCI) Generative AI (#13631)
+
+### `llama-index-readers-feishu-wiki` [0.1.1]
+
+- fix undefined variable (#13768)
+
+### `llama-index-packs-secgpt` [0.1.0]
+
+- SecGPT - LlamaIndex Integration #13127
+
+### `llama-index-vector-stores-hologres` [0.1.0]
+
+- Add Hologres vector db (#13619)
+
+### `llama-index-vector-stores-milvus` [0.1.16]
+
+- Remove FlagEmbedding as Milvus's dependency (#13767)
+Unify the collection construction regardless of the value of enable_sparse (#13773)
+
+### `llama-index-vector-stores-opensearch` [0.1.9]
+
+- refactor to put helper methods inside class definition (#13749)
+
 ## [2024-05-24]
 
 ### `llama-index-core` [0.10.39]
