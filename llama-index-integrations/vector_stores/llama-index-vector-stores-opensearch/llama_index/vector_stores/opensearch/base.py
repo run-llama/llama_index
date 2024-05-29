@@ -388,13 +388,12 @@ class OpensearchVectorClient:
             )
             params = {
                 "search_pipeline": self._search_pipeline,
-                "_source_excludes": ["embedding"],
             }
         else:
             search_query = self._knn_search_query(
                 self._embedding_field, query_embedding, k, filters=filters
             )
-            params = {"_source_excludes": ["embedding"]}
+            params = None
 
         res = await self._os_client.search(
             index=self._index, body=search_query, params=params
