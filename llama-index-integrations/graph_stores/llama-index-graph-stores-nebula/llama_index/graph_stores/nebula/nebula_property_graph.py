@@ -36,7 +36,7 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
-META_NODE_LABEL_PREFIX = "__meta__label__"
+META_NODE_LABEL_PREFIX = "__meta__label__" # Not yet used, could be applied later
 
 # DDL Design
 # - Entity__ is used to store the extracted entity name(readable id)
