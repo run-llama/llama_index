@@ -12,7 +12,9 @@ from llama_index.core import SimpleDirectoryReader
 documents = SimpleDirectoryReader("./data/paul_graham/").load_data()
 from llama_index.graph_stores.nebula import NebulaPropertyGraphStore
 
-graph_store = NebulaPropertyGraphStore(space="llamaindex_nebula_property_graph")
+graph_store = NebulaPropertyGraphStore(
+    space="llamaindex_nebula_property_graph", overwrite=True
+)
 
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
