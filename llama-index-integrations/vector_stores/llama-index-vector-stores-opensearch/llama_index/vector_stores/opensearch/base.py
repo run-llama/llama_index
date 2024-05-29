@@ -398,6 +398,10 @@ class OpensearchVectorClient:
         res = await self._os_client.search(
             index=self._index, body=search_query, params=params
         )
+
+        return self._to_query_result(res)
+
+    def _to_query_result(self, res) -> VectorStoreQueryResult:
         nodes = []
         ids = []
         scores = []
@@ -432,6 +436,7 @@ class OpensearchVectorClient:
             ids.append(node_id)
             nodes.append(node)
             scores.append(hit["_score"])
+
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
 
