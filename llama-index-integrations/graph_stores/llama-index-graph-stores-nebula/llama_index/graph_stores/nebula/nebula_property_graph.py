@@ -34,6 +34,13 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
+# DDL Design
+# - Entity__ is used to store the extracted entity name(readable id)
+# - Chunk__ is used to store the extracted chunk text
+# - Node__ is used to store the node label
+# - Props__ is used to store the LlamaIndex Node Metadata
+
+
 DDL = Template(
     """
 CREATE TAG IF NOT EXISTS `Entity__` (`name` STRING);
