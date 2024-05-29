@@ -94,7 +94,7 @@ class Relation(BaseModel):
 
     @property
     def id(self) -> str:
-        """Get the node id."""
+        """Get the relation id."""
         return self.label
 
 

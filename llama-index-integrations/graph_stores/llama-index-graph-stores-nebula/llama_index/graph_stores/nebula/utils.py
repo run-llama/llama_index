@@ -2,6 +2,8 @@ import datetime
 from typing import Dict, Any, Optional, Tuple
 from nebula3.data.ResultSet import ResultSet
 from nebula3.common.ttypes import Value, NList, Date, Time, DateTime
+from nebula3.gclient.net.base import BaseExecutor
+
 
 
 def url_scheme_parse(url) -> Tuple[str, int]:
@@ -206,3 +208,82 @@ def generate_ddl_alter_tag(tag_name: str, existing_property_type_map: Dict[str, 
             ddl_statement += " ".join(ddl_parts)
 
     return ddl_statement
+
+
+def ensure_node_meta_schema(label: str, structured_schema: Optional[Dict[str, Any]], client: BaseExecutor, node_props: Optional[Dict[str, Any]]=None)-> bool:
+    """
+    Ensure the meta schema for the node label is present.
+
+    Parameters:
+    label (str): The node label.
+    structured_schema (dict): The structured schema of the graph.
+    client (BaseExecutor): The Nebula Graph client.
+    node_props (dict): The properties of the node.
+
+    Returns:
+    bool: Whether the meta schema is mutated.
+    """
+    if not structured_schema:
+        raise ValueError("structured_schema cannot be empty.")
+    if label not in structured_schema.get("node_props", {}):
+        if node_props is None:
+            node_prop_schema = {}
+        else:
+            node_prop_schema = deduce_property_types_from_values(node_props)
+
+        result = client.execute(
+            f'INSERT EDGE `__meta__node_label__`(`label`, `props_json`): '
+            f'VALUES "{label}"->"{label}"("{label}", "{str(node_prop_schema)}")'
+        )
+        if not result.is_succeeded():
+            raise ValueError(f"Failed to create meta schema for node label {label}. Error: {result.error_msg()}")
+
+        return True
+    return False
+
+def ensure_relation_meta_schema(src_id: str, dst_id: str, rel_type: str, structured_schema: Optional[Dict[str, Any]], client: BaseExecutor, edge_props: Optional[Dict[str, Any]]=None)-> bool:
+    """
+    Ensure the meta schema for the relation type is present.
+
+    Parameters:
+    src_id (str): The source node id.
+    dst_id (str): The destination node id.
+    rel_type (str): The relation type.
+    structured_schema (dict): The structured schema of the graph.
+    client (BaseExecutor): The Nebula Graph client.
+    edge_props (dict): The properties of the edge.
+
+    Returns:
+    bool: Whether the meta schema is mutated.
+    """
+    if not structured_schema:
+        raise ValueError("structured_schema cannot be empty.")
+    if rel_type not in structured_schema.get("edge_props", {}):
+        if edge_props is None:
+            edge_prop_schema = {}
+        else:
+            edge_prop_schema = deduce_property_types_from_values(edge_props)
+
+        # Get start and end node labels
+        result = client.execute(
+            f'FETCH PROP ON `Node__` "{src_id}", "{dst_id}" YIELD id(vertex) AS id, Node__.`label` AS `label`'
+        )
+        if not result.is_succeeded():
+            raise ValueError(f"Failed to fetch start and end node labels. Error: {result.error_msg()}")
+        if result.row_size() != len(set([src_id, dst_id])):
+            raise ValueError(f"source node or destination node not found. Fetched result: {result}")
+        id_to_label = {}
+        for row_index in range(result.row_size()):
+            id_to_label[result.row_values(row_index)[0].cast_primitive()] = result.row_values(row_index)[1].cast_primitive()
+
+        source_label, dest_label = id_to_label[src_id], id_to_label[dst_id]
+
+        result = client.execute(
+            f'INSERT EDGE `__meta__rel_label__`(`type`, `props_json`): '
+            f'VALUES "{rel_type}"->"{source_label}"("{dest_label}", "{str(edge_prop_schema)}")'
+        )
+        if not result.is_succeeded():
+            raise ValueError(f"Failed to create meta schema for relation type {rel_type}. Error: {result.error_msg()}")
+
+        return True
+    return False

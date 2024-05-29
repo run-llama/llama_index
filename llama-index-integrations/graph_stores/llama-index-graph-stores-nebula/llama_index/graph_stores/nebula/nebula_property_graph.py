@@ -26,6 +26,8 @@ from llama_index.graph_stores.nebula.utils import (
     build_param_map,
     remove_empty_values,
     url_scheme_parse,
+    ensure_node_meta_schema,
+    ensure_relation_meta_schema,
 )
 
 
@@ -59,6 +61,8 @@ CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %
 
 CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING);
 CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING);
+CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING, `props_json` STRING);
+CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` STRING);
 """
 )
 
@@ -182,16 +186,21 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
-        for node_label in self.structured_query(
-            "MATCH ()-[node_label:`__meta__node_label__`]->() RETURN node_label.label AS name"
+        for node_label in self.structure_query(
+            "MATCH ()-[node_label:__meta__node_label__]->() "
+            "RETURN node_label.label AS name, "
+            "JSON_EXTRACT(node_label.props_json) AS props"
         ):
             tags_schema[node_label["name"]] = []
-        for rel_label in self.structured_query(
-            "MATCH ()-[rel_label:`__meta__rel_label__`]->() "
+            # TODO: add properties to tags_schema
+        for rel_label in self.structure_query(
+            "MATCH ()-[rel_label:__meta__rel_label__]->() "
             "RETURN rel_label.label AS name, "
-            "src(rel_label) AS src, dst(rel_label) AS dst"
+            "src(rel_label) AS src, dst(rel_label) AS dst, "
+            "JSON_EXTRACT(rel_label.props_json) AS props"
         ):
             edge_types_schema[rel_label["name"]] = []
+            # TODO: add properties to edge_types_schema
             relationships.append(
                 {
                     "start": rel_label["src"],
@@ -430,6 +439,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         # Create tags for each LabelledNode
         # This could be revisted, if we don't have any properties for labels, mapping labels to
         # Properties of tag: Entity__ is also feasible.
+        schema_ensurence_cache = set()
         for i, entity in enumerate(nodes):
             keys, values_k, values_params = self._construct_property_query(
                 entity.properties
@@ -442,6 +452,12 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             stmt = (
                 f'INSERT VERTEX Node__ (label) VALUES "{entity.id}":("{entity.label}");'
             )
+            if entity.label not in schema_ensurence_cache:
+                if ensure_node_meta_schema(
+                    entity.label, self.structured_schema, self.client, entity.properties
+                ):
+                    self.refresh_schema()
+                    schema_ensurence_cache.add(entity.label)
             self.structured_query(stmt)
 
     def _construct_property_query(self, properties: Dict[str, Any]):
@@ -456,12 +472,23 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
-        # TODO: Handle ad-hoc schema ensuring, now assuming all relations are present in the schema
+        schema_ensurence_cache = set()
         for relation in relations:
             keys, values_k, values_params = self._construct_property_query(
                 relation.properties
             )
             stmt = f'INSERT EDGE `Relation__` (`label`,{keys}) VALUES "{relation.source_id}"->"{relation.target_id}":("{relation.label}",{values_k});'
+            if relation.label not in schema_ensurence_cache:
+                if ensure_relation_meta_schema(
+                    relation.source_id,
+                    relation.target_id,
+                    relation.label,
+                    self.structured_schema,
+                    self.client,
+                    relation.properties,
+                ):
+                    self.refresh_schema()
+                    schema_ensurence_cache.add(relation.label)
             self.structured_query(stmt, param_map=values_params)
 
     def get(
