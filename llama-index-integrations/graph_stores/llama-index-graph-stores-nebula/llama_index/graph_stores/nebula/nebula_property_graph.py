@@ -59,8 +59,6 @@ CREATE TAG IF NOT EXISTS `Node__` (`label` STRING);
 CREATE TAG IF NOT EXISTS `Props__` ({{props_schema}});
 CREATE EDGE IF NOT EXISTS `Relation__` (`label` STRING{% if props_schema != "" %}, {{props_schema}}{% endif%});
 
-CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING);
-CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING);
 CREATE EDGE IF NOT EXISTS `__meta__node_label__` (`label` STRING, `props_json` STRING);
 CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` STRING);
 """
@@ -76,6 +74,8 @@ CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`);
 CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`);
 CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`);
 """
+
+DEFAULT_PROPS_SCHEMA = "`file_path` STRING, `file_name` STRING, `file_type` STRING, `file_size` INT, `creation_date` STRING, `last_modified_date` STRING, `_node_content` STRING, `_node_type` STRING, `document_id` STRING, `doc_id` STRING, `ref_doc_id` STRING, `triplet_source_id` STRING"
 
 
 class NebulaPropertyGraphStore(PropertyGraphStore):
@@ -114,7 +114,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         password: str = "nebula",
         url: str = "nebula://localhost:9669",
         overwrite: bool = False,
-        props_schema: str = "",
+        props_schema: str = DEFAULT_PROPS_SCHEMA,
         refresh_schema: bool = True,
         sanitize_query_output: bool = False,  # We don't put Embedding-Like values as Properties
         enhanced_schema: bool = False,
@@ -186,15 +186,15 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
-        for node_label in self.structure_query(
-            "MATCH ()-[node_label:__meta__node_label__]->() "
+        for node_label in self.structured_query(
+            "MATCH ()-[node_label:`__meta__node_label__`]->() "
             "RETURN node_label.label AS name, "
             "JSON_EXTRACT(node_label.props_json) AS props"
         ):
             tags_schema[node_label["name"]] = []
             # TODO: add properties to tags_schema
-        for rel_label in self.structure_query(
-            "MATCH ()-[rel_label:__meta__rel_label__]->() "
+        for rel_label in self.structured_query(
+            "MATCH ()-[rel_label:`__meta__rel_label__`]->() "
             "RETURN rel_label.label AS name, "
             "src(rel_label) AS src, dst(rel_label) AS dst, "
             "JSON_EXTRACT(rel_label.props_json) AS props"
@@ -452,12 +452,12 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             stmt = (
                 f'INSERT VERTEX Node__ (label) VALUES "{entity.id}":("{entity.label}");'
             )
-            if entity.label not in schema_ensurence_cache:
-                if ensure_node_meta_schema(
-                    entity.label, self.structured_schema, self.client, entity.properties
-                ):
-                    self.refresh_schema()
-                    schema_ensurence_cache.add(entity.label)
+            # if entity.label not in schema_ensurence_cache:
+            #     if ensure_node_meta_schema(
+            #         entity.label, self.structured_schema, self.client, entity.properties
+            #     ):
+            #         self.refresh_schema()
+            #         schema_ensurence_cache.add(entity.label)
             self.structured_query(stmt)
 
     def _construct_property_query(self, properties: Dict[str, Any]):
@@ -478,17 +478,17 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                 relation.properties
             )
             stmt = f'INSERT EDGE `Relation__` (`label`,{keys}) VALUES "{relation.source_id}"->"{relation.target_id}":("{relation.label}",{values_k});'
-            if relation.label not in schema_ensurence_cache:
-                if ensure_relation_meta_schema(
-                    relation.source_id,
-                    relation.target_id,
-                    relation.label,
-                    self.structured_schema,
-                    self.client,
-                    relation.properties,
-                ):
-                    self.refresh_schema()
-                    schema_ensurence_cache.add(relation.label)
+            # if relation.label not in schema_ensurence_cache:
+            #     if ensure_relation_meta_schema(
+            #         relation.source_id,
+            #         relation.target_id,
+            #         relation.label,
+            #         self.structured_schema,
+            #         self.client,
+            #         relation.properties,
+            #     ):
+            #         self.refresh_schema()
+            #         schema_ensurence_cache.add(relation.label)
             self.structured_query(stmt, param_map=values_params)
 
     def get(
@@ -663,11 +663,13 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             WITH startNode(rel) AS source,
                 rel.`label` AS type,
                 endNode(rel) AS endNode
+            MATCH (v) WHERE id(v)==id(source) WITH v AS source, type, endNode
+            MATCH (v) WHERE id(v)==id(endNode) WITH source, type, v AS endNode
             RETURN id(source) AS source_id, source.`Node__`.`label` AS source_type,
-                    properties(source) AS source_properties,
+                    properties(source.`Props__`) AS source_properties,
                     type,
                     id(endNode) AS target_id, endNode.`Node__`.`label` AS target_type,
-                    properties(endNode) AS target_properties
+                    properties(endNode.`Props__`) AS target_properties
             LIMIT {limit}
             """,
             param_map={"ids": ids},

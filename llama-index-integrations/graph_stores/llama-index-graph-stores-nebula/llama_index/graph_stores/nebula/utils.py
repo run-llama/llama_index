@@ -5,7 +5,6 @@ from nebula3.common.ttypes import Value, NList, Date, Time, DateTime
 from nebula3.gclient.net.base import BaseExecutor
 
 
-
 def url_scheme_parse(url) -> Tuple[str, int]:
     """
     Parse the URL scheme and host from the URL.
@@ -110,7 +109,10 @@ def _cast_value(value: Any) -> Value:
         raise TypeError(f"Unsupported type: {type(value)}")
     return casted_value
 
-def deduce_property_types_from_values(property_values: Dict[str, Any]) -> Dict[str, str]:
+
+def deduce_property_types_from_values(
+    property_values: Dict[str, Any]
+) -> Dict[str, str]:
     """
     Deduce the data types of properties for NebulaGraph DDL based on the property values.
 
@@ -133,6 +135,7 @@ def deduce_property_types_from_values(property_values: Dict[str, Any]) -> Dict[s
         else:
             raise ValueError(f"Unsupported property type: {type(value)}")
     return property_type_mapping
+
 
 def generate_ddl_create_tag(tag_name: str, properties: Dict[str, Any]) -> str:
     """
@@ -159,7 +162,13 @@ def generate_ddl_create_tag(tag_name: str, properties: Dict[str, Any]) -> str:
     ddl_statement = " ".join(ddl_parts)
     return ddl_statement
 
-def generate_ddl_alter_tag(tag_name: str, existing_property_type_map: Dict[str, str], new_properties: Dict[str, Any], perform_prop_drop_if_missing: bool = False) -> Optional[str]:
+
+def generate_ddl_alter_tag(
+    tag_name: str,
+    existing_property_type_map: Dict[str, str],
+    new_properties: Dict[str, Any],
+    perform_prop_drop_if_missing: bool = False,
+) -> Optional[str]:
     """
     Generate the DDL to alter a NebulaGraph tag.
 
@@ -184,7 +193,9 @@ def generate_ddl_alter_tag(tag_name: str, existing_property_type_map: Dict[str, 
             prop_definition = f"`{prop}` {dtype} NULL"
             prop_definitions.append(prop_definition)
         elif existing_property_type_map[prop] != dtype:
-            raise ValueError(f"Property {prop} already exists with a different type {existing_property_type_map[prop]}")
+            raise ValueError(
+                f"Property {prop} already exists with a different type {existing_property_type_map[prop]}"
+            )
 
     if prop_definitions:
         ddl_parts.append(", ".join(prop_definitions))
@@ -210,7 +221,12 @@ def generate_ddl_alter_tag(tag_name: str, existing_property_type_map: Dict[str, 
     return ddl_statement
 
 
-def ensure_node_meta_schema(label: str, structured_schema: Optional[Dict[str, Any]], client: BaseExecutor, node_props: Optional[Dict[str, Any]]=None)-> bool:
+def ensure_node_meta_schema(
+    label: str,
+    structured_schema: Optional[Dict[str, Any]],
+    client: BaseExecutor,
+    node_props: Optional[Dict[str, Any]] = None,
+) -> bool:
     """
     Ensure the meta schema for the node label is present.
 
@@ -232,16 +248,26 @@ def ensure_node_meta_schema(label: str, structured_schema: Optional[Dict[str, An
             node_prop_schema = deduce_property_types_from_values(node_props)
 
         result = client.execute(
-            f'INSERT EDGE `__meta__node_label__`(`label`, `props_json`): '
-            f'VALUES "{label}"->"{label}"("{label}", "{str(node_prop_schema)}")'
+            f"INSERT EDGE `__meta__node_label__`(`label`, `props_json`) "
+            f'VALUES "{label}"->"{label}":("{label}", "{str(node_prop_schema)}")'
         )
         if not result.is_succeeded():
-            raise ValueError(f"Failed to create meta schema for node label {label}. Error: {result.error_msg()}")
+            raise ValueError(
+                f"Failed to create meta schema for node label {label}. Error: {result.error_msg()}"
+            )
 
         return True
     return False
 
-def ensure_relation_meta_schema(src_id: str, dst_id: str, rel_type: str, structured_schema: Optional[Dict[str, Any]], client: BaseExecutor, edge_props: Optional[Dict[str, Any]]=None)-> bool:
+
+def ensure_relation_meta_schema(
+    src_id: str,
+    dst_id: str,
+    rel_type: str,
+    structured_schema: Optional[Dict[str, Any]],
+    client: BaseExecutor,
+    edge_props: Optional[Dict[str, Any]] = None,
+) -> bool:
     """
     Ensure the meta schema for the relation type is present.
 
@@ -269,21 +295,29 @@ def ensure_relation_meta_schema(src_id: str, dst_id: str, rel_type: str, structu
             f'FETCH PROP ON `Node__` "{src_id}", "{dst_id}" YIELD id(vertex) AS id, Node__.`label` AS `label`'
         )
         if not result.is_succeeded():
-            raise ValueError(f"Failed to fetch start and end node labels. Error: {result.error_msg()}")
+            raise ValueError(
+                f"Failed to fetch start and end node labels. Error: {result.error_msg()}"
+            )
         if result.row_size() != len(set([src_id, dst_id])):
-            raise ValueError(f"source node or destination node not found. Fetched result: {result}")
+            raise ValueError(
+                f"source node or destination node not found. Fetched result: {result}"
+            )
         id_to_label = {}
         for row_index in range(result.row_size()):
-            id_to_label[result.row_values(row_index)[0].cast_primitive()] = result.row_values(row_index)[1].cast_primitive()
+            id_to_label[result.row_values(row_index)[0].cast_primitive()] = (
+                result.row_values(row_index)[1].cast_primitive()
+            )
 
         source_label, dest_label = id_to_label[src_id], id_to_label[dst_id]
 
         result = client.execute(
-            f'INSERT EDGE `__meta__rel_label__`(`type`, `props_json`): '
-            f'VALUES "{rel_type}"->"{source_label}"("{dest_label}", "{str(edge_prop_schema)}")'
+            f"INSERT EDGE `__meta__rel_label__`(`type`, `props_json`) "
+            f'VALUES "{rel_type}"->"{source_label}":("{dest_label}", "{str(edge_prop_schema)}")'
         )
         if not result.is_succeeded():
-            raise ValueError(f"Failed to create meta schema for relation type {rel_type}. Error: {result.error_msg()}")
+            raise ValueError(
+                f"Failed to create meta schema for relation type {rel_type}. Error: {result.error_msg()}"
+            )
 
         return True
     return False
