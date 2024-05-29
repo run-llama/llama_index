@@ -59,7 +59,7 @@ class Gemini(CustomLLM):
         ```python
         from llama_index.llms.gemini import Gemini
 
-        llm = Gemini(model_name="models/gemini-ultra", api_key="YOUR_API_KEY")
+        llm = Gemini(model="models/gemini-ultra", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
