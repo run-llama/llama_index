@@ -3,6 +3,7 @@
 import os
 import typing
 from typing import Any, Dict, Optional, Sequence
+import warnings
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -51,7 +52,8 @@ GEMINI_MODELS = (
 
 
 class Gemini(CustomLLM):
-    """Gemini LLM.
+    """
+    Gemini LLM.
 
     Examples:
         `pip install llama-index-llms-gemini`
@@ -65,9 +67,7 @@ class Gemini(CustomLLM):
         ```
     """
 
-    model_name: str = Field(
-        default=GEMINI_MODELS[0], description="The Gemini model to use."
-    )
+    model: str = Field(default=GEMINI_MODELS[0], description="The Gemini model to use.")
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
@@ -97,6 +97,7 @@ class Gemini(CustomLLM):
         callback_manager: Optional[CallbackManager] = None,
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
+        model_name: Optional[str] = None,
         **generate_kwargs: Any,
     ):
         """Creates a new Gemini model interface."""
@@ -107,6 +108,13 @@ class Gemini(CustomLLM):
                 "Gemini is not installed. Please install it with "
                 "`pip install 'google-generativeai>=0.3.0'`."
             )
+        if model_name is not None:
+            warnings.warn(
+                "model_name is deprecated, please use model instead",
+                DeprecationWarning,
+            )
+
+            model = model_name
 
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
@@ -145,7 +153,7 @@ class Gemini(CustomLLM):
             max_tokens = min(max_tokens, self._model_meta.output_token_limit)
 
         super().__init__(
-            model_name=model,
+            model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             generate_kwargs=generate_kwargs,
