@@ -93,7 +93,10 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.event_handlers:
-                h.handle(event, **kwargs)
+                try:
+                    h.handle(event, **kwargs)
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -111,13 +114,16 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_enter(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    parent_id=parent_id,
-                    **kwargs,
-                )
+                try:
+                    h.span_enter(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        parent_id=parent_id,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -135,13 +141,16 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_drop(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    err=err,
-                    **kwargs,
-                )
+                try:
+                    h.span_drop(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        err=err,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -159,13 +168,16 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_exit(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    result=result,
-                    **kwargs,
-                )
+                try:
+                    h.span_exit(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        result=result,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
