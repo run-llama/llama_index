@@ -3,7 +3,7 @@
 import logging
 import uuid
 import re
-from typing import Any, Coroutine, List, Optional, Sequence, Type
+from typing import Any, Coroutine, List, Optional, Sequence, Type, TypeAlias
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
@@ -22,6 +22,8 @@ from llama_index.core.tools.query_engine import QueryEngineTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+
+StructuredContext: TypeAlias = BaseModel
 
 
 def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
@@ -50,7 +52,7 @@ class DataRequirements(BaseModel):
             raise ValueError("There must be a description for every data field.")
         return v
 
-    def to_structured_context(self) -> Type[BaseModel]:
+    def to_structured_context(self) -> Type[StructuredContext]:
         """Generate a custom pydantic model for StructuredContext."""
         data_fields = {}
         for name, desc in zip(self.data_field_names, self.data_field_descriptions):
