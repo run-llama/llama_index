@@ -1,17 +1,17 @@
 # NVIDIA NIMs
 
-The `llama-index-embeddings-nvidia` package contains LlamaIndex integrations building applications with models on 
-NVIDIA NIM inference microservice. NIM supports models across domains like chat, embedding, and re-ranking models 
-from the community as well as NVIDIA. These models are optimized by NVIDIA to deliver the best performance on NVIDIA 
-accelerated infrastructure and deployed as a NIM, an easy-to-use, prebuilt containers that deploy anywhere using a single 
+The `llama-index-embeddings-nvidia` package contains LlamaIndex integrations building applications with models on
+NVIDIA NIM inference microservice. NIM supports models across domains like chat, embedding, and re-ranking models
+from the community as well as NVIDIA. These models are optimized by NVIDIA to deliver the best performance on NVIDIA
+accelerated infrastructure and deployed as a NIM, an easy-to-use, prebuilt containers that deploy anywhere using a single
 command on NVIDIA accelerated infrastructure.
 
-NVIDIA hosted deployments of NIMs are available to test on the [NVIDIA API catalog](https://build.nvidia.com/). After testing, 
-NIMs can be exported from NVIDIA’s API catalog using the NVIDIA AI Enterprise license and run on-premises or in the cloud, 
+NVIDIA hosted deployments of NIMs are available to test on the [NVIDIA API catalog](https://build.nvidia.com/). After testing,
+NIMs can be exported from NVIDIA’s API catalog using the NVIDIA AI Enterprise license and run on-premises or in the cloud,
 giving enterprises ownership and full control of their IP and AI application.
 
-NIMs are packaged as container images on a per model basis and are distributed as NGC container images through the NVIDIA NGC Catalog. 
-At their core, NIMs provide easy, consistent, and familiar APIs for running inference on an AI model. 
+NIMs are packaged as container images on a per model basis and are distributed as NGC container images through the NVIDIA NGC Catalog.
+At their core, NIMs provide easy, consistent, and familiar APIs for running inference on an AI model.
 
 # NVIDIA's Embeddings connector
 
@@ -24,6 +24,7 @@ With this connector, you'll be able to connect to and generate from compatible m
 ```bash
 pip install llama-index-embeddings-nvidia
 ```
+
 ## Setup
 
 **To get started:**
@@ -44,7 +45,9 @@ if os.environ.get("NVIDIA_API_KEY", "").startswith("nvapi-"):
     print("Valid NVIDIA_API_KEY already in environment. Delete to reset")
 else:
     nvapi_key = getpass.getpass("NVAPI Key (starts with nvapi-): ")
-    assert nvapi_key.startswith("nvapi-"), f"{nvapi_key[:5]}... is not a valid key"
+    assert nvapi_key.startswith(
+        "nvapi-"
+    ), f"{nvapi_key[:5]}... is not a valid key"
     os.environ["NVIDIA_API_KEY"] = nvapi_key
 ```
 
@@ -58,6 +61,7 @@ embedder.get_query_embedding("What's the weather like in Komchatka?")
 ```
 
 ## Working with NVIDIA NIMs
+
 When ready to deploy, you can self-host models with NVIDIA NIM—which is included with the NVIDIA AI Enterprise software license—and run them anywhere, giving you ownership of your customizations and full control of your intellectual property (IP) and AI applications.
 
 [Learn more about NIMs](https://developer.nvidia.com/blog/nvidia-nim-offers-optimized-inference-microservices-for-deploying-ai-models-at-scale/)
@@ -68,4 +72,3 @@ from llama_index.embeddings.nvidia import NVIDIAEmbedding
 # connect to an embedding NIM running at localhost:8080
 embedder = NVIDIAEmbeddings(base_url="http://localhost:8080/v1")
 ```
-
