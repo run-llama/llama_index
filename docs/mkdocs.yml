@@ -396,6 +396,7 @@ nav:
           - ./examples/node_postprocessor/rankLLM.ipynb
           - ./examples/node_postprocessor/openvino_rerank.ipynb
           - ./examples/node_postprocessor/NVIDIARerank.ipynb
+          - ./examples/node_postprocessor/VoyageAIRerank.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
@@ -426,11 +427,6 @@ nav:
           - ./examples/prompts/prompts_rag.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
           - ./examples/prompts/prompt_optimization.ipynb
-      - Property Graph:
-          - ./examples/property_graph/property_graph_basic.ipynb
-          - ./examples/property_graph/property_graph_advanced.ipynb
-          - ./examples/property_graph/property_graph_custom_retriever.ipynb
-          - ./examples/property_graph/property_graph_neo4j.ipynb
       - Query Engines:
           - ./examples/query_engine/knowledge_graph_rag_query_engine.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
