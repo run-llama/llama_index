@@ -755,7 +755,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[List[LabelledNode] | List[float]]:
+    ) -> Tuple[List[LabelledNode], List[float]]:
         raise NotImplementedError(
             "Vector query not implemented for NebulaPropertyGraphStore."
         )
