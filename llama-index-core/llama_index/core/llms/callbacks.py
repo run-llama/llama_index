@@ -70,8 +70,15 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
-
-                f_return_val = await f(_self, messages, **kwargs)
+                try:
+                    f_return_val = await f(_self, messages, **kwargs)
+                except BaseException as e:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
+                        payload={EventPayload.EXCEPTION: e},
+                        event_id=event_id,
+                    )
+                    raise
                 if isinstance(f_return_val, AsyncGenerator):
                     # intercept the generator and add a callback to the end
                     async def wrapped_gen() -> ChatResponseAsyncGen:
@@ -146,8 +153,15 @@ def llm_chat_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
-                f_return_val = f(_self, messages, **kwargs)
-
+                try:
+                    f_return_val = f(_self, messages, **kwargs)
+                except BaseException as e:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
+                        payload={EventPayload.EXCEPTION: e},
+                        event_id=event_id,
+                    )
+                    raise
                 if isinstance(f_return_val, Generator):
                     # intercept the generator and add a callback to the end
                     def wrapped_gen() -> ChatResponseGen:
@@ -288,8 +302,15 @@ def llm_completion_callback() -> Callable:
                     },
                 )
 
-                f_return_val = await f(_self, *args, **kwargs)
-
+                try:
+                    f_return_val = await f(_self, *args, **kwargs)
+                except BaseException as e:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
+                        payload={EventPayload.EXCEPTION: e},
+                        event_id=event_id,
+                    )
+                    raise
                 if isinstance(f_return_val, AsyncGenerator):
                     # intercept the generator and add a callback to the end
                     async def wrapped_gen() -> CompletionResponseAsyncGen:
@@ -356,8 +377,15 @@ def llm_completion_callback() -> Callable:
                         EventPayload.SERIALIZED: _self.to_dict(),
                     },
                 )
-
-                f_return_val = f(_self, *args, **kwargs)
+                try:
+                    f_return_val = f(_self, *args, **kwargs)
+                except BaseException as e:
+                    callback_manager.on_event_end(
+                        CBEventType.LLM,
+                        payload={EventPayload.EXCEPTION: e},
+                        event_id=event_id,
+                    )
+                    raise
                 if isinstance(f_return_val, Generator):
                     # intercept the generator and add a callback to the end
                     def wrapped_gen() -> CompletionResponseGen:
