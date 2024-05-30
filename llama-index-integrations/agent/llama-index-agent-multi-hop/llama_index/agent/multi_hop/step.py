@@ -2,13 +2,14 @@
 
 import logging
 import uuid
+import re
 from typing import Any, Coroutine, List, Optional, Sequence
 
 from llama_index.core.agent.types import (
     BaseAgentWorker,
 )
 from llama_index.core.base.agent.types import Task, TaskStep, TaskStepOutput
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, validator, create_model
 from llama_index.core.callbacks import (
     CallbackManager,
 )
@@ -42,6 +43,28 @@ class DataRequirements(BaseModel):
         default_factory=list,
         description="Corresponding descriptions of each data field name.",
     )
+
+    @validator("data_field_descriptions")
+    def must_have_same_length_as_field_names(cls, v, values):
+        if len(v) != len(values["data_field_names"]):
+            raise ValueError("There must be a description for every data field.")
+        return v
+
+    def to_structured_context(self) -> BaseModel:
+        """Generate a custom pydantic model for StructuredContext."""
+        data_fields = {}
+        for name, desc in zip(self.data_field_names, self.data_field_descriptions):
+            # strip out punctuation
+            name = re.sub(r"[^\w\s]", "", name)
+            # lower and replace space with _
+            name = name.lower().replace(" ", "_")
+            data_fields[name] = (Optional[str], Field(default=None, description=desc))
+
+        StructuredContext = create_model("StructuredContext", **data_fields)
+        StructuredContext.__doc__ = (
+            "Data class for holding data requirements to answer query"
+        )
+        return StructuredContext
 
 
 class MultiHopAgentWorker(BaseAgentWorker):
@@ -112,7 +135,7 @@ class MultiHopAgentWorker(BaseAgentWorker):
 
         # perform data extraction using retrieved context from RAG
 
-        # perform final response synthesi
+        # perform final response synthesis
         return super().run_step(step, task, **kwargs)
 
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
