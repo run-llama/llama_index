@@ -170,7 +170,7 @@ class Gemini(CustomLLM):
         return LLMMetadata(
             context_window=total_tokens,
             num_output=self.max_tokens,
-            model_name=self.model_name,
+            model_name=self.model,
             is_chat_model=True,
         )
 
