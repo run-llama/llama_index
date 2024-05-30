@@ -214,7 +214,6 @@ class CohereEmbedding(BaseEmbedding):
 
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
-
         client = self._get_client()
 
         if self.model_name in V3_MODELS:
@@ -236,7 +235,6 @@ class CohereEmbedding(BaseEmbedding):
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
-
         async_client = self._get_async_client()
 
         if self.model_name in V3_MODELS:
