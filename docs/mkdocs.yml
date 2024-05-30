@@ -396,6 +396,7 @@ nav:
           - ./examples/node_postprocessor/rankLLM.ipynb
           - ./examples/node_postprocessor/openvino_rerank.ipynb
           - ./examples/node_postprocessor/NVIDIARerank.ipynb
+          - ./examples/node_postprocessor/VoyageAIRerank.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
       - Output Parsers:
