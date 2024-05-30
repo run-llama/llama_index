@@ -2,7 +2,7 @@ from llama_index.core.graph_stores.types import (
     EntityNode,
     Relation,
 )
-from llama_index.core.schema import TextNode, NodeRelationship, RelatedNodeInfo
+from llama_index.core.schema import TextNode
 from llama_index.graph_stores.nebula import NebulaPropertyGraphStore
 from unittest import TestCase
 
@@ -10,10 +10,9 @@ from unittest import TestCase
 def get_store(
     props_schema: str = "`key` STRING, `_node_content` STRING, `_node_type` STRING, `document_id` STRING, `doc_id` STRING, `ref_doc_id` STRING",
 ):
-    g = NebulaPropertyGraphStore(
+    return NebulaPropertyGraphStore(
         space="test_property_graph_store", overwrite=True, props_schema=props_schema
     )
-    return g
 
 
 class TestPropertyGraphStore(TestCase):

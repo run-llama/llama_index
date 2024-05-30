@@ -1,6 +1,5 @@
 import datetime
 from typing import Dict, Any, Optional, Tuple
-from nebula3.data.ResultSet import ResultSet
 from nebula3.common.ttypes import Value, NList, Date, Time, DateTime
 from nebula3.gclient.net.base import BaseExecutor
 
@@ -46,7 +45,6 @@ def build_param_map(params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Build a parameter map with proper binary values.
     """
-
     byte_params = {}
     for k, v in params.items():
         if isinstance(v, Value):
@@ -59,8 +57,8 @@ def build_param_map(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _cast_value(value: Any) -> Value:
-    """
-    Cast the value to nebula Value type
+    """Cast the value to nebula Value type.
+
     ref: https://github.com/vesoft-inc/nebula/blob/master/src/common/datatypes/Value.cpp
     :param value: the value to be casted
     :return: the casted value
@@ -159,8 +157,7 @@ def generate_ddl_create_tag(tag_name: str, properties: Dict[str, Any]) -> str:
         prop_definitions.append(prop_definition)
     ddl_parts.append(", ".join(prop_definitions))
     ddl_parts.append(");")
-    ddl_statement = " ".join(ddl_parts)
-    return ddl_statement
+    return " ".join(ddl_parts)
 
 
 def generate_ddl_alter_tag(
@@ -181,7 +178,6 @@ def generate_ddl_alter_tag(
     Returns:
     str: The DDL string.
     """
-
     # infer properties type in NebulaGraph DDL
     new_property_type_map = deduce_property_types_from_values(new_properties)
 
@@ -249,7 +245,7 @@ def ensure_node_meta_schema(
 
         result = client.execute(
             f"INSERT EDGE `__meta__node_label__`(`label`, `props_json`) "
-            f'VALUES "{label}"->"{label}":("{label}", "{str(node_prop_schema)}")'
+            f'VALUES "{label}"->"{label}":("{label}", "{node_prop_schema!s}")'
         )
         if not result.is_succeeded():
             raise ValueError(
@@ -298,21 +294,21 @@ def ensure_relation_meta_schema(
             raise ValueError(
                 f"Failed to fetch start and end node labels. Error: {result.error_msg()}"
             )
-        if result.row_size() != len(set([src_id, dst_id])):
+        if result.row_size() != len({src_id, dst_id}):
             raise ValueError(
                 f"source node or destination node not found. Fetched result: {result}"
             )
         id_to_label = {}
         for row_index in range(result.row_size()):
-            id_to_label[result.row_values(row_index)[0].cast_primitive()] = (
-                result.row_values(row_index)[1].cast_primitive()
-            )
+            id_to_label[
+                result.row_values(row_index)[0].cast_primitive()
+            ] = result.row_values(row_index)[1].cast_primitive()
 
         source_label, dest_label = id_to_label[src_id], id_to_label[dst_id]
 
         result = client.execute(
             f"INSERT EDGE `__meta__rel_label__`(`type`, `props_json`) "
-            f'VALUES "{rel_type}"->"{source_label}":("{dest_label}", "{str(edge_prop_schema)}")'
+            f'VALUES "{rel_type}"->"{source_label}":("{dest_label}", "{edge_prop_schema!s}")'
         )
         if not result.is_succeeded():
             raise ValueError(

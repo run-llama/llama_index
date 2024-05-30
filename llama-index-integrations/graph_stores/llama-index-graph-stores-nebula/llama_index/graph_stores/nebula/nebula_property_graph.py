@@ -1,6 +1,5 @@
 from typing import Any, List, Dict, Optional, Tuple
 
-from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
     Triplet,
@@ -14,9 +13,7 @@ from llama_index.core.graph_stores.utils import (
     value_sanitize,
     LIST_LIMIT,
 )
-from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
-from nebula3.Config import SessionPoolConfig
 from nebula3.gclient.net.SessionPool import SessionPool
 from nebula3.gclient.net.base import BaseExecutor
 from nebula3.data.ResultSet import ResultSet
@@ -26,8 +23,6 @@ from llama_index.graph_stores.nebula.utils import (
     build_param_map,
     remove_empty_values,
     url_scheme_parse,
-    ensure_node_meta_schema,
-    ensure_relation_meta_schema,
 )
 
 
@@ -36,7 +31,7 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 
-META_NODE_LABEL_PREFIX = "__meta__label__" # Not yet used, could be applied later
+META_NODE_LABEL_PREFIX = "__meta__label__"  # Not yet used, could be applied later
 
 # DDL Design
 # - Entity__ is used to store the extracted entity name(readable id)
@@ -151,15 +146,16 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
 
     @property
     def client(self):
-        """client of NebulaGraph."""
+        """Client of NebulaGraph."""
         return self._client
 
     def _execute(self, query: str) -> ResultSet:
         return self._client.execute(query)
 
     def refresh_schema(self) -> None:
-        """
-        Example data of self.structured_schema:
+        """Refresh schema.
+
+        Example data of self.structured_schema
         {
             "node_props": {
                 "Person": [
@@ -186,7 +182,6 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             ]
         }
         """
-
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
@@ -276,7 +271,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             )
 
         # Create tags for each LabelledNode
-        # This could be revisted, if we don't have any properties for labels, mapping labels to
+        # This could be revisited, if we don't have any properties for labels, mapping labels to
         # Properties of tag: Entity__ is also feasible.
         schema_ensurence_cache = set()
         for i, entity in enumerate(nodes):
@@ -300,7 +295,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             self.structured_query(stmt)
 
     def _construct_property_query(self, properties: Dict[str, Any]):
-        keys = ",".join([f"`{k}`" for k in properties.keys()])
+        keys = ",".join([f"`{k}`" for k in properties])
         values_k = ""
         values_params: Dict[Any] = {}
         for idx, v in enumerate(properties.values()):
@@ -609,7 +604,6 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         is_relationship: bool = False,
     ) -> str:
         """Get enhanced schema information."""
-        pass
 
     def get_schema(self, refresh: bool = False) -> Any:
         if refresh:
