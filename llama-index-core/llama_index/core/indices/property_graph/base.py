@@ -347,6 +347,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                         graph_store=self.property_graph_store,
                         vector_store=self.vector_store,
                         include_text=include_text,
+                        embed_model=self._embed_model,
                         **kwargs,
                     )
                 )
