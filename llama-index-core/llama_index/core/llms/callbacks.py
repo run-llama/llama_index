@@ -29,6 +29,7 @@ from llama_index.core.instrumentation.events.llm import (
     LLMChatEndEvent,
     LLMChatStartEvent,
     LLMChatInProgressEvent,
+    LLMCompletionInProgressEvent,
 )
 
 dispatcher = get_dispatcher(__name__)
@@ -296,7 +297,7 @@ def llm_completion_callback() -> Callable:
                         last_response = None
                         async for x in f_return_val:
                             dispatcher.event(
-                                LLMCompletionEndEvent(
+                                LLMCompletionInProgressEvent(
                                     prompt=prompt,
                                     response=x,
                                     span_id=span_id,
@@ -312,6 +313,13 @@ def llm_completion_callback() -> Callable:
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
+                        )
+                        dispatcher.event(
+                            LLMCompletionEndEvent(
+                                prompt=prompt,
+                                response=last_response,
+                                span_id=span_id,
+                            )
                         )
 
                     return wrapped_gen()
@@ -364,8 +372,10 @@ def llm_completion_callback() -> Callable:
                         last_response = None
                         for x in f_return_val:
                             dispatcher.event(
-                                LLMCompletionEndEvent(
-                                    prompt=prompt, response=x, span_id=span_id
+                                LLMCompletionInProgressEvent(
+                                    prompt=prompt,
+                                    response=x,
+                                    span_id=span_id,
                                 )
                             )
                             yield cast(CompletionResponse, x)
@@ -378,6 +388,13 @@ def llm_completion_callback() -> Callable:
                                 EventPayload.COMPLETION: last_response,
                             },
                             event_id=event_id,
+                        )
+                        dispatcher.event(
+                            LLMCompletionEndEvent(
+                                prompt=prompt,
+                                response=last_response,
+                                span_id=span_id,
+                            )
                         )
 
                     return wrapped_gen()
