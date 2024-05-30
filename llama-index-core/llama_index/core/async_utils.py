@@ -2,9 +2,11 @@
 
 import asyncio
 from itertools import zip_longest
+from queue import SimpleQueue
 from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
 
 import llama_index.core.instrumentation as instrument
+from llama_index.core.types import Thread
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -21,16 +23,26 @@ def asyncio_module(show_progress: bool = False) -> Any:
 
 
 def asyncio_run(coro: Coroutine) -> Any:
-    """Gets an existing event loop to run the coroutine.
-
-    If there is no existing event loop, creates a new one.
+    """
+    Run coroutine synchronously.
     """
     try:
-        # this will fail if the event loop is already running
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(coro)
+        _ = asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(coro)
+
+    def main(q: SimpleQueue) -> None:
+        try:
+            q.put(asyncio.run(coro))
+        except BaseException as e:
+            q.put(e)
+
+    q: "SimpleQueue[Any]" = SimpleQueue()
+    t = Thread(target=main, args=(q,))
+    t.start(), t.join()
+    if isinstance(result := q.get(), BaseException):
+        raise result
+    return result
 
 
 def run_async_tasks(
