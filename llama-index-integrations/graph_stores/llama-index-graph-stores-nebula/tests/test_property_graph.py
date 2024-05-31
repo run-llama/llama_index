@@ -4,23 +4,26 @@ from llama_index.core.graph_stores.types import (
 )
 from llama_index.core.schema import TextNode
 from llama_index.graph_stores.nebula import NebulaPropertyGraphStore
-from unittest import TestCase
+from unittest import TestCase, SkipTest
 
 
 def get_store(
     props_schema: str = "`key` STRING, `_node_content` STRING, `_node_type` STRING, `document_id` STRING, `doc_id` STRING, `ref_doc_id` STRING",
 ):
     return NebulaPropertyGraphStore(
-        space="test_property_graph_store", overwrite=True, props_schema=props_schema
+        space="test_property_graph_store",
+        overwrite=True,
+        props_schema=props_schema,
     )
 
 
 class TestPropertyGraphStore(TestCase):
-    g: NebulaPropertyGraphStore
-
     @classmethod
     def setUp(self) -> None:
-        pass
+        try:
+            g = get_store()
+        except RuntimeError:
+            raise SkipTest("NebulaGraph service is not available")
 
     def test_add(self) -> None:
         g = get_store()
