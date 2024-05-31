@@ -140,7 +140,11 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
 
         self.structured_schema = {}
         if refresh_schema:
-            self.refresh_schema()
+            try:
+                self.refresh_schema()
+            except Exception:
+                # fails to refresh for the first time
+                pass
 
         self.supports_structured_queries = True
 
@@ -185,6 +189,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         tags_schema = {}
         edge_types_schema = {}
         relationships = []
+
         for node_label in self.structured_query(
             "MATCH ()-[node_label:`__meta__node_label__`]->() "
             "RETURN node_label.label AS name, "
@@ -192,6 +197,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         ):
             tags_schema[node_label["name"]] = []
             # TODO: add properties to tags_schema
+
         for rel_label in self.structured_query(
             "MATCH ()-[rel_label:`__meta__rel_label__`]->() "
             "RETURN rel_label.label AS name, "
