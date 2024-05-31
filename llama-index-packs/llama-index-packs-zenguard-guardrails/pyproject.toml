@@ -27,7 +27,7 @@ python_version = "3.8"
 name = "llama-index-packs-zenguard-guardrails"
 version = "0.1.0"
 description = "llama-index packs zenguard guardrails integration"
-authors = ["Your Name <you@example.com>"]
+authors = ["ZenGuard Team <hello@zenguard.ai>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "llama_index/"}]
