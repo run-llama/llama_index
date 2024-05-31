@@ -28,7 +28,14 @@ def asyncio_run(coro: Coroutine) -> Any:
     try:
         loop = asyncio.get_running_loop()
         if loop.is_running():
-            raise RuntimeError
+            raise RuntimeError(
+                "Nested async detected. "
+                "Use async functions where possible (`aquery`, `aretrieve`, `arun`, etc.). "
+                "Otherwise, use `import nest_asyncio; nest_asyncio.apply()` "
+                "to enable nested async or use in a jupyter notebook.\n\n"
+                "If you are experiencing while using async functions and not in a notebook, "
+                "please raise an issue on github, as it indicates a bad design pattern."
+            )
         else:
             return loop.run_until_complete(coro)
     except RuntimeError:
