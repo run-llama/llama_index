@@ -21,12 +21,14 @@ from llama_index.core.llms.chatml_utils import completion_to_prompt, messages_to
 class AgentOpsHandlerState:
     is_agent_chat_span: Dict[str, bool] = {}
     agent_chat_start_event: Dict[str, LLMChatStartEvent] = {}
+    span_parent: Dict[str, Optional[str]] = {}
 
 
 class AgentOpsSpanHandler(SimpleSpanHandler):
     def __init__(self) -> None:
         self.is_agent_chat_span = AgentOpsHandlerState.is_agent_chat_span
         self.agent_chat_start_event = AgentOpsHandlerState.agent_chat_start_event
+        self.span_parent = AgentOpsHandlerState.span_parent
         return super().__init__()
 
     @classmethod
@@ -42,6 +44,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         **kwargs: Any
     ) -> SimpleSpan:
         self.is_agent_chat_span[id_] = False
+        self.span_parent[id_] = parent_span_id
         return super().new_span(id_, bound_args, instance, parent_span_id, **kwargs)
 
     def prepare_to_exit_span(
@@ -53,7 +56,8 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         **kwargs: Any
     ) -> SimpleSpan:
         del self.is_agent_chat_span[id_]
-        del self.agent_chat_start_event[id_]
+        # del self.agent_chat_start_event[id_]
+        del self.span_parent[id_]
         return super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
 
     def prepare_to_drop_span(
@@ -65,7 +69,8 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         **kwargs: Any
     ) -> SimpleSpan:
         del self.is_agent_chat_span[id_]
-        del self.agent_chat_start_event[id_]
+        # del self.agent_chat_start_event[id_]
+        del self.span_parent[id_]
         return super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
 
 
@@ -84,6 +89,7 @@ class AgentOpsEventHandler(BaseEventHandler):
     ):
         self.is_agent_chat_span = AgentOpsHandlerState.is_agent_chat_span
         self.agent_chat_start_event = AgentOpsHandlerState.agent_chat_start_event
+        self.span_parent = AgentOpsHandlerState.span_parent
         client_params: Dict[str, Any] = {
             "api_key": api_key,
             "parent_key": parent_key,
@@ -104,7 +110,12 @@ class AgentOpsEventHandler(BaseEventHandler):
         return "AgentOpsEventHandler"
 
     def _is_agent_chat_span(self, span_id: Optional[str]) -> bool:
-        return span_id in self.is_agent_chat_span and self.is_agent_chat_span[span_id]
+        if not span_id:
+            return False
+        elif span_id in self.is_agent_chat_span and self.is_agent_chat_span[span_id]:
+            return True
+        else:
+            return self._is_agent_chat_span(self.span_parent[span_id])
 
     def handle(self, event: BaseEvent) -> None:
         # We only track chat events that are emitted while using an agent
@@ -114,7 +125,8 @@ class AgentOpsEventHandler(BaseEventHandler):
             self.is_agent_chat_span[event.span_id] = True
 
         if isinstance(event, LLMChatStartEvent) and is_agent_chat_event:
-            self.agent_chat_start_event[event.span_id] = event
+            # TODO: Hook this back up
+            # self.agent_chat_start_event[event.span_id] = event
             model = event.model_dict["model"]
             prompt = messages_to_prompt(event.messages)
             self.ao_client.record(LLMEvent(model=model, prompt=prompt))
@@ -126,9 +138,11 @@ class AgentOpsEventHandler(BaseEventHandler):
                     event.response.message.content if event.response else None
                 ),
             }
-            if event.span_id and event.span_id in self.agent_chat_start_event:
-                start_event = self.agent_chat_start_event[event.span_id]
-                event_params["model"] = start_event.model_dict["model"]
+
+            # TODO: Hook this back up
+            # if event.span_id and event.span_id in self.agent_chat_start_event:
+            #     start_event = self.agent_chat_start_event[event.span_id]
+            #     event_params["model"] = start_event.model_dict["model"]
 
             self.ao_client.record(LLMEvent(**event_params))
 
