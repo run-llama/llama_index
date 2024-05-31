@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Any, Callable, List, Optional, cast
+from typing import Any, List, Optional, cast
 import asyncio
 
 from llama_index.core.agent.types import (
@@ -13,7 +13,6 @@ from llama_index.core.agent.types import (
     TaskStepOutput,
 )
 from llama_index.core.agent.utils import add_user_step_to_memory
-from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -194,10 +193,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             + task.extra_state["new_memory"].get_all()
         )
 
-    async def _call_function_handler(
+    def _call_function(
         self,
-        call_fn: Callable,
-        use_async: bool,
         tools: List[BaseTool],
         tool_call: ToolSelection,
         memory: BaseMemory,
@@ -218,11 +215,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             },
         ) as event:
             tool_output = (
-                (
-                    await call_fn(tool_call, tools, verbose=verbose)
-                    if use_async
-                    else call_fn(tool_call, tools, verbose=verbose)
-                )
+                call_tool_with_selection(tool_call, tools, verbose=verbose)
                 if tool is not None
                 else build_missing_tool_output(tool_call)
             )
@@ -241,28 +234,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         return tool.metadata.return_direct if tool is not None else False
 
-    def _call_function(
-        self,
-        tools: List[BaseTool],
-        tool_call: ToolSelection,
-        memory: BaseMemory,
-        sources: List[ToolOutput],
-        verbose: bool = False,
-    ) -> bool:
-        return asyncio_run(
-            self._call_function_handler(
-                lambda tool_call, tools, verbose: call_tool_with_selection(
-                    tool_call, tools, verbose=verbose
-                ),
-                False,
-                tools,
-                tool_call,
-                memory,
-                sources,
-                verbose,
-            )
-        )
-
     async def _acall_function(
         self,
         tools: List[BaseTool],
@@ -271,18 +242,38 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources: List[ToolOutput],
         verbose: bool = False,
     ) -> bool:
-        async def async_call_fn(tool_call, tools, verbose):
-            return await acall_tool_with_selection(tool_call, tools, verbose=verbose)
+        tool = get_function_by_name(tools, tool_call.tool_name)
 
-        return await self._call_function_handler(
-            async_call_fn,
-            True,
-            tools,
-            tool_call,
-            memory,
-            sources,
-            verbose,
+        with self.callback_manager.event(
+            CBEventType.FUNCTION_CALL,
+            payload={
+                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=tool_call.tool_name)
+                ),
+            },
+        ) as event:
+            tool_output = (
+                await acall_tool_with_selection(tool_call, tools, verbose=verbose)
+                if tool is not None
+                else build_missing_tool_output(tool_call)
+            )
+            event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
+
+        function_message = ChatMessage(
+            content=str(tool_output),
+            role=MessageRole.TOOL,
+            additional_kwargs={
+                "name": tool_call.tool_name,
+                "tool_call_id": tool_call.tool_id,
+            },
         )
+        sources.append(tool_output)
+        memory.put(function_message)
+
+        return tool.metadata.return_direct if tool is not None else False
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
