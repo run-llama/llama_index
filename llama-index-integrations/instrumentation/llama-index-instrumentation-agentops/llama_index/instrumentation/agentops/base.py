@@ -56,7 +56,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         **kwargs: Any
     ) -> SimpleSpan:
         del self.is_agent_chat_span[id_]
-        # del self.agent_chat_start_event[id_]
+        del self.agent_chat_start_event[id_]
         del self.span_parent[id_]
         return super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
 
@@ -69,7 +69,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         **kwargs: Any
     ) -> SimpleSpan:
         del self.is_agent_chat_span[id_]
-        # del self.agent_chat_start_event[id_]
+        del self.agent_chat_start_event[id_]
         del self.span_parent[id_]
         return super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
 
@@ -110,12 +110,30 @@ class AgentOpsEventHandler(BaseEventHandler):
         return "AgentOpsEventHandler"
 
     def _is_agent_chat_span(self, span_id: Optional[str]) -> bool:
+        """
+        Starting with a given span_id, navigate all ancestor spans to determine
+        whether an AgentRunStepStartEvent is associated with at least one ancestor.
+        """
         if not span_id:
             return False
         elif span_id in self.is_agent_chat_span and self.is_agent_chat_span[span_id]:
             return True
         else:
-            return self._is_agent_chat_span(self.span_parent[span_id])
+            return self._is_agent_chat_span(self.span_parent.get(span_id, None))
+
+    def _get_chat_start_event(
+        self, span_id: Optional[str]
+    ) -> Optional[LLMChatStartEvent]:
+        """
+        Starting with a given span_id, find the first ancestor span with an
+        associated LLMChatStartEvent, then return this event.
+        """
+        if not span_id:
+            return None
+        elif span_id in self.agent_chat_start_event:
+            return self.agent_chat_start_event[span_id]
+        else:
+            return self._get_chat_start_event(self.span_parent.get(span_id, None))
 
     def handle(self, event: BaseEvent) -> None:
         # We only track chat events that are emitted while using an agent
@@ -125,8 +143,7 @@ class AgentOpsEventHandler(BaseEventHandler):
             self.is_agent_chat_span[event.span_id] = True
 
         if isinstance(event, LLMChatStartEvent) and is_agent_chat_event:
-            # TODO: Hook this back up
-            # self.agent_chat_start_event[event.span_id] = event
+            self.agent_chat_start_event[event.span_id] = event
             model = event.model_dict["model"]
             prompt = messages_to_prompt(event.messages)
             self.ao_client.record(LLMEvent(model=model, prompt=prompt))
@@ -139,10 +156,10 @@ class AgentOpsEventHandler(BaseEventHandler):
                 ),
             }
 
-            # TODO: Hook this back up
-            # if event.span_id and event.span_id in self.agent_chat_start_event:
-            #     start_event = self.agent_chat_start_event[event.span_id]
-            #     event_params["model"] = start_event.model_dict["model"]
+            # Get model info from chat start event corresponding to this chat end event
+            start_event = self._get_chat_start_event(event.span_id)
+            if start_event:
+                event_params["model"] = start_event.model_dict["model"]
 
             self.ao_client.record(LLMEvent(**event_params))
 
