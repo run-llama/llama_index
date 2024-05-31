@@ -1,5 +1,32 @@
 # ChangeLog
 
+## [2024-05-31]
+
+### `llama-index-core` [0.10.42]
+
+- Allow proper setting of the vector store in property graph index (#13816)
+- fix imports in langchain bridge (#13871)
+
+### `llama-index-graph-stores-nebula` [0.2.0]
+
+- NebulaGraph support for PropertyGraphStore (#13816)
+
+### `llama-index-llms-langchain` [0.1.5]
+
+- fix fireworks imports in langchain llm (#13871)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- feat(openllm): 0.5 sdk integrations update (#13848)
+
+### `llama-index-llms-premai` [0.1.5]
+
+- Update SDK compatibility (#13836)
+
+### `llama-index-readers-google` [0.2.6]
+
+- Fixed a bug with tokens causing an infinite loop in GoogleDriveReader (#13863)
+
 ## [2024-05-30]
 
 ### `llama-index-core` [0.10.41]
