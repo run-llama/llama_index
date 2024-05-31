@@ -74,6 +74,10 @@ class PremAI(LLM):
         description="Add valid repository ids. This will be overriding existing connected repositories (if any) and will use RAG with the connected repos."
     )
 
+    additional_kwargs: Optional[dict] = Field(
+        description="Add any additional kwargs. This may override your existing settings."
+    )
+
     _client: "Prem" = PrivateAttr()
 
     def __init__(
@@ -92,8 +96,8 @@ class PremAI(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        **kwargs,
     ):
-        additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
         api_key = get_from_param_or_env("api_key", premai_api_key, "PREMAI_API_KEY", "")
@@ -105,6 +109,7 @@ class PremAI(LLM):
             )
 
         self._client = Prem(api_key=api_key)
+        additional_kwargs = {**(additional_kwargs or {}), **kwargs}
 
         super().__init__(
             project_id=project_id,
@@ -175,7 +180,7 @@ class PremAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
         chat_messages = []
 
         for message in messages:
