@@ -123,6 +123,8 @@ class CohereEmbedding(BaseEmbedding):
 
     def __init__(
         self,
+        # deprecated
+        cohere_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         model_name: str = "embed-english-v3.0",
         truncate: str = "END",
@@ -166,7 +168,7 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            api_key=api_key,
+            api_key=api_key or cohere_api_key,
             model_name=model_name,
             input_type=input_type,
             embedding_type=embedding_type,
