@@ -118,6 +118,7 @@ nav:
           - ./examples/cookbooks/llama3_cookbook.ipynb
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
+          - ./examples/cookbooks/codestral.ipynb
       - Customization:
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
@@ -1099,6 +1100,7 @@ nav:
           - ./api_reference/readers/awadb.md
           - ./api_reference/readers/azcognitive_search.md
           - ./api_reference/readers/azstorage_blob.md
+          - ./api_reference/readers/azure_devops.md
           - ./api_reference/readers/bagel.md
           - ./api_reference/readers/bilibili.md
           - ./api_reference/readers/bitbucket.md
@@ -1953,6 +1955,7 @@ plugins:
             - ../llama-index-integrations/node_parser/llama-index-node-parser-relational-dashscope
             - ../llama-index-integrations/readers/llama-index-readers-dashscope
             - ../llama-index-integrations/llms/llama-index-llms-oci-genai
+            - ../llama-index-integrations/readers/llama-index-readers-azure-devops
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
