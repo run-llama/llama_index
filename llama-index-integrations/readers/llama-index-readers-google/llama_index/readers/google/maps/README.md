@@ -50,3 +50,7 @@ documents = loader.load_data(
 index = VectorStoreIndex.from_documents(documents)
 index.query("Which Turkish restaurant has the best reviews?")
 ```
+
+## Attribution
+
+Please ensure to provide the necessary attribution when using Google Maps data. For more information, refer to the [Google Maps Platform Branding Guidelines](https://developers.google.com/maps/documentation/urls/branding).
