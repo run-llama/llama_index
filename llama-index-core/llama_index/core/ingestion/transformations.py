@@ -249,6 +249,24 @@ def build_configurable_transformation_enum():
         pass
 
     try:
+        from llama_index.embeddings.cohere import (
+            CohereEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "COHERE_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Cohere Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=CohereEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
         from llama_index.embeddings.huggingface import (
             HuggingFaceInferenceAPIEmbedding,
         )  # pants: no-infer-dep
