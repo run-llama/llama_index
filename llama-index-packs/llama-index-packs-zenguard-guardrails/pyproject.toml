@@ -9,9 +9,9 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
-# [tool.llamahub]
+[tool.llamahub]
 # contains_example = false
-# import_path = "<import-path>"
+import_path = "llama_index.packs.zenguard_guardrails"
 
 # [tool.llamahub.class_authors]
 # CLASS = "github-username"
