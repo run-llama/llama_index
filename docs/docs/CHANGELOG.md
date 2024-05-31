@@ -1,5 +1,35 @@
 # ChangeLog
 
+## [2024-05-30]
+
+### `llama-index-core` [0.10.41]
+
+- pass embeddings from index to property graph retriever (#13843)
+- protect instrumentation event/span handlers from each other (#13823)
+- add missing events for completion streaming (#13824)
+- missing callback_manager.on_event_end when there is exception (#13825)
+
+### `llama-index-llms-gemini` [0.1.10]
+
+- use `model` kwarg for model name for gemini (#13791)
+
+### `llama-index-llms-mistralai` [0.1.15]
+
+- Add mistral code model (#13807)
+- update mistral codestral with fill in middle endpoint (#13810)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- 0.5 integrations update (#13848)
+
+### `llama-index-llms-vertex` [0.1.8]
+
+- Safety setting for Pydantic Error for Vertex Integration (#13817)
+
+### `llama-index-readers-smart-pdf-loader` [0.1.5]
+
+- handle path objects in smart pdf reader (#13847)
+
 ## [2024-05-28]
 
 ### `llama-index-core` [0.10.40]
@@ -50,7 +80,7 @@
 ### `llama-index-vector-stores-milvus` [0.1.16]
 
 - Remove FlagEmbedding as Milvus's dependency (#13767)
-Unify the collection construction regardless of the value of enable_sparse (#13773)
+  Unify the collection construction regardless of the value of enable_sparse (#13773)
 
 ### `llama-index-vector-stores-opensearch` [0.1.9]
 
