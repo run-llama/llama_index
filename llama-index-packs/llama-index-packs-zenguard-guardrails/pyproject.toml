@@ -13,8 +13,8 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 # contains_example = false
 import_path = "llama_index.packs.zenguard_guardrails"
 
-# [tool.llamahub.class_authors]
-# CLASS = "github-username"
+[tool.llamahub.class_authors]
+ZenguardGuardrailsPack = "yaksh0nti"
 
 [tool.mypy]
 disallow_untyped_defs = true
