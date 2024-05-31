@@ -3,8 +3,7 @@ from typing import Dict, Generic, List, Optional, TypeVar
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from pydantic import BaseModel, parse_obj_as
-from pydantic.generics import GenericModel
+from llama_index.core.bridge.pydantic import BaseModel, GenericModel, parse_obj_as
 
 NodeType = TypeVar("NodeType")
 
@@ -21,7 +20,7 @@ class PageInfo(BaseModel):
 
 
 class Connection(GenericModel, Generic[NodeType]):
-    nodes: Optional[List[NodeType]]
+    nodes: Optional[List[NodeType]] = None
     edges: Optional[List[Edge[NodeType]]]
     pageInfo: Optional[PageInfo]
     totalCount: Optional[int]
