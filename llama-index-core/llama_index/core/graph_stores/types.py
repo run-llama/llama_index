@@ -57,7 +57,7 @@ class EntityNode(LabelledNode):
     @property
     def id(self) -> str:
         """Get the node id."""
-        return self.name
+        return self.name.replace('"', " ")
 
 
 class ChunkNode(LabelledNode):
@@ -94,7 +94,7 @@ class Relation(BaseModel):
 
     @property
     def id(self) -> str:
-        """Get the node id."""
+        """Get the relation id."""
         return self.label
 
 

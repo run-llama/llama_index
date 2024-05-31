@@ -8,6 +8,7 @@ from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
 from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
+from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMPathExtractor,
@@ -96,11 +97,11 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         # lazily initialize the graph store on the storage context
         if property_graph_store is not None:
             storage_context.property_graph_store = property_graph_store
-        else:
+        elif storage_context.property_graph_store is None:
             storage_context.property_graph_store = SimplePropertyGraphStore()
 
         if vector_store is not None:
-            storage_context.vector_store = vector_store
+            storage_context.vector_stores[DEFAULT_VECTOR_STORE] = vector_store
 
         if embed_kg_nodes and (
             storage_context.property_graph_store.supports_vector_queries
