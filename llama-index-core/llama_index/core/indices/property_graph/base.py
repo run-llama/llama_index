@@ -7,7 +7,11 @@ from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
-from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
+from llama_index.core.graph_stores.types import (
+    KG_NODES_KEY,
+    KG_RELATIONS_KEY,
+    VECTOR_SOURCE_KEY,
+)
 from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
@@ -279,17 +283,18 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
     def _insert_nodes_to_vector_index(self, nodes: List[LabelledNode]) -> None:
         """Insert vector nodes."""
-        llama_nodes = []
+        llama_nodes: List[TextNode] = []
         for node in nodes:
             if node.embedding is not None:
                 llama_nodes.append(
                     TextNode(
-                        id_=node.id,
                         text=str(node),
-                        metadata=node.properties,
+                        metadata={VECTOR_SOURCE_KEY: node.id, **node.properties},
                         embedding=[*node.embedding],
                     )
                 )
+                if not self.vector_store.stores_text:
+                    llama_nodes[-1].id_ = node.id
 
             # clear the embedding to save memory, its not used now
             node.embedding = None
