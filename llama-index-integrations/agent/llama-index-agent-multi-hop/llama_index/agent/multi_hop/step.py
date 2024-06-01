@@ -111,6 +111,7 @@ class MultiHopAgentWorker(BaseAgentWorker):
         llm: LLM,
         retrievers: List[BaseRetriever],
         tools: Optional[Sequence[BaseTool]] = None,
+        structured_context: Optional[StructuredContext] = None,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -120,6 +121,7 @@ class MultiHopAgentWorker(BaseAgentWorker):
         self.tools = tools
         self.verbose = verbose
         self.callback_manager = callback_manager or CallbackManager([])
+        self.structured_context = structured_context
         self._data_extraction_agent_worker = (
             DataExtractionAgentWorker.from_tools_and_retrievers(
                 tools=tools, retrievers=retrievers
@@ -132,6 +134,7 @@ class MultiHopAgentWorker(BaseAgentWorker):
         retrievers: List[BaseRetriever],
         llm: Optional[LLM] = None,
         tools: Optional[Sequence[BaseTool]] = None,
+        structured_context: Optional[StructuredContext] = None,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
@@ -144,6 +147,7 @@ class MultiHopAgentWorker(BaseAgentWorker):
             llm=llm,
             retrievers=retrievers,
             tools=tools,
+            structured_context=structured_context,
             verbose=verbose,
             callback_manager=callback_manager,
         )
@@ -158,35 +162,43 @@ class MultiHopAgentWorker(BaseAgentWorker):
             new_memory.put(message)
 
         # initialize task state
-        task_state = {"new_memory": new_memory}
+        task_state = {
+            "new_memory": new_memory,
+        }
         task.extra_state.update(task_state)
 
         return TaskStep(
-            task_id=task.task_id, step_id=str(uuid.uuid4()), input=task.input
+            task_id=task.task_id,
+            step_id=str(uuid.uuid4()),
+            input=task.input,
+            step_state={"structured_context": self.structured_context},
         )
 
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
-        # generate structured data model to get data requirements based on input
-        data_requirements: DataRequirements = self.llm.structured_predict(
-            DataRequirements,
-            PromptTemplate(DATA_REQUIREMENTS_PROMPT_TEMPLATE),
-            query=task.input,
-        )
-        structured_context_cls = data_requirements.get_structured_context_cls()
+        """Run step."""
+        structured_context = step.step_state["structured_context"]
+        if structured_context is None:
+            # generate structured data model to get data requirements based on input
+            data_requirements: DataRequirements = self.llm.structured_predict(
+                DataRequirements,
+                PromptTemplate(DATA_REQUIREMENTS_PROMPT_TEMPLATE),
+                query=task.input,
+            )
+            structured_context_cls = data_requirements.get_structured_context_cls()
 
-        # generate sub-task for each data requirement
-        sub_task_extra_state = {"structured_context_obj": structured_context_cls()}
-        data_extraction_agent = self._data_extraction_agent_worker.as_agent(
-            extra_state=sub_task_extra_state
-        )
-        data_extraction_response = data_extraction_agent.chat(
-            "Perform data extraction task."
-        )
+            # generate sub-task for each data requirement
+            sub_task_extra_state = {"structured_context_obj": structured_context_cls()}
+            data_extraction_agent = self._data_extraction_agent_worker.as_agent(
+                extra_state=sub_task_extra_state
+            )
+            data_extraction_response = data_extraction_agent.chat(
+                "Perform data extraction task."
+            )
 
-        # try parsing as a structured context obj
-        final_structured_context = structured_context_cls.parse_obj(
-            data_extraction_response.content
-        )
+            # try parsing as a structured context obj
+            final_structured_context = structured_context_cls.parse_obj(
+                data_extraction_response.content
+            )
 
         # perform final response synthesis
         structured_context_augmented_query = ...
