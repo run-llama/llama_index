@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 import cohere
 import httpx
@@ -105,8 +105,7 @@ class CohereEmbedding(BaseEmbedding):
     """CohereEmbedding uses the Cohere API to generate embeddings for text."""
 
     # Instance variables initialized via Pydantic's mechanism
-    cohere_client: cohere.Client = Field(description="CohereAI client")
-    cohere_async_client: cohere.AsyncClient = Field(description="CohereAI Async client")
+    api_key: str = Field(description="The Cohere API key.")
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
     input_type: Optional[str] = Field(
         description="Model Input type. If not provided, search_document and search_query are used when needed."
@@ -115,9 +114,18 @@ class CohereEmbedding(BaseEmbedding):
         description="Embedding type. If not provided float embedding_type is used when needed."
     )
 
+    _client: cohere.Client = PrivateAttr()
+    _async_client: cohere.AsyncClient = PrivateAttr()
+    _base_url: Optional[str] = PrivateAttr()
+    _timeout: Optional[float] = PrivateAttr()
+    _httpx_client: Optional[httpx.Client] = PrivateAttr()
+    _httpx_async_client: Optional[httpx.AsyncClient] = PrivateAttr()
+
     def __init__(
         self,
+        # deprecated
         cohere_api_key: Optional[str] = None,
+        api_key: Optional[str] = None,
         model_name: str = "embed-english-v3.0",
         truncate: str = "END",
         input_type: Optional[str] = None,
@@ -128,12 +136,13 @@ class CohereEmbedding(BaseEmbedding):
         timeout: Optional[float] = None,
         httpx_client: Optional[httpx.Client] = None,
         httpx_async_client: Optional[httpx.AsyncClient] = None,
+        num_workers: Optional[int] = None,
+        **kwargs: Any,
     ):
         """
         A class representation for generating embeddings using the Cohere API.
 
         Args:
-            cohere_client (Any): An instance of the Cohere client, which is used to communicate with the Cohere API.
             truncate (str): A string indicating the truncation strategy to be applied to input text. Possible values
                         are 'START', 'END', or 'NONE'.
             input_type (Optional[str]): An optional string that specifies the type of input provided to the model.
@@ -159,28 +168,47 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            cohere_client=cohere.Client(
-                cohere_api_key,
-                client_name="llama_index",
-                base_url=base_url,
-                timeout=timeout,
-                httpx_client=httpx_client,
-            ),
-            cohere_async_client=cohere.AsyncClient(
-                cohere_api_key,
-                client_name="llama_index",
-                base_url=base_url,
-                timeout=timeout,
-                httpx_client=httpx_async_client,
-            ),
-            cohere_api_key=cohere_api_key,
+            api_key=api_key or cohere_api_key,
             model_name=model_name,
             input_type=input_type,
             embedding_type=embedding_type,
             truncate=truncate,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            num_workers=num_workers,
+            **kwargs,
         )
+
+        self._client = None
+        self._async_client = None
+        self._base_url = base_url
+        self._timeout = timeout
+        self._httpx_client = httpx_client
+        self._httpx_async_client = httpx_async_client
+
+    def _get_client(self) -> cohere.Client:
+        if self._client is None:
+            self._client = cohere.Client(
+                api_key=self.api_key,
+                client_name="llama_index",
+                base_url=self._base_url,
+                timeout=self._timeout,
+                httpx_client=self._httpx_client,
+            )
+
+        return self._client
+
+    def _get_async_client(self) -> cohere.AsyncClient:
+        if self._async_client is None:
+            self._async_client = cohere.AsyncClient(
+                api_key=self.api_key,
+                client_name="llama_index",
+                base_url=self._base_url,
+                timeout=self._timeout,
+                httpx_client=self._httpx_async_client,
+            )
+
+        return self._async_client
 
     @classmethod
     def class_name(cls) -> str:
@@ -188,8 +216,10 @@ class CohereEmbedding(BaseEmbedding):
 
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
+        client = self._get_client()
+
         if self.model_name in V3_MODELS:
-            result = self.cohere_client.embed(
+            result = client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
                 embedding_types=[self.embedding_type],
@@ -197,7 +227,7 @@ class CohereEmbedding(BaseEmbedding):
                 truncate=self.truncate,
             ).embeddings
         else:
-            result = self.cohere_client.embed(
+            result = client.embed(
                 texts=texts,
                 model=self.model_name,
                 embedding_types=[self.embedding_type],
@@ -207,9 +237,11 @@ class CohereEmbedding(BaseEmbedding):
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
+        async_client = self._get_async_client()
+
         if self.model_name in V3_MODELS:
             result = (
-                await self.cohere_async_client.embed(
+                await async_client.embed(
                     texts=texts,
                     input_type=self.input_type or input_type,
                     embedding_types=[self.embedding_type],
@@ -219,7 +251,7 @@ class CohereEmbedding(BaseEmbedding):
             ).embeddings
         else:
             result = (
-                await self.cohere_async_client.embed(
+                await async_client.embed(
                     texts=texts,
                     model=self.model_name,
                     embedding_types=[self.embedding_type],
