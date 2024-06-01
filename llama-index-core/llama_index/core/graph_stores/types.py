@@ -17,6 +17,7 @@ DEFAULT_PERSIST_FNAME = "graph_store.json"
 DEFUALT_PG_PERSIST_FNAME = "property_graph_store.json"
 
 TRIPLET_SOURCE_KEY = "triplet_source_id"
+VECTOR_SOURCE_KEY = "vector_source_id"
 KG_NODES_KEY = "nodes"
 KG_RELATIONS_KEY = "relations"
 KG_SOURCE_REL = "SOURCE"
