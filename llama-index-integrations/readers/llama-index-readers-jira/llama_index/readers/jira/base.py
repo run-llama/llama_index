@@ -15,6 +15,11 @@ class Oauth2(TypedDict):
     api_token: str
 
 
+class PATauth(TypedDict):
+    server_url: str
+    api_token: str
+
+
 class JiraReader(BaseReader):
     """Jira reader. Reads data from Jira issues from passed query.
 
@@ -28,6 +33,10 @@ class JiraReader(BaseReader):
             "cloud_id": "cloud_id",
             "api_token": "token"
         }
+        Optional patauth:{
+            "server_url": "server_url",
+            "api_token": "token"
+        }
     """
 
     def __init__(
@@ -37,6 +46,7 @@ class JiraReader(BaseReader):
         server_url: Optional[str] = None,
         BasicAuth: Optional[BasicAuth] = None,
         Oauth2: Optional[Oauth2] = None,
+        PATauth: Optional[PATauth] = None,
     ) -> None:
         from jira import JIRA
 
@@ -53,6 +63,14 @@ class JiraReader(BaseReader):
                 "headers": {"Authorization": f"Bearer {Oauth2['api_token']}"},
             }
             self.jira = JIRA(options=options)
+
+        if PATauth:
+            options = {
+                "server": PATauth["server_url"],
+                "headers": {"Authorization": f"Bearer {PATauth['api_token']}"},
+            }
+            self.jira = JIRA(options=options)
+
         else:
             self.jira = JIRA(
                 basic_auth=(BasicAuth["email"], BasicAuth["api_token"]),
