@@ -185,7 +185,7 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
             name="merge_data_extractions",
             input="Use the provided data to fill in the StructuredContext data class.",
             expected_output="A StructuredContext object.",
-            dependencies=data_requirements.data_field_names,
+            dependencies=[*structured_context_cls.schema()["properties"].keys()],
         )
 
         # final structured context-augmentation query response task
