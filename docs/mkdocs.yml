@@ -433,6 +433,7 @@ nav:
           - ./examples/property_graph/property_graph_advanced.ipynb
           - ./examples/property_graph/property_graph_custom_retriever.ipynb
           - ./examples/property_graph/property_graph_neo4j.ipynb
+          - ./examples/property_graph/graph_store.ipynb
       - Query Engines:
           - ./examples/query_engine/knowledge_graph_rag_query_engine.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
