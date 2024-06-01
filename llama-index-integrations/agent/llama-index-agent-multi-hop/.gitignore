@@ -154,3 +154,6 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
+
+# data
+data/

@@ -1,29 +1,34 @@
 """MultiHop Planner Agent."""
 
+import json
 import logging
 import uuid
 import re
 
+from typing import Any, List, Optional, Sequence, Tuple, Type, TypeAlias, Union
+from llama_index.core.agent.types import (
+    BaseAgentWorker,
+)
 from llama_index.core.agent.runner.planner import (
     SubTask,
     Plan,
     PlannerAgentState,
     BasePlanningAgentRunner,
 )
-
-
-from typing import Any, List, Optional, Sequence, Tuple, Type, TypeAlias
-
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator, create_model
 from llama_index.core.callbacks import (
     CallbackManager,
 )
+from llama_index.core.chat_engine.types import (
+    AGENT_CHAT_RESPONSE_TYPE,
+    ChatResponseMode,
+)
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.tools import BaseTool
-
-from llama_index.agent.multi_hop.data_extraction import DataExtractionAgentWorker
+from llama_index.core.settings import Settings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -93,59 +98,65 @@ class DataRequirements(BaseModel):
         return StructuredContext
 
 
-def _get_query_str_from_structured_context_cls(
-    structured_context_cls: Type[StructuredContext],
-) -> str:
-    """Generate query string from a structure context class."""
-    query_str = ""
-    for props in structured_context_cls.schema()["properties"].values():
-        query_str += f"{props['description']}\n\n"
-    return query_str
-
-
 class MultiHopPlannerAgent(BasePlanningAgentRunner):
     """MultiHop Planner Agent Runner."""
 
     def __init__(
         self,
-        llm: LLM,
-        retrievers: List[BaseRetriever],
+        agent_worker: BaseAgentWorker,
+        chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        llm: Optional[LLM] = None,
         tools: Optional[Sequence[BaseTool]] = None,
         structured_context: Optional[StructuredContext] = None,
         state: Optional[PlannerAgentState] = None,
+        init_task_state_kwargs: Optional[dict] = None,
+        delete_task_on_finish: bool = False,
+        default_tool_choice: str = "auto",
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Init params."""
-        self.llm = llm
-        self.retrievers = retrievers
+        self.agent_worker = agent_worker
+        self.llm = llm or Settings.llm
+        self.memory = memory or ChatMemoryBuffer.from_defaults(chat_history, llm=llm)
         self.tools = tools
+        self.init_task_state_kwargs = init_task_state_kwargs or {}
+        self.delete_task_on_finish = delete_task_on_finish
+        self.default_tool_choice = default_tool_choice
         self.verbose = verbose
         self.callback_manager = callback_manager or CallbackManager([])
         self.structured_context = structured_context
         self.state = state or PlannerAgentState()
-        self._data_extraction_agent_worker = (
-            DataExtractionAgentWorker.from_tools_and_retrievers(
-                tools=tools, retrievers=retrievers
-            )
-        )
 
-    def _create_sub_tasks_from_data_requirements(
-        self, data_requirements: DataRequirements
+    def _create_sub_tasks_from_structured_context_cls(
+        self, structured_context_cls: Type[StructuredContext]
     ) -> List[SubTask]:
-        """Create SubTasks from a DataRequirements object."""
+        """Create data extraction subtasks from dynamic structured context class."""
         return [
             SubTask(
                 name=field,
                 input="Extract this data field.",
-                expected_output=field_desc,
+                expected_output=field_props["description"],
                 dependencies=[],
             )
-            for field, field_desc in zip(
-                data_requirements.data_field_names,
-                data_requirements.data_field_descriptions,
-            )
+            for field, field_props in structured_context_cls.schema()[
+                "properties"
+            ].items()
         ]
+
+    def get_next_tasks(self, plan_id: str, **kwargs: Any) -> List[str]:
+        """Get next task ids for a given plan."""
+        upcoming_sub_tasks = self.state.get_next_sub_tasks(plan_id)
+        return [sub_task.name for sub_task in upcoming_sub_tasks]
+
+    def mark_task_complete(self, plan_id: str, task_id: str, **kwargs: Any) -> None:
+        """Mark task complete for a given plan."""
+        sub_tasks_by_id = {
+            sub_task.name: sub_task
+            for sub_task in self.state.plan_dict[plan_id].sub_tasks
+        }
+        self.state.add_completed_sub_task(plan_id, sub_tasks_by_id[task_id])
 
     def create_plan(self, input: str, **kwargs: Any) -> str:
         """Create plan. Returns the plan id."""
@@ -155,10 +166,11 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
             PromptTemplate(DATA_REQUIREMENTS_PROMPT_TEMPLATE),
             query=input,
         )
+        structured_context_cls = data_requirements.get_structured_context_cls()
 
         # generate sub-task for each data requirement
-        data_extraction_sub_tasks = self._create_sub_tasks_from_data_requirements(
-            data_requirements
+        data_extraction_sub_tasks = self._create_sub_tasks_from_structured_context_cls(
+            structured_context_cls
         )
 
         # merge data extraction results sub-task
@@ -187,6 +199,10 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
 
         if self.verbose:
             print(f"=== Initial plan ===")
+            print(f"## Structured Context")
+            print(json.dumps(structured_context_cls.schema(), indent=4))
+            print()
+            print(f"## Sub Tasks")
             for sub_task in plan.sub_tasks:
                 print(
                     f"{sub_task.name}:\n{sub_task.input} -> {sub_task.expected_output}\ndeps: {sub_task.dependencies}\n\n"
@@ -200,6 +216,35 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
 
         return plan_id
 
+    def refine_plan(self, input: str, plan_id: str, **kwargs: Any) -> None:
+        return
+
+    def run_task(
+        self,
+        task_id: str,
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Run a task."""
+        while True:
+            # pass step queue in as argument, assume step executor is stateless
+            cur_step_output = self._run_step(
+                task_id, mode=mode, tool_choice=tool_choice
+            )
+
+            if cur_step_output.is_last:
+                result_output = cur_step_output
+                break
+
+            # ensure tool_choice does not cause endless loops
+            tool_choice = "auto"
+
+        return self.finalize_response(
+            task_id,
+            result_output,
+        )
+
     async def acreate_plan(self, input: str, **kwargs: Any) -> str:
         """Create plan (async). Returns the plan id."""
         # generate structured data model to get data requirements based on input
@@ -208,10 +253,11 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
             PromptTemplate(DATA_REQUIREMENTS_PROMPT_TEMPLATE),
             query=input,
         )
+        structured_context_cls = data_requirements.get_structured_context_cls()
 
         # generate sub-task for each data requirement
-        data_extraction_sub_tasks = self._create_sub_tasks_from_data_requirements(
-            data_requirements
+        data_extraction_sub_tasks = self._create_sub_tasks_from_structured_context_cls(
+            structured_context_cls
         )
 
         # merge data extraction results sub-task
@@ -240,6 +286,10 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
 
         if self.verbose:
             print(f"=== Initial plan ===")
+            print(f"## Structured Context")
+            print(json.dumps(structured_context_cls.schema(), indent=4))
+            print()
+            print(f"## Sub Tasks")
             for sub_task in plan.sub_tasks:
                 print(
                     f"{sub_task.name}:\n{sub_task.input} -> {sub_task.expected_output}\ndeps: {sub_task.dependencies}\n\n"
