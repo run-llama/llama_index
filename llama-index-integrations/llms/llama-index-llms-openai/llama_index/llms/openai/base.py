@@ -83,17 +83,17 @@ def llm_retry_decorator(f: Callable[[Any], Any]) -> Callable[[Any], Any]:
     @functools.wraps(f)
     def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         max_retries = getattr(self, "max_retries", 0)
-        if max_retries > 0:
-            retry = create_retry_decorator(
-                max_retries=max_retries,
-                random_exponential=True,
-                stop_after_delay_seconds=60,
-                min_seconds=1,
-                max_seconds=20,
-            )
-            nonlocal f
-            f = retry(f)
-        return f(self, *args, **kwargs)
+        if max_retries <= 0:
+            return f(self, *args, **kwargs)
+
+        retry = create_retry_decorator(
+            max_retries=max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+        return retry(f)(self, *args, **kwargs)
 
     return wrapper
 
