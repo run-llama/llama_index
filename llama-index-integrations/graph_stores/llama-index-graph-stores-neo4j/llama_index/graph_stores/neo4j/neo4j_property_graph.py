@@ -353,8 +353,10 @@ class Neo4jPGStore(PropertyGraphStore):
 
         nodes = []
         for record in response:
-            if "text" in record["properties"]:
-                text = record["properties"].pop("text")
+            # text indicates a chunk node
+            # none on the type indicates an implicit node, likely a chunk node
+            if "text" in record["properties"] or record["type"] is None:
+                text = record["properties"].pop("text", "")
                 nodes.append(
                     ChunkNode(
                         id_=record["name"],
