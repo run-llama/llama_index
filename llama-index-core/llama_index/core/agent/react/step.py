@@ -319,7 +319,7 @@ class ReActAgentWorker(BaseAgentWorker):
         if len(current_reasoning) == 0:
             raise ValueError("No reasoning steps were taken.")
         elif len(current_reasoning) == self._max_iterations:
-            raise ValueError("Reached max iterations.")
+            raise TimeoutError("Reached max iterations.")
 
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
             response_step = cast(ResponseReasoningStep, current_reasoning[-1])
