@@ -155,7 +155,59 @@ class MultiHopPlannerAgent(BasePlanningAgentRunner):
             PromptTemplate(DATA_REQUIREMENTS_PROMPT_TEMPLATE),
             query=input,
         )
-        structured_context_cls = data_requirements.get_structured_context_cls()
+
+        # generate sub-task for each data requirement
+        data_extraction_sub_tasks = self._create_sub_tasks_from_data_requirements(
+            data_requirements
+        )
+
+        # merge data extraction results sub-task
+        merge_sub_task = SubTask(
+            name="merge_data_extractions",
+            input="Use the provided data to fill in the StructuredContext data class.",
+            expected_output="A StructuredContext object.",
+            dependencies=data_requirements.data_field_names,
+        )
+
+        # final structured context-augmentation query response task
+        query_response_task = SubTask(
+            name="query_response_tasks",
+            input=input,
+            expected_output="Response to the query.",
+            dependencies=[
+                *data_requirements.data_field_names,
+                "merge_data_extractions",
+            ],
+        )
+
+        # plan
+        plan = Plan(
+            sub_tasks=[*data_extraction_sub_tasks, merge_sub_task, query_response_task]
+        )
+
+        if self.verbose:
+            print(f"=== Initial plan ===")
+            for sub_task in plan.sub_tasks:
+                print(
+                    f"{sub_task.name}:\n{sub_task.input} -> {sub_task.expected_output}\ndeps: {sub_task.dependencies}\n\n"
+                )
+
+        plan_id = str(uuid.uuid4())
+        self.state.plan_dict[plan_id] = plan
+
+        for sub_task in plan.sub_tasks:
+            self.create_task(sub_task.input, task_id=sub_task.name)
+
+        return plan_id
+
+    async def acreate_plan(self, input: str, **kwargs: Any) -> str:
+        """Create plan (async). Returns the plan id."""
+        # generate structured data model to get data requirements based on input
+        data_requirements: DataRequirements = await self.llm.astructured_predict(
+            DataRequirements,
+            PromptTemplate(DATA_REQUIREMENTS_PROMPT_TEMPLATE),
+            query=input,
+        )
 
         # generate sub-task for each data requirement
         data_extraction_sub_tasks = self._create_sub_tasks_from_data_requirements(
