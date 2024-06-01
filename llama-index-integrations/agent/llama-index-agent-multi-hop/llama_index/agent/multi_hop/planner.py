@@ -45,10 +45,14 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 DATA_REQUIREMENTS_PROMPT_TEMPLATE = """
-You are responsible for identifying the data requirements for
-sufficiently answering the query provided below. Make sure to
-also include the direct object of the query itself as a data field
-requirement.
+You have access to an all-knowing database of facts in order to answer queries.
+
+As such, your first step is generate a set of sub questions that you think are
+necessary to answer the original query. Store your sub questions in the data class.
+
+Next, make sure to convert each sub question into a data field requirement and store it in the data class.
+
+Finally, convert the original query itself as a data field requirement and store it in the data class.
 
 {query}
 """
@@ -64,6 +68,9 @@ class DataRequirements(BaseModel):
     data_field_descriptions: List[str] = Field(
         default_factory=list,
         description="Corresponding descriptions of each data field name.",
+    )
+    sub_questions: List[str] = Field(
+        default_factory=list, description="Sub questions to the original query."
     )
 
     @validator("data_field_descriptions")
