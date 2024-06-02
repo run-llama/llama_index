@@ -348,7 +348,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     self._table_name, data, mode=self.mode
                 )
 
-            self._table.add(data, mode=self.mode)
+            self._table.add(data)
             self._fts_index = None  # reset fts index
 
         return ids
