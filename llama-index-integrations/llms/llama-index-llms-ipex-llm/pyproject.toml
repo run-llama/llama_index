@@ -33,7 +33,7 @@ readme = "README.md"
 version = "0.1.6"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.41"
 ipex-llm = {allow-prereleases = true, extras = ["llama-index"], version = ">=2.1.0b20240529"}
 torch = {optional = true, source = "ipex-xpu-src-us", version = "2.1.0a0"}
