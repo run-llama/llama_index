@@ -239,12 +239,12 @@ class OpensearchVectorClient:
         Returns:
             Up to k docs closest to query_embedding
         """
-        if filters is None:
+        pre_filter = self._parse_filters(filters)
+        if not pre_filter:
             search_query = self._default_approximate_search_query(
                 query_embedding, k, vector_field=embedding_field
             )
         else:
-            pre_filter = self._parse_filters(filters)
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
             search_query = self._default_painless_scripting_query(
                 query_embedding,
@@ -388,17 +388,20 @@ class OpensearchVectorClient:
             )
             params = {
                 "search_pipeline": self._search_pipeline,
-                "_source_excludes": ["embedding"],
             }
         else:
             search_query = self._knn_search_query(
                 self._embedding_field, query_embedding, k, filters=filters
             )
-            params = {"_source_excludes": ["embedding"]}
+            params = None
 
         res = await self._os_client.search(
             index=self._index, body=search_query, params=params
         )
+
+        return self._to_query_result(res)
+
+    def _to_query_result(self, res) -> VectorStoreQueryResult:
         nodes = []
         ids = []
         scores = []
@@ -433,6 +436,7 @@ class OpensearchVectorClient:
             ids.append(node_id)
             nodes.append(node)
             scores.append(hit["_score"])
+
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
 
