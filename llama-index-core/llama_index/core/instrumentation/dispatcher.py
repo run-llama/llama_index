@@ -2,6 +2,7 @@ from contextvars import Token
 from typing import Any, List, Optional, Dict, Protocol
 import inspect
 import uuid
+from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import active_span_id
@@ -108,6 +109,14 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
+    @deprecated(
+        version="0.10.41",
+        reason=(
+            "`get_dispatch_event()` has been deprecated in favor of using `event()` directly."
+            " If running into this warning through an integration package, then please "
+            "update your integration to the latest version."
+        ),
+    )
     def get_dispatch_event(self) -> EventDispatcher:
         """Keep for backwards compatibility.
 
