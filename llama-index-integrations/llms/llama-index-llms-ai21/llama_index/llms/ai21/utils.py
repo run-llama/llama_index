@@ -1,6 +1,8 @@
 from typing import Union
 
-COMPLETE_MODELS = {"j2-light": 8191, "j2-mid": 8191, "j2-ultra": 8191}
+JAMBA_MODELS = {
+    "jamba-instruct": 256_000,
+}
 
 
 def ai21_model_to_context_size(model: str) -> Union[int, None]:
@@ -13,9 +15,9 @@ def ai21_model_to_context_size(model: str) -> Union[int, None]:
         The maximum context size
 
     """
-    token_limit = COMPLETE_MODELS.get(model, None)
+    token_limit = JAMBA_MODELS.get(model, None)
 
     if token_limit is None:
-        raise ValueError(f"Model name {model} not found in {COMPLETE_MODELS.keys()}")
+        raise ValueError(f"Model name {model} not found in {JAMBA_MODELS.keys()}")
 
     return token_limit
