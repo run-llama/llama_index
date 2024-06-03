@@ -3,15 +3,18 @@ from typing import Any, List, Optional, Union
 
 import nomic
 import nomic.embed
+import warnings
+from PIL import Image
 import torch
 from llama_index.core.base.embeddings.base import (
-    BaseEmbedding,
     DEFAULT_EMBED_BATCH_SIZE,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.huggingface.pooling import Pooling
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.core.schema import ImageType
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 
@@ -29,7 +32,7 @@ class NomicInferenceMode(str, Enum):
     DYNAMIC = "dynamic"
 
 
-class NomicEmbedding(BaseEmbedding):
+class NomicEmbedding(MultiModalEmbedding):
     """NomicEmbedding uses the Nomic API to generate embeddings."""
 
     query_task_type: Optional[NomicTaskType] = Field(
@@ -77,7 +80,11 @@ class NomicEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "NomicEmbedding"
 
-    def _embed(
+    def load_images(self, image_paths: List[ImageType]) -> List[Image.Image]:
+        """Load images from the specified paths."""
+        return [Image.open(image_path).convert("RGB") for image_path in image_paths]
+
+    def _embed_text(
         self, texts: List[str], task_type: Optional[str] = None
     ) -> List[List[float]]:
         result = nomic.embed.text(
@@ -88,6 +95,11 @@ class NomicEmbedding(BaseEmbedding):
             inference_mode=self.inference_mode,
             device=self.device,
         )
+        return result["embeddings"]
+
+    def _embed_image(self, images_paths: List[ImageType]) -> List[List[float]]:
+        images = self.load_images(images_paths)
+        result = nomic.embed.image(images)
         return result["embeddings"]
 
     def _get_query_embedding(self, query: str) -> List[float]:
@@ -106,6 +118,16 @@ class NomicEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         return self._embed(texts, task_type=self.document_task_type)
+
+    def _get_image_embedding(self, image: ImageType) -> List[float]:
+        return self._embed_image([image])[0]
+
+    async def _aget_image_embedding(self, image: ImageType) -> List[float]:
+        self._warn_async()
+        return self._get_image_embedding(image)
+
+    def _get_imag_embeddings(self, images: List[ImageType]) -> List[List[float]]:
+        return self._embed_image(images)
 
     def _warn_async() -> None:
         warnings.warn(
