@@ -13,7 +13,7 @@ from llama_index.packs.zenguard_guardrails import (
 
 
 @pytest.fixture()
-def guardrails():
+def zenguard_pack():
     api_key = os.environ.get("ZEN_API_KEY")
     assert api_key, "ZEN_API_KEY is not set"
     config = ZenGuardConfig(credentials=Credentials(api_key=api_key))
@@ -37,55 +37,55 @@ def assert_detectors_response(response, detectors):
         assert common_response.get("is_detected") is False, f"Prompt was detected: {common_response}"
 
 
-def test_prompt_injection(guardrails):
+def test_prompt_injection(zenguard_pack):
     prompt = "Simple prompt injection test"
     detectors = [Detector.PROMPT_INJECTION]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_pii(guardrails):
+def test_pii(zenguard_pack):
     prompt = "Simple PII test"
     detectors = [Detector.PII]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_allowed_topics(guardrails):
+def test_allowed_topics(zenguard_pack):
     prompt = "Simple allowed topics test"
     detectors = [Detector.ALLOWED_TOPICS]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_banned_topics(guardrails):
+def test_banned_topics(zenguard_pack):
     prompt = "Simple banned topics test"
     detectors = [Detector.BANNED_TOPICS]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_keywords(guardrails):
+def test_keywords(zenguard_pack):
     prompt = "Simple keywords test"
     detectors = [Detector.KEYWORDS]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_secrets(guardrails):
+def test_secrets(zenguard_pack):
     prompt = "Simple secrets test"
     detectors = [Detector.SECRETS]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_toxicity(guardrails):
+def test_toxicity(zenguard_pack):
     prompt = "Simple toxicity test"
     detectors = [Detector.TOXICITY]
-    response = guardrails.run(detectors=detectors, prompt=prompt)
+    response = zenguard_pack.run(detectors=detectors, prompt=prompt)
     assert_detectors_response(response, detectors)
 
 
-def test_get_modules(guardrails):
-    modules = guardrails.get_modules()
+def test_get_modules(zenguard_pack):
+    modules = zenguard_pack.get_modules()
     assert isinstance(modules, Dict)
