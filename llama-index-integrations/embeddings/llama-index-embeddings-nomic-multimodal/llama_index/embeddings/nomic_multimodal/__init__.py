@@ -1,3 +1,3 @@
-from llama_index.embeddings.nomic.base import NomicMultiModalEmbedding
+from llama_index.embeddings.nomic_multimodal.base import NomicMultiModalEmbedding
 
 __all__ = ["NomicMultiModalEmbedding"]
