@@ -12,10 +12,10 @@ contains_example = false
 import_path = "llama_index.indices.managed.vertexai"
 
 [tool.llamahub.class_authors]
-VertexAIIndex = "llama-index"
+VertexAIIndex = "holtskinner"
 
 [tool.llamahub.secondary_class_authors]
-VertexAIRetriever = "llama-index"
+VertexAIRetriever = "holtskinner"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -36,6 +36,7 @@ version = "0.0.1"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llamaindex-py-client = "^0.1.19"
+google-cloud-aiplatform = "^1.53.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
