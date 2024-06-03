@@ -1,4 +1,4 @@
-from llama_index.core.base.embeddings.base import MultiModalEmbedding
+from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.embeddings.nomic_multimodal import NomicMultiModalEmbedding
 
 
