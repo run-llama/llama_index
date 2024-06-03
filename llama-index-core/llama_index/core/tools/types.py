@@ -3,6 +3,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from llama_index.core import instrumentation
+
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
@@ -175,6 +177,17 @@ class AsyncBaseTool(BaseTool):
         Should also be implemented by the tool developer as an
         async-compatible implementation.
         """
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        """
+        Decorate the abstract methods' implementations for each subclass.
+        `__init_subclass__` is analogous to `__init__` because classes are also objects.
+        """
+        super().__init_subclass__(**kwargs)
+        dispatcher = instrumentation.get_dispatcher(cls.__module__)
+        for attr in ("call", "acall"):
+            if callable(method := cls.__dict__.get(attr)):
+                setattr(cls, attr, dispatcher.span(method))
 
 
 class BaseToolAsyncAdapter(AsyncBaseTool):
