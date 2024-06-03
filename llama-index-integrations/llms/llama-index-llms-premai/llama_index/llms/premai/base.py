@@ -199,30 +199,25 @@ class PremAI(LLM):
         if not response.choices:
             raise ChatPremError("ChatResponse must have at least one candidate")
 
-        chat_responses: Sequence[ChatResponse] = []
+        choice = response.choices[0]
+        role = choice.message.role
 
-        for choice in response.choices:
-            role = choice.message.role
-            if role is None:
-                raise ChatPremError(f"ChatResponse {choice} must have a role.")
-            content = choice.message.content or ""
-            chat_responses.append(
-                ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    raw={
-                        "role": role,
-                        "content": content,
-                        "document_chunks": [
-                            chunk.to_dict() for chunk in response.document_chunks
-                        ],
-                    },
-                )
-            )
+        if role is None:
+            raise ChatPremError(f"ChatResponse {choice} must have a role.")
+        content = choice.message.content or ""
 
-        if "is_completion" in kwargs:
-            return chat_responses[0]
-
-        return chat_responses
+        chat_response = ChatResponse(
+            message=ChatMessage(role=role, content=content),
+            raw={
+                "role": role,
+                "content": content,
+                "document_chunks": [
+                    chunk.to_dict() for chunk in response.document_chunks
+                ],
+            },
+        )
+        print(chat_response)
+        return chat_response
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
