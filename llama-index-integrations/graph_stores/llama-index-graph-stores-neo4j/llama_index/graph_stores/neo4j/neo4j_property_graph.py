@@ -70,7 +70,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
-class Neo4jPGStore(PropertyGraphStore):
+class Neo4jPropertyGraphStore(PropertyGraphStore):
     r"""
     Neo4j Property Graph Store.
 
@@ -102,10 +102,10 @@ class Neo4jPGStore(PropertyGraphStore):
 
         ```python
         from llama_index.core.indices.property_graph import PropertyGraphIndex
-        from llama_index.graph_stores.neo4j import Neo4jLPGStore
+        from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
 
-        # Create a Neo4jLPGStore instance
-        graph_store = Neo4jLPGStore(
+        # Create a Neo4jPropertyGraphStore instance
+        graph_store = Neo4jPropertyGraphStore(
             username="neo4j",
             password="neo4j",
             url="bolt://localhost:7687",
@@ -865,3 +865,6 @@ class Neo4jPGStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+
+Neo4jPGStore = Neo4jPropertyGraphStore
