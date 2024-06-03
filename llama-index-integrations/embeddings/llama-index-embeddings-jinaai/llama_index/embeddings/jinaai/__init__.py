@@ -1,3 +1,3 @@
-from llama_index.embeddings.jinaai.base import JinaEmbedding, JinaMultiModalEmbedding
+from llama_index.embeddings.jinaai.base import JinaEmbedding
 
-__all__ = ["JinaEmbedding", "JinaMultiModalEmbedding"]
+__all__ = ["JinaEmbedding"]

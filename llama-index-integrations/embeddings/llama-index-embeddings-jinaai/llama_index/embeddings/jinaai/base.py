@@ -7,10 +7,7 @@ import base64
 import requests
 import numpy as np
 
-from llama_index.core.base.embeddings.base import (
-    DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
-)
+from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
@@ -113,7 +110,19 @@ class _JinaAPICaller:
                 return [result["embedding"] for result in sorted_embeddings]
 
 
-class JinaEmbedding(BaseEmbedding):
+def is_local(url):
+    url_parsed = urlparse(url)
+    if url_parsed.scheme in ("file", ""):  # Possibly a local file
+        return exists(url_parsed.path)
+    return False
+
+
+def get_bytes_str(file_path):
+    with open(file_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
+
+class JinaEmbedding(MultiModalEmbedding):
     """
     JinaAI class for embeddings.
 
@@ -164,92 +173,6 @@ class JinaEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "JinaAIEmbedding"
-
-    def _get_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding."""
-        return self._api.get_embeddings(
-            input=[query], encoding_type=self._encoding_queries
-        )[0]
-
-    async def _aget_query_embedding(self, query: str) -> List[float]:
-        """The asynchronous version of _get_query_embedding."""
-        result = await self._api.aget_embeddings(
-            input=[query], encoding_type=self._encoding_queries
-        )
-        return result[0]
-
-    def _get_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding."""
-        return self._get_text_embeddings([text])[0]
-
-    async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Asynchronously get text embedding."""
-        result = await self._aget_text_embeddings([text])
-        return result[0]
-
-    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        return self._api.get_embeddings(
-            input=texts, encoding_type=self._encoding_documents
-        )
-
-    async def _aget_text_embeddings(
-        self,
-        texts: List[str],
-    ) -> List[List[float]]:
-        return await self._api.aget_embeddings(
-            input=texts, encoding_type=self._encoding_documents
-        )
-
-
-def is_local(url):
-    url_parsed = urlparse(url)
-    if url_parsed.scheme in ("file", ""):  # Possibly a local file
-        return exists(url_parsed.path)
-    return False
-
-
-def get_bytes_str(file_path):
-    with open(file_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
-
-
-class JinaMultiModalEmbedding(MultiModalEmbedding):
-    """
-    JinaAI class for MultiModal embeddings.
-
-    Args:
-        model (str): Model for embedding.
-            Defaults to `jina-embeddings-v2-base-en`
-    """
-
-    api_key: str = Field(default=None, description="The JinaAI API key.")
-    model: str = Field(
-        default="jina-embeddings-v2-base-en",
-        description="The model to use when calling Jina AI API",
-    )
-
-    _api: Any = PrivateAttr()
-
-    def __init__(
-        self,
-        model: str = "jina-clip-v1",
-        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-        api_key: Optional[str] = None,
-        callback_manager: Optional[CallbackManager] = None,
-        **kwargs,
-    ) -> None:
-        super().__init__(
-            embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
-            model=model,
-            api_key=api_key,
-            **kwargs,
-        )
-        self._api = _JinaAPICaller(model=model, api_key=api_key)
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "JinaMultiModalEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
