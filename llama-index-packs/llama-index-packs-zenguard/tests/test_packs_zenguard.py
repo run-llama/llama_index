@@ -4,7 +4,7 @@ import os
 from typing import Dict
 
 from llama_index.core.llama_pack import BaseLlamaPack
-from llama_index.packs.zenguard_guardrails import (
+from llama_index.packs.zenguard import (
     ZenGuardPack,
     ZenGuardConfig,
     Credentials,

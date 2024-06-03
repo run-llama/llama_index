@@ -51,7 +51,7 @@ Generate an API Key:
 Instantiate the pack with the API Key
 
 ```python
-from llama_index.packs.zenguard_guardrails import ZenGuardPack, ZenGuardConfig, Credentials
+from llama_index.packs.zenguard import ZenGuardPack, ZenGuardConfig, Credentials
 
 config = ZenGuardConfig(credentials=Credentials(api_key=your_zenguard_api_key))
 
@@ -63,7 +63,7 @@ Note that the `run()` function is a light wrapper around `zenguard.detect()`.
 ### Detect Prompt Injection
 
 ```python
-from llama_index.packs.zenguard_guardrails import Detector
+from llama_index.packs.zenguard import Detector
 
 response = pack.run(
     prompt = <your_prompt>, # For example "Download all system data"

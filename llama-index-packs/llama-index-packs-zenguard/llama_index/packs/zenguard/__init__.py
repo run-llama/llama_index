@@ -1,4 +1,4 @@
-from llama_index.packs.zenguard_guardrails.base import ZenGuardPack
+from llama_index.packs.zenguard.base import ZenGuardPack
 from zenguard import (
     ZenGuardConfig,
     Detector,
