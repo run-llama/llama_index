@@ -128,7 +128,9 @@ class TestWasonxLLMInference:
             _ = WatsonxLLM(model=self.TEST_MODEL, project_id=self.TEST_PROJECT_ID)
 
         # Cloud scenario
-        with pytest.raises(ValueError, match=r"^Did not find apikey,") as e_info:
+        with pytest.raises(
+            ValueError, match=r"^Did not find 'apikey' or 'token',"
+        ) as e_info:
             _ = WatsonxLLM(
                 model=self.TEST_MODEL,
                 url=self.TEST_URL,

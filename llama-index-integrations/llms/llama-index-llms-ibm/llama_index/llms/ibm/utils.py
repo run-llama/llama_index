@@ -16,12 +16,12 @@ except ImportError:
 
 def resolve_watsonx_credentials(
     *,
-    url: Optional[SecretStr] = None,
-    apikey: Optional[SecretStr] = None,
-    token: Optional[SecretStr] = None,
-    username: Optional[SecretStr] = None,
-    password: Optional[SecretStr] = None,
-    instance_id: Optional[SecretStr] = None
+    url: Optional[str] = None,
+    apikey: Optional[str] = None,
+    token: Optional[str] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    instance_id: Optional[str] = None
 ) -> Dict[str, SecretStr]:
     """
     Resolve watsonx.ai credentials. If the value of given param is None
@@ -30,7 +30,7 @@ def resolve_watsonx_credentials(
 
     :raises ValueError: raises when value of required attribute is not found
     :return: Dictionary with resolved credentials items
-    :rtype: Dict[str, Any]
+    :rtype: Dict[str, SecretStr]
     """
     creds = {}
     creds["url"] = convert_to_secret_str(
@@ -38,9 +38,25 @@ def resolve_watsonx_credentials(
     )
 
     if creds["url"].get_secret_value().endswith("cloud.ibm.com"):
-        creds["apikey"] = convert_to_secret_str(
-            get_from_param_or_env("apikey", apikey, "WATSONX_APIKEY")
-        )
+        if not (apikey or "WATSONX_APIKEY" in os.environ) and not (
+            token or "WATSONX_TOKEN" in os.environ
+        ):
+            raise ValueError(
+                "Did not find 'apikey' or 'token',"
+                " please add an environment variable"
+                " `WATSONX_APIKEY` or 'WATSONX_TOKEN' "
+                "which contains it,"
+                " or pass 'apikey' or 'token'"
+                " as a named parameter."
+            )
+        elif apikey or "WATSONX_APIKEY" in os.environ:
+            creds["apikey"] = convert_to_secret_str(
+                get_from_param_or_env("apikey", apikey, "WATSONX_APIKEY")
+            )
+        else:
+            creds["token"] = convert_to_secret_str(
+                get_from_param_or_env("token", token, "WATSONX_TOKEN")
+            )
     else:
         if (
             not token
