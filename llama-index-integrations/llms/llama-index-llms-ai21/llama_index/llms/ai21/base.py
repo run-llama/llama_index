@@ -40,7 +40,9 @@ class AI21(CustomLLM):
         ```
     """
 
-    model: str = Field(description="The AI21 model to use.", default=_DEFAULT_AI21_MODEL)
+    model: str = Field(
+        description="The AI21 model to use.", default=_DEFAULT_AI21_MODEL
+    )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     temperature: float = Field(description="The temperature to use for sampling.")
 
@@ -51,23 +53,22 @@ class AI21(CustomLLM):
     _client: Any = PrivateAttr()
 
     def __init__(
-            self,
-            model: str = _DEFAULT_AI21_MODEL,
-            api_key: Optional[str] = None,
-            base_url: Optional[str] = None,
-            max_tokens: Optional[int] = 512,
-            max_retries: int = 10,
-            default_headers: Optional[Dict[str, str]] = None,
-            timeout: Optional[float] = None,
-            temperature: Optional[float] = 0.1,
-            additional_kwargs: Optional[Dict[str, Any]] = None,
-            callback_manager: Optional[CallbackManager] = None,
-            system_prompt: Optional[str] = None,
-            messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-            completion_to_prompt: Optional[Callable[[str], str]] = None,
-            pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
-            output_parser: Optional[BaseOutputParser] = None,
-
+        self,
+        model: str = _DEFAULT_AI21_MODEL,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        max_tokens: Optional[int] = 512,
+        max_retries: int = 10,
+        default_headers: Optional[Dict[str, str]] = None,
+        timeout: Optional[float] = None,
+        temperature: Optional[float] = 0.1,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """Initialize params."""
         additional_kwargs = additional_kwargs or {}
@@ -111,7 +112,9 @@ class AI21(CustomLLM):
 
     @property
     def tokenizer(self) -> Tokenizer:
-        return self._client.get_tokenizer(_TOKENIZER_NAME_FORMAT.format(model_name=self.model))
+        return self._client.get_tokenizer(
+            _TOKENIZER_NAME_FORMAT.format(model_name=self.model)
+        )
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -130,7 +133,7 @@ class AI21(CustomLLM):
 
     @llm_completion_callback()
     def complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
 
@@ -144,7 +147,7 @@ class AI21(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         raise NotImplementedError(
             "AI21 does not currently support streaming completion."
@@ -159,6 +162,6 @@ class AI21(CustomLLM):
 
     @llm_chat_callback()
     def stream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         raise NotImplementedError("AI21 does not Currently Support Streaming Chat.")
