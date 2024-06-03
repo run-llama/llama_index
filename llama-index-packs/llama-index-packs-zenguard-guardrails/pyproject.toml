@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.packs.zenguard_guardrails"
 
 [tool.llamahub.class_authors]
-ZenguardGuardrailsPack = "yaksh0nti"
+ZenGuardPack = "yaksh0nti"
 
 [tool.mypy]
 disallow_untyped_defs = true
