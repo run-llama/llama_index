@@ -1,4 +1,6 @@
 from typing import Union
+from ai21.models.chat import ChatMessage as AI21ChatMessage
+from llama_index.core.base.llms.types import ChatMessage
 
 JAMBA_MODELS = {
     "jamba-instruct": 256_000,
@@ -21,3 +23,7 @@ def ai21_model_to_context_size(model: str) -> Union[int, None]:
         raise ValueError(f"Model name {model} not found in {JAMBA_MODELS.keys()}")
 
     return token_limit
+
+
+def message_to_ai21_message(message: ChatMessage) -> AI21ChatMessage:
+    return AI21ChatMessage(role=message.role, content=message.content)

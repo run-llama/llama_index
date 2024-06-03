@@ -18,8 +18,9 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index_client import MessageRole
 
-from llama_index.llms.ai21.utils import ai21_model_to_context_size
+from llama_index.llms.ai21.utils import ai21_model_to_context_size, message_to_ai21_message
 
 _DEFAULT_AI21_MODEL = "jamba-instruct"
 _TOKENIZER_NAME_FORMAT = "{model_name}-tokenizer"
@@ -120,7 +121,7 @@ class AI21(CustomLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "model": self.model,
-            "max_tokens": self.maxTokens,
+            "max_tokens": self.max_tokens,
             "temperature": self.temperature,
         }
         return {**base_kwargs, **self.additional_kwargs}
@@ -156,9 +157,20 @@ class AI21(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
-        chat_fn = completion_to_chat_decorator(self.complete)
+        messages = [message_to_ai21_message(message) for message in messages]
+        response = self._client.chat.completions.create(
+            messages=messages,
+            stream=False,
+            **all_kwargs,
+        )
 
-        return chat_fn(messages, **all_kwargs)
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response.choices[0].message.content,
+            ),
+            raw=dict(response),
+        )
 
     @llm_chat_callback()
     def stream_chat(
