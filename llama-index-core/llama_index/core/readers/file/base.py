@@ -34,7 +34,7 @@ class FileSystemReaderMixin(ABC):
             bytes: File content.
         """
 
-    def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
+    async def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
         """
         Read the bytes content of a file asynchronously.
 

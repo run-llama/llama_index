@@ -1,5 +1,146 @@
 # ChangeLog
 
+## [2024-06-02]
+
+### `llama-index-core` [0.10.43]
+
+- use default UUIDs when possible for property graph index vector stores (#13886)
+- avoid empty or duplicate inserts in property graph index (#13891)
+- Fix cur depth for `get_rel_map` in simple property graph store (#13888)
+- (bandaid) disable instrumentation from logging generators (#13901)
+- Add backwards compatibility to Dispatcher.get_dispatch_event() method (#13895)
+- Fix: Incorrect naming of acreate_plan in StructuredPlannerAgent (#13879)
+
+### `llama-index-graph-stores-neo4j` [0.2.2]
+
+- Handle cases where type is missing (neo4j property graph) (#13875)
+- Rename `Neo4jPGStore` to `Neo4jPropertyGraphStore` (with backward compat) (#13891)
+
+### `llama-index-llms-openai` [0.1.22]
+
+- Improve the retry mechanism of OpenAI (#13878)
+
+### `llama-index-readers-web` [0.1.18]
+
+- AsyncWebPageReader: made it actually async; it was exhibiting blocking behavior (#13897)
+
+### `llama-index-vector-stores-opensearch` [0.1.10]
+
+- Fix/OpenSearch filter logic (#13804)
+
+## [2024-05-31]
+
+### `llama-index-core` [0.10.42]
+
+- Allow proper setting of the vector store in property graph index (#13816)
+- fix imports in langchain bridge (#13871)
+
+### `llama-index-graph-stores-nebula` [0.2.0]
+
+- NebulaGraph support for PropertyGraphStore (#13816)
+
+### `llama-index-llms-langchain` [0.1.5]
+
+- fix fireworks imports in langchain llm (#13871)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- feat(openllm): 0.5 sdk integrations update (#13848)
+
+### `llama-index-llms-premai` [0.1.5]
+
+- Update SDK compatibility (#13836)
+
+### `llama-index-readers-google` [0.2.6]
+
+- Fixed a bug with tokens causing an infinite loop in GoogleDriveReader (#13863)
+
+## [2024-05-30]
+
+### `llama-index-core` [0.10.41]
+
+- pass embeddings from index to property graph retriever (#13843)
+- protect instrumentation event/span handlers from each other (#13823)
+- add missing events for completion streaming (#13824)
+- missing callback_manager.on_event_end when there is exception (#13825)
+
+### `llama-index-llms-gemini` [0.1.10]
+
+- use `model` kwarg for model name for gemini (#13791)
+
+### `llama-index-llms-mistralai` [0.1.15]
+
+- Add mistral code model (#13807)
+- update mistral codestral with fill in middle endpoint (#13810)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- 0.5 integrations update (#13848)
+
+### `llama-index-llms-vertex` [0.1.8]
+
+- Safety setting for Pydantic Error for Vertex Integration (#13817)
+
+### `llama-index-readers-smart-pdf-loader` [0.1.5]
+
+- handle path objects in smart pdf reader (#13847)
+
+## [2024-05-28]
+
+### `llama-index-core` [0.10.40]
+
+- Added `PropertyGraphIndex` and other supporting abstractions. See the [full guide](https://docs.llamaindex.ai/en/latest/module_guides/indexing/lpg_index_guide/) for more details (#13747)
+- Updated `AutoPrevNextNodePostprocessor` to allow passing in response mode and LLM (#13771)
+- fix type handling with return direct (#13776)
+- Correct the method name to `_aget_retrieved_ids_and_texts` in retrievval evaluator (#13765)
+- fix: QueryTransformComponent incorrect call `self._query_transform` (#13756)
+- implement more filters for `SimpleVectorStoreIndex` (#13365)
+
+### `llama-index-embeddings-bedrock` [0.2.0]
+
+- Added support for Bedrock Titan Embeddings v2 (#13580)
+
+### `llama-index-embeddings-oci-genai` [0.1.0]
+
+- add Oracle Cloud Infrastructure (OCI) Generative AI (#13631)
+
+### `llama-index-embeddings-huggingface` [0.2.1]
+
+- Expose "safe_serialization" parameter from AutoModel (#11939)
+
+### `llama-index-graph-stores-neo4j` [0.2.0]
+
+- Added `Neo4jPGStore` for property graph support (#13747)
+
+### `llama-index-indices-managed-dashscope` [0.1.1]
+
+- Added dashscope managed index (#13378)
+
+### `llama-index-llms-oci-genai` [0.1.0]
+
+- add Oracle Cloud Infrastructure (OCI) Generative AI (#13631)
+
+### `llama-index-readers-feishu-wiki` [0.1.1]
+
+- fix undefined variable (#13768)
+
+### `llama-index-packs-secgpt` [0.1.0]
+
+- SecGPT - LlamaIndex Integration #13127
+
+### `llama-index-vector-stores-hologres` [0.1.0]
+
+- Add Hologres vector db (#13619)
+
+### `llama-index-vector-stores-milvus` [0.1.16]
+
+- Remove FlagEmbedding as Milvus's dependency (#13767)
+  Unify the collection construction regardless of the value of enable_sparse (#13773)
+
+### `llama-index-vector-stores-opensearch` [0.1.9]
+
+- refactor to put helper methods inside class definition (#13749)
+
 ## [2024-05-24]
 
 ### `llama-index-core` [0.10.39]

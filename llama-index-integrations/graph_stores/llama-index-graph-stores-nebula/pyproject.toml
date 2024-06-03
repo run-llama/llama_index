@@ -13,6 +13,7 @@ import_path = "llama_index.graph_stores.nebula"
 
 [tool.llamahub.class_authors]
 NebulaGraphStore = "llama-index"
+NebulaPropertyGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,15 +25,15 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index graph stores nebula integration"
 exclude = ["**/BUILD"]
-license = "MIT"
+license = "Apache-2.0"
 name = "llama-index-graph-stores-nebula"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-nebula3-python = "^3.4.0"
+llama-index-core = "^0.10.40"
+nebula3-python = "^3.8.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -3,7 +3,6 @@
 import asyncio
 import uuid
 from functools import partial
-from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
@@ -53,6 +52,7 @@ from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.types import Thread
 from llama_index.core.utils import print_text
 
 

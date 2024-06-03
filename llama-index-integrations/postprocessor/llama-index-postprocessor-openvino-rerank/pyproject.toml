@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-postprocessor-openvino-rerank"
 readme = "README.md"
-version = "0.1.3"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.35"
+llama-index-core = "^0.10.41"
 huggingface-hub = "^0.20.3"
 
 [tool.poetry.dependencies.optimum]
