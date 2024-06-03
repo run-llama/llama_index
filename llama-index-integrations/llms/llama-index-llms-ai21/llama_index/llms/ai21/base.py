@@ -1,9 +1,10 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-import ai21
 from ai21 import AI21Client, Tokenizer
+from ai21.models.chat import ChatCompletionChunk
 from llama_index.core.base.llms.generic_utils import (
-    completion_to_chat_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -20,7 +21,10 @@ from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index_client import MessageRole
 
-from llama_index.llms.ai21.utils import ai21_model_to_context_size, message_to_ai21_message
+from llama_index.llms.ai21.utils import (
+    ai21_model_to_context_size,
+    message_to_ai21_message,
+)
 
 _DEFAULT_AI21_MODEL = "jamba-instruct"
 _TOKENIZER_NAME_FORMAT = "{model_name}-tokenizer"
@@ -137,22 +141,18 @@ class AI21(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
+        completion_fn = chat_to_completion_decorator(self.chat)
 
-        ai21.api_key = self._api_key
-
-        response = ai21.Completion.execute(**all_kwargs, prompt=prompt)
-
-        return CompletionResponse(
-            text=response["completions"][0]["data"]["text"], raw=response.__dict__
-        )
+        return completion_fn(prompt, **all_kwargs)
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        raise NotImplementedError(
-            "AI21 does not currently support streaming completion."
-        )
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        completion_fn = stream_chat_to_completion_decorator(self.stream_chat)
+
+        return completion_fn(prompt, **all_kwargs)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -169,11 +169,38 @@ class AI21(CustomLLM):
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
             ),
-            raw=dict(response),
+            raw=response.to_dict(),
         )
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        raise NotImplementedError("AI21 does not Currently Support Streaming Chat.")
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        messages = [message_to_ai21_message(message) for message in messages]
+        response = self._client.chat.completions.create(
+            messages=messages,
+            stream=True,
+            **all_kwargs,
+        )
+
+        def gen() -> ChatResponseGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+
+            for r in response:
+                if isinstance(r, ChatCompletionChunk):
+                    content_delta = r.choices[0].delta.content
+
+                    if content_delta is None:
+                        content += ""
+                    else:
+                        content += r.choices[0].delta.content
+
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=r.__dict__,
+                    )
+
+        return gen()
