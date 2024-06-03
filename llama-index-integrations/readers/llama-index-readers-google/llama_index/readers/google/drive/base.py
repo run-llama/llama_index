@@ -230,6 +230,7 @@ class GoogleDriveReader(BasePydanticReader):
                     )
 
                 items = []
+                page_token = ""
                 # get files taking into account that the results are paginated
                 while True:
                     if drive_id:
@@ -242,6 +243,7 @@ class GoogleDriveReader(BasePydanticReader):
                                 includeItemsFromAllDrives=True,
                                 supportsAllDrives=True,
                                 fields="*",
+                                pageToken=page_token,
                             )
                             .execute()
                         )
@@ -253,6 +255,7 @@ class GoogleDriveReader(BasePydanticReader):
                                 includeItemsFromAllDrives=True,
                                 supportsAllDrives=True,
                                 fields="*",
+                                pageToken=page_token,
                             )
                             .execute()
                         )

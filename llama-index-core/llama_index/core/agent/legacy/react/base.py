@@ -1,6 +1,5 @@
 import asyncio
 from itertools import chain
-from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
@@ -42,6 +41,7 @@ from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.types import Thread
 from llama_index.core.utils import print_text, unit_generator
 
 

@@ -7,7 +7,12 @@ from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.embeddings.utils import EmbedType, resolve_embed_model
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
-from llama_index.core.graph_stores.types import KG_NODES_KEY, KG_RELATIONS_KEY
+from llama_index.core.graph_stores.types import (
+    KG_NODES_KEY,
+    KG_RELATIONS_KEY,
+    VECTOR_SOURCE_KEY,
+)
+from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.property_graph.transformations import (
     SimpleLLMPathExtractor,
@@ -96,11 +101,11 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         # lazily initialize the graph store on the storage context
         if property_graph_store is not None:
             storage_context.property_graph_store = property_graph_store
-        else:
+        elif storage_context.property_graph_store is None:
             storage_context.property_graph_store = SimplePropertyGraphStore()
 
         if vector_store is not None:
-            storage_context.vector_store = vector_store
+            storage_context.vector_stores[DEFAULT_VECTOR_STORE] = vector_store
 
         if embed_kg_nodes and (
             storage_context.property_graph_store.supports_vector_queries
@@ -185,6 +190,9 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
     def _insert_nodes(self, nodes: Sequence[BaseNode]) -> Sequence[BaseNode]:
         """Insert nodes to the index struct."""
+        if len(nodes) == 0:
+            return nodes
+
         # run transformations on nodes to extract triplets
         if self._use_async:
             nodes = asyncio.run(
@@ -220,6 +228,21 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             # add nodes and relations to insert lists
             kg_nodes_to_insert.extend(kg_nodes)
             kg_rels_to_insert.extend(kg_rels)
+
+        # filter out duplicate kg nodes
+        kg_node_ids = {node.id for node in kg_nodes_to_insert}
+        existing_kg_nodes = self.property_graph_store.get(ids=list(kg_node_ids))
+        existing_kg_node_ids = {node.id for node in existing_kg_nodes}
+        kg_nodes_to_insert = [
+            node for node in kg_nodes_to_insert if node.id not in existing_kg_node_ids
+        ]
+
+        # filter out duplicate llama nodes
+        existing_nodes = self.property_graph_store.get_llama_nodes(
+            [node.id_ for node in nodes]
+        )
+        existing_node_hashes = {node.hash for node in existing_nodes}
+        nodes = [node for node in nodes if node.hash not in existing_node_hashes]
 
         # embed nodes (if needed)
         if self._embed_kg_nodes:
@@ -261,14 +284,18 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                 kg_node.embedding = embedding
 
         # if graph store doesn't support vectors, or the vector index was provided, use it
-        if self.vector_store is not None:
+        if self.vector_store is not None and len(kg_nodes_to_insert) > 0:
             self._insert_nodes_to_vector_index(kg_nodes_to_insert)
 
-        self.property_graph_store.upsert_llama_nodes(nodes)
-        self.property_graph_store.upsert_nodes(kg_nodes_to_insert)
+        if len(nodes) > 0:
+            self.property_graph_store.upsert_llama_nodes(nodes)
+
+        if len(kg_nodes_to_insert) > 0:
+            self.property_graph_store.upsert_nodes(kg_nodes_to_insert)
 
         # important: upsert relations after nodes
-        self.property_graph_store.upsert_relations(kg_rels_to_insert)
+        if len(kg_rels_to_insert) > 0:
+            self.property_graph_store.upsert_relations(kg_rels_to_insert)
 
         # refresh schema if needed
         if self.property_graph_store.supports_structured_queries:
@@ -278,17 +305,18 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
     def _insert_nodes_to_vector_index(self, nodes: List[LabelledNode]) -> None:
         """Insert vector nodes."""
-        llama_nodes = []
+        llama_nodes: List[TextNode] = []
         for node in nodes:
             if node.embedding is not None:
                 llama_nodes.append(
                     TextNode(
-                        id_=node.id,
                         text=str(node),
-                        metadata=node.properties,
+                        metadata={VECTOR_SOURCE_KEY: node.id, **node.properties},
                         embedding=[*node.embedding],
                     )
                 )
+                if not self.vector_store.stores_text:
+                    llama_nodes[-1].id_ = node.id
 
             # clear the embedding to save memory, its not used now
             node.embedding = None
@@ -347,6 +375,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                         graph_store=self.property_graph_store,
                         vector_store=self.vector_store,
                         include_text=include_text,
+                        embed_model=self._embed_model,
                         **kwargs,
                     )
                 )
