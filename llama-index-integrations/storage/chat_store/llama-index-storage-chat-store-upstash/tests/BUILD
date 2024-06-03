@@ -1,1 +1,3 @@
-python_tests()
+poetry_requirements(
+    name="poetry",
+)
