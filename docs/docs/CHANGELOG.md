@@ -1,5 +1,181 @@
 # ChangeLog
 
+## [2024-05-31]
+
+### `llama-index-core` [0.10.42]
+
+- Allow proper setting of the vector store in property graph index (#13816)
+- fix imports in langchain bridge (#13871)
+
+### `llama-index-graph-stores-nebula` [0.2.0]
+
+- NebulaGraph support for PropertyGraphStore (#13816)
+
+### `llama-index-llms-langchain` [0.1.5]
+
+- fix fireworks imports in langchain llm (#13871)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- feat(openllm): 0.5 sdk integrations update (#13848)
+
+### `llama-index-llms-premai` [0.1.5]
+
+- Update SDK compatibility (#13836)
+
+### `llama-index-readers-google` [0.2.6]
+
+- Fixed a bug with tokens causing an infinite loop in GoogleDriveReader (#13863)
+
+## [2024-05-30]
+
+### `llama-index-core` [0.10.41]
+
+- pass embeddings from index to property graph retriever (#13843)
+- protect instrumentation event/span handlers from each other (#13823)
+- add missing events for completion streaming (#13824)
+- missing callback_manager.on_event_end when there is exception (#13825)
+
+### `llama-index-llms-gemini` [0.1.10]
+
+- use `model` kwarg for model name for gemini (#13791)
+
+### `llama-index-llms-mistralai` [0.1.15]
+
+- Add mistral code model (#13807)
+- update mistral codestral with fill in middle endpoint (#13810)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- 0.5 integrations update (#13848)
+
+### `llama-index-llms-vertex` [0.1.8]
+
+- Safety setting for Pydantic Error for Vertex Integration (#13817)
+
+### `llama-index-readers-smart-pdf-loader` [0.1.5]
+
+- handle path objects in smart pdf reader (#13847)
+
+## [2024-05-28]
+
+### `llama-index-core` [0.10.40]
+
+- Added `PropertyGraphIndex` and other supporting abstractions. See the [full guide](https://docs.llamaindex.ai/en/latest/module_guides/indexing/lpg_index_guide/) for more details (#13747)
+- Updated `AutoPrevNextNodePostprocessor` to allow passing in response mode and LLM (#13771)
+- fix type handling with return direct (#13776)
+- Correct the method name to `_aget_retrieved_ids_and_texts` in retrievval evaluator (#13765)
+- fix: QueryTransformComponent incorrect call `self._query_transform` (#13756)
+- implement more filters for `SimpleVectorStoreIndex` (#13365)
+
+### `llama-index-embeddings-bedrock` [0.2.0]
+
+- Added support for Bedrock Titan Embeddings v2 (#13580)
+
+### `llama-index-embeddings-oci-genai` [0.1.0]
+
+- add Oracle Cloud Infrastructure (OCI) Generative AI (#13631)
+
+### `llama-index-embeddings-huggingface` [0.2.1]
+
+- Expose "safe_serialization" parameter from AutoModel (#11939)
+
+### `llama-index-graph-stores-neo4j` [0.2.0]
+
+- Added `Neo4jPGStore` for property graph support (#13747)
+
+### `llama-index-indices-managed-dashscope` [0.1.1]
+
+- Added dashscope managed index (#13378)
+
+### `llama-index-llms-oci-genai` [0.1.0]
+
+- add Oracle Cloud Infrastructure (OCI) Generative AI (#13631)
+
+### `llama-index-readers-feishu-wiki` [0.1.1]
+
+- fix undefined variable (#13768)
+
+### `llama-index-packs-secgpt` [0.1.0]
+
+- SecGPT - LlamaIndex Integration #13127
+
+### `llama-index-vector-stores-hologres` [0.1.0]
+
+- Add Hologres vector db (#13619)
+
+### `llama-index-vector-stores-milvus` [0.1.16]
+
+- Remove FlagEmbedding as Milvus's dependency (#13767)
+  Unify the collection construction regardless of the value of enable_sparse (#13773)
+
+### `llama-index-vector-stores-opensearch` [0.1.9]
+
+- refactor to put helper methods inside class definition (#13749)
+
+## [2024-05-24]
+
+### `llama-index-core` [0.10.39]
+
+- Add VectorMemory and SimpleComposableMemory (#13352)
+- Improve MarkdownReader to ignore headers in code blocks (#13694)
+- proper async element node parsers (#13698)
+- return only the message content in function calling worker (#13677)
+- nit: fix multimodal query engine to use metadata (#13712)
+- Add notebook with workaround for lengthy tool descriptions and QueryPlanTool (#13701)
+
+### `llama-index-embeddings-ipex-llm` [0.1.2]
+
+- Improve device selection (#13644)
+
+### `llama-index-indices-managed-postgresml` [0.1.3]
+
+- Add the PostgresML Managed Index (#13623)
+
+### `llama-index-indices-managed-vectara` [0.1.4]
+
+- Added chat engine, streaming, factual consistency score, and more (#13639)
+
+### `llama-index-llms-deepinfra` [0.0.1]
+
+- Add Integration for DeepInfra LLM Models (#13652)
+
+### `llama-index-llm-ipex-llm` [0.1.3]
+
+- add GPU support for llama-index-llm-ipex-llm (#13691)
+
+### `llama-index-llms-lmstudio` [0.1.0]
+
+- lmstudio integration (#13557)
+
+### `llama-index-llms-ollama` [0.1.5]
+
+- Use aiter_lines function to iterate over lines in ollama integration (#13699)
+
+### `llama-index-llms-vertex` [0.1.6]
+
+- Added safety_settings parameter for gemini (#13568)
+
+### `llama-index-postprocessor-voyageai-rerank` [0.1.3]
+
+- VoyageAI reranking bug fix (#13622)
+
+### `llama-index-retrievers-mongodb-atlas-bm25-retriever` [0.1.4]
+
+- Add missing return (#13720)
+
+### `llama-index-readers-web` [0.1.17]
+
+- Add Scrapfly Web Loader (#13654)
+
+### `llama-index-vector-stores-postgres` [0.1.9]
+
+- fix bug with delete and special chars (#13651)
+
+### `llama-index-vector-stores-supabase` [0.1.5]
+
+- Try-catch in case the .\_client attribute is not present (#13681)
+
 ## [2024-05-21]
 
 ### `llama-index-core` [0.10.38]

@@ -59,6 +59,10 @@ def _transform_weaviate_filter_operator(operator: str) -> str:
         return "greater_or_equal"
     elif operator == "<=":
         return "less_or_equal"
+    elif operator == "any":
+        return "contains_any"
+    elif operator == "all":
+        return "contains_all"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -263,20 +267,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        filters = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
-        if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
-            filters = wvc.query.Filter.all_of(
-                [filters, _to_weaviate_filter(delete_kwargs["filter"])]
-            )
-
         collection = self._client.collections.get(self.index_name)
-        query_result = collection.query.fetch_objects(
-            filters=filters,
-            limit=10000,  # 10,000 is the max weaviate can fetch
-        )
 
-        for entry in query_result.objects:
-            collection.data.delete_by_id(uuid=entry.uuid)
+        where_filter = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
+
+        if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
+            where_filter = where_filter & _to_weaviate_filter(delete_kwargs["filter"])
+
+        collection.data.delete_many(where=where_filter)
 
     def delete_index(self) -> None:
         """Delete the index associated with the client.
