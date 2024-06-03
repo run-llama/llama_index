@@ -8,7 +8,6 @@ import logging
 from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
@@ -127,7 +126,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     def is_text_vector_store_empty(self) -> bool:
         return self._is_text_vector_store_empty
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+    def as_retriever(self, **kwargs: Any):
         # NOTE: lazy import
         from llama_index.core.indices.multi_modal.retriever import (
             MultiModalVectorIndexRetriever,
