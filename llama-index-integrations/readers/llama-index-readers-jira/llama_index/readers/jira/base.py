@@ -63,14 +63,12 @@ class JiraReader(BaseReader):
                 "headers": {"Authorization": f"Bearer {Oauth2['api_token']}"},
             }
             self.jira = JIRA(options=options)
-
-        if PATauth:
+        elif PATauth:
             options = {
                 "server": PATauth["server_url"],
                 "headers": {"Authorization": f"Bearer {PATauth['api_token']}"},
             }
             self.jira = JIRA(options=options)
-
         else:
             self.jira = JIRA(
                 basic_auth=(BasicAuth["email"], BasicAuth["api_token"]),
