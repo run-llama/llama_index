@@ -206,7 +206,7 @@ class PremAI(LLM):
             raise ChatPremError(f"ChatResponse {choice} must have a role.")
         content = choice.message.content or ""
 
-        chat_response = ChatResponse(
+        return ChatResponse(
             message=ChatMessage(role=role, content=content),
             raw={
                 "role": role,
@@ -216,8 +216,6 @@ class PremAI(LLM):
                 ],
             },
         )
-        print(chat_response)
-        return chat_response
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
