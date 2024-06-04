@@ -131,7 +131,7 @@ class NomicEmbedding(MultiModalEmbedding):
         self._warn_async()
         return self._get_image_embedding(image)
 
-    def _get_imag_embeddings(self, images: List[ImageType]) -> List[List[float]]:
+    def _get_image_embeddings(self, images: List[ImageType]) -> List[List[float]]:
         return self._embed_image(images)
 
     def _warn_async(self) -> None:
