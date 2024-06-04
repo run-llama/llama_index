@@ -1,5 +1,90 @@
 # ChangeLog
 
+## [2024-06-02]
+
+### `llama-index-core` [0.10.43]
+
+- use default UUIDs when possible for property graph index vector stores (#13886)
+- avoid empty or duplicate inserts in property graph index (#13891)
+- Fix cur depth for `get_rel_map` in simple property graph store (#13888)
+- (bandaid) disable instrumentation from logging generators (#13901)
+- Add backwards compatibility to Dispatcher.get_dispatch_event() method (#13895)
+- Fix: Incorrect naming of acreate_plan in StructuredPlannerAgent (#13879)
+
+### `llama-index-graph-stores-neo4j` [0.2.2]
+
+- Handle cases where type is missing (neo4j property graph) (#13875)
+- Rename `Neo4jPGStore` to `Neo4jPropertyGraphStore` (with backward compat) (#13891)
+
+### `llama-index-llms-openai` [0.1.22]
+
+- Improve the retry mechanism of OpenAI (#13878)
+
+### `llama-index-readers-web` [0.1.18]
+
+- AsyncWebPageReader: made it actually async; it was exhibiting blocking behavior (#13897)
+
+### `llama-index-vector-stores-opensearch` [0.1.10]
+
+- Fix/OpenSearch filter logic (#13804)
+
+## [2024-05-31]
+
+### `llama-index-core` [0.10.42]
+
+- Allow proper setting of the vector store in property graph index (#13816)
+- fix imports in langchain bridge (#13871)
+
+### `llama-index-graph-stores-nebula` [0.2.0]
+
+- NebulaGraph support for PropertyGraphStore (#13816)
+
+### `llama-index-llms-langchain` [0.1.5]
+
+- fix fireworks imports in langchain llm (#13871)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- feat(openllm): 0.5 sdk integrations update (#13848)
+
+### `llama-index-llms-premai` [0.1.5]
+
+- Update SDK compatibility (#13836)
+
+### `llama-index-readers-google` [0.2.6]
+
+- Fixed a bug with tokens causing an infinite loop in GoogleDriveReader (#13863)
+
+## [2024-05-30]
+
+### `llama-index-core` [0.10.41]
+
+- pass embeddings from index to property graph retriever (#13843)
+- protect instrumentation event/span handlers from each other (#13823)
+- add missing events for completion streaming (#13824)
+- missing callback_manager.on_event_end when there is exception (#13825)
+
+### `llama-index-llms-gemini` [0.1.10]
+
+- use `model` kwarg for model name for gemini (#13791)
+
+### `llama-index-llms-mistralai` [0.1.15]
+
+- Add mistral code model (#13807)
+- update mistral codestral with fill in middle endpoint (#13810)
+
+### `llama-index-llms-openllm` [0.1.5]
+
+- 0.5 integrations update (#13848)
+
+### `llama-index-llms-vertex` [0.1.8]
+
+- Safety setting for Pydantic Error for Vertex Integration (#13817)
+
+### `llama-index-readers-smart-pdf-loader` [0.1.5]
+
+- handle path objects in smart pdf reader (#13847)
+
 ## [2024-05-28]
 
 ### `llama-index-core` [0.10.40]

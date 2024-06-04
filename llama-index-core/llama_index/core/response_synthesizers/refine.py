@@ -196,7 +196,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(Generator, response)
-        dispatcher.event(GetResponseEndEvent(response=response))
+        dispatcher.event(GetResponseEndEvent())
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
@@ -377,7 +377,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(AsyncGenerator, response)
-        dispatcher.event(GetResponseEndEvent(response=response))
+        dispatcher.event(GetResponseEndEvent())
         return response
 
     async def _arefine_response_single(

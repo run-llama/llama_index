@@ -121,7 +121,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             )
             graph_triplets = [t for t in graph_triplets if str(t) not in seen_triplets]
             seen_triplets.update([str(t) for t in graph_triplets])
-            depth += 1
+            cur_depth += 1
 
         ignore_rels = ignore_rels or []
         triplets = [t for t in triplets if t[1].id not in ignore_rels]
