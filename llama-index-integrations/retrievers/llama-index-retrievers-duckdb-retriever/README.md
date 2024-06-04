@@ -15,9 +15,6 @@ However, while `DuckDBVectorStore` is an VectorStore, `DuckDBRetriever` is a Ret
 DuckDBRetriever Example:
 
 ```python
-vector_store = DuckDBVectorStore(embed_dim=embed_dim,database_name="vector.db",persist_dir="duckdb")
-
-
-retriever = DuckDBRetriever(vector_store=vector_store)
+retriever = DuckDBRetriever(database_name="vector.db",persist_dir="duckdb")
 nodes = retriever.retrieve("retrieve_query")
 ```
