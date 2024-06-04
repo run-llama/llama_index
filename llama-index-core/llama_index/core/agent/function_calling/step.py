@@ -206,19 +206,20 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
         tool_args_str = json.dumps(tool_call.tool_kwargs)
+        tool_metadata = (
+            tool.metadata
+            if tool is not None
+            else ToolMetadata(description="", name=tool_call.tool_name)
+        )
 
         dispatcher.event(
-            AgentToolCallEvent(arguments=tool_args_str, tool=tool.metadata)
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool_metadata)
         )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: tool_args_str,
-                EventPayload.TOOL: (
-                    tool.metadata
-                    if tool is not None
-                    else ToolMetadata(description="", name=tool_call.tool_name)
-                ),
+                EventPayload.TOOL: tool_metadata,
             },
         ) as event:
             tool_output = (
@@ -251,19 +252,20 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
         tool_args_str = json.dumps(tool_call.tool_kwargs)
+        tool_metadata = (
+            tool.metadata
+            if tool is not None
+            else ToolMetadata(description="", name=tool_call.tool_name)
+        )
 
         dispatcher.event(
-            AgentToolCallEvent(arguments=tool_args_str, tool=tool.metadata)
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool_metadata)
         )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: tool_args_str,
-                EventPayload.TOOL: (
-                    tool.metadata
-                    if tool is not None
-                    else ToolMetadata(description="", name=tool_call.tool_name)
-                ),
+                EventPayload.TOOL: tool_metadata,
             },
         ) as event:
             tool_output = (
