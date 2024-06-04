@@ -159,6 +159,7 @@ class Vertex(LLM):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             is_chat_model=self._is_chat_model,
+            is_function_calling_model=self._is_gemini,
             model_name=self.model,
             system_role=(
                 MessageRole.USER if self._is_gemini else MessageRole.SYSTEM
