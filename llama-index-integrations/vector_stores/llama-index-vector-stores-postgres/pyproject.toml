@@ -38,7 +38,7 @@ asyncpg = "^0.29.0"
 
 [tool.poetry.dependencies.sqlalchemy]
 extras = ["asyncio"]
-version = "^2.0.25"
+version = "^1.4.52"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -67,3 +67,12 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+markers = [
+    "asyncio",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning:"
+]

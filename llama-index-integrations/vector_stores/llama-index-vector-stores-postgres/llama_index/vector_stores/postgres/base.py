@@ -135,8 +135,8 @@ class PGVectorStore(BasePydanticVectorStore):
     stores_text = True
     flat_metadata = False
 
-    connection_string: Union[str, sqlalchemy.URL]
-    async_connection_string: Union[str, sqlalchemy.URL]
+    connection_string: str
+    async_connection_string: Union[str, sqlalchemy.engine.URL]
     table_name: str
     schema_name: str
     embed_dim: int
@@ -157,8 +157,8 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        connection_string: Union[str, sqlalchemy.URL],
-        async_connection_string: Union[str, sqlalchemy.URL],
+        connection_string: Union[str, sqlalchemy.engine.URL],
+        async_connection_string: Union[str, sqlalchemy.engine.URL],
         table_name: str,
         schema_name: str,
         hybrid_search: bool = False,
@@ -230,8 +230,8 @@ class PGVectorStore(BasePydanticVectorStore):
         password: Optional[str] = None,
         table_name: str = "llamaindex",
         schema_name: str = "public",
-        connection_string: Optional[Union[str, sqlalchemy.URL]] = None,
-        async_connection_string: Optional[Union[str, sqlalchemy.URL]] = None,
+        connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
+        async_connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
@@ -281,24 +281,22 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            from sqlalchemy import text
 
             # Check if the specified schema exists with "CREATE" statement
-            check_schema_statement = text(
+            check_schema_statement = sqlalchemy.text(
                 f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema_name"
-            )
+            ).bindparams(schema_name=self.schema_name)
             result = session.execute(
-                check_schema_statement, {"schema_name": self.schema_name}
+                check_schema_statement
             ).fetchone()
 
             # If the schema does not exist, then create it
             if not result:
-                create_schema_statement = text(
-                    f"CREATE SCHEMA IF NOT EXISTS :schema_name"
+                create_schema_statement = sqlalchemy.text(
+                    # DDL won't tolerate quoted string literal here for schema_name, so use format string
+                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
                 )
-                session.execute(
-                    create_schema_statement, {"schema_name": self.schema_name}
-                )
+                session.execute(create_schema_statement)
 
             session.commit()
 
@@ -381,13 +379,13 @@ class PGVectorStore(BasePydanticVectorStore):
             return "="
 
     def _build_filter_clause(self, filter_: MetadataFilter) -> Any:
-        from sqlalchemy import text
+        from sqlalchemy import text, bindparam
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
             return text(
                 f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
-            ).bindparams(values=tuple(filter_.value))
+            ).bindparams(bindparam('values', expanding=True)).bindparams(values=tuple(filter_.value))
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
             return text(
