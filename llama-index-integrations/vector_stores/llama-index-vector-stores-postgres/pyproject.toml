@@ -38,7 +38,7 @@ asyncpg = "^0.29.0"
 
 [tool.poetry.dependencies.sqlalchemy]
 extras = ["asyncio"]
-version = "^1.4.52"
+version = ">=1.4.49,<2.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

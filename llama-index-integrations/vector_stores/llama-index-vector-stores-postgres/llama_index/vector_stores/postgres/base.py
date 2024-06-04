@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import asyncpg  # noqa
@@ -280,20 +281,23 @@ class PGVectorStore(BasePydanticVectorStore):
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_schema_if_not_exists(self) -> None:
-        with self._session() as session, session.begin():
 
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", self.schema_name):
+            raise ValueError(
+                f"Invalid schema_name: {self.schema_name}"
+            )
+        with self._session() as session, session.begin():
             # Check if the specified schema exists with "CREATE" statement
             check_schema_statement = sqlalchemy.text(
                 f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema_name"
             ).bindparams(schema_name=self.schema_name)
-            result = session.execute(
-                check_schema_statement
-            ).fetchone()
+            result = session.execute(check_schema_statement).fetchone()
 
             # If the schema does not exist, then create it
             if not result:
                 create_schema_statement = sqlalchemy.text(
-                    # DDL won't tolerate quoted string literal here for schema_name, so use format string
+                    # DDL won't tolerate quoted string literal here for schema_name,
+                    # so use a format string to embed the schema_name directly, instead of a param.
                     f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
                 )
                 session.execute(create_schema_statement)
@@ -383,9 +387,13 @@ class PGVectorStore(BasePydanticVectorStore):
 
         if filter_.operator in [FilterOperator.IN, FilterOperator.NIN]:
             # Expects a single value in the metadata, and a list to compare
-            return text(
-                f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
-            ).bindparams(bindparam('values', expanding=True)).bindparams(values=tuple(filter_.value))
+            return (
+                text(
+                    f"metadata_->>'{filter_.key}' {self._to_postgres_operator(filter_.operator)} :values"
+                )
+                .bindparams(bindparam("values", expanding=True))
+                .bindparams(values=tuple(filter_.value))
+            )
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
             return text(
