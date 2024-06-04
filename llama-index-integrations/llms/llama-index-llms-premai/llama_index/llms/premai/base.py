@@ -139,7 +139,6 @@ class PremAI(LLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             temperature=self.temperature,
-            top_p=self.top_p,
         )
 
     @property
