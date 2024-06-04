@@ -250,11 +250,15 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         verbose: bool = False,
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
+        tool_args_str = json.dumps(tool_call.tool_kwargs)
 
+        dispatcher.event(
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool.metadata)
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
+                EventPayload.FUNCTION_CALL: tool_args_str,
                 EventPayload.TOOL: (
                     tool.metadata
                     if tool is not None
