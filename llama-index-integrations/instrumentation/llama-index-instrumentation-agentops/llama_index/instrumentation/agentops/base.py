@@ -3,6 +3,7 @@ from inspect import BoundArguments
 from typing import Any, Dict, List, Optional, Set
 from agentops import Client as AOClient
 from agentops import LLMEvent, ToolEvent, ErrorEvent
+from llama_index.core.instrumentation.base_handler import BaseInstrumentationHandler
 from llama_index.core.instrumentation.event_handlers.base import BaseEventHandler
 from llama_index.core.instrumentation.events.agent import (
     AgentRunStepStartEvent,
@@ -195,7 +196,7 @@ class AgentOpsEventHandler(BaseEventHandler):
             self._ao_client.record(ToolEvent(name=event.tool.name))
 
 
-class AgentOpsHandler:
+class AgentOpsHandler(BaseInstrumentationHandler):
     @classmethod
     def init(
         cls,

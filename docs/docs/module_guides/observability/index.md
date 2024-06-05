@@ -356,6 +356,32 @@ openlit.init()
 
 - [OpenLIT's Official Documentation](https://docs.openlit.io/latest/integrations/llama-index)
 
+### AgentOps
+
+[AgentOps](https://github.com/AgentOps-AI/agentops) helps developers build, evaluate,
+and monitor AI agents. AgentOps will help build agents from prototype to production,
+enabling agent monitoring, LLM cost tracking, benchmarking, and more.
+
+#### Install
+
+```shell
+pip install agentops
+```
+
+#### Usage Pattern
+
+```python
+from llama_index.core import set_global_handler
+
+# Make sure you've installed the 'llama-index-instrumentation-agentops' integration package.
+
+# NOTE: Feel free to set your AgentOps environment variables (e.g., 'AGENTOPS_API_KEY')
+# as outlined in the AgentOps documentation, or pass the equivalent keyword arguments
+# anticipated by AgentOps' AOClient as **eval_params in set_global_handler.
+
+set_global_handler("agentops")
+```
+
 ## More observability
 
 - [Callbacks Guide](./callbacks/index.md)
