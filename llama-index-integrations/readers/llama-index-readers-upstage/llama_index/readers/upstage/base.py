@@ -236,6 +236,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
                 "id": element["id"],
                 "type": output_type,
                 "split": split,
+                "bounding_box": json.dumps(element["bounding_box"]),
             },
         )
 
