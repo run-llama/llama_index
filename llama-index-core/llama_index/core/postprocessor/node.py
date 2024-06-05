@@ -286,7 +286,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
-    response_mode: ResponseMode = Field(default=ResponseMode.TREE_SUMMARIZE)
+    response_mode: ResponseMode = Field(default=ResponseMode.COMPACT)
 
     class Config:
         """Configuration for this pydantic object."""
