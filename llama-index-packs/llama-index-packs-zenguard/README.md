@@ -2,6 +2,8 @@
 
 This LlamaPack lets you quickly set up [ZenGuard AI](https://www.zenguard.ai/) in your LlamaIndex-powered application. The ZenGuard AI provides ultrafast guardrails to protect your GenAI application from:
 
+Updated!
+
 - Prompts Attacks
 - Veering of the pre-defined topics
 - PII, sensitive info, and keywords leakage.
