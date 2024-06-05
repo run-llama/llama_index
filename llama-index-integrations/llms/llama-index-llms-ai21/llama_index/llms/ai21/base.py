@@ -200,7 +200,7 @@ class AI21(CustomLLM):
                     yield ChatResponse(
                         message=ChatMessage(role=role, content=content),
                         delta=content_delta,
-                        raw=r.__dict__,
+                        raw=r.to_dict(),
                     )
 
         return gen()
