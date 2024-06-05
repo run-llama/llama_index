@@ -349,10 +349,10 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                     f"Querying other query engine: {result.reason}\n", color="blue"
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
-            response = self._other_query_tool.query_engine.query(query_bundle)
+            return self._other_query_tool.query_engine.query(query_bundle)
             # if self._verbose:
             #     print_text(f"Query Engine response: {response}\n", color="pink")
-            return response
+            # return response
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")
 
