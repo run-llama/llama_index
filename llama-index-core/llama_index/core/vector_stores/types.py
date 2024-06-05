@@ -20,6 +20,7 @@ from llama_index.core.bridge.pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    Json,
 )
 from llama_index.core.schema import BaseComponent, BaseNode, TextNode
 
@@ -74,6 +75,34 @@ class FilterOperator(str, Enum):
     ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
     CONTAINS = "contains"  # metadata array contains value (string or number)
+    LIKE = "like"  # metadata field contains value in substring (string)
+
+
+class FilterOperatorFunction(str, Enum):
+    ARRAY_CONTAINS = "ARRAY_CONTAINS({key}, {value})"  # array contains single value
+    NARRAY_CONTAINS = (
+        "not ARRAY_CONTAINS({key}, {value})"  # array does not contain single value
+    )
+    ARRAY_CONTAINS_ANY = (
+        "ARRAY_CONTAINS_ANY({key}, {value})"  # array contains any value in the list
+    )
+    NARRAY_CONTAINS_ANY = "not ARRAY_CONTAINS_ANY({key}, {value})"  # array does not contain any value in the list
+    ARRAY_CONTAINS_ALL = (
+        "ARRAY_CONTAINS_ALL({key}, {value})"  # array contains all values in the list
+    )
+    NARRAY_CONTAINS_ALL = "not ARRAY_CONTAINS_ALL({key}, {value})"  # array does not contain all values in the list
+    ARRAY_LENGTH = "ARRAY_LENGTH({key}) == {value}"  # array length equals value
+    NARRAY_LENGTH = "ARRAY_LENGTH({key}) != {value}"  # array length not equals value
+    JSON_CONTAINS = "JSON_CONTAINS({key}, {value})"  # JSON contains value
+    NJSON_CONTAINS = "not JSON_CONTAINS({key}, {value})"  # JSON does not contain value
+    JSON_CONTAINS_ANY = (
+        "JSON_CONTAINS_ANY({key}, {value})"  # JSON contains any value in the list
+    )
+    NJSON_CONTAINS_ANY = "not JSON_CONTAINS_ANY({key}, {value})"  # JSON does not contain any value in the list
+    JSON_CONTAINS_ALL = (
+        "JSON_CONTAINS_ALL({key}, {value})"  # JSON contains all values in the list
+    )
+    NJSON_CONTAINS_ALL = "not JSON_CONTAINS_ALL({key}, {value})"  # JSON does not contain all values in the list
 
 
 class FilterCondition(str, Enum):
@@ -94,8 +123,17 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[StrictInt, StrictFloat, StrictStr, List[StrictStr]]
-    operator: FilterOperator = FilterOperator.EQ
+    value: Union[
+        StrictInt,
+        StrictFloat,
+        StrictStr,
+        Json,
+        List[StrictStr],
+        List[StrictFloat],
+        List[StrictInt],
+        List[Json],
+    ]
+    operator: Union[FilterOperator, FilterOperatorFunction] = FilterOperator.EQ
 
     @classmethod
     def from_dict(

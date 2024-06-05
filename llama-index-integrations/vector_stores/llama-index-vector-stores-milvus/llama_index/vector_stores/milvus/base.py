@@ -21,6 +21,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    FilterOperatorFunction,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
@@ -45,11 +47,28 @@ except Exception as e:
 def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
     """Translate standard metadata filters to Milvus specific spec."""
     filters = []
-    for filter in standard_filters.legacy_filters():
-        if isinstance(filter.value, str):
-            filters.append(str(filter.key) + " == " + '"' + str(filter.value) + '"')
+    for filter in standard_filters.filters:
+        filter_value = (
+            f'"{filter.value!s}"'
+            if isinstance(filter.value, str)
+            else str(filter.value)
+        )
+        if isinstance(filter.operator, FilterOperatorFunction):
+            operator = filter.operator.value.format(key=filter.key, value=filter_value)
+            filters.append(operator)
         else:
-            filters.append(str(filter.key) + " == " + str(filter.value))
+            match filter.operator:
+                case FilterOperator.NIN:
+                    filters.append(str(filter.key) + " not in " + filter_value)
+                case FilterOperator.EQ | FilterOperator.GT | FilterOperator.LT | FilterOperator.NE | FilterOperator.GTE | FilterOperator.LTE | FilterOperator.IN | FilterOperator.LIKE:
+                    filters.append(
+                        str(filter.key) + " " + filter.operator + " " + filter_value
+                    )
+                case _:
+                    raise ValueError(
+                        f"Operator {filter.operator} not supported by Milvus."
+                    )
+
     joined_filters = f" {standard_filters.condition.value} ".join(filters)
     return f"({joined_filters})" if len(filters) > 1 else joined_filters
 
