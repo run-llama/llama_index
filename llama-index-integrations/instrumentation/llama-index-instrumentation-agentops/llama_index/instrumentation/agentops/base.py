@@ -196,7 +196,7 @@ class AgentOpsEventHandler(BaseEventHandler):
 
 class AgentOpsHandler:
     @classmethod
-    def add_handler(
+    def init(
         cls,
         api_key: Optional[str] = None,
         parent_key: Optional[str] = None,

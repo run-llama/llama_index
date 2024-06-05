@@ -282,8 +282,8 @@ async def test_agentops_event_handler_emits_llmevents(
     mock_ao_client_instance = MagicMock()
     mock_ao_client.return_value = mock_ao_client_instance
 
-    # Add the AgentOps handler
-    AgentOpsHandler.add_handler()
+    # Initialize the AgentOps handler
+    AgentOpsHandler.init()
 
     # Initiate a chat with the agent
     if method == "chat":
@@ -320,8 +320,8 @@ async def test_agentops_event_handler_emits_toolevents(
     mock_ao_client_instance = MagicMock()
     mock_ao_client.return_value = mock_ao_client_instance
 
-    # Add the AgentOps handler
-    AgentOpsHandler.add_handler()
+    # Initialize the AgentOps handler
+    AgentOpsHandler.init()
 
     # Initiate a chat with the agent
     if method == "chat":
@@ -357,8 +357,8 @@ async def test_agentops_event_handler_emits_errorevents(
     mock_ao_client_instance = MagicMock()
     mock_ao_client.return_value = mock_ao_client_instance
 
-    # Add the AgentOps handler
-    AgentOpsHandler.add_handler()
+    # Initialize the AgentOps handler
+    AgentOpsHandler.init()
 
     # Initiate a chat with the agent
     with pytest.raises(Exception):
