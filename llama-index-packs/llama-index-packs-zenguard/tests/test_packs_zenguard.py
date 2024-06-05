@@ -33,8 +33,12 @@ def assert_detectors_response(response, detectors):
             for resp in response["responses"]
             if resp["detector"] == detector.value
         )
-        assert "err" not in common_response, f"API returned an error: {common_response.get('err')}"
-        assert common_response.get("is_detected") is False, f"Prompt was detected: {common_response}"
+        assert (
+            "err" not in common_response
+        ), f"API returned an error: {common_response.get('err')}"
+        assert (
+            common_response.get("is_detected") is False
+        ), f"Prompt was detected: {common_response}"
 
 
 def test_prompt_injection(zenguard_pack):
