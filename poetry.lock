@@ -356,13 +356,13 @@ css = ["tinycss2 (>=1.1.0,<1.3)"]
 
 [[package]]
 name = "certifi"
-version = "2024.2.2"
+version = "2024.6.2"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2024.2.2-py3-none-any.whl", hash = "sha256:dc383c07b76109f368f6106eee2b593b04a011ea4d55f652c6ca24a754d1cdd1"},
-    {file = "certifi-2024.2.2.tar.gz", hash = "sha256:0569859f95fc761b18b45ef421b1290a0f65f147e92a1e5eb3e635f9a5e4e66f"},
+    {file = "certifi-2024.6.2-py3-none-any.whl", hash = "sha256:ddc6c8ce995e6987e7faf5e3f1b02b302836a0e5d98ece18392cb1a36c72ad56"},
+    {file = "certifi-2024.6.2.tar.gz", hash = "sha256:3cd43f1c6fa7dedc5899d69d3ad0398fd018ad1a17fba83ddaf78aa46c747516"},
 ]
 
 [[package]]
@@ -1504,13 +1504,13 @@ files = [
 
 [[package]]
 name = "llama-index-agent-openai"
-version = "0.2.6"
+version = "0.2.7"
 description = "llama-index agent openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_agent_openai-0.2.6-py3-none-any.whl", hash = "sha256:fddf5a21b5cc584d4aab4517edcdd7ccdba7bf2b66ba6f1ae31d6b87800b4246"},
-    {file = "llama_index_agent_openai-0.2.6.tar.gz", hash = "sha256:32d95ab8ebd8fb8174e34427e6cfcddb56003da7029be9a1d3fe002540d13b9a"},
+    {file = "llama_index_agent_openai-0.2.7-py3-none-any.whl", hash = "sha256:34be65011a508dd8cab0c9a606594f28075b98b0cebe69e3c543adc8564fee0d"},
+    {file = "llama_index_agent_openai-0.2.7.tar.gz", hash = "sha256:13ce535f03e32c821763c01e26af4222f3981178622414d3868013a1946e8124"},
 ]
 
 [package.dependencies]
@@ -1536,13 +1536,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.42"
+version = "0.10.43"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.42-py3-none-any.whl", hash = "sha256:31825850aace51891275cffd7ff5bb1dbb6a5adbb18a55d2fa8f66ad70aa0128"},
-    {file = "llama_index_core-0.10.42.tar.gz", hash = "sha256:6bcbfefd776ae461552494ac296ccfffa1d0110b98707ec56fd58bb2387f50fa"},
+    {file = "llama_index_core-0.10.43-py3-none-any.whl", hash = "sha256:355a5f7808dfa09dc27b6bd564926fa697e0279344b829732a9f91b8000157ac"},
+    {file = "llama_index_core-0.10.43.tar.gz", hash = "sha256:c7dce5158e112d3cbc8d331c303e830b2eabcae55c9636e8050dc85320522c1b"},
 ]
 
 [package.dependencies]
@@ -1640,13 +1640,13 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.1.21"
+version = "0.1.22"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.1.21-py3-none-any.whl", hash = "sha256:fd2fa240238c7dca0170bf55957bb088d9b6acf63c80924eb59498f3a5ac0df3"},
-    {file = "llama_index_llms_openai-0.1.21.tar.gz", hash = "sha256:e9d631135160ac87093cd7d5ae3e32c4debf8eeaafa29ee4739675867155d773"},
+    {file = "llama_index_llms_openai-0.1.22-py3-none-any.whl", hash = "sha256:84a8c910671460ad724ed818192f209f7481e71bcc6528553ba7e66db2e14bcd"},
+    {file = "llama_index_llms_openai-0.1.22.tar.gz", hash = "sha256:729bf2ea7043517465e1d585089512b77d8b3ce92233a67c138d5d621061ed56"},
 ]
 
 [package.dependencies]
@@ -4088,13 +4088,13 @@ files = [
 
 [[package]]
 name = "typing-extensions"
-version = "4.12.0"
+version = "4.12.1"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "typing_extensions-4.12.0-py3-none-any.whl", hash = "sha256:b349c66bea9016ac22978d800cfff206d5f9816951f12a7d0ec5578b0a819594"},
-    {file = "typing_extensions-4.12.0.tar.gz", hash = "sha256:8cbcdc8606ebcb0d95453ad7dc5065e6237b6aa230a31e81d0f440c30fed5fd8"},
+    {file = "typing_extensions-4.12.1-py3-none-any.whl", hash = "sha256:6024b58b69089e5a89c347397254e35f1bf02a907728ec7fee9bf0fe837d203a"},
+    {file = "typing_extensions-4.12.1.tar.gz", hash = "sha256:915f5e35ff76f56588223f15fdd5938f9a1cf9195c0de25130c627e4d597f6d1"},
 ]
 
 [[package]]
@@ -4440,4 +4440,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "b4ec495bd49bb8ff53dec13714555c4edf7812200eeb2ec946879f9563306130"
+content-hash = "c4e17dac95167cb9096dfb2ed7df5ca72e7f753be5c320f5a64a0cb5a6ce930d"
