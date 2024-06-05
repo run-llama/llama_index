@@ -1,6 +1,9 @@
 from llama_index.core.node_parser.file.html import HTMLNodeParser
 from llama_index.core.node_parser.file.json import JSONNodeParser
 from llama_index.core.node_parser.file.markdown import MarkdownNodeParser
+from llama_index.core.node_parser.file.markdown_with_options import (
+    MarkdownNodeParserWithOptions,
+)
 from llama_index.core.node_parser.file.simple_file import SimpleFileNodeParser
 
 __all__ = [
@@ -8,4 +11,5 @@ __all__ = [
     "HTMLNodeParser",
     "MarkdownNodeParser",
     "JSONNodeParser",
+    "MarkdownNodeParserWithOptions",
 ]
