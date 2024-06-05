@@ -40,6 +40,13 @@ class AgentOpsHandlerState(BaseModel):
         description="Dictionary to hold exceptions thrown in a span and its immediate children.",
     )
 
+    def remove_span_id(self, span_id: str) -> None:
+        """Remove a given span_id from all state fields."""
+        self.is_agent_chat_span.pop(span_id, None)
+        self.agent_chat_start_event.pop(span_id, None)
+        self.span_parent.pop(span_id, None)
+        self.span_exception.pop(span_id, None)
+
     def check_is_agent_chat_span(self, span_id: Optional[str]) -> bool:
         """
         Starting with a given span_id, navigate all ancestor spans to determine
@@ -104,10 +111,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         result: Optional[Any] = None,
         **kwargs: Any
     ) -> SimpleSpan:
-        self._shared_handler_state.is_agent_chat_span.pop(id_, None)
-        self._shared_handler_state.agent_chat_start_event.pop(id_, None)
-        self._shared_handler_state.span_parent.pop(id_, None)
-        self._shared_handler_state.span_exception.pop(id_, None)
+        self._shared_handler_state.remove_span_id(id_)
         return super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
 
     def prepare_to_drop_span(
@@ -134,10 +138,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
             ):
                 self._ao_client.record(ErrorEvent(details=str(err)))
 
-        self._shared_handler_state.is_agent_chat_span.pop(id_, None)
-        self._shared_handler_state.agent_chat_start_event.pop(id_, None)
-        self._shared_handler_state.span_parent.pop(id_, None)
-        self._shared_handler_state.span_exception.pop(id_, None)
+        self._shared_handler_state.remove_span_id(id_)
         return super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
 
 
