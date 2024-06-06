@@ -105,10 +105,20 @@ class YouRetriever(BaseRetriever):
         response.raise_for_status()
         results = response.json()
 
+        nodes: List[TextNode] = []
         if self.endpoint == "search":
-            retrieved_text = ["\n".join(hit["snippets"]) for hit in results["hits"]]
+            for hit in results["hits"]:
+                nodes.append(
+                    TextNode(
+                        text="\n".join(hit["snippets"]),
+                    )
+                )
         else:  # news endpoint
-            retrieved_text = [
-                article["description"] for article in results["news"]["results"]
-            ]
-        return [NodeWithScore(node=TextNode(text=s), score=1.0) for s in retrieved_text]
+            for article in results["news"]["results"]:
+                node = TextNode(
+                    text=article["description"],
+                    extra_info={"url": article["url"], "age": article["age"]},
+                )
+                nodes.append(node)
+
+        return [NodeWithScore(node=node, score=1.0) for node in nodes]
