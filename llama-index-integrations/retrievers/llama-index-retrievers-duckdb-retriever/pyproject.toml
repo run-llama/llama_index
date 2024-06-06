@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.postgres"
+import_path = "llama_index.retrievers.duckdb_retriever"
 
 [tool.llamahub.class_authors]
-PGVectorStore = "llama-index"
+DuckDBRetriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,23 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores postgres integration"
+description = "llama-index retrievers duckdb-retriever integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-postgres"
+name = "llama-index-retrievers-duckdb-retriever"
 readme = "README.md"
-version = "0.1.9"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.20"
-pgvector = "^0.2.4"
-psycopg2-binary = "^2.9.9"
-asyncpg = "^0.29.0"
-
-[tool.poetry.dependencies.sqlalchemy]
-extras = ["asyncio"]
-version = ">=1.4.49,<2.1"
+llama-index-core = "^0.10.1"
+pymongo = "^4.6.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -67,12 +61,3 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-filterwarnings = [
-    "ignore::DeprecationWarning:",
-]
-markers = [
-    "asyncio",
-]
