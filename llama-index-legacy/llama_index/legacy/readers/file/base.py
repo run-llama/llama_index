@@ -22,6 +22,7 @@ from llama_index.legacy.readers.file.markdown_reader import MarkdownReader
 from llama_index.legacy.readers.file.mbox_reader import MboxReader
 from llama_index.legacy.readers.file.slides_reader import PptxReader
 from llama_index.legacy.readers.file.tabular_reader import PandasCSVReader
+from llama_index.legacy.readers.file.tabular_reader import PandasExcelReader
 from llama_index.legacy.readers.file.video_audio_reader import VideoAudioReader
 from llama_index.legacy.schema import Document
 
@@ -42,6 +43,8 @@ DEFAULT_FILE_READER_CLS: Dict[str, Type[BaseReader]] = {
     ".md": MarkdownReader,
     ".mbox": MboxReader,
     ".ipynb": IPYNBReader,
+    ".xls": PandasExcelReader,
+    ".xlsx": PandasExcelReader,
 }
 
 
