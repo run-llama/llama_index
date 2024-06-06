@@ -32,24 +32,20 @@ from llama_index.core.base.llms.types import ChatMessage
 api_key = "your_api_key"
 llm = AI21(model="jamba-instruct", api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the meaning of life?")
-]
+messages = [ChatMessage(role="user", content="What is the meaning of life?")]
 response = llm.chat(messages)
 print(response.message.content)
-
 ```
 
 ### Chat Streaming
 ```python
 from llama_index.llms.ai21 import AI21
 from llama_index.core.base.llms.types import ChatMessage
+
 api_key = "your_api_key"
 llm = AI21(model="jamba-instruct", api_key=api_key)
 
-messages = [
-    ChatMessage(role="user", content="What is the meaning of life?")
-]
+messages = [ChatMessage(role="user", content="What is the meaning of life?")]
 
 for chunk in llm.stream_chat(messages):
     print(chunk.message.content)
@@ -57,7 +53,6 @@ for chunk in llm.stream_chat(messages):
 
 ### Text Completion
 ```python
-
 from llama_index.llms.ai21 import AI21
 
 api_key = "your_api_key"
