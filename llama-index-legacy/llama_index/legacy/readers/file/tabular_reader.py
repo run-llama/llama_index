@@ -130,7 +130,7 @@ class PandasExcelReader(BaseReader):
 
         sheet_name (str | int | None): Defaults to None, for all sheets, otherwise pass a str or int to specify the sheet to read.
 
-        pandas_config (dict): Options for the `pandas.read_csv` function call.
+        pandas_config (dict): Options for the `pandas.read_excel` function call.
             Refer to https://pandas.pydata.org/docs/reference/api/pandas.read_excel.html
             for more information.
             Set to empty dict by default.
