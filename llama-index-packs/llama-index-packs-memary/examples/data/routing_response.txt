@@ -1,0 +1,6 @@
+Thought: I need to use a tool to help me answer the question.
+Action: search
+Action Input: {'query': 'How old am I?'}
+Observation: assistant: I am an artificial intelligence and do not have the ability to have an age. I exist to provide information and answer questions to the best of my ability.
+Thought: I can answer without using any more tools.
+Answer: You do not have an age as you are an artificial intelligence.
