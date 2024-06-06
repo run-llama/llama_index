@@ -1238,6 +1238,7 @@ nav:
           - ./api_reference/retrievers/auto_merging.md
           - ./api_reference/retrievers/bedrock.md
           - ./api_reference/retrievers/bm25.md
+          - ./api_reference/retrievers/duckdb_retriever.md
           - ./api_reference/retrievers/index.md
           - ./api_reference/retrievers/keyword.md
           - ./api_reference/retrievers/knowledge_graph.md
@@ -1957,6 +1958,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-dashscope
             - ../llama-index-integrations/llms/llama-index-llms-oci-genai
             - ../llama-index-integrations/readers/llama-index-readers-azure-devops
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-duckdb-retriever
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

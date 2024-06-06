@@ -1,8 +1,10 @@
 # LlamaIndex Retrievers Integration: DuckDBRetriever
 
+`pip install llama-index-retrievers-duckdb-retriever.`
+
 ## What is this?
 
-This is a BM25 Retriever for DuckDB that can be used with LlamaIndex.
+This is a BM25 Retriever for DuckDB that can be used with LlamaIndex to enable full-text search.
 
 ## How to use
 
@@ -15,6 +17,8 @@ However, while `DuckDBVectorStore` is an VectorStore, `DuckDBRetriever` is a Ret
 DuckDBRetriever Example:
 
 ```python
-retriever = DuckDBRetriever(database_name="vector.db",persist_dir="duckdb")
+from llama_index.retrievers.duckdb_retriever import DuckDBRetriever
+
+retriever = DuckDBRetriever(database_name="vector.db", persist_dir="duckdb")
 nodes = retriever.retrieve("retrieve_query")
 ```
