@@ -41,7 +41,7 @@ class AI21(CustomLLM):
         ```python
         from llama_index.llms.ai21 import AI21
 
-        llm = AI21(model="j2-mid", api_key=api_key)
+        llm = AI21(model="jamba-instruct", api_key=api_key)
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
