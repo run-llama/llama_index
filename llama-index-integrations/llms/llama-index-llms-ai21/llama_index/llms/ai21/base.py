@@ -28,6 +28,8 @@ from llama_index.llms.ai21.utils import (
 
 _DEFAULT_AI21_MODEL = "jamba-instruct"
 _TOKENIZER_NAME_FORMAT = "{model_name}-tokenizer"
+_DEFAULT_TEMPERATURE = 0.7
+_DEFAULT_MAX_TOKENS = 512
 
 
 class AI21(CustomLLM):
@@ -48,8 +50,25 @@ class AI21(CustomLLM):
     model: str = Field(
         description="The AI21 model to use.", default=_DEFAULT_AI21_MODEL
     )
-    max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    max_tokens: int = Field(
+        description="The maximum number of tokens to generate.",
+        default=_DEFAULT_MAX_TOKENS,
+        gt=0,
+    )
+    temperature: float = Field(
+        description="The temperature to use for sampling.",
+        default=_DEFAULT_TEMPERATURE,
+        gte=0.0,
+        lte=1.0,
+    )
+    base_url: Optional[str] = Field(default=None, description="The base URL to use.")
+    timeout: Optional[float] = Field(
+        default=None, description="The timeout to use in seconds.", gte=0
+    )
+
+    max_retries: int = Field(
+        default=10, description="The maximum number of API retries.", gte=0
+    )
 
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the anthropic API."
@@ -62,11 +81,11 @@ class AI21(CustomLLM):
         model: str = _DEFAULT_AI21_MODEL,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        max_tokens: Optional[int] = 512,
+        max_tokens: Optional[int] = _DEFAULT_MAX_TOKENS,
         max_retries: int = 10,
         default_headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = None,
-        temperature: Optional[float] = 0.1,
+        temperature: Optional[float] = _DEFAULT_TEMPERATURE,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
