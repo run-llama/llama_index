@@ -27,7 +27,7 @@ python_version = "3.10.12"
 name = "llama-index-packs-memary"
 version = "0.1.3"
 description = "llama-index packs memary integration"
-authors = ["Your Name <you@example.com>"]
+authors = ["Seyeong Han <h960213@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "llama_index/"}]
