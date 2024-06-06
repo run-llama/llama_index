@@ -393,7 +393,7 @@ This example shows how you might save/load a property graph index using Neo4j an
 ```python
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.indices import PropertyGraphIndex
-from llama_index.graph_stores.neo4j import Neo4jPGStore
+from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient, AsyncQdrantClient
 
@@ -403,7 +403,7 @@ vector_store = QdrantVectorStore(
     aclient=AsyncQdrantClient(...),
 )
 
-graph_store = Neo4jPGStore(
+graph_store = Neo4jPropertyGraphStore(
     username="neo4j",
     password="<password>",
     url="bolt://localhost:7687",
@@ -606,6 +606,7 @@ Below, you can find some example notebooks showcasing the `PropertyGraphIndex`
 
 - [Basic Usage](../../examples/property_graph/property_graph_basic.ipynb)
 - [Using Neo4j](../../examples/property_graph/property_graph_neo4j.ipynb)
+- [Using Nebula](../../examples/property_graph/property_graph_nebula.ipynb)
 - [Advanced Usage with Neo4j and local models](../../examples/property_graph/property_graph_advanced.ipynb)
 - [Using a Property Graph Store](../../examples/property_graph/graph_store.ipynb)
 - [Creating a Custom Graph Retriever](../../examples/property_graph/property_graph_custom_retriever.ipynb)

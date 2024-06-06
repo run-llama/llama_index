@@ -1,7 +1,8 @@
 from contextvars import Token
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Protocol
 import inspect
 import uuid
+from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import active_span_id
@@ -12,6 +13,12 @@ from llama_index.core.instrumentation.span_handlers import (
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
+
+
+# Keep for backwards compatibility
+class EventDispatcher(Protocol):
+    def __call__(self, event: BaseEvent, **kwargs) -> None:
+        ...
 
 
 class Dispatcher(BaseModel):
@@ -101,6 +108,24 @@ class Dispatcher(BaseModel):
                 c = None
             else:
                 c = c.parent
+
+    @deprecated(
+        version="0.10.41",
+        reason=(
+            "`get_dispatch_event()` has been deprecated in favor of using `event()` directly."
+            " If running into this warning through an integration package, then please "
+            "update your integration to the latest version."
+        ),
+    )
+    def get_dispatch_event(self) -> EventDispatcher:
+        """Keep for backwards compatibility.
+
+        In llama-index-core v0.10.41, we removed this method and made changes to
+        integrations or packs that relied on this method. Adding back this method
+        in case any integrations or apps have not been upgraded. That is, they
+        still rely on this method.
+        """
+        return self.event
 
     def span_enter(
         self,

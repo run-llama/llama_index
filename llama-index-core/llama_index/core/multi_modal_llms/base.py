@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, get_args
 
+from llama_index.core import instrumentation
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -24,6 +26,7 @@ from llama_index.core.constants import (
     DEFAULT_NUM_INPUT_FILES,
     DEFAULT_NUM_OUTPUTS,
 )
+from llama_index.core.llms.callbacks import llm_completion_callback, llm_chat_callback
 from llama_index.core.schema import BaseComponent, ImageDocument
 
 
@@ -157,6 +160,30 @@ class MultiModalLLM(ChainableMixin, BaseComponent):
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
         else:
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        """
+        Decorate the abstract methods' implementations for each subclass.
+        `__init_subclass__` is analogous to `__init__` because classes are also objects.
+        """
+        super().__init_subclass__(**kwargs)
+        dispatcher = instrumentation.get_dispatcher(cls.__module__)
+        for attr in (
+            "complete",
+            "acomplete",
+            "stream_complete",
+            "astream_complete",
+            "chat",
+            "achat",
+            "stream_chat",
+            "astream_chat",
+        ):
+            if callable(method := cls.__dict__.get(attr)):
+                if attr.endswith("chat"):
+                    method = llm_chat_callback()(method)
+                else:
+                    method = llm_completion_callback()(method)
+                setattr(cls, attr, dispatcher.span(method))
 
 
 class BaseMultiModalComponent(QueryComponent):

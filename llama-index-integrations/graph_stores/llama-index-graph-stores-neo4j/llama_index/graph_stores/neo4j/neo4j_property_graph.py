@@ -70,7 +70,7 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
-class Neo4jPGStore(PropertyGraphStore):
+class Neo4jPropertyGraphStore(PropertyGraphStore):
     r"""
     Neo4j Property Graph Store.
 
@@ -102,10 +102,10 @@ class Neo4jPGStore(PropertyGraphStore):
 
         ```python
         from llama_index.core.indices.property_graph import PropertyGraphIndex
-        from llama_index.graph_stores.neo4j import Neo4jLPGStore
+        from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
 
-        # Create a Neo4jLPGStore instance
-        graph_store = Neo4jLPGStore(
+        # Create a Neo4jPropertyGraphStore instance
+        graph_store = Neo4jPropertyGraphStore(
             username="neo4j",
             password="neo4j",
             url="bolt://localhost:7687",
@@ -350,6 +350,7 @@ class Neo4jPGStore(PropertyGraphStore):
         cypher_statement += return_statement
 
         response = self.structured_query(cypher_statement, param_map=params)
+        response = response if response else []
 
         nodes = []
         for record in response:
@@ -427,6 +428,7 @@ class Neo4jPGStore(PropertyGraphStore):
         cypher_statement += return_statement
 
         data = self.structured_query(cypher_statement, param_map=params)
+        data = data if data else []
 
         triples = []
         for record in data:
@@ -480,6 +482,7 @@ class Neo4jPGStore(PropertyGraphStore):
             """,
             param_map={"ids": ids, "limit": limit},
         )
+        response = response if response else []
 
         ignore_rels = ignore_rels or []
         for record in response:
@@ -538,6 +541,7 @@ class Neo4jPGStore(PropertyGraphStore):
                 "limit": query.similarity_top_k,
             },
         )
+        data = data if data else []
 
         nodes = []
         scores = []
@@ -865,3 +869,6 @@ class Neo4jPGStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+
+Neo4jPGStore = Neo4jPropertyGraphStore

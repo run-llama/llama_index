@@ -190,6 +190,9 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
 
     def _insert_nodes(self, nodes: Sequence[BaseNode]) -> Sequence[BaseNode]:
         """Insert nodes to the index struct."""
+        if len(nodes) == 0:
+            return nodes
+
         # run transformations on nodes to extract triplets
         if self._use_async:
             nodes = asyncio.run(
@@ -225,6 +228,21 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             # add nodes and relations to insert lists
             kg_nodes_to_insert.extend(kg_nodes)
             kg_rels_to_insert.extend(kg_rels)
+
+        # filter out duplicate kg nodes
+        kg_node_ids = {node.id for node in kg_nodes_to_insert}
+        existing_kg_nodes = self.property_graph_store.get(ids=list(kg_node_ids))
+        existing_kg_node_ids = {node.id for node in existing_kg_nodes}
+        kg_nodes_to_insert = [
+            node for node in kg_nodes_to_insert if node.id not in existing_kg_node_ids
+        ]
+
+        # filter out duplicate llama nodes
+        existing_nodes = self.property_graph_store.get_llama_nodes(
+            [node.id_ for node in nodes]
+        )
+        existing_node_hashes = {node.hash for node in existing_nodes}
+        nodes = [node for node in nodes if node.hash not in existing_node_hashes]
 
         # embed nodes (if needed)
         if self._embed_kg_nodes:
@@ -266,14 +284,18 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                 kg_node.embedding = embedding
 
         # if graph store doesn't support vectors, or the vector index was provided, use it
-        if self.vector_store is not None:
+        if self.vector_store is not None and len(kg_nodes_to_insert) > 0:
             self._insert_nodes_to_vector_index(kg_nodes_to_insert)
 
-        self.property_graph_store.upsert_llama_nodes(nodes)
-        self.property_graph_store.upsert_nodes(kg_nodes_to_insert)
+        if len(nodes) > 0:
+            self.property_graph_store.upsert_llama_nodes(nodes)
+
+        if len(kg_nodes_to_insert) > 0:
+            self.property_graph_store.upsert_nodes(kg_nodes_to_insert)
 
         # important: upsert relations after nodes
-        self.property_graph_store.upsert_relations(kg_rels_to_insert)
+        if len(kg_rels_to_insert) > 0:
+            self.property_graph_store.upsert_relations(kg_rels_to_insert)
 
         # refresh schema if needed
         if self.property_graph_store.supports_structured_queries:

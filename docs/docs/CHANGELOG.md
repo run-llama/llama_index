@@ -1,5 +1,33 @@
 # ChangeLog
 
+## [2024-06-02]
+
+### `llama-index-core` [0.10.43]
+
+- use default UUIDs when possible for property graph index vector stores (#13886)
+- avoid empty or duplicate inserts in property graph index (#13891)
+- Fix cur depth for `get_rel_map` in simple property graph store (#13888)
+- (bandaid) disable instrumentation from logging generators (#13901)
+- Add backwards compatibility to Dispatcher.get_dispatch_event() method (#13895)
+- Fix: Incorrect naming of acreate_plan in StructuredPlannerAgent (#13879)
+
+### `llama-index-graph-stores-neo4j` [0.2.2]
+
+- Handle cases where type is missing (neo4j property graph) (#13875)
+- Rename `Neo4jPGStore` to `Neo4jPropertyGraphStore` (with backward compat) (#13891)
+
+### `llama-index-llms-openai` [0.1.22]
+
+- Improve the retry mechanism of OpenAI (#13878)
+
+### `llama-index-readers-web` [0.1.18]
+
+- AsyncWebPageReader: made it actually async; it was exhibiting blocking behavior (#13897)
+
+### `llama-index-vector-stores-opensearch` [0.1.10]
+
+- Fix/OpenSearch filter logic (#13804)
+
 ## [2024-05-31]
 
 ### `llama-index-core` [0.10.42]
