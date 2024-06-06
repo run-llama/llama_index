@@ -31,4 +31,4 @@ def message_to_ai21_message(message: ChatMessage) -> AI21ChatMessage:
 
 
 def message_to_ai21_j2_message(message: ChatMessage) -> J2ChatMessage:
-    return J2ChatMessage(role=RoleType[message.role], text=message.content)
+    return J2ChatMessage(role=RoleType[message.role.name], text=message.content)
