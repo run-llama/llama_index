@@ -15,6 +15,7 @@ class TokenCountingEvent:
     prompt_token_count: int
     total_token_count: int = 0
     event_id: str = ""
+    model: Optional[str] = None
 
     def __post_init__(self) -> None:
         self.total_token_count = self.prompt_token_count + self.completion_token_count
@@ -57,6 +58,7 @@ def get_llm_token_counts(
                         usage = dict(usage)
                     messages_tokens = usage.get("prompt_tokens", 0)
                     response_tokens = usage.get("completion_tokens", 0)
+                    model = response.raw.get("model")
 
                 if messages_tokens == 0 or response_tokens == 0:
                     raise ValueError("Invalid token counts!")
@@ -67,6 +69,7 @@ def get_llm_token_counts(
                     prompt_token_count=messages_tokens,
                     completion=response_str,
                     completion_token_count=response_tokens,
+                    model=model,
                 )
 
         except (ValueError, KeyError):
@@ -175,6 +178,7 @@ class TokenCountingHandler(BaseCallbackHandler):
             and payload is not None
         ):
             total_chunk_tokens = 0
+            serialized = payload.get(EventPayload.SERIALIZED)
             for chunk in payload.get(EventPayload.CHUNKS, []):
                 self.embedding_token_counts.append(
                     TokenCountingEvent(
@@ -183,6 +187,7 @@ class TokenCountingHandler(BaseCallbackHandler):
                         prompt_token_count=self._token_counter.get_string_tokens(chunk),
                         completion="",
                         completion_token_count=0,
+                        model=serialized["model_name"] if serialized else None,
                     )
                 )
                 total_chunk_tokens += self.embedding_token_counts[-1].total_token_count
