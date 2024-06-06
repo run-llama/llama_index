@@ -1,5 +1,6 @@
 from typing import Union
 from ai21.models.chat import ChatMessage as AI21ChatMessage
+from ai21.models import ChatMessage as J2ChatMessage, RoleType
 from llama_index.core.base.llms.types import ChatMessage
 
 JAMBA_MODELS = {
@@ -27,3 +28,7 @@ def ai21_model_to_context_size(model: str) -> Union[int, None]:
 
 def message_to_ai21_message(message: ChatMessage) -> AI21ChatMessage:
     return AI21ChatMessage(role=message.role, content=message.content)
+
+
+def message_to_ai21_j2_message(message: ChatMessage) -> J2ChatMessage:
+    return J2ChatMessage(role=RoleType[message.role.name], text=message.content)

@@ -24,6 +24,7 @@ from llama_index_client import MessageRole
 from llama_index.llms.ai21.utils import (
     ai21_model_to_context_size,
     message_to_ai21_message,
+    message_to_ai21_j2_message,
 )
 
 _DEFAULT_AI21_MODEL = "jamba-instruct"
@@ -160,6 +161,10 @@ class AI21(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
+
+        if self._is_j2_model():
+            return self._j2_completion(prompt, formatted, **all_kwargs)
+
         completion_fn = chat_to_completion_decorator(self.chat)
 
         return completion_fn(prompt, **all_kwargs)
@@ -168,6 +173,9 @@ class AI21(CustomLLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
+        if self._is_j2_model():
+            raise ValueError("Stream completion is not supported for J2 models.")
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         completion_fn = stream_chat_to_completion_decorator(self.stream_chat)
 
@@ -176,6 +184,10 @@ class AI21(CustomLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
+
+        if self._is_j2_model():
+            return self._j2_chat(messages, **all_kwargs)
+
         messages = [message_to_ai21_message(message) for message in messages]
         response = self._client.chat.completions.create(
             messages=messages,
@@ -191,10 +203,43 @@ class AI21(CustomLLM):
             raw=response.to_dict(),
         )
 
+    def _j2_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        messages = [message_to_ai21_j2_message(message) for message in messages]
+        response = self._client.chat.create(
+            messages=messages,
+            stream=False,
+            **kwargs,
+        )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response.outputs[0].text,
+            ),
+            raw=response.to_dict(),
+        )
+
+    def _j2_completion(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        response = self._client.completion.create(
+            prompt=prompt,
+            stream=False,
+            **kwargs,
+        )
+
+        return CompletionResponse(
+            text=response.completions[0].data.text,
+            raw=response.to_dict(),
+        )
+
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        if self._is_j2_model():
+            raise ValueError("Stream chat is not supported for J2 models.")
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         messages = [message_to_ai21_message(message) for message in messages]
         response = self._client.chat.completions.create(
@@ -223,3 +268,6 @@ class AI21(CustomLLM):
                     )
 
         return gen()
+
+    def _is_j2_model(self) -> bool:
+        return "j2" in self.model
