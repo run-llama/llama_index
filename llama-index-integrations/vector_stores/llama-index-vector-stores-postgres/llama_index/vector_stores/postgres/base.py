@@ -281,11 +281,8 @@ class PGVectorStore(BasePydanticVectorStore):
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_schema_if_not_exists(self) -> None:
-
         if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", self.schema_name):
-            raise ValueError(
-                f"Invalid schema_name: {self.schema_name}"
-            )
+            raise ValueError(f"Invalid schema_name: {self.schema_name}")
         with self._session() as session, session.begin():
             # Check if the specified schema exists with "CREATE" statement
             check_schema_statement = sqlalchemy.text(
