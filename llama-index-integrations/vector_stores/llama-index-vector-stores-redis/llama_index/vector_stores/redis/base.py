@@ -266,7 +266,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             key.strip(self._index.prefix + self._index.key_separator) for key in keys
         ]
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    def delete_by_doc_id(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
 
@@ -292,7 +292,34 @@ class RedisVectorStore(BasePydanticVectorStore):
         logger.info(
             f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
         )
+        
+    def delete_by_field(self, field_name: str, field_value: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with field_name and field_value.
 
+        Args:
+            field_name (str): The field name of the document to delete, which should be of the 'Tag' type.
+            field_value (str): The value of the above field.
+        """
+        # build a filter to target specific docs by special field
+        doc_filter = Tag(field_name) == field_value
+        total = self._index.query(CountQuery(doc_filter))
+        delete_query = FilterQuery(
+            return_fields=[NODE_ID_FIELD_NAME],
+            filter_expression=doc_filter,
+            num_results=total,
+        )
+        # fetch docs to delete and flush them
+        docs_to_delete = self._index.search(delete_query.query, delete_query.params)
+        with self._index.client.pipeline(transaction=False) as pipe:
+            for doc in docs_to_delete.docs:
+                pipe.delete(doc.id)
+            res = pipe.execute()
+
+        logger.info(
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
+        )
+        
     def delete_index(self) -> None:
         """Delete the index and all documents."""
         logger.info(f"Deleting index {self._index.name}")
