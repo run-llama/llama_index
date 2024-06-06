@@ -127,13 +127,11 @@ class MetadataFilter(BaseModel):
         StrictInt,
         StrictFloat,
         StrictStr,
-        Json,
         List[StrictStr],
         List[StrictFloat],
         List[StrictInt],
-        List[Json],
     ]
-    operator: Union[FilterOperator, FilterOperatorFunction] = FilterOperator.EQ
+    operator: FilterOperator = FilterOperator.EQ
 
     @classmethod
     def from_dict(

@@ -17,6 +17,7 @@ from llama_index.vector_stores.milvus.utils import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -44,33 +45,32 @@ except Exception as e:
     RRFRanker = None
 
 
-def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
-    """Translate standard metadata filters to Milvus specific spec."""
-    filters = []
-    for filter in standard_filters.filters:
-        filter_value = (
-            f'"{filter.value!s}"'
-            if isinstance(filter.value, str)
-            else str(filter.value)
-        )
-        if isinstance(filter.operator, FilterOperatorFunction):
-            operator = filter.operator.value.format(key=filter.key, value=filter_value)
-            filters.append(operator)
-        else:
-            match filter.operator:
-                case FilterOperator.NIN:
-                    filters.append(str(filter.key) + " not in " + filter_value)
-                case FilterOperator.EQ | FilterOperator.GT | FilterOperator.LT | FilterOperator.NE | FilterOperator.GTE | FilterOperator.LTE | FilterOperator.IN | FilterOperator.LIKE:
-                    filters.append(
-                        str(filter.key) + " " + filter.operator + " " + filter_value
-                    )
-                case _:
-                    raise ValueError(
-                        f"Operator {filter.operator} not supported by Milvus."
-                    )
+def _to_milvus_filter(
+    standard_filters: MetadataFilters, scalar_filters: ScalarMetadataFilters
+) -> str:
+    """Translate metadata filters to Milvus specific spec."""
+    standard_filters_list, joined_standard_filters = parse_standard_filters(
+        standard_filters
+    )
+    scalar_filters_list, joined_scalar_filters = parse_scalar_filters(scalar_filters)
 
-    joined_filters = f" {standard_filters.condition.value} ".join(filters)
-    return f"({joined_filters})" if len(filters) > 1 else joined_filters
+    filters = standard_filters_list + scalar_filters_list
+
+    if len(standard_filters_list) > 0 and len(scalar_filters_list) > 0:
+        joined_filters = f" {joined_standard_filters} and {joined_scalar_filters} "
+        return f"({joined_filters})" if len(filters) > 1 else joined_filters
+    elif len(standard_filters_list) > 0 and len(scalar_filters_list) == 0:
+        return (
+            f"({joined_standard_filters})"
+            if len(filters) > 1
+            else joined_standard_filters
+        )
+    elif len(standard_filters_list) == 0 and len(scalar_filters_list) > 0:
+        return (
+            f"({joined_scalar_filters})" if len(filters) > 1 else joined_scalar_filters
+        )
+    else:
+        return ""
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
