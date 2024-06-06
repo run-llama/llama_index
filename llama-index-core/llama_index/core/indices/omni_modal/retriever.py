@@ -436,9 +436,8 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
         query_bundle: QueryBundle,
         *,
         query_type: KQ,
-        doc_types: Optional[
-            Collection[KD]
-        ] = None,  # Defaults to all document modalities
+        # Defaults to all document modalities
+        doc_types: Optional[Collection[KD]] = None,
     ) -> List[NodeWithScore]:
         if doc_types is None:
             doc_types = self._embed_model.document_modalities.keys()
@@ -479,9 +478,8 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
         query_bundle: QueryBundle,
         *,
         query_type: KQ,
-        doc_types: Optional[
-            Collection[KD]
-        ] = None,  # Defaults to all document modalities
+        # Defaults to all document modalities
+        doc_types: Optional[Collection[KD]] = None,
     ) -> List[NodeWithScore]:
         if doc_types is None:
             doc_types = self._embed_model.document_modalities.keys()
@@ -580,9 +578,8 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
         self,
         str_or_query_bundle: QueryType,
         *,
-        doc_types: Optional[
-            Collection[KD]
-        ] = None,  # Defaults to all document modalities
+        # Defaults to all document modalities
+        doc_types: Optional[Collection[KD]] = None,
     ) -> List[NodeWithScore]:
         query_bundle = self._as_query_bundle(
             str_or_query_bundle, query_type=Modalities.TEXT.key
@@ -598,9 +595,8 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
         self,
         str_or_query_bundle: QueryType,
         *,
-        doc_types: Optional[
-            Collection[KD]
-        ] = None,  # Defaults to all document modalities
+        # Defaults to all document modalities
+        doc_types: Optional[Collection[KD]] = None,
     ) -> List[NodeWithScore]:
         query_bundle = self._as_query_bundle(
             str_or_query_bundle, query_type=Modalities.TEXT.key
