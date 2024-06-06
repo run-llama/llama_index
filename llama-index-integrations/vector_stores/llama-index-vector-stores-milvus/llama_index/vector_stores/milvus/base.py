@@ -17,6 +17,7 @@ from llama_index.vector_stores.milvus.utils import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -43,13 +44,41 @@ except Exception as e:
 
 
 def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
-    """Translate standard metadata filters to Milvus specific spec."""
+    """Translate standard metadata filters to Milvus specific spec.
+
+    Note that Milvus supports single-quoted strings, so we use f-string with
+    the '!r' modifier to add single quotes for string values if necessary.
+
+    References:
+    - https://milvus.io/docs/boolean.md
+    - https://github.com/milvus-io/milvus/pull/24386
+    - https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals
+    """
     filters = []
-    for filter in standard_filters.legacy_filters():
-        if isinstance(filter.value, str):
-            filters.append(str(filter.key) + " == " + '"' + str(filter.value) + '"')
+    for filter in standard_filters.filters:
+        if filter.operator in (
+            FilterOperator.EQ,
+            FilterOperator.NE,
+            FilterOperator.GT,
+            FilterOperator.LT,
+            FilterOperator.GTE,
+            FilterOperator.LTE,
+            FilterOperator.IN,
+        ):
+            filters.append(f"{filter.key} {filter.operator.value} {filter.value!r}")
+        elif filter.operator == FilterOperator.NIN:
+            filters.append(f"{filter.key} not in {filter.value!r}")
+        elif filter.operator == FilterOperator.TEXT_MATCH:
+            # We assume that "text_match" can only be used for string values.
+            filters.append(f"{filter.key} like '%{filter.value}%'")
+        elif filter.operator == FilterOperator.CONTAINS:
+            filters.append(f"array_contains({filter.key}, {filter.value!r})")
+        elif filter.operator == FilterOperator.ANY:
+            filters.append(f"array_contains_any({filter.key}, {filter.value!r})")
+        elif filter.operator == FilterOperator.ALL:
+            filters.append(f"array_contains_all({filter.key}, {filter.value!r})")
         else:
-            filters.append(str(filter.key) + " == " + str(filter.value))
+            raise ValueError(f"FilterOperator {filter.operator} is not supported.")
     joined_filters = f" {standard_filters.condition.value} ".join(filters)
     return f"({joined_filters})" if len(filters) > 1 else joined_filters
 
