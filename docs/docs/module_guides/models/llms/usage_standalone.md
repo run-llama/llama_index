@@ -8,16 +8,16 @@ You can use our LLM modules on their own.
 from llama_index.llms.openai import OpenAI
 
 # non-streaming
-resp = OpenAI().complete("Paul Graham is ")
-print(resp)
+completion = OpenAI().complete("Paul Graham is ")
+print(completion)
 
 # using streaming endpoint
 from llama_index.llms.openai import OpenAI
 
 llm = OpenAI()
-resp = llm.stream_complete("Paul Graham is ")
-for delta in resp:
-    print(delta, end="")
+completions = llm.stream_complete("Paul Graham is ")
+for completion in completions:
+    print(completion.delta, end="")
 ```
 
 ## Chat Example
