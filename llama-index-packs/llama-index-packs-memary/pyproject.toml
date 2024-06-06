@@ -9,12 +9,12 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
-# [tool.llamahub]
-# contains_example = false
-# import_path = "<import-path>"
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.packs.memary"
 
-# [tool.llamahub.class_authors]
-# CLASS = "github-username"
+[tool.llamahub.class_authors]
+CLASS = "seyeong-han"
 
 [tool.mypy]
 disallow_untyped_defs = true
