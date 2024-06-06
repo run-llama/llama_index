@@ -4,6 +4,7 @@ Contains parsers for tabular data files.
 
 """
 
+import importlib.util
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -115,6 +116,7 @@ class PandasCSVReader(BaseReader):
                 Document(text=text, metadata=extra_info or {}) for text in text_list
             ]
 
+
 class PandasExcelReader(BaseReader):
     r"""Pandas-based Excel parser.
 
@@ -139,51 +141,72 @@ class PandasExcelReader(BaseReader):
         self,
         *args: Any,
         concat_rows: bool = True,
-        sheet_name = None, 
+        sheet_name=None,
         pandas_config: dict = {},
         **kwargs: Any
     ) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
         self._concat_rows = concat_rows
-        self._sheet_name = sheet_name 
+        self._sheet_name = sheet_name
         self._pandas_config = pandas_config
 
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Parse file."""
-        try:
-            import openpyxl
-        except ImportError:
-            raise ImportError("Please install openpyxl to read Excel files. You can install it with 'pip install openpyxl'")
-    
-        # sheet_name of None is all sheets, otherwise indexing starts at 0 
-        dfs = pd.read_excel(file, self._sheet_name, **self._pandas_config) 
+        openpyxl_spec = importlib.util.find_spec("openpyxl")
+        if openpyxl_spec is not None:
+            pass
+        else:
+            raise ImportError(
+                "Please install openpyxl to read Excel files. You can install it with 'pip install openpyxl'"
+            )
 
-        documents = [] 
+        # sheet_name of None is all sheets, otherwise indexing starts at 0
+        dfs = pd.read_excel(file, self._sheet_name, **self._pandas_config)
 
-        #handle the case where only a single DataFrame is returned 
+        documents = []
+
+        # handle the case where only a single DataFrame is returned
         if isinstance(dfs, pd.DataFrame):
-            df = dfs.fillna('')
+            df = dfs.fillna("")
 
             # Convert DataFrame to list of rows
-            text_list = df.astype(str).apply(lambda row: ' '.join(row.values), axis=1).tolist()
+            text_list = (
+                df.astype(str).apply(lambda row: " ".join(row.values), axis=1).tolist()
+            )
 
             if self._concat_rows:
-                documents.append(Document(text="\n".join(text_list), metadata=extra_info or {}))
+                documents.append(
+                    Document(text="\n".join(text_list), metadata=extra_info or {})
+                )
             else:
-                documents.append([Document(text=text, metadata=extra_info or {}) for text in text_list])
+                documents.append(
+                    [
+                        Document(text=text, metadata=extra_info or {})
+                        for text in text_list
+                    ]
+                )
         else:
-            for _sheet, df in dfs.items():
-                df = df.fillna('')
+            for df in dfs.values():
+                df = df.fillna("")
 
                 # Convert DataFrame to list of rows
-                text_list = df.astype(str).apply(lambda row: ' '.join(row), axis=1).tolist()
+                text_list = (
+                    df.astype(str).apply(lambda row: " ".join(row), axis=1).tolist()
+                )
 
                 if self._concat_rows:
-                    documents.append(Document(text="\n".join(text_list), metadata=extra_info or {}))
+                    documents.append(
+                        Document(text="\n".join(text_list), metadata=extra_info or {})
+                    )
                 else:
-                    documents.append([Document(text=text, metadata=extra_info or {}) for text in text_list])
+                    documents.append(
+                        [
+                            Document(text=text, metadata=extra_info or {})
+                            for text in text_list
+                        ]
+                    )
 
         return documents
