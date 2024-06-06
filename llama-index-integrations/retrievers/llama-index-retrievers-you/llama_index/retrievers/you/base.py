@@ -22,7 +22,7 @@ class YouRetriever(BaseRetriever):
 
     Args:
         api_key: you.com API key, if `YDC_API_KEY` is not set in the environment
-        endpoint_type: you.com endpoints
+        endpoint: you.com endpoints
         num_web_results: The max number of web results to return, must be under 20
         safesearch: Safesearch settings, one of "off", "moderate", "strict", defaults to moderate
         country: Country code, ex: 'US' for United States, see API reference for more info
@@ -49,17 +49,16 @@ class YouRetriever(BaseRetriever):
         super().__init__(callback_manager)
 
         if endpoint not in ("search", "news"):
-            raise ValueError('`endpoint_type` must be either "search" or "news"')
+            raise ValueError('`endpoint` must be either "search" or "news"')
 
-        # Raise warning if News API-specific fields are set but endpoint_type is not "news"
+        # Raise warning if News API-specific fields are set but endpoint is not "news"
         if endpoint != "news":
             news_api_fields = (search_lang, ui_lang, spellcheck)
             for field in news_api_fields:
                 if field:
                     warnings.warn(
                         (
-                            f"News API-specific field '{field}' is set but "
-                            f'`endpoint_type="{endpoint}"`. '
+                            f"News API-specific field '{field}' is set but `{endpoint=}`. "
                             "This will have no effect."
                         ),
                         UserWarning,
