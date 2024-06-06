@@ -21,11 +21,11 @@ disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.10.12"
 
 [tool.poetry]
 name = "llama-index-packs-memary"
-version = "0.1.0"
+version = "0.1.3"
 description = "llama-index packs memary integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
