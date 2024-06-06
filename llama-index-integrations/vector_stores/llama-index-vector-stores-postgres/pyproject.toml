@@ -69,10 +69,10 @@ version = ">=v2.2.6"
 include = "llama_index/"
 
 [tool.pytest.ini_options]
-markers = [
-    "asyncio",
-]
 asyncio_mode = "auto"
 filterwarnings = [
-    "ignore::DeprecationWarning:"
+    "ignore::DeprecationWarning:",
+]
+markers = [
+    "asyncio",
 ]
