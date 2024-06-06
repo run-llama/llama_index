@@ -12,8 +12,11 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
-    get_defualt_sparse_embedding_function,
+    get_default_sparse_embedding_function,
     BaseSparseEmbeddingFunction,
+    ScalarMetadataFilters,
+    parse_standard_filters,
+    parse_scalar_filters,
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -22,8 +25,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    FilterOperatorFunction,
-    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     DEFAULT_DOC_ID_KEY,
@@ -277,7 +278,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.enable_sparse = enable_sparse
         if self.enable_sparse is True and sparse_embedding_function is None:
             logger.warning("Sparse embedding function is not provided, using default.")
-            self.sparse_embedding_function = get_defualt_sparse_embedding_function()
+            self.sparse_embedding_function = get_default_sparse_embedding_function()
         elif self.enable_sparse is True and sparse_embedding_function is not None:
             self.sparse_embedding_function = sparse_embedding_function
         else:
@@ -388,8 +389,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields = ["*"]
 
         # Parse the filter
-        if query.filters is not None:
-            expr.append(_to_milvus_filter(query.filters))
+
+        if query.filters is not None or "milvus_scalar_filters" in kwargs:
+            expr.append(
+                _to_milvus_filter(
+                    query.filters,
+                    kwargs["milvus_scalar_filters"]
+                    if "milvus_scalar_filters" in kwargs
+                    else None,
+                )
+            )
 
         # Parse any docs we are filtering on
         if query.doc_ids is not None and len(query.doc_ids) != 0:

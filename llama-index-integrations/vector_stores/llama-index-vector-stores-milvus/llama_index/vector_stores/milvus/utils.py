@@ -2,8 +2,142 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 import sys
 import logging
+from enum import Enum
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+)
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Union,
+)
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+)
+from llama_index.core.vector_stores.types import (
+    MetadataFilters,
+    FilterOperator,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class FilterOperatorFunction(str, Enum):
+    ARRAY_CONTAINS = "ARRAY_CONTAINS({key}, {value})"  # array contains single value
+    NARRAY_CONTAINS = (
+        "not ARRAY_CONTAINS({key}, {value})"  # array does not contain single value
+    )
+    ARRAY_CONTAINS_ANY = (
+        "ARRAY_CONTAINS_ANY({key}, {value})"  # array contains any value in the list
+    )
+    NARRAY_CONTAINS_ANY = "not ARRAY_CONTAINS_ANY({key}, {value})"  # array does not contain any value in the list
+    ARRAY_CONTAINS_ALL = (
+        "ARRAY_CONTAINS_ALL({key}, {value})"  # array contains all values in the list
+    )
+    NARRAY_CONTAINS_ALL = "not ARRAY_CONTAINS_ALL({key}, {value})"  # array does not contain all values in the list
+    ARRAY_LENGTH = "ARRAY_LENGTH({key}) == {value}"  # array length equals value
+    NARRAY_LENGTH = "ARRAY_LENGTH({key}) != {value}"  # array length not equals value
+
+
+class ScalarMetadataFilter(BaseModel):
+    key: str
+    value: Union[
+        StrictInt,
+        StrictFloat,
+        StrictStr,
+        List[StrictStr],
+        List[StrictFloat],
+        List[StrictInt],
+    ]
+    operator: FilterOperatorFunction = FilterOperatorFunction.ARRAY_CONTAINS
+
+    def to_dict(self):
+        return {"key": self.key, "value": self.value, "operator": self.operator.value}
+
+    @classmethod
+    def from_dict(
+        cls,
+        filter_dict: Dict,
+    ) -> "ScalarMetadataFilter":
+        """Create ScalarMetadataFilter from dictionary.
+
+        Args:
+            filter_dict: Dict with key, value and FilterOperatorFunction.
+
+        """
+        return ScalarMetadataFilter.parse_obj(filter_dict)
+
+
+class ScalarMetadataFilters(BaseModel):
+    # scalar metadata filters for advanced vector filtering
+    # https://docs.zilliz.com/docs/use-array-fields#advanced-scalar-filtering
+    filters: List[ScalarMetadataFilter]
+    # and/or such conditions for combining different filters
+    condition: Optional[FilterCondition] = FilterCondition.AND
+
+    def to_dict(self):
+        return [filter.to_dict() for filter in self.filters]
+
+    @classmethod
+    def from_dict(cls, data):
+        filters = [ScalarMetadataFilter.from_dict(item) for item in data]
+        return cls(filters=filters)
+
+
+def parse_filter_value(filter_value: any):
+    if filter_value is None:
+        return filter_value
+
+    return f'"{filter_value!s}"' if isinstance(filter_value, str) else str(filter_value)
+
+
+def parse_standard_filters(standard_filters: MetadataFilters = None):
+    filters = []
+    if standard_filters is None or standard_filters.filters is None:
+        return filters, ""
+
+    for filter in standard_filters.filters:
+        filter_value = parse_filter_value(filter.value)
+        if filter_value is None:
+            continue
+
+        if filter.operator == FilterOperator.NIN:
+            filters.append(str(filter.key) + " not in " + filter_value)
+        elif filter.operator in [
+            FilterOperator.EQ,
+            FilterOperator.GT,
+            FilterOperator.LT,
+            FilterOperator.NE,
+            FilterOperator.GTE,
+            FilterOperator.LTE,
+            FilterOperator.IN,
+        ]:
+            filters.append(str(filter.key) + " " + filter.operator + " " + filter_value)
+        else:
+            raise ValueError(f"Operator {filter.operator} not supported by Milvus.")
+
+    return filters, f" {standard_filters.condition.value} ".join(filters)
+
+
+def parse_scalar_filters(scalar_filters: ScalarMetadataFilters = None):
+    filters = []
+    if scalar_filters is None:
+        return filters, ""
+
+    scalar_filters = ScalarMetadataFilters.from_dict(scalar_filters)
+    for filter in scalar_filters.filters:
+        filter_value = parse_filter_value(filter.value)
+        if filter_value is None:
+            continue
+
+        operator = filter.operator.value.format(key=filter.key, value=filter_value)
+        filters.append(operator)
+
+    return filters, f" {scalar_filters.condition.value} ".join(filters)
 
 
 class BaseSparseEmbeddingFunction(ABC):
@@ -50,5 +184,5 @@ class BGEM3SparseEmbeddingFunction(BaseSparseEmbeddingFunction):
         return result
 
 
-def get_defualt_sparse_embedding_function() -> BGEM3SparseEmbeddingFunction:
+def get_default_sparse_embedding_function() -> BGEM3SparseEmbeddingFunction:
     return BGEM3SparseEmbeddingFunction()
