@@ -26,6 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["ZenGuard Team <hello@zenguard.ai>"]
 description = "llama-index packs zenguard guardrails integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-packs-zenguard-guardrails"
 packages = [{include = "llama_index/"}]

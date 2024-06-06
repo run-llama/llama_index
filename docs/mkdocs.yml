@@ -2592,6 +2592,7 @@ plugins:
         ./use_cases/text_to_sql.html: https://docs.llamaindex.ai/en/stable/use_cases/text_to_sql/
       use_directory_urls: false
 site_name: LlamaIndex
+site_url: https://docs.llamaindex.ai/
 theme:
   custom_dir: overrides
   favicon: _static/assets/LlamaLogoBrowserTab.png
