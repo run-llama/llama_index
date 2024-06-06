@@ -365,15 +365,13 @@ enabling agent monitoring, LLM cost tracking, benchmarking, and more.
 #### Install
 
 ```shell
-pip install agentops
+pip install llama-index-instrumentation-agentops
 ```
 
 #### Usage Pattern
 
 ```python
 from llama_index.core import set_global_handler
-
-# Make sure you've installed the 'llama-index-instrumentation-agentops' integration package.
 
 # NOTE: Feel free to set your AgentOps environment variables (e.g., 'AGENTOPS_API_KEY')
 # as outlined in the AgentOps documentation, or pass the equivalent keyword arguments
