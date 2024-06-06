@@ -1,5 +1,4 @@
 import pytest
-import os
 
 from typing import Dict
 
@@ -14,8 +13,7 @@ from llama_index.packs.zenguard import (
 
 @pytest.fixture()
 def zenguard_pack():
-    api_key = os.environ.get("ZEN_API_KEY")
-    assert api_key, "ZEN_API_KEY is not set"
+    api_key = "3Ev_DGvELv7EnlgWMTlpmWTo82tpstyz4Li_R7kTDQw"  # mock key. whitelisted only for LlamaIndex tests.
     config = ZenGuardConfig(credentials=Credentials(api_key=api_key))
     return ZenGuardPack(config)
 
