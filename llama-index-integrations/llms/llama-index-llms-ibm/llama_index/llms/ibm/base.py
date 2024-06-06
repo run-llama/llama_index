@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
 )
+from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.core.bridge.pydantic import (
     Field,
     PrivateAttr,
@@ -34,6 +35,9 @@ from llama_index.core.llms.custom import CustomLLM
 from llama_index.llms.ibm.utils import (
     resolve_watsonx_credentials,
 )
+
+# default max tokens determined by service
+DEFAULT_MAX_TOKENS = 20
 
 
 class WatsonxLLM(CustomLLM):
@@ -136,6 +140,8 @@ class WatsonxLLM(CustomLLM):
     _model: ModelInference = PrivateAttr()
     _client: Optional[APIClient] = PrivateAttr()
     _model_info: Optional[Dict[str, Any]] = PrivateAttr()
+    _deployment_info: Optional[Dict[str, Any]] = PrivateAttr()
+    _context_window: Optional[int] = PrivateAttr()
     _text_generation_params: Dict[str, Any] | None = PrivateAttr()
 
     def __init__(
@@ -165,6 +171,7 @@ class WatsonxLLM(CustomLLM):
         """
         callback_manager = callback_manager or CallbackManager([])
         additional_params = additional_params or {}
+        self._context_window = kwargs.get("context_window")
 
         creds = (
             resolve_watsonx_credentials(
@@ -238,15 +245,22 @@ class WatsonxLLM(CustomLLM):
             validate=validate_model,
         )
         self._model_info = None
+        self._deployment_info = None
 
     class Config:
         validate_assignment = True
 
     @property
     def model_info(self):
-        if self._model_info is None:
+        if self._model.model_id and self._model_info is None:
             self._model_info = self._model.get_details()
         return self._model_info
+
+    @property
+    def deployment_info(self):
+        if self._model.deployment_id and self._deployment_info is None:
+            self._deployment_info = self._model.get_details()
+        return self._deployment_info
 
     @classmethod
     def class_name(cls) -> str:
@@ -266,18 +280,28 @@ class WatsonxLLM(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(
-            context_window=(
-                (self.model_info or {})
+        if self.model_id:
+            return LLMMetadata(
+                context_window=(
+                    self.model_info.get("model_limits", {}).get("max_sequence_length")
+                ),
+                num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
+                model_name=self.model_id,
+            )
+        else:
+            model_id = self.deployment_info.get("entity", {}).get("base_model_id")
+            context_window = (
+                self._model._client.foundation_models.get_model_specs(model_id=model_id)
                 .get("model_limits", {})
                 .get("max_sequence_length")
-                if self.model_id
-                else None
-            ),
-            num_output=self.max_new_tokens,
-            model_name=self.model_id
-            or self.model_info.get("entity", {}).get("base_model_id"),
-        )
+            )
+            return LLMMetadata(
+                context_window=context_window
+                or self._context_window
+                or DEFAULT_CONTEXT_WINDOW,
+                num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
+                model_name=model_id or self._model.deployment_id,
+            )
 
     @property
     def sample_generation_text_params(self) -> Dict[str, Any]:
