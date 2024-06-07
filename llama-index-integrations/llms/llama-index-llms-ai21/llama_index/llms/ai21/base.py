@@ -1,7 +1,8 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from ai21 import AI21Client, Tokenizer
+from ai21 import AI21Client
 from ai21.models.chat import ChatCompletionChunk
+from ai21_tokenizer import Tokenizer, BaseTokenizer
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
@@ -31,6 +32,12 @@ _DEFAULT_AI21_MODEL = "jamba-instruct"
 _TOKENIZER_NAME_FORMAT = "{model_name}-tokenizer"
 _DEFAULT_TEMPERATURE = 0.7
 _DEFAULT_MAX_TOKENS = 512
+
+_TOKENIZER_MAP = {
+    "j2-ultra": "j2-tokenizer",
+    "j2-mid": "j2-tokenizer",
+    "jamba-instruct": "jamba-instruct-tokenizer",
+}
 
 
 class AI21(CustomLLM):
@@ -136,10 +143,8 @@ class AI21(CustomLLM):
         )
 
     @property
-    def tokenizer(self) -> Tokenizer:
-        return self._client.get_tokenizer(
-            _TOKENIZER_NAME_FORMAT.format(model_name=self.model)
-        )
+    def tokenizer(self) -> BaseTokenizer:
+        return Tokenizer.get_tokenizer(_TOKENIZER_MAP.get(self.model))
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
