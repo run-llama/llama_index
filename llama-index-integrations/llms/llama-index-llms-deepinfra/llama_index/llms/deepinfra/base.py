@@ -7,7 +7,7 @@ from typing import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
-from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
+from llama_index.core.constants import DEFAULT_TEMPERATURE
 
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.callbacks import CallbackManager
@@ -40,6 +40,7 @@ from llama_index.llms.deepinfra.constants import (
     CHAT_API_ENDPOINT,
     ENV_VARIABLE,
     DEFAULT_MODEL_NAME,
+    DEFAULT_MAX_TOKENS,
 )
 
 from llama_index.llms.deepinfra.client import DeepInfraClient
