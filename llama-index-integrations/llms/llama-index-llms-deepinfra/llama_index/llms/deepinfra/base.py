@@ -7,7 +7,7 @@ from typing import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms.llm import LLM
-from llama_index.core.constants import DEFAULT_TEMPERATURE
+from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.callbacks import CallbackManager
@@ -78,6 +78,7 @@ class DeepInfraLLM(LLM):
         lte=1.0,
     )
     max_tokens: Optional[int] = Field(
+        default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate.",
         gt=0,
     )
@@ -102,7 +103,7 @@ class DeepInfraLLM(LLM):
         model: str = DEFAULT_MODEL_NAME,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = DEFAULT_MAX_TOKENS,
         max_retries: int = 10,
         api_base: str = API_BASE,
         timeout: Optional[float] = None,
