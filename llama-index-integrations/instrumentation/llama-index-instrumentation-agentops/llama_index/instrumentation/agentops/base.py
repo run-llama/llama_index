@@ -98,7 +98,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         bound_args: BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> SimpleSpan:
         self._shared_handler_state.is_agent_chat_span[id_] = False
         self._shared_handler_state.span_parent[id_] = parent_span_id
@@ -110,7 +110,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         bound_args: BoundArguments,
         instance: Optional[Any] = None,
         result: Optional[Any] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> SimpleSpan:
         self._shared_handler_state.remove_span_id(id_)
         return super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
@@ -121,7 +121,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         bound_args: BoundArguments,
         instance: Optional[Any] = None,
         err: Optional[BaseException] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> SimpleSpan:
         if err:
             # Associate this exception to the parent span, so that it will know to ignore it
@@ -207,7 +207,6 @@ class AgentOpsHandler(BaseInstrumentationHandler):
         max_queue_size: Optional[int] = None,
         tags: Optional[List[str]] = None,
         instrument_llm_calls=True,
-        auto_start_session=True,
         inherited_session_id: Optional[str] = None,
     ):
         client_params: Dict[str, Any] = {
@@ -218,8 +217,9 @@ class AgentOpsHandler(BaseInstrumentationHandler):
             "max_queue_size": max_queue_size,
             "tags": tags,
             "instrument_llm_calls": instrument_llm_calls,
-            "auto_start_session": auto_start_session,
+            "auto_start_session": True,
             "inherited_session_id": inherited_session_id,
+            "skip_auto_end_session": False,
         }
         ao_client = AOClient(
             **{k: v for k, v in client_params.items() if v is not None}
