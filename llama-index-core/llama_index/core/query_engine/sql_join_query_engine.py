@@ -297,8 +297,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                 query_engine_query_str=new_query.query_str,
                 query_engine_response_str=str(other_response),
             )
-            if self._verbose:
-                print_text(f"Final response: {response_str}\n", color="green")
+
             response_metadata = {
                 **(sql_response.metadata or {}),
                 **(other_response.metadata or {}),
@@ -319,8 +318,6 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                 query_engine_response_str=str(other_response),
             )
 
-            if self._verbose:
-                print_text(f"Final response: {response_str}\n", color="green")
             response_metadata = {
                 **(sql_response.metadata or {}),
                 **(other_response.metadata or {}),
@@ -350,9 +347,6 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
             return self._other_query_tool.query_engine.query(query_bundle)
-            # if self._verbose:
-            #     print_text(f"Query Engine response: {response}\n", color="pink")
-            # return response
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")
 
