@@ -2,7 +2,11 @@ import inspect
 from abc import ABC
 from typing import Any, List
 
-from llama_index.core.instrumentation.dispatcher import Dispatcher, Manager
+from llama_index.core.instrumentation.dispatcher import (
+    Dispatcher,
+    Manager,
+    DISPATCHER_SPAN_DECORATED_ATTR,
+)
 from llama_index.core.instrumentation.event_handlers import NullEventHandler
 from llama_index.core.instrumentation.span_handlers import NullSpanHandler
 
@@ -39,22 +43,27 @@ def get_dispatcher(name: str = "root") -> Dispatcher:
 
 class DispatcherSpanMixin(ABC):
     """
-    Apply dispatcher.span to implementations of abstract methods.
+    Apply dispatcher.span decorator to implementations of abstract methods
+    as well as any previously decorated methods that have been overridden.
     """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         abstract_methods: List[str] = []
+        decorated_methods: List[str] = []
         for base_cls in inspect.getmro(cls):
             if base_cls is cls:
                 continue
             for attr, method in base_cls.__dict__.items():
+                if not callable(method):
+                    continue
                 if (
-                    callable(method)
-                    and hasattr(method, "__isabstractmethod__")
+                    hasattr(method, "__isabstractmethod__")
                     and method.__isabstractmethod__
                 ):
                     abstract_methods.append(attr)
+                elif hasattr(method, DISPATCHER_SPAN_DECORATED_ATTR):
+                    decorated_methods.append(attr)
         dispatcher = get_dispatcher(cls.__module__)
         for attr, method in cls.__dict__.items():
             if (
@@ -63,5 +72,5 @@ class DispatcherSpanMixin(ABC):
                 and method.__isabstractmethod__
             ):
                 continue
-            if attr in abstract_methods:
+            if attr in abstract_methods or attr in decorated_methods:
                 setattr(cls, attr, dispatcher.span(method))

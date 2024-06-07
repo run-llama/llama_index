@@ -14,6 +14,8 @@ from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
 
+DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
+
 
 # Keep for backwards compatibility
 class EventDispatcher(Protocol):
@@ -209,9 +211,9 @@ class Dispatcher(BaseModel):
                 c = c.parent
 
     def span(self, func):
-        if hasattr(func, "__dispatcher_span_decorated__"):
+        if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
             return func
-        func.__dispatcher_span_decorated__ = True
+        setattr(func, DISPATCHER_SPAN_DECORATED_ATTR, True)
 
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
