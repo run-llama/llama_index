@@ -19,6 +19,7 @@ from typing import (
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
 
@@ -59,7 +60,7 @@ class BaseOutputParser(Protocol):
         return messages
 
 
-class BasePydanticProgram(ABC, Generic[Model]):
+class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     """A base class for LLM-powered function that return a pydantic model.
 
     Note: this interface is not yet stable.

@@ -209,6 +209,10 @@ class Dispatcher(BaseModel):
                 c = c.parent
 
     def span(self, func):
+        if hasattr(func, "__dispatcher_span_decorated__"):
+            return func
+        func.__dispatcher_span_decorated__ = True
+
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
