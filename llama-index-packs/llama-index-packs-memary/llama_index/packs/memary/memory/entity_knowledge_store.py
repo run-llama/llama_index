@@ -6,13 +6,13 @@ from llama_index.packs.memary.memory.data_types import KnowledgeMemoryItem, Memo
 
 
 class EntityKnowledgeStore(BaseMemory):
-
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the number of items in the memory."""
         return len(self.knowledge_memory)
 
     def init_memory(self):
         """Initializes memory.
+
         self.entity_memory: list[EntityMemoryItem]
         """
         self.load_memory_from_file()
@@ -25,10 +25,9 @@ class EntityKnowledgeStore(BaseMemory):
 
     def load_memory_from_file(self):
         try:
-            with open(self.file_name, 'r') as file:
+            with open(self.file_name) as file:
                 self.knowledge_memory = [
-                    KnowledgeMemoryItem.from_dict(item)
-                    for item in json.load(file)
+                    KnowledgeMemoryItem.from_dict(item) for item in json.load(file)
                 ]
             logging.info(
                 f"Entity Knowledge Memory loaded from {self.file_name} successfully."
@@ -39,18 +38,18 @@ class EntityKnowledgeStore(BaseMemory):
             )
 
     def add_memory(self, memory_stream: list[MemoryItem]):
-        """To add new memory to the entity knowledge store
-        we should convert the memory to knowledge memory and then update the knowledge memory
+        """Add new memory to the entity knowledge store.
+
+        We should convert the memory to knowledge memory and then update the knowledge memory.
 
         Args:
             memory_stream (list): list of MemoryItem
         """
-        knowledge_meory = self._convert_memory_to_knowledge_memory(
-            memory_stream)
+        knowledge_meory = self._convert_memory_to_knowledge_memory(memory_stream)
         self._update_knowledge_memory(knowledge_meory)
 
     def _update_knowledge_memory(self, knowledge_memory: list):
-        """update self.knowledge memory with new knowledge memory items
+        """Update self.knowledge memory with new knowledge memory items.
 
         Args:
             knowledge_memory (list): list of KnowledgeMemoryItem
@@ -65,22 +64,23 @@ class EntityKnowledgeStore(BaseMemory):
                 self.knowledge_memory.append(item)
 
     def _convert_memory_to_knowledge_memory(
-            self, memory_stream: list) -> list[KnowledgeMemoryItem]:
-        """Converts memory to knowledge memory
+        self, memory_stream: list
+    ) -> list[KnowledgeMemoryItem]:
+        """Converts memory to knowledge memory.
 
         Returns:
             knowledge_memory (list): list of KnowledgeMemoryItem
         """
         knowledge_memory = []
 
-        entities = set([item.entity for item in memory_stream])
+        entities = {item.entity for item in memory_stream}
         for entity in entities:
             memory_dates = [
                 item.date for item in memory_stream if item.entity == entity
             ]
             knowledge_memory.append(
-                KnowledgeMemoryItem(entity, len(memory_dates),
-                                    max(memory_dates)))
+                KnowledgeMemoryItem(entity, len(memory_dates), max(memory_dates))
+            )
         return knowledge_memory
 
     def get_memory(self) -> list[KnowledgeMemoryItem]:

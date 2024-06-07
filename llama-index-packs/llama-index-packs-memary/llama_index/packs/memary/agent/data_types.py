@@ -11,21 +11,23 @@ def save_json(filename, data):
 @dataclass
 class Context:
     """Context class to store the role and content of the message."""
+
     role: str  # system or user
     content: str
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.role}: {self.content} |"
 
     def to_dict(self):
-        return {'role': self.role, 'content': self.content}
+        return {"role": self.role, "content": self.content}
 
 
 class Message:
     """Message class to store the contexts, memory stream and knowledge entity store."""
 
-    def __init__(self, system_persona_txt, user_persona_txt, past_chat_json,
-                 model):
+    def __init__(
+        self, system_persona_txt, user_persona_txt, past_chat_json, model
+    ) -> None:
         self.past_chat_json = past_chat_json
 
         self.contexts = []
@@ -38,19 +40,19 @@ class Message:
             "model": model,
             "messages": self.contexts,
             "memory_stream": [],
-            "knowledge_entity_store": []
+            "knowledge_entity_store": [],
         }
 
         # self.prompt_tokens = count_tokens(self.contexts)
 
-    def __str__(self):
+    def __str__(self) -> str:
         llm_message_str = f"System Persona: {self.system_persona}\nUser Persona: {self.user_persona}\n"
         for context in self.contexts:
-            llm_message_str += f"{str(context)},"
+            llm_message_str += f"{context!s},"
         for memory in self.llm_message["memory_stream"]:
-            llm_message_str += f"{str(memory)},"
+            llm_message_str += f"{memory!s},"
         for entity in self.llm_message["knowledge_entity_store"]:
-            llm_message_str += f"{str(entity)},"
+            llm_message_str += f"{entity!s},"
         return llm_message_str
 
     def _init_persona_to_messages(self):
@@ -68,20 +70,19 @@ class Message:
             str: persona
         """
         try:
-            with open(persona_txt, "r") as file:
-                persona = file.read()
-            return persona
+            with open(persona_txt) as file:
+                return file.read()
         except FileNotFoundError:
             logging.info(f"{persona_txt} file does not exist.")
 
     def load_contexts_from_json(self):
         """Loads the contexts from the past chat json file."""
         try:
-            with open(self.past_chat_json, "r") as file:
+            with open(self.past_chat_json) as file:
                 data_dicts = json.load(file)
 
             return [Context(**data_dict) for data_dict in data_dicts]
-        except:
+        except FileNotFoundError:
             logging.info(
                 f"{self.past_chat_json} file does not exist. Starts from empty contexts."
             )
@@ -89,8 +90,9 @@ class Message:
 
     def save_contexts_to_json(self):
         """Saves the contexts to the json file.
-        We don't save the system and user personas (first two messages)
+        We don't save the system and user personas (first two messages).
         """
-        save_json(self.past_chat_json, [
-            message.to_dict() for message in self.llm_message['messages'][2:]
-        ])
+        save_json(
+            self.past_chat_json,
+            [message.to_dict() for message in self.llm_message["messages"][2:]],
+        )

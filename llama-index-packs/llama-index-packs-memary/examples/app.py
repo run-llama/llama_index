@@ -66,8 +66,8 @@ def create_graph(nodes, edges):
 def fill_graph(nodes, edges, cypher_query):
     entities = []
     with GraphDatabase.driver(
-            uri=chat_agent.neo4j_url,
-            auth=(chat_agent.neo4j_username, chat_agent.neo4j_password),
+        uri=chat_agent.neo4j_url,
+        auth=(chat_agent.neo4j_username, chat_agent.neo4j_password),
     ) as driver:
         with driver.session() as session:
             result = session.run(cypher_query)
@@ -138,14 +138,17 @@ if selected_llm_model and selected_vision_model:
     tools = st.multiselect(
         "Select tools to include:",
         ["search", "locate", "vision", "stocks"],  # all options available
-        ["search", "locate", "vision", "stocks"
-         ],  # options that are selected by default
+        [
+            "search",
+            "locate",
+            "vision",
+            "stocks",
+        ],  # options that are selected by default
     )
 
     img_url = ""
     if "vision" in tools:
-        img_url = st.text_input(
-            "URL of image, leave blank if no image to provide")
+        img_url = st.text_input("URL of image, leave blank if no image to provide")
         if img_url:
             st.image(img_url, caption="Uploaded Image", use_column_width=True)
 
@@ -153,12 +156,11 @@ if selected_llm_model and selected_vision_model:
     st.write("")
 
     if clear_memory:
-        # print("Front end recieved request to clear memory")
+        # print("Front end received request to clear memory")
         chat_agent.clearMemory()
         st.write("Memory DB cleared")
 
     if generate_clicked:
-
         if query == "":
             st.write("Please enter a question")
             st.stop()
@@ -181,9 +183,9 @@ if selected_llm_model and selected_vision_model:
         cypher_query = chat_agent.check_KG(query)
         if cypher_query:
             rag_response, entities = chat_agent.get_routing_agent_response(
-                query, return_entity=True)
-            chat_agent.add_chat("system", "ReAct agent: " + rag_response,
-                                entities)
+                query, return_entity=True
+            )
+            chat_agent.add_chat("system", "ReAct agent: " + rag_response, entities)
         else:
             # get response
             react_response = chat_agent.get_routing_agent_response(query)
@@ -206,8 +208,7 @@ if selected_llm_model and selected_vision_model:
             st.write("")
             st.text("Subgraph:")
             graph = create_graph(nodes, edges)
-            graph_html = graph.generate_html(
-                f"graph_{random.randint(0, 1000)}.html")
+            graph_html = graph.generate_html(f"graph_{random.randint(0, 1000)}.html")
             components.html(graph_html, height=500, scrolling=True)
         else:
             st.subheader("Knowledge Graph")
@@ -226,8 +227,7 @@ if selected_llm_model and selected_vision_model:
             st.dataframe(df)
 
             # Entity Knowledge Store
-            knowledge_memory_items = chat_agent.entity_knowledge_store.get_memory(
-            )
+            knowledge_memory_items = chat_agent.entity_knowledge_store.get_memory()
             knowledge_memory_items_dicts = [
                 item.to_dict() for item in knowledge_memory_items
             ]

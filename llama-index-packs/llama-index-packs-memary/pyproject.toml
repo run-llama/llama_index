@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -24,43 +24,43 @@ ignore_missing_imports = true
 python_version = "3.10.12"
 
 [tool.poetry]
-name = "llama-index-packs-memary"
-version = "0.1.3"
-description = "llama-index packs memary integration"
 authors = ["Seyeong Han <h960213@gmail.com>"]
+description = "llama-index packs memary integration"
 license = "MIT"
-readme = "README.md"
+name = "llama-index-packs-memary"
 packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
 python = ">3.9.7,<3.11.10"
-neo4j="5.17.0"
-python-dotenv="1.0.1"
-pyvis="0.3.2"
-streamlit="1.31.1"
-llama-index="0.10.11"
-llama-index-agent-openai="0.1.5"
-llama-index-core="0.10.12"
-llama-index-embeddings-openai="0.1.5"
-llama-index-graph-stores-nebula="0.1.2"
-llama-index-graph-stores-neo4j="0.1.1"
-llama-index-legacy="0.9.48"
-llama-index-llms-openai="0.1.5"
-llama-index-multi-modal-llms-openai="0.1.3"
-llama-index-program-openai="0.1.3"
-llama-index-question-gen-openai="0.1.2"
-llama-index-readers-file="0.1.4"
-langchain="0.1.12"
-langchain-openai="0.0.8"
-llama-index-llms-perplexity="0.1.3"
-llama-index-multi-modal-llms-ollama="0.1.3"
-llama-index-llms-ollama="0.1.2"
-pandas="2.2.0"
-geocoder="1.38.1"
-googlemaps="4.10.0"
-ansistrip="0.1"
-numpy="1.26.4"
-ollama="0.1.9"
+neo4j = "5.17.0"
+python-dotenv = "1.0.1"
+pyvis = "0.3.2"
+streamlit = "1.31.1"
+llama-index = "0.10.11"
+llama-index-agent-openai = "0.1.5"
+llama-index-core = "0.10.12"
+llama-index-embeddings-openai = "0.1.5"
+llama-index-graph-stores-nebula = "0.1.2"
+llama-index-graph-stores-neo4j = "0.1.1"
+llama-index-legacy = "0.9.48"
+llama-index-llms-openai = "0.1.5"
+llama-index-multi-modal-llms-openai = "0.1.3"
+llama-index-program-openai = "0.1.3"
+llama-index-question-gen-openai = "0.1.2"
+llama-index-readers-file = "0.1.4"
+langchain = "0.1.12"
+langchain-openai = "0.0.8"
+llama-index-llms-perplexity = "0.1.3"
+llama-index-multi-modal-llms-ollama = "0.1.3"
+llama-index-llms-ollama = "0.1.2"
+pandas = "2.2.0"
+geocoder = "1.38.1"
+googlemaps = "4.10.0"
+ansistrip = "0.1"
+numpy = "1.26.4"
+ollama = "0.1.9"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
@@ -78,5 +78,5 @@ types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
-types-requests = "2.28.11.8" # TODO: unpin when mypy>0.991
+types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
 types-setuptools = "67.1.0.0"

@@ -53,7 +53,7 @@ Google Maps:
 
 Alpha Vantage: (this key is for getting real time stock data)
   https://www.alphavantage.co/support/#api-key
-  Reccomend use https://10minutemail.com/ to generate a temporary email to use
+  Recommend use https://10minutemail.com/ to generate a temporary email to use
 ```
 
 4.  Update user persona which can be found in `streamlit_app/data/user_persona.txt` using the user persona template which can be found in `streamlit_app/data/user_persona_template.txt`. Instructions have been provided - replace the curly brackets with relevant information.
@@ -70,6 +70,7 @@ streamlit run app.py
 
 ```python
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from llama_index.packs.memary.agent.chat_agent import ChatAgent
@@ -98,6 +99,7 @@ Pass in subset of `['search', 'vision', 'locate', 'stocks']` as `include_from_de
 def multiply(a: int, b: int) -> int:
     """Multiply two integers and returns the result integer"""
     return a * b
+
 
 chat_agent.add_tool({"multiply": multiply})
 ```

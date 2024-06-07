@@ -6,20 +6,16 @@ import requests
 
 
 def smart_urljoin(base_url, relative_url):
-    """urljoin is stupid and wants a trailing / at the end of the endpoint address, or it will chop the suffix off"""
+    """Urljoin is stupid and wants a trailing / at the end of the endpoint address, or it will chop the suffix off."""
     if not base_url.endswith("/"):
         base_url += "/"
     return urllib.parse.urljoin(base_url, relative_url)
 
 
 def openai_chat_completions_request(url, api_key, data):
-    """text-generation?lang=curl"""
-
+    """text-generation?lang=curl."""
     url = smart_urljoin(url, "chat/completions")
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
 
     logging.info(f"Sending request to {url}")
     try:
@@ -43,20 +39,19 @@ def openai_chat_completions_request(url, api_key, data):
     except requests.exceptions.HTTPError as http_err:
         # Handle HTTP errors (e.g., response 4XX, 5XX)
         logging.error(f"Got HTTPError, exception={http_err}, payload={data}")
-        raise http_err
+        raise
     except requests.exceptions.RequestException as req_err:
         # Handle other requests-related errors (e.g., connection error)
         logging.warning(f"Got RequestException, exception={req_err}")
-        raise req_err
+        raise
     except Exception as e:
         # Handle other potential errors
         logging.warning(f"Got unknown Exception, exception={e}")
-        raise e
+        raise
 
 
 def ollama_chat_completions_request(messages, model):
-    """sends chat request to model running on Ollama"""
-
+    """Sends chat request to model running on Ollama."""
     url = "http://localhost:11434/api/chat"
     data = {"model": model, "messages": messages, "stream": False}
 
@@ -71,12 +66,12 @@ def ollama_chat_completions_request(messages, model):
     except requests.exceptions.HTTPError as http_err:
         # Handle HTTP errors (e.g., response 4XX, 5XX)
         logging.error(f"Got HTTPError, exception={http_err}, payload={data}")
-        raise http_err
+        raise
     except requests.exceptions.RequestException as req_err:
         # Handle other requests-related errors (e.g., connection error)
         logging.warning(f"Got RequestException, exception={req_err}")
-        raise req_err
+        raise
     except Exception as e:
         # Handle other potential errors
         logging.warning(f"Got unknown Exception, exception={e}")
-        raise e
+        raise
