@@ -20,7 +20,6 @@ from llama_index.vector_stores.milvus.utils import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
