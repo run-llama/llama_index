@@ -204,8 +204,9 @@ class AI21(CustomLLM):
         )
 
     def _j2_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        messages = [message_to_ai21_j2_message(message) for message in messages]
+        system, messages = message_to_ai21_j2_message(messages)
         response = self._client.chat.create(
+            system=system,
             messages=messages,
             stream=False,
             **kwargs,

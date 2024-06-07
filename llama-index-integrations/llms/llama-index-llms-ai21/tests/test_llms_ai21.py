@@ -125,6 +125,7 @@ def test_chat__when_j2():
     assert actual_response == expected_chat_response
 
     llm._client.chat.create.assert_called_once_with(
+        system="",
         messages=[J2ChatMessage(role=RoleType.USER, text=_PROMPT)],
         stream=False,
         **llm._get_all_kwargs(),
