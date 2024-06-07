@@ -38,6 +38,10 @@ def get_dispatcher(name: str = "root") -> Dispatcher:
 
 
 class DispatcherSpanMixin(ABC):
+    """
+    Apply dispatcher.span to implementations of abstract methods.
+    """
+
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         abstract_methods: List[str] = []
