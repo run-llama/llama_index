@@ -16,6 +16,8 @@ from threading import Lock
 from typing import Callable, Optional, Any, Dict, List
 
 import pytest
+import wrapt
+
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.dispatcher import Dispatcher
@@ -759,6 +761,14 @@ def test_dispatcher_fire_event_with_instance_backwards_compat(
 @patch.object(Dispatcher, "span_enter")
 def test_span_decorator_is_idempotent(mock_span_enter):
     dispatcher.span(dispatcher.span(lambda: ...))()
+    mock_span_enter.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_span_decorator_is_idempotent_with_pass_through(mock_span_enter):
+    a, b, c, d = (wrapt.decorator(lambda f, *_: f()) for _ in range(4))
+    s = dispatcher.span
+    s(a(b(s(c(d(s(lambda: ...)))))))()
     mock_span_enter.assert_called_once()
 
 
