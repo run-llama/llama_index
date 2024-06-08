@@ -12,6 +12,7 @@ from asyncio import (
     AbstractEventLoop,
 )
 from collections import Counter
+from random import random
 from threading import Lock
 from typing import Callable, Optional, Any, Dict, List
 
@@ -760,35 +761,38 @@ def test_dispatcher_fire_event_with_instance_backwards_compat(
 
 @patch.object(Dispatcher, "span_enter")
 def test_span_decorator_is_idempotent(mock_span_enter):
-    dispatcher.span(dispatcher.span(lambda: ...))()
+    x, z = random(), dispatcher.span
+    assert z(z(z(lambda: x)))() == x
     mock_span_enter.assert_called_once()
 
 
 @patch.object(Dispatcher, "span_enter")
 def test_span_decorator_is_idempotent_with_pass_through(mock_span_enter):
+    x, z = random(), dispatcher.span
     a, b, c, d = (wrapt.decorator(lambda f, *_: f()) for _ in range(4))
-    s = dispatcher.span
-    s(a(b(s(c(d(s(lambda: ...)))))))()
+    assert z(a(b(z(c(d(z(lambda: x)))))))() == x
     mock_span_enter.assert_called_once()
 
 
 @patch.object(Dispatcher, "span_enter")
 def test_mixin_decorates_abstract_method(mock_span_enter):
-    A = type("A", (DispatcherSpanMixin,), {"f": abstractmethod(lambda _: ...)})
-    B = type("B", (A,), {"f": lambda _: ...})
-    C = type("C", (B,), {"f": lambda _: ...})
-    D = type("D", (C,), {"f": lambda _: ...})
-    for i, T in enumerate((D, C, B)):
-        T().f()
+    x, z = random(), abstractmethod
+    A = type("A", (DispatcherSpanMixin,), {"f": z(lambda _: ...)})
+    B = type("B", (A,), {"f": lambda _: x + 0})
+    C = type("C", (B,), {"f": lambda _: x + 1})
+    D = type("D", (C,), {"f": lambda _: x + 2})
+    for i, T in enumerate((B, C, D)):
+        assert T().f() - i == pytest.approx(x)
         assert mock_span_enter.call_count - i == 1
 
 
 @patch.object(Dispatcher, "span_enter")
 def test_mixin_decorates_overridden_method(mock_span_enter):
-    A = type("A", (DispatcherSpanMixin,), {"f": dispatcher.span(lambda _: ...)})
-    B = type("B", (A,), {"f": lambda _: ...})
-    C = type("C", (B,), {"f": lambda _: ...})
-    D = type("D", (C,), {"f": lambda _: ...})
-    for i, T in enumerate((D, C, B)):
-        T().f()
+    x, z = random(), dispatcher.span
+    A = type("A", (DispatcherSpanMixin,), {"f": z(lambda _: x)})
+    B = type("B", (A,), {"f": lambda _: x + 1})
+    C = type("C", (B,), {"f": lambda _: x + 2})
+    D = type("D", (C,), {"f": lambda _: x + 3})
+    for i, T in enumerate((A, B, C, D)):
+        assert T().f() - i == pytest.approx(x)
         assert mock_span_enter.call_count - i == 1
