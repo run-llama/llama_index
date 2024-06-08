@@ -1,3 +1,3 @@
-from llama_index.readers.discord.base import ProjectGutenbergReader
+from llama_index.readers.gutenberg import ProjectGutenbergReader
 
 __all__ = ["ProjectGutenbergReader"]
