@@ -56,12 +56,15 @@ class GoogleMapsTextSearchReader(BaseReader):
         documents = []
         while "nextPageToken" in response:
             next_page_token = response["nextPageToken"]
-            places = response["places"]
-
+            places = response.get("places", [])
+            if len(places) == 0:
+                break
             for place in places:
                 formatted_address = place["formattedAddress"]
                 rating = place["rating"]
                 display_name = place["displayName"]
+                if isinstance(display_name, dict):
+                    display_name = display_name["text"]
                 number_of_ratings = place["userRatingCount"]
                 reviews = []
                 for review in place["reviews"]:
@@ -92,17 +95,16 @@ class GoogleMapsTextSearchReader(BaseReader):
                     ]
                 )
                 place_text = f"Place: {place.display_name}, Address: {place.address}, Average Rating: {place.average_rating}, Number of Ratings: {place.number_of_ratings}"
-                text = f"{place_text}\n{reviews_text}"
+                document_text = f"{place_text}\n{reviews_text}"
 
                 if len(documents) == number_of_results:
                     return documents
 
-                if len(text) > MAX_TEXT_LENGTH:
-                    text = text[:MAX_TEXT_LENGTH]
-                documents.append(Document(text=text, extra_info=place.dict()))
-
+                if len(document_text) > MAX_TEXT_LENGTH:
+                    document_text = document_text[:MAX_TEXT_LENGTH]
+                documents.append(Document(text=document_text, extra_info=place.dict()))
             response = self._search_text_request(
-                text, number_of_results, next_page_token
+                text, MAX_RESULTS_PER_PAGE, next_page_token
             )
 
         return documents
