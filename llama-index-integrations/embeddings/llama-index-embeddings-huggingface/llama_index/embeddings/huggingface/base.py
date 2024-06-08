@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+from deprecated import deprecated
 from huggingface_hub import (
     AsyncInferenceClient,
     InferenceClient,
@@ -30,6 +31,10 @@ DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    "Deprecated in favor of `TextGenerationInferenceEmbedding` from `llama-index-embeddings-text-generation-inference` which should be used instead.",
+    action="always",
+)
 class HuggingFaceEmbedding(BaseEmbedding):
     max_length: int = Field(
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
@@ -149,6 +154,10 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(texts, prompt_name="text")
 
 
+@deprecated(
+    "Deprecated in favor of `HuggingFaceInferenceAPIEmbedding` from `llama-index-embeddings-huggingface-api` which should be used instead.",
+    action="always",
+)
 class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
     """
     Wrapper on the Hugging Face's Inference API for embeddings.
