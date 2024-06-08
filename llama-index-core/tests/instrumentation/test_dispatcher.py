@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import threading
 import time
+from abc import abstractmethod
 from asyncio import (
     CancelledError,
     get_event_loop,
@@ -16,6 +17,7 @@ from typing import Callable, Optional, Any, Dict, List
 
 import pytest
 import llama_index.core.instrumentation as instrument
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.dispatcher import Dispatcher
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
@@ -752,3 +754,32 @@ def test_dispatcher_fire_event_with_instance_backwards_compat(
 
     # span_exit
     mock_span_exit.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_span_decorator_is_idempotent(mock_span_enter):
+    dispatcher = Dispatcher(propagate=False)
+    dispatcher.span(dispatcher.span(lambda: ...))()
+    mock_span_enter.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_mixin_decorates_abstract_method(mock_span_enter):
+    A = type("A", (DispatcherSpanMixin,), {"f": abstractmethod(lambda _: ...)})
+    B = type("B", (A,), {"f": lambda _: ...})
+    C = type("C", (B,), {"f": lambda _: ...})
+    D = type("D", (C,), {"f": lambda _: ...})
+    for i, T in enumerate((D, C, B)):
+        T().f()
+        assert mock_span_enter.call_count - i == 1
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_mixin_decorates_overridden_method(mock_span_enter):
+    A = type("A", (DispatcherSpanMixin,), {"f": dispatcher.span(lambda _: ...)})
+    B = type("B", (A,), {"f": lambda _: ...})
+    C = type("C", (B,), {"f": lambda _: ...})
+    D = type("D", (C,), {"f": lambda _: ...})
+    for i, T in enumerate((D, C, B)):
+        T().f()
+        assert mock_span_enter.call_count - i == 1

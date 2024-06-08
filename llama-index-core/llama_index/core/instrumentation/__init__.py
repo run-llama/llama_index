@@ -43,8 +43,10 @@ def get_dispatcher(name: str = "root") -> Dispatcher:
 
 class DispatcherSpanMixin(ABC):
     """
-    Apply dispatcher.span decorator to implementations of abstract methods
-    as well as any previously decorated methods that have been overridden.
+    Apply the `dispatcher.span` decorator to implementations of abstract methods, as well
+    as any methods previously decorated (in any base class) that are being overridden by
+    the subclass. Note that users can still manually decorate the methods in their custom
+    subclasses because the `dispatcher.span` decorator is idempotent.
     """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:

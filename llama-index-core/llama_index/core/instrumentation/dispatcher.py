@@ -211,6 +211,7 @@ class Dispatcher(BaseModel):
                 c = c.parent
 
     def span(self, func):
+        # The `span` decorator should be idempotent.
         if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
             return func
         setattr(func, DISPATCHER_SPAN_DECORATED_ATTR, True)
