@@ -84,5 +84,5 @@ class SimpleChatStore(BaseChatStore):
         if not fs.exists(persist_path):
             return cls()
         with fs.open(persist_path, "r") as f:
-            data = json.load(f)
-        return cls.parse_raw(data)
+            raw_data = f.read()
+        return cls.parse_raw(raw_data)
