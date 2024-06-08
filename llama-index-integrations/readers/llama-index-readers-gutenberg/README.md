@@ -17,4 +17,5 @@ reader = ProjectGutenbergReader()
 crime_and_punishment = reader.load_data("Crime and Punishment")
 
 # Not existing book raises exception
+reader.load_data("Not existing book")
 ```
