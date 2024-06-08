@@ -30,6 +30,7 @@ from llama_index.core.schema import (
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
     RetrievalStartEvent,
@@ -39,7 +40,7 @@ import llama_index.core.instrumentation as instrument
 dispatcher = instrument.get_dispatcher(__name__)
 
 
-class BaseRetriever(ChainableMixin, PromptMixin):
+class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Base retriever."""
 
     def __init__(

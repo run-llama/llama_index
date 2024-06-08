@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import List, Sequence
 
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle
 from llama_index.core.tools.types import ToolMetadata
@@ -21,7 +22,7 @@ class SubQuestionList(BaseModel):
     items: List[SubQuestion]
 
 
-class BaseQuestionGenerator(PromptMixin):
+class BaseQuestionGenerator(PromptMixin, DispatcherSpanMixin):
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
         return {}
