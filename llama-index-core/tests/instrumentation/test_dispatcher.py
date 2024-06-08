@@ -780,7 +780,7 @@ def test_mixin_decorates_abstract_method(mock_span_enter):
     A = type("A", (DispatcherSpanMixin,), {"f": z(lambda _: ...)})
     B = type("B", (A,), {"f": lambda _: x + 0})
     C = type("C", (B,), {"f": lambda _: x + 1})
-    D = type("D", (C,), {"f": lambda _: x + 2})
+    D = type("D", (C, B), {"f": lambda _: x + 2})
     for i, T in enumerate((B, C, D)):
         assert T().f() - i == pytest.approx(x)
         assert mock_span_enter.call_count - i == 1
@@ -792,7 +792,7 @@ def test_mixin_decorates_overridden_method(mock_span_enter):
     A = type("A", (DispatcherSpanMixin,), {"f": z(lambda _: x)})
     B = type("B", (A,), {"f": lambda _: x + 1})
     C = type("C", (B,), {"f": lambda _: x + 2})
-    D = type("D", (C,), {"f": lambda _: x + 3})
+    D = type("D", (C, B), {"f": lambda _: x + 3})
     for i, T in enumerate((A, B, C, D)):
         assert T().f() - i == pytest.approx(x)
         assert mock_span_enter.call_count - i == 1
