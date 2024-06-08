@@ -758,7 +758,6 @@ def test_dispatcher_fire_event_with_instance_backwards_compat(
 
 @patch.object(Dispatcher, "span_enter")
 def test_span_decorator_is_idempotent(mock_span_enter):
-    dispatcher = Dispatcher(propagate=False)
     dispatcher.span(dispatcher.span(lambda: ...))()
     mock_span_enter.assert_called_once()
 
