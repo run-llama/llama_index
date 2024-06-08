@@ -80,16 +80,15 @@ class BM25Retriever(BaseRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         if query_bundle.custom_embedding_strs or query_bundle.embedding:
             logger.warning("BM25Retriever does not support embeddings, skipping...")
-        
+
         query = query_bundle.query_str
         tokenized_query = self._tokenizer(query)
         scores = self.bm25.get_scores(tokenized_query)
-        
-        top_n = scores.argsort()[::-1][:self._similarity_top_k]
-        
+
+        top_n = scores.argsort()[::-1][: self._similarity_top_k]
+
         nodes: List[NodeWithScore] = []
         for ix, score in zip(top_n, scores):
-            nodes.append(NodeWithScore(node = self._nodes[ix],
-                                       score = float(score)))
+            nodes.append(NodeWithScore(node=self._nodes[ix], score=float(score)))
 
         return nodes
