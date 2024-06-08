@@ -45,8 +45,13 @@ class DispatcherSpanMixin(ABC):
     """
     Apply the `dispatcher.span` decorator to implementations of abstract methods, as well
     as any methods previously decorated (in any base class) that are being overridden by
-    the subclass. Note that users can still manually decorate the methods in their custom
-    subclasses because the `dispatcher.span` decorator is idempotent.
+    a subclass. For example, if class `A` has abstract method `f`, and class `B` inherits
+    from `A` and provides an implementation of `f`, then `B.f` will be decorated by the mixin.
+    Furthermore, if `B` has a non-abstract method `g` that is decorated by `dispatcher.span`
+    and new class `C` inherits from `B` and overrides `g`, then `C.g` will also be decorated
+    by the mixin. Note that users can still manually apply `dispatcher.span` to the methods
+    in their custom subclasses without creating duplicate spans because the `dispatcher.span`
+    decorator should be idempotent.
     """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
