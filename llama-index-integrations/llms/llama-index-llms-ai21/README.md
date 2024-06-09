@@ -12,8 +12,8 @@ pip install llama-index-llms-ai21
 
 Here's a basic example of how to use the AI21 class to generate text completions and handle chat interactions.
 
-
 ## Initializing the AI21 Client
+
 You need to initialize the AI21 client with the appropriate model and API key.
 
 ```python
@@ -38,6 +38,7 @@ print(response.message.content)
 ```
 
 ### Chat Streaming
+
 ```python
 from llama_index.llms.ai21 import AI21
 from llama_index.core.base.llms.types import ChatMessage
@@ -52,6 +53,7 @@ for chunk in llm.stream_chat(messages):
 ```
 
 ### Text Completion
+
 ```python
 from llama_index.llms.ai21 import AI21
 
@@ -63,6 +65,7 @@ print(response.text)
 ```
 
 ### Stream Text Completion
+
 ```python
 from llama_index.llms.ai21 import AI21
 
@@ -76,11 +79,13 @@ for chunk in response:
 ```
 
 ## Other Models Support
+
 You could also use more model types. For example the `j2-ultra` and `j2-mid`
 
 These models support `chat` and `complete` methods only.
 
 ### Chat
+
 ```python
 from llama_index.llms.ai21 import AI21
 from llama_index.core.base.llms.types import ChatMessage
@@ -94,6 +99,7 @@ print(response.message.content)
 ```
 
 ### Complete
+
 ```python
 from llama_index.llms.ai21 import AI21
 
