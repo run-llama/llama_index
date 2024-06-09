@@ -75,24 +75,6 @@ for chunk in response:
     print(response.text)
 ```
 
-## Tokenizer
-
-The type of the tokenizer is determined by the name of the model
-
-```python
-from llama_index.llms.ai21 import AI21
-
-api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
-tokenizer = llm.tokenizer
-
-tokens = tokenizer.encode("What is the meaning of life?")
-print(tokens)
-
-text = tokenizer.decode(tokens)
-print(text)
-```
-
 ## Other Models Support
 You could also use more model types. For example the `j2-ultra` and `j2-mid`
 
@@ -120,4 +102,22 @@ llm = AI21(model="j2-ultra", api_key=api_key)
 
 response = llm.complete(prompt="What is the meaning of life?")
 print(response.text)
+```
+
+## Tokenizer
+
+The type of the tokenizer is determined by the name of the model
+
+```python
+from llama_index.llms.ai21 import AI21
+
+api_key = "your_api_key"
+llm = AI21(model="jamba-instruct", api_key=api_key)
+tokenizer = llm.tokenizer
+
+tokens = tokenizer.encode("What is the meaning of life?")
+print(tokens)
+
+text = tokenizer.decode(tokens)
+print(text)
 ```

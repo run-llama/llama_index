@@ -1,3 +1,4 @@
+from typing import Type
 from unittest import mock
 
 import pytest
@@ -21,6 +22,7 @@ from ai21.models.chat import (
     ChatMessage as AI21ChatMessage,
 )
 from ai21.models.usage_info import UsageInfo
+from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokenizer
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.llms import ChatMessage
@@ -255,3 +257,21 @@ def test_chat_complete_when_j2__should_raise_error():
         llm.stream_chat(
             messages=[ChatMessage(role="user", content="What is the meaning of life?")]
         )
+
+
+@pytest.mark.parametrize(
+    ids=[
+        "when_j2_mid__should_return_right_tokenizer",
+        "when_j2_ultra__should_return_right_tokenizer",
+        "when_jamba_instruct__should_return_right_tokenizer",
+    ],
+    argnames=["model", "expected_tokenizer_type"],
+    argvalues=[
+        ("j2-mid", JurassicTokenizer),
+        ("j2-ultra", JurassicTokenizer),
+        ("jamba-instruct", JambaInstructTokenizer),
+    ],
+)
+def test_tokenizer(model: str, expected_tokenizer_type: Type[BaseTokenizer]):
+    llm = AI21(api_key=_FAKE_API_KEY, model=model)
+    assert isinstance(llm.tokenizer, expected_tokenizer_type)
