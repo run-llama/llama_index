@@ -134,6 +134,20 @@ def test_chat__when_j2():
     )
 
 
+def test_chat__when_j2_and_system_message_not_first__should_raise_error():
+    llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
+
+    with pytest.raises(ValueError) as e:
+        llm.chat(
+            messages=[
+                ChatMessage(role="user", content=_PROMPT),
+                ChatMessage(role="system", content=""),
+            ]
+        )
+
+    assert e.value.args[0] == "System message must be at beginning of message list."
+
+
 def test_stream_chat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
 
