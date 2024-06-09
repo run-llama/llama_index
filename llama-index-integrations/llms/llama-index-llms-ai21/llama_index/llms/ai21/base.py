@@ -29,7 +29,6 @@ from llama_index.llms.ai21.utils import (
 )
 
 _DEFAULT_AI21_MODEL = "jamba-instruct"
-_TOKENIZER_NAME_FORMAT = "{model_name}-tokenizer"
 _DEFAULT_TEMPERATURE = 0.7
 _DEFAULT_MAX_TOKENS = 512
 
