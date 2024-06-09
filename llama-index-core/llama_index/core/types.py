@@ -10,15 +10,14 @@ from typing import (
     Generator,
     Generic,
     List,
-    Protocol,
     Type,
     TypeVar,
     Union,
-    runtime_checkable,
 )
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
 
@@ -29,8 +28,7 @@ RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
 
 # TODO: move into a `core` folder
 # NOTE: this is necessary to make it compatible with pydantic
-@runtime_checkable
-class BaseOutputParser(Protocol):
+class BaseOutputParser(DispatcherSpanMixin, ABC):
     """Output parser class."""
 
     @classmethod
@@ -59,7 +57,7 @@ class BaseOutputParser(Protocol):
         return messages
 
 
-class BasePydanticProgram(ABC, Generic[Model]):
+class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     """A base class for LLM-powered function that return a pydantic model.
 
     Note: this interface is not yet stable.

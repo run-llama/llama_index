@@ -4,7 +4,6 @@ from typing import (
     Sequence,
 )
 
-from llama_index.core import instrumentation
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -20,10 +19,11 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import Field, validator
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
 
 
-class BaseLLM(ChainableMixin, BaseComponent):
+class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
     callback_manager: CallbackManager = Field(
@@ -254,23 +254,3 @@ class BaseLLM(ChainableMixin, BaseComponent):
                 print(response.text, end="", flush=True)
             ```
         """
-
-    def __init_subclass__(cls, **kwargs) -> None:
-        """
-        Decorate the abstract methods' implementations for each subclass.
-        `__init_subclass__` is analogous to `__init__` because classes are also objects.
-        """
-        super().__init_subclass__(**kwargs)
-        dispatcher = instrumentation.get_dispatcher(cls.__module__)
-        for attr in (
-            "chat",
-            "complete",
-            "stream_chat",
-            "stream_complete",
-            "achat",
-            "acomplete",
-            "astream_chat",
-            "astream_complete",
-        ):
-            if callable(method := cls.__dict__.get(attr)):
-                setattr(cls, attr, dispatcher.span(method))

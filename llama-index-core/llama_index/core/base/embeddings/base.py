@@ -12,6 +12,7 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import (
     DEFAULT_EMBED_BATCH_SIZE,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
 from llama_index.core.async_utils import run_jobs
@@ -59,7 +60,7 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(TransformComponent):
+class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     """Base class for embeddings."""
 
     model_name: str = Field(

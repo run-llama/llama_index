@@ -18,6 +18,7 @@ from llama_index.core.indices.struct_store.sql_retriever import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.objects.table_node_mapping import SQLTableSchema
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
@@ -463,6 +464,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -478,6 +480,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             tables=tables,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            embed_model=embed_model,
             sql_only=sql_only,
             callback_manager=callback_manager,
             verbose=verbose,
