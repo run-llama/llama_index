@@ -343,13 +343,13 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             data.append(append_data)
             ids.append(node.node_id)
 
-            if self._table is None:
-                self._table = self._connection.create_table(
-                    self._table_name, data, mode=self.mode
-                )
-
+        if self._table is None:
+            self._table = self._connection.create_table(
+                self._table_name, data, mode=self.mode
+            )
+        else:
             self._table.add(data, mode=self.mode)
-            self._fts_index = None  # reset fts index
+        self._fts_index = None  # reset fts index
 
         return ids
 

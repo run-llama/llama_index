@@ -10,11 +10,12 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import BaseComponent, NodeWithScore, QueryBundle
 
 
-class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
+class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, ABC):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
