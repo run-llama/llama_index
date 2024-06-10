@@ -35,7 +35,6 @@ class GoogleMapsTextSearchReader(BaseReader):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        length_limit: Optional[int] = None,
     ):
         self.api_key = api_key or os.getenv("GOOGLE_MAPS_API_KEY")
         if not self.api_key:
