@@ -250,7 +250,7 @@ class Vllm(LLM):
     def __del__(self) -> None:
         import torch
         import gc
-        
+
         if torch.cuda.is_available():
             del self._client
             gc.collect()
