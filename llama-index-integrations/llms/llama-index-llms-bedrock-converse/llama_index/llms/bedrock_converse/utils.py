@@ -162,21 +162,23 @@ def converse_with_retry(
 ) -> Any:
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
-    converse_args = {
+    converse_kwargs = {
         "modelId": model,
         "messages": messages,
-        "system": [{"text": system_prompt}],
         "inferenceConfig": {
             "maxTokens": max_tokens,
             "temperature": temperature,
         },
-        "toolConfig": kwargs.get("tools"),
     }
+    if system_prompt:
+        converse_kwargs["system"] = [{"text": system_prompt}]
+    if tool_config := kwargs.get("tools"):
+        converse_kwargs["toolConfig"] = tool_config
 
     @retry_decorator
     def _conversion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            return client.converse_stream(converse_args)
-        return client.converse(converse_args)
+            return client.converse_stream(**converse_kwargs)
+        return client.converse(**converse_kwargs)
 
     return _conversion_with_retry(**kwargs)

@@ -147,7 +147,7 @@ class BedrockConverse(FunctionCallingLLM):
         if context_size is None and model not in FUNCTION_CALLING_MODELS:
             raise ValueError(
                 "`context_size` argument not provided and"
-                "model provided refers to a non-foundation model."
+                " model provided refers to a non-foundation model."
                 " Please specify the context_size"
             )
 
@@ -268,17 +268,16 @@ class BedrockConverse(FunctionCallingLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
             client=self._client,
-            model=self.model,
             messages=converse_messages,
-            system_prompt=system_prompt,
+            system_prompt=self.system_prompt,
             max_retries=self.max_retries,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
             stream=False,
             **all_kwargs,
         )
@@ -313,17 +312,16 @@ class BedrockConverse(FunctionCallingLLM):
     ) -> ChatResponseGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
             client=self._client,
-            model=self.model,
             messages=converse_messages,
-            system_prompt=system_prompt,
+            system_prompt=self.system_prompt,
             max_retries=self.max_retries,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
             stream=True,
             **all_kwargs,
         )
