@@ -37,7 +37,7 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.llms.bedrock_converse.utils import FUNCTION_CALLING_MODELS
+from llama_index.llms.bedrock_converse.utils import FUNCTION_CALLING_MODELS, messages_to_converse_messages
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -242,22 +242,37 @@ class BedrockConverse(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(
         self, response: Dict[str, Any]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, Dict[str, Any], List[str], List[str]]:
         tool_calls = []
+        tool_call_ids = []
+        status = []
         content = ""
-        for message in response["message"]:
-            for content_block in message["content"]:
-                if text := content_block.get("text", None):
-                    content += text
-                if tool_usage := content_block.get("toolUse", None):
-                    tool_calls.append(tool_usage)
+        last_message = response["message"][-1]
+        for content_block in last_message["content"]:
+            if text := content_block.get("text", None):
+                content += text
+            if tool_usage := content_block.get("toolUse", None):
+                tool_calls.append(tool_usage)
+            if tool_result := content_block.get("toolResult", None):
+                for tool_result_content in tool_result["content"]:
+                    if text := tool_result_content.get("text", None):
+                        content += text
+                tool_call_ids.append(tool_result_content.get("toolUseId", ""))
+                status.append(tool_result.get("status", ""))
 
-        return content, tool_calls
+        return content, tool_calls, tool_call_ids, status
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
+        # convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+
+        # TODO convert Llama Index tools to AWS Bedrock Converse tools
+
+        # TODO send the system prompt to AWS Bedrock Converse
+
+        # TODO invoke LLMs in AWS Bedrock Converse with retry
 
         response = self._client.beta.tools.messages.create(
             messages=anthropic_messages,
@@ -266,13 +281,13 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls = self._get_content_and_tool_calls(response)
+        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(response)
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=content,
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs={"tool_calls": tool_calls, "tool_call_id": tool_call_ids, "status": status},
             ),
             raw=dict(response),
         )
@@ -288,7 +303,7 @@ class BedrockConverse(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
+        anthropic_messages, system_prompt = messages_to_converse_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = self._client.messages.create(
@@ -321,7 +336,7 @@ class BedrockConverse(FunctionCallingLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
+        anthropic_messages, system_prompt = messages_to_converse_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = await self._aclient.beta.tools.messages.create(
@@ -331,13 +346,13 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls = self._get_content_and_tool_calls(response)
+        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(response)
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=content,
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs={"tool_calls": tool_calls, "tool_call_id": tool_call_ids, "status": status},
             ),
             raw=dict(response),
         )
@@ -353,7 +368,7 @@ class BedrockConverse(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
+        anthropic_messages, system_prompt = messages_to_converse_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         response = await self._aclient.messages.create(
@@ -469,7 +484,7 @@ class BedrockConverse(FunctionCallingLLM):
         for tool_call in tool_calls:
             if (
                 "input" not in tool_call
-                or "id" not in tool_call
+                or "toolUseId" not in tool_call
                 or "name" not in tool_call
             ):
                 raise ValueError("Invalid tool call.")
@@ -483,7 +498,7 @@ class BedrockConverse(FunctionCallingLLM):
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["id"],
+                    tool_id=tool_call["toolUseId"],
                     tool_name=tool_call["name"],
                     tool_kwargs=argument_dict,
                 )
