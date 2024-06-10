@@ -58,11 +58,7 @@ def _to_milvus_filter(
 
     if len(standard_filters_list) > 0 and len(scalar_filters_list) > 0:
         joined_filters = f" {joined_standard_filters} and {joined_scalar_filters} "
-        return (
-            f"({joined_filters})" 
-            if len(filters) > 1 
-            else joined_filters
-        )
+        return f"({joined_filters})" if len(filters) > 1 else joined_filters
     elif len(standard_filters_list) > 0 and len(scalar_filters_list) == 0:
         return (
             f"({joined_standard_filters})"
@@ -71,9 +67,7 @@ def _to_milvus_filter(
         )
     elif len(standard_filters_list) == 0 and len(scalar_filters_list) > 0:
         return (
-            f"({joined_scalar_filters})" 
-            if len(filters) > 1 
-            else joined_scalar_filters
+            f"({joined_scalar_filters})" if len(filters) > 1 else joined_scalar_filters
         )
     else:
         return ""

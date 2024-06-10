@@ -10,7 +10,7 @@ from llama_index.vector_stores.milvus.base import _to_milvus_filter
 from llama_index.vector_stores.milvus.utils import (
     ScalarMetadataFilter,
     ScalarMetadataFilters,
-    FilterOperatorFunction
+    FilterOperatorFunction,
 )
 
 
@@ -21,17 +21,34 @@ def test_class():
 
 def test_to_milvus_filter_with_scalar_filters():
     filters = None
-    scalar_filters=ScalarMetadataFilters(filters=[ScalarMetadataFilter(key="a", value=1)])
+    scalar_filters = ScalarMetadataFilters(
+        filters=[ScalarMetadataFilter(key="a", value=1)]
+    )
     expr = _to_milvus_filter(filters, scalar_filters.to_dict())
     assert expr == "ARRAY_CONTAINS(a, 1)"
 
-    scalar_filters = ScalarMetadataFilters(filters=[ScalarMetadataFilter(key="a", value=1, operator=FilterOperatorFunction.NARRAY_CONTAINS)])
+    scalar_filters = ScalarMetadataFilters(
+        filters=[
+            ScalarMetadataFilter(
+                key="a", value=1, operator=FilterOperatorFunction.NARRAY_CONTAINS
+            )
+        ]
+    )
     expr = _to_milvus_filter(filters, scalar_filters.to_dict())
     assert expr == "not ARRAY_CONTAINS(a, 1)"
 
-    scalar_filters = ScalarMetadataFilters(filters=[ScalarMetadataFilter(key="a", value="b", operator=FilterOperatorFunction.NARRAY_CONTAINS), ScalarMetadataFilter(key="c", value=2, operator=FilterOperatorFunction.ARRAY_LENGTH)])
+    scalar_filters = ScalarMetadataFilters(
+        filters=[
+            ScalarMetadataFilter(
+                key="a", value="b", operator=FilterOperatorFunction.NARRAY_CONTAINS
+            ),
+            ScalarMetadataFilter(
+                key="c", value=2, operator=FilterOperatorFunction.ARRAY_LENGTH
+            ),
+        ]
+    )
     expr = _to_milvus_filter(filters, scalar_filters.to_dict())
-    assert expr == "(not ARRAY_CONTAINS(a, \'b\') and ARRAY_LENGTH(c) == 2)"
+    assert expr == "(not ARRAY_CONTAINS(a, 'b') and ARRAY_LENGTH(c) == 2)"
 
 
 def test_to_milvus_filter_with_various_operators():

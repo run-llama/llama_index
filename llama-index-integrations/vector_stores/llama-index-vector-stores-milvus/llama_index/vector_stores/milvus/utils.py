@@ -95,9 +95,9 @@ def parse_filter_value(filter_value: any, is_text_match: bool = False):
 
     if is_text_match:
         # Per Milvus, "only prefix pattern match like ab% and equal match like ab(no wildcards) are supported"
-        return f"\'{filter_value!s}%\'"
-    
-    return f'\'{filter_value!s}\'' if isinstance(filter_value, str) else str(filter_value)
+        return f"'{filter_value!s}%'"
+
+    return f"'{filter_value!s}'" if isinstance(filter_value, str) else str(filter_value)
 
 
 def parse_standard_filters(standard_filters: MetadataFilters = None):
@@ -111,15 +111,17 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
             continue
 
         if filter.operator == FilterOperator.NIN:
-            filters.append(f"{str(filter.key)} not in {filter_value}")
+            filters.append(f"{filter.key!s} not in {filter_value}")
         elif filter.operator == FilterOperator.CONTAINS:
-            filters.append(f"array_contains({str(filter.key)}, {filter_value})")
+            filters.append(f"array_contains({filter.key!s}, {filter_value})")
         elif filter.operator == FilterOperator.ANY:
-            filters.append(f"array_contains_any({str(filter.key)}, {filter_value})")
+            filters.append(f"array_contains_any({filter.key!s}, {filter_value})")
         elif filter.operator == FilterOperator.ALL:
-            filters.append(f"array_contains_all({str(filter.key)}, {filter_value})")
-        elif filter.operator == FilterOperator.TEXT_MATCH: 
-            filters.append(f"{str(filter.key)} like {parse_filter_value(filter.value, True)}")
+            filters.append(f"array_contains_all({filter.key!s}, {filter_value})")
+        elif filter.operator == FilterOperator.TEXT_MATCH:
+            filters.append(
+                f"{filter.key!s} like {parse_filter_value(filter.value, True)}"
+            )
         elif filter.operator in [
             FilterOperator.EQ,
             FilterOperator.GT,
@@ -129,7 +131,7 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
             FilterOperator.LTE,
             FilterOperator.IN,
         ]:
-            filters.append(f"{str(filter.key)} {filter.operator} {filter_value}")
+            filters.append(f"{filter.key!s} {filter.operator} {filter_value}")
         else:
             raise ValueError(f"Operator {filter.operator} not supported by Milvus.")
 
