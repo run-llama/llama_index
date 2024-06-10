@@ -119,6 +119,7 @@ nav:
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/codestral.ipynb
+          - ./examples/cookbooks/prometheus2_cookbook.ipynb
       - Customization:
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
@@ -160,6 +161,7 @@ nav:
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
           - ./examples/data_connectors/GoogleDriveDemo.ipynb
           - ./examples/data_connectors/upstage.ipynb
+          - ./examples/data_connectors/GoogleMapsTextSearchReaderDemo.ipynb
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
@@ -373,6 +375,7 @@ nav:
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
           - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
+          - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
       - Multi-Tenancy:
           - ./examples/multi_tenancy/multi_tenancy_rag.ipynb
       - Node Parsers & Text Splitters:
@@ -949,6 +952,7 @@ nav:
           - ./api_reference/packs/vanna.md
           - ./api_reference/packs/vectara_rag.md
           - ./api_reference/packs/voyage_query_engine.md
+          - ./api_reference/packs/zenguard.md
           - ./api_reference/packs/zephyr_query_engine.md
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
@@ -1959,6 +1963,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-oci-genai
             - ../llama-index-integrations/readers/llama-index-readers-azure-devops
             - ../llama-index-integrations/retrievers/llama-index-retrievers-duckdb-retriever
+            - ../llama-index-packs/llama-index-packs-zenguard
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
