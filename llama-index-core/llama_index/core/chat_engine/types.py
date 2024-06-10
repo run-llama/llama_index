@@ -17,6 +17,7 @@ from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.tools import ToolOutput
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.chat_engine import (
     StreamChatErrorEvent,
     StreamChatEndEvent,
@@ -296,7 +297,7 @@ class StreamingAgentChatResponse:
 AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
 
 
-class BaseChatEngine(ABC):
+class BaseChatEngine(DispatcherSpanMixin, ABC):
     """Base Chat Engine."""
 
     @abstractmethod
