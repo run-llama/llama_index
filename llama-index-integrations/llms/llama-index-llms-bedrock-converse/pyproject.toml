@@ -33,7 +33,7 @@ version = "0.1.8"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-llms-anthropic = "^0.1.7"
-boto3 = "^1.34.26"
+boto3 = "^1.34.122"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
