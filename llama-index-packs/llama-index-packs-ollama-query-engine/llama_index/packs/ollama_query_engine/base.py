@@ -16,15 +16,20 @@ class OllamaQueryEnginePack(BaseLlamaPack):
     def __init__(
         self,
         model: str,
+        embeddings: str = None,
         base_url: str = DEFAULT_OLLAMA_BASE_URL,
         documents: List[Document] = None,
     ) -> None:
         self._model = model
         self._base_url = base_url
+        if embeddings is None:
+            self._embeddings = model
+        else:
+            self._embeddings = embeddings
 
         llm = Ollama(model=self._model, base_url=self._base_url)
-
-        embed_model = OllamaEmbedding(model_name=self._model, base_url=self._base_url)
+        
+        embed_model = OllamaEmbedding(model_name=self._embeddings, base_url=self._base_url)
 
         service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
 
