@@ -14,10 +14,8 @@ from typing import (
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
-    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
@@ -30,8 +28,6 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
@@ -308,7 +304,7 @@ class BedrockConverse(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
-        response = response = converse_with_retry(
+        response = converse_with_retry(
             client=self._client,
             model=self.model,
             messages=converse_messages,
@@ -323,14 +319,20 @@ class BedrockConverse(FunctionCallingLLM):
         def gen() -> ChatResponseGen:
             content = ""
             role = MessageRole.ASSISTANT
-            for r in response:
-                if isinstance(r, ContentBlockDeltaEvent):
-                    content_delta = r.delta.text
+            for chunk in response["stream"]:
+                if "contentBlockDelta" in chunk:
+                    content_delta = chunk["contentBlockDelta"]["delta"]
                     content += content_delta
+                    _, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(response)
+
                     yield ChatResponse(
-                        message=ChatMessage(role=role, content=content),
+                        message=ChatMessage(
+                            role=role,
+                            content=content,
+                            additional_kwargs={"tool_calls": tool_calls, "tool_call_id": tool_call_ids, "status": status},
+                        ),
                         delta=content_delta,
-                        raw=r,
+                        raw=response,
                     )
 
         return gen()
@@ -345,67 +347,26 @@ class BedrockConverse(FunctionCallingLLM):
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        anthropic_messages, system_prompt = messages_to_converse_messages(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
-
-        response = await self._aclient.beta.tools.messages.create(
-            messages=anthropic_messages,
-            system=system_prompt,
-            stream=False,
-            **all_kwargs,
-        )
-
-        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(response)
-
-        return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=content,
-                additional_kwargs={"tool_calls": tool_calls, "tool_call_id": tool_call_ids, "status": status},
-            ),
-            raw=dict(response),
-        )
+    ) -> NotImplementedError:
+        raise NotImplementedError("Async chat is not supported for Bedrock Converse.")
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        acomplete_fn = achat_to_completion_decorator(self.achat)
-        return await acomplete_fn(prompt, **kwargs)
+    ) -> NotImplementedError:
+        raise NotImplementedError("Async completion is not supported for Bedrock Converse.")
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        anthropic_messages, system_prompt = messages_to_converse_messages(messages)
-        all_kwargs = self._get_all_kwargs(**kwargs)
-
-        response = await self._aclient.messages.create(
-            messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
-        )
-
-        async def gen() -> ChatResponseAsyncGen:
-            content = ""
-            role = MessageRole.ASSISTANT
-            async for r in response:
-                if isinstance(r, ContentBlockDeltaEvent):
-                    content_delta = r.delta.text
-                    content += content_delta
-                    yield ChatResponse(
-                        message=ChatMessage(role=role, content=content),
-                        delta=content_delta,
-                        raw=r,
-                    )
-
-        return gen()
+    ) -> NotImplementedError:
+        raise NotImplementedError("Async stream chat is not supported for Bedrock Converse.")
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
-        return await astream_complete_fn(prompt, **kwargs)
+    ) -> NotImplementedError:
+        raise NotImplementedError("Async stream completion is not supported for Bedrock Converse.")
 
     def chat_with_tools(
         self,
@@ -441,23 +402,8 @@ class BedrockConverse(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
-        chat_history = chat_history or []
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-            chat_history.append(user_msg)
-
-        # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_dicts = tools_to_converse_tools(tools)
-
-        response = await self.achat(chat_history, tools=tool_dicts, **kwargs)
-
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-
-        return response
+    ) -> NotImplementedError:
+        raise NotImplementedError("Async chat with tools is not supported for Bedrock Converse.")
 
     def get_tool_calls_from_response(
         self,
