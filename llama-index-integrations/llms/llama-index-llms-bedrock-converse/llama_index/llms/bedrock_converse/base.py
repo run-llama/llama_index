@@ -249,8 +249,8 @@ class BedrockConverse(FunctionCallingLLM):
         tool_call_ids = []
         status = []
         content = ""
-        last_message = response["message"][-1]
-        for content_block in last_message["content"]:
+        message = response["output"]["message"]
+        for content_block in message["content"]:
             if text := content_block.get("text", None):
                 content += text
             if tool_usage := content_block.get("toolUse", None):
