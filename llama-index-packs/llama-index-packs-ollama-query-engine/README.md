@@ -25,7 +25,7 @@ OllamaQueryEnginePack = download_llama_pack(
 )
 
 # You can use any llama-hub loader to get documents!
-ollama_pack = OllamaQueryEnginePack(model="llama2", documents=documents)
+ollama_pack = OllamaQueryEnginePack(model="llama3", embeddings="mxbai-embed-large", documents=documents)
 ```
 
 From here, you can use the pack, or inspect and modify the pack in `./ollama_pack`.
