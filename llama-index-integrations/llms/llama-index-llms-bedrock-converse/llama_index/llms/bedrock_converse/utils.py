@@ -115,9 +115,7 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
         tool_dict = {
             "name": tool.name,
             "description": tool.description,
-            "inputSchema": {
-                "json": tool.metadata.get_parameters_dict()
-            },
+            "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
         converse_tools.append({"toolSpec": tool_dict})
     return {"tools": converse_tools}
@@ -155,9 +153,9 @@ def converse_with_retry(
     client: Any,
     model: str,
     messages: Sequence[Dict[str, Any]],
-    max_retries: int=3,
+    max_retries: int = 3,
     system_prompt: str | None = None,
-    max_tokens: int= 1000,
+    max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
     **kwargs: Any,
@@ -172,7 +170,7 @@ def converse_with_retry(
             "maxTokens": max_tokens,
             "temperature": temperature,
         },
-        "toolConfig": kwargs.get("tools")
+        "toolConfig": kwargs.get("tools"),
     }
 
     @retry_decorator

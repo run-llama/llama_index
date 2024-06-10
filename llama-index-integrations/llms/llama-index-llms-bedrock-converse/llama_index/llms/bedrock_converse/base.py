@@ -33,7 +33,13 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.llms.bedrock_converse.utils import FUNCTION_CALLING_MODELS, converse_with_retry, force_single_tool_call, messages_to_converse_messages, tools_to_converse_tools
+from llama_index.llms.bedrock_converse.utils import (
+    FUNCTION_CALLING_MODELS,
+    converse_with_retry,
+    force_single_tool_call,
+    messages_to_converse_messages,
+    tools_to_converse_tools,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -277,13 +283,19 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(response)
+        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
+            response
+        )
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=content,
-                additional_kwargs={"tool_calls": tool_calls, "tool_call_id": tool_call_ids, "status": status},
+                additional_kwargs={
+                    "tool_calls": tool_calls,
+                    "tool_call_id": tool_call_ids,
+                    "status": status,
+                },
             ),
             raw=dict(response),
         )
@@ -323,13 +335,22 @@ class BedrockConverse(FunctionCallingLLM):
                 if "contentBlockDelta" in chunk:
                     content_delta = chunk["contentBlockDelta"]["delta"]
                     content += content_delta
-                    _, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(response)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(response)
 
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             content=content,
-                            additional_kwargs={"tool_calls": tool_calls, "tool_call_id": tool_call_ids, "status": status},
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
+                            },
                         ),
                         delta=content_delta,
                         raw=response,
@@ -354,19 +375,25 @@ class BedrockConverse(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> NotImplementedError:
-        raise NotImplementedError("Async completion is not supported for Bedrock Converse.")
+        raise NotImplementedError(
+            "Async completion is not supported for Bedrock Converse."
+        )
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> NotImplementedError:
-        raise NotImplementedError("Async stream chat is not supported for Bedrock Converse.")
+        raise NotImplementedError(
+            "Async stream chat is not supported for Bedrock Converse."
+        )
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> NotImplementedError:
-        raise NotImplementedError("Async stream completion is not supported for Bedrock Converse.")
+        raise NotImplementedError(
+            "Async stream completion is not supported for Bedrock Converse."
+        )
 
     def chat_with_tools(
         self,
@@ -403,7 +430,9 @@ class BedrockConverse(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> NotImplementedError:
-        raise NotImplementedError("Async chat with tools is not supported for Bedrock Converse.")
+        raise NotImplementedError(
+            "Async chat with tools is not supported for Bedrock Converse."
+        )
 
     def get_tool_calls_from_response(
         self,

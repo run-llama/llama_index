@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.bedrock"
+import_path = "llama_index.llms.bedrock_converse"
 
 [tool.llamahub.class_authors]
-Bedrock = "llama-index"
+BedrockConverse = "AndreCNF"
 
 [tool.mypy]
 disallow_untyped_defs = true
