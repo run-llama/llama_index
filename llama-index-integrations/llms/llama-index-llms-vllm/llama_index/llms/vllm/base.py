@@ -247,7 +247,7 @@ class Vllm(LLM):
         }
         return {**base_kwargs}
 
-        def __del__(self) -> None:
+    def __del__(self) -> None:
         import torch
         import gc
         
