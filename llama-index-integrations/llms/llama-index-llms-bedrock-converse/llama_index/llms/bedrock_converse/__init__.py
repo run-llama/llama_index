@@ -1,3 +1,3 @@
-from llama_index.llms.anthropic.base import Anthropic
+from llama_index.llms.bedrock_converse.base import BedrockConverse
 
-__all__ = ["Anthropic"]
+__all__ = ["BedrockConverse"]
