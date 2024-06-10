@@ -39,6 +39,7 @@ class FilterOperatorFunction(str, Enum):
         "ARRAY_CONTAINS_ALL({key}, {value})"  # array contains all values in the list
     )
     NARRAY_CONTAINS_ALL = "not ARRAY_CONTAINS_ALL({key}, {value})"  # array does not contain all values in the list
+    # GT, GTE, LT, LTE not yet supported on ARRAY_LENGTH functions
     ARRAY_LENGTH = "ARRAY_LENGTH({key}) == {value}"  # array length equals value
     NARRAY_LENGTH = "ARRAY_LENGTH({key}) != {value}"  # array length not equals value
 
@@ -88,11 +89,15 @@ class ScalarMetadataFilters(BaseModel):
         return cls(filters=filters)
 
 
-def parse_filter_value(filter_value: any):
+def parse_filter_value(filter_value: any, is_text_match: bool = False):
     if filter_value is None:
         return filter_value
 
-    return f'"{filter_value!s}"' if isinstance(filter_value, str) else str(filter_value)
+    if is_text_match:
+        # Per Milvus, "only prefix pattern match like ab% and equal match like ab(no wildcards) are supported"
+        return f"\'{filter_value!s}%\'"
+    
+    return f'\'{filter_value!s}\'' if isinstance(filter_value, str) else str(filter_value)
 
 
 def parse_standard_filters(standard_filters: MetadataFilters = None):
@@ -106,7 +111,15 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
             continue
 
         if filter.operator == FilterOperator.NIN:
-            filters.append(str(filter.key) + " not in " + filter_value)
+            filters.append(f"{str(filter.key)} not in {filter_value}")
+        elif filter.operator == FilterOperator.CONTAINS:
+            filters.append(f"array_contains({str(filter.key)}, {filter_value})")
+        elif filter.operator == FilterOperator.ANY:
+            filters.append(f"array_contains_any({str(filter.key)}, {filter_value})")
+        elif filter.operator == FilterOperator.ALL:
+            filters.append(f"array_contains_all({str(filter.key)}, {filter_value})")
+        elif filter.operator == FilterOperator.TEXT_MATCH: 
+            filters.append(f"{str(filter.key)} like {parse_filter_value(filter.value, True)}")
         elif filter.operator in [
             FilterOperator.EQ,
             FilterOperator.GT,
@@ -116,7 +129,7 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
             FilterOperator.LTE,
             FilterOperator.IN,
         ]:
-            filters.append(str(filter.key) + " " + filter.operator + " " + filter_value)
+            filters.append(f"{str(filter.key)} {filter.operator} {filter_value}")
         else:
             raise ValueError(f"Operator {filter.operator} not supported by Milvus.")
 

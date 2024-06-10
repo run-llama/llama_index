@@ -12,7 +12,6 @@ try:
         root_validator,
         validator,
         parse_obj_as,
-        Json,
     )
     from pydantic.v1.error_wrappers import ValidationError
     from pydantic.v1.fields import FieldInfo
@@ -31,7 +30,6 @@ except ImportError:
         root_validator,
         validator,
         parse_obj_as,
-        Json,
     )
     from pydantic.error_wrappers import ValidationError
     from pydantic.fields import FieldInfo
@@ -53,5 +51,4 @@ __all__ = [
     "GenericModel",
     "BaseConfig",
     "parse_obj_as",
-    "Json",
 ]
