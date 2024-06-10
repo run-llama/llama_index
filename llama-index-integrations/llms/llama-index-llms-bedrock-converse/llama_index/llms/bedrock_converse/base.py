@@ -37,7 +37,7 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.llms.bedrock_converse.utils import FUNCTION_CALLING_MODELS, messages_to_converse_messages
+from llama_index.llms.bedrock_converse.utils import FUNCTION_CALLING_MODELS, converse_with_retry, force_single_tool_call, messages_to_converse_messages, tools_to_converse_tools
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -268,16 +268,16 @@ class BedrockConverse(FunctionCallingLLM):
         converse_messages, system_prompt = messages_to_converse_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        # TODO convert Llama Index tools to AWS Bedrock Converse tools
-
-        # TODO send the system prompt to AWS Bedrock Converse
-
-        # TODO invoke LLMs in AWS Bedrock Converse with retry
-
-        response = self._client.beta.tools.messages.create(
-            messages=anthropic_messages,
+        # invoke LLM in AWS Bedrock Converse with retry
+        response = converse_with_retry(
+            client=self._client,
+            model=self.model,
+            messages=converse_messages,
+            system_prompt=system_prompt,
+            max_retries=self.max_retries,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
             stream=False,
-            system=system_prompt,
             **all_kwargs,
         )
 
@@ -303,11 +303,21 @@ class BedrockConverse(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        anthropic_messages, system_prompt = messages_to_converse_messages(messages)
+        # convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.messages.create(
-            messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
+        # invoke LLM in AWS Bedrock Converse with retry
+        response = response = converse_with_retry(
+            client=self._client,
+            model=self.model,
+            messages=converse_messages,
+            system_prompt=system_prompt,
+            max_retries=self.max_retries,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            stream=True,
+            **all_kwargs,
         )
 
         def gen() -> ChatResponseGen:
@@ -413,15 +423,8 @@ class BedrockConverse(FunctionCallingLLM):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
             chat_history.append(user_msg)
 
-        tool_dicts = []
-        for tool in tools:
-            tool_dicts.append(
-                {
-                    "name": tool.metadata.name,
-                    "description": tool.metadata.description,
-                    "input_schema": tool.metadata.get_parameters_dict(),
-                }
-            )
+        # convert Llama Index tools to AWS Bedrock Converse tools
+        tool_dicts = tools_to_converse_tools(tools)
 
         response = self.chat(chat_history, tools=tool_dicts, **kwargs)
 
@@ -446,15 +449,8 @@ class BedrockConverse(FunctionCallingLLM):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
             chat_history.append(user_msg)
 
-        tool_dicts = []
-        for tool in tools:
-            tool_dicts.append(
-                {
-                    "name": tool.metadata.name,
-                    "description": tool.metadata.description,
-                    "input_schema": tool.metadata.get_parameters_dict(),
-                }
-            )
+        # convert Llama Index tools to AWS Bedrock Converse tools
+        tool_dicts = tools_to_converse_tools(tools)
 
         response = await self.achat(chat_history, tools=tool_dicts, **kwargs)
 

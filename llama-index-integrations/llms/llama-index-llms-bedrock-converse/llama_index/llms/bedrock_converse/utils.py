@@ -1,7 +1,17 @@
-from typing import Any, Dict, Sequence, Tuple
+import logging
+from typing import Any, Callable, Dict, List, Sequence, Tuple
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
+
+logger = logging.getLogger(__name__)
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -90,7 +100,85 @@ def messages_to_converse_messages(
     return __merge_common_role_msgs(converse_messages), system_prompt.strip()
 
 
+def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
+    """
+    Converts a list of tools to AWS Bedrock Converse tools.
+
+    Args:
+        tools: List of BaseTools
+
+    Returns:
+        AWS Bedrock Converse tools
+    """
+    converse_tools = []
+    for tool in tools:
+        tool_dict = {
+            "name": tool.name,
+            "description": tool.description,
+            "inputSchema": {
+                "json": tool.metadata.get_parameters_dict()
+            },
+        }
+        converse_tools.append({"toolSpec": tool_dict})
+    return {"tools": converse_tools}
+
+
 def force_single_tool_call(response: ChatResponse) -> None:
     tool_calls = response.message.additional_kwargs.get("tool_calls", [])
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
+def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], Any]:
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    try:
+        import boto3  # noqa
+    except ImportError as e:
+        raise ImportError(
+            "You must install the `boto3` package to use Bedrock."
+            "Please `pip install boto3`"
+        ) from e
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def converse_with_retry(
+    client: Any,
+    model: str,
+    messages: Sequence[Dict[str, Any]],
+    max_retries: int=3,
+    system_prompt: str | None = None,
+    max_tokens: int= 1000,
+    temperature: float = 0.1,
+    stream: bool = False,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
+    converse_args = {
+        "modelId": model,
+        "messages": messages,
+        "system": [{"text": system_prompt}],
+        "inferenceConfig": {
+            "maxTokens": max_tokens,
+            "temperature": temperature,
+        },
+        "toolConfig": kwargs.get("tools")
+    }
+
+    @retry_decorator
+    def _conversion_with_retry(**kwargs: Any) -> Any:
+        if stream:
+            return client.converse_stream(converse_args)
+        return client.converse(converse_args)
+
+    return _conversion_with_retry(**kwargs)
