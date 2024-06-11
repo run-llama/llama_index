@@ -753,7 +753,9 @@ nav:
           - ./api_reference/embeddings/gemini.md
           - ./api_reference/embeddings/google.md
           - ./api_reference/embeddings/gradient.md
+          - ./api_reference/embeddings/huggingface-api.md
           - ./api_reference/embeddings/huggingface.md
+          - ./api_reference/embeddings/huggingface_api.md
           - ./api_reference/embeddings/huggingface_itrex.md
           - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
@@ -877,6 +879,7 @@ nav:
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/solar.md
+          - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
           - ./api_reference/llms/unify.md
           - ./api_reference/llms/upstage.md
@@ -1964,6 +1967,8 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-azure-devops
             - ../llama-index-integrations/retrievers/llama-index-retrievers-duckdb-retriever
             - ../llama-index-packs/llama-index-packs-zenguard
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-api
+            - ../llama-index-integrations/llms/llama-index-llms-text-generation-inference
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
