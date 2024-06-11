@@ -419,7 +419,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Add the text key to output fields if necessary
         if self.text_key and self.text_key not in output_fields:
-            output_fields = output_fields + [self.text_key]
+            output_fields.append(self.text_key)
 
         # Convert to string expression
         string_expr = ""
