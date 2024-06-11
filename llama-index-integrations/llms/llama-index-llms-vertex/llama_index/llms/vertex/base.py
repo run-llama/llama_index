@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
-
 class Vertex(FunctionCallingLLM):
     """Vertext LLM.
 
