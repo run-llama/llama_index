@@ -2,31 +2,49 @@
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is a framework for building **context-augmented** [LLM](https://en.wikipedia.org/wiki/Large_language_model) applications. Context augmentation refers to any use case that applies LLMs on top of your private or domain-specific data. Some popular [use cases](./use_cases/index.md) include the following:
+LlamaIndex is a framework for building context-augmented generative AI applications with [LLMs](https://en.wikipedia.org/wiki/Large_language_model).
 
-- Question-Answering Chatbots (commonly referred to as RAG systems, which stands for "Retrieval-Augmented Generation")
-- Document Understanding and Extraction
-- Autonomous Agents that can perform research and take actions
+<div class="grid cards" markdown>
 
+-  <span style="font-size: 200%">[Introduction](#introduction)</span>
 
-LlamaIndex provides the tools to build any of these above use cases from prototype to production. The tools allow you to both ingest/process this data and implement complex query workflows combining data access with LLM prompting.
+    What is context augmentation? How does LlamaIndex help?
 
-LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/).
+-   <span style="font-size: 200%">[Use cases](#use-cases)</span>
 
-!!! tip
-    Updating to LlamaIndex v0.10.0? Check out the [migration guide](./getting_started/v0_10_0_migration.md).
+    What kind of apps can you build with LlamaIndex? Who should use it?
 
-## 🚀 Why Context Augmentation?
+-   <span style="font-size: 200%">[Getting started](#getting-started)</span>
 
-LLMs offer a natural language interface between humans and data. Widely available models come pre-trained on huge amounts of publicly available data. However, they are not trained on **your** data, which may be private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
+    Get started in Python or TypeScript in just 5 lines of code!
 
-LlamaIndex provides tooling to enable context augmentation. A popular example is [Retrieval-Augmented Generation (RAG)](./getting_started/concepts.md) which combines context with LLMs at inference time. Another is [finetuning](./use_cases/fine_tuning.md).
+-   <span style="font-size: 200%">[LlamaCloud](#llamacloud)</span>
 
-## 🦙 LlamaIndex is the Data Framework for Context-Augmented LLM Apps
+    Managed services for LlamaIndex including [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/getting_started), the world's best document parser.
 
-LlamaIndex imposes no restriction on how you use LLMs. You can still use LLMs as auto-complete, chatbots, semi-autonomous agents, and more. It only makes LLMs more relevant to you.
+-   <span style="font-size: 200%">[Community](#community)</span>
 
-LlamaIndex provides the following tools to help you quickly standup production-ready LLM applications:
+    Get help and meet collaborators on Discord, Twitter and more.
+
+-   <span style="font-size: 200%">[Related projects](#related-projects)</span>
+
+    Check out our library of connectors at [LlamaHub](https://llamahub.ai), demos and more.
+
+</div>
+
+## Introduction
+
+### What is context augmentation?
+
+LLMs offer a natural language interface between humans and data. LLMs come pre-trained on huge amounts of publicly available data, but they are not trained on **your** data. Your data may be private or specific to the problem you're trying to solve. It's behind APIs, in SQL databases, or trapped in PDFs and slide decks.
+
+Context augmentation makes your data available to the LLM to solve the problem at hand. LlamaIndex provides the tools to build any of context-augmentation use case, from prototype to production. Our tools allow you to ingest, parse, index and process your data and quickly implement complex query workflows combining data access with LLM prompting.
+
+The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](./getting_started/concepts.md), which combines context with LLMs at inference time.
+
+### LlamaIndex is the Data Framework for Context-Augmented LLM Apps
+
+LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-complete, chatbots, semi-autonomous agents, and more. It just makes using them easier. We provide tools like:
 
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
@@ -36,7 +54,17 @@ LlamaIndex provides the following tools to help you quickly standup production-r
 - **Agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
 - **Observability/Evaluation** integrations that enable you to rigorously experiment, evaluate, and monitor your app in a virtuous cycle.
 
-## 👨‍👩‍👧‍👦 Who is LlamaIndex for?
+## Use cases
+
+Some popular use cases include:
+
+- [Question-Answering Chatbots](/use_cases/q_and_a/) (Retrieval-Augmented Generation aka RAG)
+- Document Understanding and Extraction
+- Autonomous Agents that can perform research and take actions
+
+Check out our [use cases](./use_cases/index.md) documentation for more examples and links to tutorials.
+
+### 👨‍👩‍👧‍👦 Who is LlamaIndex for?
 
 LlamaIndex provides tools for beginners, advanced users, and everyone in between.
 
@@ -45,6 +73,8 @@ Our high-level API allows beginner users to use LlamaIndex to ingest and query t
 For more complex applications, our lower-level APIs allow advanced users to customize and extend any module—data connectors, indices, retrievers, query engines, reranking modules—to fit their needs.
 
 ## Getting Started
+
+LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/).
 
 To install the library:
 
