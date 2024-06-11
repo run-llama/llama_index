@@ -4,13 +4,13 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Optional, Sequence, Union
 
-from llama_index.core import ServiceContext
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.indices import SummaryIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import Document
+from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(

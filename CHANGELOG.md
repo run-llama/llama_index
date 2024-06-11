@@ -1,5 +1,87 @@
 # ChangeLog
 
+## [2024-06-10]
+
+### `llama-index-core` [0.10.44]
+
+- Add WEBP and GIF to supported image types for SimpleDirectoryReader (#14038)
+- refactor: add spans to abstractmethods via mixin (#14003)
+- Adding streaming support for SQLAutoVectorQueryEngine (#13947)
+- add option to specify embed_model to NLSQLTableQueryEngine (#14006)
+- add spans for multimodal LLMs (#13966)
+- change to compact in auto prev next (#13940)
+- feat: add exception events for streaming errors (#13917)
+- feat: add spans for tools (#13916)
+
+### `llama-index-embeddings-azure-openai` [0.1.10]
+
+- Fix error when using azure_ad without setting the API key (#13970)
+
+### `llama-index-embeddings-jinaai` [0.2.0]
+
+- add Jina Embeddings MultiModal (#13861)
+
+### `llama-index-embeddings-nomic` [0.3.0]
+
+- Add Nomic multi modal embeddings (#13920)
+
+### `llama-index-graph-stores-neo4j` [0.2.3]
+
+- ensure cypher returns list before iterating (#13938)
+
+### `llama-index-llms-ai21` [0.2.0]
+
+- Add AI21 Labs Jamba-Instruct Support (#14030)
+
+### `llama-index-llms-deepinfra` [0.1.2]
+
+- fix(deepinfrallm): default max_tokens (#13998)
+
+### `llama-index-llms-vllm` [0.1.8]
+
+- correct `__del__()` Vllm (#14053)
+
+### `llama-index-packs-zenguard` [0.1.0]
+
+- Add ZenGuard llamapack (#13959)
+
+### `llama-index-readers-google` [0.2.7]
+
+- fix how class attributes are set in google drive reader (#14022)
+- Add Google Maps Text Search Reader (#13884)
+
+### `llama-index-readers-jira` [0.1.4]
+
+- Jira personal access token with hosted instances (#13890)
+
+### `llama-index-readers-mongodb` [0.1.6]
+
+- set document ids when loading (#14000)
+
+### `llama-index-retrievers-duckdb-retriever` [0.1.0]
+
+- Add DuckDBRetriever (#13929)
+
+### `llama-index-vector-stores-chroma` [0.1.9]
+
+- Add inclusion filter to chromadb (#14010)
+
+### `llama-index-vector-stores-lancedb` [0.1.5]
+
+- Fix LanceDBVectorStore `add()` logic (#13993)
+
+### `llama-index-vector-stores-milvus` [0.1.17]
+
+- Support all filter operators for Milvus vector store (#13745)
+
+### `llama-index-vector-stores-postgres` [0.1.10]
+
+- Broaden SQLAlchemy support in llama-index-vector-stores-postgres to 1.4+ (#13936)
+
+### `llama-index-vector-stores-qdrant` [0.2.9]
+
+- Qdrant: Create payload index for `doc_id` (#14001)
+
 ## [2024-06-02]
 
 ### `llama-index-core` [0.10.43]
