@@ -417,6 +417,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
         elif len(self.output_fields) > 0:
             output_fields = self.output_fields
 
+        # Add the text key to output fields if necessary
+        if self.text_key and self.text_key not in output_fields:
+            output_fields = output_fields + [self.text_key]
+
         # Convert to string expression
         string_expr = ""
         if len(expr) != 0:
