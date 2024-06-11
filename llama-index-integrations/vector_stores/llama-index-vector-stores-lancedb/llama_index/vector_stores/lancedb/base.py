@@ -257,11 +257,15 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_table(cls, table: Any) -> "LanceDBVectorStore":
         """Create instance from table."""
-        if not isinstance(
-            table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
-        ):
-            raise Exception("argument is not lancedb table instance")
-        return cls(table=table)
+        try:
+            if not isinstance(
+                table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
+            ):
+                raise Exception("argument is not lancedb table instance")
+            return cls(table=table)
+        except Exception as e:
+            print("ldb version", lancedb.__version__)
+            raise
 
     def _add_reranker(self, reranker: lancedb.rerankers.Reranker) -> None:
         """Add a reranker to an existing vector store."""
