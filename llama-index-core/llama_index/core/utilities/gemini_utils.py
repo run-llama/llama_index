@@ -11,11 +11,14 @@ ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
     ## Gemini only has user and model roles. Put the rest in user role.
     MessageRole.SYSTEM: MessageRole.USER,
     MessageRole.MODEL: MessageRole.MODEL,
+    MessageRole.TOOL: MessageRole.USER,
+    MessageRole.FUNCTION: MessageRole.USER,
 }
 ROLES_FROM_GEMINI: Dict[MessageRole, MessageRole] = {
     ## Gemini only has user and model roles.
     MessageRole.USER: MessageRole.USER,
     MessageRole.MODEL: MessageRole.ASSISTANT,
+    MessageRole.FUNCTION: MessageRole.TOOL,
 }
 
 
@@ -47,7 +50,12 @@ def merge_neighboring_same_role_messages(
             content="\n".join([str(msg_content) for msg_content in merged_content]),
             additional_kwargs=current_message.additional_kwargs,
         )
-        merged_messages.append(merged_message)
+        # When making function calling, role 'model' response does not contain text.
+        # It will cause "empty text parameter" issue, the following code can avoid it.
+        print("merged_message", merged_message)
+        if merged_message.content == "" and merged_message.role == MessageRole.MODEL:
+            merged_message.content = "Function Calling"
+        merged_messages.append(merged_message) 
         i += 1
 
     return merged_messages
