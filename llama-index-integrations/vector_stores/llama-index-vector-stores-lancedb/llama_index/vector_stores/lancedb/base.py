@@ -456,7 +456,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             if not isinstance(self._table, lancedb.db.LanceTable):
                 raise ValueError(
-                    "creating FTS index is not supported for remote tables yet. "
+                    "creating FTS index is not supported for LanceDB Cloud yet. "
                     "Please use a local table for FTS/Hybrid search."
                 )
             if self._fts_index is None:
