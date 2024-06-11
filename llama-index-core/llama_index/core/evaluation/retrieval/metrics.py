@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Literal, Optional, Type
 
 import numpy as np
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -22,7 +22,7 @@ class HitRate(BaseRetrievalMetric):
         metric_name (str): The name of the metric.
     """
 
-    metric_name: str = "hit_rate"
+    metric_name: ClassVar[str] = "hit_rate"
     use_granular_hit_rate: bool = False
 
     def compute(
@@ -143,8 +143,8 @@ class MRR(BaseRetrievalMetric):
 class CohereRerankRelevancyMetric(BaseRetrievalMetric):
     """Cohere rerank relevancy metric."""
 
+    metric_name: ClassVar[str] = "cohere_rerank_relevancy"
     model: str = Field(description="Cohere model name.")
-    metric_name: str = "cohere_rerank_relevancy"
 
     _client: Any = PrivateAttr()
 
