@@ -218,20 +218,17 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         if table is not None:
             try:
-                # TODO : The below throws error if table object is not remote table
-                # assert isinstance(
-                #     table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
-                # )
-                assert isinstance(table, lancedb.db.LanceTable)
+                assert isinstance(
+                    table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
+                )
                 self._table = table
+                self._table_name = (
+                    table.name if hasattr(table, "name") else "remote_table"
+                )
             except AssertionError:
-                if uri.startswith("db://"):
-                    self._table = table
-                else:
-                    raise ValueError(
-                        "`table` has to be a lancedb.db.LanceTable or lancedb.remote.table.RemoteTable object."
-                    )
-            self._table_name = table.name if hasattr(table, "name") else "remote_table"
+                raise ValueError(
+                    "`table` has to be a lancedb.db.LanceTable or lancedb.remote.table.RemoteTable object."
+                )
         else:
             if self._table_exists():
                 self._table = self._connection.open_table(table_name)
@@ -260,10 +257,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     @classmethod
     def from_table(cls, table: Any) -> "LanceDBVectorStore":
         """Create instance from table."""
-        # if not isinstance(
-        #     table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
-        # ):
-        if not isinstance(table, lancedb.db.LanceTable) and not hasattr(table, "name"):
+        if not isinstance(
+            table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
+        ):
             raise Exception("argument is not lancedb table instance")
         return cls(table=table)
 
@@ -278,7 +274,6 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     def _table_exists(self, tbl_name: Optional[str] = None) -> bool:
         return (tbl_name or self._table_name) in self._connection.table_names()
 
-    @classmethod
     def create_index(
         self,
         scalar: Optional[bool] = False,
@@ -343,13 +338,13 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             data.append(append_data)
             ids.append(node.node_id)
 
-        if self._table is None:
-            self._table = self._connection.create_table(
-                self._table_name, data, mode=self.mode
-            )
-        else:
+            if self._table is None:
+                self._table = self._connection.create_table(
+                    self._table_name, data, mode=self.mode
+                )
+
             self._table.add(data, mode=self.mode)
-        self._fts_index = None  # reset fts index
+            self._fts_index = None  # reset fts index
 
         return ids
 
@@ -372,6 +367,68 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         """
         self._table.delete('id in ("' + '","'.join(node_ids) + '")')
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        """
+        Get nodes from the vector store.
+        """
+        if isinstance(self._table, lancedb.remote.table.RemoteTable):
+            raise ValueError("get_nodes is not supported for LanceDB cloud yet.")
+
+        if filters is not None:
+            if "where" in kwargs:
+                raise ValueError(
+                    "Cannot specify filter via both query and kwargs. "
+                    "Use kwargs only for lancedb specific items that are "
+                    "not supported via the generic query interface."
+                )
+            where = _to_lance_filter(filters, self._metadata_keys)
+        else:
+            where = kwargs.pop("where", None)
+
+        if node_ids is not None:
+            where = f'id in ("' + '","'.join(node_ids) + '")'
+
+        results = self._table.search().where(where).to_pandas()
+
+        nodes = []
+
+        for _, item in results.iterrows():
+            try:
+                node = metadata_dict_to_node(item.metadata)
+                node.embedding = list(item[self.vector_column_name])
+            except Exception:
+                # deprecated legacy logic for backward compatibility
+                _logger.debug(
+                    "Failed to parse Node metadata, fallback to legacy logic."
+                )
+                if item.metadata:
+                    metadata, node_info, _relation = legacy_metadata_dict_to_node(
+                        item.metadata, text_key=self.text_key
+                    )
+                else:
+                    metadata, node_info = {}, {}
+                node = TextNode(
+                    text=item[self.text_key] or "",
+                    id_=item.id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships={
+                        NodeRelationship.SOURCE: RelatedNodeInfo(
+                            node_id=item[self.doc_id_key]
+                        ),
+                    },
+                )
+
+            nodes.append(node)
+
+        return nodes
 
     def query(
         self,
