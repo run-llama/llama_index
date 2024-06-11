@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.embeddings.text_generation_inference"
+import_path = "llama_index.llms.text_generation_inference"
 
 [tool.llamahub.class_authors]
-TextGenerationInferenceEmbedding = "llama-index"
+TextGenerationInference = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index embeddings huggingface text generation inference integration"
+description = "llama-index llms huggingface text generation inference integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-embeddings-text-generation-inference"
+name = "llama-index-llms-text-generation-inference"
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-sentence-transformers = "^2.6.1"
+llama-index-core = "^0.10.41"
+text-generation = "^0.7.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

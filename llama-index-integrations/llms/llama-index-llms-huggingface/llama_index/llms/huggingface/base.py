@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from deprecated import deprecated
 
 import torch
 from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
@@ -685,6 +686,10 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
 
+@deprecated(
+    "Deprecated in favor of `TextGenerationInference` from `llama-index-llms-text-generation-inference` which should be used instead.",
+    action="always",
+)
 class TextGenerationInference(FunctionCallingLLM):
     model_name: Optional[str] = Field(
         default=None,

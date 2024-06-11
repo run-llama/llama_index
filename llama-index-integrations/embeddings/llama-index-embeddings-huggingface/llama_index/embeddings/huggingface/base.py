@@ -154,10 +154,6 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(texts, prompt_name="text")
 
 
-@deprecated(
-    "Deprecated in favor of `HuggingFaceInferenceAPIEmbedding` from `llama-index-embeddings-huggingface-api` which should be used instead.",
-    action="always",
-)
 class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
     """
     Wrapper on the Hugging Face's Inference API for embeddings.
