@@ -231,7 +231,7 @@ class BedrockConverse(FunctionCallingLLM):
         }
 
     def _get_content_and_tool_calls(
-        self, response: Dict[str, Any] | None = None, content: Dict[str, Any] = None
+        self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
     ) -> Tuple[str, Dict[str, Any], List[str], List[str]]:
         assert (
             response is not None or content is not None

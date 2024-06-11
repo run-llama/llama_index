@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, List, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from tenacity import (
     before_sleep_log,
     retry,
@@ -214,7 +214,7 @@ def converse_with_retry(
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
-    system_prompt: str | None = None,
+    system_prompt: Optional[str] = None,
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
