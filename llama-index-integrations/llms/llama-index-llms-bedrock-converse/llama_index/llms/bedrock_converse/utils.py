@@ -88,7 +88,7 @@ def messages_to_converse_messages(
                 content.append({"text": message.content})
             # convert tool calls to the AWS Bedrock Converse format
             tool_calls = message.additional_kwargs.get("tool_calls", [])
-            for tool_call in enumerate(tool_calls):
+            for tool_call in tool_calls:
                 assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
                 assert "input" in tool_call, f"`input` not found in {tool_call}"
                 assert "name" in tool_call, f"`name` not found in {tool_call}"
