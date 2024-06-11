@@ -113,8 +113,10 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
     converse_tools = []
     for tool in tools:
         tool_dict = {
-            "name": tool.name,
-            "description": tool.description,
+            # if the tool's name or description aren't defined, get them from the Python function
+            "name": getattr(tool, "name", tool.fn.__name__),
+            "description": getattr(tool, "description", tool.fn.__doc__),
+            # get the schema of the tool's input parameters in the format expected by AWS Bedrock Converse
             "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
         converse_tools.append({"toolSpec": tool_dict})
@@ -182,3 +184,26 @@ def converse_with_retry(
         return client.converse(**converse_kwargs)
 
     return _conversion_with_retry(**kwargs)
+
+
+def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Joins two dictionaries, summing shared keys and adding new keys.
+
+    Args:
+        dict1: First dictionary
+        dict2: Second dictionary
+
+    Returns:
+        Joined dictionary
+    """
+    new_dict = dict1.copy()
+    for key, value in dict2.items():
+        if key not in new_dict:
+            new_dict[key] = value
+        if key in new_dict:
+            if isinstance(value, dict):
+                new_dict[key] = join_two_dicts(new_dict[key], value)
+            else:
+                new_dict[key] += value
+    return new_dict

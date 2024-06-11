@@ -37,6 +37,7 @@ from llama_index.llms.bedrock_converse.utils import (
     FUNCTION_CALLING_MODELS,
     converse_with_retry,
     force_single_tool_call,
+    join_two_dicts,
     messages_to_converse_messages,
     tools_to_converse_tools,
 )
@@ -77,7 +78,9 @@ class BedrockConverse(FunctionCallingLLM):
         lte=1.0,
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    context_size: int = Field("The maximum number of tokens available for input.")
+    context_size: Optional[int] = Field(
+        description="The maximum number of tokens available for input."
+    )
     profile_name: Optional[str] = Field(
         description="The name of aws profile to use. If not given, then the default profile is used."
     )
@@ -150,6 +153,7 @@ class BedrockConverse(FunctionCallingLLM):
                 " model provided refers to a non-foundation model."
                 " Please specify the context_size"
             )
+        context_size = context_size or FUNCTION_CALLING_MODELS[model]
 
         session_kwargs = {
             "profile_name": profile_name,
@@ -196,6 +200,7 @@ class BedrockConverse(FunctionCallingLLM):
             additional_kwargs=additional_kwargs,
             timeout=timeout,
             max_retries=max_retries,
+            context_size=context_size,
             model=model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -243,26 +248,35 @@ class BedrockConverse(FunctionCallingLLM):
         }
 
     def _get_content_and_tool_calls(
-        self, response: Dict[str, Any]
+        self, response: Dict[str, Any] | None = None, content: Dict[str, Any] = None
     ) -> Tuple[str, Dict[str, Any], List[str], List[str]]:
+        assert (
+            response is not None or content is not None
+        ), f"Either response or content must be provided. Got response: {response}, content: {content}"
+        assert (
+            response is None or content is None
+        ), f"Only one of response or content should be provided. Got response: {response}, content: {content}"
         tool_calls = []
         tool_call_ids = []
         status = []
-        content = ""
-        message = response["output"]["message"]
-        for content_block in message["content"]:
+        text_content = ""
+        if content is not None:
+            content_list = [content]
+        else:
+            content_list = response["output"]["message"]["content"]
+        for content_block in content_list:
             if text := content_block.get("text", None):
-                content += text
+                text_content += text
             if tool_usage := content_block.get("toolUse", None):
                 tool_calls.append(tool_usage)
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
                     if text := tool_result_content.get("text", None):
-                        content += text
+                        text_content += text
                 tool_call_ids.append(tool_result_content.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
 
-        return content, tool_calls, tool_call_ids, status
+        return text_content, tool_calls, tool_call_ids, status
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -327,30 +341,52 @@ class BedrockConverse(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            content = ""
+            content = {}
             role = MessageRole.ASSISTANT
             for chunk in response["stream"]:
-                if "contentBlockDelta" in chunk:
-                    content_delta = chunk["contentBlockDelta"]["delta"]
-                    content += content_delta
+                if content_block_delta := chunk.get("contentBlockDelta"):
+                    content_delta = content_block_delta["delta"]
+                    content = join_two_dicts(content, content_delta)
                     (
                         _,
                         tool_calls,
                         tool_call_ids,
                         status,
-                    ) = self._get_content_and_tool_calls(response)
+                    ) = self._get_content_and_tool_calls(content=content)
 
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content,
+                            content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
                                 "tool_call_id": tool_call_ids,
                                 "status": status,
                             },
                         ),
-                        delta=content_delta,
+                        delta=content_delta.get("text", ""),
+                        raw=response,
+                    )
+                elif content_block_start := chunk.get("contentBlockStart"):
+                    tool_use = content_block_start["toolUse"]
+                    content = join_two_dicts(content, tool_use)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
+                            },
+                        ),
                         raw=response,
                     )
 
@@ -457,8 +493,6 @@ class BedrockConverse(FunctionCallingLLM):
                 or "name" not in tool_call
             ):
                 raise ValueError("Invalid tool call.")
-            if tool_call["type"] != "tool_use":
-                raise ValueError("Invalid tool type. Unsupported by Anthropic")
             argument_dict = (
                 json.loads(tool_call["input"])
                 if isinstance(tool_call["input"], str)
