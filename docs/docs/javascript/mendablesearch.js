@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "https://unpkg.com/react-dom@17/umd/react-dom.production.min.js",
       () => {
         loadScript(
-          "https://unpkg.com/@mendable/search@0.0.150/dist/umd/mendable.min.js",
+          "https://unpkg.com/@mendable/search@0.0.206/dist/umd/mendable.min.js",
           initializeMendable,
         );
       },

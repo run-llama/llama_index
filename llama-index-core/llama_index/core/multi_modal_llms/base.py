@@ -24,6 +24,8 @@ from llama_index.core.constants import (
     DEFAULT_NUM_INPUT_FILES,
     DEFAULT_NUM_OUTPUTS,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
+from llama_index.core.llms.callbacks import llm_completion_callback, llm_chat_callback
 from llama_index.core.schema import BaseComponent, ImageDocument
 
 
@@ -71,7 +73,7 @@ class MultiModalLLMMetadata(BaseModel):
     )
 
 
-class MultiModalLLM(ChainableMixin, BaseComponent):
+class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """Multi-Modal LLM interface."""
 
     callback_manager: CallbackManager = Field(
@@ -157,6 +159,28 @@ class MultiModalLLM(ChainableMixin, BaseComponent):
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
         else:
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        """
+        The callback decorators installs events, so they must be applied before
+        the span decorators, otherwise the spans wouldn't contain the events.
+        """
+        for attr in (
+            "complete",
+            "acomplete",
+            "stream_complete",
+            "astream_complete",
+            "chat",
+            "achat",
+            "stream_chat",
+            "astream_chat",
+        ):
+            if callable(method := cls.__dict__.get(attr)):
+                if attr.endswith("chat"):
+                    setattr(cls, attr, llm_chat_callback()(method))
+                else:
+                    setattr(cls, attr, llm_completion_callback()(method))
+        super().__init_subclass__(**kwargs)
 
 
 class BaseMultiModalComponent(QueryComponent):

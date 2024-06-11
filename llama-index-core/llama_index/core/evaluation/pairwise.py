@@ -4,7 +4,6 @@ import asyncio
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
-from llama_index.core import ServiceContext
 from llama_index.core.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
@@ -18,6 +17,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
 )
 from llama_index.core.prompts.mixin import PromptDictType
+from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 
 DEFAULT_SYSTEM_TEMPLATE = (

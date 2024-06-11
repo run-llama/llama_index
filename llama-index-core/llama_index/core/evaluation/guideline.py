@@ -3,13 +3,13 @@ import asyncio
 import logging
 from typing import Any, Optional, Sequence, Union, cast
 
-from llama_index.core import ServiceContext
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.llms.llm import LLM
 from llama_index.core.output_parsers import PydanticOutputParser
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
+from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 
 logger = logging.getLogger(__name__)

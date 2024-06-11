@@ -350,6 +350,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         cypher_statement += return_statement
 
         response = self.structured_query(cypher_statement, param_map=params)
+        response = response if response else []
 
         nodes = []
         for record in response:
@@ -427,6 +428,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         cypher_statement += return_statement
 
         data = self.structured_query(cypher_statement, param_map=params)
+        data = data if data else []
 
         triples = []
         for record in data:
@@ -480,6 +482,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             """,
             param_map={"ids": ids, "limit": limit},
         )
+        response = response if response else []
 
         ignore_rels = ignore_rels or []
         for record in response:
@@ -538,6 +541,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 "limit": query.similarity_top_k,
             },
         )
+        data = data if data else []
 
         nodes = []
         scores = []
