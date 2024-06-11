@@ -65,18 +65,20 @@ def messages_to_converse_messages(
             # convert tool output to the AWS Bedrock Converse format
             content = {
                 "toolResult": {
-                    "toolUseId": message.additional_kwargs["tool_call_id"][-1],
+                    "toolUseId": message.additional_kwargs["tool_call_id"],
                     "content": [
                         {
                             "text": message.content,
                         },
                     ],
-                    "status": message.additional_kwargs["status"][-1],
                 }
             }
+            status = message.additional_kwargs.get("status")
+            if status:
+                content["toolResult"]["status"] = status
             converse_message = {
-                "role": message.role.value,
-                "content": content,
+                "role": "user",
+                "content": [content],
             }
             converse_messages.append(converse_message)
         else:
@@ -86,11 +88,11 @@ def messages_to_converse_messages(
                 content.append({"text": message.content})
             # convert tool calls to the AWS Bedrock Converse format
             tool_calls = message.additional_kwargs.get("tool_calls", [])
-            for tool_call in tool_calls:
-                assert "toolUseId" in tool_call
-                assert "input" in tool_call
-                assert "name" in tool_call
-                content.append(tool_call)
+            for tool_call in enumerate(tool_calls):
+                assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
+                assert "input" in tool_call, f"`input` not found in {tool_call}"
+                assert "name" in tool_call, f"`name` not found in {tool_call}"
+                content.append({"toolUse": tool_call})
             converse_message = {
                 "role": message.role.value,
                 "content": content,
@@ -112,10 +114,24 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
     """
     converse_tools = []
     for tool in tools:
+        tool_name, tool_description = getattr(tool, "name", None), getattr(
+            tool, "description", None
+        )
+        if not tool_name or not tool_description:
+            # get the tool's name and description from the metadata if they aren't defined
+            tool_name = getattr(tool.metadata, "name", None)
+            if tool_fn := getattr(tool, "fn", None):
+                # get the tool's description from the function's docstring
+                tool_description = tool_fn.__doc__
+                if not tool_name:
+                    tool_name = tool_fn.__name__
+            else:
+                tool_description = getattr(tool.metadata, "description", None)
+            if not tool_name or not tool_description:
+                raise ValueError(f"Tool {tool} does not have a name or description.")
         tool_dict = {
-            # if the tool's name or description aren't defined, get them from the Python function
-            "name": getattr(tool, "name", tool.fn.__name__),
-            "description": getattr(tool, "description", tool.fn.__doc__),
+            "name": tool_name,
+            "description": tool_description,
             # get the schema of the tool's input parameters in the format expected by AWS Bedrock Converse
             "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
@@ -176,14 +192,17 @@ def converse_with_retry(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    converse_kwargs = join_two_dicts(
+        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+    )
 
     @retry_decorator
     def _conversion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            return client.converse_stream(**converse_kwargs)
-        return client.converse(**converse_kwargs)
+            return client.converse_stream(**kwargs)
+        return client.converse(**kwargs)
 
-    return _conversion_with_retry(**kwargs)
+    return _conversion_with_retry(**converse_kwargs)
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
