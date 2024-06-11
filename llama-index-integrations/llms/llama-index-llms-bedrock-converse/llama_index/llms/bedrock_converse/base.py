@@ -34,9 +34,10 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
-    FUNCTION_CALLING_MODELS,
+    bedrock_modelname_to_context_size,
     converse_with_retry,
     force_single_tool_call,
+    is_bedrock_function_calling_model,
     join_two_dicts,
     messages_to_converse_messages,
     tools_to_converse_tools,
@@ -78,9 +79,6 @@ class BedrockConverse(FunctionCallingLLM):
         lte=1.0,
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
-    context_size: Optional[int] = Field(
-        description="The maximum number of tokens available for input."
-    )
     profile_name: Optional[str] = Field(
         description="The name of aws profile to use. If not given, then the default profile is used."
     )
@@ -125,7 +123,6 @@ class BedrockConverse(FunctionCallingLLM):
         model: str,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = 512,
-        context_size: Optional[int] = None,
         profile_name: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -146,14 +143,6 @@ class BedrockConverse(FunctionCallingLLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-
-        if context_size is None and model not in FUNCTION_CALLING_MODELS:
-            raise ValueError(
-                "`context_size` argument not provided and"
-                " model provided refers to a non-foundation model."
-                " Please specify the context_size"
-            )
-        context_size = context_size or FUNCTION_CALLING_MODELS[model]
 
         session_kwargs = {
             "profile_name": profile_name,
@@ -200,7 +189,6 @@ class BedrockConverse(FunctionCallingLLM):
             additional_kwargs=additional_kwargs,
             timeout=timeout,
             max_retries=max_retries,
-            context_size=context_size,
             model=model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -217,17 +205,12 @@ class BedrockConverse(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self.context_size,
+            context_window=bedrock_modelname_to_context_size(self.model),
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
-            is_function_calling_model=True,
+            is_function_calling_model=is_bedrock_function_calling_model(self.model),
         )
-
-    # TODO might need to implement this
-    # @property
-    # def tokenizer(self) -> Tokenizer:
-    #     return self._client.get_tokenizer()
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
