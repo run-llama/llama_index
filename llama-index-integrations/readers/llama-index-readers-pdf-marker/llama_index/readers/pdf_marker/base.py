@@ -40,7 +40,7 @@ class PDFMarkerReader(BaseReader):
 
         model_lst = load_all_models()
         full_text, images, out_meta = convert_single_pdf(
-            file.name,
+            str(file),
             model_lst,
             max_pages=max_pages,
             langs=langs,
