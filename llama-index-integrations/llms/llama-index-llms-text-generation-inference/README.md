@@ -22,5 +22,3 @@ llm = TextGenerationInference(
 
 response = llm.complete("Hello, how are you?")
 ```
-
-For more detailed example of installation and usage, please refer to the [Jupyter Notebook example](https://docs.llamaindex.ai/en/stable/examples/llms/text_generation_inference/).

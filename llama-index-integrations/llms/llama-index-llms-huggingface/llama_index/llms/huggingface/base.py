@@ -456,6 +456,10 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
+@deprecated(
+    "Deprecated in favor of `HuggingFaceInferenceAPI` from `llama-index-llms-huggingface-api` which should be used instead.",
+    action="always",
+)
 class HuggingFaceInferenceAPI(CustomLLM):
     """
     Wrapper on the Hugging Face's Inference API.

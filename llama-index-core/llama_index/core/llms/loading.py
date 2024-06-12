@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 try:
-    from llama_index.llms.huggingface import (
+    from llama_index.llms.huggingface_api import (
         HuggingFaceInferenceAPI,
     )  # pants: no-infer-dep
 
