@@ -1,7 +1,7 @@
 import anthropic
 import json
 from anthropic.types import ContentBlockDeltaEvent, TextBlock
-from anthropic.types.beta.tools import ToolUseBlock
+from anthropic.types.tool_use_block import ToolUseBlock
 from typing import (
     Any,
     Callable,

@@ -94,7 +94,14 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[StrictInt, StrictFloat, StrictStr, List[StrictStr]]
+    value: Union[
+        StrictInt,
+        StrictFloat,
+        StrictStr,
+        List[StrictStr],
+        List[StrictFloat],
+        List[StrictInt],
+    ]
     operator: FilterOperator = FilterOperator.EQ
 
     @classmethod
