@@ -310,7 +310,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             """
             UNWIND $data AS row
             MERGE (source {id: row.source_id})
+            ON CREATE SET source:Chunk
             MERGE (target {id: row.target_id})
+            ON CREATE SET target:Chunk
             WITH source, target, row
             CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
             RETURN count(*)
