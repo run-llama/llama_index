@@ -47,6 +47,7 @@ class PDFMarkerReader(BaseReader):
             batch_multiplier=batch_multiplier,
             start_page=start_page,
         )
+
         doc = Document(text=full_text, extra_info=extra_info or {})
 
         return [doc]
