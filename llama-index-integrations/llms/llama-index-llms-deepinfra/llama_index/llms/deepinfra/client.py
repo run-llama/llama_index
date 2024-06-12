@@ -159,3 +159,28 @@ class DeepInfraClient:
         Get DeepInfra API URL.
         """
         return f"{self.api_base}/{endpoint}"
+
+    def get_model_details(self, model_name: str) -> requests.Response:
+        """
+        Get model details from DeepInfra API.
+        If the model does not exist, a 404 response is returned.
+
+        Returns:
+            requests.Response: The API response.
+        """
+        request_url = self.get_url(f"models/{model_name}")
+        return requests.get(request_url, headers=self._get_headers())
+
+    def is_function_calling_model(self, model_name: str) -> bool:
+        """
+        Check if the model is a function calling model.
+
+        Returns:
+            bool: True if the model is a function calling model, False otherwise.
+        """
+        response = self.get_model_details(model_name)
+        if response.status_code == 404:
+            return False
+        response_json = response.json()
+        tags = response_json.get("tags", [])
+        return "tools" in tags
