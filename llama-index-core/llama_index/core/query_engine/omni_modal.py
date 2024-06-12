@@ -1,9 +1,8 @@
-from typing import Any, Dict, Generic, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence
 
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.indices.omni_modal import OmniModalVectorIndexRetriever
 from llama_index.core.embeddings.omni_modal_base import (
     KD,
     KQ,
@@ -19,6 +18,9 @@ from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.schema import MetadataMode, NodeWithScore
+
+if TYPE_CHECKING:
+    from llama_index.core.indices.omni_modal import OmniModalVectorIndexRetriever
 
 
 class OmniModalQueryEngine(BaseQueryEngine, Generic[KD, KQ]):
@@ -37,7 +39,7 @@ class OmniModalQueryEngine(BaseQueryEngine, Generic[KD, KQ]):
 
     def __init__(
         self,
-        retriever: OmniModalVectorIndexRetriever[KD, KQ],
+        retriever: "OmniModalVectorIndexRetriever[KD, KQ]",
         multi_modal_llm: Optional[MultiModalLLM] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         image_qa_template: Optional[BasePromptTemplate] = None,
@@ -256,3 +258,8 @@ class OmniModalQueryEngine(BaseQueryEngine, Generic[KD, KQ]):
             query_event.on_end(payload={EventPayload.RESPONSE: response})
 
         return response
+
+    @property
+    def retriever(self) -> "OmniModalVectorIndexRetriever[KD, KQ]":
+        """Get the retriever object."""
+        return self._retriever

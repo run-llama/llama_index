@@ -1,5 +1,6 @@
 import asyncio
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Collection,
@@ -50,7 +51,8 @@ from llama_index.core.instrumentation.events.retrieval import (
 )
 import llama_index.core.instrumentation as instrument
 
-from .base import OmniModalVectorStoreIndex
+if TYPE_CHECKING:
+    from llama_index.core.indices.omni_modal.base import OmniModalVectorStoreIndex
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -78,7 +80,7 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
 
     def __init__(
         self,
-        index: OmniModalVectorStoreIndex[KD, KQ],
+        index: "OmniModalVectorStoreIndex[KD, KQ]",
         # The similarity_top_k to use for each document modality, defaulting to DEFAULT_SIMILARITY_TOP_K
         similarity_top_k: Optional[Mapping[KD, int]] = None,
         # The sparse_top_k to use for each document modality, defaulting to None
