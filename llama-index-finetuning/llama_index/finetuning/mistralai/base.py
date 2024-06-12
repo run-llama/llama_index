@@ -6,8 +6,7 @@ import time
 from typing import Any, Optional, Dict
 
 from mistralai.client import MistralClient
-from mistralai.models.jobs import DetailedJob
-from mistralai.models.jobs import WandbIntegrationIn, TrainingParameters
+from mistralai.models.jobs import DetailedJob, WandbIntegrationIn, TrainingParameters
 
 from llama_index.core.llms.llm import LLM
 from llama_index.finetuning.callbacks.finetuning_handler import (
