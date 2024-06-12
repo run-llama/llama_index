@@ -32,7 +32,7 @@ jobs:
           version: ${{ env.POETRY_VERSION }}
       - name: Update venv and filelock
         shell: bash
-        run: poetry run pip install --upgrade virtualenv filelock
+        run: pip install --upgrade virtualenv filelock
       - name: Install deps
         shell: bash
         run: poetry install
