@@ -3,6 +3,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from llama_index.core.instrumentation import DispatcherSpanMixin
+
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
@@ -99,7 +101,7 @@ class ToolOutput(BaseModel):
         return str(self.content)
 
 
-class BaseTool:
+class BaseTool(DispatcherSpanMixin):
     @property
     @abstractmethod
     def metadata(self) -> ToolMetadata:

@@ -96,7 +96,7 @@ class SimpleMongoReader(BaseReader):
             text = separator.join(texts)
 
             if metadata_names is None:
-                yield Document(text=text)
+                yield Document(text=text, id_=str(item["_id"]))
             else:
                 try:
                     metadata = {name: item.get(name) for name in metadata_names}
@@ -104,4 +104,4 @@ class SimpleMongoReader(BaseReader):
                     raise ValueError(
                         f"{err.args[0]} field not found in Mongo document."
                     ) from err
-                yield Document(text=text, metadata=metadata)
+                yield Document(text=text, id_=str(item["_id"]), metadata=metadata)
