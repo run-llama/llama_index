@@ -4,7 +4,11 @@ import logging
 from typing import Callable, Dict, Optional, Union
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    Response,
+    StreamingResponse,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.core.indices.struct_store.sql_query import (
@@ -198,6 +202,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         use_sql_join_synthesis: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
+        streaming: bool = False,
         # deprecated
         service_context: Optional[ServiceContext] = None,
     ) -> None:
@@ -228,6 +233,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         self._use_sql_join_synthesis = use_sql_join_synthesis
         self._verbose = verbose
+        self._streaming = streaming
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -282,26 +288,46 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str = self._llm.predict(
-            self._sql_join_synthesis_prompt,
-            query_str=query_bundle.query_str,
-            sql_query_str=sql_query,
-            sql_response_str=str(sql_response),
-            query_engine_query_str=new_query.query_str,
-            query_engine_response_str=str(other_response),
-        )
-        if self._verbose:
-            print_text(f"Final response: {response_str}\n", color="green")
-        response_metadata = {
-            **(sql_response.metadata or {}),
-            **(other_response.metadata or {}),
-        }
-        source_nodes = other_response.source_nodes
-        return Response(
-            response_str,
-            metadata=response_metadata,
-            source_nodes=source_nodes,
-        )
+        if self._streaming:
+            response_str = self._llm.stream(
+                self._sql_join_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query_str=sql_query,
+                sql_response_str=str(sql_response),
+                query_engine_query_str=new_query.query_str,
+                query_engine_response_str=str(other_response),
+            )
+
+            response_metadata = {
+                **(sql_response.metadata or {}),
+                **(other_response.metadata or {}),
+            }
+            source_nodes = other_response.source_nodes
+            return StreamingResponse(
+                response_str,
+                metadata=response_metadata,
+                source_nodes=source_nodes,
+            )
+        else:
+            response_str = self._llm.predict(
+                self._sql_join_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query_str=sql_query,
+                sql_response_str=str(sql_response),
+                query_engine_query_str=new_query.query_str,
+                query_engine_response_str=str(other_response),
+            )
+
+            response_metadata = {
+                **(sql_response.metadata or {}),
+                **(other_response.metadata or {}),
+            }
+            source_nodes = other_response.source_nodes
+            return Response(
+                response_str,
+                metadata=response_metadata,
+                source_nodes=source_nodes,
+            )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Query and get response."""
@@ -320,10 +346,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                     f"Querying other query engine: {result.reason}\n", color="blue"
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
-            response = self._other_query_tool.query_engine.query(query_bundle)
-            if self._verbose:
-                print_text(f"Query Engine response: {response}\n", color="pink")
-            return response
+            return self._other_query_tool.query_engine.query(query_bundle)
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")
 

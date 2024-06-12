@@ -3,7 +3,6 @@
 import logging
 import uuid
 from typing import Any, List, Optional
-
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -20,19 +19,9 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.tools import BaseTool
-from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
-
-
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
-    name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
 
 
 class IntrospectiveAgentWorker(BaseAgentWorker):

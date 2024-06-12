@@ -40,6 +40,7 @@ from llama_index.llms.deepinfra.constants import (
     CHAT_API_ENDPOINT,
     ENV_VARIABLE,
     DEFAULT_MODEL_NAME,
+    DEFAULT_MAX_TOKENS,
 )
 
 from llama_index.llms.deepinfra.client import DeepInfraClient
@@ -78,6 +79,7 @@ class DeepInfraLLM(LLM):
         lte=1.0,
     )
     max_tokens: Optional[int] = Field(
+        default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate.",
         gt=0,
     )
@@ -102,7 +104,7 @@ class DeepInfraLLM(LLM):
         model: str = DEFAULT_MODEL_NAME,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = DEFAULT_MAX_TOKENS,
         max_retries: int = 10,
         api_base: str = API_BASE,
         timeout: Optional[float] = None,

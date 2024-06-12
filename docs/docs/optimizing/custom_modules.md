@@ -23,10 +23,12 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 ## Custom Transformations
 
 - [Custom Transformations](../module_guides/loading/ingestion_pipeline/transformations.md#custom-transformations)
+- [Custom Property Graph Extractors](../module_guides/indexing/lpg_index_guide.md#sub-classing-extractors)
 
 ## Custom Retrievers
 
 - [Custom Retrievers](../examples/query_engine/CustomRetrievers.ipynb)
+- [Custom Property Graph Retrievers](../module_guides/indexing/lpg_index_guide.md#sub-classing-retrievers)
 
 ## Custom Postprocessors/Rerankers
 

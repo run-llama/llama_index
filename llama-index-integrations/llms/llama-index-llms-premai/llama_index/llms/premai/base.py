@@ -30,10 +30,6 @@ from llama_index.core.llms.llm import LLM
 from premai import Prem
 
 
-# FIXME: The current version does not support stop tokens and number of responses i.e. n > 1
-# TODO: Fetch the default values from prem-sdk
-
-
 class ChatPremError(Exception):
     pass
 
@@ -45,10 +41,6 @@ class PremAI(LLM):
         description=(
             "The project ID in which the experiments or deployments are carried out. can find all your projects here: https://app.premai.io/projects/"
         )
-    )
-
-    session_id: Optional[str] = Field(
-        description="The ID of the session to use. It helps to track the chat history."
     )
 
     premai_api_key: Optional[str] = Field(
@@ -74,40 +66,16 @@ class PremAI(LLM):
         description="Model temperature. Value should be >= 0 and <= 1.0"
     )
 
-    top_p: Optional[float] = Field(
-        description="top_p adjusts the number of choices for each predicted tokens based on cumulative probabilities. Value should be ranging between 0.0 and 1.0."
-    )
-
     max_retries: Optional[int] = Field(
         description="Max number of retries to call the API"
     )
 
-    tools: Optional[Dict[str, Any]] = Field(
-        description="A list of tools the model may call. Currently, only functions are supported as a tool"
+    repositories: Optional[dict] = Field(
+        description="Add valid repository ids. This will be overriding existing connected repositories (if any) and will use RAG with the connected repos."
     )
 
-    frequency_penalty: Optional[float] = Field(
-        description=(
-            "Number between -2.0 and 2.0. Positive values penalize new tokens based."
-        ),
-    )
-
-    presence_penalty: Optional[float] = Field(
-        description=(
-            "Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far."
-        ),
-    )
-
-    logit_bias: Optional[dict] = Field(
-        description=(
-            "JSON object that maps tokens to an associated bias value from -100 to 100."
-        ),
-    )
-
-    seed: Optional[int] = Field(
-        description=(
-            "This feature is in Beta. If specified, our system will make a best effort to sample deterministically."
-        ),
+    additional_kwargs: Optional[dict] = Field(
+        description="Add any additional kwargs. This may override your existing settings."
     )
 
     _client: "Prem" = PrivateAttr()
@@ -116,26 +84,20 @@ class PremAI(LLM):
         self,
         project_id: int,
         premai_api_key: Optional[str] = None,
-        session_id: Optional[int] = None,
         model: Optional[str] = None,
         system_prompt: Optional[str] = None,
         max_tokens: Optional[str] = 128,
         temperature: Optional[float] = 0.1,
-        top_p: Optional[float] = 0.7,
         max_retries: Optional[int] = 1,
-        tools: Optional[Dict[str, Any]] = None,
-        frequency_penalty: Optional[float] = None,
-        presence_penalty: Optional[float] = None,
-        logit_bias: Optional[dict] = None,
-        seed: Optional[int] = None,
+        repositories: Optional[dict] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        **kwargs,
     ):
-        additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
         api_key = get_from_param_or_env("api_key", premai_api_key, "PREMAI_API_KEY", "")
@@ -147,28 +109,23 @@ class PremAI(LLM):
             )
 
         self._client = Prem(api_key=api_key)
+        additional_kwargs = {**(additional_kwargs or {}), **kwargs}
 
         super().__init__(
             project_id=project_id,
-            session_id=session_id,
             temperature=temperature,
             max_tokens=max_tokens,
             model=model,
             api_key=api_key,
             callback_manager=callback_manager,
-            top_p=top_p,
             system_prompt=system_prompt,
             additional_kwargs=additional_kwargs,
-            logit_bias=logit_bias,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
-            seed=seed,
             max_retries=max_retries,
-            tools=tools,
-            frequency_penalty=frequency_penalty,
-            presence_penalty=presence_penalty,
+            repositories=repositories,
         )
 
     @classmethod
@@ -182,7 +139,6 @@ class PremAI(LLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             temperature=self.temperature,
-            top_p=self.top_p,
         )
 
     @property
@@ -191,33 +147,39 @@ class PremAI(LLM):
             "model": self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "seed": self.seed,
-            "top_p": self.top_p,
             "system_prompt": self.system_prompt,
-            "logit_bias": self.logit_bias,
-            "tools": self.tools,
-            "frequency_penalty": self.frequency_penalty,
-            "presence_penalty": self.presence_penalty,
+            "repositories": self.repositories,
         }
 
     def _get_all_kwargs(self, **kwargs) -> Dict[str, Any]:
-        all_kwargs = {**self._model_kwargs, **kwargs}
-        _keys_that_cannot_be_none = [
-            "system_prompt",
+        kwargs_to_ignore = [
+            "top_p",
+            "tools",
             "frequency_penalty",
             "presence_penalty",
-            "tools",
-            "model",
+            "logit_bias",
+            "stop",
+            "seed",
         ]
+        keys_to_remove = []
+        for key in kwargs:
+            if key in kwargs_to_ignore:
+                print(f"WARNING: Parameter {key} is not supported in kwargs.")
+                keys_to_remove.append(key)
 
-        for key in _keys_that_cannot_be_none:
-            if all_kwargs.get(key) is None:
+        for key in keys_to_remove:
+            kwargs.pop(key)
+
+        all_kwargs = {**self._model_kwargs, **kwargs}
+
+        for key in list(self._model_kwargs.keys()):
+            if all_kwargs.get(key) is None or all_kwargs.get(key) == "":
                 all_kwargs.pop(key, None)
         return all_kwargs
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        all_kwargs = self._get_all_kwargs(**kwargs)
+        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
         chat_messages = []
 
         for message in messages:
@@ -236,24 +198,23 @@ class PremAI(LLM):
         if not response.choices:
             raise ChatPremError("ChatResponse must have at least one candidate")
 
-        chat_responses: Sequence[ChatResponse] = []
+        choice = response.choices[0]
+        role = choice.message.role
 
-        for choice in response.choices:
-            role = choice.message.role
-            if role is None:
-                raise ChatPremError(f"ChatResponse {choice} must have a role.")
-            content = choice.message.content or ""
-            chat_responses.append(
-                ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    raw={"role": role, "content": content},
-                )
-            )
+        if role is None:
+            raise ChatPremError(f"ChatResponse {choice} must have a role.")
+        content = choice.message.content or ""
 
-        if "is_completion" in kwargs:
-            return chat_responses[0]
-
-        return chat_responses
+        return ChatResponse(
+            message=ChatMessage(role=role, content=content),
+            raw={
+                "role": role,
+                "content": content,
+                "document_chunks": [
+                    chunk.to_dict() for chunk in response.document_chunks
+                ],
+            },
+        )
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any

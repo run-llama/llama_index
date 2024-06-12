@@ -68,9 +68,6 @@ class Vertex(LLM):
         description="Example messages for the chat model."
     )
     max_retries: int = Field(default=10, description="The maximum number of retries.")
-    safety_settings: Optional[SafetySettingsType] = Field(
-        default=None, description="Safety settings for the Vertex AI model."
-    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Vertex."
     )
@@ -146,7 +143,6 @@ class Vertex(LLM):
             model=model,
             examples=examples,
             iscode=iscode,
-            safety_settings=safety_settings,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
