@@ -1,1 +1,3 @@
-python_tests()
+python_tests(
+	interpreter_constraints=["==3.10.*"]
+)
