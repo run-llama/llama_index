@@ -7,6 +7,7 @@ Contains parsers for tabular data files.
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fsspec import AbstractFileSystem
+import importlib
 
 import pandas as pd
 from llama_index.core.readers.base import BaseReader
