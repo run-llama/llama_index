@@ -315,7 +315,10 @@ class OmniModalRetrievalEvaluator(Generic[KD, KQ]):
         if show_progress:
             from tqdm.asyncio import tqdm_asyncio
 
-            eval_results = await tqdm_asyncio.gather(*response_jobs)
+            eval_results = await tqdm_asyncio.gather(
+                *response_jobs,
+                desc="Evaluating retrieval",
+            )
         else:
             eval_results = await asyncio.gather(*response_jobs)
 
