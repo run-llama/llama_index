@@ -2,7 +2,7 @@ import io
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, Iterable, List, Literal, Optional, Union
 
 import fitz  # type: ignore
 import requests
@@ -285,7 +285,7 @@ class UpstageLayoutAnalysisReader(BaseReader):
         file_path: Union[str, Path, List[str], List[Path]],
         output_type: Union[OutputType, dict] = "html",
         split: SplitType = "none",
-    ) -> List[Document]:
+    ) -> Iterable[Document]:
         """
         Load data from a file or list of files lazily.
 
