@@ -132,11 +132,25 @@ def test_load_index_from_storage_retrieval_result_identical(
     assert nodes == new_nodes
 
 
+def is_clip_available() -> bool:
+    try:
+        from llama_index.embeddings.clip import (
+            ClipEmbedding,  # noqa: F401  # pants: no-infer-dep
+        )
+
+        return True
+    except ImportError:
+        return False
+
+
 def test_load_index_from_storage_multimodal_retrieval_result_identical(
     documents: List[Document],
     image_documents: List[ImageDocument],
     tmp_path: Path,
 ) -> None:
+    if not is_clip_available():
+        pytest.skip("CLIP is not available")
+
     storage_context = StorageContext.from_defaults(
         vector_store=SimpleVectorStore(),
         image_store=SimpleVectorStore(),
