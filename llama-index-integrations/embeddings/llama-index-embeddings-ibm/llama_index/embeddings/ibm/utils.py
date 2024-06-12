@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from typing import Dict, Optional, Union
 
 
@@ -37,7 +38,8 @@ def resolve_watsonx_credentials(
         get_from_param_or_env("url", url, "WATSONX_URL")
     )
 
-    if creds["url"].get_secret_value().endswith("cloud.ibm.com"):
+    parsed_url = urllib.parse.urlparse(creds["url"].get_secret_value())
+    if parsed_url.netloc.endswith("cloud.ibm.com"):
         if not (apikey or "WATSONX_APIKEY" in os.environ) and not (
             token or "WATSONX_TOKEN" in os.environ
         ):
