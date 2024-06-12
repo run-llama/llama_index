@@ -753,7 +753,6 @@ nav:
           - ./api_reference/embeddings/gemini.md
           - ./api_reference/embeddings/google.md
           - ./api_reference/embeddings/gradient.md
-          - ./api_reference/embeddings/huggingface-api.md
           - ./api_reference/embeddings/huggingface.md
           - ./api_reference/embeddings/huggingface_api.md
           - ./api_reference/embeddings/huggingface_itrex.md
