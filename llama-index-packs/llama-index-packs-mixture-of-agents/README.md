@@ -1,6 +1,6 @@
 # Mixture-Of-Agents Pack
 
-Implementation Of [Mixture-Of-Agents](https://arxiv.org/abs/2406.04692) paper from TogetherAI.
+Implementation Of [Mixture-Of-Agents](https://arxiv.org/abs/2406.04692) paper from TogetherAI as LlamaPack.
 
 ### Approach
 
@@ -36,11 +36,13 @@ from llama_index.llms.mistralai import MistralAI
 # Add OPENAI_API_KEY and MISTRAL_API_KEY to your env variable
 
 mixture_of_agents_pack = MixtureOfAgentsPack(
-    llm=OpenAI(model="GPT-4"),  # Aggregator
-    reference_llm=[
+    llm=OpenAI(model="gpt-4"),  # Aggregator
+    reference_llms=[
         OpenAI(model="gpt-3.5-turbo"),
-        MistralAI(model="mistral-small"),
+        MistralAI(model="mistral-medium"),
     ],  # Proposers
+    num_layers=3,
+    temperature=0.1,
 )
 ```
 
