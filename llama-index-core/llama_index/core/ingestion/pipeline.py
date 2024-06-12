@@ -36,6 +36,7 @@ from llama_index.core.ingestion.data_sources import (
 from llama_index.core.ingestion.transformations import (
     ConfigurableTransformations,
 )
+from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.schema import (
@@ -53,6 +54,8 @@ from llama_index.core.storage.docstore import (
 from llama_index.core.storage.storage_context import DOCSTORE_FNAME
 from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+
+dispatcher = get_dispatcher(__name__)
 
 
 def deserialize_transformation_component(
@@ -640,6 +643,7 @@ class IngestionPipeline(BaseModel):
         for i in range(0, len(nodes), batch_size):
             yield nodes[i : i + batch_size]
 
+    @dispatcher.span
     def run(
         self,
         show_progress: bool = False,
@@ -816,6 +820,7 @@ class IngestionPipeline(BaseModel):
 
         return nodes_to_run
 
+    @dispatcher.span
     async def arun(
         self,
         show_progress: bool = False,

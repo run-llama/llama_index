@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.milvus"
+import_path = "llama_index.llms.bedrock_converse"
 
 [tool.llamahub.class_authors]
-MilvusVectorStore = "llama-index"
+BedrockConverse = "AndreCNF"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,18 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores milvus integration"
+description = "llama-index llms bedrock integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-milvus"
+name = "llama-index-llms-bedrock"
 readme = "README.md"
-version = "0.1.18"
+version = "0.1.8"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-pymilvus = "^2.3.6"
+llama-index-llms-anthropic = "^0.1.7"
+boto3 = "^1.34.122"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
