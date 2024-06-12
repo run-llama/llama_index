@@ -275,6 +275,7 @@ class OmniModalRetrievalEvaluator(Generic[KD, KQ]):
         async def eval_worker(
             query_bundle: QueryBundle,
             expected_ids: List[str],
+            expected_docs: List[BaseNode],
         ) -> OmniModalRetrievalEvalResult:
             async with semaphore:
                 ret_ids, ret_docs = await self._aget_retrieved_ids_and_docs(
@@ -293,7 +294,7 @@ class OmniModalRetrievalEvaluator(Generic[KD, KQ]):
                     query_bundle=query_bundle,
                     query_type=query_type,
                     expected_ids=expected_ids,
-                    expected_docs=None,
+                    expected_docs=expected_docs,
                     retrieved_ids=ret_ids,
                     retrieved_docs=ret_docs,
                     doc_types=doc_types,
@@ -302,14 +303,15 @@ class OmniModalRetrievalEvaluator(Generic[KD, KQ]):
                         retrieved_ids=ret_ids,
                         retrieved_docs=ret_docs,
                         expected_ids=expected_ids,
-                        expected_docs=None,
+                        expected_docs=expected_docs,
                     ),
                 )
 
         response_jobs = []
         for query_id, query in dataset.queries.items():
             expected_ids = dataset.relevant_docs[query_id]
-            response_jobs.append(eval_worker(query, expected_ids))
+            expected_docs = [dataset.corpus[doc_id] for doc_id in expected_ids]
+            response_jobs.append(eval_worker(query, expected_ids, expected_docs))
         if show_progress:
             from tqdm.asyncio import tqdm_asyncio
 
