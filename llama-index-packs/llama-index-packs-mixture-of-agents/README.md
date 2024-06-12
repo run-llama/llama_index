@@ -2,6 +2,8 @@
 
 Implementation Of [Mixture-Of-Agents](https://arxiv.org/abs/2406.04692) paper from TogetherAI as LlamaPack.
 
+Disclaimer: While the paper named the method "Mixture of Agents", agents appear to refer to LLMs themselves, not actual agentic behaviour
+
 ### Approach
 
 The capabilities of LLMs have advanced significantly, and there is now a growing number of these models available. To maximize their potential, we need to harness the collective expertise of multiple LLMs. This is where the Mixture-of-Agents (MoA) approach comes in.
