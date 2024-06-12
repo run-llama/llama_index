@@ -10,7 +10,6 @@ from typing import (
     Union,
 )
 from google.protobuf.json_format import MessageToDict
-import json
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -25,7 +24,6 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
@@ -41,12 +39,14 @@ from llama_index.llms.vertex.utils import (
     acompletion_with_retry,
     completion_with_retry,
     init_vertexai,
-    force_single_tool_call
+    force_single_tool_call,
 )
 from vertexai.generative_models._generative_models import SafetySettingsType
+
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
+
 
 class Vertex(FunctionCallingLLM):
     """Vertext LLM.
@@ -198,19 +198,17 @@ class Vertex(FunctionCallingLLM):
             **kwargs,
         }
 
-    def _get_content_and_tool_calls(
-        self, response: Any
-    ) -> Tuple[str, List]:
+    def _get_content_and_tool_calls(self, response: Any) -> Tuple[str, List]:
         tool_calls = []
         content = ""
-        
+
         if response.candidates[0].function_calls:
             for tool_call in response.candidates[0].function_calls:
                 tool_calls.append(tool_call)
         try:
-            content += response.text
-        except:
-            print("Function Calling, No Text Content")
+            content = response.text
+        except Exception:
+            content = ""
         return content, tool_calls
 
     @llm_chat_callback()
@@ -219,7 +217,7 @@ class Vertex(FunctionCallingLLM):
             merge_neighboring_same_role_messages(messages)
             if self._is_gemini
             else messages
-        )      
+        )
         question = _parse_message(merged_messages[-1], self._is_gemini)
         chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
 
@@ -254,13 +252,13 @@ class Vertex(FunctionCallingLLM):
         content, tool_calls = self._get_content_and_tool_calls(generation)
 
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, 
-                                content=content,
-                                additional_kwargs={"tool_calls": tool_calls},
-                                ),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
             raw=generation.__dict__,
         )
-
 
     @llm_completion_callback()
     def complete(
@@ -396,13 +394,13 @@ class Vertex(FunctionCallingLLM):
         if self.iscode:
             generation = await generation
 
-        
         content, tool_calls = self._get_content_and_tool_calls(generation)
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, 
-                                content=content,
-                                additional_kwargs={"tool_calls": tool_calls},
-                                ),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
             raw=generation.__dict__,
         )
 
@@ -435,7 +433,6 @@ class Vertex(FunctionCallingLLM):
     ) -> CompletionResponseAsyncGen:
         raise (ValueError("Not Implemented"))
 
-
     def chat_with_tools(
         self,
         tools: List["BaseTool"],
@@ -461,7 +458,7 @@ class Vertex(FunctionCallingLLM):
                     "parameters": tool.metadata.get_parameters_dict(),
                 }
             )
-        
+
         response = self.chat(chat_history, tools=tool_dicts, **kwargs)
 
         if not allow_parallel_tool_calls:
@@ -502,7 +499,6 @@ class Vertex(FunctionCallingLLM):
 
         return response
 
-
     def get_tool_calls_from_response(
         self,
         response: "AgentChatResponse",
@@ -519,14 +515,11 @@ class Vertex(FunctionCallingLLM):
                 )
             else:
                 return []
-        
+
         tool_selections = []
         for tool_call in tool_calls:
             response_dict = MessageToDict(tool_call._pb)
-            if (
-                "args" not in response_dict
-                or "name" not in response_dict
-            ):
+            if "args" not in response_dict or "name" not in response_dict:
                 raise ValueError("Invalid tool call.")
             argument_dict = response_dict["args"]
 

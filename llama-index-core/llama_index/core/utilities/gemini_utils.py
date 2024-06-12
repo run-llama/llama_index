@@ -55,7 +55,7 @@ def merge_neighboring_same_role_messages(
         print("merged_message", merged_message)
         if merged_message.content == "" and merged_message.role == MessageRole.MODEL:
             merged_message.content = "Function Calling"
-        merged_messages.append(merged_message) 
+        merged_messages.append(merged_message)
         i += 1
 
     return merged_messages

@@ -5,10 +5,11 @@ from vertexai.generative_models._generative_models import SafetySettingsType
 from llama_index.core.llms import ChatMessage, MessageRole
 
 TO_GEMINI_ROLES: Dict[MessageRole, str] = {
-    MessageRole.USER: 'user',
-    MessageRole.MODEL: 'model',
-    MessageRole.FUNCTION: 'model',
+    MessageRole.USER: "user",
+    MessageRole.MODEL: "model",
+    MessageRole.FUNCTION: "model",
 }
+
 
 def is_gemini_model(model: str) -> bool:
     return model.startswith("gemini")
@@ -54,12 +55,12 @@ def convert_chat_message_to_gemini_content(
         return Part.from_image(image)
 
     raw_content = message.content
-    '''
+    """
     if raw_content is None:
         raw_content = ""
     if isinstance(raw_content, str):
         raw_content = [raw_content]
-    '''
+    """
     raw_content = [raw_content]
     parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
     if is_history:

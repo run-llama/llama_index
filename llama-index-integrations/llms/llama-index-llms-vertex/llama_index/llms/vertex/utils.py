@@ -51,20 +51,22 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
+
 def to_gemini_tools(tools) -> Any:
     func_list = []
     for i, tool in enumerate(tools):
-        func_name = f'func_{i}'
+        func_name = f"func_{i}"
         func_name = FunctionDeclaration(
-            name=tool['name'],
-            description=tool['description'],
-            parameters=tool['parameters'],
+            name=tool["name"],
+            description=tool["description"],
+            parameters=tool["parameters"],
         )
-        func_list.append(func_name)   
+        func_list.append(func_name)
     gemini_tools = Tool(
-           function_declarations=func_list,
-        )
+        function_declarations=func_list,
+    )
     return [gemini_tools]
+
 
 def completion_with_retry(
     client: Any,
@@ -84,11 +86,11 @@ def completion_with_retry(
         if is_gemini:
             history = params["message_history"] if "message_history" in params else []
             generation = client.start_chat(history=history)
-            kwargs=dict(kwargs)
+            kwargs = dict(kwargs)
             tools = kwargs.pop("tools", None) if "tools" in kwargs else []
             tools = to_gemini_tools(tools) if tools else []
             generation_config = kwargs if kwargs else {}
-        
+
             return generation.send_message(
                 prompt, stream=stream, tools=tools, generation_config=generation_config
             )
@@ -124,7 +126,7 @@ async def acompletion_with_retry(
         if is_gemini:
             history = params["message_history"] if "message_history" in params else []
             generation = client.start_chat(history=history)
-            kwargs=dict(kwargs)
+            kwargs = dict(kwargs)
             tools = kwargs.pop("tools", None) if "tools" in kwargs else []
             tools = to_gemini_tools(tools) if tools else []
             generation_config = kwargs if kwargs else {}
@@ -169,6 +171,7 @@ def _parse_message(message: ChatMessage, is_gemini: bool) -> Any:
         from llama_index.llms.vertex.gemini_utils import (
             convert_chat_message_to_gemini_content,
         )
+
         return convert_chat_message_to_gemini_content(message=message, is_history=False)
     else:
         return message.content
@@ -204,7 +207,7 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
                 from llama_index.llms.vertex.gemini_utils import (
                     convert_chat_message_to_gemini_content,
                 )
-        
+
                 context = message.content
                 vertex_messages.append(
                     convert_chat_message_to_gemini_content(
@@ -258,6 +261,7 @@ def _parse_examples(examples: Any) -> Any:
             )
             example_pairs.append(pair)
     return example_pairs
+
 
 def force_single_tool_call(response: ChatResponse) -> None:
     tool_calls = response.message.additional_kwargs.get("tool_calls", [])
