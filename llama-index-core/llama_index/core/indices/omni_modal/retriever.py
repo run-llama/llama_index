@@ -442,10 +442,8 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
         if doc_types is None:
             doc_types = self._embed_model.document_modalities.keys()
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
         self._check_callback_manager()
-        dispatch_event(
+        dispatcher.event(
             RetrievalStartEvent(
                 str_or_query_bundle=query_bundle,
             )
@@ -464,7 +462,7 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        dispatch_event(
+        dispatcher.event(
             RetrievalEndEvent(
                 str_or_query_bundle=query_bundle,
                 nodes=nodes,
@@ -484,10 +482,8 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
         if doc_types is None:
             doc_types = self._embed_model.document_modalities.keys()
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
         self._check_callback_manager()
-        dispatch_event(
+        dispatcher.event(
             RetrievalStartEvent(
                 str_or_query_bundle=query_bundle,
             )
@@ -506,7 +502,7 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        dispatch_event(
+        dispatcher.event(
             RetrievalEndEvent(
                 str_or_query_bundle=query_bundle,
                 nodes=nodes,

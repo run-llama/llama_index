@@ -603,9 +603,7 @@ class OmniModalEmbedding(
         """Embed the input query."""
         modality = self.get_query_modality(modality_key)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=self.to_dict(),
             )
@@ -621,7 +619,7 @@ class OmniModalEmbedding(
                     EventPayload.EMBEDDINGS: [embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             self._embedding_end_event(
                 data_items=[data],
                 embeddings=[embedding],
@@ -635,9 +633,7 @@ class OmniModalEmbedding(
         """Asynchronously embed the input query."""
         modality = self.get_query_modality(modality_key)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=self.to_dict(),
             )
@@ -653,7 +649,7 @@ class OmniModalEmbedding(
                     EventPayload.EMBEDDINGS: [embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             self._embedding_end_event(
                 data_items=[data],
                 embeddings=[embedding],
@@ -735,9 +731,7 @@ class OmniModalEmbedding(
         """Embed the input document."""
         modality = self.get_document_modality(modality_key)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=self.to_dict(),
             )
@@ -753,7 +747,7 @@ class OmniModalEmbedding(
                     EventPayload.EMBEDDINGS: [embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             self._embedding_end_event(
                 data_items=[data],
                 embeddings=[embedding],
@@ -769,9 +763,7 @@ class OmniModalEmbedding(
         """Asynchronously embed the input document."""
         modality = self.get_document_modality(modality_key)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             EmbeddingStartEvent(
                 model_dict=self.to_dict(),
             )
@@ -787,7 +779,7 @@ class OmniModalEmbedding(
                     EventPayload.EMBEDDINGS: [embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             self._embedding_end_event(
                 data_items=[data],
                 embeddings=[embedding],
@@ -803,8 +795,6 @@ class OmniModalEmbedding(
         """Get a list of document embeddings, with batching."""
         modality = self.get_document_modality(modality_key)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
         cur_batch: List[object] = []
         result_embeddings: List[Embedding] = []
 
@@ -816,7 +806,7 @@ class OmniModalEmbedding(
             cur_batch.append(data)
             if idx == len(data_items) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingStartEvent(
                         model_dict=self.to_dict(),
                     )
@@ -833,7 +823,7 @@ class OmniModalEmbedding(
                             EventPayload.EMBEDDINGS: embeddings,
                         },
                     )
-                dispatch_event(
+                dispatcher.event(
                     self._embedding_end_event(
                         data_items=cur_batch,
                         embeddings=embeddings,
@@ -850,8 +840,6 @@ class OmniModalEmbedding(
         """Asynchronously get a list of document embeddings, with batching."""
         modality = self.get_document_modality(modality_key)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
         cur_batch: List[object] = []
         callback_payloads: List[Tuple[str, List[object]]] = []
         result_embeddings: List[Embedding] = []
@@ -861,7 +849,7 @@ class OmniModalEmbedding(
             cur_batch.append(data)
             if idx == len(data_items) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingStartEvent(
                         model_dict=self.to_dict(),
                     )
@@ -899,7 +887,7 @@ class OmniModalEmbedding(
         for (event_id, data_batch), embeddings in zip(
             callback_payloads, nested_embeddings
         ):
-            dispatch_event(
+            dispatcher.event(
                 self._embedding_end_event(
                     data_items=data_batch,
                     embeddings=embeddings,
