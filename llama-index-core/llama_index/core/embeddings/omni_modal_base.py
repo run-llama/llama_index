@@ -49,6 +49,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import get_tqdm_iterable, find_duplicates
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.embedding import (
     EmbeddingEndEvent,
     EmbeddingStartEvent,
@@ -478,7 +479,9 @@ class GenericTransformComponent:
 
 
 @dataclass
-class OmniModalEmbedding(GenericTransformComponent, Generic[KD, KQ]):
+class OmniModalEmbedding(
+    GenericTransformComponent, DispatcherSpanMixin, Generic[KD, KQ]
+):
     model_name: str = field(default="unknown")
     """The name of the embedding model."""
 
