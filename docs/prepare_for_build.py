@@ -79,6 +79,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "memory": "Memory",
     "multi_modal_llms": "Multi-Modal LLMs",
     "node_parsers": "Node Parsers & Text Splitters",
+    "node_parser": "Node Parsers & Text Splitters",
     "objects": "Object Stores",
     "output_parsers": "Output Parsers",
     "postprocessor": "Node Postprocessors",

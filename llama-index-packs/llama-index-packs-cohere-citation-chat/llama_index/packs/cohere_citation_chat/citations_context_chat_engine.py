@@ -1,5 +1,4 @@
 import asyncio
-from threading import Thread
 from typing import List, Optional, Any
 from enum import Enum
 from dataclasses import dataclass, field
@@ -19,6 +18,7 @@ from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core import VectorStoreIndex
 from llama_index.core.settings import Settings
 from llama_index.core.memory import BaseMemory
+from llama_index.core.types import Thread
 
 from .types import (
     Document,

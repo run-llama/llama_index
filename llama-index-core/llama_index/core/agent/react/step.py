@@ -3,7 +3,6 @@
 import asyncio
 import uuid
 from functools import partial
-from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
@@ -53,6 +52,7 @@ from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.types import Thread
 from llama_index.core.utils import print_text
 
 
@@ -303,9 +303,11 @@ class ReActAgentWorker(BaseAgentWorker):
 
         observation_step = ObservationReasoningStep(
             observation=str(tool_output),
-            return_direct=tool.metadata.return_direct and not tool_output.is_error
-            if tool
-            else False,
+            return_direct=(
+                tool.metadata.return_direct and not tool_output.is_error
+                if tool
+                else False
+            ),
         )
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -367,9 +369,11 @@ class ReActAgentWorker(BaseAgentWorker):
 
         observation_step = ObservationReasoningStep(
             observation=str(tool_output),
-            return_direct=tool.metadata.return_direct and not tool_output.is_error
-            if tool
-            else False,
+            return_direct=(
+                tool.metadata.return_direct and not tool_output.is_error
+                if tool
+                else False
+            ),
         )
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -525,7 +529,8 @@ class ReActAgentWorker(BaseAgentWorker):
         tools = self.get_tools(task.input)
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -564,7 +569,8 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
@@ -602,7 +608,8 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -673,7 +680,8 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 

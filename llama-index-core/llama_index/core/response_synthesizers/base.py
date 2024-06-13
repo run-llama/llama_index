@@ -46,6 +46,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.synthesis import (
     SynthesizeStartEvent,
     SynthesizeEndEvent,
@@ -67,7 +68,7 @@ async def empty_response_agenerator() -> AsyncGenerator[str, None]:
     yield "Empty Response"
 
 
-class BaseSynthesizer(ChainableMixin, PromptMixin):
+class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Response builder class."""
 
     def __init__(
@@ -202,9 +203,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             SynthesizeStartEvent(
                 query=query,
             )
@@ -215,7 +214,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 empty_response = StreamingResponse(
                     response_gen=empty_response_generator()
                 )
-                dispatch_event(
+                dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
@@ -224,7 +223,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 return empty_response
             else:
                 empty_response = Response("Empty Response")
-                dispatch_event(
+                dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
@@ -254,7 +253,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatch_event(
+        dispatcher.event(
             SynthesizeEndEvent(
                 query=query,
                 response=response,
@@ -270,9 +269,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TYPE:
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             SynthesizeStartEvent(
                 query=query,
             )
@@ -282,7 +279,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 empty_response = AsyncStreamingResponse(
                     response_gen=empty_response_agenerator()
                 )
-                dispatch_event(
+                dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
@@ -291,7 +288,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
                 return empty_response
             else:
                 empty_response = Response("Empty Response")
-                dispatch_event(
+                dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
                         response=empty_response,
@@ -321,7 +318,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin):
 
             event.on_end(payload={EventPayload.RESPONSE: response})
 
-        dispatch_event(
+        dispatcher.event(
             SynthesizeEndEvent(
                 query=query,
                 response=response,

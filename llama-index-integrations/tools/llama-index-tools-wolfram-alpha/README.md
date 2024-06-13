@@ -6,7 +6,7 @@ You will need to provide an API key: https://products.wolframalpha.com/api
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/wolfram_alpha.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-wolfram-alpha/examples/wolfram_alpha.ipynb)
 
 Here's an example usage of the WolframAlphaToolSpec.
 

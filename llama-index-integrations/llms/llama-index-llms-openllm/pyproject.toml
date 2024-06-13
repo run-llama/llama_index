@@ -12,8 +12,8 @@ contains_example = false
 import_path = "llama_index.llms.openllm"
 
 [tool.llamahub.class_authors]
-OpenLLM = "llama-index"
-OpenLLMAPI = "llama-index"
+OpenLLM = "aarnphm"
+OpenLLMAPI = "aarnphm"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,19 +22,19 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Aaron Pham <aarnphm@bentoml.com>"]
 description = "llama-index llms openllm integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openllm"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-openllm-client = "^0.4.41"
-openllm = "^0.4.41"
+openllm-client = "^0.5.3"
+openllm = "^0.5.3"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
