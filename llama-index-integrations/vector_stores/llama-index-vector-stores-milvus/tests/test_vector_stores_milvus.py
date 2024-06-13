@@ -7,11 +7,48 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.base import _to_milvus_filter
+from llama_index.vector_stores.milvus.utils import (
+    ScalarMetadataFilter,
+    ScalarMetadataFilters,
+    FilterOperatorFunction,
+)
 
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in MilvusVectorStore.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
+
+
+def test_to_milvus_filter_with_scalar_filters():
+    filters = None
+    scalar_filters = ScalarMetadataFilters(
+        filters=[ScalarMetadataFilter(key="a", value=1)]
+    )
+    expr = _to_milvus_filter(filters, scalar_filters.to_dict())
+    assert expr == "ARRAY_CONTAINS(a, 1)"
+
+    scalar_filters = ScalarMetadataFilters(
+        filters=[
+            ScalarMetadataFilter(
+                key="a", value=1, operator=FilterOperatorFunction.NARRAY_CONTAINS
+            )
+        ]
+    )
+    expr = _to_milvus_filter(filters, scalar_filters.to_dict())
+    assert expr == "not ARRAY_CONTAINS(a, 1)"
+
+    scalar_filters = ScalarMetadataFilters(
+        filters=[
+            ScalarMetadataFilter(
+                key="a", value="b", operator=FilterOperatorFunction.NARRAY_CONTAINS
+            ),
+            ScalarMetadataFilter(
+                key="c", value=2, operator=FilterOperatorFunction.ARRAY_LENGTH
+            ),
+        ]
+    )
+    expr = _to_milvus_filter(filters, scalar_filters.to_dict())
+    assert expr == "(not ARRAY_CONTAINS(a, 'b') and ARRAY_LENGTH(c) == 2)"
 
 
 def test_to_milvus_filter_with_various_operators():
@@ -69,7 +106,7 @@ def test_to_milvus_filter_with_various_operators():
         ]
     )
     expr = _to_milvus_filter(filters)
-    assert expr == "a like '%substring%'"
+    assert expr == "a like 'substring%'"
 
     filters = MetadataFilters(
         filters=[MetadataFilter(key="a", value=1, operator=FilterOperator.CONTAINS)]

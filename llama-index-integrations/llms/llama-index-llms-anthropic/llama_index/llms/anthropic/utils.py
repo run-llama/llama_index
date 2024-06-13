@@ -3,7 +3,8 @@ from typing import Dict, Sequence, Tuple
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 from anthropic.types import MessageParam, TextBlockParam
-from anthropic.types.beta.tools import ToolResultBlockParam, ToolUseBlockParam
+from anthropic.types.tool_result_block_param import ToolResultBlockParam
+from anthropic.types.tool_use_block_param import ToolUseBlockParam
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
