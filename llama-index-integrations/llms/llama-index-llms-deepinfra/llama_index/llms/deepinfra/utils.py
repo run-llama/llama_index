@@ -70,21 +70,13 @@ def chat_messages_to_list(messages: Sequence[ChatMessage]) -> Sequence[Dict[str,
             MessageRole.USER,
             MessageRole.ASSISTANT,
             MessageRole.SYSTEM,
+            MessageRole.TOOL,
         ]:
             chat_messages.append(
                 {
                     "role": message.role,
                     "content": message.content,
                     **message.additional_kwargs,
-                }
-            )
-        elif message.role is MessageRole.TOOL:
-            chat_messages.append(
-                {
-                    "role": MessageRole.TOOL,
-                    "content": message.content,
-                    "tool_call_id": message.additional_kwargs.get("id", ""),
-                    "tool_calls": message.additional_kwargs.get("tool_calls", []),
                 }
             )
 
