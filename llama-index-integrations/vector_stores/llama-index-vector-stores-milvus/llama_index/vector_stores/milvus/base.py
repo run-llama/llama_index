@@ -415,7 +415,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields = query.output_fields
             outputs_limited = True
         elif len(self.output_fields) > 0:
-            output_fields = self.output_fields
+            output_fields = [*self.output_fields]
             outputs_limited = True
 
         # Add the text key to output fields if necessary
