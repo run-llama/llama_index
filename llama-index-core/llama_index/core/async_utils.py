@@ -26,7 +26,7 @@ def asyncio_run(coro: Coroutine) -> Any:
     If there is no existing event loop, creates a new one.
     """
     try:
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         if loop.is_running():
             raise RuntimeError(
                 "Nested async detected. "
