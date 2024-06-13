@@ -198,10 +198,7 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
             context = message.content
         elif message.role in (
             MessageRole.MODEL,
-            MessageRole.ASSISTANT,
             MessageRole.USER,
-            MessageRole.TOOL,
-            MessageRole.FUNCTION,
         ):
             if is_gemini:
                 from llama_index.llms.vertex.gemini_utils import (
@@ -225,6 +222,8 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
                 )
                 vertex_messages.append(vertex_message)
         else:
+            # Roles are consolidated to two roles in merge_neighboring_same_role_messages
+            # Other roles will cause error
             raise ValueError(
                 f"Unexpected message with role {message.role} at the position {i}."
             )

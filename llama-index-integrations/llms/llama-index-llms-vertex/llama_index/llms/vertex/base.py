@@ -200,8 +200,6 @@ class Vertex(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(self, response: Any) -> Tuple[str, List]:
         tool_calls = []
-        content = ""
-
         if response.candidates[0].function_calls:
             for tool_call in response.candidates[0].function_calls:
                 tool_calls.append(tool_call)
