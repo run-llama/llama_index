@@ -42,7 +42,7 @@ MOCK_RESPONSE_JSON: Dict[str, Any] = {
     "text": "arXiv:2103.15348v2LayoutParser Toolkit",
 }
 
-EXAMPLE_PDF_PATH = Path(__file__).parent / "examples/solar.pdf"
+EXAMPLE_PDF_PATH = Path(__file__).parent.resolve() / "examples/solar.pdf"
 
 
 def test_initialization() -> None:
