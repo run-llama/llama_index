@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -20,13 +20,9 @@ from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
-# import nltk
-# nltk.download("punkt")
-# nltk.download("stopwords")
-
 # TODO test more languages
-LANGUAGES: list[str] = ["english", "german", "spanish"]
-LANGUAGE_MODELS: dict[str, list[str]] = {
+LANGUAGES: List[str] = ["english", "german", "spanish"]
+LANGUAGE_MODELS: Dict[str, List[str]] = {
     "english": ["en_core_web_md", "en_core_web_lg"],
     "german": ["de_core_news_md", "de_core_news_lg"],
     "spanish": ["es_core_news_md", "es_core_news_lg"],
@@ -53,7 +49,7 @@ class LanguageConfig:
         self.language = language
         self.spacy_model = spacy_model
         self.nlp = None
-        self.stopwords: list[str] = []
+        self.stopwords: List[str] = []
 
     def load_model(self) -> None:
         try:
@@ -216,7 +212,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         return all_nodes
 
     def _create_initial_chunks(self, sentences: List[str]) -> List[str]:
-        initial_chunks: list[str] = []
+        initial_chunks: List[str] = []
         chunk = sentences[0]  # ""
         new = True
 
@@ -266,8 +262,8 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
         return initial_chunks
 
-    def _merge_initial_chunks(self, initial_chunks: list[str]) -> List[str]:
-        chunks: list[str] = []
+    def _merge_initial_chunks(self, initial_chunks: List[str]) -> List[str]:
+        chunks: List[str] = []
         skip = 0
         current = initial_chunks[0]
 
