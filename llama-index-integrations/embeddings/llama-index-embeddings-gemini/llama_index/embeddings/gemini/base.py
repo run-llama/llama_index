@@ -33,6 +33,10 @@ class GeminiEmbedding(BaseEmbedding):
         default="retrieval_document",
         description="The task for embedding model.",
     )
+    api_key: Optional[str] = Field(
+        default=None,
+        description="API key to access the model. Defaults to None.",
+    )
 
     def __init__(
         self,
@@ -60,6 +64,7 @@ class GeminiEmbedding(BaseEmbedding):
         self._model = gemini
 
         super().__init__(
+            api_key=api_key,
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
