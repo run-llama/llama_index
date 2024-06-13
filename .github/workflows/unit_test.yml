@@ -5,14 +5,13 @@ on:
     branches:
       - main
   pull_request:
-  workflow_dispatch:
 
 env:
   POETRY_VERSION: "1.6.1"
 
 jobs:
   test:
-    runs-on: ubuntu-latest-unit-tester
+    runs-on: ubuntu-latest
     strategy:
       # You can use PyPy versions in python-version.
       # For example, pypy-2.7 and pypy-3.8
