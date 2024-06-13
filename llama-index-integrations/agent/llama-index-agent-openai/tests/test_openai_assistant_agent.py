@@ -57,6 +57,7 @@ def mock_nonexistent_function_run(completed: bool) -> Run:
                 ]
             ),
         ),
+        parallel_tool_calls=False,
     )
 
 
