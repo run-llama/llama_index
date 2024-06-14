@@ -99,8 +99,8 @@ class Anthropic(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _client: anthropic.Anthropic = PrivateAttr()
+    _aclient: anthropic.AsyncAnthropic = PrivateAttr()
 
     def __init__(
         self,
@@ -208,7 +208,7 @@ class Anthropic(FunctionCallingLLM):
         anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.beta.tools.messages.create(
+        response = self._client.messages.create(
             messages=anthropic_messages,
             stream=False,
             system=system_prompt,
@@ -273,7 +273,7 @@ class Anthropic(FunctionCallingLLM):
         anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.beta.tools.messages.create(
+        response = await self._aclient.messages.create(
             messages=anthropic_messages,
             system=system_prompt,
             stream=False,
