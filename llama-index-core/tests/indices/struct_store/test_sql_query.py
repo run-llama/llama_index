@@ -164,11 +164,12 @@ def test_default_output_parser() -> None:
         "number": "123456789",
     }
 
+
 def test_nl_query_engine_parser(
     mock_service_context: ServiceContext,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
-    """Test the sql reponse parser."""
+    """Test the sql response parser."""
     index_kwargs, _ = struct_kwargs
     docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
     engine = create_engine("sqlite:///:memory:")
@@ -211,8 +212,14 @@ def test_nl_query_engine_parser(
 
     # Response with escaped single quotes
     response = "SELECT * FROM table WHERE name = \\'O\\'Reilly\\';"
-    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    assert (
+        nl_query_engine._parse_response_to_sql(response)
+        == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )
 
     # Response with escaped single quotes
     response = "SQLQuery: ```sql\nSELECT * FROM table WHERE name = \\'O\\'Reilly\\';\n``` Extra test SQLResult: [(1, 'value')]"
-    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    assert (
+        nl_query_engine._parse_response_to_sql(response)
+        == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )
