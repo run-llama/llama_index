@@ -2,14 +2,15 @@ import asyncio
 from llama_index.core.async_utils import batch_gather
 
 
-def test_batch_gather_uneven_task_list() -> None:
+def test_batch_gather_indivisible_task_list() -> None:
     """
-    Test that batch_gather works with an uneven task list.
+    Test that batch_gather works with an task list of a
+    length that is not cleanly divisible by the batch size.
     """
 
-    async def async_method():
-        return 1
+    async def async_method(n: int) -> int:
+        return n
 
-    coroutines = [async_method() for _ in range(5)]
+    coroutines = [async_method(n) for n in range(5)]
     results = asyncio.run(batch_gather(coroutines, batch_size=2))
-    assert results == [1] * len(coroutines)
+    assert results == list(range(len(coroutines)))
