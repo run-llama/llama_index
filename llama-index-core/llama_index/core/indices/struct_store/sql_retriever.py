@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+import asyncio
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -389,6 +390,34 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         retrieved_nodes, _ = await self.aretrieve_with_metadata(query_bundle)
         return retrieved_nodes
 
+    async def _aget_table_context(self, query_bundle: QueryBundle) -> str:
+        """
+        Get table context.
+
+        Get tables schema + optional context as a single string.
+
+        """
+        table_schema_objs = self._get_tables(query_bundle.query_str)
+
+        context_strs = []
+        if self._context_str_prefix is not None:
+            context_strs = [self._context_str_prefix]
+        
+        tasks = []
+        try:
+            async with self._sql_database._engine.connect() as conn:
+                async with asyncio.TaskGroup() as tg:
+                    for table_schema_obj in table_schema_objs:
+                        task = tg.create_task(conn.run_sync(
+                            self._sql_database.get_single_table_info_async, table_schema_obj
+                        ))
+                        tasks.append(task)
+        except Exception as e:
+            print(f'Error --> {e}')
+        context_strs = [task.result() for task in tasks]
+
+        return "\n\n".join(context_strs)
+
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
         """
         Get table context.
@@ -397,6 +426,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
 
         """
         table_schema_objs = self._get_tables(query_bundle.query_str)
+
         context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]

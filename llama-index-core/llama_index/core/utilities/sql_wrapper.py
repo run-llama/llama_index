@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection
 
 
 class SQLDatabase:
@@ -55,26 +56,46 @@ class SQLDatabase:
         """Create engine from database URI."""
         self._engine = engine
         self._schema = schema
+        self._view_support = view_support
+        self._include_tables = include_tables
+        self._ignore_tables = ignore_tables
+        self._sample_rows_in_table_info = sample_rows_in_table_info
+        self._indexes_in_table_info = indexes_in_table_info
+        self._custom_table_info = custom_table_info
+        self._max_string_length = max_string_length
+        self._metadata = metadata
+
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
-        self._inspector = inspect(self._engine)
+        if not isinstance(self._engine, AsyncEngine):
+            self.inspect_db()
+
+    def inspect_db(self, conn):
+
+        self._inspector = inspect(conn)
 
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=schema)
-            + (self._inspector.get_view_names(schema=schema) if view_support else [])
+            self._inspector.get_table_names(schema=self._schema)
+            + (
+                self._inspector.get_view_names(schema=self._schema)
+                if self._view_support
+                else []
+            )
         )
 
-        self._include_tables = set(include_tables) if include_tables else set()
+        self._include_tables = (
+            set(self._include_tables) if self._include_tables else set()
+        )
         if self._include_tables:
             missing_tables = self._include_tables - self._all_tables
             if missing_tables:
                 raise ValueError(
                     f"include_tables {missing_tables} not found in database"
                 )
-        self._ignore_tables = set(ignore_tables) if ignore_tables else set()
+        self._ignore_tables = set(self._ignore_tables) if self._ignore_tables else set()
         if self._ignore_tables:
             missing_tables = self._ignore_tables - self._all_tables
             if missing_tables:
@@ -84,13 +105,13 @@ class SQLDatabase:
         usable_tables = self.get_usable_table_names()
         self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
 
-        if not isinstance(sample_rows_in_table_info, int):
+        if not isinstance(self._sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
 
-        self._sample_rows_in_table_info = sample_rows_in_table_info
-        self._indexes_in_table_info = indexes_in_table_info
+        self._sample_rows_in_table_info = self._sample_rows_in_table_info
+        self._indexes_in_table_info = self._indexes_in_table_info
 
-        self._custom_table_info = custom_table_info
+        self._custom_table_info = self._custom_table_info
         if self._custom_table_info:
             if not isinstance(self._custom_table_info, dict):
                 raise TypeError(
@@ -105,13 +126,18 @@ class SQLDatabase:
                 if table in intersection
             }
 
-        self._max_string_length = max_string_length
+        self._max_string_length = self._max_string_length
 
-        self._metadata = metadata or MetaData()
+        self._metadata = self._metadata or MetaData()
         # including view support if view_support = true
+
         self._metadata.reflect(
-            views=view_support,
-            bind=self._engine,
+            views=self._view_support,
+            bind=(
+                self._engine.sync_engine
+                if isinstance(self._engine, AsyncEngine)
+                else self._engine
+            ),
             only=list(self._usable_tables),
             schema=self._schema,
         )
@@ -149,9 +175,21 @@ class SQLDatabase:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
+    def get_single_table_info_async(self, conn: AsyncConnection, table) -> str:
+        """Use this when using an Async Engine. Get table info for a single table."""
+        # reload the inspector
+        self._inspector = inspect(conn)
+        table_info = self.get_single_table_info(table)
+        if table.context_str:
+            table_opt_context = " The table description is: "
+            table_opt_context += table.context_str
+            table_info += table_opt_context        
+        return table_info
+
     def get_single_table_info(self, table) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
+
         full_table_name = table.full_table_name
         template = "Table '{full_table_name}' has columns: {columns}, "
         try:
