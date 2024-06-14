@@ -10,18 +10,15 @@ We develop SecGPT using [LlamaIndex](https://www.llamaindex.ai/), an open-source
 
 A comprehensive notebook guide is available [here](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-secgpt/examples/SecGPT.ipynb). In the meantime, you can explore its features by comparing the execution flows of SecGPT and VanillaGPT (a non-isolated LLM-based system defined [here](https://github.com/run-llama/llama_index/blob/main/llama-index-packs/llama-index-packs-secgpt/examples/VanillaGPT.ipynb)) in response to the same query.
 
-
-
 SecGPT original GitHub repository link: [https://github.com/llm-platform-security/SecGPT](https://github.com/llm-platform-security/SecGPT)
-
 
 If you build on this work, considering citing our paper:
 
-
 ## Citation
+
 ```plaintext
 @article{wu2024secgpt,
-  title={{SecGPT: An Execution Isolation Architecture for LLM-Based Systems}}, 
+  title={{SecGPT: An Execution Isolation Architecture for LLM-Based Systems}},
   author={Wu, Yuhao and Roesner, Franziska and Kohno, Tadayoshi and Zhang, Ning and Iqbal, Umar},
   journal={arXiv preprint arXiv:2403.04960},
   year={2024},
@@ -29,12 +26,13 @@ If you build on this work, considering citing our paper:
 ```
 
 ## Contribution and Support
-We welcome contributions to the project, e.g., through pull requests to the [original GitHub repo](https://github.com/llm-platform-security/SecGPT). Please also feel free to reach out to us if you have questions about the project and if you would like to contribute. 
 
+We welcome contributions to the project, e.g., through pull requests to the [original GitHub repo](https://github.com/llm-platform-security/SecGPT). Please also feel free to reach out to us if you have questions about the project and if you would like to contribute.
 
-## Research Team 
-[Yuhao Wu](https://yuhao-w.github.io) (Washington University in St. Louis)  
-[Franziska Roesner](https://www.franziroesner.com/) (University of Washington)  
-[Tadayoshi Kohno](https://homes.cs.washington.edu/~yoshi/) (University of Washington)  
-[Ning Zhang](https://cybersecurity.seas.wustl.edu/) (Washington University in St. Louis)  
-[Umar Iqbal](https://umariqbal.com) (Washington University in St. Louis)  
+## Research Team
+
+[Yuhao Wu](https://yuhao-w.github.io) (Washington University in St. Louis)
+[Franziska Roesner](https://www.franziroesner.com/) (University of Washington)
+[Tadayoshi Kohno](https://homes.cs.washington.edu/~yoshi/) (University of Washington)
+[Ning Zhang](https://cybersecurity.seas.wustl.edu/) (Washington University in St. Louis)
+[Umar Iqbal](https://umariqbal.com) (Washington University in St. Louis)
