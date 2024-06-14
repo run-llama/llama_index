@@ -305,7 +305,7 @@ cypher_retriever = TextToCypherRetriever(
     text_to_cypher_template=DEFAULT_TEXT_TO_CYPHER_TEMPLATE,
     # customize how the cypher result is inserted into
     # a text node. Requires `query` and `response` template args
-    response_template=DEFAULT_RESPONSE_TEMPLAT,
+    response_template=DEFAULT_RESPONSE_TEMPLATE,
     # an optional callable that can clean/verify generated cypher
     cypher_validator=None,
     # allowed fields in the resulting
