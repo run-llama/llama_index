@@ -265,15 +265,15 @@ class OpensearchVectorClient:
         k: int,
         filters: Optional[MetadataFilters] = None,
     ) -> Dict:
-        knn_query = self._knn_search_query(
-            embedding_field, query_embedding, k, filters
-        )["query"]
+        knn_query = self._knn_search_query(embedding_field, query_embedding, k, filters)
+        lexical_query = self._lexical_search_query(text_field, query_str, k, filters)
 
-        lexical_query = self._lexical_search_query(text_field, query_str, k, filters)[
-            "query"
-        ]
-
-        return {"size": k, "query": {"hybrid": {"queries": [lexical_query, knn_query]}}}
+        return {
+            "size": k,
+            "query": {
+                "hybrid": {"queries": [lexical_query["query"], knn_query["query"]]}
+            },
+        }
 
     def _lexical_search_query(
         self,
