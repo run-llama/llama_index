@@ -98,6 +98,7 @@ class IndexStructType(str, Enum):
     # for KG index
     KG = "kg"
     SIMPLE_KG = "simple_kg"
+    SIMPLE_LPG = "simple_lpg"
     NEBULAGRAPH = "nebulagraph"
     FALKORDB = "falkordb"
 
@@ -112,3 +113,4 @@ class IndexStructType(str, Enum):
     # Managed
     VECTARA = "vectara"
     ZILLIZ_CLOUD_PIPELINE = "zilliz_cloud_pipeline"
+    POSTGRESML = "postgresml"

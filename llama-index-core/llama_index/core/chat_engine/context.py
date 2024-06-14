@@ -1,5 +1,4 @@
 import asyncio
-from threading import Thread
 from typing import Any, List, Optional, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -21,6 +20,7 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
+from llama_index.core.types import Thread
 
 DEFAULT_CONTEXT_TEMPLATE = (
     "Context information is below."

@@ -1,6 +1,6 @@
 import logging
-from threading import Thread
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from deprecated import deprecated
 
 import torch
 from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
@@ -42,7 +42,7 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 from llama_index.core.prompts.base import PromptTemplate
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools.types import BaseTool
 from llama_index.llms.huggingface.utils import (
@@ -456,6 +456,10 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
+@deprecated(
+    "Deprecated in favor of `HuggingFaceInferenceAPI` from `llama-index-llms-huggingface-api` which should be used instead.",
+    action="always",
+)
 class HuggingFaceInferenceAPI(CustomLLM):
     """
     Wrapper on the Hugging Face's Inference API.
@@ -686,6 +690,10 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
 
+@deprecated(
+    "Deprecated in favor of `TextGenerationInference` from `llama-index-llms-text-generation-inference` which should be used instead.",
+    action="always",
+)
 class TextGenerationInference(FunctionCallingLLM):
     model_name: Optional[str] = Field(
         default=None,
@@ -870,9 +878,9 @@ class TextGenerationInference(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
-                additional_kwargs={"tool_calls": tool_calls}
-                if tool_calls is not None
-                else {},
+                additional_kwargs=(
+                    {"tool_calls": tool_calls} if tool_calls is not None else {}
+                ),
             ),
             raw=dict(response),
         )
@@ -930,9 +938,9 @@ class TextGenerationInference(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=response.choices[0].message.content,
-                additional_kwargs={"tool_calls": tool_calls}
-                if tool_calls is not None
-                else {},
+                additional_kwargs=(
+                    {"tool_calls": tool_calls} if tool_calls is not None else {}
+                ),
             ),
             raw=dict(response),
         )
@@ -990,7 +998,9 @@ class TextGenerationInference(FunctionCallingLLM):
     ) -> ChatResponse:
         """Predict and call the tool."""
         # use openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -1020,7 +1030,9 @@ class TextGenerationInference(FunctionCallingLLM):
         **kwargs: Any,
     ) -> ChatResponse:
         # use openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)

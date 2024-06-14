@@ -89,7 +89,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         llm_kwargs = llm_kwargs or {}
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
-
+            messages = self._llm._extend_messages(messages)
             response = self._llm.chat(messages, **llm_kwargs)
 
             raw_output = response.message.content or ""
@@ -116,7 +116,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         llm_kwargs = llm_kwargs or {}
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
-
+            messages = self._llm._extend_messages(messages)
             response = await self._llm.achat(messages, **llm_kwargs)
 
             raw_output = response.message.content or ""

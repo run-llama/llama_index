@@ -92,8 +92,7 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        dispatch_event = dispatcher.get_dispatch_event()
-        dispatch_event(
+        dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
                 nodes=nodes,
@@ -152,7 +151,7 @@ class RankLLMRerank(BaseNodePostprocessor):
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
 
-        dispatch_event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
         return new_nodes[: self.top_n]
 
 

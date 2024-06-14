@@ -67,14 +67,14 @@ pyyaml_env_tag==0.1
 pyzmq==25.1.2
 referencing==0.33.0
 regex==2023.12.25
-requests==2.31.0
+requests==2.32.0
 rpds-py==0.18.0
 six==1.16.0
 soupsieve==2.5
 stack-data==0.6.3
 tinycss2==1.2.1
 toml==0.10.2
-tornado==6.4
+tornado==6.4.1
 traitlets==5.14.2
 urllib3==2.2.1
 watchdog==4.0.0

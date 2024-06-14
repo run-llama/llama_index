@@ -34,7 +34,7 @@ from llama_index.core.tools.calling import (
     acall_tool_with_selection,
 )
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
-from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -42,12 +42,42 @@ logger.setLevel(logging.WARNING)
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
+def get_function_by_name(tools: List[BaseTool], name: str) -> Optional[BaseTool]:
+    """Get function by name. If the function is not found, None is returned."""
     name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
+    return name_to_tool.get(name, None)
+
+
+def build_missing_tool_message(missing_tool_name: str) -> str:
+    """
+    Build an error message for the case where a tool is not found. This message
+    instructs the LLM to double check the tool name, since it was hallucinated.
+    """
+    return f"Tool with name {missing_tool_name} not found, please double check."
+
+
+def build_error_tool_output(tool_name: str, tool_args: Any, err_msg: str) -> ToolOutput:
+    """Build a ToolOutput for an error that has occurred."""
+    return ToolOutput(
+        content=err_msg,
+        tool_name=tool_name,
+        raw_input={"args": str(tool_args)},
+        raw_output=err_msg,
+        is_error=True,
+    )
+
+
+def build_missing_tool_output(bad_tool_call: ToolSelection) -> ToolOutput:
+    """
+    Build a ToolOutput for the case where a tool is not found. This output contains
+    instructions that ask the LLM to double check the tool name, along with the
+    hallucinated tool name itself.
+    """
+    return build_error_tool_output(
+        bad_tool_call.tool_name,
+        bad_tool_call.tool_kwargs,
+        build_missing_tool_message(bad_tool_call.tool_name),
+    )
 
 
 class FunctionCallingAgentWorker(BaseAgentWorker):
@@ -159,7 +189,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
             self.prefix_messages
-            + task.memory.get()
+            + task.memory.get(input=task.input)
             + task.extra_state["new_memory"].get_all()
         )
 
@@ -177,10 +207,18 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: tool.metadata,
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=tool_call.tool_name)
+                ),
             },
         ) as event:
-            tool_output = call_tool_with_selection(tool_call, tools, verbose=verbose)
+            tool_output = (
+                call_tool_with_selection(tool_call, tools, verbose=verbose)
+                if tool is not None
+                else build_missing_tool_output(tool_call)
+            )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         function_message = ChatMessage(
@@ -194,7 +232,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct
+        return tool.metadata.return_direct if tool is not None else False
 
     async def _acall_function(
         self,
@@ -210,11 +248,17 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             CBEventType.FUNCTION_CALL,
             payload={
                 EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: tool.metadata,
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=tool_call.tool_name)
+                ),
             },
         ) as event:
-            tool_output = await acall_tool_with_selection(
-                tool_call, tools, verbose=verbose
+            tool_output = (
+                await acall_tool_with_selection(tool_call, tools, verbose=verbose)
+                if tool is not None
+                else build_missing_tool_output(tool_call)
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
@@ -229,7 +273,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct
+        return tool.metadata.return_direct if tool is not None else False
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
@@ -304,8 +348,15 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 else []
             )
 
+        # get response string
+        # return_direct can change the response type
+        try:
+            response_str = str(response.message.content)
+        except AttributeError:
+            response_str = str(response)
+
         agent_response = AgentChatResponse(
-            response=str(response), sources=task.extra_state["sources"]
+            response=response_str, sources=task.extra_state["sources"]
         )
 
         return TaskStepOutput(
@@ -390,8 +441,15 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                 else []
             )
 
+        # get response string
+        # return_direct can change the response type
+        try:
+            response_str = str(response.message.content)
+        except AttributeError:
+            response_str = str(response)
+
         agent_response = AgentChatResponse(
-            response=str(response), sources=task.extra_state["sources"]
+            response=response_str, sources=task.extra_state["sources"]
         )
 
         return TaskStepOutput(

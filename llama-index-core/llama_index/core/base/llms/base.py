@@ -19,10 +19,11 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import Field, validator
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
 
 
-class BaseLLM(ChainableMixin, BaseComponent):
+class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
     callback_manager: CallbackManager = Field(

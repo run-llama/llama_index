@@ -16,6 +16,7 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
@@ -26,7 +27,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ChainableMixin, PromptMixin):
+class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Base query engine."""
 
     def __init__(
@@ -44,26 +45,26 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
 
     @dispatcher.span
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(QueryStartEvent(query=str_or_query_bundle))
+        dispatcher.event(QueryStartEvent(query=str_or_query_bundle))
         with self.callback_manager.as_trace("query"):
             if isinstance(str_or_query_bundle, str):
                 str_or_query_bundle = QueryBundle(str_or_query_bundle)
             query_result = self._query(str_or_query_bundle)
-        dispatch_event(QueryEndEvent(query=str_or_query_bundle, response=query_result))
+        dispatcher.event(
+            QueryEndEvent(query=str_or_query_bundle, response=query_result)
+        )
         return query_result
 
     @dispatcher.span
     async def aquery(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(QueryStartEvent(query=str_or_query_bundle))
+        dispatcher.event(QueryStartEvent(query=str_or_query_bundle))
         with self.callback_manager.as_trace("query"):
             if isinstance(str_or_query_bundle, str):
                 str_or_query_bundle = QueryBundle(str_or_query_bundle)
             query_result = await self._aquery(str_or_query_bundle)
-        dispatch_event(QueryEndEvent(query=str_or_query_bundle, response=query_result))
+        dispatcher.event(
+            QueryEndEvent(query=str_or_query_bundle, response=query_result)
+        )
         return query_result
 
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
