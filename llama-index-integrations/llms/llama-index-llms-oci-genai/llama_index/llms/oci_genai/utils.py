@@ -22,9 +22,9 @@ COMPLETION_MODELS = {
 }
 
 CHAT_MODELS = {
-    "cohere.command-r": 128000,  # placeholder for future support
+    "cohere.command-r-16k": 16000,
     "cohere.command-r-plus": 128000,  # placeholder for future support
-    "meta.llama-3-70b-instruct": 8192,  # placeholder for future support
+    "meta.llama-3-70b-instruct": 8192,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -33,7 +33,7 @@ STREAMING_MODELS = {
     "cohere.command",
     "cohere.command-light",
     "meta.llama-2-70b-chat",
-    "cohere.command-r",
+    "cohere.command-r-16k",
     "cohere.command-r-plus",
     "meta.llama-3-70b-instruct",
 }
@@ -184,7 +184,12 @@ class CohereProvider(Provider):
 
         self.oci_completion_request = models.CohereLlmInferenceRequest
         self.oci_chat_request = models.CohereChatRequest
-        self.oci_chat_message = models.CohereMessage
+        self.oci_chat_message = {
+            "USER": models.CohereUserMessage,
+            "SYSTEM": models.CohereSystemMessage,
+            "CHATBOT": models.CohereChatBotMessage,
+            "TOOL": models.CohereToolMessage,
+        }
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_COHERE
 
     def completion_response_to_text(self, response: Any) -> str:
@@ -205,13 +210,14 @@ class CohereProvider(Provider):
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
             "user": "USER",
-            "system": "USER",
+            "system": "SYSTEM",
             "chatbot": "CHATBOT",
             "assistant": "CHATBOT",
+            "tool": "TOOL",
         }
 
         oci_chat_history = [
-            self.oci_chat_message(role=role_map[msg.role.value], message=msg.content)
+            self.oci_chat_message[role_map[msg.role]](message=msg.content)
             for msg in messages[:-1]
         ]
 
@@ -235,7 +241,11 @@ class MetaProvider(Provider):
 
         self.oci_completion_request = models.LlamaLlmInferenceRequest
         self.oci_chat_request = models.GenericChatRequest
-        self.oci_chat_message = models.Message
+        self.oci_chat_message = {
+            "USER": models.UserMessage,
+            "SYSTEM": models.SystemMessage,
+            "ASSISTANT": models.AssistantMessage,
+        }
         self.oci_chat_message_content = models.TextContent
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
 
@@ -256,15 +266,14 @@ class MetaProvider(Provider):
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
-            "user": "user",
-            "system": "system",
-            "chatbot": "assistant",
-            "assistant": "assistant",
+            "user": "USER",
+            "system": "SYSTEM",
+            "chatbot": "ASSISTANT",
+            "assistant": "ASSISTANT",
         }
 
         oci_messages = [
-            self.oci_chat_message(
-                role=role_map[msg.role.value],
+            self.oci_chat_message[role_map[msg.role]](
                 content=[self.oci_chat_message_content(text=msg.content)],
             )
             for msg in messages
@@ -302,11 +311,19 @@ def get_context_size(model: str, context_size: int = None) -> int:
         try:
             return OCIGENAI_LLMS[model]
         except KeyError as e:
-            raise ValueError(
-                f"Invalid context size derived from model_id: {model} "
-                "Please explicitly pass in the context size "
-                "when using custom endpoint",
-                e,
-            ) from e
+            if model.startswith(CUSTOM_ENDPOINT_PREFIX):
+                raise ValueError(
+                    f"Invalid context size derived from model_id: {model} "
+                    "Please explicitly pass in the context size "
+                    "when using custom endpoint",
+                    e,
+                ) from e
+            else:
+                raise ValueError(
+                    f"Invalid model name {model} "
+                    "Please double check the following OCI documentation if the model is supported "
+                    "https://docs.public.oneportal.content.oci.oraclecloud.com/en-us/iaas/Content/generative-ai/pretrained-models.htm#pretrained-models",
+                    e,
+                ) from e
     else:
         return context_size

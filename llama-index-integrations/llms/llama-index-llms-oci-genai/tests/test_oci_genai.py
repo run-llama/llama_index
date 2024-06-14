@@ -79,7 +79,7 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "test_model_id", ["cohere.command-r", "meta.llama-3-70b-instruct"]
+    "test_model_id", ["cohere.command-r-16k", "meta.llama-3-70b-instruct"]
 )
 def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     """Test valid chat call to OCI Generative AI LLM service."""
