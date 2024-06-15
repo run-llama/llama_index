@@ -295,7 +295,7 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
     def vector_stores(self) -> Mapping[KD, BasePydanticVectorStore]:
         return self._vector_stores
 
-    def as_retriever(self, **kwargs: Any) -> "OmniModalVectorIndexRetriever":
+    def as_retriever(self, **kwargs: Any) -> "OmniModalVectorIndexRetriever[KD, KQ]":
         return OmniModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
@@ -306,7 +306,7 @@ class OmniModalVectorStoreIndex(BaseIndex[MultiModelIndexDict], Generic[KD, KQ])
 
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
-    ) -> "OmniModalQueryEngine":
+    ) -> "OmniModalQueryEngine[KD, KQ]":
         retriever = self.as_retriever(**kwargs)
 
         llm = llm or llm_from_settings_or_context(Settings, self._service_context)
