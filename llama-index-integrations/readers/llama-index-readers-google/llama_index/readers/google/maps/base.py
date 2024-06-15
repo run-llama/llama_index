@@ -14,8 +14,6 @@ DEFAULT_NUMBER_OF_RESULTS = 100
 SEARCH_TEXT_BASE_URL = "https://places.googleapis.com/v1/places:searchText"
 # Maximum results per page
 MAX_RESULTS_PER_PAGE = 20
-# Maximum text length
-MAX_TEXT_LENGTH = 512
 
 
 class Review(BaseModel):
@@ -34,7 +32,10 @@ class Place(BaseModel):
 
 
 class GoogleMapsTextSearchReader(BaseReader):
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+    ):
         self.api_key = api_key or os.getenv("GOOGLE_MAPS_API_KEY")
         if not self.api_key:
             raise ValueError(
@@ -100,8 +101,6 @@ class GoogleMapsTextSearchReader(BaseReader):
                 if len(documents) == number_of_results:
                     return documents
 
-                if len(document_text) > MAX_TEXT_LENGTH:
-                    document_text = document_text[:MAX_TEXT_LENGTH]
                 documents.append(Document(text=document_text, extra_info=place.dict()))
             response = self._search_text_request(
                 text, MAX_RESULTS_PER_PAGE, next_page_token

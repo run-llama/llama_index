@@ -12,12 +12,14 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
-    get_defualt_sparse_embedding_function,
+    get_default_sparse_embedding_function,
     BaseSparseEmbeddingFunction,
+    ScalarMetadataFilters,
+    parse_standard_filters,
+    parse_scalar_filters,
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -43,44 +45,32 @@ except Exception as e:
     RRFRanker = None
 
 
-def _to_milvus_filter(standard_filters: MetadataFilters) -> str:
-    """Translate standard metadata filters to Milvus specific spec.
+def _to_milvus_filter(
+    standard_filters: MetadataFilters, scalar_filters: ScalarMetadataFilters = None
+) -> str:
+    """Translate metadata filters to Milvus specific spec."""
+    standard_filters_list, joined_standard_filters = parse_standard_filters(
+        standard_filters
+    )
+    scalar_filters_list, joined_scalar_filters = parse_scalar_filters(scalar_filters)
 
-    Note that Milvus supports single-quoted strings, so we use f-string with
-    the '!r' modifier to add single quotes for string values if necessary.
+    filters = standard_filters_list + scalar_filters_list
 
-    References:
-    - https://milvus.io/docs/boolean.md
-    - https://github.com/milvus-io/milvus/pull/24386
-    - https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals
-    """
-    filters = []
-    for filter in standard_filters.filters:
-        if filter.operator in (
-            FilterOperator.EQ,
-            FilterOperator.NE,
-            FilterOperator.GT,
-            FilterOperator.LT,
-            FilterOperator.GTE,
-            FilterOperator.LTE,
-            FilterOperator.IN,
-        ):
-            filters.append(f"{filter.key} {filter.operator.value} {filter.value!r}")
-        elif filter.operator == FilterOperator.NIN:
-            filters.append(f"{filter.key} not in {filter.value!r}")
-        elif filter.operator == FilterOperator.TEXT_MATCH:
-            # We assume that "text_match" can only be used for string values.
-            filters.append(f"{filter.key} like '%{filter.value}%'")
-        elif filter.operator == FilterOperator.CONTAINS:
-            filters.append(f"array_contains({filter.key}, {filter.value!r})")
-        elif filter.operator == FilterOperator.ANY:
-            filters.append(f"array_contains_any({filter.key}, {filter.value!r})")
-        elif filter.operator == FilterOperator.ALL:
-            filters.append(f"array_contains_all({filter.key}, {filter.value!r})")
-        else:
-            raise ValueError(f"FilterOperator {filter.operator} is not supported.")
-    joined_filters = f" {standard_filters.condition.value} ".join(filters)
-    return f"({joined_filters})" if len(filters) > 1 else joined_filters
+    if len(standard_filters_list) > 0 and len(scalar_filters_list) > 0:
+        joined_filters = f" {joined_standard_filters} and {joined_scalar_filters} "
+        return f"({joined_filters})" if len(filters) > 1 else joined_filters
+    elif len(standard_filters_list) > 0 and len(scalar_filters_list) == 0:
+        return (
+            f"({joined_standard_filters})"
+            if len(filters) > 1
+            else joined_standard_filters
+        )
+    elif len(standard_filters_list) == 0 and len(scalar_filters_list) > 0:
+        return (
+            f"({joined_scalar_filters})" if len(filters) > 1 else joined_scalar_filters
+        )
+    else:
+        return ""
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
@@ -287,7 +277,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self.enable_sparse = enable_sparse
         if self.enable_sparse is True and sparse_embedding_function is None:
             logger.warning("Sparse embedding function is not provided, using default.")
-            self.sparse_embedding_function = get_defualt_sparse_embedding_function()
+            self.sparse_embedding_function = get_default_sparse_embedding_function()
         elif self.enable_sparse is True and sparse_embedding_function is not None:
             self.sparse_embedding_function = sparse_embedding_function
         else:
@@ -398,8 +388,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields = ["*"]
 
         # Parse the filter
-        if query.filters is not None:
-            expr.append(_to_milvus_filter(query.filters))
+
+        if query.filters is not None or "milvus_scalar_filters" in kwargs:
+            expr.append(
+                _to_milvus_filter(
+                    query.filters,
+                    kwargs["milvus_scalar_filters"]
+                    if "milvus_scalar_filters" in kwargs
+                    else None,
+                )
+            )
 
         # Parse any docs we are filtering on
         if query.doc_ids is not None and len(query.doc_ids) != 0:
@@ -412,10 +410,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
             expr.append(f"{MILVUS_ID_FIELD} in [{','.join(expr_list)}]")
 
         # Limit output fields
+        outputs_limited = False
         if query.output_fields is not None:
             output_fields = query.output_fields
+            outputs_limited = True
         elif len(self.output_fields) > 0:
-            output_fields = self.output_fields
+            output_fields = [*self.output_fields]
+            outputs_limited = True
+
+        # Add the text key to output fields if necessary
+        if self.text_key and self.text_key not in output_fields and outputs_limited:
+            output_fields.append(self.text_key)
 
         # Convert to string expression
         string_expr = ""

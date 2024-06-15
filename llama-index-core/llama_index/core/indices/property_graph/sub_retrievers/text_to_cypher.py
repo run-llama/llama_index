@@ -10,7 +10,6 @@ from llama_index.core.settings import Settings
 DEFAULT_RESPONSE_TEMPLATE = (
     "Generated Cypher query:\n{query}\n\n" "Cypher Response:\n{response}"
 )
-DEFAULT_ALLOWED_FIELDS = ["text", "label", "type"]
 
 
 class TextToCypherRetriever(BasePGRetriever):
@@ -59,7 +58,7 @@ class TextToCypherRetriever(BasePGRetriever):
             text_to_cypher_template or graph_store.text_to_cypher_template
         )
         self.cypher_validator = cypher_validator
-        self.allowed_output_fields = allowed_output_fields or DEFAULT_ALLOWED_FIELDS
+        self.allowed_output_fields = allowed_output_fields
         super().__init__(graph_store=graph_store, include_text=False)
 
     def _parse_generated_cyher(self, cypher_query: str) -> str:
@@ -72,7 +71,10 @@ class TextToCypherRetriever(BasePGRetriever):
         if isinstance(query_output, dict):
             filtered = {}
             for key, value in query_output.items():
-                if key in self.allowed_output_fields:
+                if (
+                    key in self.allowed_output_fields
+                    or self.allowed_output_fields is None
+                ):
                     filtered[key] = value
                 elif isinstance(value, (dict, list)):
                     filtered_value = self._clean_query_output(value)
@@ -99,7 +101,8 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
-        parsed_cypher_query = self._parse_generated_cyher(response)
+        if self.allowed_output_fields is not None:
+            parsed_cypher_query = self._parse_generated_cyher(response)
 
         query_output = self._graph_store.structured_query(parsed_cypher_query)
 
@@ -131,7 +134,8 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
-        parsed_cypher_query = self._parse_generated_cyher(response)
+        if self.allowed_output_fields is not None:
+            parsed_cypher_query = self._parse_generated_cyher(response)
 
         query_output = await self._graph_store.astructured_query(parsed_cypher_query)
 
