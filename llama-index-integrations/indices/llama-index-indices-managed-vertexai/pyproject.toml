@@ -9,10 +9,13 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.mongodb"
+import_path = "llama_index.indices.managed.vertexai"
 
 [tool.llamahub.class_authors]
-SimpleMongoReader = "jerryjliu"
+VertexAIIndex = "holtskinner"
+
+[tool.llamahub.secondary_class_authors]
+VertexAIRetriever = "holtskinner"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,19 +24,19 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index readers mongodb integration"
+authors = ["Holt Skinner <holtskinner@google.com>"]
+description = "llama-index managed Vertex AI integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-maintainers = ["jerryjliu"]
-name = "llama-index-readers-mongodb"
+name = "llama-index-indices-managed-vertexai"
 readme = "README.md"
-version = "0.1.7"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-pymongo = "^4.6.1"
+llamaindex-py-client = "^0.1.19"
+google-cloud-aiplatform = "^1.53.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
