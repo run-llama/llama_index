@@ -1,5 +1,124 @@
 # ChangeLog
 
+## [2024-06-14]
+
+### `llama-index-core` [0.10.45]
+
+- Fix parsing sql query.py (#14109)
+- Implement NDCG metric (#14100)
+- Fixed System Prompts for Structured Generation (#14026)
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+- Add PandasExcelReader class for parsing excel files (#13991)
+- feat: add spans to ingestion pipeline (#14062)
+
+### `llama-index-vector-stores-qdrant` [0.2.10]
+
+- Fix Qdrant nodes (#14149)
+
+### `llama-index-readers-mongodb` [0.1.7]
+
+- Fixes TypeError: sequence item : expected str instance, int found
+
+### `llama-index-indices-managed-vertexai` [0.0.1]
+
+- feat: Add Managed Index for LlamaIndex on Vertex AI for RAG (#13626)
+
+### `llama-index-llms-oci-genai` [0.1.1]
+
+- Feature/add command r support oci genai (#14080)
+
+### `llama-index-vector-stores-milvus` [0.1.20]
+
+- MilvusVectorStore: always include text_key in output_fields (#14076)
+
+### `llama-index-packs-mixture-of-agents` [0.1.0]
+
+- Add Mixture Of Agents paper implementation (#14112)
+
+### `llama-index-llms-text-generation-inference` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-llms-huggingface-api` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-embeddings-huggingface-api` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-utils-huggingface` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-llms-watsonx` [0.1.8]
+
+- Feat: IBM watsonx.ai llm and embeddings integration (#13600)
+
+### `llama-index-llms-ibm` [0.1.0]
+
+- Feat: IBM watsonx.ai llm and embeddings integration (#13600)
+
+### `llama-index-embeddings-ibm` [0.1.0]
+
+- Feat: IBM watsonx.ai llm and embeddings integration (#13600)
+
+### `llama-index-vector-stores-milvus` [0.1.19]
+
+- Fix to milvus filter enum parsing (#14111)
+
+### `llama-index-llms-anthropic` [0.1.13]
+
+- fix anthropic llm calls (#14108)
+
+### `llama-index-storage-index-store-postgres` [0.1.4]
+
+- Wrong mongo name was used instead of Postgres (#14107)
+
+### `llama-index-embeddings-bedrock` [0.2.1]
+
+- Remove unnecessary excluded from fields in Bedrock embedding (#14085)
+
+### `llama-index-finetuning` [0.1.7]
+
+- Feature/added trust remote code (#14102)
+
+### `llama-index-readers-file` [0.1.25]
+
+- nit: fix for pandas excel reader (#14086)
+
+### `llama-index-llms-anthropic` [0.1.12]
+
+- Update anthropic dependency to 0.26.2 minimum version (#14091)
+
+### `llama-index-llms-llama-cpp` [0.1.4]
+
+- Add support for Llama 3 Instruct prompt format (#14072)
+
+### `llama-index-llms-bedrock-converse` [0.1.8]
+
+- Implement Bedrock Converse API for function calling (#14055)
+
+### `llama-index-vector-stores-postgres` [0.1.11]
+
+- fix/postgres-metadata-in-filter-single-elem (#14035)
+
+### `llama-index-readers-file` [0.1.24]
+
+- Add PandasExcelReader class for parsing excel files (#13991)
+
+### `llama-index-embeddings-ipex-llm` [0.1.4]
+
+- Update dependency of llama-index-embeddings-ipex-llm
+
+### `llama-index-embeddings-gemini` [0.1.8]
+
+- Add api key as field in Gemini Embedding (#14061)
+
+### `llama-index-vector-stores-milvus` [0.1.18]
+
+- Expand milvus vector store filter options (#13961)
+
 ## [2024-06-10]
 
 ### `llama-index-core` [0.10.44]
