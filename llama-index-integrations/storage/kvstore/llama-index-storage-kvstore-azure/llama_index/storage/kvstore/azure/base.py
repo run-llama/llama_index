@@ -185,7 +185,8 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        self._table_client.create_table_if_not_exists(table_name).upsert_entity(
+        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client.upsert_entity(
             {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
@@ -212,9 +213,10 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        await self._atable_service_client.create_table_if_not_exists(
-            table_name
-        ).upsert_entity(
+        atable_service_client = (
+            await self._atable_service_client.create_table_if_not_exists(table_name)
+        )
+        await atable_service_client.upsert_entity(
             {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
