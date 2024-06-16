@@ -195,6 +195,7 @@ class Gemini(CustomLLM):
         response = chat.send_message(next_msg)
         return chat_from_gemini_response(response)
 
+    @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
