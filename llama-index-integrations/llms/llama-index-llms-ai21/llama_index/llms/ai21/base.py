@@ -1,11 +1,13 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from ai21 import AI21Client
+from ai21 import AI21Client, AsyncAI21Client
 from ai21.models.chat import ChatCompletionChunk
 from ai21_tokenizer import Tokenizer, BaseTokenizer
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -14,6 +16,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
+    ChatResponseAsyncGen,
+    CompletionResponseAsyncGen,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -82,6 +86,7 @@ class AI21(CustomLLM):
     )
 
     _client: Any = PrivateAttr()
+    _async_client: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -106,6 +111,15 @@ class AI21(CustomLLM):
         callback_manager = callback_manager or CallbackManager([])
 
         self._client = AI21Client(
+            api_key=api_key,
+            api_host=base_url,
+            timeout_sec=timeout,
+            num_retries=max_retries,
+            headers=default_headers,
+            via="llama-index",
+        )
+
+        self._async_client = AsyncAI21Client(
             api_key=api_key,
             api_host=base_url,
             timeout_sec=timeout,
@@ -207,6 +221,89 @@ class AI21(CustomLLM):
             raw=response.to_dict(),
         )
 
+    @llm_chat_callback()
+    async def achat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponse:
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        if self._is_j2_model():
+            return await self._j2_async_chat(messages, **all_kwargs)
+
+        messages = [message_to_ai21_message(message) for message in messages]
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            stream=False,
+            **all_kwargs,
+        )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response.choices[0].message.content,
+            ),
+            raw=response.to_dict(),
+        )
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
+        if self._is_j2_model():
+            raise ValueError("Async Stream chat is not supported for J2 models.")
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        messages = [message_to_ai21_message(message) for message in messages]
+        response = await self._async_client.chat.completions.create(
+            messages=messages,
+            stream=True,
+            **all_kwargs,
+        )
+
+        async def gen() -> ChatResponseAsyncGen:
+            content = ""
+            role = MessageRole.ASSISTANT
+
+            async for r in response:
+                if isinstance(r, ChatCompletionChunk):
+                    content_delta = r.choices[0].delta.content
+
+                    if content_delta is None:
+                        content += ""
+                    else:
+                        content += r.choices[0].delta.content
+
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=content_delta,
+                        raw=r.to_dict(),
+                    )
+
+        return gen()
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        if self._is_j2_model():
+            return self._j2_completion(prompt, formatted, **all_kwargs)
+
+        acomplete_fn = achat_to_completion_decorator(self.achat)
+        return await acomplete_fn(prompt, **kwargs)
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await astream_complete_fn(prompt, **kwargs)
+
     def _j2_chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         system, messages = message_to_ai21_j2_message(messages)
         response = self._client.chat.create(
@@ -221,6 +318,39 @@ class AI21(CustomLLM):
                 role=MessageRole.ASSISTANT,
                 content=response.outputs[0].text,
             ),
+            raw=response.to_dict(),
+        )
+
+    async def _j2_async_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        system, messages = message_to_ai21_j2_message(messages)
+        response = await self._async_client.chat.create(
+            system=system,
+            messages=messages,
+            stream=False,
+            **kwargs,
+        )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=response.outputs[0].text,
+            ),
+            raw=response.to_dict(),
+        )
+
+    async def _j2_async_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        response = self._async_client.completion.create(
+            prompt=prompt,
+            stream=False,
+            **kwargs,
+        )
+
+        return CompletionResponse(
+            text=response.completions[0].data.text,
             raw=response.to_dict(),
         )
 
