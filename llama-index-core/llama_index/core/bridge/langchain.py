@@ -66,6 +66,7 @@ from langchain.tools import BaseTool, StructuredTool, Tool  # pants: no-infer-de
 from langchain_community.chat_models import (
     ChatAnyscale,
     ChatOpenAI,
+    ChatFireworks,
 )  # pants: no-infer-dep
 from langchain_community.embeddings import (  # pants: no-infer-dep
     HuggingFaceBgeEmbeddings,  # pants: no-infer-dep
@@ -91,6 +92,7 @@ __all__ = [
     "BaseChatModel",
     "ChatAnyscale",
     "ChatOpenAI",
+    "ChatFireworks",
     "BaseLanguageModel",
     "Embeddings",
     "HuggingFaceEmbeddings",

@@ -8,7 +8,7 @@ from llama_index.embeddings.cohere import CohereEmbedding
 
 
 def test_embedding_class():
-    emb = CohereEmbedding(cohere_api_key="token")
+    emb = CohereEmbedding(api_key="token")
     assert isinstance(emb, BaseEmbedding)
 
 
@@ -17,7 +17,7 @@ def test_embedding_class():
 )
 def test_sync_embedding():
     emb = CohereEmbedding(
-        cohere_api_key=os.environ["CO_API_KEY"],
+        api_key=os.environ["CO_API_KEY"],
         model_name="embed-english-v3.0",
         input_type="clustering",
         embedding_type="float",
@@ -33,7 +33,7 @@ def test_sync_embedding():
 @pytest.mark.asyncio()
 async def test_async_embedding():
     emb = CohereEmbedding(
-        cohere_api_key=os.environ["CO_API_KEY"],
+        api_key=os.environ["CO_API_KEY"],
         model_name="embed-english-v3.0",
         input_type="clustering",
         embedding_type="float",

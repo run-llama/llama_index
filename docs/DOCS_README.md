@@ -22,14 +22,16 @@ Install all dependencies required for building docs (mainly `mkdocs` and its ext
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
-- `poetry install --with docs` - this will install all dependencies needed for building docs
+- `poetry install --only docs` - this will install all dependencies needed for building docs
 
 Build with mkdocs:
 
 ```bash
 cd docs
-mkdocs serve
+mkdocs serve --dirty
 ```
+
+**NOTE:** The `--dirty` option will mean that only changed files will be re-built, decreasing the time it takes to iterate on a page.
 
 And open your browser at http://localhost:8000/ to view the generated docs.
 

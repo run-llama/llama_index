@@ -2,6 +2,16 @@
 
 Interested in contributing to LlamaIndex? Here's how to get started!
 
+## QuickStart
+
+For python users who just want to dive in and start contributing, here's a quick guide on the env setup (if any of this doesn't make sense, read on to the [full guide](#development-guidelines)):
+
+1. Fork the repo and clone your fork
+2. `cd llama_index`
+3. Setup a new venv with `poetry shell`
+4. Install dev (and/or docs) dependencies with `poetry install --only dev,docs`
+5. Install the packages you intend to edit (i.e. `pip install -e  llama-index-core` or `pip install -e llama-index-integrations/llms/llama-index-llms-openai`)
+
 ## Contribution Guideline
 
 The best part of LlamaIndex is our community of users and contributors.
@@ -21,7 +31,7 @@ Also, join our Discord for ideas and discussions: <https://discord.gg/dGcwcsnxhU
 ### 1. 🆕 Extend Core Modules
 
 The most impactful way to contribute to LlamaIndex is by extending our core modules:
-![LlamaIndex modules](https://github.com/jerryjliu/llama_index/raw/main/docs/_static/contribution/contrib.png)
+![LlamaIndex modules](https://github.com/run-llama/llama_index/raw/main/docs/docs/_static/contribution/contrib.png)
 
 We welcome contributions in _all_ modules shown above.
 So far, we have implemented a core set of functionalities for each, all of
@@ -71,9 +81,6 @@ Anthropic = "llama-index"
 
 ([source](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/llms/llama-index-llms-anthropic/pyproject.toml))
 
-**NOTE**: We are making rapid improvements to the project, and as a result,
-some interfaces are still volatile. Specifically, we are actively working on making the following components more modular and extensible (uncolored boxes above): core indexes, document stores, index queries, query runner
-
 #### Module Details
 
 Below, we will describe what each module does, give a high-level idea of the interface, show existing implementations, and give some ideas for contribution.
@@ -93,12 +100,11 @@ A data loader ingests data of any format from anywhere into `Document` objects, 
 
 **Examples**:
 
-- [Google Sheets Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/google_sheets)
-- [Gmail Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/gmail)
-- [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/github_repo)
+- [Database Reader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-database)
+- [Jira Reader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-jira)
+- [MongoDB Reader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-mongodb)
 
 Contributing a data loader is easy and super impactful for the community.
-The preferred way to contribute is by making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
 
 **Ideas**
 
@@ -115,9 +121,9 @@ It is responsible for splitting text (via text splitters) and explicitly modelin
 
 **Examples**:
 
-- [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
+- [Hierarchical Node Parser](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/relational/hierarchical.py)
 
-See [the API reference](https://docs.llamaindex.ai/en/latest/api_reference/index.html) for full details.
+See [the API reference](https://docs.llamaindex.ai/en/stable/api_reference/node_parsers/) for full details.
 
 **Ideas**:
 
@@ -133,9 +139,9 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 
 **Examples**:
 
-- [Token Text Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L26)
-- [Sentence Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L276)
-- [Code Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L476)
+- [Token Text Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/token.py)
+- [Sentence Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/sentence.py)
+- [Code Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/code.py)
 
 ---
 
@@ -146,7 +152,7 @@ Under the hood, LlamaIndex also supports a swappable **storage layer** that allo
 We have an underlying key-value abstraction backing the document/index stores.
 Currently we support in-memory and MongoDB storage for these stores. Open to contributions!
 
-See [Storage guide](https://docs.llamaindex.ai/en/stable/module_guides/storing/kv_stores.html) for details.
+See [the API reference](https://docs.llamaindex.ai/en/stable/api_reference/storage/kvstore/) for details.
 
 ---
 
@@ -154,10 +160,10 @@ See [Storage guide](https://docs.llamaindex.ai/en/stable/module_guides/storing/k
 
 A managed index is used to represent an index that's managed via an API, exposing API calls to index documents and query documents.
 
-Currently we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara).
+For example, we support the [VectaraIndex](https://github.com/run-llama/llama_index/tree/ca09272af000307762d301c99da46ddc70d3bfd2/llama_index/indices/managed/vectara).
 Open to contributions!
 
-See [Managed Index docs](https://docs.llamaindex.ai/en/stable/community/integrations/managed_indices.html) for details.
+See [Managed Index docs](https://docs.llamaindex.ai/en/stable/community/integrations/managed_indices/) for details.
 
 ---
 
@@ -171,19 +177,22 @@ These serve as the main data store and retrieval engine for our vector index.
 - `add` takes in a sequence of `NodeWithEmbeddings` and inserts the embeddings (and possibly the node contents & metadata) into the vector store.
 - `delete` removes entries given document IDs.
 - `query` retrieves top-k most similar entries given a query embedding.
+- `get_nodes` get nodes by ID or filters
+- `delete_nodes` delete nodes by ID or filters
+- `clear` clears an entire db of data
 
 **Examples**:
 
-- [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/pinecone.py)
-- [Faiss](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/faiss.py)
-- [Chroma](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/chroma.py)
-- [DashVector](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/dashvector.py)
+- [Chroma](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/vector_stores/llama-index-vector-stores-chroma)
+- [Qdrant](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/vector_stores/llama-index-vector-stores-qdrant)
+- [Pinecone](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/vector_stores/llama-index-vector-stores-pinecone)
+- [Faiss](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/vector_stores/llama-index-vector-stores-faiss)
 
 **Ideas**:
 
-- See a vector database out there that we don't support yet? Make a PR!
+- See a vector database out there that we don't support yet? A vector store missing methods like `get_nodes` and `delete_nodes`? Make a PR!
 
-See [reference](https://docs.llamaindex.ai/en/stable/api_reference/indices/vector_store.html) for full details.
+See [reference](https://docs.llamaindex.ai/en/stable/api_reference/storage/vector_store/) for full details.
 
 ---
 
@@ -203,14 +212,13 @@ data if you wish.
 
 **Examples**:
 
-- [Vector Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/vector_store/retrievers.py)
-- [List Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/list/retrievers.py)
-- [Transform Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/retrievers/transform_retriever.py)
+- [Vector Index Retriever](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/indices/vector_store/retrievers/retriever.py)
+- [Property Graph Index Retriever](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/indices/property_graph/retriever.py)
+- [Router Retriever](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/retrievers/router_retriever.py)
 
 **Ideas**:
 
-- Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrievers as input? Or other
-  types of data?
+- Besides the "default" retrievers built on top of each index, what about fancier retrievers? E.g. retrievers that take in other retrievers as input? Or other types of data?
 
 ---
 
@@ -228,8 +236,8 @@ They may take in other query engine classes as input too.
 
 **Examples**:
 
-- [Retriever Query Engine](https://github.com/jerryjliu/llama_index/blob/main/llama_index/query_engine/retriever_query_engine.py)
-- [Transform Query Engine](https://github.com/jerryjliu/llama_index/blob/main/llama_index/query_engine/transform_query_engine.py)
+- [Retriever Query Engine](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/query_engine/retriever_query_engine.py)
+- [Citation Query Engine](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/query_engine/citation_query_engine.py)
 
 ---
 
@@ -242,22 +250,10 @@ This can interpreted as a pre-processing stage, before the core index query logi
 
 **Examples**:
 
-- [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L77)
-- [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L124)
+- [Hypothetical Document Embeddings](https://github.com/run-llama/llama_index/blob/e490158e1562c903d99a7fb4a3cb4407b192d63a/llama-index-core/llama_index/core/indices/query/query_transform/base.py#L109)
+- [Query Decompose](https://github.com/run-llama/llama_index/blob/e490158e1562c903d99a7fb4a3cb4407b192d63a/llama-index-core/llama_index/core/indices/query/query_transform/base.py#L165)
 
-See [guide](https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
-
----
-
-#### Token Usage Optimizers
-
-A token usage optimizer refines the retrieved `Nodes` to reduce token usage during response synthesis.
-
-**Interface**: `optimize` takes in the `QueryBundle` and a text chunk `str`, and outputs a refined text chunk `str` that yields a more optimized response
-
-**Examples**:
-
-- [Sentence Embedding Optimizer](https://github.com/jerryjliu/llama_index/blob/main/llama_index/optimization/optimizer.py)
+See [guide](https://docs.llamaindex.ai/en/stable/examples/query_transformations/query_transform_cookbook/?h=query+transform) for more information.
 
 ---
 
@@ -269,9 +265,9 @@ A node postprocessor refines a list of retrieved nodes given configuration and c
 
 **Examples**:
 
-- [Keyword Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L32): filters nodes based on keyword match
-- [Similarity Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L74): filers nodes based on similarity threshold
-- [Prev Next Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L175): fetches additional nodes to augment context based on node relationships.
+- [Keyword Postprocessor](https://github.com/run-llama/llama_index/blob/e490158e1562c903d99a7fb4a3cb4407b192d63a/llama-index-core/llama_index/core/postprocessor/node.py#L20): filters nodes based on keyword match
+- [Colbert Rerank Postprocessor](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/postprocessor/llama-index-postprocessor-colbert-rerank/llama_index/postprocessor/colbert_rerank): reranks retrieved nodes.
+- [Presidio Postprocessor](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/postprocessor/llama-index-postprocessor-presidio): provides some data privacy on retrieved nodes by omitting personal information.
 
 ---
 
@@ -286,18 +282,14 @@ An output parser enables us to extract structured output from the plain text out
 
 **Examples**:
 
-- [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/guardrails.py)
-- [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/langchain.py)
+- [Guardrails Output Parser](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/output_parsers/llama-index-output-parsers-guardrails)
+- [Langchain Output Parser](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/output_parsers/llama-index-output-parsers-langchain)
 
-See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structured_outputs/output_parser.html) for more information.
+See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structured_outputs/) for more information.
 
 ---
 
 ### 2. 📦 Contribute a Pack, Reader, Tool, or Dataset (formerly from llama-hub)
-
-Tools, Readers, and Packs have all been migrated from [llama-hub](https://github.com/run-llama/llama-hub) to the main
-llama-index repo (i.e., this one). Datasets still reside in llama-hub, but will be
-migrated here in the near future.
 
 Contributing a new Reader or Tool involves submitting a new package within
 the [llama-index-integrations/readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers) and [llama-index-integrations/tools](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/tools),
@@ -345,13 +337,9 @@ that represent enhancements from the current set of capabilities.
 General improvements that make these core abstractions more robust and thus
 easier to build on are also welcome!
 
-A [Requests For Contribution Project Board](https://github.com/orgs/run-llama/projects/2)
-has been curated and can provide some ideas for what contributions can be made
-into core.
-
 ### 4. 🐛 Fix Bugs
 
-Most bugs are reported and tracked in the [Github Issues Page](https://github.com/jerryjliu/llama_index/issues).
+Most bugs are reported and tracked in the [Github Issues Page](https://github.com/run-llama/llama_index/issues).
 We try our best in triaging and tagging these issues:
 
 - Issues tagged as `bug` are confirmed bugs.
@@ -363,8 +351,8 @@ Please feel free to open an issue and/or assign an issue to yourself.
 
 If you have applied LlamaIndex to a unique use-case (e.g. interesting dataset, customized index structure, complex query), we would love your contribution in the form of:
 
-1. a guide: e.g. [Guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data.html)
-2. an example notebook: e.g. [Email Info Extraction](/examples/usecases/email_data_extraction.ipynb)
+1. a guide: e.g. [Guide to LlamIndex + Structured Data](https://docs.llamaindex.ai/en/stable/understanding/putting_it_all_together/structured_data/)
+2. an example notebook: e.g. [Email Info Extraction](https://docs.llamaindex.ai/en/stable/examples/usecases/email_data_extraction/)
 
 ### 6. 🧪 Add Experimental Features
 
@@ -377,6 +365,10 @@ We would love your help in making the project cleaner, more robust, and more und
 
 ## Development Guidelines
 
+### Repo Structure
+
+The `llama_index` repo is structured as a mono-repo of many packages. For example, `llama-index-core/`, `llama-index-integrations/llms/llama-index-llms-openai`, and `llama-index-integrations/embeddings/llama-index-embeddings-openai` are all separate python packages. This organization should hopefully direct you to where you want to make a change or add a new modules.
+
 ### Setting up environment
 
 LlamaIndex is a Python package. We've tested primarily with Python versions >= 3.8. Here's a quick
@@ -385,11 +377,12 @@ and dirty guide to setting up your environment for local development.
 1. Fork [LlamaIndex Github repo][ghr]\* and clone it locally. (New to GitHub / git? Here's [how][frk].)
 2. In a terminal, `cd` into the directory of your local clone of your forked repo.
 3. Install [pre-commit hooks][pch]\* by running `pre-commit install`. These hooks are small house-keeping scripts executed every time you make a git commit, which automates away a lot of chores.
-4. `cd` into the specific package you want to work on. For example, if I want to work on the core package, I execute `cd llama-index-core/`. (New to terminal / command line? Here's a [getting started guide][gsg].)
-5. Prepare a [virtual environment][vev].
+4. Prepare a [virtual environment][vev].
    1. [Install Poetry][pet]\*. This will help you manage package dependencies.
    2. Execute `poetry shell`. This command will create a [virtual environment][vev] specific for this package, which keeps installed packages contained to this project. (New to Poetry, the dependency & packaging manager for Python? Read about its basic usage [here][bus].)
-   3. Execute `poetry install --with dev,docs`\*. This will install all dependencies needed for local development. To see what will be installed, read the `pyproject.toml` under that directory.
+   3. Execute `poetry install --only dev,docs`\*. This will install all dependencies needed for local development. To see what will be installed, read the `pyproject.toml` under that directory.
+5. `cd` into the specific package you want to work on. For example, if I want to work on the core package, I execute `cd llama-index-core/`. (New to terminal / command line? Here's a [getting started guide][gsg].)
+6. Install that specific integration with `pip install -e .` (or alternatively, `pip install -e <path to package>`). This will install the package in editable mode, which means any changes you make to that package will show up when you run your code again. **NOTE:** If working in a notebook, you will need to restart it for changes to packages to show up.
 
 [frk]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo
 [ghr]: https://github.com/run-llama/llama_index/
@@ -434,12 +427,6 @@ Reciprocally, you should **run existing tests** (from every package that you tou
 (By the way, when a test is run with the goal of detecting whether something broke in a new version of the codebase, it's referred to as a "[regression test][reg]". You'll also hear people say "the test _regressed_" as a more diplomatic way of saying "the test _failed_".)
 
 Our tests are stored in the `tests` folders under each package directory. We use the testing framework [pytest][pyt], so you can **just run `pytest` in each package you touched** to run all its tests.
-
-Just like with formatting and linting, if you prefer to do things the [make][mkf] way, run:
-
-```shell
-make test
-```
 
 Regardless of whether you have run them locally, a [CI system][cis] will run all affected tests on your PR when you submit one anyway. There, tests are orchestrated with [Pants][pts], the build system of our choice. There is a slight chance that tests broke on CI didn't break on your local machine or the other way around. When that happens, please take our CI as the source of truth. This is because our release pipeline (which builds the packages users are going to download from PyPI) are run in the CI, not on your machine (even if you volunteer), so it's the CI that is the golden standard.
 

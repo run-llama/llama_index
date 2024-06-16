@@ -163,3 +163,63 @@ def test_default_output_parser() -> None:
         "testing": "testing2",
         "number": "123456789",
     }
+
+
+def test_nl_query_engine_parser(
+    mock_service_context: ServiceContext,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test the sql response parser."""
+    index_kwargs, _ = struct_kwargs
+    docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    # NOTE: table is created by tying to metadata_obj
+    Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine)
+    # NOTE: we can use the default output parser for this
+    index = SQLStructStoreIndex.from_documents(
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        service_context=mock_service_context,
+        **index_kwargs
+    )
+    nl_query_engine = NLStructStoreQueryEngine(index)
+
+    # Response with SQLResult
+    response = "SELECT * FROM table; SQLResult: [(1, 'value')]"
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with SQLQuery
+    response = "SQLQuery: SELECT * FROM table;"
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with ```sql markdown
+    response = "```sql\nSELECT * FROM table;\n```"
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with extra text after semi-colon
+    response = "SELECT * FROM table; This is extra text."
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with escaped single quotes
+    response = "SELECT * FROM table WHERE name = \\'O\\'Reilly\\';"
+    assert (
+        nl_query_engine._parse_response_to_sql(response)
+        == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )
+
+    # Response with escaped single quotes
+    response = "SQLQuery: ```sql\nSELECT * FROM table WHERE name = \\'O\\'Reilly\\';\n``` Extra test SQLResult: [(1, 'value')]"
+    assert (
+        nl_query_engine._parse_response_to_sql(response)
+        == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )

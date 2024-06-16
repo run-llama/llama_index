@@ -4,7 +4,7 @@ This tool allows Agents to load a plugin using a ChatGPT manifest file, and have
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/chatgpt_plugin.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-chatgpt-plugin/examples/chatgpt_plugin.ipynb)
 
 ```python
 # Load the manifest

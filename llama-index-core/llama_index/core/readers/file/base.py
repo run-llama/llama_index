@@ -34,7 +34,7 @@ class FileSystemReaderMixin(ABC):
             bytes: File content.
         """
 
-    def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
+    async def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
         """
         Read the bytes content of a file asynchronously.
 
@@ -58,6 +58,7 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
             MarkdownReader,
             MboxReader,
             PandasCSVReader,
+            PandasExcelReader,
             PDFReader,
             PptxReader,
             VideoAudioReader,
@@ -72,9 +73,11 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".pptx": PptxReader,
         ".ppt": PptxReader,
         ".pptm": PptxReader,
+        ".gif": ImageReader,
         ".jpg": ImageReader,
         ".png": ImageReader,
         ".jpeg": ImageReader,
+        ".webp": ImageReader,
         ".mp3": VideoAudioReader,
         ".mp4": VideoAudioReader,
         ".csv": PandasCSVReader,
@@ -82,6 +85,8 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".md": MarkdownReader,
         ".mbox": MboxReader,
         ".ipynb": IPYNBReader,
+        ".xls": PandasExcelReader,
+        ".xlsx": PandasExcelReader,
     }
     return default_file_reader_cls
 

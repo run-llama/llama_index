@@ -1,5 +1,4 @@
 import asyncio
-from threading import Thread
 from typing import Any, List, Optional, Type
 
 from llama_index.core.base.llms.types import ChatMessage
@@ -17,6 +16,7 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
+from llama_index.core.types import Thread
 
 
 class SimpleChatEngine(BaseChatEngine):

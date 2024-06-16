@@ -163,6 +163,18 @@ class IndexList(IndexStruct):
 
 
 @dataclass
+class IndexLPG(IndexStruct):
+    """An index struct for LPG index (doesn't actually store anything)."""
+
+    def add_node(self, node: BaseNode) -> None:
+        pass
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        return IndexStructType.SIMPLE_LPG
+
+
+@dataclass
 class IndexDict(IndexStruct):
     """A simple dictionary of documents."""
 

@@ -361,7 +361,7 @@ class Ollama(CustomLLM):
                     url=f"{self.base_url}/api/generate",
                     json=payload,
                 ) as response:
-                    async for line in response.aiter_text():
+                    async for line in response.aiter_lines():
                         if line:
                             chunk = json.loads(line)
                             delta = chunk.get("response")

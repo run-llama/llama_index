@@ -422,3 +422,19 @@ def test_validates_api_key_is_present() -> None:
         # We can create a new LLM when the api_key is set on the
         # class directly
         assert OpenAI(api_key="sk-" + ("a" * 48))
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_completion_model_with_retry(MockSyncOpenAI: MagicMock) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.completions.create.side_effect = openai.APITimeoutError(None)
+
+    llm = OpenAI(model="text-davinci-003", max_retries=3)
+    prompt = "test prompt"
+    with pytest.raises(openai.APITimeoutError) as exc:
+        llm.complete(prompt)
+
+    assert exc.value.message == "Request timed out."
+    # The actual retry count is max_retries - 1
+    # see https://github.com/jd/tenacity/issues/459
+    assert mock_instance.completions.create.call_count == 3
