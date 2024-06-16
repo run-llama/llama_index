@@ -41,8 +41,8 @@ class AzureKVStore(BaseKVStore):
 
     def __init__(
         self,
-        table_client: Any,
-        atable_client: Optional[Any] = None,
+        table_service_client: Any,
+        atable_service_client: Optional[Any] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
         *args: Any,
@@ -64,9 +64,9 @@ class AzureKVStore(BaseKVStore):
 
         super().__init__(*args, **kwargs)
 
-        self._table_client = cast(TableServiceClient, table_client)
+        self._table_service_client = cast(TableServiceClient, table_service_client)
         self._atable_service_client = cast(
-            Optional[AsyncTableServiceClient], atable_client
+            Optional[AsyncTableServiceClient], atable_service_client
         )
 
     @classmethod
@@ -185,7 +185,7 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         table_client.upsert_entity(
             {
                 "PartitionKey": self.partition_key,
@@ -213,10 +213,10 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        atable_service_client = (
-            await self._atable_service_client.create_table_if_not_exists(table_name)
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
+            table_name
         )
-        await atable_service_client.upsert_entity(
+        await atable_client.upsert_entity(
             {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
@@ -242,7 +242,7 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
 
         entities = []
         for key, val in kv_pairs:
@@ -325,7 +325,7 @@ class AzureKVStore(BaseKVStore):
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
 
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         try:
             entity = table_client.get_entity(
                 partition_key=self.partition_key, row_key=key, select=select
@@ -374,7 +374,7 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         entities = table_client.list_entities(
             filter=f"PartitionKey eq '{self.partition_key}'",
             select=select,
@@ -421,7 +421,7 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         table_client.delete_entity(partition_key=self.partition_key, row_key=key)
         return True
 
@@ -458,7 +458,7 @@ class AzureKVStore(BaseKVStore):
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
 
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         try:
             entities = table_client.query_entities(
                 query_filter=query_filter, select=select
