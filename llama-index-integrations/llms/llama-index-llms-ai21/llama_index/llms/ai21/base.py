@@ -292,7 +292,7 @@ class AI21(CustomLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         if self._is_j2_model():
-            return self._j2_completion(prompt, formatted, **all_kwargs)
+            return await self._j2_async_complete(prompt, formatted, **all_kwargs)
 
         acomplete_fn = achat_to_completion_decorator(self.achat)
         return await acomplete_fn(prompt, **kwargs)
