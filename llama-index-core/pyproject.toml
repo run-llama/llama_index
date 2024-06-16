@@ -43,7 +43,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.10.37.post1"
+version = "0.10.45"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -62,8 +62,6 @@ tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
 requests = ">=2.31.0"  # Pin to avoid CVE-2023-32681 in requests 2.3 to 2.30
-jsonpath-ng = {optional = true, version = "^1.6.0"}
-spacy = {optional = true, version = "^3.7.1"}
 aiohttp = "^3.8.6"
 networkx = ">=3.0"
 dirtyjson = "^1.0.8"

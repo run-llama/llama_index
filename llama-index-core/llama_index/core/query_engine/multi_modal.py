@@ -1,9 +1,8 @@
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
-from llama_index.core.indices.multi_modal import MultiModalVectorIndexRetriever
 from llama_index.core.indices.query.base import BaseQueryEngine
 from llama_index.core.indices.query.schema import QueryBundle, QueryType
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
@@ -11,7 +10,10 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.prompts.mixin import PromptMixinType
-from llama_index.core.schema import ImageNode, NodeWithScore
+from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
+
+if TYPE_CHECKING:
+    from llama_index.core.indices.multi_modal import MultiModalVectorIndexRetriever
 
 
 def _get_image_and_text_nodes(
@@ -43,7 +45,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
 
     def __init__(
         self,
-        retriever: MultiModalVectorIndexRetriever,
+        retriever: "MultiModalVectorIndexRetriever",
         multi_modal_llm: Optional[MultiModalLLM] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         image_qa_template: Optional[BasePromptTemplate] = None,
@@ -110,7 +112,9 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-        context_str = "\n\n".join([r.get_content() for r in text_nodes])
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
@@ -151,7 +155,9 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
     ) -> RESPONSE_TYPE:
         image_nodes, text_nodes = _get_image_and_text_nodes(nodes)
-        context_str = "\n\n".join([r.get_content() for r in text_nodes])
+        context_str = "\n\n".join(
+            [r.get_content(metadata_mode=MetadataMode.LLM) for r in text_nodes]
+        )
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
@@ -239,6 +245,6 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         return response
 
     @property
-    def retriever(self) -> MultiModalVectorIndexRetriever:
+    def retriever(self) -> "MultiModalVectorIndexRetriever":
         """Get the retriever object."""
         return self._retriever

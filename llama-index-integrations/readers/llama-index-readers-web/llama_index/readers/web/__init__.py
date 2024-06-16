@@ -23,6 +23,9 @@ from llama_index.readers.web.rss.base import (
 from llama_index.readers.web.rss_news.base import (
     RssNewsReader,
 )
+from llama_index.readers.web.scrapfly_web.base import (
+    ScrapflyReader,
+)
 from llama_index.readers.web.simple_web.base import (
     SimpleWebPageReader,
 )
@@ -54,6 +57,7 @@ __all__ = [
     "ReadabilityWebPageReader",
     "RssReader",
     "RssNewsReader",
+    "ScrapflyReader",
     "SimpleWebPageReader",
     "SitemapReader",
     "SpiderWebReader",

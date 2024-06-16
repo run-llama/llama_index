@@ -29,11 +29,11 @@ license = "MIT"
 maintainers = ["EugeneLightsOn"]
 name = "llama-index-packs-cohere-citation-chat"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.7"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.35"
+llama-index-core = "^0.10.41"
 llama-index-llms-cohere = ">=0.1.2"
 llama-index-embeddings-cohere = "^0.1.2"
 

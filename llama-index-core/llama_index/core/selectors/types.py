@@ -6,6 +6,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle, QueryType
 from llama_index.core.tools.types import ToolMetadata
@@ -72,7 +73,7 @@ def _wrap_query(query: QueryType) -> QueryBundle:
         raise ValueError(f"Unexpected type: {type(query)}")
 
 
-class BaseSelector(PromptMixin, ChainableMixin):
+class BaseSelector(PromptMixin, ChainableMixin, DispatcherSpanMixin):
     """Base selector."""
 
     def _get_prompt_modules(self) -> PromptMixinType:

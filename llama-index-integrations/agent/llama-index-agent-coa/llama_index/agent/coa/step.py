@@ -120,7 +120,7 @@ class CoAAgentWorker(BaseAgentWorker):
         new_memory = ChatMemoryBuffer.from_defaults()
 
         # put current history in new memory
-        messages = task.memory.get()
+        messages = task.memory.get(input=task.input)
         for message in messages:
             new_memory.put(message)
 
@@ -270,6 +270,6 @@ class CoAAgentWorker(BaseAgentWorker):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
-        task.memory.set(task.memory.get() + task.extra_state["new_memory"].get_all())
+        task.memory.put_messages(task.extra_state["new_memory"].get_all())
         # reset new memory
         task.extra_state["new_memory"].reset()

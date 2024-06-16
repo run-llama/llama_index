@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from threading import Thread
 from typing import Any, List, Optional, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -25,6 +24,7 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
+from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
 
 logger = logging.getLogger(__name__)
@@ -196,7 +196,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get()
+        chat_history = self._memory.get(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = self._condense_question(chat_history, message)  # type: ignore
@@ -243,7 +243,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get()
+        chat_history = self._memory.get(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)  # type: ignore

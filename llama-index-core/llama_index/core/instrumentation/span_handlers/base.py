@@ -52,17 +52,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
             self._lock = threading.Lock()
         return self._lock
 
-    @property
-    def current_span_id(self) -> Optional[str]:
-        current_thread = threading.get_ident()
-        if current_thread in self.current_span_ids:
-            return self.current_span_ids[current_thread]
-        return None
-
-    def set_current_span_id(self, value: str) -> None:
-        current_thread = threading.get_ident()
-        self.current_span_ids[current_thread] = value
-
     def span_enter(
         self,
         id_: str,
@@ -75,17 +64,15 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         if id_ in self.open_spans:
             pass  # should probably raise an error here
         else:
-            # TODO: thread safe?
             span = self.new_span(
                 id_=id_,
                 bound_args=bound_args,
                 instance=instance,
-                parent_span_id=parent_id or self.current_span_id,
+                parent_span_id=parent_id,
             )
             if span:
                 with self.lock:
                     self.open_spans[id_] = span
-                    self.set_current_span_id(id_)
 
     def span_exit(
         self,
@@ -101,12 +88,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         )
         if span:
             with self.lock:
-                if self.current_span_id == id_:
-                    self.set_current_span_id(self.open_spans[id_].parent_id)
                 del self.open_spans[id_]
-        if not self.open_spans:  # empty so flush
-            with self.lock:
-                self.set_current_span_id(None)
 
     def span_drop(
         self,
@@ -122,8 +104,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         )
         if span:
             with self.lock:
-                if self.current_span_id == id_:
-                    self.set_current_span_id(self.open_spans[id_].parent_id)
                 del self.open_spans[id_]
 
     @abstractmethod

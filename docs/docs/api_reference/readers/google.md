@@ -6,4 +6,5 @@
         - GoogleDocsReader
         - GoogleDriveReader
         - GoogleKeepReader
+        - GoogleMapsTextSearchReader
         - GoogleSheetsReader

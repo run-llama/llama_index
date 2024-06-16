@@ -2,4 +2,3 @@
     options:
       members:
         - HuggingFaceEmbedding
-        - HuggingFaceInferenceAPIEmbedding

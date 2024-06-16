@@ -57,7 +57,7 @@ def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
 
     # When I get the chat history from the memory
     with pytest.raises(ValueError) as error:
-        memory.get(initial_tokens)
+        memory.get(initial_token_count=initial_tokens)
 
     # Then a value error should be raised
     assert str(error.value) == "Initial token count exceeds token limit"
@@ -73,7 +73,7 @@ def test_get_when_initial_tokens_same_as_limit_removes_message() -> None:
     )
 
     # When I get the chat history from the memory
-    history = memory.get(initial_tokens)
+    history = memory.get(initial_token_count=initial_tokens)
 
     # Then the history should be empty
     assert len(history) == 0
@@ -93,7 +93,7 @@ def test_get_when_space_for_assistant_message_removes_assistant_message_at_start
     )
 
     # When I get the chat history from the memory
-    history = memory.get(initial_tokens)
+    history = memory.get(initial_token_count=initial_tokens)
 
     # Then the history should be empty
     assert len(history) == 0
@@ -120,7 +120,7 @@ def test_get_when_space_for_second_message_and_answer_removes_only_first_message
     )
 
     # When I get the chat history from the memory
-    history = memory.get(initial_tokens)
+    history = memory.get(initial_token_count=initial_tokens)
 
     # Then the history should contain the second message and the second answer
     assert len(history) == 2
@@ -152,7 +152,7 @@ def test_get_when_space_for_all_but_first_message_removes_first_message_and_answ
     )
 
     # When I get the chat history from the memory
-    history = memory.get(initial_tokens)
+    history = memory.get(initial_token_count=initial_tokens)
 
     # Then the history should contain the second message and the second answer
     assert len(history) == 2

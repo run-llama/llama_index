@@ -8,7 +8,7 @@ This tool loads an OpenAPI spec and allow the Agent to retrieve endpoints and de
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/openapi_and_requests.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-openapi/examples/openapi_and_requests.ipynb)
 
 Here's an example usage of the OpenAPIToolSpec.
 

@@ -1,5 +1,4 @@
 """Vector store index types."""
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -69,8 +68,10 @@ class FilterOperator(str, Enum):
     NE = "!="  # not equal to (string, int, float)
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
-    IN = "in"  # metadata in value array (string or number)
-    NIN = "nin"  # metadata not in value array (string or number)
+    IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
+    ANY = "any"  # Contains any (array of strings)
+    ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
     CONTAINS = "contains"  # metadata array contains value (string or number)
 
@@ -97,7 +98,9 @@ class MetadataFilter(BaseModel):
         StrictInt,
         StrictFloat,
         StrictStr,
-        List[Union[StrictInt, StrictFloat, StrictStr]],
+        List[StrictStr],
+        List[StrictFloat],
+        List[StrictInt],
     ]
     operator: FilterOperator = FilterOperator.EQ
 

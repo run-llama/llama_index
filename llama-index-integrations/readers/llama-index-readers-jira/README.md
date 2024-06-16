@@ -5,7 +5,7 @@ pip install llama-index-readers-jira
 ```
 
 The Jira loader returns a set of issues based on the query provided to the dataloader.
-We can follow two methods to initialize the loader-
+We can follow three methods to initialize the loader-
 1- basic_auth -> this takes a dict with the following keys
 `basic_auth:{
 "email": "email",
@@ -15,6 +15,11 @@ We can follow two methods to initialize the loader-
 2- Oauth2 -> this takes a dict with the following keys
 `oauth:{
 "cloud_id": "cloud_id",
+"api_token": "token"
+}`
+3- Personal access Token with Server hosted instance
+`PATauth:{
+"server_url": "server_url",
 "api_token": "token"
 }`
 
