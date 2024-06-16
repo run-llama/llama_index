@@ -34,19 +34,15 @@ class CleanlabTLM(CustomLLM):
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
         self._api_key = api_key
+        self.quality_preset = quality_preset
 
-        super().__init__(
-            model=model,
-            maxTokens=maxTokens,
-            temperature=temperature,
-            additional_kwargs=additional_kwargs,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-        )
+        self._studio = Studio(api_key = self._api_key)
+        self._client = self._studio.TLM(quality_preset = self.quality_preset)
+
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "CleanlabTLM"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -60,60 +56,19 @@ class CleanlabTLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # Prompt TLM for a response and trustworthiness score
-        response: Dict[str, str] = tlm.prompt(prompt)
+        response: Dict[str, str] = self._client.prompt(prompt)
         output = json.dumps(response)
-        return CompletionResponse(text=output)
+        return CompletionResponse(text=response['text'], additional_kwargs={'trustworthiness_score': response['trustworthiness_score']})
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         # Prompt TLM for a response and trustworthiness score
-        response = tlm.prompt(prompt)
+        response = self._client.prompt(prompt)
         output = json.dumps(response)
 
+        # TODO: figure how to stream additional_kwargs. workaround: dump `trustworthiness_score` as str
         # Stream the output
         output_str = ""
         for token in output:
             output_str += token
             yield CompletionResponse(text=output_str, delta=token)
-
-class Databricks(OpenAILike):
-    """Databricks LLM.
-
-    Examples:
-        `pip install llama-index-llms-databricks`
-
-        ```python
-        from llama_index.llms.databricks import Databricks
-
-        # Set up the Databricks class with the required model, API key and serving endpoint
-        llm = Databricks(model="databricks-dbrx-instruct", api_key="your_api_key", api_base="https://[your-work-space].cloud.databricks.com/serving-endpoints")
-
-        # Call the complete method with a query
-        response = llm.complete("Explain the importance of open source LLMs")
-
-        print(response)
-        ```
-    """
-
-    def __init__(
-        self,
-        model: str,
-        api_key: Optional[str] = None,
-        api_base: Optional[str] = None,
-        is_chat_model: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        api_key = api_key or os.environ.get("DATABRICKS_TOKEN", None)
-        api_base = api_base or os.environ.get("DATABRICKS_SERVING_ENDPOINT", None)
-        super().__init__(
-            model=model,
-            api_key=api_key,
-            api_base=api_base,
-            is_chat_model=is_chat_model,
-            **kwargs,
-        )
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Get class name."""
-        return "Databricks"
