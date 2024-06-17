@@ -63,13 +63,13 @@ class CleanlabTLM(CustomLLM):
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # Prompt TLM for a response and trustworthiness score
         response: Dict[str, str] = self._client.prompt(prompt)
-        output = json.dumps(response)
-        return CompletionResponse(text=response['text'], additional_kwargs={'trustworthiness_score': response['trustworthiness_score']})
+        # output = json.dumps(response)
+        return CompletionResponse(text=response['response'], additional_kwargs={'trustworthiness_score': response['trustworthiness_score']})
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         # Prompt TLM for a response and trustworthiness score
-        response = client.prompt(prompt)
+        response = self._client.prompt(prompt)
         output = json.dumps(response)
 
         # TODO: figure how to stream additional_kwargs. workaround: dump `trustworthiness_score` as str
