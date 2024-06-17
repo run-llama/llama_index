@@ -1,5 +1,66 @@
 # ChangeLog
 
+## [2024-06-17]
+
+### `llama-index-core`[0.10.46]
+
+- Add precision and recall metrics (#14170)
+- Enable Function calling and agent runner for Vertex AI (#14088)
+- fix for batch_gather (#14162)
+
+### `llama-index-utils-huggingface` [0.1.1]
+
+- Remove sentence-transformers dependency from HuggingFace utils package (#14204)
+
+### `llama-index-finetuning` [0.1.8]
+
+- Add MistralAI Finetuning API support (#14101)
+
+### `llama-index-llms-mistralai` [0.1.16]
+
+- Update MistralAI (#14199)
+
+### `llama-index-llms-bedrock-converse` [0.1.0]
+
+- fix: 🐛 Fix Bedrock Converse' pyproject.toml for the PyPI release (#14197)
+
+### `llama-index-utils-azure` [0.1.1]
+
+- Use typical include llama_index/ (#14196)
+- Feature/azure_table_storage (#14182)
+
+### `llama-index-embeddings-nvidia` [0.1.4]
+
+- add support for nvidia/nv-embed-v1 (https://huggingface.co/nvidia/NV-Embed-v1) (#14194)
+
+### `llama-index-retrievers-you` [0.1.3]
+
+- add news retriever (#13934)
+
+### `llama-index-storage-kvstore-azure` [0.1.1]
+
+- Fixes a bug where there is a missing await. (#14177)
+
+### `llama-index-embeddings-nomic` [0.4.0post1]
+
+- Restore Nomic Embed einops dependency (#14176)
+
+### `llama-index-retrievers-bm25` [0.1.4]
+
+- Changing BM25Retriever \_retrieve to use numpy methods (#14015)
+
+### `llama-index-llms-gemini` [0.1.11]
+
+- Add missing @llm_chat_callback() to Gemini.stream_chat (#14166)
+
+### `llama-index-llms-vertex` [0.2.0]
+
+- Enable Function calling and agent runner for Vertex AI (#14088)
+
+### `llama-index-vector-stores-opensearch` [0.1.11]
+
+- feat: support VectorStoreQueryMode.TEXT_SEARCH on OpenSearch VectorStore (#14153)
+
 ## [2024-06-14]
 
 ### `llama-index-core` [0.10.45]
