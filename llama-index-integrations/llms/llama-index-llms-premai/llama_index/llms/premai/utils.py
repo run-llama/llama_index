@@ -17,7 +17,7 @@ def prepare_messages_before_chat(messages: Sequence[ChatMessage], **all_kwargs):
             chat_messages.append(
                 {"role": message.role.value, "content": message.content}
             )
-        elif message.role.value == "user":
+        elif message.role.value == MessageRole.USER:
             if "template_id" not in all_kwargs:
                 chat_messages.append(
                     {"role": message.role.value, "content": message.content}
