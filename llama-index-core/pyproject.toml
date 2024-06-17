@@ -53,7 +53,7 @@ fsspec = ">=2023.5.0"
 httpx = "*"
 nest-asyncio = "^1.5.8"
 nltk = "^3.8.1"
-numpy = "*"
+numpy = "<2.0.0"  # Pin until we adapt to Numpy v2
 openai = ">=1.1.0"
 pandas = "*"
 python = ">=3.8.1,<4.0"
