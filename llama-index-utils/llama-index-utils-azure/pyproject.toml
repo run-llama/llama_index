@@ -57,5 +57,4 @@ extras = ["toml"]
 version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
-from = "llama-index-utils-azure/llama_index/utils/azure"
-include = "llama_index.utils.azure"
+include = "llama_index/"
