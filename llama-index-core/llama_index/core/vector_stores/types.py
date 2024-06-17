@@ -98,9 +98,9 @@ class MetadataFilter(BaseModel):
         StrictInt,
         StrictFloat,
         StrictStr,
-        List[StrictInt],
-        List[StrictFloat],
         List[StrictStr],
+        List[StrictFloat],
+        List[StrictInt],
     ]
     operator: FilterOperator = FilterOperator.EQ
 

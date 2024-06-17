@@ -285,7 +285,7 @@ def build_configurable_transformation_enum():
         pass
 
     try:
-        from llama_index.embeddings.huggingface import (
+        from llama_index.embeddings.huggingface_api import (
             HuggingFaceInferenceAPIEmbedding,
         )  # pants: no-infer-dep
 

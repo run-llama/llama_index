@@ -42,20 +42,14 @@ class BedrockEmbedding(BaseEmbedding):
     model_name: str = Field(description="The modelId of the Bedrock model to use.")
     profile_name: Optional[str] = Field(
         description="The name of aws profile to use. If not given, then the default profile is used.",
-        exclude=True,
     )
-    aws_access_key_id: Optional[str] = Field(
-        description="AWS Access Key ID to use", exclude=True
-    )
+    aws_access_key_id: Optional[str] = Field(description="AWS Access Key ID to use")
     aws_secret_access_key: Optional[str] = Field(
-        description="AWS Secret Access Key to use", exclude=True
+        description="AWS Secret Access Key to use"
     )
-    aws_session_token: Optional[str] = Field(
-        description="AWS Session Token to use", exclude=True
-    )
+    aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
     region_name: Optional[str] = Field(
         description="AWS region name to use. Uses region configured in AWS CLI if not passed",
-        exclude=True,
     )
     botocore_session: Optional[Any] = Field(
         description="Use this Botocore session instead of creating a new default one.",
