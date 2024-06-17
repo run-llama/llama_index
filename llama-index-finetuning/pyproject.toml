@@ -32,10 +32,11 @@ python = ">=3.9,<4.0"
 llama-index-core = "^0.10.11.post1"
 llama-index-llms-openai = "^0.1.1"
 llama-index-llms-gradient = "^0.1.1"
-llama-index-llms-mistralai = "^0.1.15"
+llama-index-llms-mistralai = "^0.1.16"
 llama-index-postprocessor-cohere-rerank = "^0.1.1"
 llama-index-embeddings-adapter = "^0.1.2"
 sentence-transformers = "^2.3.0"
+tenacity = ">=8.2.0,<8.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
