@@ -4,9 +4,10 @@
 
 ### `llama-index-core`[0.10.46]
 
+- Fix Pin tenacity and numpy in core (#14203)
 - Add precision and recall metrics (#14170)
 - Enable Function calling and agent runner for Vertex AI (#14088)
-- fix for batch_gather (#14162)
+- Fix for batch_gather (#14162)
 
 ### `llama-index-utils-huggingface` [0.1.1]
 
