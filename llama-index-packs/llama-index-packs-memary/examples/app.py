@@ -19,7 +19,7 @@ parent_dir = os.path.dirname(curr_dir)
 
 sys.path.append(parent_dir + "/src")
 
-from llama_index.packs.memary.agent.chat_agent import ChatAgent
+from llama_index.packs.memary.base import MemaryChatAgentPack
 
 load_dotenv()
 
@@ -28,7 +28,7 @@ user_persona_txt = "data/user_persona.txt"
 past_chat_json = "data/past_chat.json"
 memory_stream_json = "data/memory_stream.json"
 entity_knowledge_store_json = "data/entity_knowledge_store.json"
-chat_agent = ChatAgent(
+chat_agent = MemaryChatAgentPack(
     "Personal Agent",
     memory_stream_json,
     entity_knowledge_store_json,
@@ -120,7 +120,7 @@ selected_vision_model = st.selectbox(
 )
 
 if selected_llm_model and selected_vision_model:
-    chat_agent = ChatAgent(
+    chat_agent = MemaryChatAgentPack(
         "Personal Agent",
         memory_stream_json,
         entity_knowledge_store_json,
