@@ -343,7 +343,7 @@ class AI21(CustomLLM):
     async def _j2_async_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        response = self._async_client.completion.create(
+        response = await self._async_client.completion.create(
             prompt=prompt,
             stream=False,
             **kwargs,
