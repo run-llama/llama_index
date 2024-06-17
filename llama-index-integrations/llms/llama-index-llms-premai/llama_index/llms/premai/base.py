@@ -27,6 +27,8 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.llms.llm import LLM
 
+from llama_index.llms.premai.utils import prepare_messages_before_chat
+
 from premai import Prem
 
 
@@ -177,55 +179,12 @@ class PremAI(LLM):
                 all_kwargs.pop(key, None)
         return all_kwargs
 
-    def _prepare_messages_before_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ):
-        chat_messages = []
-        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
-
-        for message in messages:
-            if "system_prompt" in all_kwargs and message.role.value == "system":
-                continue
-            elif "system_prompt" not in all_kwargs and message.role.value == "system":
-                all_kwargs["system_prompt"] = message.content
-            elif message.role.value == "assistant":
-                chat_messages.append(
-                    {"role": message.role.value, "content": message.content}
-                )
-            elif message.role.value == "user":
-                if "template_id" not in kwargs:
-                    chat_messages.append(
-                        {"role": message.role.value, "content": message.content}
-                    )
-                else:
-                    template_id = kwargs["template_id"]
-                    assert template_id is not None and template_id != "", ValueError(
-                        "template_id can not be None or '' when passed in kwargs"
-                    )
-                    assert "id" in message.additional_kwargs, KeyError(
-                        "When using Prem templates in llama-index, ensure you have 'id' key ",
-                        "in message.additional_kwargs. This id act as the template variable. ",
-                        "If you do not have template variable then use only system prompt",
-                    )
-
-                    chat_messages.append(
-                        {
-                            "role": message.role.value,
-                            "template_id": template_id,
-                            "params": {
-                                message.additional_kwargs["id"]: message.content
-                            },
-                        }
-                    )
-
-            else:
-                raise ValueError("role can be either 'system', 'user' or 'assistant'")
-        return chat_messages, all_kwargs
-
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        chat_messages, all_kwargs = self._prepare_messages_before_chat(
-            messages=messages, **kwargs
+        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
+
+        chat_messages, all_kwargs = prepare_messages_before_chat(
+            messages=messages, **all_kwargs
         )
 
         response = self._client.chat.completions.create(
@@ -255,8 +214,10 @@ class PremAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        chat_messages, all_kwargs = self._prepare_messages_before_chat(
-            messages=messages, **kwargs
+        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
+
+        chat_messages, all_kwargs = prepare_messages_before_chat(
+            messages=messages, **all_kwargs
         )
 
         response_generator = self._client.chat.completions.create(
