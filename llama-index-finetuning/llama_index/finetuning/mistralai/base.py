@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from typing import Any, Optional, Dict
+import sys
 
 from mistralai.client import MistralClient
 from mistralai.models.jobs import DetailedJob, WandbIntegrationIn, TrainingParameters
@@ -15,6 +16,9 @@ from llama_index.finetuning.callbacks.finetuning_handler import (
 from llama_index.finetuning.mistralai.utils import reformat_jsonl
 from llama_index.finetuning.types import BaseLLMFinetuneEngine
 from llama_index.llms.mistralai import MistralAI
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 logger = logging.getLogger(__name__)
 
@@ -85,9 +89,9 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         # launch training
         while True:
             try:
-                job_output = self._client.fine_tuning.jobs.create(
+                job_output = self._client.jobs.create(
                     training_files=[train_file.id],
-                    validation_files=[eval_file.id] if eval_file else None,
+                    validation_files=[eval_file.id] if self.validation_path else None,
                     model=self.base_model,
                     hyperparameters=TrainingParameters(
                         training_steps=self.training_steps,
@@ -130,6 +134,8 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         job_id = current_job.id
         status = current_job.status
         model_id = current_job.fine_tuned_model
+
+        logger.info(f"status of the job_id: {job_id} is {status}")
 
         if model_id is None:
             raise ValueError(
