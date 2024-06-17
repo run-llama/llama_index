@@ -37,7 +37,7 @@ from llama_index.llms.cleanlab import CleanlabTLM
 
 # Set up the CleanlabTLM's class with the required API key and quality preset
 llm = CleanlabTLM(
-    quality_preset="best"  # supported quality presets are: 'best','high','medium','low','base'
+    quality_preset="best",  # supported quality presets are: 'best','high','medium','low','base'
     api_key="your_api_key",
 )
 
