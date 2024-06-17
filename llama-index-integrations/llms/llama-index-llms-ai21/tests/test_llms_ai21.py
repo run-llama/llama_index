@@ -28,7 +28,7 @@ from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.llms import ChatMessage
 
 from llama_index.llms.ai21 import AI21
-from tests.async_iterator import AsyncIterator
+from .async_iterator import AsyncIterator
 
 _PROMPT = "What is the meaning of life?"
 _FAKE_API_KEY = "fake-api-key"
