@@ -82,7 +82,7 @@ class PostgresMLQueryEngine(BaseQueryEngine):
         retriever: PostgresMLRetriever,
         streaming: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
-        query: Optional[Dict[str, Any]] = None,
+        pgml_query: Optional[Dict[str, Any]] = None,
         vector_search_limit: Optional[int] = 4,
         vector_search_rerank: Optional[Dict[str, Any]] = None,
         vector_search_document: Optional[Dict[str, Any]] = {"keys": ["id", "metadata"]},
@@ -93,7 +93,7 @@ class PostgresMLQueryEngine(BaseQueryEngine):
         self._retriever = retriever
         self._streaming = streaming
         self._prompts = deepcopy(PROMPTS)
-        self._query_query = query
+        self._pgml_query = pgml_query
         self._vector_search_limit = vector_search_limit
         self._vector_search_rerank = vector_search_rerank
         self._vector_search_document = vector_search_document
@@ -134,7 +134,7 @@ class PostgresMLQueryEngine(BaseQueryEngine):
     async def _do_query(
         self, query_bundle: Optional[QueryBundle] = None
     ) -> RESPONSE_TYPE:
-        query = self._query_query
+        query = self._pgml_query
         if not query:
             if not query_bundle:
                 raise Exception(

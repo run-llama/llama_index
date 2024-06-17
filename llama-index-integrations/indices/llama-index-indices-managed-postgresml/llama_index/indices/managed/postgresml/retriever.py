@@ -25,14 +25,14 @@ class PostgresMLRetriever(BaseRetriever):
         self,
         index: PostgresMLIndex,
         callback_manager: Optional[CallbackManager] = None,
-        query: Optional[Dict[str, Any]] = None,
+        pgml_query: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = 5,
         rerank: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         """Initialize params."""
         self._index = index
-        self._query = query
+        self._pgml_query = pgml_query
         self._limit = limit
         self._rerank = rerank
         super().__init__(callback_manager)
@@ -49,9 +49,9 @@ class PostgresMLRetriever(BaseRetriever):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         async def do_vector_search():
-            if self._query:
+            if self._pgml_query:
                 return await self._index.collection.vector_search(
-                    self._query,
+                    self._pgml_query,
                     self._index.pipeline,
                 )
             else:
