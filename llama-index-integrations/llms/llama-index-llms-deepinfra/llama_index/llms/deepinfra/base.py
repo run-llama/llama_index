@@ -222,14 +222,14 @@ class DeepInfraLLM(FunctionCallingLLM):
         messages = chat_messages_to_list(messages)
         payload = self._build_payload(messages=messages, **kwargs)
         result = self._client.request(CHAT_API_ENDPOINT, payload)
-        message_object = result["choices"][-1]["message"]
+        mo = result["choices"][-1]["message"]
         additional_kwargs = {
-            "tool_calls": message_object.get("tool_calls", []) or [],
+            "tool_calls": mo.get("tool_calls", []) or [],
         }
         return ChatResponse(
             message=ChatMessage(
-                role=message_object["role"],
-                content=message_object["content"],
+                role=mo["role"],
+                content=mo["content"],
                 additional_kwargs=additional_kwargs,
             ),
             raw=result,
@@ -335,12 +335,12 @@ class DeepInfraLLM(FunctionCallingLLM):
         payload = self._build_payload(messages=messages, **kwargs)
 
         result = await self._client.arequest(CHAT_API_ENDPOINT, payload)
-        message_object = result["choices"][-1]["message"]
-        additional_kwargs = {"tool_calls": message_object.get("tool_calls", []) or []}
+        mo = result["choices"][-1]["message"]
+        additional_kwargs = {"tool_calls": mo.get("tool_calls", []) or []}
         return ChatResponse(
             message=ChatMessage(
-                role=message_object["role"],
-                content=message_object["content"],
+                role=mo["role"],
+                content=mo["content"],
                 additional_kwargs=additional_kwargs,
             ),
             raw=result,
