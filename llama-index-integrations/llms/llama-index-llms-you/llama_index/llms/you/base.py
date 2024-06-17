@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Generator, Literal
+from typing import Any, Dict, Generator, Literal, Optional
 
 import requests
 import sseclient
@@ -18,7 +18,7 @@ RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
 def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
     """
-    This function can be replaced by a OpenAPI-generated Python SDK in the future,
+    NOTE: This function can be replaced by a OpenAPI-generated Python SDK in the future,
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
@@ -47,10 +47,40 @@ def _request_stream(
             raise NotImplementedError(f"Unknown event type {event.event}")
 
 
-class YouLM(CustomLLM):
-    # TODO: DOCME
+class You(CustomLLM):
+    """Wrapper around You.com's conversational Smart and Research APIs.
 
-    mode: Literal["smart", "research"] = Field("smart", description="# TODO[DOCME]")
+    Each API endpoint is designed to generate conversational
+    responses to a variety of query types, including inline citations
+    and web results when relevant.
+
+    Smart Mode:
+    - Quick, reliable answers for a variety of questions
+    - Cites the entire web page URL
+
+    Research Mode:
+    - In-depth answers with extensive citations for a variety of questions
+    - Cites the specific web page snippet relevant to the claim
+
+    To connect to the You.com api requires an API key which
+    you can get at https://api.you.com.
+
+    For more information, check out the documentations at
+    https://documentation.you.com/api-reference/.
+
+    Args:
+        mode: You.com conversational endpoints. Choose from "smart" or "research"
+        ydc_api_key: You.com API key, if `YDC_API_KEY` is not set in the environment
+    """
+
+    mode: Literal["smart", "research"] = Field(
+        "smart",
+        description='You.com conversational endpoints. Choose from "smart" or "research"',
+    )
+    ydc_api_key: Optional[str] = Field(
+        None,
+        description="You.com API key, if `YDC_API_KEY` is not set in the envrioment",
+    )
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -64,7 +94,7 @@ class YouLM(CustomLLM):
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         response = _request(
             self.endpoint,
-            api_key=self.api_key,
+            api_key=self._api_key,
             query=prompt,
         )
         return CompletionResponse(text=response["answer"], raw=response)
@@ -73,7 +103,7 @@ class YouLM(CustomLLM):
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         response = _request_stream(
             self.endpoint,
-            api_key=self.api_key,
+            api_key=self._api_key,
             query=prompt,
         )
 
@@ -89,5 +119,5 @@ class YouLM(CustomLLM):
         return RESEARCH_ENDPOINT
 
     @property
-    def api_key(self) -> str:
-        return os.environ["YDC_API_KEY"]
+    def _api_key(self) -> str:
+        return self.ydc_api_key or os.environ["YDC_API_KEY"]
