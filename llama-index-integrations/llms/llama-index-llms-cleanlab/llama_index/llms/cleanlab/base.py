@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import json
 
 # Import LlamaIndex dependencies
@@ -33,11 +33,10 @@ class CleanlabTLM(CustomLLM):
         additional_kwargs = additional_kwargs or {}
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
-        self._api_key = api_key
-        self.quality_preset = quality_preset
+        #self.quality_preset = quality_preset
 
-        self._studio = Studio(api_key = self._api_key)
-        self._client = self._studio.TLM(quality_preset = self.quality_preset)
+        studio = Studio(api_key = api_key)
+        client = studio.TLM(quality_preset = quality_preset)
 
 
     @classmethod
@@ -56,14 +55,14 @@ class CleanlabTLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # Prompt TLM for a response and trustworthiness score
-        response: Dict[str, str] = self._client.prompt(prompt)
+        response: Dict[str, str] = self.client.prompt(prompt)
         output = json.dumps(response)
         return CompletionResponse(text=response['text'], additional_kwargs={'trustworthiness_score': response['trustworthiness_score']})
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         # Prompt TLM for a response and trustworthiness score
-        response = self._client.prompt(prompt)
+        response = self.client.prompt(prompt)
         output = json.dumps(response)
 
         # TODO: figure how to stream additional_kwargs. workaround: dump `trustworthiness_score` as str
