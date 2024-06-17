@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 from ai21 import AI21Client, AsyncAI21Client
 from ai21.models.chat import ChatCompletionChunk
-from ai21_tokenizer import Tokenizer, BaseTokenizer
+from ai21_tokenizer import Tokenizer, BaseTokenizer  # pants: no-infer-dep
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
