@@ -28,7 +28,11 @@ from llama_index.llms.watsonx.utils import (
 
 
 class WatsonX(LLM):
-    """IBM WatsonX LLM.
+    """
+    IBM WatsonX LLM.
+
+    *Deprecated:* Use ``llama_index.llms.ibm.base.WatsonxLLM`` instead.
+    To install llama-index-llms-ibm run `pip install -U llama-index-llms-ibm` .
 
     Examples:
         `pip install llama-index-llms-watsonx`

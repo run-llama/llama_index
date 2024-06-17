@@ -87,6 +87,7 @@ async def batch_gather(
 ) -> List[Any]:
     output: List[Any] = []
     for task_chunk in chunks(tasks, batch_size):
+        task_chunk = (task for task in task_chunk if task is not None)
         output_chunk = await asyncio.gather(*task_chunk)
         output.extend(output_chunk)
         if verbose:
