@@ -54,7 +54,7 @@ from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
-from llama_index.core.utils import print_text, unit_generator
+from llama_index.core.utils import aprint_text, print_text, unit_generator
 
 
 def add_user_step_to_reasoning(
@@ -303,7 +303,7 @@ class ReActAgentWorker(BaseAgentWorker):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            print_text(
+            aprint_text(
                 f"{observation_step.get_content()}\n",
                 color="blue",
                 response_hook=self.response_hook,
