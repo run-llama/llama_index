@@ -172,46 +172,46 @@ nav:
           - ./examples/docstore/DocstoreDemo.ipynb
           - ./examples/docstore/AzureDocstoreDemo.ipynb
       - Embeddings:
+          - ./examples/embeddings/alephalpha.ipynb
+          - ./examples/embeddings/Anyscale.ipynb
+          - ./examples/embeddings/bedrock.ipynb
+          - ./examples/embeddings/cloudflare_workersai.ipynb
+          - ./examples/embeddings/cohereai.ipynb
+          - ./examples/embeddings/custom_embeddings.ipynb
+          - ./examples/embeddings/dashscope_embeddings.ipynb
+          - ./examples/embeddings/deepinfra.ipynb
+          - ./examples/embeddings/elasticsearch.ipynb
+          - ./examples/embeddings/clarifai.ipynb
+          - ./examples/embeddings/fireworks.ipynb
+          - ./examples/embeddings/gemini.ipynb
+          - ./examples/embeddings/google_palm.ipynb
+          - ./examples/embeddings/gradient.ipynb
+          - ./examples/embeddings/ibm_watsonx.ipynb
+          - ./examples/embeddings/sagemaker_embedding_endpoint.ipynb
+          - ./examples/embeddings/jina_embeddings.ipynb
+          - ./examples/embeddings/jinaai_embeddings.ipynb
+          - ./examples/embeddings/Langchain.ipynb
+          - ./examples/embeddings/llamafile.ipynb
+          - ./examples/embeddings/llm_rails.ipynb
+          - ./examples/embeddings/huggingface.ipynb
+          - ./examples/embeddings/ipex_llm.ipynb
+          - ./examples/embeddings/ipex_llm_gpu.ipynb
+          - ./examples/embeddings/openvino.ipynb
+          - ./examples/embeddings/mistralai.ipynb
+          - ./examples/embeddings/nomic.ipynb
+          - ./examples/embeddings/nvidia.ipynb
+          - ./examples/embeddings/octoai.ipynb
+          - ./examples/embeddings/ollama_embedding.ipynb
+          - ./examples/embeddings/OpenAI.ipynb
+          - ./examples/embeddings/itrex.ipynb
+          - ./examples/embeddings/optimum_intel.ipynb
+          - ./examples/embeddings/oci_genai.ipynb
+          - ./examples/embeddings/premai.ipynb
           - ./examples/embeddings/fastembed.ipynb
           - ./examples/embeddings/text_embedding_inference.ipynb
-          - ./examples/embeddings/clarifai.ipynb
-          - ./examples/embeddings/bedrock.ipynb
-          - ./examples/embeddings/voyageai.ipynb
-          - ./examples/embeddings/ollama_embedding.ipynb
-          - ./examples/embeddings/gradient.ipynb
-          - ./examples/embeddings/custom_embeddings.ipynb
-          - ./examples/embeddings/gemini.ipynb
-          - ./examples/embeddings/huggingface.ipynb
-          - ./examples/embeddings/Anyscale.ipynb
-          - ./examples/embeddings/optimum_intel.ipynb
-          - ./examples/embeddings/jinaai_embeddings.ipynb
-          - ./examples/embeddings/fireworks.ipynb
-          - ./examples/embeddings/nomic.ipynb
-          - ./examples/embeddings/mistralai.ipynb
-          - ./examples/embeddings/dashscope_embeddings.ipynb
-          - ./examples/embeddings/jina_embeddings.ipynb
-          - ./examples/embeddings/llm_rails.ipynb
-          - ./examples/embeddings/google_palm.ipynb
-          - ./examples/embeddings/sagemaker_embedding_endpoint.ipynb
-          - ./examples/embeddings/Langchain.ipynb
-          - ./examples/embeddings/elasticsearch.ipynb
-          - ./examples/embeddings/OpenAI.ipynb
-          - ./examples/embeddings/cohereai.ipynb
           - ./examples/embeddings/together.ipynb
-          - ./examples/embeddings/llamafile.ipynb
-          - ./examples/embeddings/premai.ipynb
-          - ./examples/embeddings/alephalpha.ipynb
-          - ./examples/embeddings/itrex.ipynb
-          - ./examples/embeddings/cloudflare_workersai.ipynb
-          - ./examples/embeddings/openvino.ipynb
-          - ./examples/embeddings/ipex_llm.ipynb
-          - ./examples/embeddings/octoai.ipynb
-          - ./examples/embeddings/ipex_llm_gpu.ipynb
-          - ./examples/embeddings/nvidia.ipynb
-          - ./examples/embeddings/deepinfra.ipynb
           - ./examples/embeddings/upstage.ipynb
-          - ./examples/embeddings/oci_genai.ipynb
-          - ./examples/embeddings/ibm_watsonx.ipynb
+          - ./examples/embeddings/voyageai.ipynb
       - Evaluation:
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
@@ -265,77 +265,77 @@ nav:
           - ./examples/llama_hub/llama_hub.ipynb
           - ./examples/llama_hub/llama_pack_resume.ipynb
       - LLMs:
-          - ./examples/llm/rungpt.ipynb
-          - ./examples/llm/watsonx.ipynb
-          - ./examples/llm/openllm.ipynb
-          - ./examples/llm/openai_json_vs_function_calling.ipynb
-          - ./examples/llm/mymagic.ipynb
-          - ./examples/llm/portkey.ipynb
-          - ./examples/llm/everlyai.ipynb
-          - ./examples/llm/palm.ipynb
-          - ./examples/llm/cohere.ipynb
-          - ./examples/llm/vertex.ipynb
-          - ./examples/llm/predibase.ipynb
-          - ./examples/llm/llama_api.ipynb
-          - ./examples/llm/clarifai.ipynb
-          - ./examples/llm/bedrock.ipynb
-          - ./examples/llm/llama_2.ipynb
-          - ./examples/llm/gradient_model_adapter.ipynb
-          - ./examples/llm/maritalk.ipynb
-          - ./examples/llm/nvidia_tensorrt.ipynb
-          - ./examples/llm/xinference_local_deployment.ipynb
-          - ./examples/llm/azure_openai.ipynb
-          - ./examples/llm/gemini.ipynb
-          - ./examples/llm/huggingface.ipynb
-          - ./examples/llm/anyscale.ipynb
-          - ./examples/llm/vicuna.ipynb
-          - ./examples/llm/openrouter.ipynb
-          - ./examples/llm/fireworks.ipynb
-          - ./examples/llm/llama_2_rap_battle.ipynb
-          - ./examples/llm/vllm.ipynb
-          - ./examples/llm/dashscope.ipynb
-          - ./examples/llm/localai.ipynb
-          - ./examples/llm/llm_predictor.ipynb
-          - ./examples/llm/mistralai.ipynb
-          - ./examples/llm/monsterapi.ipynb
           - ./examples/llm/ai21.ipynb
-          - ./examples/llm/llama_2_llama_cpp.ipynb
-          - ./examples/llm/nvidia_triton.ipynb
-          - ./examples/llm/perplexity.ipynb
-          - ./examples/llm/litellm.ipynb
-          - ./examples/llm/ollama.ipynb
-          - ./examples/llm/neutrino.ipynb
-          - ./examples/llm/groq.ipynb
-          - ./examples/llm/langchain.ipynb
-          - ./examples/llm/sagemaker_endpoint_llm.ipynb
-          - ./examples/llm/openai.ipynb
+          - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/anthropic.ipynb
-          - ./examples/llm/gradient_base_model.ipynb
-          - ./examples/llm/ollama_gemma.ipynb
-          - ./examples/llm/konko.ipynb
-          - ./examples/llm/together.ipynb
+          - ./examples/llm/anyscale.ipynb
+          - ./examples/llm/azure_openai.ipynb
+          - ./examples/llm/bedrock.ipynb
+          - ./examples/llm/clarifai.ipynb
+          - ./examples/llm/cohere.ipynb
+          - ./examples/llm/dashscope.ipynb
+          - ./examples/llm/databricks.ipynb
+          - ./examples/llm/deepinfra.ipynb
+          - ./examples/llm/everlyai.ipynb
+          - ./examples/llm/fireworks.ipynb
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
-          - ./examples/llm/modelscope.ipynb
-          - ./examples/llm/llamafile.ipynb
-          - ./examples/llm/premai.ipynb
-          - ./examples/llm/solar.ipynb
-          - ./examples/llm/alephalpha.ipynb
+          - ./examples/llm/gemini.ipynb
+          - ./examples/llm/gradient_base_model.ipynb
+          - ./examples/llm/gradient_model_adapter.ipynb
+          - ./examples/llm/groq.ipynb
+          - ./examples/llm/huggingface.ipynb
+          - ./examples/llm/ibm_watsonx.ipynb
+          - ./examples/llm/sagemaker_endpoint_llm.ipynb
           - ./examples/llm/ipex_llm.ipynb
-          - ./examples/llm/databricks.ipynb
-          - ./examples/llm/openvino.ipynb
-          - ./examples/llm/octoai.ipynb
-          - ./examples/llm/mistral_rs.ipynb
-          - ./examples/llm/nvidia.ipynb
-          - ./examples/llm/mlx.ipynb
-          - ./examples/llm/upstage.ipynb
-          - ./examples/llm/lmstudio.ipynb
-          - ./examples/llm/unify.ipynb
           - ./examples/llm/ipex_llm_gpu.ipynb
-          - ./examples/llm/deepinfra.ipynb
-          - ./examples/llm/oci_genai.ipynb
+          - ./examples/llm/konko.ipynb
+          - ./examples/llm/langchain.ipynb
+          - ./examples/llm/litellm.ipynb
+          - ./examples/llm/llama_2_llama_cpp.ipynb
+          - ./examples/llm/llama_2_rap_battle.ipynb
+          - ./examples/llm/llama_api.ipynb
+          - ./examples/llm/llamafile.ipynb
+          - ./examples/llm/llm_predictor.ipynb
+          - ./examples/llm/lmstudio.ipynb
+          - ./examples/llm/localai.ipynb
+          - ./examples/llm/maritalk.ipynb
+          - ./examples/llm/mistral_rs.ipynb
+          - ./examples/llm/mistralai.ipynb
+          - ./examples/llm/mlx.ipynb
+          - ./examples/llm/modelscope.ipynb
+          - ./examples/llm/monsterapi.ipynb
+          - ./examples/llm/mymagic.ipynb
+          - ./examples/llm/neutrino.ipynb
+          - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
-          - ./examples/embeddings/ibm_watsonx.ipynb
+          - ./examples/llm/nvidia_tensorrt.ipynb
+          - ./examples/llm/nvidia_triton.ipynb
+          - ./examples/llm/octoai.ipynb
+          - ./examples/llm/ollama.ipynb
+          - ./examples/llm/ollama_gemma.ipynb
+          - ./examples/llm/openai.ipynb
+          - ./examples/llm/openai_json_vs_function_calling.ipynb
+          - ./examples/llm/openllm.ipynb
+          - ./examples/llm/openrouter.ipynb
+          - ./examples/llm/openvino.ipynb
+          - ./examples/llm/oci_genai.ipynb
+          - ./examples/llm/palm.ipynb
+          - ./examples/llm/perplexity.ipynb
+          - ./examples/llm/portkey.ipynb
+          - ./examples/llm/predibase.ipynb
+          - ./examples/llm/premai.ipynb
+          - ./examples/llm/llama_2.ipynb
+          - ./examples/llm/vicuna.ipynb
+          - ./examples/llm/rungpt.ipynb
+          - ./examples/llm/solar.ipynb
+          - ./examples/llm/together.ipynb
+          - ./examples/llm/unify.ipynb
+          - ./examples/llm/upstage.ipynb
+          - ./examples/llm/vertex.ipynb
+          - ./examples/llm/vllm.ipynb
+          - ./examples/llm/watsonx.ipynb
+          - ./examples/llm/xinference_local_deployment.ipynb
       - Low Level:
           - ./examples/low_level/oss_ingestion_retrieval.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
@@ -761,6 +761,7 @@ nav:
           - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
+          - ./api_reference/embeddings/ibm_watsonx.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
           - ./api_reference/embeddings/ipex_llm.md
@@ -782,7 +783,6 @@ nav:
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
-          - ./api_reference/embeddings/ibm_watsonx.md
       - Evaluation:
           - ./api_reference/evaluation/answer_relevancy.md
           - ./api_reference/evaluation/context_relevancy.md
@@ -844,6 +844,7 @@ nav:
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
+          - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
           - ./api_reference/llms/konko.md
@@ -890,7 +891,6 @@ nav:
           - ./api_reference/llms/vllm.md
           - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
-          - ./api_reference/llms/ibm_watsonx.md
       - Llama Datasets:
           - ./api_reference/llama_dataset/index.md
       - Llama Packs:
