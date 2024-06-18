@@ -10,3 +10,5 @@ ENV_VARIABLE = "DEEPINFRA_API_TOKEN"
 DEFAULT_MODEL_NAME = "mistralai/Mixtral-8x22B-Instruct-v0.1"
 """Default max tokens. DeepInfra documentation constant is set."""
 DEFAULT_MAX_TOKENS = 512
+"""Tool choice is auto."""
+TOOL_CHOICE = "auto"
