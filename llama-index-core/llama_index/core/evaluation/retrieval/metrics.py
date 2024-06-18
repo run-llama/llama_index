@@ -185,7 +185,9 @@ class Precision(BaseRetrievalMetric):
         ):
             raise ValueError("Retrieved ids and expected ids must be provided")
 
-        precision = len(set(retrieved_ids) & set(expected_ids)) / len(retrieved_ids)
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        precision = len(retrieved_set & expected_set) / len(retrieved_set)
 
         return RetrievalMetricResult(score=precision)
 
@@ -231,9 +233,62 @@ class Recall(BaseRetrievalMetric):
         ):
             raise ValueError("Retrieved ids and expected ids must be provided")
 
-        recall = len(set(retrieved_ids) & set(expected_ids)) / len(expected_ids)
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        recall = len(retrieved_set & expected_set) / len(expected_set)
 
         return RetrievalMetricResult(score=recall)
+
+
+class AveragePrecision(BaseRetrievalMetric):
+    """Average Precision (AP) metric.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "ap"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute average precision based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed average precision score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        ap = sum(
+            len(expected_set.intersection(retrieved_ids[:i])) / i
+            for i in range(1, len(retrieved_ids) + 1)
+        ) / len(retrieved_set)
+
+        return RetrievalMetricResult(score=ap)
 
 
 DiscountedGainMode = Literal["linear", "exponential"]
@@ -392,6 +447,7 @@ METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
     "mrr": MRR,
     "precision": Precision,
     "recall": Recall,
+    "ap": AveragePrecision,
     "ndcg": NDCG,
     "cohere_rerank_relevancy": CohereRerankRelevancyMetric,
 }
