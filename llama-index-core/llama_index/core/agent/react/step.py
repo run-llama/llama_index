@@ -206,12 +206,18 @@ class ReActAgentWorker(BaseAgentWorker):
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
             raise ValueError(f"Could not parse output: {message_content}") from exc
+        background_tasks = set()
         if self._verbose:
-            print_text(
-                f"{reasoning_step.get_content()}\n",
-                color="pink",
-                response_hook=self.response_hook,
+            task = asyncio.create_task(
+                aprint_text(
+                    f"{reasoning_step.get_content()}\n",
+                    color="pink",
+                    response_hook=self.response_hook,
+                )
             )
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
+            
         current_reasoning.append(reasoning_step)
 
         if reasoning_step.is_done:
