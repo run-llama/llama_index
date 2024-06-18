@@ -34,6 +34,26 @@ from llama_index.core.base.query_pipeline.query import (
 from llama_index.core.utils import print_text
 
 
+# TODO: Make this (safely) pydantic?
+class RunState:
+    def __init__(
+        self,
+        module_dict: Dict[str, QueryComponent],
+        module_input_dict: Dict[str, Dict[str, Any]],
+    ):
+        self.all_module_inputs: Dict[str, Dict[str, Any]] = {
+            module_key: {} for module_key in module_dict
+        }
+
+        for module_key, input_dict in module_input_dict.items():
+            self.all_module_inputs[module_key] = input_dict
+
+        self.module_dict = module_dict
+        self.result_outputs: Dict[str, Any] = {}
+        self.intermediate_outputs: Dict[str, ComponentIntermediates] = {}
+        self.executed_modules: Set[str] = set()
+
+
 def get_output(
     src_key: Optional[str],
     output_dict: Dict[str, Any],
@@ -598,6 +618,11 @@ class QueryPipeline(QueryComponent):
             kwargs[next(iter(root_module.free_req_input_keys))] = args[0]
         return root_key, kwargs
 
+    def get_input_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Get input dict."""
+        root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
+        return {root_key: kwargs}
+
     def _get_single_result_output(
         self,
         result_outputs: Dict[str, Any],
@@ -750,18 +775,16 @@ class QueryPipeline(QueryComponent):
         self,
         output_dict: Dict[str, Any],
         module_key: str,
-        all_module_inputs: Dict[str, Dict[str, Any]],
-        result_outputs: Dict[str, Any],
-        executed_modules: Set[str],
+        run_state: RunState,
     ):
         """Process component output."""
         if module_key in self._get_leaf_keys():
-            result_outputs[module_key] = output_dict
+            run_state.result_outputs[module_key] = output_dict
         else:
             edge_list = list(self.dag.edges(module_key, data=True))
 
             for _, dest, attr in edge_list:
-                if dest in executed_modules:
+                if dest in run_state.executed_modules:
                     continue  # Skip already executed modules
 
                 output = get_output(attr.get("src_key"), output_dict)
@@ -776,17 +799,17 @@ class QueryPipeline(QueryComponent):
                         attr.get("dest_key"),
                         dest_output,
                         self.module_dict[dest],
-                        all_module_inputs[dest],
+                        run_state.all_module_inputs[dest],
                     )
 
-    def get_next_module_keys(
-        self, all_module_inputs: Dict[str, Dict[str, Any]], executed_modules: Set[str]
-    ) -> List[str]:
+        run_state.executed_modules.add(module_key)
+
+    def get_next_module_keys(self, run_state: RunState) -> List[str]:
         """Determine the next module keys to run based on the current state."""
         next_module_keys = []
 
-        for module_key, module_input in all_module_inputs.items():
-            if module_key in executed_modules:
+        for module_key, module_input in run_state.all_module_inputs.items():
+            if module_key in run_state.executed_modules:
                 continue  # Module already executed
 
             if all(
@@ -797,57 +820,58 @@ class QueryPipeline(QueryComponent):
 
         return next_module_keys
 
+    def get_run_state(
+        self, module_input_dict: Optional[Dict[str, Any]] = None, **pipeline_inputs: Any
+    ) -> RunState:
+        """Get run state."""
+        if module_input_dict is not None:
+            return RunState(self.module_dict, module_input_dict)
+        else:
+            root_key, kwargs = self._get_root_key_and_kwargs(**pipeline_inputs)
+            return RunState(self.module_dict, {root_key: kwargs})
+
     def _run_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates=False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
         """Run the pipeline for multiple roots."""
         self._validate_inputs(module_input_dict)
 
-        all_module_inputs: Dict[str, Dict[str, Any]] = {
-            module_key: {} for module_key in self.module_dict
-        }
-        result_outputs: Dict[str, Any] = {}
-        intermediate_outputs: Dict[str, ComponentIntermediates] = {}
-        executed_modules: Set[str] = set()
+        run_state = self.get_run_state(module_input_dict)
 
         # Add root inputs to all_module_inputs
-        next_module_keys = []
-        for module_key, module_input in module_input_dict.items():
-            all_module_inputs[module_key] = module_input
-            if module_input:
-                next_module_keys.append(module_key)
+        next_module_keys = self.get_next_module_keys(run_state)
 
         while True:
             for module_key in next_module_keys:
-                module = self.module_dict[module_key]
-                module_input = all_module_inputs[module_key]
+                module = run_state.module_dict[module_key]
+                module_input = run_state.all_module_inputs[module_key]
 
                 if self.verbose:
                     print_debug_input(module_key, module_input)
                 output_dict = module.run_component(**module_input)
 
-                if show_intermediates and module_key not in intermediate_outputs:
-                    intermediate_outputs[module_key] = ComponentIntermediates(
+                if (
+                    show_intermediates
+                    and module_key not in run_state.intermediate_outputs
+                ):
+                    run_state.intermediate_outputs[module_key] = ComponentIntermediates(
                         inputs=module_input, outputs=output_dict
                     )
 
                 self.process_component_output(
                     output_dict,
                     module_key,
-                    all_module_inputs,
-                    result_outputs,
-                    executed_modules,
+                    run_state,
                 )
-                executed_modules.add(module_key)
 
             next_module_keys = self.get_next_module_keys(
-                all_module_inputs, executed_modules
+                run_state,
             )
             if not next_module_keys:
-                result_outputs[module_key] = output_dict
+                run_state.result_outputs[module_key] = output_dict
                 break
 
-        return result_outputs, intermediate_outputs
+        return run_state.result_outputs, run_state.intermediate_outputs
 
     async def _arun_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
@@ -860,25 +884,16 @@ class QueryPipeline(QueryComponent):
         """
         self._validate_inputs(module_input_dict)
 
-        all_module_inputs: Dict[str, Dict[str, Any]] = {
-            module_key: {} for module_key in self.module_dict
-        }
-        result_outputs: Dict[str, Any] = {}
-        intermediate_outputs: Dict[str, ComponentIntermediates] = {}
-        executed_modules: Set[str] = set()
+        run_state = self.get_run_state(module_input_dict)
 
         # Add root inputs to all_module_inputs
-        next_module_keys = []
-        for module_key, module_input in module_input_dict.items():
-            all_module_inputs[module_key] = module_input
-            if module_input:
-                next_module_keys.append(module_key)
+        next_module_keys = self.get_next_module_keys(run_state)
 
         while True:
             jobs = []
             for module_key in next_module_keys:
-                module = self.module_dict[module_key]
-                module_input = all_module_inputs[module_key]
+                module = run_state.module_dict[module_key]
+                module_input = run_state.all_module_inputs[module_key]
 
                 if self.verbose:
                     print_debug_input(module_key, module_input)
@@ -887,28 +902,28 @@ class QueryPipeline(QueryComponent):
 
             output_dicts = await run_jobs(jobs, show_progress=self.show_progress)
             for module_key, output_dict in zip(next_module_keys, output_dicts):
-                if show_intermediates and module_key not in intermediate_outputs:
-                    intermediate_outputs[module_key] = ComponentIntermediates(
+                if (
+                    show_intermediates
+                    and module_key not in run_state.intermediate_outputs
+                ):
+                    run_state.intermediate_outputs[module_key] = ComponentIntermediates(
                         inputs=module_input, outputs=output_dict
                     )
 
                 self.process_component_output(
                     output_dict,
                     module_key,
-                    all_module_inputs,
-                    result_outputs,
-                    executed_modules,
+                    run_state,
                 )
-                executed_modules.add(module_key)
 
             next_module_keys = self.get_next_module_keys(
-                all_module_inputs, executed_modules
+                run_state,
             )
             if not next_module_keys:
-                result_outputs[module_key] = output_dicts[-1]
+                run_state.result_outputs[module_key] = output_dicts[-1]
                 break
 
-        return result_outputs, intermediate_outputs
+        return run_state.result_outputs, run_state.intermediate_outputs
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
