@@ -242,7 +242,6 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
-        breakpoint()
         tool = tools_dict[reasoning_step.action]
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
