@@ -164,7 +164,7 @@ def serialize(service_mode: ServiceMode, value: dict) -> dict:
 
         validate_table_property_count(num_properties)
 
-        parts = split_large_property_value(num_parts, bytes_val, item, key)
+        parts = split_large_property_value(num_parts, bytes_val, key)
         item.update(parts)
 
     return item
