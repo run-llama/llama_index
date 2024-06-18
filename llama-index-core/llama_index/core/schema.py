@@ -100,7 +100,7 @@ class BaseComponent(BaseModel):
 
     def to_json(self, **kwargs: Any) -> str:
         data = self.to_dict(**kwargs)
-        return json.dumps(data)
+        return json.dumps(data, ensure_ascii=False, indent=4)
 
     # TODO: return type here not supported by current mypy version
     @classmethod
