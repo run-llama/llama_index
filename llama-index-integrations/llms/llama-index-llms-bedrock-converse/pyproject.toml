@@ -22,12 +22,12 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms bedrock integration"
+description = "llama-index llms bedrock converse integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-bedrock"
+name = "llama-index-llms-bedrock-converse"
 readme = "README.md"
-version = "0.1.8"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
