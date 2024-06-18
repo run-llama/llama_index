@@ -309,6 +309,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             filter = Filter(should=should)
 
+        # If we pass an empty list, Qdrant will not return any results
+        filter.must = filter.must if filter.must and len(filter.must) > 0 else None
+        filter.should = (
+            filter.should if filter.should and len(filter.should) > 0 else None
+        )
+        filter.must_not = (
+            filter.must_not if filter.must_not and len(filter.must_not) > 0 else None
+        )
+
         response = self._client.scroll(
             collection_name=self.collection_name,
             limit=9999,

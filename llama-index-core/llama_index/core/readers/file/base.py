@@ -58,6 +58,7 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
             MarkdownReader,
             MboxReader,
             PandasCSVReader,
+            PandasExcelReader,
             PDFReader,
             PptxReader,
             VideoAudioReader,
@@ -84,6 +85,8 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".md": MarkdownReader,
         ".mbox": MboxReader,
         ".ipynb": IPYNBReader,
+        ".xls": PandasExcelReader,
+        ".xlsx": PandasExcelReader,
     }
     return default_file_reader_cls
 
