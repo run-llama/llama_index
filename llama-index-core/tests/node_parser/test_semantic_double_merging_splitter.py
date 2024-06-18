@@ -19,21 +19,24 @@ doc = Document(
     "Its branches include algebra, calculus, geometry, and statistics."
 )
 
-from spacy.cli.download import download
+try:
+    splitter = SemanticDoubleMergingSplitterNodeParser(
+        initial_threshold=0.7, appending_threshold=0.8, merging_threshold=0.7
+    )
+    splitter.language_config.load_model()
+    spacy_available = True
+except Exception:
+    spacy_available = False
 
-download("en_core_web_md")
 
-splitter = SemanticDoubleMergingSplitterNodeParser(
-    initial_threshold=0.7, appending_threshold=0.8, merging_threshold=0.7
-)
-
-
+@pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
 def test_number_of_returned_nides() -> None:
     nodes = splitter.get_nodes_from_documents([doc])
 
     assert len(nodes) == 3
 
 
+@pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
 def test_creating_initial_chunks() -> None:
     text = doc.text
     sentences = splitter.sentence_splitter(text)
@@ -42,6 +45,7 @@ def test_creating_initial_chunks() -> None:
     assert len(initial_chunks) == 9
 
 
+@pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
 def test_config_models() -> None:
     with pytest.raises(ValueError):
         LanguageConfig(language="polish")
