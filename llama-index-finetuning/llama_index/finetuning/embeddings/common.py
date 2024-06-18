@@ -8,6 +8,7 @@ from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.utils import LLM
 from llama_index.core.schema import MetadataMode, TextNode
 
+
 class EmbeddingQAFinetuneDataset(BaseModel):
     """Embedding QA Finetuning Dataset.
 
@@ -16,6 +17,7 @@ class EmbeddingQAFinetuneDataset(BaseModel):
         corpus (Dict[str, str]): Dict id -> string.
         relevant_docs (Dict[str, List[str]]): Dict query id -> list of doc ids.
     """
+
     queries: Dict[str, str]
     corpus: Dict[str, str]
     relevant_docs: Dict[str, List[str]]
@@ -52,6 +54,7 @@ class EmbeddingQAFinetuneDataset(BaseModel):
             data = json.load(f)
         return cls(**data)
 
+
 DEFAULT_QA_GENERATE_PROMPT_TMPL = """\
 Context information is below.
 
@@ -69,7 +72,10 @@ across the document. Restrict the questions to the \
 context information provided."
 """
 
-def load_existing_data(path: str) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, List[str]]]:
+
+def load_existing_data(
+    path: str,
+) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, List[str]]]:
     """Load existing data from a JSON file if it exists.
 
     Args:
@@ -79,11 +85,12 @@ def load_existing_data(path: str) -> Tuple[Dict[str, str], Dict[str, str], Dict[
         Tuple[Dict[str, str], Dict[str, str], Dict[str, List[str]]]: The loaded queries, corpus, and relevant_docs.
     """
     try:
-        with open(path, "r") as f:
+        with open(path) as f:
             data = json.load(f)
-        return data['queries'], data['corpus'], data['relevant_docs']
+        return data["queries"], data["corpus"], data["relevant_docs"]
     except FileNotFoundError:
         return {}, {}, {}
+
 
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
@@ -94,7 +101,7 @@ def generate_qa_embedding_pairs(
     on_failure: str = "continue",  # options are "fail" or "continue"
     save_every: int = 500,
     output_path: str = "qa_finetune_dataset.json",
-    verbose: bool = True
+    verbose: bool = True,
 ) -> EmbeddingQAFinetuneDataset:
     """Generate QA pairs from a set of nodes and save periodically.
 
@@ -112,19 +119,20 @@ def generate_qa_embedding_pairs(
     Returns:
         EmbeddingQAFinetuneDataset: The generated dataset.
     """
-    
     queries, corpus, relevant_docs = load_existing_data(output_path)
-    
+
     node_dict = {
         node.node_id: node.get_content(metadata_mode=MetadataMode.NONE)
         for node in nodes
     }
-    
+
     start_index = len(corpus)
 
     save_counter = start_index
 
-    for node_id, text in tqdm(list(node_dict.items())[start_index:], initial=start_index):
+    for node_id, text in tqdm(
+        list(node_dict.items())[start_index:], initial=start_index
+    ):
         query = qa_generate_prompt_tmpl.format(
             context_str=text, num_questions_per_chunk=num_questions_per_chunk
         )
@@ -139,8 +147,10 @@ def generate_qa_embedding_pairs(
             except Exception as e:
                 retry_count += 1
                 if verbose:
-                    print(f"Error querying LLM: {e}. Retrying {retry_count}/{retry_limit}...")
-        
+                    print(
+                        f"Error querying LLM: {e}. Retrying {retry_count}/{retry_limit}..."
+                    )
+
         if not success:
             if on_failure == "fail":
                 raise RuntimeError(f"Failed to query LLM after {retry_limit} retries.")
