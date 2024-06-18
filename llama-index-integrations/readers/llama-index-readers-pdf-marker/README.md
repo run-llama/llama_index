@@ -26,3 +26,10 @@ path = Path("/path/to/pdf")
 reader = PDFMarkerReader()
 reader.load_data(path)
 ```
+
+## License
+
+The marker-pdf library is licensed under the GPL-3.0 license (see https://github.com/VikParuchuri/marker), meaning that you may copy, distribute and modify the software as long as you track changes/dates in source files.
+Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions.
+
+There is also commercial usage limitations (see https://github.com/VikParuchuri/marker?tab=readme-ov-file#commercial-usage).
