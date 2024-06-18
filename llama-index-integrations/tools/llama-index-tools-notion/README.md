@@ -4,7 +4,7 @@ This tool loads and updates documents from Notion. The user specifies an API tok
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/notion.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-notion/examples/notion.ipynb)
 
 Here's an example usage of the NotionToolSpec.
 

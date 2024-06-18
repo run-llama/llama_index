@@ -23,13 +23,30 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
         elements = self.extract_elements(
-            node.get_content(),
-            table_filters=[self.filter_table],
-            node_id=node.id_,
+            node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
         )
         table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
         self.extract_table_summaries(table_elements)
+        # convert into nodes
+        # will return a list of Nodes and Index Nodes
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
+
+    async def aget_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
+        """Get nodes from node."""
+        elements = self.extract_elements(
+            node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
+        )
+        table_elements = self.get_table_elements(elements)
+        # extract summaries over table elements
+        await self.aextract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
         nodes = self.get_nodes_from_elements(

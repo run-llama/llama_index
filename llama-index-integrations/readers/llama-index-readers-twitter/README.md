@@ -17,7 +17,7 @@ Check [Twitter API](https://developer.twitter.com/en/docs/twitter-api/getting-st
 ### Usage
 
 ```python
-from llama_index.readers.twitter_tweet import TwitterTweetReader
+from llama_index.readers.twitter import TwitterTweetReader
 
 # Initialize TwitterTweetReader
 reader = TwitterTweetReader(

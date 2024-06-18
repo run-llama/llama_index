@@ -1,5 +1,6 @@
+import math
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, Type
+from typing import Any, Callable, ClassVar, Dict, List, Literal, Optional, Type
 
 import numpy as np
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -7,6 +8,7 @@ from llama_index.core.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
     RetrievalMetricResult,
 )
+from typing_extensions import assert_never
 
 _AGG_FUNC: Dict[str, Callable] = {"mean": np.mean, "median": np.median, "max": np.max}
 
@@ -18,11 +20,11 @@ class HitRate(BaseRetrievalMetric):
     - The more granular method checks for all potential matches between retrieved docs and expected docs.
 
     Attributes:
-        use_granular_hit_rate (bool): Determines whether to use the granular method for calculation.
         metric_name (str): The name of the metric.
+        use_granular_hit_rate (bool): Determines whether to use the granular method for calculation.
     """
 
-    metric_name: str = "hit_rate"
+    metric_name: ClassVar[str] = "hit_rate"
     use_granular_hit_rate: bool = False
 
     def compute(
@@ -77,11 +79,11 @@ class MRR(BaseRetrievalMetric):
     - The more granular method sums the reciprocal ranks of all relevant retrieved documents and divides by the count of relevant documents.
 
     Attributes:
-        use_granular_mrr (bool): Determines whether to use the granular method for calculation.
         metric_name (str): The name of the metric.
+        use_granular_mrr (bool): Determines whether to use the granular method for calculation.
     """
 
-    metric_name: str = "mrr"
+    metric_name: ClassVar[str] = "mrr"
     use_granular_mrr: bool = False
 
     def compute(
@@ -140,11 +142,245 @@ class MRR(BaseRetrievalMetric):
         return RetrievalMetricResult(score=mrr_score)
 
 
+class Precision(BaseRetrievalMetric):
+    """Precision metric.
+
+    The `K`-value in `Precision@K` usually corresponds to `top_k` of the retriever.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "precision"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute precision based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed precision score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        precision = len(retrieved_set & expected_set) / len(retrieved_set)
+
+        return RetrievalMetricResult(score=precision)
+
+
+class Recall(BaseRetrievalMetric):
+    """Recall metric.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "recall"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute recall based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed recall score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        recall = len(retrieved_set & expected_set) / len(expected_set)
+
+        return RetrievalMetricResult(score=recall)
+
+
+class AveragePrecision(BaseRetrievalMetric):
+    """Average Precision (AP) metric.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "ap"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute average precision based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed average precision score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        ap = sum(
+            len(expected_set.intersection(retrieved_ids[:i])) / i
+            for i in range(1, len(retrieved_ids) + 1)
+        ) / len(retrieved_set)
+
+        return RetrievalMetricResult(score=ap)
+
+
+DiscountedGainMode = Literal["linear", "exponential"]
+
+
+def discounted_gain(*, rel: float, i: int, mode: DiscountedGainMode) -> float:
+    # Avoid unnecessary calculations. Note that `False == 0` and `True == 1`.
+    if rel == 0:
+        return 0
+    if rel == 1:
+        return 1 / math.log2(i + 1)
+
+    if mode == "linear":
+        return rel / math.log2(i + 1)
+    elif mode == "exponential":
+        return (2**rel - 1) / math.log2(i + 1)
+    else:
+        assert_never(mode)
+
+
+class NDCG(BaseRetrievalMetric):
+    """NDCG (Normalized Discounted Cumulative Gain) metric.
+
+    The position `p` is taken as the size of the query results (which is usually
+    `top_k` of the retriever).
+
+    Currently only supports binary relevance
+    (``rel=1`` if document is in ``expected_ids``, otherwise ``rel=0``)
+    since we assume that ``expected_ids`` is unordered.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+        mode (DiscountedGainMode): Determines the formula for each item in the summation.
+    """
+
+    metric_name: ClassVar[str] = "ndcg"
+    mode: DiscountedGainMode = "linear"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute NDCG based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs, unordered by relevance.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed NDCG score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        mode = self.mode
+        expected_set = set(expected_ids)
+
+        dcg = sum(
+            discounted_gain(rel=docid in expected_set, i=i, mode=mode)
+            for i, docid in enumerate(retrieved_ids, start=1)
+        )
+        idcg = sum(
+            discounted_gain(rel=True, i=i, mode=mode)
+            for i in range(1, len(retrieved_ids) + 1)
+        )
+
+        ndcg_score = dcg / idcg
+
+        return RetrievalMetricResult(score=ndcg_score)
+
+
 class CohereRerankRelevancyMetric(BaseRetrievalMetric):
     """Cohere rerank relevancy metric."""
 
+    metric_name: ClassVar[str] = "cohere_rerank_relevancy"
     model: str = Field(description="Cohere model name.")
-    metric_name: str = "cohere_rerank_relevancy"
 
     _client: Any = PrivateAttr()
 
@@ -209,6 +445,10 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
 METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
     "hit_rate": HitRate,
     "mrr": MRR,
+    "precision": Precision,
+    "recall": Recall,
+    "ap": AveragePrecision,
+    "ndcg": NDCG,
     "cohere_rerank_relevancy": CohereRerankRelevancyMetric,
 }
 

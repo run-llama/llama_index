@@ -332,6 +332,30 @@ langtrace.init(api_key="<LANGTRACE_API_KEY>")
 
 - [Langtrace](https://docs.langtrace.ai/supported-integrations/llm-frameworks/llamaindex)
 
+### OpenLIT
+
+[OpenLIT](https://github.com/openlit/openlit) is an OpenTelemetry-native GenAI and LLM Application Observability tool. It's designed to make the integration process of observability into GenAI projects with just a single line of code. OpenLIT provides OpenTelemetry Auto instrumentation for various LLMs, VectorDBs and Frameworks like LlamaIndex. OpenLIT provides insights into your LLM Applications performance, tracing of requests, over view metrics on usage like costs, tokens and a lot more.
+
+#### Install
+
+```shell
+pip install openlit
+```
+
+#### Usage Pattern
+
+```python
+import openlit
+
+openlit.init()
+```
+
+![](../../_static/integrations/openlit.gif)
+
+#### Guides
+
+- [OpenLIT's Official Documentation](https://docs.openlit.io/latest/integrations/llama-index)
+
 ## More observability
 
 - [Callbacks Guide](./callbacks/index.md)

@@ -21,6 +21,7 @@ NewsArticleReader = "ruze00"
 ReadabilityWebPageReader = "pandazki"
 RssNewsReader = "ruze00"
 RssReader = "bborn"
+ScrapflyReader = "mazen-r"
 SimpleWebPageReader = "thejessezhang"
 SitemapReader = "selamanse"
 SpiderReader = "WilliamEspegren"
@@ -43,7 +44,7 @@ license = "MIT"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.1.16"
+version = "0.1.18"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

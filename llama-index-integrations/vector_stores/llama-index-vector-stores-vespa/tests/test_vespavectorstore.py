@@ -23,7 +23,12 @@ except Exception:
 @pytest.fixture(scope="session")
 def vespa_app():
     app_package: ApplicationPackage = hybrid_template
-    return VespaVectorStore(application_package=app_package, deployment_target="local")
+    try:
+        return VespaVectorStore(
+            application_package=app_package, deployment_target="local"
+        )
+    except RuntimeError as e:
+        pytest.skip(f"Could not create VespaVectorStore: {e}")
 
 
 @pytest.fixture(scope="session")

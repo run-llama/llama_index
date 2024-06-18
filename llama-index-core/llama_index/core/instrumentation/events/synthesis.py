@@ -3,7 +3,6 @@ from typing import List
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.schema import QueryType
-from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
 class SynthesizeStartEvent(BaseEvent):
@@ -56,14 +55,10 @@ class GetResponseStartEvent(BaseEvent):
 
 
 class GetResponseEndEvent(BaseEvent):
-    """GetResponseEndEvent.
+    """GetResponseEndEvent."""
 
-    Args:
-        query (str): Query string.
-        response (RESPONSE_TEXT_TYPE): Response.
-    """
-
-    response: RESPONSE_TEXT_TYPE
+    # TODO: consumes the first chunk of generators??
+    # response: RESPONSE_TEXT_TYPE
 
     @classmethod
     def class_name(cls):

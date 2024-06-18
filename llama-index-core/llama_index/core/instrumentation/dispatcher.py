@@ -1,32 +1,25 @@
+from contextvars import Token
 from typing import Any, List, Optional, Dict, Protocol
-from functools import partial
-from collections import defaultdict
-import asyncio
 import inspect
-import threading
 import uuid
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
-from llama_index.core.instrumentation.events import BaseEvent
+from deprecated import deprecated
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.span_handlers import (
     BaseSpanHandler,
     NullSpanHandler,
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
-from contextvars import ContextVar
 import wrapt
 
-
-# ContextVar's for managing active spans
-span_ctx_var = ContextVar(
-    "span_ctx_var", default=defaultdict(dict)
-)  # per thread >> async-task
-DEFAULT_SYNC_KEY = "sync_tasks"
+DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
 
 
+# Keep for backwards compatibility
 class EventDispatcher(Protocol):
-    def __call__(self, event: BaseEvent) -> None:
+    def __call__(self, event: BaseEvent, **kwargs) -> None:
         ...
 
 
@@ -67,8 +60,6 @@ class Dispatcher(BaseModel):
         default_factory=dict,
         description="Id of current enclosing span. Used for creating `dispatch_event` partials.",
     )
-    _asyncio_lock: Optional[asyncio.Lock] = PrivateAttr()
-    _lock: Optional[threading.Lock] = PrivateAttr()
 
     def __init__(
         self,
@@ -80,8 +71,6 @@ class Dispatcher(BaseModel):
         root_name: str = "root",
         propagate: bool = True,
     ):
-        self._asyncio_lock = None
-        self._lock = None
         super().__init__(
             name=name,
             event_handlers=event_handlers,
@@ -91,29 +80,6 @@ class Dispatcher(BaseModel):
             root_name=root_name,
             propagate=propagate,
         )
-
-    @property
-    def current_span_id(self) -> Optional[str]:
-        current_thread = threading.get_ident()
-        if current_thread in self.current_span_ids:
-            return self.current_span_ids[current_thread]
-        return None
-
-    def set_current_span_id(self, value: str):
-        current_thread = threading.get_ident()
-        self.current_span_ids[current_thread] = value
-
-    @property
-    def asyncio_lock(self) -> asyncio.Lock:
-        if self._asyncio_lock is None:
-            self._asyncio_lock = asyncio.Lock()
-        return self._asyncio_lock
-
-    @property
-    def lock(self) -> threading.Lock:
-        if self._lock is None:
-            self._lock = threading.Lock()
-        return self._lock
 
     @property
     def parent(self) -> "Dispatcher":
@@ -131,18 +97,37 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.span_handlers += [handler]
 
-    def event(self, event: BaseEvent, span_id: Optional[str] = None, **kwargs) -> None:
+    def event(self, event: BaseEvent, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
         c = self
-        if span_id:
-            event.span_id = span_id
         while c:
             for h in c.event_handlers:
-                h.handle(event, **kwargs)
+                try:
+                    h.handle(event, **kwargs)
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
+
+    @deprecated(
+        version="0.10.41",
+        reason=(
+            "`get_dispatch_event()` has been deprecated in favor of using `event()` directly."
+            " If running into this warning through an integration package, then please "
+            "update your integration to the latest version."
+        ),
+    )
+    def get_dispatch_event(self) -> EventDispatcher:
+        """Keep for backwards compatibility.
+
+        In llama-index-core v0.10.41, we removed this method and made changes to
+        integrations or packs that relied on this method. Adding back this method
+        in case any integrations or apps have not been upgraded. That is, they
+        still rely on this method.
+        """
+        return self.event
 
     def span_enter(
         self,
@@ -156,13 +141,16 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_enter(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    parent_id=parent_id,
-                    **kwargs,
-                )
+                try:
+                    h.span_enter(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        parent_id=parent_id,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -180,13 +168,16 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_drop(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    err=err,
-                    **kwargs,
-                )
+                try:
+                    h.span_drop(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        err=err,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -204,69 +195,34 @@ class Dispatcher(BaseModel):
         c = self
         while c:
             for h in c.span_handlers:
-                h.span_exit(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    result=result,
-                    **kwargs,
-                )
+                try:
+                    h.span_exit(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        result=result,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
-    def get_dispatch_event(self) -> EventDispatcher:
-        """Get dispatch_event for firing events within the context of a span.
-
-        This method should be used with @dispatcher.span decorated
-        functions only. Otherwise, the span_id should not be trusted, as the
-        span decorator sets the span_id.
-        """
-        with self.lock:
-            span_id = self.current_span_id
-        dispatch_event: EventDispatcher = partial(self.event, span_id=span_id)
-        return dispatch_event
-
-    def _get_parent_update_span_ctx_var(self, id_: str, current_task_name: str):
-        """Helper method to get parent id from the appropriate async contextvar."""
-        current_thread = threading.get_ident()
-        thread_span_ctx = span_ctx_var.get().copy()
-        span_ctx = thread_span_ctx[current_thread]
-        if current_task_name not in span_ctx:
-            parent_id = None
-            span_ctx[current_task_name] = [id_]
-        else:
-            parent_id = span_ctx[current_task_name][-1]
-            span_ctx[current_task_name].append(id_)
-        span_ctx_var.set(thread_span_ctx)
-
-        return parent_id
-
-    def _pop_span_from_ctx_var(self, current_task_name: str) -> None:
-        """Helper method to pop completed/dropped span from async contextvar."""
-        current_thread = threading.get_ident()
-        thread_span_ctx = span_ctx_var.get().copy()
-        span_ctx = thread_span_ctx[current_thread]
-
-        span_ctx[current_task_name].pop()
-        if len(span_ctx[current_task_name]) == 0:
-            del span_ctx[current_task_name]
-        span_ctx_var.set(thread_span_ctx)
-
     def span(self, func):
+        # The `span` decorator should be idempotent.
+        if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
+            return func
+        setattr(func, DISPATCHER_SPAN_DECORATED_ATTR, True)
+
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-            with self.lock:
-                self.set_current_span_id(id_)
-            with self.root.lock:
-                self.root.set_current_span_id(id_)
 
-            # get parent_id (thread-safe)
-            parent_id = self._get_parent_update_span_ctx_var(id_, DEFAULT_SYNC_KEY)
-
+            token = active_span_id.set(id_)
+            parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
             )
@@ -283,23 +239,15 @@ class Dispatcher(BaseModel):
                 return result
             finally:
                 # clean up
-                self._pop_span_from_ctx_var(DEFAULT_SYNC_KEY)
+                active_span_id.reset(token)
 
         @wrapt.decorator
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-            async with self.asyncio_lock:
-                self.set_current_span_id(id_)
-            async with self.root.asyncio_lock:
-                self.root.set_current_span_id(id_)
 
-            # get parent_id (thread and async-task safe)
-            # spans are managed in this hieararchy: thread > async task > async coros
-            current_task = asyncio.current_task()
-            current_task_name = current_task.get_name()
-            parent_id = self._get_parent_update_span_ctx_var(id_, current_task_name)
-
+            token = active_span_id.set(id_)
+            parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
                 id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
             )
@@ -316,63 +264,12 @@ class Dispatcher(BaseModel):
                 return result
             finally:
                 # clean up
-                self._pop_span_from_ctx_var(current_task_name)
+                active_span_id.reset(token)
 
         if inspect.iscoroutinefunction(func):
             return async_wrapper(func)
         else:
             return wrapper(func)
-
-    def async_span_with_parent_id(self, parent_id: str):
-        """This decorator should be used to span an async function nested in an outer span.
-
-        Primary example: llama_index.core.async_utils.run_jobs
-
-        Args:
-            parent_id (str): The span_id of the outer span.
-        """
-
-        def outer(func):
-            @wrapt.decorator
-            async def async_wrapper(func, instance, args, kwargs):
-                bound_args = inspect.signature(func).bind(*args, **kwargs)
-                id_ = f"{func.__qualname__}-{uuid.uuid4()}"
-                async with self.asyncio_lock:
-                    self.set_current_span_id(id_)
-                async with self.root.asyncio_lock:
-                    self.root.set_current_span_id(id_)
-
-                # don't need parent_id but need to update span ctx var
-                current_task = asyncio.current_task()
-                current_task_name = current_task.get_name()
-                _ = self._get_parent_update_span_ctx_var(id_, current_task_name)
-
-                self.span_enter(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    parent_id=parent_id,
-                )
-                try:
-                    result = await func(*args, **kwargs)
-                except BaseException as e:
-                    self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
-                    self.span_drop(
-                        id_=id_, bound_args=bound_args, instance=instance, err=e
-                    )
-                    raise
-                else:
-                    self.span_exit(
-                        id_=id_, bound_args=bound_args, instance=instance, result=result
-                    )
-                    return result
-                finally:
-                    # clean up
-                    self._pop_span_from_ctx_var(current_task_name)
-
-            return async_wrapper(func)
-
-        return outer
 
     @property
     def log_name(self) -> str:

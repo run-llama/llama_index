@@ -433,6 +433,7 @@
   "PathwayRetriever": "llama_index.retrievers.pathway",
   "AmazonKnowledgeBasesRetriever": "llama_index.retrievers.bedrock",
   "MongoDBAtlasBM25Retriever": "llama_index.retrievers.mongodb_atlas_bm25_retriever",
+  "DuckDBRetriever": "llama_index.retrievers.duckdb_retriever",
   "VideoDBRetriever": "llama_index.retrievers.videodb",
   "YouRetriever": "llama_index.retrievers.you",
   "ZillizCloudPipelineIndex": "llama_index.indices.managed.zilliz",

@@ -102,3 +102,4 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
 
             node_with_score = NodeWithScore(node=node, score=result["score"])
             retrieve_nodes.append(node_with_score)
+        return retrieve_nodes
