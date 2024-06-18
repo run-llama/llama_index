@@ -410,10 +410,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
             expr.append(f"{MILVUS_ID_FIELD} in [{','.join(expr_list)}]")
 
         # Limit output fields
+        outputs_limited = False
         if query.output_fields is not None:
             output_fields = query.output_fields
+            outputs_limited = True
         elif len(self.output_fields) > 0:
-            output_fields = self.output_fields
+            output_fields = [*self.output_fields]
+            outputs_limited = True
+
+        # Add the text key to output fields if necessary
+        if self.text_key and self.text_key not in output_fields and outputs_limited:
+            output_fields.append(self.text_key)
 
         # Convert to string expression
         string_expr = ""
