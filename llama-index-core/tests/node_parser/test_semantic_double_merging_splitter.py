@@ -19,6 +19,10 @@ doc = Document(
     "Its branches include algebra, calculus, geometry, and statistics."
 )
 
+from spacy.cli.download import download
+
+download("en_core_web_md")
+
 splitter = SemanticDoubleMergingSplitterNodeParser(
     initial_threshold=0.7, appending_threshold=0.8, merging_threshold=0.7
 )
