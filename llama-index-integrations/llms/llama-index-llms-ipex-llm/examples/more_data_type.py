@@ -52,7 +52,6 @@ if __name__ == "__main__":
         "-d",
         type=str,
         default="xpu",
-        choices=["cpu", "xpu"],
         help="The device the model will run on.",
     )
     parser.add_argument(
