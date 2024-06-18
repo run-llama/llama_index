@@ -131,9 +131,11 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
             FilterOperator.LTE,
             FilterOperator.IN,
         ]:
-            filters.append(f"{filter.key!s} {filter.operator} {filter_value}")
+            filters.append(f"{filter.key!s} {filter.operator.value} {filter_value}")
         else:
-            raise ValueError(f"Operator {filter.operator} not supported by Milvus.")
+            raise ValueError(
+                f'Operator {filter.operator} ("{filter.operator.value}") is not supported by Milvus.'
+            )
 
     return filters, f" {standard_filters.condition.value} ".join(filters)
 

@@ -12,6 +12,7 @@ from llama_index.finetuning.embeddings.sentence_transformer import (
 )
 from llama_index.finetuning.gradient.base import GradientFinetuneEngine
 from llama_index.finetuning.openai.base import OpenAIFinetuneEngine
+from llama_index.finetuning.mistralai.base import MistralAIFinetuneEngine
 from llama_index.finetuning.rerankers.cohere_reranker import (
     CohereRerankerFinetuneEngine,
 )
@@ -28,4 +29,5 @@ __all__ = [
     "GradientFinetuneEngine",
     "generate_cohere_reranker_finetuning_dataset",
     "CohereRerankerFinetuneEngine",
+    "MistralAIFinetuneEngine",
 ]

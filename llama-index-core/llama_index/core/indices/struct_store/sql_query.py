@@ -212,6 +212,23 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
+        # If LLM returns SQLQuery: or ```sql, extract the SQL query
+        sql_query_start = response.find("SQLQuery:")
+        if sql_query_start != -1:
+            response = response[sql_query_start:]
+            response = response.replace("SQLQuery:", "")
+        sql_markdown_start = response.find("```sql")
+        if sql_markdown_start != -1:
+            response = response.replace("```sql", "")
+        response = response.replace("```", "")
+        # If LLM talks between the end of query and SQL result
+        # find semi-colon and remove everything after it
+        semi_colon = response.find(";")
+        if semi_colon != -1:
+            response = response[: semi_colon + 1]
+        # Replace escaped single quotes, happens when
+        # there's a ' in the value (e.g. "I'm")
+        response = response.replace("\\'", "''")
         return response.strip()
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
