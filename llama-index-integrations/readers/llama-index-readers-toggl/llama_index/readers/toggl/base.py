@@ -28,7 +28,15 @@ class TogglReader(BaseReader):
         end_date: Optional[datetime.datetime] = datetime.datetime.now(),
         out_format: TogglOutFormat = TogglOutFormat.json,
     ) -> List[Document]:
-        """Load time entries from Toggl."""
+        """Load data from Toggl.
+
+        Args:
+            workspace_id (str): The workspace ID.
+            project_id (str): The project ID.
+            start_date (Optional[datetime.datetime]): The start date.
+            end_date (Optional[datetime.datetime]): The end date.
+            out_format (TogglOutFormat): The output format.
+        """
         return self.loop.run_until_complete(
             self._load_data(workspace_id, project_id, start_date, end_date, out_format)
         )
@@ -68,22 +76,6 @@ class TogglReader(BaseReader):
                     **Tags:** {",".join(item.tags)}
                 """
             doc = Document(text=json.dumps(text))
-            doc.metadata = {
-                **doc.metadata,
-                "id": item.id,
-                "pid": item.pid,
-                "tid": item.tid,
-                "uid": item.uid,
-                "updated": item.updated,
-                "user": item.user,
-                "project": item.project,
-                "use_stop": item.use_stop,
-                "project_color": item.project_color,
-                "project_hex_color": item.project_hex_color,
-                "task": item.task,
-                "billable": item.billable,
-                "is_billable": item.is_billable,
-                "cur": item.cur,
-            }
+            doc.metadata = {**doc.metadata, **item.dict()}
             items.append(doc)
         return items
