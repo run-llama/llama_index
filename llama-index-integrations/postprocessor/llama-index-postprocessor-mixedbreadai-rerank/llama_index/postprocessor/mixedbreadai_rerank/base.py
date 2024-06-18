@@ -12,15 +12,34 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
 from mixedbread_ai.core import RequestOptions
 from mixedbread_ai.client import MixedbreadAI
+import httpx
 
 dispatcher = get_dispatcher(__name__)
 
 
 class MixedbreadAIRerank(BaseNodePostprocessor):
-    model: str = Field(description="Mixedbread AI model name.")
-    top_n: int = Field(description="Top N nodes to return.")
+    """
+    Class for reranking nodes using the mixedbread ai reranking API with models such as 'mixedbread-ai/mxbai-rerank-large-v1'.
+
+    Args:
+        top_n (int): Top N nodes to return. Defaults to 10.
+        model (str): mixedbread ai model name. Defaults to "mixedbread-ai/mxbai-rerank-large-v1".
+        api_key (Optional[str]): mixedbread ai API key. Defaults to None.
+        max_retries (Optional[int]): Maximum number of retries for API calls. Defaults to None.
+        timeout (Optional[float]): Timeout for API calls.
+        httpx_client (Optional[httpx.Client]): Custom HTTPX client for synchronous requests.
+        httpx_async_client (Optional[httpx.AsyncClient]): Custom HTTPX client for asynchronous requests.
+    """
+
+    model: str = Field(
+        default="mixedbread-ai/mxbai-rerank-large-v1",
+        description="mixedbread ai model name.",
+        min_length=1,
+    )
+    top_n: int = Field(default=10, description="Top N nodes to return.", gt=0)
 
     _client: Any = PrivateAttr()
+    _async_client: Any = PrivateAttr()
     _request_options: Optional[RequestOptions] = PrivateAttr()
 
     def __init__(
@@ -29,16 +48,24 @@ class MixedbreadAIRerank(BaseNodePostprocessor):
         model: str = "mixedbread-ai/mxbai-rerank-large-v1",
         api_key: Optional[str] = None,
         max_retries: Optional[int] = None,
+        timeout: Optional[float] = None,
+        httpx_client: Optional[httpx.Client] = None,
+        httpx_async_client: Optional[httpx.AsyncClient] = None,
     ):
         try:
             api_key = api_key or os.environ["MXBAI_API_KEY"]
         except KeyError:
             raise ValueError(
-                "Must pass in Mixedbread AI API key or "
-                "specify via MXBAI_API_KEY environment variable "
+                "Must pass in mixedbread ai API key or "
+                "specify via MXBAI_API_KEY environment variable"
             )
 
-        self._client = MixedbreadAI(api_key=api_key)
+        self._client = MixedbreadAI(
+            api_key=api_key, timeout=timeout, httpx_client=httpx_client
+        )
+        self._async_client = MixedbreadAI(
+            api_key=api_key, timeout=timeout, httpx_client=httpx_async_client
+        )
         self._request_options = (
             RequestOptions(max_retries=max_retries) if max_retries is not None else None
         )
@@ -54,6 +81,16 @@ class MixedbreadAIRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        """
+        Postprocess nodes by reranking them using the mixedbread ai reranking API.
+
+        Args:
+            nodes (List[NodeWithScore]): List of nodes to rerank.
+            query_bundle (Optional[QueryBundle]): Query bundle containing the query string.
+
+        Returns:
+            List[NodeWithScore]: Reranked list of nodes.
+        """
         dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
@@ -62,6 +99,7 @@ class MixedbreadAIRerank(BaseNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
+
         if len(nodes) == 0:
             return []
 
