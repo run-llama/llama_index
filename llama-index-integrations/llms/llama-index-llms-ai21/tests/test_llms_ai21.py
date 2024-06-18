@@ -28,7 +28,6 @@ from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokeni
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.llms import ChatMessage
-from tests.async_iterator import AsyncIterator
 
 from llama_index.llms.ai21 import AI21
 
