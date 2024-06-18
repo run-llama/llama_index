@@ -1,6 +1,6 @@
 # LlamaIndex Llms Integration: You
 
-Integration with You.com's conversational Smart and Research APIs.
+Integration with [You.com's conversational Smart and Research APIs](https://documentation.you.com/api-reference/).
 
 Each API endpoint is designed to generate conversational
 responses to a variety of query types, including inline citations
