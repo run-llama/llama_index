@@ -60,7 +60,7 @@ class IpexLLMEmbedding(BaseEmbedding):
         if device not in ["cpu", "xpu"] and not device.startswith("xpu:"):
             raise ValueError(
                 "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
-                f"or 'xpu:<device_id>, but you have: {device}."
+                f"or 'xpu:<device_id>', but you have: {device}."
             )
         self._device = device
 

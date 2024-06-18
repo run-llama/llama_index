@@ -199,7 +199,7 @@ class IpexLLM(CustomLLM):
         if device_map not in ["cpu", "xpu"] and not device_map.startswith("xpu:"):
             raise ValueError(
                 "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
-                f"or 'xpu:<device_id>, but you have: {device_map}."
+                f"or 'xpu:<device_id>', but you have: {device_map}."
             )
         if "xpu" in device_map:
             self._model = self._model.to(device_map)
