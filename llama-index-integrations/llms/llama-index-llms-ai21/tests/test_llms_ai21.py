@@ -1,4 +1,6 @@
-from typing import Type
+from __future__ import annotations
+
+from typing import Type, Any, Iterable
 from unittest import mock
 
 import pytest
@@ -26,9 +28,9 @@ from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokeni
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.llms import ChatMessage
+from tests.async_iterator import AsyncIterator
 
 from llama_index.llms.ai21 import AI21
-from tests.async_iterator import AsyncIterator
 
 _PROMPT = "What is the meaning of life?"
 _FAKE_API_KEY = "fake-api-key"
@@ -79,6 +81,20 @@ _FAKE_COMPLETION_RESPONSE = CompletionResponse(
     text="42",
     raw=_FAKE_RAW_COMPLETION_RESPONSE,
 )
+
+
+class AsyncIterator:
+    def __init__(self, iterable: Iterable) -> None:
+        self._iterable = iter(iterable)
+
+    def __aiter__(self) -> AsyncIterator:
+        return self
+
+    async def __anext__(self) -> Any:
+        try:
+            return next(self._iterable)
+        except StopIteration:
+            raise StopAsyncIteration
 
 
 def test_text_inference_embedding_class():
