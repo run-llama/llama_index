@@ -303,7 +303,7 @@ class ReActAgentWorker(BaseAgentWorker):
         observation_step = ObservationReasoningStep(observation=str(tool_output))
         current_reasoning.append(observation_step)
         if self._verbose:
-            aprint_text(
+            await aprint_text(
                 f"{observation_step.get_content()}\n",
                 color="blue",
                 response_hook=self.response_hook,
