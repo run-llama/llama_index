@@ -635,7 +635,6 @@ class QueryPipeline(QueryComponent):
 
         """
         if len(result_outputs) != 1:
-            print(result_outputs)
             raise ValueError("Only one output is supported.")
 
         result_output = next(iter(result_outputs.values()))
