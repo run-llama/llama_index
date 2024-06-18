@@ -10,7 +10,7 @@ from llama_index.core.llms import (
     LLMMetadata,
 )
 from llama_index.core.llms.callbacks import llm_completion_callback
-from pydantic import Field
+from llama_index.core.bridge.pydantic import Field
 
 SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"

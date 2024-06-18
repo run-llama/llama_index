@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.llms.you"
+
+[tool.llamahub.class_authors]
+You = "You-OpenSource"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -17,8 +24,9 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]  # TODO: Update authors
+authors = ["You-OpenSource"]
 description = "llama-index LLM integration with You.com's conversational Smart and Research APIs"
+exclude = ["**/BUILD"]
 license = "MIT"  # TODO: Update license
 name = "llama-index-llms-you"
 packages = [{include = "llama_index/"}]
