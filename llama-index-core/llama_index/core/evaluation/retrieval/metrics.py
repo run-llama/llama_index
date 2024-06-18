@@ -281,12 +281,12 @@ class AveragePrecision(BaseRetrievalMetric):
         ):
             raise ValueError("Retrieved ids and expected ids must be provided")
 
-        retrieved_set = set(retrieved_ids)
         expected_set = set(expected_ids)
         ap = sum(
             len(expected_set.intersection(retrieved_ids[:i])) / i
             for i in range(1, len(retrieved_ids) + 1)
-        ) / len(retrieved_set)
+            if retrieved_ids[i - 1] in expected_set
+        ) / len(expected_set)
 
         return RetrievalMetricResult(score=ap)
 
