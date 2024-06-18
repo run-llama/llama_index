@@ -8,8 +8,7 @@ import re
 from pathlib import Path
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
-from typing import Any, Dict, List, Optional, Tuple, cast
-
+from typing import Any, Dict, List, Optional, Tuple
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -44,34 +43,36 @@ class MarkdownReader(BaseReader):
         lines = markdown_text.split("\n")
 
         current_header = None
-        current_text = ""
+        current_lines = []
+        in_code_block = False
 
         for line in lines:
+            if line.startswith("```"):
+                # This is the end of a code block if we are already in it, and vice versa.
+                in_code_block = not in_code_block
+
             header_match = re.match(r"^#+\s", line)
-            if header_match:
-                if current_header is not None:
-                    if current_text == "" or None:
-                        continue
-                    markdown_tups.append((current_header, current_text))
+            if not in_code_block and header_match:
+                # Upon first header, skip if current text chunk is empty
+                if current_header is not None or len(current_lines) > 0:
+                    markdown_tups.append((current_header, "\n".join(current_lines)))
 
                 current_header = line
-                current_text = ""
+                current_lines.clear()
             else:
-                current_text += line + "\n"
-        markdown_tups.append((current_header, current_text))
+                current_lines.append(line)
 
-        if current_header is not None:
-            # pass linting, assert keys are defined
-            markdown_tups = [
-                (re.sub(r"#", "", cast(str, key)).strip(), re.sub(r"<.*?>", "", value))
-                for key, value in markdown_tups
-            ]
-        else:
-            markdown_tups = [
-                (key, re.sub("<.*?>", "", value)) for key, value in markdown_tups
-            ]
+        # Append final text chunk
+        markdown_tups.append((current_header, "\n".join(current_lines)))
 
-        return markdown_tups
+        # Postprocess the tuples before returning
+        return [
+            (
+                key if key is None else re.sub(r"#", "", key).strip(),
+                re.sub(r"<.*?>", "", value),
+            )
+            for key, value in markdown_tups
+        ]
 
     def remove_images(self, content: str) -> str:
         """Remove images in markdown content."""

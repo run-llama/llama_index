@@ -1,16 +1,23 @@
+import asyncio
 import unicodedata
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, Optional, cast
+from typing import Callable, Dict, List, Literal, Optional
 
 from llama_index.core.node_parser.interface import TextSplitter
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from playwright.async_api._generated import Browser
 
 path = Path(__file__).parent / "Readability.js"
 
 
 def nfkc_normalize(text: str) -> str:
     return unicodedata.normalize("NFKC", text)
+
+
+def async_to_sync(awaitable):
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(awaitable)
 
 
 class ReadabilityWebPageReader(BaseReader):
@@ -50,7 +57,7 @@ class ReadabilityWebPageReader(BaseReader):
         self._normalize = normalize
         self._readability_js = None
 
-    def load_data(self, url: str) -> List[Document]:
+    async def async_load_data(self, url: str) -> List[Document]:
         """Render and load data content from url.
 
         Args:
@@ -60,12 +67,12 @@ class ReadabilityWebPageReader(BaseReader):
             List[Document]: List of documents.
 
         """
-        from playwright.sync_api import sync_playwright
+        from playwright.async_api import async_playwright
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(**self._launch_options)
+        async with async_playwright() as async_playwright:
+            browser = await async_playwright.chromium.launch(**self._launch_options)
 
-            article = self.scrape_page(
+            article = await self.scrape_page(
                 browser,
                 url,
             )
@@ -90,13 +97,16 @@ class ReadabilityWebPageReader(BaseReader):
             else:
                 texts = [article["textContent"]]
 
-            browser.close()
+            await browser.close()
 
             return [Document(text=x, extra_info=extra_info) for x in texts]
 
-    def scrape_page(
+    def load_data(self, url: str) -> List[Document]:
+        return async_to_sync(self.async_load_data(url))
+
+    async def scrape_page(
         self,
-        browser: Any,
+        browser: Browser,
         url: str,
     ) -> Dict[str, str]:
         """Scrape a single article url.
@@ -118,8 +128,6 @@ class ReadabilityWebPageReader(BaseReader):
             lang: content language
 
         """
-        from playwright.sync_api._generated import Browser
-
         if self._readability_js is None:
             with open(path) as f:
                 self._readability_js = f.read()
@@ -134,14 +142,14 @@ class ReadabilityWebPageReader(BaseReader):
             }}())
         """
 
-        browser = cast(Browser, browser)
-        page = browser.new_page(ignore_https_errors=True)
+        # browser = cast(Browser, browser)
+        page = await browser.new_page(ignore_https_errors=True)
         page.set_default_timeout(60000)
-        page.goto(url, wait_until=self._wait_until)
+        await page.goto(url, wait_until=self._wait_until)
 
-        r = page.evaluate(inject_readability)
+        r = await page.evaluate(inject_readability)
 
-        page.close()
+        await page.close()
         print("scraped:", url)
 
         return r

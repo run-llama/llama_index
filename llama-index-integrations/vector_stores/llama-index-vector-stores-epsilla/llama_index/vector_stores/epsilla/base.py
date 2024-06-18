@@ -1,11 +1,13 @@
 """Epsilla vector store."""
+
 import logging
 from typing import Any, List, Optional
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -23,7 +25,7 @@ from pyepsilla import vectordb
 logger = logging.getLogger(__name__)
 
 
-class EpsillaVectorStore(VectorStore):
+class EpsillaVectorStore(BasePydanticVectorStore):
     """The Epsilla Vector Store.
 
     In this vector store we store the text, its embedding and
@@ -52,10 +54,25 @@ class EpsillaVectorStore(VectorStore):
 
     Returns:
         EpsillaVectorStore: Vectorstore that supports add, delete, and query.
+
+    Examples:
+        `pip install llama-index-vector-stores-epsilla`
+
+        ```python
+        from llama_index.vector_stores.epsilla import EpsillaVectorStore
+        from pyepsilla import vectordb
+
+        client = vectordb.Client()
+        vector_store = EpsillaVectorStore(client=client, db_path="/tmp/llamastore")
+        ```
     """
 
     stores_text = True
     flat_metadata: bool = False
+
+    _client: vectordb.Client = PrivateAttr()
+    _collection_name: str = PrivateAttr()
+    _collection_created: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -68,6 +85,8 @@ class EpsillaVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__()
+
         if not isinstance(client, vectordb.Client):
             raise TypeError(
                 f"client should be an instance of pyepsilla.vectordb.Client, "
@@ -103,6 +122,11 @@ class EpsillaVectorStore(VectorStore):
         if self._collection_name not in table_list and dimension is not None:
             self._create_collection(dimension)
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "EpsillaVectorStore"
+
+    @property
     def client(self) -> Any:
         """Return the Epsilla client."""
         return self._client

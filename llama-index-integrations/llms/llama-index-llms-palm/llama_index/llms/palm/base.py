@@ -1,4 +1,5 @@
 """Palm API."""
+
 import os
 from typing import Any, Callable, Optional, Sequence
 
@@ -20,7 +21,37 @@ DEFAULT_PALM_MODEL = "models/text-bison-001"
 
 
 class PaLM(CustomLLM):
-    """PaLM LLM."""
+    """PaLM LLM.
+
+    Examples:
+        `pip install llama-index-llms-palm`
+
+        ```python
+        import google.generativeai as palm
+
+        # API key for PaLM
+        palm_api_key = "YOUR_API_KEY_HERE"
+
+        # List all models that support text generation
+        models = [
+            m
+            for m in palm.list_models()
+            if "generateText" in m.supported_generation_methods
+        ]
+        model = models[0].name
+        print(model)
+
+        # Start using our PaLM LLM abstraction
+        from llama_index.llms.palm import PaLM
+
+        # Create an instance of the PaLM class with the API key
+        llm = PaLM(model_name=model, api_key=palm_api_key)
+
+        # Use the complete method to generate text based on a prompt
+        response = llm.complete("Your prompt text here.")
+        print(str(response))
+        ```
+    """
 
     model_name: str = Field(
         default=DEFAULT_PALM_MODEL, description="The PaLM model to use."

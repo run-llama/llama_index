@@ -63,6 +63,9 @@ def default_output_response_parser(llm_output: str) -> str:
 
 def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
     """Default output processor that extracts values based on JSON Path expressions."""
+    # Post-process the LLM output to remove the JSONPath: prefix
+    llm_output = llm_output.replace("JSONPath: ", "").replace("JSON Path: ", "").strip()
+
     # Split the given string into separate JSON Path expressions
     expressions = [expr.strip() for expr in llm_output.split(",")]
 

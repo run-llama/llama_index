@@ -217,6 +217,7 @@ class SQLDatabase:
             try:
                 if self._schema:
                     command = command.replace("FROM ", f"FROM {self._schema}.")
+                    command = command.replace("JOIN ", f"JOIN {self._schema}.")
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(

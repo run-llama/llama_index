@@ -1,18 +1,24 @@
+import asyncio
 import logging
-from threading import Thread
 from typing import Any, List, Optional, Type
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.base.response.schema import RESPONSE_TYPE, StreamingResponse
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    StreamingResponse,
+    AsyncStreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
-from llama_index.core.chat_engine.utils import response_gen_from_query_engine
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core.chat_engine.utils import (
+    response_gen_from_query_engine,
+    aresponse_gen_from_query_engine,
+)
 from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -22,8 +28,10 @@ from llama_index.core.service_context_elements.llm_predictor import LLMPredictor
 from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
 )
 from llama_index.core.tools import ToolOutput
+from llama_index.core.types import Thread
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +54,8 @@ DEFAULT_PROMPT = PromptTemplate(DEFAULT_TEMPLATE)
 
 
 class CondenseQuestionChatEngine(BaseChatEngine):
-    """Condense Question Chat Engine.
+    """
+    Condense Question Chat Engine.
 
     First generate a standalone question from conversation context and last message,
     then query the query engine for a response.
@@ -86,15 +95,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
 
-        if llm is None:
-            service_context = service_context or ServiceContext.from_defaults(
-                embed_model=MockEmbedding(embed_dim=2)
-            )
-            llm = service_context.llm
-        else:
-            service_context = service_context or ServiceContext.from_defaults(
-                llm=llm, embed_model=MockEmbedding(embed_dim=2)
-            )
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -125,6 +126,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
+        if not chat_history:
+            # Keep the question as is if there's no conversation context.
+            return last_message
+
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
@@ -140,6 +145,10 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """
         Generate standalone question from conversation context and last message.
         """
+        if not chat_history:
+            # Keep the question as is if there's no conversation context.
+            return last_message
+
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
@@ -152,7 +161,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def _get_tool_output_from_response(
         self, query: str, response: RESPONSE_TYPE
     ) -> ToolOutput:
-        if isinstance(response, StreamingResponse):
+        if isinstance(response, (StreamingResponse, AsyncStreamingResponse)):
             return ToolOutput(
                 content="",
                 tool_name="query_engine",
@@ -171,7 +180,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
@@ -215,7 +224,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = self._condense_question(chat_history, message)
@@ -259,7 +268,8 @@ class CondenseQuestionChatEngine(BaseChatEngine):
                 sources=[tool_output],
             )
             thread = Thread(
-                target=response.write_response_to_history, args=(self._memory, True)
+                target=response.write_response_to_history,
+                args=(self._memory,),
             )
             thread.start()
         else:
@@ -270,7 +280,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -314,7 +324,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_history = chat_history or self._memory.get()
+        chat_history = chat_history or self._memory.get(input=message)
 
         # Generate standalone question from conversation context and last message
         condensed_question = await self._acondense_question(chat_history, message)
@@ -347,21 +357,17 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         )
 
         # Record response
-        if (
-            isinstance(query_response, StreamingResponse)
-            and query_response.response_gen is not None
-        ):
+        if isinstance(query_response, AsyncStreamingResponse):
             # override the generator to include writing to chat history
             # TODO: query engine does not support async generator yet
             self._memory.put(ChatMessage(role=MessageRole.USER, content=message))
             response = StreamingAgentChatResponse(
-                chat_stream=response_gen_from_query_engine(query_response.response_gen),
+                achat_stream=aresponse_gen_from_query_engine(
+                    query_response.async_response_gen()
+                ),
                 sources=[tool_output],
             )
-            thread = Thread(
-                target=response.write_response_to_history, args=(self._memory,)
-            )
-            thread.start()
+            asyncio.create_task(response.awrite_response_to_history(self._memory))
         else:
             raise ValueError("Streaming is not enabled. Please use achat() instead.")
         return response

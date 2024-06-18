@@ -3,11 +3,15 @@ from typing import Any, List, Optional, Sequence
 from llama_index.core.prompts.prompt_utils import get_biggest_prompt
 from llama_index.core.response_synthesizers.refine import Refine
 from llama_index.core.types import RESPONSE_TEXT_TYPE
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class CompactAndRefine(Refine):
     """Refine responses across compact text chunks."""
 
+    @dispatcher.span
     async def aget_response(
         self,
         query_str: str,
@@ -23,6 +27,7 @@ class CompactAndRefine(Refine):
             **response_kwargs,
         )
 
+    @dispatcher.span
     def get_response(
         self,
         query_str: str,

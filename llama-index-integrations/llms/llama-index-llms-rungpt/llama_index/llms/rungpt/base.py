@@ -23,7 +23,22 @@ DEFAULT_RUNGPT_TEMP = 0.75
 
 
 class RunGptLLM(LLM):
-    """The opengpt of Jina AI models."""
+    """RunGPT LLM.
+
+    The opengpt of Jina AI models.
+
+    Examples:
+        `pip install llama-index-llms-rungpt`
+
+        ```python
+        from llama_index.llms.rungpt import RunGptLLM
+
+        llm = RunGptLLM(model="rungpt", endpoint="0.0.0.0:51002")
+
+        response = llm.complete("What public transportation might be available in a city?")
+        print(str(response))
+        ```
+    """
 
     model: Optional[str] = Field(
         default=DEFAULT_RUNGPT_MODEL, description="The rungpt model to use."

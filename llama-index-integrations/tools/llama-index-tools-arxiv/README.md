@@ -4,7 +4,7 @@ This tool connects to ArXiv and allows an Agent to search for recent papers and 
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/arxiv.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-arxiv/examples/arxiv.ipynb).
 
 Here's an example usage of the ArxivToolSpec.
 
@@ -22,4 +22,4 @@ agent.chat("what are the latest developments in machine learning")
 
 `arxiv_query`: Search arXiv for results related to the query
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

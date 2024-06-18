@@ -90,7 +90,9 @@ def initialize_directory(
 
 def get_source_files_list(source_tree_url: str, path: str) -> List[str]:
     """Get the list of source files to download."""
-    resp = requests.get(source_tree_url + path + "?recursive=1")
+    resp = requests.get(
+        source_tree_url + path + "?recursive=1", headers={"Accept": "application/json"}
+    )
     payload = resp.json()["payload"]
     return [item["name"] for item in payload["tree"]["items"]]
 
@@ -105,7 +107,7 @@ def recursive_tree_traverse(
         url = tree_urls[0]
 
         try:
-            res = requests.get(url)
+            res = requests.get(url, headers={"Accept": "application/json"})
             tree_elements = res.json()["payload"]["tree"]["items"]
         except Exception:
             raise ValueError("Failed to traverse github tree source.")

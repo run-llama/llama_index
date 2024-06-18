@@ -2,9 +2,11 @@
 
 An index that is built on top of Alibaba Cloud's Tair database.
 """
+
 import logging
 from typing import Any, Dict, List, Optional
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -14,7 +16,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -35,10 +37,61 @@ def _to_filter_expr(filters: MetadataFilters) -> str:
     return "&&".join(conditions)
 
 
-class TairVectorStore(VectorStore):
+class TairVectorStore(BasePydanticVectorStore):
+    """Initialize TairVectorStore.
+
+    Two index types are available: FLAT & HNSW.
+
+    index args for HNSW:
+        - ef_construct
+        - M
+        - ef_search
+
+    Detailed info for these arguments can be found here:
+    https://www.alibabacloud.com/help/en/tair/latest/tairvector#section-c76-ull-5mk
+
+    Args:
+        index_name (str): Name of the index.
+        index_type (str): Type of the index. Defaults to 'HNSW'.
+        index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
+        tair_url (str): URL for the Tair instance.
+        overwrite (bool): Whether to overwrite the index if it already exists.
+            Defaults to False.
+        kwargs (Any): Additional arguments to pass to the Tair client.
+
+    Raises:
+        ValueError: If tair-py is not installed
+        ValueError: If failed to connect to Tair instance
+
+    Examples:
+        `pip install llama-index-vector-stores-tair`
+
+        ```python
+        from llama_index.core.vector_stores.tair import TairVectorStore
+
+        # Create a TairVectorStore
+        vector_store = TairVectorStore(
+            tair_url="redis://{username}:{password}@r-bp****************.redis.rds.aliyuncs.com:{port}",
+            index_name="my_index",
+            index_type="HNSW",
+            index_args={"M": 16, "ef_construct": 200},
+            overwrite=True
+        )
+        ```
+    """
+
     stores_text = True
     stores_node = True
     flat_metadata = False
+
+    _tair_client: Tair = PrivateAttr()
+    _index_name: str = PrivateAttr()
+    _index_type: str = PrivateAttr()
+    _metric_type: str = PrivateAttr()
+    _overwrite: bool = PrivateAttr()
+    _index_args: Dict[str, Any] = PrivateAttr()
+    _query_args: Dict[str, Any] = PrivateAttr()
+    _dim: int = PrivateAttr()
 
     def __init__(
         self,
@@ -49,43 +102,6 @@ class TairVectorStore(VectorStore):
         overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Initialize TairVectorStore.
-
-        Two index types are available: FLAT & HNSW.
-
-        index args for HNSW:
-            - ef_construct
-            - M
-            - ef_search
-
-        Detailed info for these arguments can be found here:
-        https://www.alibabacloud.com/help/en/tair/latest/tairvector#section-c76-ull-5mk
-
-        Args:
-            index_name (str): Name of the index.
-            index_type (str): Type of the index. Defaults to 'HNSW'.
-            index_args (Dict[str, Any]): Arguments for the index. Defaults to None.
-            tair_url (str): URL for the Tair instance.
-            overwrite (bool): Whether to overwrite the index if it already exists.
-                Defaults to False.
-            kwargs (Any): Additional arguments to pass to the Tair client.
-
-        Raises:
-            ValueError: If tair-py is not installed
-            ValueError: If failed to connect to Tair instance
-
-        Examples:
-            >>> from llama_index.core.vector_stores.tair import TairVectorStore
-            >>> # Create a TairVectorStore
-            >>> vector_store = TairVectorStore(
-            >>>     tair_url="redis://{username}:{password}@r-bp****************.\
-                redis.rds.aliyuncs.com:{port}",
-            >>>     index_name="my_index",
-            >>>     index_type="HNSW",
-            >>>     index_args={"M": 16, "ef_construct": 200},
-            >>>     overwrite=True)
-
-        """
         try:
             self._tair_client = Tair.from_url(tair_url, **kwargs)
         except ValueError as e:
@@ -111,6 +127,11 @@ class TairVectorStore(VectorStore):
             self._index_args = {"ef_construct": ef_construct, "M": M}
             self._query_args = {"ef_search": ef_search}
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "TairVectorStore"
+
     @property
     def client(self) -> "Tair":
         """Return the Tair client instance."""
@@ -130,7 +151,7 @@ class TairVectorStore(VectorStore):
             return []
 
         # set vector dim for creation if index doesn't exist
-        self.dim = len(nodes[0].get_embedding())
+        self._dim = len(nodes[0].get_embedding())
 
         if self._index_exists():
             if self._overwrite:
@@ -245,7 +266,7 @@ class TairVectorStore(VectorStore):
         _logger.info(f"Creating index {self._index_name}")
         self._tair_client.tvs_create_index(
             self._index_name,
-            self.dim,
+            self._dim,
             distance_type=self._metric_type,
             index_type=self._index_type,
             data_type=tairvector.DataType.Float32,

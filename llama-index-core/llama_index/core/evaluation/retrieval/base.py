@@ -5,6 +5,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.evaluation.retrieval.metrics import resolve_metrics
 from llama_index.core.evaluation.retrieval.metrics_base import (
@@ -123,7 +124,7 @@ class BaseRetrievalEvaluator(BaseModel):
             RetrievalEvalResult: Evaluation result
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate(
                 query=query,
                 expected_ids=expected_ids,

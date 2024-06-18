@@ -157,6 +157,7 @@ class RouterQueryEngine(BaseQueryEngine):
         return cls(
             selector,
             query_engine_tools,
+            llm=llm,
             service_context=service_context,
             summarizer=summarizer,
             **kwargs,
@@ -332,17 +333,20 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         retriever: ObjectRetriever[QueryEngineTool],
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         summarizer: Optional[TreeSummarize] = None,
     ) -> None:
-        self.service_context = service_context or ServiceContext.from_defaults()
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._summarizer = summarizer or TreeSummarize(
-            service_context=self.service_context,
+            llm=llm,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._retriever = retriever
 
-        super().__init__(self.service_context.callback_manager)
+        super().__init__(
+            callback_manager_from_settings_or_context(Settings, service_context)
+        )
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""

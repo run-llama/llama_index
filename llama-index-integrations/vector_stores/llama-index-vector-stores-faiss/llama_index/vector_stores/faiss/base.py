@@ -40,6 +40,19 @@ class FaissVectorStore(BasePydanticVectorStore):
     Args:
         faiss_index (faiss.Index): Faiss index instance
 
+    Examples:
+        `pip install llama-index-vector-stores-faiss faiss-cpu`
+
+        ```python
+        from llama_index.vector_stores.faiss import FaissVectorStore
+        import faiss
+
+        # create a faiss index
+        d = 1536  # dimension
+        faiss_index = faiss.IndexFlatL2(d)
+
+        vector_store = FaissVectorStore(faiss_index=faiss_index)
+        ```
     """
 
     stores_text: bool = False

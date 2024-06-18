@@ -79,6 +79,17 @@ class CassandraVectorStore(BasePydanticVectorStore):
             Default is no expiration (None).
         insertion_batch_size (optional, int): how many vectors are inserted
             concurrently, for use by bulk inserts. Defaults to 20.
+
+    Examples:
+        `pip install llama-index-vector-stores-cassandra`
+
+        ```python
+        from llama_index.vector_stores.cassandra import CassandraVectorStore
+
+        vector_store = CassandraVectorStore(
+            table="cass_v_table", embedding_dimension=1536
+        )
+        ```
     """
 
     stores_text: bool = True

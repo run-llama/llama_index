@@ -4,6 +4,13 @@ Please include a summary of the change and which issue is fixed. Please also inc
 
 Fixes # (issue)
 
+## New Package?
+
+Did I fill in the `tool.llamahub` section in the `pyproject.toml` and provide a detailed README.md for my new integration or package?
+
+- [ ] Yes
+- [ ] No
+
 ## Version Bump?
 
 Did I bump the version in the `pyproject.toml` file of the package I am updating? (Except for the `llama-index-core` package)

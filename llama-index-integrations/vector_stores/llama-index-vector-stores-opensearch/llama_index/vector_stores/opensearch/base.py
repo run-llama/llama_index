@@ -32,220 +32,6 @@ INVALID_HYBRID_QUERY_ERROR = (
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
 
 
-def _import_async_opensearch() -> Any:
-    """Import OpenSearch if available, otherwise raise error."""
-    return AsyncOpenSearch
-
-
-def _import_async_bulk() -> Any:
-    """Import bulk if available, otherwise raise error."""
-    return async_bulk
-
-
-def _import_not_found_error() -> Any:
-    """Import not found error if available, otherwise raise error."""
-    return NotFoundError
-
-
-def _get_async_opensearch_client(opensearch_url: str, **kwargs: Any) -> Any:
-    """Get AsyncOpenSearch client from the opensearch_url, otherwise raise error."""
-    try:
-        opensearch = _import_async_opensearch()
-        client = opensearch(opensearch_url, **kwargs)
-
-    except ValueError as e:
-        raise ValueError(
-            f"AsyncOpenSearch client string provided is not in proper format. "
-            f"Got error: {e} "
-        )
-    return client
-
-
-async def _bulk_ingest_embeddings(
-    client: Any,
-    index_name: str,
-    embeddings: List[List[float]],
-    texts: Iterable[str],
-    metadatas: Optional[List[dict]] = None,
-    ids: Optional[List[str]] = None,
-    vector_field: str = "embedding",
-    text_field: str = "content",
-    mapping: Optional[Dict] = None,
-    max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
-    is_aoss: bool = False,
-) -> List[str]:
-    """Async Bulk Ingest Embeddings into given index."""
-    if not mapping:
-        mapping = {}
-
-    async_bulk = _import_async_bulk()
-    not_found_error = _import_not_found_error()
-    requests = []
-    return_ids = []
-    mapping = mapping
-
-    try:
-        await client.indices.get(index=index_name)
-    except not_found_error:
-        await client.indices.create(index=index_name, body=mapping)
-
-    for i, text in enumerate(texts):
-        metadata = metadatas[i] if metadatas else {}
-        _id = ids[i] if ids else str(uuid.uuid4())
-        request = {
-            "_op_type": "index",
-            "_index": index_name,
-            vector_field: embeddings[i],
-            text_field: text,
-            "metadata": metadata,
-        }
-        if is_aoss:
-            request["id"] = _id
-        else:
-            request["_id"] = _id
-        requests.append(request)
-        return_ids.append(_id)
-    await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
-    if not is_aoss:
-        await client.indices.refresh(index=index_name)
-    return return_ids
-
-
-def _default_approximate_search_query(
-    query_vector: List[float],
-    k: int = 4,
-    vector_field: str = "embedding",
-) -> Dict:
-    """For Approximate k-NN Search, this is the default query."""
-    return {
-        "size": k,
-        "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
-    }
-
-
-def _parse_filters(filters: Optional[MetadataFilters]) -> Any:
-    pre_filter = []
-    if filters is not None:
-        for f in filters.legacy_filters():
-            pre_filter.append({f.key: json.loads(str(f.value))})
-
-    return pre_filter
-
-
-def _knn_search_query(
-    embedding_field: str,
-    query_embedding: List[float],
-    k: int,
-    filters: Optional[MetadataFilters] = None,
-) -> Dict:
-    """
-    Do knn search.
-
-    If there are no filters do approx-knn search.
-    If there are (pre)-filters, do an exhaustive exact knn search using 'painless
-        scripting'.
-
-    Note that approximate knn search does not support pre-filtering.
-
-    Args:
-        query_embedding: Vector embedding to query.
-        k: Maximum number of results.
-        filters: Optional filters to apply before the search.
-            Supports filter-context queries documented at
-            https://opensearch.org/docs/latest/query-dsl/query-filter-context/
-
-    Returns:
-        Up to k docs closest to query_embedding
-    """
-    if filters is None:
-        search_query = _default_approximate_search_query(
-            query_embedding, k, vector_field=embedding_field
-        )
-    else:
-        pre_filter = _parse_filters(filters)
-        # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
-        search_query = _default_painless_scripting_query(
-            query_embedding,
-            k,
-            space_type="l2Squared",
-            pre_filter={"bool": {"filter": pre_filter}},
-            vector_field=embedding_field,
-        )
-
-    return search_query
-
-
-def _hybrid_search_query(
-    text_field: str,
-    query_str: str,
-    embedding_field: str,
-    query_embedding: List[float],
-    k: int,
-    filters: Optional[MetadataFilters] = None,
-) -> Dict:
-    knn_query = _knn_search_query(embedding_field, query_embedding, k, filters)["query"]
-    lexical_query = {"must": {"match": {text_field: {"query": query_str}}}}
-
-    parsed_filters = _parse_filters(filters)
-    if len(parsed_filters) > 0:
-        lexical_query["filter"] = parsed_filters
-    return {
-        "size": k,
-        "query": {"hybrid": {"queries": [{"bool": lexical_query}, knn_query]}},
-    }
-
-
-def __get_painless_scripting_source(
-    space_type: str, vector_field: str = "embedding"
-) -> str:
-    """For Painless Scripting, it returns the script source based on space type."""
-    source_value = f"(1.0 + {space_type}(params.query_value, doc['{vector_field}']))"
-    if space_type == "cosineSimilarity":
-        return source_value
-    else:
-        return f"1/{source_value}"
-
-
-def _default_painless_scripting_query(
-    query_vector: List[float],
-    k: int = 4,
-    space_type: str = "l2Squared",
-    pre_filter: Optional[Union[Dict, List]] = None,
-    vector_field: str = "embedding",
-) -> Dict:
-    """For Painless Scripting Search, this is the default query."""
-    if not pre_filter:
-        pre_filter = MATCH_ALL_QUERY
-
-    source = __get_painless_scripting_source(space_type, vector_field)
-    return {
-        "size": k,
-        "query": {
-            "script_score": {
-                "query": pre_filter,
-                "script": {
-                    "source": source,
-                    "params": {
-                        "field": vector_field,
-                        "query_value": query_vector,
-                    },
-                },
-            }
-        },
-    }
-
-
-def _is_aoss_enabled(http_auth: Any) -> bool:
-    """Check if the service is http_auth is set as `aoss`."""
-    if (
-        http_auth is not None
-        and hasattr(http_auth, "service")
-        and http_auth.service == "aoss"
-    ):
-        return True
-    return False
-
-
 class OpensearchVectorClient:
     """
     Object encapsulating an Opensearch index that has vector search enabled.
@@ -302,7 +88,7 @@ class OpensearchVectorClient:
 
         self._search_pipeline = search_pipeline
         http_auth = kwargs.get("http_auth")
-        self.is_aoss = _is_aoss_enabled(http_auth=http_auth)
+        self.is_aoss = self._is_aoss_enabled(http_auth=http_auth)
         # initialize mapping
         idx_conf = {
             "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
@@ -316,8 +102,8 @@ class OpensearchVectorClient:
                 }
             },
         }
-        self._os_client = _get_async_opensearch_client(self._endpoint, **kwargs)
-        not_found_error = _import_not_found_error()
+        self._os_client = self._get_async_opensearch_client(self._endpoint, **kwargs)
+        not_found_error = self._import_not_found_error()
 
         event_loop = asyncio.get_event_loop()
         try:
@@ -332,6 +118,234 @@ class OpensearchVectorClient:
                 self._os_client.indices.refresh(index=self._index)
             )
 
+    def _import_async_opensearch(self) -> Any:
+        """Import OpenSearch if available, otherwise raise error."""
+        return AsyncOpenSearch
+
+    def _import_async_bulk(self) -> Any:
+        """Import bulk if available, otherwise raise error."""
+        return async_bulk
+
+    def _import_not_found_error(self) -> Any:
+        """Import not found error if available, otherwise raise error."""
+        return NotFoundError
+
+    def _get_async_opensearch_client(self, opensearch_url: str, **kwargs: Any) -> Any:
+        """Get AsyncOpenSearch client from the opensearch_url, otherwise raise error."""
+        try:
+            opensearch = self._import_async_opensearch()
+            client = opensearch(opensearch_url, **kwargs)
+
+        except ValueError as e:
+            raise ValueError(
+                f"AsyncOpenSearch client string provided is not in proper format. "
+                f"Got error: {e} "
+            )
+        return client
+
+    async def _bulk_ingest_embeddings(
+        self,
+        client: Any,
+        index_name: str,
+        embeddings: List[List[float]],
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        vector_field: str = "embedding",
+        text_field: str = "content",
+        mapping: Optional[Dict] = None,
+        max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
+        is_aoss: bool = False,
+    ) -> List[str]:
+        """Async Bulk Ingest Embeddings into given index."""
+        if not mapping:
+            mapping = {}
+
+        async_bulk = self._import_async_bulk()
+        not_found_error = self._import_not_found_error()
+        requests = []
+        return_ids = []
+        mapping = mapping
+
+        try:
+            await client.indices.get(index=index_name)
+        except not_found_error:
+            await client.indices.create(index=index_name, body=mapping)
+
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            _id = ids[i] if ids else str(uuid.uuid4())
+            request = {
+                "_op_type": "index",
+                "_index": index_name,
+                vector_field: embeddings[i],
+                text_field: text,
+                "metadata": metadata,
+            }
+            if is_aoss:
+                request["id"] = _id
+            else:
+                request["_id"] = _id
+            requests.append(request)
+            return_ids.append(_id)
+        await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
+        if not is_aoss:
+            await client.indices.refresh(index=index_name)
+        return return_ids
+
+    def _default_approximate_search_query(
+        self,
+        query_vector: List[float],
+        k: int = 4,
+        vector_field: str = "embedding",
+    ) -> Dict:
+        """For Approximate k-NN Search, this is the default query."""
+        return {
+            "size": k,
+            "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
+        }
+
+    def _parse_filters(self, filters: Optional[MetadataFilters]) -> Any:
+        pre_filter = []
+        if filters is not None:
+            for f in filters.legacy_filters():
+                pre_filter.append({f.key: json.loads(str(f.value))})
+
+        return pre_filter
+
+    def _knn_search_query(
+        self,
+        embedding_field: str,
+        query_embedding: List[float],
+        k: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Dict:
+        """
+        Do knn search.
+
+        If there are no filters do approx-knn search.
+        If there are (pre)-filters, do an exhaustive exact knn search using 'painless
+            scripting'.
+
+        Note that approximate knn search does not support pre-filtering.
+
+        Args:
+            query_embedding: Vector embedding to query.
+            k: Maximum number of results.
+            filters: Optional filters to apply before the search.
+                Supports filter-context queries documented at
+                https://opensearch.org/docs/latest/query-dsl/query-filter-context/
+
+        Returns:
+            Up to k docs closest to query_embedding
+        """
+        pre_filter = self._parse_filters(filters)
+        if not pre_filter:
+            search_query = self._default_approximate_search_query(
+                query_embedding, k, vector_field=embedding_field
+            )
+        else:
+            # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
+            search_query = self._default_painless_scripting_query(
+                query_embedding,
+                k,
+                space_type="l2Squared",
+                pre_filter={"bool": {"filter": pre_filter}},
+                vector_field=embedding_field,
+            )
+
+        return search_query
+
+    def _hybrid_search_query(
+        self,
+        text_field: str,
+        query_str: str,
+        embedding_field: str,
+        query_embedding: List[float],
+        k: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Dict:
+        knn_query = self._knn_search_query(embedding_field, query_embedding, k, filters)
+        lexical_query = self._lexical_search_query(text_field, query_str, k, filters)
+
+        return {
+            "size": k,
+            "query": {
+                "hybrid": {"queries": [lexical_query["query"], knn_query["query"]]}
+            },
+        }
+
+    def _lexical_search_query(
+        self,
+        text_field: str,
+        query_str: str,
+        k: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Dict:
+        lexical_query = {
+            "bool": {"must": {"match": {text_field: {"query": query_str}}}}
+        }
+
+        parsed_filters = self._parse_filters(filters)
+        if len(parsed_filters) > 0:
+            lexical_query["bool"]["filter"] = parsed_filters
+
+        return {
+            "size": k,
+            "query": lexical_query,
+        }
+
+    def __get_painless_scripting_source(
+        self, space_type: str, vector_field: str = "embedding"
+    ) -> str:
+        """For Painless Scripting, it returns the script source based on space type."""
+        source_value = (
+            f"(1.0 + {space_type}(params.query_value, doc['{vector_field}']))"
+        )
+        if space_type == "cosineSimilarity":
+            return source_value
+        else:
+            return f"1/{source_value}"
+
+    def _default_painless_scripting_query(
+        self,
+        query_vector: List[float],
+        k: int = 4,
+        space_type: str = "l2Squared",
+        pre_filter: Optional[Union[Dict, List]] = None,
+        vector_field: str = "embedding",
+    ) -> Dict:
+        """For Painless Scripting Search, this is the default query."""
+        if not pre_filter:
+            pre_filter = MATCH_ALL_QUERY
+
+        source = self.__get_painless_scripting_source(space_type, vector_field)
+        return {
+            "size": k,
+            "query": {
+                "script_score": {
+                    "query": pre_filter,
+                    "script": {
+                        "source": source,
+                        "params": {
+                            "field": vector_field,
+                            "query_value": query_vector,
+                        },
+                    },
+                }
+            },
+        }
+
+    def _is_aoss_enabled(self, http_auth: Any) -> bool:
+        """Check if the service is http_auth is set as `aoss`."""
+        if (
+            http_auth is not None
+            and hasattr(http_auth, "service")
+            and http_auth.service == "aoss"
+        ):
+            return True
+        return False
+
     async def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
         embeddings: List[List[float]] = []
@@ -344,7 +358,7 @@ class OpensearchVectorClient:
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node, remove_text=True))
 
-        return await _bulk_ingest_embeddings(
+        return await self._bulk_ingest_embeddings(
             self._os_client,
             self._index,
             embeddings,
@@ -358,14 +372,17 @@ class OpensearchVectorClient:
             is_aoss=self.is_aoss,
         )
 
-    async def delete_doc_id(self, doc_id: str) -> None:
+    async def delete_by_doc_id(self, doc_id: str) -> None:
         """
-        Delete a document.
+        Deletes all OpenSearch documents corresponding to the given LlamaIndex `Document` ID.
 
         Args:
-            doc_id (str): document id
+            doc_id (str): a LlamaIndex `Document` id
         """
-        await self._os_client.delete(index=self._index, id=doc_id)
+        search_query = {
+            "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
+        }
+        await self._os_client.delete_by_query(index=self._index, body=search_query)
 
     async def aquery(
         self,
@@ -378,7 +395,7 @@ class OpensearchVectorClient:
         if query_mode == VectorStoreQueryMode.HYBRID:
             if query_str is None or self._search_pipeline is None:
                 raise ValueError(INVALID_HYBRID_QUERY_ERROR)
-            search_query = _hybrid_search_query(
+            search_query = self._hybrid_search_query(
                 self._text_field,
                 query_str,
                 self._embedding_field,
@@ -386,9 +403,16 @@ class OpensearchVectorClient:
                 k,
                 filters=filters,
             )
-            params = {"search_pipeline": self._search_pipeline}
+            params = {
+                "search_pipeline": self._search_pipeline,
+            }
+        elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
+            search_query = self._lexical_search_query(
+                self._text_field, query_str, k, filters=filters
+            )
+            params = None
         else:
-            search_query = _knn_search_query(
+            search_query = self._knn_search_query(
                 self._embedding_field, query_embedding, k, filters=filters
             )
             params = None
@@ -396,6 +420,10 @@ class OpensearchVectorClient:
         res = await self._os_client.search(
             index=self._index, body=search_query, params=params
         )
+
+        return self._to_query_result(res)
+
+    def _to_query_result(self, res) -> VectorStoreQueryResult:
         nodes = []
         ids = []
         scores = []
@@ -430,6 +458,7 @@ class OpensearchVectorClient:
             ids.append(node_id)
             nodes.append(node)
             scores.append(hit["_score"])
+
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
 
@@ -440,6 +469,35 @@ class OpensearchVectorStore(BasePydanticVectorStore):
     Args:
         client (OpensearchVectorClient): Vector index client to use
             for data insertion/querying.
+
+    Examples:
+        `pip install llama-index-vector-stores-opensearch`
+
+        ```python
+        from llama_index.vector_stores.opensearch import (
+            OpensearchVectorStore,
+            OpensearchVectorClient,
+        )
+
+        # http endpoint for your cluster (opensearch required for vector index usage)
+        endpoint = "http://localhost:9200"
+        # index to demonstrate the VectorStore impl
+        idx = "gpt-index-demo"
+
+        # OpensearchVectorClient stores text in this field by default
+        text_field = "content"
+        # OpensearchVectorClient stores embeddings in this field by default
+        embedding_field = "embedding"
+
+        # OpensearchVectorClient encapsulates logic for a
+        # single opensearch index with vector search enabled
+        client = OpensearchVectorClient(
+            endpoint, idx, 1536, embedding_field=embedding_field, text_field=text_field
+        )
+
+        # initialize vector store
+        vector_store = OpensearchVectorStore(client)
+        ```
     """
 
     stores_text: bool = True
@@ -491,10 +549,10 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes using a ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
 
         """
         asyncio.get_event_loop().run_until_complete(
@@ -503,13 +561,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Async delete nodes using with ref_doc_id.
+        Async delete nodes using a ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document to delete.
+            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
 
         """
-        await self._client.delete_doc_id(ref_doc_id)
+        await self._client.delete_by_doc_id(ref_doc_id)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """

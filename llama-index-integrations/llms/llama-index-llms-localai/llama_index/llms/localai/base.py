@@ -30,6 +30,21 @@ LOCALAI_DEFAULTS: Dict[str, Any] = MappingProxyType(  # type: ignore[assignment]
 
 
 class LocalAI(OpenAI):
+    """LocalAI LLM class.
+
+    Examples:
+        `pip install llama-index-llms-localai`
+
+        ```python
+        from llama_index.llms.localai import LocalAI
+
+        llm = LocalAI(api_base="http://localhost:8080/v1")
+
+        response = llm.complete("Hello!")
+        print(str(response))
+        ```
+    """
+
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",

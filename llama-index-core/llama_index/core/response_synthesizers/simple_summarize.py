@@ -52,23 +52,23 @@ class SimpleSummarize(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
+        single_text_chunk = "\n".join(text_chunks)
         truncated_chunks = self._prompt_helper.truncate(
             prompt=text_qa_template,
-            text_chunks=text_chunks,
+            text_chunks=[single_text_chunk],
         )
-        node_text = "\n".join(truncated_chunks)
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
             response = await self._llm.apredict(
                 text_qa_template,
-                context_str=node_text,
+                context_str=truncated_chunks,
                 **response_kwargs,
             )
         else:
             response = self._llm.stream(
                 text_qa_template,
-                context_str=node_text,
+                context_str=truncated_chunks,
                 **response_kwargs,
             )
 
@@ -86,23 +86,23 @@ class SimpleSummarize(BaseSynthesizer):
         **kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
+        single_text_chunk = "\n".join(text_chunks)
         truncated_chunks = self._prompt_helper.truncate(
             prompt=text_qa_template,
-            text_chunks=text_chunks,
+            text_chunks=[single_text_chunk],
         )
-        node_text = "\n".join(truncated_chunks)
 
         response: RESPONSE_TEXT_TYPE
         if not self._streaming:
             response = self._llm.predict(
                 text_qa_template,
-                context_str=node_text,
+                context_str=truncated_chunks,
                 **kwargs,
             )
         else:
             response = self._llm.stream(
                 text_qa_template,
-                context_str=node_text,
+                context_str=truncated_chunks,
                 **kwargs,
             )
 

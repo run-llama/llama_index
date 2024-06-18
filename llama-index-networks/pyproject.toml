@@ -19,6 +19,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Andrei Fajardo <andrei@llamaindex.ai>", "Jerry Liu <jerry@llamaindex.ai>"]
 description = "llama-index networks  integration"
+exclude = ["**/BUILD"]
 license = "MIT"
 maintainers = [
     "Andrei Fajardo <andrei@runllama.ai>",
@@ -31,7 +32,7 @@ maintainers = [
 name = "llama-index-networks"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.3"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -42,11 +43,11 @@ python-jose = "^3.3.0"
 uvicorn = {extras = ["standard"], version = "^0.27.1"}
 pydantic = {extras = ["dotenv"], version = "^2.6.1"}
 python-dotenv = "^1.0.1"
-asyncio = "^3.4.3"
 aiohttp = "^3.9.3"
+ecdsa = ">=0.19.0"
 
 [tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
+black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"

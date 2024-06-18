@@ -27,6 +27,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock.utils import (
+    AnthropicProvider,
     BEDROCK_FOUNDATION_LLMS,
     CHAT_ONLY_MODELS,
     STREAMING_MODELS,
@@ -37,6 +38,27 @@ from llama_index.llms.bedrock.utils import (
 
 
 class Bedrock(LLM):
+    """Bedrock LLM.
+
+    Examples:
+        `pip install llama-index-llms-bedrock`
+
+        ```python
+        from llama_index.llms.bedrock import Bedrock
+
+        llm = Bedrock(
+            model="amazon.titan-text-express-v1",
+            aws_access_key_id="AWS Access Key ID to use",
+            aws_secret_access_key="AWS Secret Access Key to use",
+            aws_session_token="AWS Session Token to use",
+            aws_region_name="AWS Region to use, eg. us-east-1",
+        )
+
+        resp = llm.complete("Paul Graham is ")
+        print(resp)
+        ```
+    """
+
     model: str = Field(description="The modelId of the Bedrock model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -198,6 +220,8 @@ class Bedrock(LLM):
             "temperature": self.temperature,
             self._provider.max_tokens_key: self.max_tokens,
         }
+        if type(self._provider) is AnthropicProvider and self.system_prompt:
+            base_kwargs["system"] = self.system_prompt
         return {
             **base_kwargs,
             **self.additional_kwargs,

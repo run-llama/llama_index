@@ -94,6 +94,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     def __call__(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
+        image_documents: Optional[Sequence[ImageDocument]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
@@ -102,7 +103,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
 
         response = self._multi_modal_llm.complete(
             formatted_prompt,
-            image_documents=self._image_documents,
+            image_documents=image_documents or self._image_documents,
             **llm_kwargs,
         )
 
@@ -115,6 +116,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     async def acall(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
+        image_documents: Optional[Sequence[ImageDocument]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
@@ -123,7 +125,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
 
         response = await self._multi_modal_llm.acomplete(
             formatted_prompt,
-            image_documents=self._image_documents,
+            image_documents=image_documents or self._image_documents,
             **llm_kwargs,
         )
 

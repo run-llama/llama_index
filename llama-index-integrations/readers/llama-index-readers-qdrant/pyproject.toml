@@ -28,7 +28,7 @@ license = "MIT"
 maintainers = ["kacperlukawski"]
 name = "llama-index-readers-qdrant"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

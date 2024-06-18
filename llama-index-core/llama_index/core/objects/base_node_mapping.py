@@ -137,7 +137,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         self._objs[hash(str(obj))] = obj
 
     def to_node(self, obj: Any) -> TextNode:
-        return TextNode(text=str(obj))
+        return TextNode(id_=str(hash(str(obj))), text=str(obj))
 
     def _from_node(self, node: BaseNode) -> Any:
         return self._objs[hash(node.get_content(metadata_mode=MetadataMode.NONE))]

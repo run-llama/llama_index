@@ -5,39 +5,14 @@ from typing import Any, Callable, List, Optional, Dict
 
 from llama_index.core.bridge.pydantic import Field
 
-import pandas as pd
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser.relational.base_element import (
     DEFAULT_SUMMARY_QUERY_STR,
     BaseElementNodeParser,
     Element,
 )
-from llama_index.core.schema import BaseNode, TextNode
-
-
-def html_to_df(html_str: str) -> pd.DataFrame:
-    """Convert HTML to dataframe."""
-    from lxml import html
-
-    tree = html.fromstring(html_str)
-    table_element = tree.xpath("//table")[0]
-    rows = table_element.xpath(".//tr")
-
-    data = []
-    for row in rows:
-        cols = row.xpath(".//td")
-        cols = [c.text.strip() if c.text is not None else "" for c in cols]
-        data.append(cols)
-
-    # Check if the table is empty
-    if len(data) == 0:
-        return None
-
-    # Check if the all rows have the same number of columns
-    if not all(len(row) == len(data[0]) for row in data):
-        return None
-
-    return pd.DataFrame(data[1:], columns=data[0])
+from llama_index.core.schema import BaseNode, NodeRelationship, TextNode
+from llama_index.core.node_parser.relational.utils import html_to_df
 
 
 class UnstructuredElementNodeParser(BaseElementNodeParser):
@@ -92,7 +67,35 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
+
+    async def aget_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
+        """Get nodes from node."""
+        elements = self.extract_elements(
+            node.get_content(), table_filters=[self.filter_table]
+        )
+        table_elements = self.get_table_elements(elements)
+        # extract summaries over table elements
+        await self.aextract_table_summaries(table_elements)
+        # convert into nodes
+        # will return a list of Nodes and Index Nodes
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
 
     def extract_elements(
         self, text: str, table_filters: Optional[List[Callable]] = None, **kwargs: Any

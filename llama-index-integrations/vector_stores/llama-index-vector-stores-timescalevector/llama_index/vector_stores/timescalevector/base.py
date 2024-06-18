@@ -3,11 +3,12 @@ import uuid
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -26,9 +27,37 @@ class IndexType(enum.Enum):
     PGVECTOR_HNSW = 3
 
 
-class TimescaleVectorStore(VectorStore):
+class TimescaleVectorStore(BasePydanticVectorStore):
+    """Timescale vector store.
+
+    Examples:
+        `pip install llama-index-vector-stores-timescalevector`
+
+        ```python
+        from llama_index.vector_stores.timescalevector import TimescaleVectorStore
+
+        # Set up the Timescale service URL
+        TIMESCALE_SERVICE_URL = "postgres://tsdbadmin:<password>@<id>.tsdb.cloud.timescale.com:<port>/tsdb?sslmode=require"
+
+        # Create a TimescaleVectorStore instance
+        vector_store = TimescaleVectorStore.from_params(
+            service_url=TIMESCALE_SERVICE_URL,
+            table_name="your_table_name_here",
+            num_dimensions=1536,
+        )
+        ```
+    """
+
     stores_text = True
     flat_metadata = False
+
+    service_url: str
+    table_name: str
+    num_dimensions: int
+    time_partition_interval: Optional[timedelta]
+
+    _sync_client: client.Sync = PrivateAttr()
+    _async_client: client.Async = PrivateAttr()
 
     def __init__(
         self,
@@ -37,13 +66,21 @@ class TimescaleVectorStore(VectorStore):
         num_dimensions: int = DEFAULT_EMBEDDING_DIM,
         time_partition_interval: Optional[timedelta] = None,
     ) -> None:
-        self.service_url = service_url
-        self.table_name: str = table_name.lower()
-        self.num_dimensions = num_dimensions
-        self.time_partition_interval = time_partition_interval
+        table_name = table_name.lower()
+
+        super().__init__(
+            service_url=service_url,
+            table_name=table_name,
+            num_dimensions=num_dimensions,
+            time_partition_interval=time_partition_interval,
+        )
 
         self._create_clients()
         self._create_tables()
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "TimescaleVectorStore"
 
     async def close(self) -> None:
         self._sync_client.close()

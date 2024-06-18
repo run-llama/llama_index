@@ -1,13 +1,20 @@
 """Google Drive files reader."""
 
+import json
 import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from google.auth.transport.requests import Request
+from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader, BaseReader
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -16,23 +23,108 @@ logger = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
-class GoogleDriveReader(BaseReader):
-    """Google drive reader."""
+class GoogleDriveReader(BasePydanticReader):
+    """Google Drive Reader.
+
+    Reads files from Google Drive. Credentials passed directly to the constructor
+    will take precedence over those passed as file paths.
+
+    Args:
+        drive_id (Optional[str]): Drive id of the shared drive in google drive.
+        folder_id (Optional[str]): Folder id of the folder in google drive.
+        file_ids (Optional[str]): File ids of the files in google drive.
+        query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+            It gives more flexibility to filter the documents. More info: https://developers.google.com/drive/api/v3/search-files
+        is_cloud (Optional[bool]): Whether the reader is being used in
+            a cloud environment. Will not save credentials to disk if so.
+            Defaults to False.
+        credentials_path (Optional[str]): Path to client config file.
+            Defaults to None.
+        token_path (Optional[str]): Path to authorized user info file. Defaults
+            to None.
+        service_account_key_path (Optional[str]): Path to service account key
+            file. Defaults to None.
+        client_config (Optional[dict]): Dictionary containing client config.
+            Defaults to None.
+        authorized_user_info (Optional[dict]): Dicstionary containing authorized
+            user info. Defaults to None.
+        service_account_key (Optional[dict]): Dictionary containing service
+            account key. Defaults to None.
+        file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
+            extension to a BaseReader class that specifies how to convert that
+            file to text. See `SimpleDirectoryReader` for more details.
+    """
+
+    drive_id: Optional[str] = None
+    folder_id: Optional[str] = None
+    file_ids: Optional[List[str]] = None
+    query_string: Optional[str] = None
+    client_config: Optional[dict] = None
+    authorized_user_info: Optional[dict] = None
+    service_account_key: Optional[dict] = None
+    token_path: Optional[str] = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
+
+    _is_cloud: bool = PrivateAttr(default=False)
+    _creds: Credentials = PrivateAttr()
+    _mimetypes: dict = PrivateAttr()
 
     def __init__(
         self,
+        drive_id: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        file_ids: Optional[List[str]] = None,
+        query_string: Optional[str] = None,
+        is_cloud: Optional[bool] = False,
         credentials_path: str = "credentials.json",
         token_path: str = "token.json",
-        pydrive_creds_path: str = "creds.txt",
+        service_account_key_path: str = "service_account_key.json",
+        client_config: Optional[dict] = None,
+        authorized_user_info: Optional[dict] = None,
+        service_account_key: Optional[dict] = None,
+        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
-        self.credentials_path = credentials_path
-        self.token_path = token_path
-        self.pydrive_creds_path = pydrive_creds_path
+        # Read the file contents so they can be serialized and stored.
+        if client_config is None and os.path.isfile(credentials_path):
+            with open(credentials_path, encoding="utf-8") as json_file:
+                client_config = json.load(json_file)
+
+        if authorized_user_info is None and os.path.isfile(token_path):
+            with open(token_path, encoding="utf-8") as json_file:
+                authorized_user_info = json.load(json_file)
+
+        if service_account_key is None and os.path.isfile(service_account_key_path):
+            with open(service_account_key_path, encoding="utf-8") as json_file:
+                service_account_key = json.load(json_file)
+
+        if (
+            client_config is None
+            and service_account_key is None
+            and authorized_user_info is None
+        ):
+            raise ValueError(
+                "Must specify `client_config` or `service_account_key` or `authorized_user_info`."
+            )
+
+        super().__init__(
+            drive_id=drive_id,
+            folder_id=folder_id,
+            file_ids=file_ids,
+            query_string=query_string,
+            client_config=client_config,
+            authorized_user_info=authorized_user_info,
+            service_account_key=service_account_key,
+            token_path=token_path,
+            file_extractor=file_extractor,
+            **kwargs,
+        )
 
         self._creds = None
-        self._drive = None
-
+        self._is_cloud = is_cloud
         # Download Google Docs/Slides/Sheets as actual files
         # See https://developers.google.com/drive/v3/web/mime-types
         self._mimetypes = {
@@ -52,83 +144,62 @@ class GoogleDriveReader(BaseReader):
             },
         }
 
-    def _get_credentials(self) -> Any:
+    @classmethod
+    def class_name(cls) -> str:
+        return "GoogleDriveReader"
+
+    def _get_credentials(self) -> Tuple[Credentials]:
         """Authenticate with Google and save credentials.
-        Download the credentials.json file with these instructions: https://developers.google.com/drive/api/v3/quickstart/python.
-            Copy credentials.json file and rename it to client_secrets.json file which will be used by pydrive for downloading files.
-            So, we need two files:
-                1. credentials.json
-                2. client_secrets.json
-            Both 1, 2 are essentially same but needed with two different names according to google-api-python-client, google-auth-httplib2, google-auth-oauthlib and pydrive libraries.
+        Download the service_account_key.json file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
+
+        IMPORTANT: Make sure to share the folders / files with the service account. Otherwise it will fail to read the docs
 
         Returns:
-            credentials, pydrive object.
+            credentials
         """
-        from google_auth_oauthlib.flow import InstalledAppFlow
-        from pydrive.auth import GoogleAuth
-        from pydrive.drive import GoogleDrive
-
-        from google.auth.transport.requests import Request
-        from google.oauth2 import service_account
-        from google.oauth2.credentials import Credentials
-
         # First, we need the Google API credentials for the app
         creds = None
-        if os.path.exists(self.token_path):
-            creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-        elif os.path.exists(self.credentials_path):
-            creds = service_account.Credentials.from_service_account_file(
-                self.credentials_path, scopes=SCOPES
+
+        if self.authorized_user_info is not None:
+            creds = Credentials.from_authorized_user_info(
+                self.authorized_user_info, SCOPES
             )
-            gauth = GoogleAuth()
-            gauth.credentials = creds
-            drive = GoogleDrive(gauth)
-            return creds, drive
+        elif self.service_account_key is not None:
+            return service_account.Credentials.from_service_account_info(
+                self.service_account_key, scopes=SCOPES
+            )
+
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials_path, SCOPES
-                )
+                flow = InstalledAppFlow.from_client_config(self.client_config, SCOPES)
                 creds = flow.run_local_server(port=0)
+
             # Save the credentials for the next run
-            with open(self.token_path, "w") as token:
-                token.write(creds.to_json())
+            if not self._is_cloud:
+                with open(self.token_path, "w", encoding="utf-8") as token:
+                    token.write(creds.to_json())
 
-        # Next, we need user authentication to download files (via pydrive)
-        # Uses client_secrets.json file for authorization.
-        gauth = GoogleAuth()
-        # Try to load saved client credentials
-        gauth.LoadCredentialsFile(self.pydrive_creds_path)
-        if gauth.credentials is None:
-            # Authenticate if they're not there
-            gauth.LocalWebserverAuth()
-        elif gauth.access_token_expired:
-            # Refresh them if expired
-            gauth.Refresh()
-        else:
-            # Initialize the saved creds
-            gauth.Authorize()
-        # Save the current credentials to a file so user doesn't have to auth every time
-        gauth.SaveCredentialsFile(self.pydrive_creds_path)
-
-        drive = GoogleDrive(gauth)
-
-        return creds, drive
+        return creds
 
     def _get_fileids_meta(
         self,
+        drive_id: Optional[str] = None,
         folder_id: Optional[str] = None,
         file_id: Optional[str] = None,
-        mime_types: Optional[list] = None,
+        mime_types: Optional[List[str]] = None,
+        query_string: Optional[str] = None,
     ) -> List[List[str]]:
         """Get file ids present in folder/ file id
         Args:
+            drive_id: Drive id of the shared drive in google drive.
             folder_id: folder id of the folder in google drive.
             file_id: file id of the file in google drive
-            mime_types: the mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+
         Returns:
             metadata: List of metadata of filde ids.
         """
@@ -139,7 +210,7 @@ class GoogleDriveReader(BaseReader):
             fileids_meta = []
             if folder_id:
                 folder_mime_type = "application/vnd.google-apps.folder"
-                query = "'" + folder_id + "' in parents"
+                query = "('" + folder_id + "' in parents)"
 
                 # Add mimeType filter to query
                 if mime_types:
@@ -150,24 +221,67 @@ class GoogleDriveReader(BaseReader):
                     )
                     query += f" and ({mime_query})"
 
-                results = (
-                    service.files()
-                    .list(
-                        q=query,
-                        includeItemsFromAllDrives=True,
-                        supportsAllDrives=True,
-                        fields="*",
+                # Add query string filter
+                if query_string:
+                    # to keep the recursiveness, we need to add folder_mime_type to the mime_types
+                    query += (
+                        f" and ((mimeType='{folder_mime_type}') or ({query_string}))"
                     )
-                    .execute()
-                )
-                items = results.get("files", [])
+
+                items = []
+                page_token = ""
+                # get files taking into account that the results are paginated
+                while True:
+                    if drive_id:
+                        results = (
+                            service.files()
+                            .list(
+                                q=query,
+                                driveId=drive_id,
+                                corpora="drive",
+                                includeItemsFromAllDrives=True,
+                                supportsAllDrives=True,
+                                fields="*",
+                                pageToken=page_token,
+                            )
+                            .execute()
+                        )
+                    else:
+                        results = (
+                            service.files()
+                            .list(
+                                q=query,
+                                includeItemsFromAllDrives=True,
+                                supportsAllDrives=True,
+                                fields="*",
+                                pageToken=page_token,
+                            )
+                            .execute()
+                        )
+                    items.extend(results.get("files", []))
+                    page_token = results.get("nextPageToken", None)
+                    if page_token is None:
+                        break
+
                 for item in items:
                     if item["mimeType"] == folder_mime_type:
-                        fileids_meta.extend(
-                            self._get_fileids_meta(
-                                folder_id=item["id"], mime_types=mime_types
+                        if drive_id:
+                            fileids_meta.extend(
+                                self._get_fileids_meta(
+                                    drive_id=drive_id,
+                                    folder_id=item["id"],
+                                    mime_types=mime_types,
+                                    query_string=query_string,
+                                )
                             )
-                        )
+                        else:
+                            fileids_meta.extend(
+                                self._get_fileids_meta(
+                                    folder_id=item["id"],
+                                    mime_types=mime_types,
+                                    query_string=query_string,
+                                )
+                            )
                     else:
                         # Check if file doesn't belong to a Shared Drive. "owners" doesn't exist in a Shared Drive
                         is_shared_drive = "driveId" in item
@@ -187,7 +301,6 @@ class GoogleDriveReader(BaseReader):
                                 item["modifiedTime"],
                             )
                         )
-
             else:
                 # Get the file details
                 file = (
@@ -217,7 +330,9 @@ class GoogleDriveReader(BaseReader):
             return fileids_meta
 
         except Exception as e:
-            logger.error(f"An error occurred while getting fileids metadata: {e}")
+            logger.error(
+                f"An error occurred while getting fileids metadata: {e}", exc_info=True
+            )
 
     def _download_file(self, fileid: str, filename: str) -> str:
         """Download the file with fileid and filename
@@ -266,7 +381,9 @@ class GoogleDriveReader(BaseReader):
 
             return new_file_name
         except Exception as e:
-            logger.error(f"An error occurred while downloading file: {e}")
+            logger.error(
+                f"An error occurred while downloading file: {e}", exc_info=True
+            )
 
     def _load_data_fileids_meta(self, fileids_meta: List[List[str]]) -> List[Document]:
         """Load data from fileids metadata
@@ -286,11 +403,12 @@ class GoogleDriveReader(BaseReader):
                 metadata = {}
 
                 for fileid_meta in fileids_meta:
-                    filename = fileid_meta[2]
-                    filepath = os.path.join(temp_dir, filename)
+                    # Download files and name them with their fileid
                     fileid = fileid_meta[0]
+                    filepath = os.path.join(temp_dir, fileid)
                     final_filepath = self._download_file(fileid, filepath)
 
+                    # Add metadata of the file to metadata dictionary
                     metadata[final_filepath] = {
                         "file id": fileid_meta[0],
                         "author": fileid_meta[1],
@@ -299,21 +417,34 @@ class GoogleDriveReader(BaseReader):
                         "created at": fileid_meta[4],
                         "modified at": fileid_meta[5],
                     }
-                loader = SimpleDirectoryReader(temp_dir, file_metadata=get_metadata)
+                loader = SimpleDirectoryReader(
+                    temp_dir,
+                    file_extractor=self.file_extractor,
+                    file_metadata=get_metadata,
+                )
                 documents = loader.load_data()
                 for doc in documents:
                     doc.id_ = doc.metadata.get("file id", doc.id_)
 
             return documents
         except Exception as e:
-            logger.error(f"An error occurred while loading data from fileids meta: {e}")
+            logger.error(
+                f"An error occurred while loading data from fileids meta: {e}",
+                exc_info=True,
+            )
 
     def _load_from_file_ids(
-        self, file_ids: List[str], mime_types: list
+        self,
+        drive_id: Optional[str],
+        file_ids: List[str],
+        mime_types: Optional[List[str]],
+        query_string: Optional[str],
     ) -> List[Document]:
         """Load data from file ids
         Args:
-            file_ids: file ids of the files in google drive.
+            file_ids: File ids of the files in google drive.
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: List of query strings to filter the documents, e.g. "name contains 'test'".
 
         Returns:
             Document: List of Documents of text.
@@ -322,46 +453,89 @@ class GoogleDriveReader(BaseReader):
             fileids_meta = []
             for file_id in file_ids:
                 fileids_meta.extend(
-                    self._get_fileids_meta(file_id=file_id, mime_types=mime_types)
+                    self._get_fileids_meta(
+                        drive_id=drive_id,
+                        file_id=file_id,
+                        mime_types=mime_types,
+                        query_string=query_string,
+                    )
                 )
             return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error(f"An error occurred while loading with fileid: {e}")
+            logger.error(
+                f"An error occurred while loading with fileid: {e}", exc_info=True
+            )
 
-    def _load_from_folder(self, folder_id: str, mime_types: list) -> List[Document]:
-        """Load data from folder_id
+    def _load_from_folder(
+        self,
+        drive_id: Optional[str],
+        folder_id: str,
+        mime_types: Optional[List[str]],
+        query_string: Optional[str],
+    ) -> List[Document]:
+        """Load data from folder_id.
+
         Args:
+            drive_id: Drive id of the shared drive in google drive.
             folder_id: folder id of the folder in google drive.
-            mime_types: the mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+
         Returns:
             Document: List of Documents of text.
         """
         try:
             fileids_meta = self._get_fileids_meta(
-                folder_id=folder_id, mime_types=mime_types
+                drive_id=drive_id,
+                folder_id=folder_id,
+                mime_types=mime_types,
+                query_string=query_string,
             )
             return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error(f"An error occurred while loading from folder: {e}")
+            logger.error(
+                f"An error occurred while loading from folder: {e}", exc_info=True
+            )
 
     def load_data(
         self,
-        folder_id: str = None,
-        file_ids: List[str] = None,
-        mime_types: List[str] = None,
+        drive_id: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        file_ids: Optional[List[str]] = None,
+        mime_types: Optional[List[str]] = None,  # Deprecated
+        query_string: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id and file ids.
+        """Load data from the folder id or file ids.
 
         Args:
-            folder_id: folder id of the folder in google drive.
-            file_ids: file ids of the files in google drive.
-            mime_types: the mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            drive_id: Drive id of the shared drive in google drive.
+            folder_id: Folder id of the folder in google drive.
+            file_ids: File ids of the files in google drive.
+            mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
+            query_string: A more generic query string to filter the documents, e.g. "name contains 'test'".
+                It gives more flexibility to filter the documents. More info: https://developers.google.com/drive/api/v3/search-files
+
         Returns:
             List[Document]: A list of documents.
         """
-        self._creds, self._drive = self._get_credentials()
+        self._creds = self._get_credentials()
+
+        # If no arguments are provided to load_data, default to the object attributes
+        if drive_id is None:
+            drive_id = self.drive_id
+        if folder_id is None:
+            folder_id = self.folder_id
+        if file_ids is None:
+            file_ids = self.file_ids
+        if query_string is None:
+            query_string = self.query_string
 
         if folder_id:
-            return self._load_from_folder(folder_id, mime_types)
+            return self._load_from_folder(drive_id, folder_id, mime_types, query_string)
+        elif file_ids:
+            return self._load_from_file_ids(
+                drive_id, file_ids, mime_types, query_string
+            )
         else:
-            return self._load_from_file_ids(file_ids, mime_types)
+            logger.warning("Either 'folder_id' or 'file_ids' must be provided.")
+            return []

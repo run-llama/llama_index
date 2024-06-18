@@ -1,3 +1,29 @@
+# Copyright 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import abc
 import json
 import random
@@ -25,13 +51,21 @@ class StreamingResponseGenerator(Queue):
     """A Generator that provides the inference results from an LLM."""
 
     def __init__(
-        self, client: "GrpcTritonClient", request_id: str, force_batch: bool
+        self,
+        client: "GrpcTritonClient",
+        request_id: str,
+        force_batch: bool,
+        model_name: str,
+        max_tokens: int,
     ) -> None:
         """Instantiate the generator class."""
         super().__init__()
         self._client = client
         self.request_id = request_id
         self._batch = force_batch
+        self._model_name = model_name
+        self._max_tokens = max_tokens
+        self._counter = 0
 
     def __iter__(self) -> "StreamingResponseGenerator":
         """Return self as a generator."""
@@ -40,15 +74,16 @@ class StreamingResponseGenerator(Queue):
     def __next__(self) -> str:
         """Return the next retrieved token."""
         val = self.get()
-        if val is None or val in STOP_WORDS:
+        if val is None or val in STOP_WORDS or self._counter == self._max_tokens - 1:
             self._stop_stream()
             raise StopIteration
+        self._counter += 1
         return val
 
     def _stop_stream(self) -> None:
         """Drain and shutdown the Triton stream."""
         self._client.stop_stream(
-            "tensorrt_llm", self.request_id, signal=not self._batch
+            self._model_name, self.request_id, signal=not self._batch
         )
 
 
@@ -163,8 +198,8 @@ class _BaseTritonClient(abc.ABC):
     ) -> List[Union["grpcclient.InferInput", "httpclient.InferInput"]]:
         """Create the input for the triton inference server."""
         query = np.array(prompt).astype(object)
-        request_output_len = np.array([tokens]).astype(np.uint32).reshape((1, -1))
-        runtime_top_k = np.array([top_k]).astype(np.uint32).reshape((1, -1))
+        request_output_len = np.array([tokens]).astype(np.int32).reshape((1, -1))
+        runtime_top_k = np.array([top_k]).astype(np.int32).reshape((1, -1))
         runtime_top_p = np.array([top_p]).astype(np.float32).reshape((1, -1))
         temperature_array = np.array([temperature]).astype(np.float32).reshape((1, -1))
         len_penalty = np.array([length_penalty]).astype(np.float32).reshape((1, -1))
@@ -172,7 +207,7 @@ class _BaseTritonClient(abc.ABC):
             np.array([repetition_penalty]).astype(np.float32).reshape((1, -1))
         )
         random_seed = np.array([RANDOM_SEED]).astype(np.uint64).reshape((1, -1))
-        beam_width_array = np.array([beam_width]).astype(np.uint32).reshape((1, -1))
+        beam_width_array = np.array([beam_width]).astype(np.int32).reshape((1, -1))
         streaming_data = np.array([[stream]], dtype=bool)
 
         return [
@@ -318,8 +353,10 @@ class GrpcTritonClient(_BaseTritonClient):
         if not request_id:
             request_id = str(random.randint(1, 9999999))  # nosec
 
-        result_queue = StreamingResponseGenerator(self, request_id, force_batch)
         inputs = self._generate_inputs(stream=not force_batch, **params)
+        result_queue = StreamingResponseGenerator(
+            self, request_id, force_batch, model_name, max_tokens=params["tokens"]
+        )
         outputs = self._generate_outputs()
         self._send_prompt_streaming(
             model_name,

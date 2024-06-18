@@ -59,7 +59,7 @@ class ArxivReader(BaseReader):
         for paper in search_results:
             # Hash filename to avoid bad characters in file path
             filename = f"{self._hacky_hash(paper.title)}.pdf"
-            paper_lookup[os.path.join(papers_dir, filename)] = {
+            paper_lookup[filename] = {
                 "Title of this paper": paper.title,
                 "Authors": (", ").join([a.name for a in paper.authors]),
                 "Date published": paper.published.strftime("%m/%d/%Y"),
@@ -70,10 +70,12 @@ class ArxivReader(BaseReader):
             logging.debug(f"> Downloading {filename}...")
 
         def get_paper_metadata(filename):
-            return paper_lookup[filename]
+            return paper_lookup[os.path.basename(filename)]
 
         arxiv_documents = SimpleDirectoryReader(
-            papers_dir, file_metadata=get_paper_metadata
+            papers_dir,
+            file_metadata=get_paper_metadata,
+            exclude_hidden=False,  # default directory is hidden ".papers"
         ).load_data()
         # Include extra documents containing the abstracts
         abstract_documents = []
@@ -131,7 +133,7 @@ class ArxivReader(BaseReader):
         for paper in search_results:
             # Hash filename to avoid bad characters in file path
             filename = f"{self._hacky_hash(paper.title)}.pdf"
-            paper_lookup[os.path.join(papers_dir, filename)] = {
+            paper_lookup[filename] = {
                 "Title of this paper": paper.title,
                 "Authors": (", ").join([a.name for a in paper.authors]),
                 "Date published": paper.published.strftime("%m/%d/%Y"),
@@ -142,10 +144,12 @@ class ArxivReader(BaseReader):
             logging.debug(f"> Downloading {filename}...")
 
         def get_paper_metadata(filename):
-            return paper_lookup[filename]
+            return paper_lookup[os.path.basename(filename)]
 
         arxiv_documents = SimpleDirectoryReader(
-            papers_dir, file_metadata=get_paper_metadata
+            papers_dir,
+            file_metadata=get_paper_metadata,
+            exclude_hidden=False,  # default directory is hidden ".papers"
         ).load_data()
         # Include extra documents containing the abstracts
         abstract_documents = []

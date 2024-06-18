@@ -7,8 +7,10 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Union,
     get_args,
     runtime_checkable,
+    TYPE_CHECKING,
 )
 
 from llama_index.core.base.llms.types import (
@@ -47,6 +49,32 @@ from llama_index.core.types import (
     TokenAsyncGen,
     TokenGen,
 )
+from llama_index.core.instrumentation.events.llm import (
+    LLMPredictEndEvent,
+    LLMPredictStartEvent,
+    LLMStructuredPredictEndEvent,
+    LLMStructuredPredictStartEvent,
+)
+
+import llama_index.core.instrumentation as instrument
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+)
+
+dispatcher = instrument.get_dispatcher(__name__)
+
+if TYPE_CHECKING:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.types import BaseTool
+
+
+class ToolSelection(BaseModel):
+    """Tool selection."""
+
+    tool_id: str = Field(description="Tool ID to select.")
+    tool_name: str = Field(description="Tool name to select.")
+    tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
+    # NOTE: no args for now
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -115,6 +143,22 @@ def default_completion_to_prompt(prompt: str) -> str:
 
 
 class LLM(BaseLLM):
+    """
+    The LLM class is the main class for interacting with language models.
+
+    Attributes:
+        system_prompt (Optional[str]):
+            System prompt for LLM calls.
+        messages_to_prompt (Callable):
+            Function to convert a list of messages to an LLM prompt.
+        completion_to_prompt (Callable):
+            Function to convert a completion to an LLM prompt.
+        output_parser (Optional[BaseOutputParser]):
+            Output parser to parse, validate, and correct errors programmatically.
+        pydantic_program_mode (PydanticProgramMode):
+            Pydantic program mode to use for structured prediction.
+    """
+
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
@@ -142,6 +186,8 @@ class LLM(BaseLLM):
         exclude=True,
     )
 
+    # -- Pydantic Configs --
+
     @validator("messages_to_prompt", pre=True)
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
@@ -161,6 +207,8 @@ class LLM(BaseLLM):
         if values.get("messages_to_prompt") is None:
             values["messages_to_prompt"] = generic_messages_to_prompt
         return values
+
+    # -- Utils --
 
     def _log_template_data(
         self, prompt: BasePromptTemplate, **prompt_args: Any
@@ -200,129 +248,11 @@ class LLM(BaseLLM):
             messages = self.output_parser.format_messages(messages)
         return self._extend_messages(messages)
 
-    def structured_predict(
-        self,
-        output_cls: BaseModel,
-        prompt: PromptTemplate,
-        **prompt_args: Any,
-    ) -> BaseModel:
-        from llama_index.core.program.utils import get_program_for_llm
-
-        program = get_program_for_llm(
-            output_cls,
-            prompt,
-            self,
-            pydantic_program_mode=self.pydantic_program_mode,
-        )
-
-        return program(**prompt_args)
-
-    async def astructured_predict(
-        self,
-        output_cls: BaseModel,
-        prompt: PromptTemplate,
-        **prompt_args: Any,
-    ) -> BaseModel:
-        from llama_index.core.program.utils import get_program_for_llm
-
-        program = get_program_for_llm(
-            output_cls,
-            prompt,
-            self,
-            pydantic_program_mode=self.pydantic_program_mode,
-        )
-
-        return await program.acall(**prompt_args)
-
     def _parse_output(self, output: str) -> str:
         if self.output_parser is not None:
             return str(self.output_parser.parse(output))
 
         return output
-
-    def predict(
-        self,
-        prompt: BasePromptTemplate,
-        **prompt_args: Any,
-    ) -> str:
-        """Predict."""
-        self._log_template_data(prompt, **prompt_args)
-
-        if self.metadata.is_chat_model:
-            messages = self._get_messages(prompt, **prompt_args)
-            chat_response = self.chat(messages)
-            output = chat_response.message.content or ""
-        else:
-            formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            response = self.complete(formatted_prompt, formatted=True)
-            output = response.text
-
-        return self._parse_output(output)
-
-    def stream(
-        self,
-        prompt: BasePromptTemplate,
-        **prompt_args: Any,
-    ) -> TokenGen:
-        """Stream."""
-        self._log_template_data(prompt, **prompt_args)
-
-        if self.metadata.is_chat_model:
-            messages = self._get_messages(prompt, **prompt_args)
-            chat_response = self.stream_chat(messages)
-            stream_tokens = stream_chat_response_to_tokens(chat_response)
-        else:
-            formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            stream_response = self.stream_complete(formatted_prompt, formatted=True)
-            stream_tokens = stream_completion_response_to_tokens(stream_response)
-
-        if prompt.output_parser is not None or self.output_parser is not None:
-            raise NotImplementedError("Output parser is not supported for streaming.")
-
-        return stream_tokens
-
-    async def apredict(
-        self,
-        prompt: BasePromptTemplate,
-        **prompt_args: Any,
-    ) -> str:
-        """Async predict."""
-        self._log_template_data(prompt, **prompt_args)
-
-        if self.metadata.is_chat_model:
-            messages = self._get_messages(prompt, **prompt_args)
-            chat_response = await self.achat(messages)
-            output = chat_response.message.content or ""
-        else:
-            formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            response = await self.acomplete(formatted_prompt, formatted=True)
-            output = response.text
-
-        return self._parse_output(output)
-
-    async def astream(
-        self,
-        prompt: BasePromptTemplate,
-        **prompt_args: Any,
-    ) -> TokenAsyncGen:
-        """Async stream."""
-        self._log_template_data(prompt, **prompt_args)
-
-        if self.metadata.is_chat_model:
-            messages = self._get_messages(prompt, **prompt_args)
-            chat_response = await self.astream_chat(messages)
-            stream_tokens = await astream_chat_response_to_tokens(chat_response)
-        else:
-            formatted_prompt = self._get_prompt(prompt, **prompt_args)
-            stream_response = await self.astream_complete(
-                formatted_prompt, formatted=True
-            )
-            stream_tokens = await astream_completion_response_to_tokens(stream_response)
-
-        if prompt.output_parser is not None or self.output_parser is not None:
-            raise NotImplementedError("Output parser is not supported for streaming.")
-
-        return stream_tokens
 
     def _extend_prompt(
         self,
@@ -356,6 +286,399 @@ class LLM(BaseLLM):
             return LLMChatComponent(llm=self, **kwargs)
         else:
             return LLMCompleteComponent(llm=self, **kwargs)
+
+    # -- Structured outputs --
+
+    @dispatcher.span
+    def structured_predict(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> BaseModel:
+        r"""Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            BaseModel: The structured prediction output.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            output = llm.structured_predict(Test, prompt, topic="cats")
+            print(output.name)
+            ```
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = program(**prompt_args)
+        dispatcher.event(LLMStructuredPredictEndEvent(output=result))
+        return result
+
+    @dispatcher.span
+    async def astructured_predict(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> BaseModel:
+        r"""Async Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            BaseModel: The structured prediction output.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            output = await llm.astructured_predict(Test, prompt, topic="cats")
+            print(output.name)
+            ```
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
+
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = await program.acall(**prompt_args)
+        dispatcher.event(LLMStructuredPredictEndEvent(output=result))
+        return result
+
+    # -- Prompt Chaining --
+
+    @dispatcher.span
+    def predict(
+        self,
+        prompt: BasePromptTemplate,
+        **prompt_args: Any,
+    ) -> str:
+        """Predict for a given prompt.
+
+        Args:
+            prompt (BasePromptTemplate):
+                The prompt to use for prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            str: The prediction output.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            output = llm.predict(prompt, topic="cats")
+            print(output)
+            ```
+        """
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
+        self._log_template_data(prompt, **prompt_args)
+
+        if self.metadata.is_chat_model:
+            messages = self._get_messages(prompt, **prompt_args)
+            chat_response = self.chat(messages)
+            output = chat_response.message.content or ""
+        else:
+            formatted_prompt = self._get_prompt(prompt, **prompt_args)
+            response = self.complete(formatted_prompt, formatted=True)
+            output = response.text
+        parsed_output = self._parse_output(output)
+        dispatcher.event(LLMPredictEndEvent(output=parsed_output))
+        return parsed_output
+
+    @dispatcher.span
+    def stream(
+        self,
+        prompt: BasePromptTemplate,
+        **prompt_args: Any,
+    ) -> TokenGen:
+        """Stream predict for a given prompt.
+
+        Args:
+            prompt (BasePromptTemplate):
+                The prompt to use for prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Yields:
+            str: Each streamed token.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            gen = llm.stream_predict(prompt, topic="cats")
+            for token in gen:
+                print(token, end="", flush=True)
+            ```
+        """
+        self._log_template_data(prompt, **prompt_args)
+
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
+        if self.metadata.is_chat_model:
+            messages = self._get_messages(prompt, **prompt_args)
+            chat_response = self.stream_chat(messages)
+            stream_tokens = stream_chat_response_to_tokens(chat_response)
+        else:
+            formatted_prompt = self._get_prompt(prompt, **prompt_args)
+            stream_response = self.stream_complete(formatted_prompt, formatted=True)
+            stream_tokens = stream_completion_response_to_tokens(stream_response)
+
+        if prompt.output_parser is not None or self.output_parser is not None:
+            raise NotImplementedError("Output parser is not supported for streaming.")
+
+        return stream_tokens
+
+    @dispatcher.span
+    async def apredict(
+        self,
+        prompt: BasePromptTemplate,
+        **prompt_args: Any,
+    ) -> str:
+        """Async Predict for a given prompt.
+
+        Args:
+            prompt (BasePromptTemplate):
+                The prompt to use for prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            str: The prediction output.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            output = await llm.apredict(prompt, topic="cats")
+            print(output)
+            ```
+        """
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
+        self._log_template_data(prompt, **prompt_args)
+
+        if self.metadata.is_chat_model:
+            messages = self._get_messages(prompt, **prompt_args)
+            chat_response = await self.achat(messages)
+            output = chat_response.message.content or ""
+        else:
+            formatted_prompt = self._get_prompt(prompt, **prompt_args)
+            response = await self.acomplete(formatted_prompt, formatted=True)
+            output = response.text
+
+        parsed_output = self._parse_output(output)
+        dispatcher.event(LLMPredictEndEvent(output=parsed_output))
+        return parsed_output
+
+    @dispatcher.span
+    async def astream(
+        self,
+        prompt: BasePromptTemplate,
+        **prompt_args: Any,
+    ) -> TokenAsyncGen:
+        """Async stream predict for a given prompt.
+
+        Args:
+        prompt (BasePromptTemplate):
+            The prompt to use for prediction.
+        prompt_args (Any):
+            Additional arguments to format the prompt with.
+
+        Yields:
+            str: An async generator that yields strings of tokens.
+
+        Examples:
+            ```python
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please write a random name related to {topic}.")
+            gen = await llm.astream_predict(prompt, topic="cats")
+            async for token in gen:
+                print(token, end="", flush=True)
+            ```
+        """
+        self._log_template_data(prompt, **prompt_args)
+
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
+        if self.metadata.is_chat_model:
+            messages = self._get_messages(prompt, **prompt_args)
+            chat_response = await self.astream_chat(messages)
+            stream_tokens = await astream_chat_response_to_tokens(chat_response)
+        else:
+            formatted_prompt = self._get_prompt(prompt, **prompt_args)
+            stream_response = await self.astream_complete(
+                formatted_prompt, formatted=True
+            )
+            stream_tokens = await astream_completion_response_to_tokens(stream_response)
+
+        if prompt.output_parser is not None or self.output_parser is not None:
+            raise NotImplementedError("Output parser is not supported for streaming.")
+
+        return stream_tokens
+
+    @dispatcher.span
+    def predict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        """Predict and call the tool.
+
+        By default uses a ReAct agent to do tool calling (through text prompting),
+        but function calling LLMs will implement this differently.
+
+        """
+        from llama_index.core.agent.react import ReActAgentWorker
+        from llama_index.core.agent.types import Task
+        from llama_index.core.chat_engine.types import AgentChatResponse
+        from llama_index.core.memory import ChatMemoryBuffer
+
+        worker = ReActAgentWorker(
+            tools,
+            llm=self,
+            callback_manager=self.callback_manager,
+            verbose=verbose,
+            **kwargs,
+        )
+
+        if isinstance(user_msg, ChatMessage):
+            user_msg = user_msg.content
+
+        task = Task(
+            input=user_msg,
+            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
+            extra_state={},
+            callback_manager=self.callback_manager,
+        )
+        step = worker.initialize_step(task)
+
+        try:
+            output = worker.run_step(step, task).output
+
+            # react agent worker inserts a "Observation: " prefix to the response
+            if output.response and output.response.startswith("Observation: "):
+                output.response = output.response.replace("Observation: ", "")
+        except Exception as e:
+            output = AgentChatResponse(
+                response="An error occurred while running the tool: " + str(e),
+                sources=[],
+            )
+
+        return output
+
+    @dispatcher.span
+    async def apredict_and_call(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> "AgentChatResponse":
+        """Predict and call the tool."""
+        from llama_index.core.agent.react import ReActAgentWorker
+        from llama_index.core.agent.types import Task
+        from llama_index.core.chat_engine.types import AgentChatResponse
+        from llama_index.core.memory import ChatMemoryBuffer
+
+        worker = ReActAgentWorker(
+            tools,
+            llm=self,
+            callback_manager=self.callback_manager,
+            verbose=verbose,
+            **kwargs,
+        )
+
+        if isinstance(user_msg, ChatMessage):
+            user_msg = user_msg.content
+
+        task = Task(
+            input=user_msg,
+            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
+            extra_state={},
+            callback_manager=self.callback_manager,
+        )
+        step = worker.initialize_step(task)
+
+        try:
+            output = await worker.arun_step(step, task).output
+
+            # react agent worker inserts a "Observation: " prefix to the response
+            if output.response and output.response.startswith("Observation: "):
+                output.response = output.response.replace("Observation: ", "")
+        except Exception as e:
+            output = AgentChatResponse(
+                response="An error occurred while running the tool: " + str(e),
+                sources=[],
+            )
+
+        return output
 
 
 class BaseLLMComponent(QueryComponent):

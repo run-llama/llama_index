@@ -1,5 +1,14 @@
 import logging
-from typing import Any, Callable, Generator, Optional, Sequence, Type, cast
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Optional,
+    Sequence,
+    Type,
+    cast,
+    AsyncGenerator,
+)
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
@@ -11,13 +20,20 @@ from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TEXT_QA_PROMPT_SEL,
 )
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.response.utils import get_response_text
+from llama_index.core.response.utils import get_response_text, aget_response_text
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
+from llama_index.core.instrumentation.events.synthesis import (
+    GetResponseEndEvent,
+    GetResponseStartEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +163,7 @@ class Refine(BaseSynthesizer):
         if "refine_template" in prompts:
             self._refine_template = prompts["refine_template"]
 
+    @dispatcher.span
     def get_response(
         self,
         query_str: str,
@@ -155,6 +172,9 @@ class Refine(BaseSynthesizer):
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
         """Give response over chunks."""
+        dispatcher.event(
+            GetResponseStartEvent(query_str=query_str, text_chunks=text_chunks)
+        )
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:
@@ -176,6 +196,7 @@ class Refine(BaseSynthesizer):
                 response = response or "Empty Response"
         else:
             response = cast(Generator, response)
+        dispatcher.event(GetResponseEndEvent())
         return response
 
     def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
@@ -323,6 +344,7 @@ class Refine(BaseSynthesizer):
 
         return response
 
+    @dispatcher.span
     async def aget_response(
         self,
         query_str: str,
@@ -330,6 +352,9 @@ class Refine(BaseSynthesizer):
         prev_response: Optional[RESPONSE_TEXT_TYPE] = None,
         **response_kwargs: Any,
     ) -> RESPONSE_TEXT_TYPE:
+        dispatcher.event(
+            GetResponseStartEvent(query_str=query_str, text_chunks=text_chunks)
+        )
         response: Optional[RESPONSE_TEXT_TYPE] = None
         for text_chunk in text_chunks:
             if prev_response is None:
@@ -351,7 +376,8 @@ class Refine(BaseSynthesizer):
             else:
                 response = response or "Empty Response"
         else:
-            response = cast(Generator, response)
+            response = cast(AsyncGenerator, response)
+        dispatcher.event(GetResponseEndEvent())
         return response
 
     async def _arefine_response_single(
@@ -363,8 +389,8 @@ class Refine(BaseSynthesizer):
     ) -> Optional[RESPONSE_TEXT_TYPE]:
         """Refine response."""
         # TODO: consolidate with logic in response/schema.py
-        if isinstance(response, Generator):
-            response = get_response_text(response)
+        if isinstance(response, AsyncGenerator):
+            response = await aget_response_text(response)
 
         fmt_text_chunk = truncate_text(text_chunk, 50)
         logger.debug(f"> Refine context: {fmt_text_chunk}")
@@ -411,7 +437,24 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             else:
-                raise ValueError("Streaming not supported for async")
+                if isinstance(response, Generator):
+                    response = "".join(response)
+
+                if isinstance(response, AsyncGenerator):
+                    _r = ""
+                    async for text in response:
+                        _r += text
+                    response = _r
+
+                refine_template = self._refine_template.partial_format(
+                    query_str=query_str, existing_answer=response
+                )
+
+                response = await self._llm.astream(
+                    refine_template,
+                    context_msg=cur_text_chunk,
+                    **response_kwargs,
+                )
 
             if query_satisfied:
                 refine_template = self._refine_template.partial_format(
@@ -451,7 +494,12 @@ class Refine(BaseSynthesizer):
                         f"Validation error on structured response: {e}", exc_info=True
                     )
             elif response is None and self._streaming:
-                raise ValueError("Streaming not supported for async")
+                response = await self._llm.astream(
+                    text_qa_template,
+                    context_str=cur_text_chunk,
+                    **response_kwargs,
+                )
+                query_satisfied = True
             else:
                 response = await self._arefine_response_single(
                     cast(RESPONSE_TEXT_TYPE, response),
@@ -464,5 +512,5 @@ class Refine(BaseSynthesizer):
         if isinstance(response, str):
             response = response or "Empty Response"
         else:
-            response = cast(Generator, response)
+            response = cast(AsyncGenerator, response)
         return response

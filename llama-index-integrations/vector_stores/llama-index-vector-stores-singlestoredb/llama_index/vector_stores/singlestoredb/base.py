@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Sequence
 
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -19,7 +19,7 @@ import singlestoredb as s2
 logger = logging.getLogger(__name__)
 
 
-class SingleStoreVectorStore(VectorStore):
+class SingleStoreVectorStore(BasePydanticVectorStore):
     """SingleStore vector store.
 
     This vector store stores embeddings within a SingleStore database table.
@@ -56,10 +56,39 @@ class SingleStoreVectorStore(VectorStore):
             connections, 80 for HTTP connections, and 443 for HTTPS connections.
         database (str, optional): Database name.
 
+    Examples:
+        `pip install llama-index-vector-stores-singlestoredb`
+
+        ```python
+        from llama_index.vector_stores.singlestoredb import SingleStoreVectorStore
+        import os
+
+        # can set the singlestore db url in env
+        # or pass it in as an argument to the SingleStoreVectorStore constructor
+        os.environ["SINGLESTOREDB_URL"] = "PLACEHOLDER URL"
+        vector_store = SingleStoreVectorStore(
+            table_name="embeddings",
+            content_field="content",
+            metadata_field="metadata",
+            vector_field="vector",
+            timeout=30,
+        )
+        ```
+
     """
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    table_name: str
+    content_field: str
+    metadata_field: str
+    vector_field: str
+    pool_size: int
+    max_overflow: int
+    timeout: float
+    connection_kwargs: dict
+    connection_pool: QueuePool
 
     def __init__(
         self,
@@ -73,20 +102,21 @@ class SingleStoreVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        self.table_name = table_name
-        self.content_field = content_field
-        self.metadata_field = metadata_field
-        self.vector_field = vector_field
-        self.pool_size = pool_size
-        self.max_overflow = max_overflow
-        self.timeout = timeout
-
-        self.connection_kwargs = kwargs
-        self.connection_pool = QueuePool(
-            self._get_connection,
-            pool_size=self.pool_size,
-            max_overflow=self.max_overflow,
-            timeout=self.timeout,
+        super().__init__(
+            table_name=table_name,
+            content_field=content_field,
+            metadata_field=metadata_field,
+            vector_field=vector_field,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            timeout=timeout,
+            connection_kwargs=kwargs,
+            connection_pool=QueuePool(
+                self._get_connection,
+                pool_size=pool_size,
+                max_overflow=max_overflow,
+                timeout=timeout,
+            ),
         )
 
         self._create_table()

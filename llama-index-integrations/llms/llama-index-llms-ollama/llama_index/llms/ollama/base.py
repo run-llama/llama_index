@@ -7,7 +7,9 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
+    ChatResponseAsyncGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
@@ -27,6 +29,27 @@ def get_additional_kwargs(
 
 
 class Ollama(CustomLLM):
+    """Ollama LLM.
+
+    Visit https://ollama.com/ to download and install Ollama.
+
+    Run `ollama serve` to start a server.
+
+    Run `ollama pull <name>` to download a model to run.
+
+    Examples:
+        `pip install llama-index-llms-ollama`
+
+        ```python
+        from llama_index.llms.ollama import Ollama
+
+        llm = Ollama(model="llama2", request_timeout=60.0)
+
+        response = llm.complete("What is the capital of France?")
+        print(response)
+        ```
+    """
+
     base_url: str = Field(
         default="http://localhost:11434",
         description="Base url the model is hosted under.",
@@ -49,6 +72,10 @@ class Ollama(CustomLLM):
     )
     prompt_key: str = Field(
         default="prompt", description="The key to use for the prompt in API calls."
+    )
+    json_mode: bool = Field(
+        default=False,
+        description="Whether to use JSON mode for the Ollama API.",
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
@@ -97,6 +124,9 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
+        if self.json_mode:
+            payload["format"] = "json"
+
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
                 url=f"{self.base_url}/api/chat",
@@ -136,6 +166,9 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
+        if self.json_mode:
+            payload["format"] = "json"
+
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             with client.stream(
                 method="POST",
@@ -167,6 +200,48 @@ class Ollama(CustomLLM):
                             ),
                         )
 
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": message.role.value,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+                for message in messages
+            ],
+            "options": self._model_kwargs,
+            "stream": False,
+            **kwargs,
+        }
+
+        if self.json_mode:
+            payload["format"] = "json"
+
+        async with httpx.AsyncClient(timeout=Timeout(self.request_timeout)) as client:
+            response = await client.post(
+                url=f"{self.base_url}/api/chat",
+                json=payload,
+            )
+            response.raise_for_status()
+            raw = response.json()
+            message = raw["message"]
+            return ChatResponse(
+                message=ChatMessage(
+                    content=message.get("content"),
+                    role=MessageRole(message.get("role")),
+                    additional_kwargs=get_additional_kwargs(
+                        message, ("content", "role")
+                    ),
+                ),
+                raw=raw,
+                additional_kwargs=get_additional_kwargs(raw, ("message",)),
+            )
+
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -179,8 +254,40 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
+        if self.json_mode:
+            payload["format"] = "json"
+
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             response = client.post(
+                url=f"{self.base_url}/api/generate",
+                json=payload,
+            )
+            response.raise_for_status()
+            raw = response.json()
+            text = raw.get("response")
+            return CompletionResponse(
+                text=text,
+                raw=raw,
+                additional_kwargs=get_additional_kwargs(raw, ("response",)),
+            )
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        payload = {
+            self.prompt_key: prompt,
+            "model": self.model,
+            "options": self._model_kwargs,
+            "stream": False,
+            **kwargs,
+        }
+
+        if self.json_mode:
+            payload["format"] = "json"
+
+        async with httpx.AsyncClient(timeout=Timeout(self.request_timeout)) as client:
+            response = await client.post(
                 url=f"{self.base_url}/api/generate",
                 json=payload,
             )
@@ -205,6 +312,9 @@ class Ollama(CustomLLM):
             **kwargs,
         }
 
+        if self.json_mode:
+            payload["format"] = "json"
+
         with httpx.Client(timeout=Timeout(self.request_timeout)) as client:
             with client.stream(
                 method="POST",
@@ -226,3 +336,42 @@ class Ollama(CustomLLM):
                                 chunk, ("response",)
                             ),
                         )
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        payload = {
+            self.prompt_key: prompt,
+            "model": self.model,
+            "options": self._model_kwargs,
+            "stream": True,
+            **kwargs,
+        }
+
+        if self.json_mode:
+            payload["format"] = "json"
+
+        async def gen() -> CompletionResponseAsyncGen:
+            async with httpx.AsyncClient(
+                timeout=Timeout(self.request_timeout)
+            ) as client:
+                async with client.stream(
+                    method="POST",
+                    url=f"{self.base_url}/api/generate",
+                    json=payload,
+                ) as response:
+                    async for line in response.aiter_lines():
+                        if line:
+                            chunk = json.loads(line)
+                            delta = chunk.get("response")
+                            yield CompletionResponse(
+                                delta=delta,
+                                text=delta,
+                                raw=chunk,
+                                additional_kwargs=get_additional_kwargs(
+                                    chunk, ("response",)
+                                ),
+                            )
+
+        return gen()

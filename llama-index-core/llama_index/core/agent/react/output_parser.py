@@ -15,7 +15,7 @@ from llama_index.core.types import BaseOutputParser
 
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     pattern = (
-        r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: .*?(\{.*\})"
+        r"\s*Thought: (.*?)\n+Action: ([a-zA-Z0-9_]+).*?\n+Action Input: .*?(\{.*\})"
     )
 
     match = re.search(pattern, input_text, re.DOTALL)
@@ -97,14 +97,15 @@ class ReActOutputParser(BaseOutputParser):
                 is_streaming=is_streaming,
             )
 
+        # An "Action" should take priority over an "Answer"
+        if "Action:" in output:
+            return parse_action_reasoning_step(output)
+
         if "Answer:" in output:
             thought, answer = extract_final_response(output)
             return ResponseReasoningStep(
                 thought=thought, response=answer, is_streaming=is_streaming
             )
-
-        if "Action:" in output:
-            return parse_action_reasoning_step(output)
 
         raise ValueError(f"Could not parse output: {output}")
 

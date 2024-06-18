@@ -8,9 +8,10 @@ import uuid
 from typing import Coroutine, Dict, List, Optional, Tuple
 
 from deprecated import deprecated
-from llama_index.core import Document, ServiceContext, SummaryIndex
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.indices.list import SummaryIndex
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.node import KeywordNodePostprocessor
@@ -23,10 +24,12 @@ from llama_index.core.prompts.mixin import (
 )
 from llama_index.core.schema import (
     BaseNode,
+    Document,
     MetadataMode,
     NodeWithScore,
     TransformComponent,
 )
+from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
     callback_manager_from_settings_or_context,
@@ -325,13 +328,13 @@ class DatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self, num: int | None = None) -> List[str]:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_questions_from_nodes(num=num))
+        return asyncio_run(self.agenerate_questions_from_nodes(num=num))
 
     def generate_dataset_from_nodes(
         self, num: int | None = None
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
+        return asyncio_run(self.agenerate_dataset_from_nodes(num=num))
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-postprocessor-cohere-rerank"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.8"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-cohere = "^4.45"
+llama-index-core = "^0.10.41"
+cohere = "^5.1.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

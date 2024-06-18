@@ -1,136 +1,119 @@
 """Pathway Retriever."""
 
-import logging
-from typing import Any, Callable, List, Optional, Tuple, Union
+import json
+from typing import List, Optional
+
+import requests
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.ingestion.pipeline import run_transformations
 from llama_index.core.schema import (
-    BaseNode,
     NodeWithScore,
     QueryBundle,
     TextNode,
-    TransformComponent,
 )
 
-logger = logging.getLogger(__name__)
 
-
-def node_transformer(x: str) -> List[BaseNode]:
-    return [TextNode(text=x)]
-
-
-def node_to_pathway(x: BaseNode) -> List[Tuple[str, dict]]:
-    return [(node.text, node.extra_info) for node in x]
-
-
-class PathwayVectorServer:
-    """
-    Build an autoupdating document indexing pipeline
-    for approximate nearest neighbor search.
-
-    Args:
-        docs (list): Pathway tables, may be pw.io connectors or custom tables.
-
-        transformations (List[TransformComponent]): list of transformation steps, has to
-            include embedding as last step, optionally splitter and other
-            TransformComponent in the middle
-
-        parser (Callable[[bytes], list[tuple[str, dict]]]): optional, callable that
-            parses file contents into a list of documents. If None, defaults to `uft-8` decoding of the file contents. Defaults to None.
-    """
-
+# Copied from https://github.com/pathwaycom/pathway/blob/main/python/pathway/xpacks/llm/vector_store.py
+# to remove dependency on Pathway library when only the client is used.
+class _VectorStoreClient:
     def __init__(
         self,
-        *docs: Any,
-        transformations: List[Union[TransformComponent, Callable[[Any], Any]]],
-        parser: Optional[Callable[[bytes], List[Tuple[str, dict]]]] = None,
-        **kwargs: Any,
-    ) -> None:
-        try:
-            from pathway.xpacks.llm import vector_store
-        except ImportError:
-            raise ImportError(
-                "Could not import pathway python package. "
-                "Please install it with `pip install pathway`."
-            )
-
-        if transformations is None or not transformations:
-            raise ValueError("Transformations list cannot be None or empty.")
-
-        if not isinstance(transformations[-1], BaseEmbedding):
-            raise ValueError(
-                f"Last step of transformations should be an instance of {BaseEmbedding.__name__}, "
-                f"found {type(transformations[-1])}."
-            )
-
-        embedder: BaseEmbedding = transformations.pop()  # type: ignore
-
-        def embedding_callable(x: str) -> List[float]:
-            return embedder.get_text_embedding(x)
-
-        transformations.insert(0, node_transformer)
-        transformations.append(node_to_pathway)  # TextNode -> (str, dict)
-
-        def generic_transformer(x: List[str]) -> List[Tuple[str, dict]]:
-            return run_transformations(x, transformations)  # type: ignore
-
-        self.vector_store_server = vector_store.VectorStoreServer(
-            *docs,
-            embedder=embedding_callable,
-            parser=parser,
-            splitter=generic_transformer,
-            **kwargs,
-        )
-
-    def run_server(
-        self,
-        host: str,
-        port: str,
-        threaded: bool = False,
-        with_cache: bool = True,
-        cache_backend: Any = None,
-    ) -> Any:
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        url: Optional[str] = None,
+    ):
         """
-        Run the server and start answering queries.
+        A client you can use to query :py:class:`VectorStoreServer`.
+
+        Please provide either the `url`, or `host` and `port`.
 
         Args:
-            host (str): host to bind the HTTP listener
-            port (str | int): port to bind the HTTP listener
-            threaded (bool): if True, run in a thread. Else block computation
-            with_cache (bool): if True, embedding requests for the same contents are cached
-            cache_backend: the backend to use for caching if it is enabled. The
-              default is the disk cache, hosted locally in the folder ``./Cache``. You
-              can use ``Backend`` class of the [`persistence API`]
-              (/developers/api-docs/persistence-api/#pathway.persistence.Backend)
-              to override it.
-
-        Returns:
-            If threaded, return the Thread object. Else, does not return.
+            - host: host on which `:py:class:`VectorStoreServer` listens
+            - port: port on which `:py:class:`VectorStoreServer` listens
+            - url: url at which `:py:class:`VectorStoreServer` listens
         """
-        try:
-            import pathway as pw
-        except ImportError:
-            raise ImportError(
-                "Could not import pathway python package. "
-                "Please install it with `pip install pathway`."
-            )
-        if with_cache and cache_backend is None:
-            cache_backend = pw.persistence.Backend.filesystem("./Cache")
-        return self.vector_store_server.run_server(
-            host,
-            port,
-            threaded=threaded,
-            with_cache=with_cache,
-            cache_backend=cache_backend,
+        err = "Either (`host` and `port`) or `url` must be provided, but not both."
+        if url is not None:
+            if host or port:
+                raise ValueError(err)
+            self.url = url
+        else:
+            if host is None:
+                raise ValueError(err)
+            port = port or 80
+            self.url = f"http://{host}:{port}"
+
+    def query(
+        self, query: str, k: int = 3, metadata_filter: Optional[str] = None
+    ) -> List[dict]:
+        """
+        Perform a query to the vector store and fetch results.
+
+        Args:
+            - query:
+            - k: number of documents to be returned
+            - metadata_filter: optional string representing the metadata filtering query
+                in the JMESPath format. The search will happen only for documents
+                satisfying this filtering.
+        """
+        data = {"query": query, "k": k}
+        if metadata_filter is not None:
+            data["metadata_filter"] = metadata_filter
+        url = self.url + "/v1/retrieve"
+        response = requests.post(
+            url,
+            data=json.dumps(data),
+            headers={"Content-Type": "application/json"},
+            timeout=3,
         )
+        responses = response.json()
+        return sorted(responses, key=lambda x: x["dist"])
+
+    # Make an alias
+    __call__ = query
+
+    def get_vectorstore_statistics(self) -> dict:
+        """Fetch basic statistics about the vector store."""
+        url = self.url + "/v1/statistics"
+        response = requests.post(
+            url,
+            json={},
+            headers={"Content-Type": "application/json"},
+        )
+        return response.json()
+
+    def get_input_files(
+        self,
+        metadata_filter: Optional[str] = None,
+        filepath_globpattern: Optional[str] = None,
+    ) -> list:
+        """
+        Fetch information on documents in the vector store.
+
+        Args:
+            metadata_filter: optional string representing the metadata filtering query
+                in the JMESPath format. The search will happen only for documents
+                satisfying this filtering.
+            filepath_globpattern: optional glob pattern specifying which documents
+                will be searched for this query.
+        """
+        url = self.url + "/v1/inputs"
+        response = requests.post(
+            url,
+            json={
+                "metadata_filter": metadata_filter,
+                "filepath_globpattern": filepath_globpattern,
+            },
+            headers={"Content-Type": "application/json"},
+        )
+        return response.json()
 
 
 class PathwayRetriever(BaseRetriever):
     """Pathway retriever.
+
     Pathway is an open data processing framework.
     It allows you to easily develop data transformation pipelines
     that work with live data sources and changing data.
@@ -140,18 +123,14 @@ class PathwayRetriever(BaseRetriever):
 
     def __init__(
         self,
-        host: str,
-        port: Union[str, int],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        url: Optional[str] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         """Initializing the Pathway retriever client."""
-        import_err_msg = "`pathway` package not found, please run `pip install pathway`"
-        try:
-            from pathway.xpacks.llm.vector_store import VectorStoreClient
-        except ImportError:
-            raise ImportError(import_err_msg)
-        self.client = VectorStoreClient(host, port)
+        self.client = _VectorStoreClient(host, port, url)
         self.similarity_top_k = similarity_top_k
         super().__init__(callback_manager)
 

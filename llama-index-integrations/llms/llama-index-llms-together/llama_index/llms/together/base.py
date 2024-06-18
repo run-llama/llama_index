@@ -5,6 +5,27 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class TogetherLLM(OpenAILike):
+    """Together LLM.
+
+    Examples:
+        `pip install llama-index-llms-together`
+
+        ```python
+        from llama_index.llms.together import TogetherLLM
+
+        # set api key in env or in llm
+        # import os
+        # os.environ["TOGETHER_API_KEY"] = "your api key"
+
+        llm = TogetherLLM(
+            model="mistralai/Mixtral-8x7B-Instruct-v0.1", api_key="your_api_key"
+        )
+
+        resp = llm.complete("Who is Paul Graham?")
+        print(resp)
+        ```
+    """
+
     def __init__(
         self,
         model: str,

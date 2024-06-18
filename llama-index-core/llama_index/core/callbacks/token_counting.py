@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from llama_index.core.callbacks.base_handler import BaseCallbackHandler
+from llama_index.core.callbacks.pythonically_printing_base_handler import (
+    PythonicallyPrintingBaseHandler,
+)
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.utils import get_tokenizer
+import logging
 
 
 @dataclass
@@ -90,7 +93,7 @@ def get_llm_token_counts(
         )
 
 
-class TokenCountingHandler(BaseCallbackHandler):
+class TokenCountingHandler(PythonicallyPrintingBaseHandler):
     """Callback handler for counting tokens in LLM and Embedding events.
 
     Args:
@@ -107,6 +110,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
         verbose: bool = False,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         self.llm_token_counts: List[TokenCountingEvent] = []
         self.embedding_token_counts: List[TokenCountingEvent] = []
@@ -118,6 +122,7 @@ class TokenCountingHandler(BaseCallbackHandler):
         super().__init__(
             event_starts_to_ignore=event_starts_to_ignore or [],
             event_ends_to_ignore=event_ends_to_ignore or [],
+            logger=logger,
         )
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
@@ -162,12 +167,11 @@ class TokenCountingHandler(BaseCallbackHandler):
             )
 
             if self._verbose:
-                print(
+                self._print(
                     "LLM Prompt Token Usage: "
                     f"{self.llm_token_counts[-1].prompt_token_count}\n"
                     "LLM Completion Token Usage: "
                     f"{self.llm_token_counts[-1].completion_token_count}",
-                    flush=True,
                 )
         elif (
             event_type == CBEventType.EMBEDDING
@@ -188,7 +192,7 @@ class TokenCountingHandler(BaseCallbackHandler):
                 total_chunk_tokens += self.embedding_token_counts[-1].total_token_count
 
             if self._verbose:
-                print(f"Embedding Token Usage: {total_chunk_tokens}", flush=True)
+                self._print(f"Embedding Token Usage: {total_chunk_tokens}")
 
     @property
     def total_llm_token_count(self) -> int:

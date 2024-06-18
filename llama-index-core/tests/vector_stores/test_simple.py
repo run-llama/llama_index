@@ -7,6 +7,9 @@ from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
+    FilterCondition,
+    MetadataFilter,
+    FilterOperator,
 )
 
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
@@ -21,21 +24,36 @@ def _node_embeddings_for_test() -> List[TextNode]:
             id_=_NODE_ID_WEIGHT_1_RANK_A,
             embedding=[1.0, 0.0],
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
-            metadata={"weight": 1.0, "rank": "a"},
+            metadata={
+                "weight": 1.0,
+                "rank": "a",
+                "quality": ["medium", "high"],
+                "identifier": "6FTR78Yun",
+            },
         ),
         TextNode(
             text="lorem ipsum",
             id_=_NODE_ID_WEIGHT_2_RANK_C,
             embedding=[0.0, 1.0],
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
-            metadata={"weight": 2.0, "rank": "c"},
+            metadata={
+                "weight": 2.0,
+                "rank": "c",
+                "quality": ["medium"],
+                "identifier": "6FTR78Ygl",
+            },
         ),
         TextNode(
             text="lorem ipsum",
             id_=_NODE_ID_WEIGHT_3_RANK_C,
             embedding=[1.0, 1.0],
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")},
-            metadata={"weight": 3.0, "rank": "c"},
+            metadata={
+                "weight": 3.0,
+                "rank": "c",
+                "quality": ["low", "medium", "high"],
+                "identifier": "6FTR78Ztl",
+            },
         ),
     ]
 
@@ -148,3 +166,254 @@ class SimpleVectorStoreTest(unittest.TestCase):
             result.ids,
             [_NODE_ID_WEIGHT_3_RANK_C, _NODE_ID_WEIGHT_1_RANK_A],
         )
+
+    def test_query_with_filters_with_filter_condition(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        # test OR filter
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="rank", value="c"),
+                ExactMatchFilter(key="weight", value=1.0),
+            ],
+            condition=FilterCondition.OR,
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), 3)
+
+        # test AND filter
+        filters = MetadataFilters(
+            filters=[
+                ExactMatchFilter(key="rank", value="c"),
+                ExactMatchFilter(key="weight", value=1.0),
+            ],
+            condition=FilterCondition.AND,
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), 0)
+
+    def test_query_with_equal_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="weight", operator=FilterOperator.EQ, value=1.0)
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 1)
+
+    def test_query_with_notequal_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="weight", operator=FilterOperator.NE, value=1.0)
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_query_with_greaterthan_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="weight", operator=FilterOperator.GT, value=1.5)
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_query_with_greaterthanequal_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="weight", operator=FilterOperator.GTE, value=1.0)
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 3)
+
+    def test_query_with_lessthan_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="weight", operator=FilterOperator.LT, value=1.1)
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+
+    def test_query_with_lessthanequal_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="weight", operator=FilterOperator.LTE, value=1.0)
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 1)
+
+    def test_query_with_in_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="quality", operator=FilterOperator.IN, value="high")
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_query_with_notin_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(key="quality", operator=FilterOperator.NIN, value="high")
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 1)
+
+    def test_query_with_contains_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="quality", operator=FilterOperator.CONTAINS, value="high"
+                )
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_query_with_textmatch_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="identifier",
+                    operator=FilterOperator.TEXT_MATCH,
+                    value="6FTR78Y",
+                )
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_query_with_any_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="quality", operator=FilterOperator.ANY, value=["high", "low"]
+                )
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_query_with_all_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="quality", operator=FilterOperator.ALL, value=["medium", "high"]
+                )
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        assert result.ids is not None
+        self.assertEqual(len(result.ids), 2)
+
+    def test_clear(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+        simple_vector_store.clear()
+        query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), 0)
+
+    def test_delete_nodes(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+        simple_vector_store.delete_nodes(
+            [_NODE_ID_WEIGHT_1_RANK_A, _NODE_ID_WEIGHT_2_RANK_C]
+        )
+        query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
+        result = simple_vector_store.query(query)
+        self.assertEqual(result.ids, [_NODE_ID_WEIGHT_3_RANK_C])

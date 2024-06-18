@@ -1,12 +1,12 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.llms.anthropic.utils import messages_to_anthropic_prompt
+from llama_index.llms.anthropic.utils import messages_to_anthropic_messages
 from llama_index.llms.bedrock.llama_utils import (
     completion_to_prompt as completion_to_llama_prompt,
 )
@@ -44,8 +44,17 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-v1": 100000,
     "anthropic.claude-v2": 100000,
     "anthropic.claude-v2:1": 200000,
+    "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "cohere.command-r-plus-v1:0": 128000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
+    "meta.llama3-8b-instruct-v1:0": 8192,
+    "meta.llama3-70b-instruct-v1:0": 8192,
+    "mistral.mistral-7b-instruct-v0:2": 32000,
+    "mistral.mixtral-8x7b-instruct-v0:1": 32000,
+    "mistral.mistral-large-2402-v1:0": 32000,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -59,7 +68,13 @@ STREAMING_MODELS = {
     "anthropic.claude-v1",
     "anthropic.claude-v2",
     "anthropic.claude-v2:1",
+    "anthropic.claude-3-sonnet-20240229-v1:0",
+    "anthropic.claude-3-haiku-20240307-v1:0",
+    "anthropic.claude-3-opus-20240229-v1:0",
     "meta.llama2-13b-chat-v1",
+    "mistral.mistral-7b-instruct-v0:2",
+    "mistral.mixtral-8x7b-instruct-v0:1",
+    "mistral.mistral-large-2402-v1:0",
 }
 
 
@@ -107,18 +122,53 @@ class Ai21Provider(Provider):
 
 
 def completion_to_anthopic_prompt(completion: str) -> str:
-    return messages_to_anthropic_prompt(prompt_to_messages(completion))
+    messages, _ = messages_to_anthropic_messages(prompt_to_messages(completion))
+    return messages
+
+
+def _messages_to_anthropic_messages(messages: Sequence[ChatMessage]) -> List[dict]:
+    messages, system_prompt = messages_to_anthropic_messages(messages)
+    if system_prompt:
+        messages = [{"role": "system", "content": system_prompt}, *messages]
+    return messages
 
 
 class AnthropicProvider(Provider):
-    max_tokens_key = "max_tokens_to_sample"
+    max_tokens_key = "max_tokens"
 
     def __init__(self) -> None:
-        self.messages_to_prompt = messages_to_anthropic_prompt
+        self.messages_to_prompt = _messages_to_anthropic_messages
         self.completion_to_prompt = completion_to_anthopic_prompt
 
+    def get_text_from_stream_response(self, response: dict) -> str:
+        if response["type"] == "content_block_delta":
+            return response["delta"]["text"]
+        else:
+            return ""
+
     def get_text_from_response(self, response: dict) -> str:
-        return response["completion"]
+        return response["content"][0]["text"]
+
+    def get_request_body(self, prompt: Sequence[Dict], inference_parameters: dict):
+        if len(prompt) > 0 and prompt[0]["role"] == "system":
+            system_message = prompt[0]["content"]
+            prompt = prompt[1:]
+
+            if (
+                "system" in inference_parameters
+                and inference_parameters["system"] is not None
+            ):
+                inference_parameters["system"] += system_message
+            else:
+                inference_parameters["system"] = system_message
+
+        return {
+            "messages": prompt,
+            "anthropic_version": inference_parameters.get(
+                "anthropic_version", "bedrock-2023-05-31"
+            ),  # Required by AWS.
+            **inference_parameters,
+        }
 
 
 class CohereProvider(Provider):
@@ -139,12 +189,24 @@ class MetaProvider(Provider):
         return response["generation"]
 
 
+class MistralProvider(Provider):
+    max_tokens_key = "max_tokens"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = messages_to_llama_prompt
+        self.completion_to_prompt = completion_to_llama_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["outputs"][0]["text"]
+
+
 PROVIDERS = {
     "amazon": AmazonProvider(),
     "ai21": Ai21Provider(),
     "anthropic": AnthropicProvider(),
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
+    "mistral": MistralProvider(),
 }
 
 

@@ -93,6 +93,7 @@ class OnDemandLoaderTool(AsyncBaseTool):
         query_str_kwargs_key: str = "query_str",
         name: Optional[str] = None,
         description: Optional[str] = None,
+        return_direct: bool = False,
         fn_schema: Optional[Type[BaseModel]] = None,
     ) -> "OnDemandLoaderTool":
         """From defaults."""
@@ -106,7 +107,12 @@ class OnDemandLoaderTool(AsyncBaseTool):
             fn_schema = create_schema_from_function(
                 name or "LoadData", tool._fn, [(query_str_kwargs_key, str, None)]
             )
-        metadata = ToolMetadata(name=name, description=description, fn_schema=fn_schema)
+        metadata = ToolMetadata(
+            name=name,
+            description=description,
+            fn_schema=fn_schema,
+            return_direct=return_direct,
+        )
         return cls(
             loader=tool._fn,
             index_cls=index_cls,

@@ -10,6 +10,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.core.async_utils import asyncio_run, run_jobs
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -28,6 +29,15 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.tools.types import BaseTool
+from llama_index.core.instrumentation.events.agent import (
+    AgentRunStepEndEvent,
+    AgentRunStepStartEvent,
+    AgentChatWithStepStartEvent,
+    AgentChatWithStepEndEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class BaseAgentRunner(BaseAgent):
@@ -51,6 +61,14 @@ class BaseAgentRunner(BaseAgent):
     @abstractmethod
     def list_tasks(self, **kwargs: Any) -> List[Task]:
         """List tasks."""
+
+    @abstractmethod
+    def get_completed_tasks(self, **kwargs: Any) -> List[Task]:
+        """Get completed tasks."""
+
+    @abstractmethod
+    def get_task_output(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
+        """Get task output."""
 
     @abstractmethod
     def get_task(self, task_id: str, **kwargs: Any) -> Task:
@@ -231,7 +249,6 @@ class AgentRunner(BaseAgentRunner):
                 )
             else:
                 self.callback_manager = CallbackManager()
-
         self.init_task_state_kwargs = init_task_state_kwargs or {}
         self.delete_task_on_finish = delete_task_on_finish
         self.default_tool_choice = default_tool_choice
@@ -333,7 +350,7 @@ class AgentRunner(BaseAgentRunner):
 
     def list_tasks(self, **kwargs: Any) -> List[Task]:
         """List tasks."""
-        return list(self.state.task_dict.values())
+        return [task_state.task for task_state in self.state.task_dict.values()]
 
     def get_task(self, task_id: str, **kwargs: Any) -> Task:
         """Get task."""
@@ -347,6 +364,25 @@ class AgentRunner(BaseAgentRunner):
         """Get completed steps."""
         return self.state.get_completed_steps(task_id)
 
+    def get_task_output(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
+        """Get task output."""
+        completed_steps = self.get_completed_steps(task_id)
+        if len(completed_steps) == 0:
+            raise ValueError(f"No completed steps for task_id: {task_id}")
+        return completed_steps[-1]
+
+    def get_completed_tasks(self, **kwargs: Any) -> List[Task]:
+        """Get completed tasks."""
+        task_states = list(self.state.task_dict.values())
+        completed_tasks = []
+        for task_state in task_states:
+            completed_steps = self.get_completed_steps(task_state.task.task_id)
+            if len(completed_steps) > 0 and completed_steps[-1].is_last:
+                completed_tasks.append(task_state.task)
+
+        return completed_tasks
+
+    @dispatcher.span
     def _run_step(
         self,
         task_id: str,
@@ -356,6 +392,9 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
+        dispatcher.event(
+            AgentRunStepStartEvent(task_id=task_id, step=step, input=input)
+        )
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -382,8 +421,10 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
+        dispatcher.event(AgentRunStepEndEvent(step_output=cur_step_output))
         return cur_step_output
 
+    @dispatcher.span
     async def _arun_step(
         self,
         task_id: str,
@@ -393,6 +434,9 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
+        dispatcher.event(
+            AgentRunStepStartEvent(task_id=task_id, step=step, input=input)
+        )
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
@@ -418,8 +462,10 @@ class AgentRunner(BaseAgentRunner):
         completed_steps = self.state.get_completed_steps(task_id)
         completed_steps.append(cur_step_output)
 
+        dispatcher.event(AgentRunStepEndEvent(step_output=cur_step_output))
         return cur_step_output
 
+    @dispatcher.span
     def run_step(
         self,
         task_id: str,
@@ -433,6 +479,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
+    @dispatcher.span
     async def arun_step(
         self,
         task_id: str,
@@ -446,6 +493,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.WAIT, **kwargs
         )
 
+    @dispatcher.span
     def stream_step(
         self,
         task_id: str,
@@ -459,6 +507,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    @dispatcher.span
     async def astream_step(
         self,
         task_id: str,
@@ -472,6 +521,7 @@ class AgentRunner(BaseAgentRunner):
             task_id, step, input=input, mode=ChatResponseMode.STREAM, **kwargs
         )
 
+    @dispatcher.span
     def finalize_response(
         self,
         task_id: str,
@@ -502,6 +552,7 @@ class AgentRunner(BaseAgentRunner):
 
         return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
 
+    @dispatcher.span
     def _chat(
         self,
         message: str,
@@ -515,6 +566,7 @@ class AgentRunner(BaseAgentRunner):
         task = self.create_task(message)
 
         result_output = None
+        dispatcher.event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = self._run_step(
@@ -528,11 +580,14 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(
+        result = self.finalize_response(
             task.task_id,
             result_output,
         )
+        dispatcher.event(AgentChatWithStepEndEvent(response=result))
+        return result
 
+    @dispatcher.span
     async def _achat(
         self,
         message: str,
@@ -546,6 +601,7 @@ class AgentRunner(BaseAgentRunner):
         task = self.create_task(message)
 
         result_output = None
+        dispatcher.event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
@@ -559,11 +615,14 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        return self.finalize_response(
+        result = self.finalize_response(
             task.task_id,
             result_output,
         )
+        dispatcher.event(AgentChatWithStepEndEvent(response=result))
+        return result
 
+    @dispatcher.span
     @trace_method("chat")
     def chat(
         self,
@@ -579,12 +638,16 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = self._chat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.WAIT
+                message=message,
+                chat_history=chat_history,
+                tool_choice=tool_choice,
+                mode=ChatResponseMode.WAIT,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     async def achat(
         self,
@@ -600,12 +663,16 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = await self._achat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.WAIT
+                message=message,
+                chat_history=chat_history,
+                tool_choice=tool_choice,
+                mode=ChatResponseMode.WAIT,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     def stream_chat(
         self,
@@ -623,10 +690,14 @@ class AgentRunner(BaseAgentRunner):
             chat_response = self._chat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
+            assert isinstance(chat_response, StreamingAgentChatResponse) or (
+                isinstance(chat_response, AgentChatResponse)
+                and chat_response.is_dummy_stream
+            )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
+    @dispatcher.span
     @trace_method("chat")
     async def astream_chat(
         self,
@@ -644,10 +715,148 @@ class AgentRunner(BaseAgentRunner):
             chat_response = await self._achat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
+            assert isinstance(chat_response, StreamingAgentChatResponse) or (
+                isinstance(chat_response, AgentChatResponse)
+                and chat_response.is_dummy_stream
+            )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
         return chat_response
 
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""
         raise NotImplementedError("undo_step not implemented")
+
+
+class BasePlanningAgentRunner(AgentRunner):
+    @abstractmethod
+    def create_plan(self, input: str, **kwargs: Any) -> str:
+        """Create plan. Returns the plan_id."""
+        ...
+
+    @abstractmethod
+    def get_next_tasks(self, plan_id: str, **kwargs: Any) -> List[str]:
+        """Get next task ids for a given plan."""
+        ...
+
+    @abstractmethod
+    def mark_task_complete(self, plan_id: str, task_id: str, **kwargs: Any) -> None:
+        """Mark task complete for a given plan."""
+        ...
+
+    @abstractmethod
+    def refine_plan(self, input: str, plan_id: str, **kwargs: Any) -> None:
+        """Refine plan."""
+        ...
+
+    @abstractmethod
+    def run_task(self, task_id: str, **kwargs: Any) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Run task."""
+        ...
+
+    async def acreate_plan(self, input: str, **kwargs: Any) -> str:
+        """Create plan (async). Returns the plan_id."""
+        return self.create_plan(input, **kwargs)
+
+    async def arefine_plan(self, input: str, plan_id: str, **kwargs: Any) -> None:
+        """Refine plan (async)."""
+        return self.refine_plan(input, plan_id, **kwargs)
+
+    async def arun_task(self, task_id: str, **kwargs: Any) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Run task (async)."""
+        return self.run_task(task_id, **kwargs)
+
+    @dispatcher.span
+    def _chat(
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        tool_choice: Union[str, dict] = "auto",
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Chat with step executor."""
+        if chat_history is not None:
+            self.memory.set(chat_history)
+
+        # create initial set of tasks
+        plan_id = self.create_plan(message)
+
+        results = []
+        dispatcher.event(AgentChatWithStepStartEvent(user_msg=message))
+        while True:
+            # EXIT CONDITION: check if all sub-tasks are completed
+            next_task_ids = self.get_next_tasks(plan_id)
+            if len(next_task_ids) == 0:
+                break
+
+            jobs = [
+                self.arun_task(sub_task_id, mode=mode, tool_choice=tool_choice)
+                for sub_task_id in next_task_ids
+            ]
+            results = asyncio_run(run_jobs(jobs, workers=len(jobs)))
+
+            for sub_task_id in next_task_ids:
+                self.mark_task_complete(plan_id, sub_task_id)
+
+            # EXIT CONDITION: check if all sub-tasks are completed now
+            # LLMs have a tendency to add more tasks, so we end if there are no more tasks
+            # next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
+            # if len(next_sub_tasks) == 0:
+            #    break
+
+            # refine the plan
+            self.refine_plan(message, plan_id)
+
+        dispatcher.event(
+            AgentChatWithStepEndEvent(
+                response=results[-1] if len(results) > 0 else None
+            )
+        )
+        return results[-1]
+
+    @dispatcher.span
+    async def _achat(
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        tool_choice: Union[str, dict] = "auto",
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Chat with step executor."""
+        if chat_history is not None:
+            self.memory.set(chat_history)
+
+        # create initial set of tasks
+        plan_id = self.create_plan(message)
+
+        results = []
+        dispatcher.event(AgentChatWithStepStartEvent(user_msg=message))
+        while True:
+            # EXIT CONDITION: check if all sub-tasks are completed
+            next_task_ids = self.get_next_tasks(plan_id)
+            if len(next_task_ids) == 0:
+                break
+
+            jobs = [
+                self.arun_task(sub_task_id, mode=mode, tool_choice=tool_choice)
+                for sub_task_id in next_task_ids
+            ]
+            results = await run_jobs(jobs, workers=len(jobs))
+
+            for sub_task_id in next_task_ids:
+                self.mark_task_complete(plan_id, sub_task_id)
+
+            # EXIT CONDITION: check if all sub-tasks are completed now
+            # LLMs have a tendency to add more tasks, so we end if there are no more tasks
+            # next_sub_tasks = self.state.get_next_sub_tasks(plan_id)
+            # if len(next_sub_tasks) == 0:
+            #    break
+
+            # refine the plan
+            await self.arefine_plan(message, plan_id)
+
+        dispatcher.event(
+            AgentChatWithStepEndEvent(
+                response=results[-1] if len(results) > 0 else None
+            )
+        )
+        return results[-1]

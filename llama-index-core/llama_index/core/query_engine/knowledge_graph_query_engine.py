@@ -180,14 +180,14 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         node = NodeWithScore(
             node=TextNode(
                 text=retrieved_graph_context,
-                score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
                     "graph_store_query": graph_store_query,
                     "graph_store_response": graph_store_response,
                     "graph_schema": self._graph_schema,
                 },
-            )
+            ),
+            score=1.0,
         )
         return [node]
 
@@ -241,14 +241,14 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         node = NodeWithScore(
             node=TextNode(
                 text=retrieved_graph_context,
-                score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
                     "graph_store_query": graph_store_query,
                     "graph_store_response": graph_store_response,
                     "graph_schema": self._graph_schema,
                 },
-            )
+            ),
+            score=1.0,
         )
         return [node]
 

@@ -1,0 +1,19 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.poetry]
+authors = ["Laurie Voss <github@seldo.com>"]
+description = ""
+name = "new-docs"
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+mkdocs = "^1.5.3"
+mkdocstrings = {extras = ["python"], version = "^0.24.1"}
+mkdocs-jupyter = "^0.24.6"
+mkdocs-include-dir-to-nav = "^1.2.0"
+mkdocs-material = "^9.5.13"
+mkdocs-redirects = "^1.2.1"

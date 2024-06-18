@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 from abc import abstractmethod
-from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
 from llama_index.agent.openai_legacy.utils import get_function_by_name
@@ -25,6 +24,7 @@ from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.types import Thread
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
 
@@ -228,9 +228,9 @@ class BaseOpenAIAgent(BaseAgent):
         )
         thread.start()
         # Wait for the event to be set
-        chat_stream_response._is_function_not_none_thread_event.wait()
+        chat_stream_response.is_function_not_none_thread_event.wait()
         # If it is executing an openAI function, wait for the thread to finish
-        if chat_stream_response._is_function:
+        if chat_stream_response.is_function:
             thread.join()
 
         # if it's false, return the answer (to stream)
@@ -248,7 +248,9 @@ class BaseOpenAIAgent(BaseAgent):
             chat_stream_response.awrite_response_to_history(self.memory)
         )
         # wait until openAI functions stop executing
-        await chat_stream_response._is_function_false_event.wait()
+        chat_stream_response._ensure_async_setup()
+        await chat_stream_response.is_function_false_event.wait()
+
         # return response stream
         return chat_stream_response
 

@@ -3,6 +3,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from llama_index.core.instrumentation import DispatcherSpanMixin
+
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
@@ -20,6 +22,7 @@ class ToolMetadata:
     description: str
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
+    return_direct: bool = False
 
     def get_parameters_dict(self) -> dict:
         if self.fn_schema is None:
@@ -67,8 +70,13 @@ class ToolMetadata:
             "parameters": self.get_parameters_dict(),
         }
 
-    def to_openai_tool(self) -> Dict[str, Any]:
+    def to_openai_tool(self, skip_length_check: bool = False) -> Dict[str, Any]:
         """To OpenAI tool."""
+        if not skip_length_check and len(self.description) > 1024:
+            raise ValueError(
+                "Tool description exceeds maximum length of 1024 characters. "
+                "Please shorten your description or move it to the prompt."
+            )
         return {
             "type": "function",
             "function": {
@@ -86,13 +94,14 @@ class ToolOutput(BaseModel):
     tool_name: str
     raw_input: Dict[str, Any]
     raw_output: Any
+    is_error: bool = False
 
     def __str__(self) -> str:
         """String."""
         return str(self.content)
 
 
-class BaseTool:
+class BaseTool(DispatcherSpanMixin):
     @property
     @abstractmethod
     def metadata(self) -> ToolMetadata:

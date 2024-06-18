@@ -1,7 +1,8 @@
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+from deprecated import deprecated
 from huggingface_hub import (
     AsyncInferenceClient,
     InferenceClient,
@@ -15,28 +16,25 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.utils import get_cache_dir, infer_torch_device
 from llama_index.embeddings.huggingface.pooling import Pooling
+from llama_index.core.utils import get_cache_dir, infer_torch_device
 from llama_index.embeddings.huggingface.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     format_query,
     format_text,
+    get_query_instruct_for_model_name,
+    get_text_instruct_for_model_name,
 )
-from transformers import AutoModel, AutoTokenizer
-
-if TYPE_CHECKING:
-    import torch
+from sentence_transformers import SentenceTransformer
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
-    tokenizer_name: str = Field(description="Tokenizer name from HuggingFace.")
     max_length: int = Field(
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
     )
-    pooling: Pooling = Field(default=Pooling.CLS, description="Pooling strategy.")
     normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
@@ -45,82 +43,70 @@ class HuggingFaceEmbedding(BaseEmbedding):
         description="Instruction to prepend to text."
     )
     cache_folder: Optional[str] = Field(
-        description="Cache folder for huggingface files."
+        description="Cache folder for Hugging Face files."
     )
 
     _model: Any = PrivateAttr()
-    _tokenizer: Any = PrivateAttr()
     _device: str = PrivateAttr()
 
     def __init__(
         self,
-        model_name: Optional[str] = None,
-        tokenizer_name: Optional[str] = None,
-        pooling: Union[str, Pooling] = "cls",
+        model_name: str = DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
+        tokenizer_name: Optional[str] = "deprecated",
+        pooling: str = "deprecated",
         max_length: Optional[int] = None,
         query_instruction: Optional[str] = None,
         text_instruction: Optional[str] = None,
         normalize: bool = True,
-        model: Optional[Any] = None,
-        tokenizer: Optional[Any] = None,
+        model: Optional[Any] = "deprecated",
+        tokenizer: Optional[Any] = "deprecated",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         cache_folder: Optional[str] = None,
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        **model_kwargs,
     ):
         self._device = device or infer_torch_device()
 
         cache_folder = cache_folder or get_cache_dir()
 
-        if model is None:  # Use model_name with AutoModel
-            model_name = (
-                model_name
-                if model_name is not None
-                else DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-            )
-            model = AutoModel.from_pretrained(
-                model_name, cache_dir=cache_folder, trust_remote_code=trust_remote_code
-            )
-        elif model_name is None:  # Extract model_name from model
-            model_name = model.name_or_path
-        self._model = model.to(self._device)
-
-        if tokenizer is None:  # Use tokenizer_name with AutoTokenizer
-            tokenizer_name = (
-                model_name or tokenizer_name or DEFAULT_HUGGINGFACE_EMBEDDING_MODEL
-            )
-            tokenizer = AutoTokenizer.from_pretrained(
-                tokenizer_name, cache_dir=cache_folder
-            )
-        elif tokenizer_name is None:  # Extract tokenizer_name from model
-            tokenizer_name = tokenizer.name_or_path
-        self._tokenizer = tokenizer
-
-        if max_length is None:
-            try:
-                max_length = int(self._model.config.max_position_embeddings)
-            except AttributeError as exc:
+        for variable, value in [
+            ("model", model),
+            ("tokenizer", tokenizer),
+            ("pooling", pooling),
+            ("tokenizer_name", tokenizer_name),
+        ]:
+            if value != "deprecated":
                 raise ValueError(
-                    "Unable to find max_length from model config. Please specify max_length."
-                ) from exc
+                    f"{variable} is deprecated. Please remove it from the arguments."
+                )
+        if model_name is None:
+            raise ValueError("The `model_name` argument must be provided.")
 
-        if isinstance(pooling, str):
-            try:
-                pooling = Pooling(pooling)
-            except ValueError as exc:
-                raise NotImplementedError(
-                    f"Pooling {pooling} unsupported, please pick one in"
-                    f" {[p.value for p in Pooling]}."
-                ) from exc
+        self._model = SentenceTransformer(
+            model_name,
+            device=self._device,
+            cache_folder=cache_folder,
+            trust_remote_code=trust_remote_code,
+            prompts={
+                "query": query_instruction
+                or get_query_instruct_for_model_name(model_name),
+                "text": text_instruction
+                or get_text_instruct_for_model_name(model_name),
+            },
+            **model_kwargs,
+        )
+        if max_length:
+            self._model.max_seq_length = max_length
+        else:
+            max_length = self._model.max_seq_length
 
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=model_name,
-            tokenizer_name=tokenizer_name,
             max_length=max_length,
-            pooling=pooling,
             normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
@@ -130,58 +116,22 @@ class HuggingFaceEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
-    def _mean_pooling(
-        self, token_embeddings: "torch.Tensor", attention_mask: "torch.Tensor"
-    ) -> "torch.Tensor":
-        """Mean Pooling - Take attention mask into account for correct averaging."""
-        input_mask_expanded = (
-            attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        )
-        numerator = (token_embeddings * input_mask_expanded).sum(1)
-        return numerator / input_mask_expanded.sum(1).clamp(min=1e-9)
-
-    def _embed(self, sentences: List[str]) -> List[List[float]]:
+    def _embed(
+        self,
+        sentences: List[str],
+        prompt_name: Optional[str] = None,
+    ) -> List[List[float]]:
         """Embed sentences."""
-        encoded_input = self._tokenizer(
+        return self._model.encode(
             sentences,
-            padding=True,
-            max_length=self.max_length,
-            truncation=True,
-            return_tensors="pt",
-        )
-
-        # pop token_type_ids
-        encoded_input.pop("token_type_ids", None)
-
-        # move tokenizer inputs to device
-        encoded_input = {
-            key: val.to(self._device) for key, val in encoded_input.items()
-        }
-
-        model_output = self._model(**encoded_input)
-
-        context_layer: "torch.Tensor" = model_output[0]
-        if self.pooling == Pooling.CLS:
-            embeddings = self.pooling.cls_pooling(context_layer)
-        elif self.pooling == Pooling.LAST:
-            embeddings = self.pooling.last_pooling(context_layer)
-        else:
-            embeddings = self._mean_pooling(
-                token_embeddings=context_layer,
-                attention_mask=encoded_input["attention_mask"],
-            )
-
-        if self.normalize:
-            import torch
-
-            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-
-        return embeddings.tolist()
+            batch_size=self.embed_batch_size,
+            prompt_name=prompt_name,
+            normalize_embeddings=self.normalize,
+        ).tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        query = format_query(query, self.model_name, self.query_instruction)
-        return self._embed([query])[0]
+        return self._embed(query, prompt_name="query")
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """Get query embedding async."""
@@ -193,17 +143,17 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        text = format_text(text, self.model_name, self.text_instruction)
-        return self._embed([text])[0]
+        return self._embed(text, prompt_name="text")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        texts = [
-            format_text(text, self.model_name, self.text_instruction) for text in texts
-        ]
-        return self._embed(texts)
+        return self._embed(texts, prompt_name="text")
 
 
+@deprecated(
+    "Deprecated in favor of `HuggingFaceInferenceAPIEmbedding` from `llama-index-embeddings-huggingface-api` which should be used instead.",
+    action="always",
+)
 class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
     """
     Wrapper on the Hugging Face's Inference API for embeddings.

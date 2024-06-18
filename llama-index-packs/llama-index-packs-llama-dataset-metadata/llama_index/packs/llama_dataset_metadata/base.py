@@ -7,6 +7,7 @@ from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.download.utils import get_file_content
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.settings import Settings
 
 if TYPE_CHECKING:
     from llama_index.core.llama_dataset import LabelledRagDataset
@@ -143,11 +144,9 @@ class DatasetCard(BaseMetadata):
         )
 
         # extract baseline config info from index
-        llm = index.service_context.llm.model
-        embed_model = index.as_retriever().get_service_context().embed_model.model_name
-        chunk_size = (
-            index.as_retriever().get_service_context().transformations[0].chunk_size
-        )
+        llm = Settings.llm.metadata.model_name
+        embed_model = Settings.embed_model.model_name
+        chunk_size = index._transformations[0].chunk_size
         similarity_top_k = index.as_retriever()._similarity_top_k
         baseline_config = BaselineConfig(
             llm=llm,

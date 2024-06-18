@@ -202,6 +202,7 @@ class CitationQueryEngine(BaseQueryEngine):
 
         return cls(
             retriever=retriever,
+            llm=llm,
             response_synthesizer=response_synthesizer,
             callback_manager=callback_manager_from_settings_or_context(
                 Settings, index.service_context

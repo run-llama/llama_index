@@ -4,18 +4,24 @@ Contains parsers for docx, pdf files.
 
 """
 
+import io
+import logging
 import struct
 import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from tenacity import retry, stop_after_attempt
+
 from fsspec import AbstractFileSystem
-import logging
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.readers.file.base import get_default_fs
+from llama_index.core.readers.file.base import get_default_fs, is_default_fs
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
+
+RETRY_TIMES = 3
 
 
 class PDFReader(BaseReader):
@@ -27,6 +33,9 @@ class PDFReader(BaseReader):
         """
         self.return_full_document = return_full_document
 
+    @retry(
+        stop=stop_after_attempt(RETRY_TIMES),
+    )
     def load_data(
         self,
         file: Path,
@@ -34,6 +43,9 @@ class PDFReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import pypdf
         except ImportError:
@@ -42,8 +54,12 @@ class PDFReader(BaseReader):
             )
         fs = fs or get_default_fs()
         with fs.open(file, "rb") as fp:
+            # Load the file in memory if the filesystem is not the default one to avoid
+            # issues with pypdf
+            stream = fp if is_default_fs(fs) else io.BytesIO(fp.read())
+
             # Create a PDF object
-            pdf = pypdf.PdfReader(fp)
+            pdf = pypdf.PdfReader(stream)
 
             # Get the number of pages in the PDF document
             num_pages = len(pdf.pages)
@@ -52,13 +68,14 @@ class PDFReader(BaseReader):
 
             # This block returns a whole PDF as a single Document
             if self.return_full_document:
-                text = ""
-                metadata = {"file_name": fp.name}
+                metadata = {"file_name": file.name}
+                if extra_info is not None:
+                    metadata.update(extra_info)
 
-                for page in range(num_pages):
-                    # Extract the text from the page
-                    page_text = pdf.pages[page].extract_text()
-                    text += page_text
+                # Join text extracted from each page
+                text = "\n".join(
+                    pdf.pages[page].extract_text() for page in range(num_pages)
+                )
 
                 docs.append(Document(text=text, metadata=metadata))
 
@@ -71,7 +88,7 @@ class PDFReader(BaseReader):
                     page_text = pdf.pages[page].extract_text()
                     page_label = pdf.page_labels[page]
 
-                    metadata = {"page_label": page_label, "file_name": fp.name}
+                    metadata = {"page_label": page_label, "file_name": file.name}
                     if extra_info is not None:
                         metadata.update(extra_info)
 
@@ -90,6 +107,9 @@ class DocxReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
+        if not isinstance(file, Path):
+            file = Path(file)
+
         try:
             import docx2txt
         except ImportError:
@@ -144,6 +164,8 @@ class HWPReader(BaseReader):
                 "from fsspec filesystems. Will load from local filesystem instead."
             )
 
+        if not isinstance(file, Path):
+            file = Path(file)
         load_file = olefile.OleFileIO(file)
         file_dir = load_file.listdir()
         if self.is_valid(file_dir) is False:

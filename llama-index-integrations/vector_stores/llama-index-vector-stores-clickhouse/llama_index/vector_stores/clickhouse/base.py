@@ -63,7 +63,7 @@ DISTANCE_MAPPING = {
 class ClickHouseSettings:
     """ClickHouse Client Configuration.
 
-    Attributes:
+    Args:
         table (str): Table name to operate on.
         database (str): Database name to find the table.
         engine (str): Engine. Options are "MergeTree" and "Memory". Default is "MergeTree".
@@ -138,6 +138,24 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             Defaults to None.
         service_context (ServiceContext, optional): Vector store service context.
             Defaults to None
+
+    Examples:
+        `pip install llama-index-vector-stores-clickhouse`
+
+        ```python
+        from llama_index.vector_stores.clickhouse import ClickHouseVectorStore
+        import clickhouse_connect
+
+        # initialize client
+        client = clickhouse_connect.get_client(
+            host="localhost",
+            port=8123,
+            username="default",
+            password="",
+        )
+
+        vector_store = ClickHouseVectorStore(clickhouse_client=client)
+        ```
     """
 
     stores_text = True

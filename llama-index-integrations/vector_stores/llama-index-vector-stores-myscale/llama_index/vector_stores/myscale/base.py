@@ -3,10 +3,12 @@
 An index that is built on top of an existing MyScale cluster.
 
 """
+
 import json
 import logging
 from typing import Any, Dict, List, Optional, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -16,7 +18,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -30,7 +32,7 @@ from llama_index.readers.myscale.base import (
 logger = logging.getLogger(__name__)
 
 
-class MyScaleVectorStore(VectorStore):
+class MyScaleVectorStore(BasePydanticVectorStore):
     """MyScale Vector Store.
 
     In this vector store, embeddings and docs are stored within an existing
@@ -57,14 +59,37 @@ class MyScaleVectorStore(VectorStore):
             Defaults to None.
         embed_dims (embed_dims, optional): Embedding dimensions. Defaults to None.
 
+    Examples:
+        `pip install llama-index-vector-stores-myscale`
+
+        ```python
+        from llama_index.vector_stores.myscale import MyScaleVectorStore
+        import clickhouse_connect
+
+        # initialize client
+        client = clickhouse_connect.get_client(
+            host="YOUR_CLUSTER_HOST",
+            port=8443,
+            username="YOUR_USERNAME",
+            password="YOUR_CLUSTER_PASSWORD",
+        )
+
+        vector_store = MyScaleVectorStore(myscale_client=client)
+        ```
+
     """
 
     stores_text: bool = True
-    _index_existed: bool = False
     metadata_column: str = "metadata"
     AMPLIFY_RATIO_LE5 = 100
     AMPLIFY_RATIO_GT5 = 20
     AMPLIFY_RATIO_GT50 = 10
+
+    _index_existed: bool = PrivateAttr(False)
+    _client: Any = PrivateAttr()
+    _config: MyScaleSettings = PrivateAttr()
+    _column_config: Dict = PrivateAttr()
+    _dim: int = PrivateAttr()
 
     def __init__(
         self,
@@ -84,6 +109,8 @@ class MyScaleVectorStore(VectorStore):
             `clickhouse_connect` package not found,
             please run `pip install clickhouse-connect`
         """
+        super().__init__()
+
         try:
             from clickhouse_connect.driver.httpclient import HttpClient
         except ImportError:
@@ -93,7 +120,7 @@ class MyScaleVectorStore(VectorStore):
             raise ValueError("Missing MyScale client!")
 
         self._client = cast(HttpClient, myscale_client)
-        self.config = MyScaleSettings(
+        self._config = MyScaleSettings(
             table=table,
             database=database,
             index_type=index_type,
@@ -105,7 +132,7 @@ class MyScaleVectorStore(VectorStore):
         )
 
         # schema column name, type, and construct format method
-        self.column_config: Dict = {
+        self._column_config: Dict = {
             "id": {"type": "String", "extract_func": lambda x: x.node_id},
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
@@ -131,6 +158,11 @@ class MyScaleVectorStore(VectorStore):
         if embed_dims is not None:
             self._create_index(embed_dims)
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "MyScaleVectorStore"
+
     @property
     def client(self) -> Any:
         """Get client."""
@@ -138,19 +170,20 @@ class MyScaleVectorStore(VectorStore):
 
     def _create_index(self, dimension: int) -> None:
         index_params = (
-            ", " + ",".join([f"'{k}={v}'" for k, v in self.config.index_params.items()])
-            if self.config.index_params
+            ", "
+            + ",".join([f"'{k}={v}'" for k, v in self._config.index_params.items()])
+            if self._config.index_params
             else ""
         )
         schema_ = f"""
-            CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-                {",".join([f'{k} {v["type"]}' for k, v in self.column_config.items()])},
+            CREATE TABLE IF NOT EXISTS {self._config.database}.{self._config.table}(
+                {",".join([f'{k} {v["type"]}' for k, v in self._column_config.items()])},
                 CONSTRAINT vector_length CHECK length(vector) = {dimension},
-                VECTOR INDEX {self.config.table}_index vector TYPE
-                {self.config.index_type}('metric_type={self.config.metric}'{index_params})
+                VECTOR INDEX {self._config.table}_index vector TYPE
+                {self._config.index_type}('metric_type={self._config.metric}'{index_params})
             ) ENGINE = MergeTree ORDER BY id
             """
-        self.dim = dimension
+        self._dim = dimension
         self._client.command("SET allow_experimental_object_type=1")
         self._client.command(schema_)
         self._index_existed = True
@@ -164,14 +197,14 @@ class MyScaleVectorStore(VectorStore):
             item_value_str = ",".join(
                 [
                     f"'{column['extract_func'](item)}'"
-                    for column in self.column_config.values()
+                    for column in self._column_config.values()
                 ]
             )
             _data.append(f"({item_value_str})")
 
         return f"""
                 INSERT INTO TABLE
-                    {self.config.database}.{self.config.table}({",".join(self.column_config.keys())})
+                    {self._config.database}.{self._config.table}({",".join(self._column_config.keys())})
                 VALUES
                     {','.join(_data)}
                 """
@@ -180,7 +213,7 @@ class MyScaleVectorStore(VectorStore):
         self, stage_one_sql: str, query_str: str, similarity_top_k: int
     ) -> str:
         terms_pattern = [f"(?i){x}" for x in query_str.split(" ")]
-        column_keys = self.column_config.keys()
+        column_keys = self._column_config.keys()
         return (
             f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
             f"dist FROM ({stage_one_sql}) tempt "
@@ -222,7 +255,7 @@ class MyScaleVectorStore(VectorStore):
         if not self._index_existed:
             self._create_index(len(nodes[0].get_embedding()))
 
-        for result_batch in iter_batch(nodes, self.config.batch_size):
+        for result_batch in iter_batch(nodes, self._config.batch_size):
             insert_statement = self._build_insert_statement(values=result_batch)
             self._client.command(insert_statement)
 
@@ -237,14 +270,14 @@ class MyScaleVectorStore(VectorStore):
 
         """
         self._client.command(
-            f"DELETE FROM {self.config.database}.{self.config.table} "
+            f"DELETE FROM {self._config.database}.{self._config.table} "
             f"where doc_id='{ref_doc_id}'"
         )
 
     def drop(self) -> None:
         """Drop MyScale Index and table."""
         self._client.command(
-            f"DROP TABLE IF EXISTS {self.config.database}.{self.config.table}"
+            f"DROP TABLE IF EXISTS {self._config.database}.{self._config.table}"
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -266,7 +299,7 @@ class MyScaleVectorStore(VectorStore):
             )
 
         # build query sql
-        query_statement = self.config.build_query_statement(
+        query_statement = self._config.build_query_statement(
             query_embed=query_embedding,
             where_str=where_str,
             limit=query.similarity_top_k,
@@ -278,7 +311,7 @@ class MyScaleVectorStore(VectorStore):
             if query.similarity_top_k > 50:
                 amplify_ratio = self.AMPLIFY_RATIO_GT50
             query_statement = self._build_hybrid_search_statement(
-                self.config.build_query_statement(
+                self._config.build_query_statement(
                     query_embed=query_embedding,
                     where_str=where_str,
                     limit=query.similarity_top_k * amplify_ratio,

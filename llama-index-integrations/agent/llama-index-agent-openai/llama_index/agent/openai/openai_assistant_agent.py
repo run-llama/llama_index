@@ -1,11 +1,15 @@
 """OpenAI Assistant Agent."""
+
 import asyncio
 import json
 import logging
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
-
-from llama_index.agent.openai.utils import get_function_by_name
+from llama_index.core.agent.function_calling.step import (
+    build_error_tool_output,
+    build_missing_tool_message,
+    get_function_by_name,
+)
 from llama_index.core.agent.types import BaseAgent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.callbacks import (
@@ -28,13 +32,13 @@ logger.setLevel(logging.WARNING)
 
 def from_openai_thread_message(thread_message: Any) -> ChatMessage:
     """From OpenAI thread message."""
-    from openai.types.beta.threads import MessageContentText, ThreadMessage
+    from openai.types.beta.threads import TextContentBlock, Message
 
-    thread_message = cast(ThreadMessage, thread_message)
+    thread_message = cast(Message, thread_message)
 
     # we don't have a way of showing images, just do text for now
     text_contents = [
-        t for t in thread_message.content if isinstance(t, MessageContentText)
+        t for t in thread_message.content if isinstance(t, TextContentBlock)
     ]
     text_content_str = " ".join([t.text.value for t in text_contents])
 
@@ -68,15 +72,27 @@ def call_function(
     # TMP: consolidate with other abstractions
     name = fn_obj.name
     arguments_str = fn_obj.arguments
+
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
+
     tool = get_function_by_name(tools, name)
-    argument_dict = json.loads(arguments_str)
-    output = tool(**argument_dict)
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================")
+    if tool is not None:
+        argument_dict = json.loads(arguments_str)
+        output = tool(**argument_dict)
+
+        if verbose:
+            print(f"Got output: {output!s}")
+            print("========================")
+    else:
+        err_msg = build_missing_tool_message(name)
+        output = build_error_tool_output(name, arguments_str, err_msg)
+
+        if verbose:
+            print(err_msg)
+            print("========================")
+
     return (
         ChatMessage(
             content=str(output),
@@ -99,16 +115,28 @@ async def acall_function(
     # TMP: consolidate with other abstractions
     name = fn_obj.name
     arguments_str = fn_obj.arguments
+
     if verbose:
         print("=== Calling Function ===")
         print(f"Calling function: {name} with args: {arguments_str}")
+
     tool = get_function_by_name(tools, name)
-    argument_dict = json.loads(arguments_str)
-    async_tool = adapt_to_async_tool(tool)
-    output = await async_tool.acall(**argument_dict)
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================")
+    if tool is not None:
+        argument_dict = json.loads(arguments_str)
+        tool = adapt_to_async_tool(tool)
+        output = await tool.acall(**argument_dict)
+
+        if verbose:
+            print(f"Got output: {output!s}")
+            print("========================")
+    else:
+        err_msg = build_missing_tool_message(name)
+        output = build_error_tool_output(name, arguments_str, err_msg)
+
+        if verbose:
+            print(err_msg)
+            print("========================")
+
     return (
         ChatMessage(
             content=str(output),
@@ -132,6 +160,12 @@ def _process_files(client: Any, files: List[str]) -> Dict[str, str]:
         file_obj = client.files.create(file=open(file, "rb"), purpose="assistants")
         file_dict[file_obj.id] = file
     return file_dict
+
+
+def format_attachments(file_ids: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """Create attachments from file_ids."""
+    file_ids = file_ids or []
+    return [{"file_id": file_id} for file_id in file_ids]
 
 
 class OpenAIAssistantAgent(BaseAgent):
@@ -223,7 +257,6 @@ class OpenAIAssistantAgent(BaseAgent):
         file_ids = file_ids or []
 
         file_dict = _process_files(client, files)
-        all_file_ids = list(file_dict.keys()) + file_ids
 
         # TODO: openai's typing is a bit sus
         all_openai_tools = cast(List[Any], all_openai_tools)
@@ -232,7 +265,6 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
-            file_ids=all_file_ids,
         )
         return cls(
             client,
@@ -335,12 +367,12 @@ class OpenAIAssistantAgent(BaseAgent):
 
     def add_message(self, message: str, file_ids: Optional[List[str]] = None) -> Any:
         """Add message to assistant."""
-        file_ids = file_ids or []
+        attachments = format_attachments(file_ids=file_ids)
         return self._client.beta.threads.messages.create(
             thread_id=self._thread_id,
             role="user",
             content=message,
-            file_ids=file_ids,
+            attachments=attachments,
         )
 
     def _run_function_calling(self, run: Any) -> List[ToolOutput]:
@@ -348,6 +380,7 @@ class OpenAIAssistantAgent(BaseAgent):
         tool_calls = run.required_action.submit_tool_outputs.tool_calls
         tool_output_dicts = []
         tool_output_objs: List[ToolOutput] = []
+
         for tool_call in tool_calls:
             fn_obj = tool_call.function
             _, tool_output = call_function(self._tools, fn_obj, verbose=self._verbose)
@@ -403,7 +436,6 @@ class OpenAIAssistantAgent(BaseAgent):
         run = cast(Run, run)
 
         sources = []
-
         while run.status in ["queued", "in_progress", "requires_action"]:
             run = self._client.beta.threads.runs.retrieve(
                 thread_id=self._thread_id, run_id=run.id

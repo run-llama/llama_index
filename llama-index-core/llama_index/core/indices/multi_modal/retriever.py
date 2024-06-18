@@ -1,7 +1,7 @@
 """Base vector store index query."""
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.core.base.base_multi_modal_retriever import (
     MultiModalRetriever,
@@ -11,7 +11,6 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.core.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.core.indices.utils import log_vector_store_query_result
 from llama_index.core.schema import (
     NodeWithScore,
@@ -25,18 +24,21 @@ from llama_index.core.settings import (
 )
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.indices.multi_modal.base import MultiModalVectorStoreIndex
 
 
 class MultiModalVectorIndexRetriever(MultiModalRetriever):
     """Multi Modal Vector index retriever.
 
     Args:
-        index (MultiModalVectorIndexRetriever): Multi Modal vector store index for images and texts.
+        index (MultiModalVectorStoreIndex): Multi Modal vector store index for images and texts.
         similarity_top_k (int): number of top k results to return.
         vector_store_query_mode (str): vector store query mode
             See reference for VectorStoreQueryMode for full list of supported modes.
@@ -51,7 +53,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
 
     def __init__(
         self,
-        index: MultiModalVectorStoreIndex,
+        index: "MultiModalVectorStoreIndex",
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         image_similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
@@ -225,7 +227,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
         similarity_top_k: int,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(
             query_bundle_with_embeddings, similarity_top_k
@@ -347,7 +349,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self,
         query_bundle_with_embeddings: QueryBundle,
         similarity_top_k: int,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(
             query_bundle_with_embeddings, similarity_top_k

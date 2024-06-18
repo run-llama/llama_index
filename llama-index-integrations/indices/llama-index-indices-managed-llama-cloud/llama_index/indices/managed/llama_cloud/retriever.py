@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from llama_index_client import TextNodeWithScore
 from llama_index_client.resources.pipeline.client import OMIT, PipelineType
@@ -7,6 +7,7 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
 from llama_index.core.ingestion.api_utils import get_aclient, get_client
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.core.vector_stores.types import MetadataFilters
 
 
 class LlamaCloudRetriever(BaseRetriever):
@@ -19,7 +20,7 @@ class LlamaCloudRetriever(BaseRetriever):
         enable_reranking: Optional[bool] = None,
         rerank_top_n: Optional[int] = None,
         alpha: Optional[float] = None,
-        search_filters: Optional[Dict[str, List[Any]]] = None,
+        filters: Optional[MetadataFilters] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
@@ -36,14 +37,23 @@ class LlamaCloudRetriever(BaseRetriever):
         if len(projects) == 0:
             raise ValueError(f"No project found with name {project_name}")
 
-        self._dense_similarity_top_k = dense_similarity_top_k or OMIT
-        self._sparse_similarity_top_k = sparse_similarity_top_k or OMIT
-        self._enable_reranking = enable_reranking or OMIT
-        self._rerank_top_n = rerank_top_n or OMIT
-        self._alpha = alpha or OMIT
-        self._search_filters = search_filters or OMIT
+        self._dense_similarity_top_k = (
+            dense_similarity_top_k if dense_similarity_top_k is not None else OMIT
+        )
+        self._sparse_similarity_top_k = (
+            sparse_similarity_top_k if sparse_similarity_top_k is not None else OMIT
+        )
+        self._enable_reranking = (
+            enable_reranking if enable_reranking is not None else OMIT
+        )
+        self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
+        self._alpha = alpha if alpha is not None else OMIT
+        self._filters = filters if filters is not None else OMIT
 
-        super().__init__(**kwargs)
+        super().__init__(
+            callback_manager=kwargs.get("callback_manager", None),
+            verbose=kwargs.get("verbose", False),
+        )
 
     def _result_nodes_to_node_with_score(
         self, result_nodes: List[TextNodeWithScore]
@@ -86,7 +96,7 @@ class LlamaCloudRetriever(BaseRetriever):
             enable_reranking=self._enable_reranking,
             rerank_top_n=self._rerank_top_n,
             alpha=self._alpha,
-            search_filters=self._search_filters,
+            search_filters=self._filters,
         )
 
         result_nodes = results.retrieval_nodes
@@ -124,7 +134,7 @@ class LlamaCloudRetriever(BaseRetriever):
             enable_reranking=self._enable_reranking,
             rerank_top_n=self._rerank_top_n,
             alpha=self._alpha,
-            search_filters=self._search_filters,
+            search_filters=self._filters,
         )
 
         result_nodes = results.retrieval_nodes

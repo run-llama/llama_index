@@ -27,18 +27,18 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-postgres"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.11"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = "^0.10.20"
 pgvector = "^0.2.4"
 psycopg2-binary = "^2.9.9"
 asyncpg = "^0.29.0"
 
 [tool.poetry.dependencies.sqlalchemy]
 extras = ["asyncio"]
-version = "^2.0.25"
+version = ">=1.4.49,<2.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -67,3 +67,12 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning:",
+]
+markers = [
+    "asyncio",
+]

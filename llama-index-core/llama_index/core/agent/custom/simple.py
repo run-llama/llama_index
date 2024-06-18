@@ -77,6 +77,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        **kwargs: Any,
     ) -> None:
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -88,12 +89,15 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         else:
             self._get_tools = lambda _: []
 
+        callback_manager = callback_manager or CallbackManager([])
+
         super().__init__(
             tools=tools,
             llm=llm,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             tool_retriever=tool_retriever,
             verbose=verbose,
+            **kwargs,
         )
 
     @classmethod
@@ -114,8 +118,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
             tools=tools or [],
             tool_retriever=tool_retriever,
             llm=llm,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             verbose=verbose,
+            **kwargs,
         )
 
     @abstractmethod

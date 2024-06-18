@@ -40,9 +40,9 @@ def messages_to_prompt(
         content = message.content
 
         if role == MessageRole.USER:
-            string_messages.append(f"{B_USER}{user_message.content} {END}")
+            string_messages.append(f"{B_USER}{content} {END}")
         elif role == MessageRole.ASSISTANT:
-            string_messages.append(f"{B_ASSISTANT}{assistant_message.content} {END}")
+            string_messages.append(f"{B_ASSISTANT}{content} {END}")
 
     string_messages.append(f"{B_ASSISTANT}")
 

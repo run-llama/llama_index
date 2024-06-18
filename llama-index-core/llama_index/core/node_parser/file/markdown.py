@@ -65,7 +65,7 @@ class MarkdownNodeParser(NodeParser):
         current_section = ""
 
         for line in lines:
-            if line.startswith("```"):
+            if line.lstrip().startswith("```"):
                 code_block = not code_block
             header_match = re.match(r"^(#+)\s(.*)", line)
             if header_match and not code_block:
@@ -99,11 +99,11 @@ class MarkdownNodeParser(NodeParser):
         updated_headers = {}
 
         for i in range(1, new_header_level):
-            key = f"Header {i}"
+            key = f"Header_{i}"
             if key in headers_metadata:
                 updated_headers[key] = headers_metadata[key]
 
-        updated_headers[f"Header {new_header_level}"] = new_header
+        updated_headers[f"Header_{new_header_level}"] = new_header
         return updated_headers
 
     def _build_node_from_split(

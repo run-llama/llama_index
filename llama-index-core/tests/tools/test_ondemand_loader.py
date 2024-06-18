@@ -5,7 +5,7 @@ from typing import List
 import pytest
 
 try:
-    import langchain
+    import langchain  # pants: no-infer-dep
 except ImportError:
     langchain = None  # type: ignore
 

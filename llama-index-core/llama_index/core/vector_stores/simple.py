@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import (
     get_top_k_embeddings,
     get_top_k_embeddings_learner,
@@ -18,8 +19,10 @@ from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
     DEFAULT_PERSIST_FNAME,
+    BasePydanticVectorStore,
     MetadataFilters,
-    VectorStore,
+    FilterCondition,
+    FilterOperator,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -45,23 +48,64 @@ def _build_metadata_filter_fn(
     metadata_filters: Optional[MetadataFilters] = None,
 ) -> Callable[[str], bool]:
     """Build metadata filter function."""
-    filter_list = metadata_filters.legacy_filters() if metadata_filters else []
+    filter_list = metadata_filters.filters if metadata_filters else []
     if not filter_list:
         return lambda _: True
 
+    filter_condition = cast(MetadataFilters, metadata_filters.condition)
+
     def filter_fn(node_id: str) -> bool:
-        metadata = metadata_lookup_fn(node_id)
-        for filter_ in filter_list:
-            metadata_value = metadata.get(filter_.key, None)
+        def _process_filter_match(
+            operator: FilterOperator, value: Any, metadata_value: Any
+        ) -> bool:
             if metadata_value is None:
                 return False
-            elif isinstance(metadata_value, list):
-                if filter_.value not in metadata_value:
-                    return False
-            elif isinstance(metadata_value, (int, float, str, bool)):
-                if metadata_value != filter_.value:
-                    return False
-        return True
+            if operator == FilterOperator.EQ:
+                return metadata_value == value
+            if operator == FilterOperator.NE:
+                return metadata_value != value
+            if operator == FilterOperator.GT:
+                return metadata_value > value
+            if operator == FilterOperator.GTE:
+                return metadata_value >= value
+            if operator == FilterOperator.LT:
+                return metadata_value < value
+            if operator == FilterOperator.LTE:
+                return metadata_value <= value
+            if operator == FilterOperator.IN:
+                return value in metadata_value
+            if operator == FilterOperator.NIN:
+                return value not in metadata_value
+            if operator == FilterOperator.CONTAINS:
+                return value in metadata_value
+            if operator == FilterOperator.TEXT_MATCH:
+                return value.lower() in metadata_value.lower()
+            if operator == FilterOperator.ALL:
+                return all(val in metadata_value for val in value)
+            if operator == FilterOperator.ANY:
+                return any(val in metadata_value for val in value)
+            raise ValueError(f"Invalid operator: {operator}")
+
+        metadata = metadata_lookup_fn(node_id)
+
+        filter_matches_list = []
+        for filter_ in filter_list:
+            filter_matches = True
+
+            filter_matches = _process_filter_match(
+                operator=filter_.operator,
+                value=filter_.value,
+                metadata_value=metadata.get(filter_.key, None),
+            )
+
+            filter_matches_list.append(filter_matches)
+
+        if filter_condition == FilterCondition.AND:
+            return all(filter_matches_list)
+        elif filter_condition == FilterCondition.OR:
+            return any(filter_matches_list)
+        else:
+            raise ValueError(f"Invalid filter condition: {filter_condition}")
 
     return filter_fn
 
@@ -82,7 +126,7 @@ class SimpleVectorStoreData(DataClassJsonMixin):
     metadata_dict: Dict[str, Any] = field(default_factory=dict)
 
 
-class SimpleVectorStore(VectorStore):
+class SimpleVectorStore(BasePydanticVectorStore):
     """Simple Vector Store.
 
     In this vector store, embeddings are stored within a simple, in-memory dictionary.
@@ -95,6 +139,9 @@ class SimpleVectorStore(VectorStore):
 
     stores_text: bool = False
 
+    data: SimpleVectorStoreData = Field(default_factory=SimpleVectorStoreData)
+    _fs: fsspec.AbstractFileSystem = PrivateAttr()
+
     def __init__(
         self,
         data: Optional[SimpleVectorStoreData] = None,
@@ -102,7 +149,7 @@ class SimpleVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._data = data or SimpleVectorStoreData()
+        super().__init__(data=data or SimpleVectorStoreData())
         self._fs = fs or fsspec.filesystem("file")
 
     @classmethod
@@ -129,11 +176,11 @@ class SimpleVectorStore(VectorStore):
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
-    ) -> Dict[str, VectorStore]:
+    ) -> Dict[str, BasePydanticVectorStore]:
         """Load from namespaced persist dir."""
         listing_fn = os.listdir if fs is None else fs.listdir
 
-        vector_stores: Dict[str, VectorStore] = {}
+        vector_stores: Dict[str, BasePydanticVectorStore] = {}
 
         try:
             for fname in listing_fn(persist_dir):
@@ -163,14 +210,32 @@ class SimpleVectorStore(VectorStore):
 
         return vector_stores
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "SimpleVectorStore"
+
     @property
     def client(self) -> None:
         """Get client."""
         return
 
+    @property
+    def _data(self) -> SimpleVectorStoreData:
+        """Backwards compatibility."""
+        return self.data
+
     def get(self, text_id: str) -> List[float]:
         """Get embedding."""
-        return self._data.embedding_dict[text_id]
+        return self.data.embedding_dict[text_id]
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes."""
+        raise NotImplementedError("SimpleVectorStore does not store nodes directly.")
 
     def add(
         self,
@@ -179,14 +244,14 @@ class SimpleVectorStore(VectorStore):
     ) -> List[str]:
         """Add nodes to index."""
         for node in nodes:
-            self._data.embedding_dict[node.node_id] = node.get_embedding()
-            self._data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
+            self.data.embedding_dict[node.node_id] = node.get_embedding()
+            self.data.text_id_to_ref_doc_id[node.node_id] = node.ref_doc_id or "None"
 
             metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=False
             )
             metadata.pop("_node_content", None)
-            self._data.metadata_dict[node.node_id] = metadata
+            self.data.metadata_dict[node.node_id] = metadata
         return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -198,18 +263,49 @@ class SimpleVectorStore(VectorStore):
 
         """
         text_ids_to_delete = set()
-        for text_id, ref_doc_id_ in self._data.text_id_to_ref_doc_id.items():
+        for text_id, ref_doc_id_ in self.data.text_id_to_ref_doc_id.items():
             if ref_doc_id == ref_doc_id_:
                 text_ids_to_delete.add(text_id)
 
         for text_id in text_ids_to_delete:
-            del self._data.embedding_dict[text_id]
-            del self._data.text_id_to_ref_doc_id[text_id]
+            del self.data.embedding_dict[text_id]
+            del self.data.text_id_to_ref_doc_id[text_id]
             # Handle metadata_dict not being present in stores that were persisted
             # without metadata, or, not being present for nodes stored
             # prior to metadata functionality.
-            if self._data.metadata_dict is not None:
-                self._data.metadata_dict.pop(text_id, None)
+            if self.data.metadata_dict is not None:
+                self.data.metadata_dict.pop(text_id, None)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        filter_fn = _build_metadata_filter_fn(
+            lambda node_id: self.data.metadata_dict[node_id], filters
+        )
+
+        if node_ids is not None:
+            node_id_set = set(node_ids)
+
+            def node_filter_fn(node_id: str) -> bool:
+                return node_id in node_id_set and filter_fn(node_id)
+
+        else:
+
+            def node_filter_fn(node_id: str) -> bool:
+                return filter_fn(node_id)
+
+        for node_id in list(self.data.embedding_dict.keys()):
+            if node_filter_fn(node_id):
+                del self.data.embedding_dict[node_id]
+                del self.data.text_id_to_ref_doc_id[node_id]
+                self.data.metadata_dict.pop(node_id, None)
+
+    def clear(self) -> None:
+        """Clear the store."""
+        self.data = SimpleVectorStoreData()
 
     def query(
         self,
@@ -220,8 +316,8 @@ class SimpleVectorStore(VectorStore):
         # Prevent metadata filtering on stores that were persisted without metadata.
         if (
             query.filters is not None
-            and self._data.embedding_dict
-            and not self._data.metadata_dict
+            and self.data.embedding_dict
+            and not self.data.metadata_dict
         ):
             raise ValueError(
                 "Cannot filter stores that were persisted without metadata. "
@@ -229,7 +325,7 @@ class SimpleVectorStore(VectorStore):
             )
         # Prefilter nodes based on the query filter and node ID restrictions.
         query_filter_fn = _build_metadata_filter_fn(
-            lambda node_id: self._data.metadata_dict[node_id], query.filters
+            lambda node_id: self.data.metadata_dict[node_id], query.filters
         )
 
         if query.node_ids is not None:
@@ -246,7 +342,7 @@ class SimpleVectorStore(VectorStore):
         node_ids = []
         embeddings = []
         # TODO: consolidate with get_query_text_embedding_similarities
-        for node_id, embedding in self._data.embedding_dict.items():
+        for node_id, embedding in self.data.embedding_dict.items():
             if node_filter_fn(node_id) and query_filter_fn(node_id):
                 node_ids.append(node_id)
                 embeddings.append(embedding)
@@ -293,7 +389,7 @@ class SimpleVectorStore(VectorStore):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w") as f:
-            json.dump(self._data.to_dict(), f)
+            json.dump(self.data.to_dict(), f)
 
     @classmethod
     def from_persist_path(
@@ -318,4 +414,4 @@ class SimpleVectorStore(VectorStore):
         return cls(data)
 
     def to_dict(self) -> dict:
-        return self._data.to_dict()
+        return self.data.to_dict()

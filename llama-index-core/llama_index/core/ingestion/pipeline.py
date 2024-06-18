@@ -36,6 +36,7 @@ from llama_index.core.ingestion.data_sources import (
 from llama_index.core.ingestion.transformations import (
     ConfigurableTransformations,
 )
+from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.schema import (
@@ -53,6 +54,8 @@ from llama_index.core.storage.docstore import (
 from llama_index.core.storage.storage_context import DOCSTORE_FNAME
 from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
+
+dispatcher = get_dispatcher(__name__)
 
 
 def deserialize_transformation_component(
@@ -192,7 +195,17 @@ def arun_transformations_wrapper(
 
 
 class DocstoreStrategy(str, Enum):
-    """Document de-duplication strategy."""
+    """Document de-duplication de-deduplication strategies work by comparing the hashes or ids stored in the document store.
+       They require a document store to be set which must be persisted across pipeline runs.
+
+    Attributes:
+        UPSERTS:
+            ('upserts') Use upserts to handle duplicates. Checks if the a document is already in the doc store based on its id. If it is not, or if the hash of the document is updated, it will update the document in the doc store and run the transformations.
+        DUPLICATES_ONLY:
+            ('duplicates_only') Only handle duplicates. Checks if the hash of a document is already in the doc store. Only then it will add the document to the doc store and run the transformations
+        UPSERTS_AND_DELETE:
+            ('upserts_and_delete') Use upserts and delete to handle duplicates. Like the upsert strategy but it will also delete non-existing documents from the doc store
+    """
 
     UPSERTS = "upserts"
     DUPLICATES_ONLY = "duplicates_only"
@@ -200,7 +213,52 @@ class DocstoreStrategy(str, Enum):
 
 
 class IngestionPipeline(BaseModel):
-    """An ingestion pipeline that can be applied to data."""
+    """An ingestion pipeline that can be applied to data.
+
+    Args:
+        name (str, optional):
+            Unique name of the ingestion pipeline. Defaults to DEFAULT_PIPELINE_NAME.
+        project_name (str, optional):
+            Unique name of the project. Defaults to DEFAULT_PROJECT_NAME.
+        transformations (List[TransformComponent], optional):
+            Transformations to apply to the data. Defaults to None.
+        documents (Optional[Sequence[Document]], optional):
+            Documents to ingest. Defaults to None.
+        readers (Optional[List[ReaderConfig]], optional):
+            Reader to use to read the data. Defaults to None.
+        vector_store (Optional[BasePydanticVectorStore], optional):
+            Vector store to use to store the data. Defaults to None.
+        cache (Optional[IngestionCache], optional):
+            Cache to use to store the data. Defaults to None.
+        docstore (Optional[BaseDocumentStore], optional):
+            Document store to use for de-duping with a vector store. Defaults to None.
+        docstore_strategy (DocstoreStrategy, optional):
+            Document de-dup strategy. Defaults to DocstoreStrategy.UPSERTS.
+        disable_cache (bool, optional):
+            Disable the cache. Defaults to False.
+        base_url (str, optional):
+            Base URL for the LlamaCloud API. Defaults to DEFAULT_BASE_URL.
+        app_url (str, optional):
+            Base URL for the LlamaCloud app. Defaults to DEFAULT_APP_URL.
+        api_key (Optional[str], optional):
+            LlamaCloud API key. Defaults to None.
+
+    Examples:
+        ```python
+        from llama_index.core.ingestion import IngestionPipeline
+        from llama_index.core.node_parser import SentenceSplitter
+        from llama_index.embeddings.openai import OpenAIEmbedding
+
+        pipeline = IngestionPipeline(
+            transformations=[
+                SentenceSplitter(chunk_size=512, chunk_overlap=20),
+                OpenAIEmbedding(),
+            ],
+        )
+
+        nodes = pipeline.run(documents=documents)
+        ```
+    """
 
     name: str = Field(
         default=DEFAULT_PIPELINE_NAME,
@@ -296,89 +354,7 @@ class IngestionPipeline(BaseModel):
         vector_store: Optional[BasePydanticVectorStore] = None,
         disable_cache: bool = False,
     ) -> "IngestionPipeline":
-        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
-        assert base_url is not None
-
-        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
-
-        client = get_client(api_key=api_key, base_url=base_url)
-
-        projects: List[Project] = client.project.list_projects(
-            project_name=project_name
-        )
-        if len(projects) < 0:
-            raise ValueError(f"Project with name {project_name} not found")
-
-        project = projects[0]
-        assert project.id is not None, "Project ID should not be None"
-
-        pipelines: List[Pipeline] = client.pipeline.search_pipelines(
-            project_name=project_name, pipeline_name=name
-        )
-        if len(pipelines) < 0:
-            raise ValueError(f"Pipeline with name {name} not found")
-
-        pipeline = pipelines[0]
-
-        transformations: List[TransformComponent] = []
-        for configured_transformation in pipeline.configured_transformations:
-            component_dict = cast(dict, configured_transformation.component)
-            transformation_component_type = (
-                configured_transformation.configurable_transformation_type
-            )
-            transformation = deserialize_transformation_component(
-                component_dict, transformation_component_type
-            )
-            transformations.append(transformation)
-
-        documents = []
-        readers = []
-        for data_source in pipeline.data_sources:
-            component_dict = cast(dict, data_source.component)
-            source_component_type = data_source.source_type
-
-            if data_source.source_type == ConfigurableDataSourceNames.READER:
-                source_component = deserialize_source_component(
-                    component_dict, source_component_type
-                )
-                readers.append(source_component)
-            elif data_source.source_type == ConfigurableDataSourceNames.DOCUMENT:
-                source_component = deserialize_source_component(
-                    component_dict, source_component_type
-                )
-                if (
-                    isinstance(source_component, BaseNode)
-                    and source_component.get_content()
-                ):
-                    documents.append(source_component)
-
-        return cls(
-            name=name,
-            project_name=project_name,
-            transformations=transformations,
-            readers=readers,
-            documents=documents,
-            vector_store=vector_store,
-            base_url=base_url,
-            cache=cache,
-            disable_cache=disable_cache,
-            api_key=api_key,
-            app_url=app_url,
-        )
-
-    @classmethod
-    def from_pipeline_name(
-        cls,
-        name: str,
-        project_name: str = DEFAULT_PROJECT_NAME,
-        base_url: Optional[str] = None,
-        cache: Optional[IngestionCache] = None,
-        api_key: Optional[str] = None,
-        app_url: Optional[str] = None,
-        vector_store: Optional[BasePydanticVectorStore] = None,
-        disable_cache: bool = False,
-    ) -> "IngestionPipeline":
+        """Create an ingestion pipeline from a pipeline name."""
         base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
         assert base_url is not None
 
@@ -456,6 +432,7 @@ class IngestionPipeline(BaseModel):
         documents: Optional[List[Document]] = None,
         nodes: Optional[List[BaseNode]] = None,
     ) -> str:
+        """Register the pipeline with the LlamaCloud API."""
         client = get_client(api_key=self.api_key, base_url=self.base_url)
 
         input_nodes = self._prepare_inputs(documents, nodes)
@@ -551,16 +528,20 @@ class IngestionPipeline(BaseModel):
             self.cache = IngestionCache.from_persist_path(
                 concat_dirs(persist_dir, cache_name), fs=fs
             )
-            self.docstore = SimpleDocumentStore.from_persist_path(
-                concat_dirs(persist_dir, docstore_name), fs=fs
-            )
+            persist_docstore_path = concat_dirs(persist_dir, docstore_name)
+            if os.path.exists(persist_docstore_path):
+                self.docstore = SimpleDocumentStore.from_persist_path(
+                    concat_dirs(persist_dir, docstore_name), fs=fs
+                )
         else:
             self.cache = IngestionCache.from_persist_path(
                 str(Path(persist_dir) / cache_name)
             )
-            self.docstore = SimpleDocumentStore.from_persist_path(
-                str(Path(persist_dir) / docstore_name)
-            )
+            persist_docstore_path = str(Path(persist_dir) / docstore_name)
+            if os.path.exists(persist_docstore_path):
+                self.docstore = SimpleDocumentStore.from_persist_path(
+                    str(Path(persist_dir) / docstore_name)
+                )
 
     def _get_default_transformations(self) -> List[TransformComponent]:
         return [
@@ -662,6 +643,7 @@ class IngestionPipeline(BaseModel):
         for i in range(0, len(nodes), batch_size):
             yield nodes[i : i + batch_size]
 
+    @dispatcher.span
     def run(
         self,
         show_progress: bool = False,
@@ -674,6 +656,12 @@ class IngestionPipeline(BaseModel):
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
         """
+        Run a series of transformations on a set of nodes.
+
+        If a vector store is provided, nodes with embeddings will be added to the vector store.
+
+        If a vector store + docstore are provided, the docstore will be used to de-duplicate documents.
+
         Args:
             show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
             documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
@@ -832,6 +820,7 @@ class IngestionPipeline(BaseModel):
 
         return nodes_to_run
 
+    @dispatcher.span
     async def arun(
         self,
         show_progress: bool = False,
@@ -843,6 +832,26 @@ class IngestionPipeline(BaseModel):
         num_workers: Optional[int] = None,
         **kwargs: Any,
     ) -> Sequence[BaseNode]:
+        """
+        Run a series of transformations on a set of nodes.
+
+        If a vector store is provided, nodes with embeddings will be added to the vector store.
+
+        If a vector store + docstore are provided, the docstore will be used to de-duplicate documents.
+
+        Args:
+            show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
+            documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
+            nodes (Optional[List[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
+            cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
+            in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
+                array passed to `run_transformations`. Defaults to True.
+            num_workers (Optional[int], optional): The number of parallel processes to use.
+                If set to None, then sequential compute is used. Defaults to None.
+
+        Returns:
+            Sequence[BaseNode]: The set of transformed Nodes/Documents
+        """
         input_nodes = self._prepare_inputs(documents, nodes)
 
         # check if we need to dedup

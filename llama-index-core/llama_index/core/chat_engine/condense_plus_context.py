@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from threading import Thread
 from typing import Any, List, Optional, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -25,6 +24,7 @@ from llama_index.core.settings import (
     callback_manager_from_settings_or_context,
     llm_from_settings_or_context,
 )
+from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,8 @@ DEFAULT_CONDENSE_PROMPT_TEMPLATE = """
 
 
 class CondensePlusContextChatEngine(BaseChatEngine):
-    """Condensed Conversation & Context Chat Engine.
+    """
+    Condensed Conversation & Context Chat Engine.
 
     First condense a conversation and latest user message to a standalone question
     Then build a context for the standalone question from a retriever,
@@ -179,6 +180,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def _aretrieve_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
         """Build context for a message from retriever."""
         nodes = await self._retriever.aretrieve(message)
+        for postprocessor in self._node_postprocessors:
+            nodes = postprocessor.postprocess_nodes(
+                nodes, query_bundle=QueryBundle(message)
+            )
+
         context_str = "\n\n".join(
             [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
         )
@@ -190,7 +196,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get()
+        chat_history = self._memory.get(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = self._condense_question(chat_history, message)  # type: ignore
@@ -237,7 +243,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        chat_history = self._memory.get()
+        chat_history = self._memory.get(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)  # type: ignore
@@ -352,12 +358,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             sources=[context_source],
             source_nodes=context_nodes,
         )
-        thread = Thread(
-            target=lambda x: asyncio.run(chat_response.awrite_response_to_history(x)),
-            args=(self._memory,),
-        )
-        thread.start()
-
+        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
         return chat_response
 
     def reset(self) -> None:

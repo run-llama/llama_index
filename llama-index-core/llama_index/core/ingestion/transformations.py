@@ -5,7 +5,12 @@ This module maintains the list of transformations that are supported by the syst
 from enum import Enum
 from typing import Generic, Sequence, Type, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GenericModel,
+    ValidationError,
+)
 from llama_index.core.node_parser import (
     CodeSplitter,
     HTMLNodeParser,
@@ -14,6 +19,7 @@ from llama_index.core.node_parser import (
     SentenceSplitter,
     SimpleFileNodeParser,
     TokenTextSplitter,
+    MarkdownElementNodeParser,
 )
 from llama_index.core.schema import BaseComponent, BaseNode, Document
 
@@ -196,6 +202,17 @@ def build_configurable_transformation_enum():
         )
     )
 
+    enum_members.append(
+        (
+            "MARKDOWN_ELEMENT_NODE_PARSER",
+            ConfigurableTransformation(
+                name="Markdown Element Node Parser",
+                transformation_category=TransformationCategories.NODE_PARSER,
+                component_type=MarkdownElementNodeParser,
+            ),
+        )
+    )
+
     # Embeddings
     try:
         from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
@@ -210,7 +227,7 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -228,11 +245,47 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
-        from llama_index.embeddings.huggingface import (
+        from llama_index.embeddings.cohere import (
+            CohereEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "COHERE_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Cohere Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=CohereEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.bedrock import (
+            BedrockEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "BEDROCK_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Bedrock Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=BedrockEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.huggingface_api import (
             HuggingFaceInferenceAPIEmbedding,
         )  # pants: no-infer-dep
 
@@ -246,7 +299,43 @@ def build_configurable_transformation_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.gemini import (
+            GeminiEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "GEMINI_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Gemini Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=GeminiEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.mistralai import (
+            MistralAIEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "MISTRALAI_EMBEDDING",
+                ConfigurableTransformation(
+                    name="MistralAI Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=MistralAIEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
         pass
 
     return ConfigurableComponent("ConfigurableTransformations", enum_members)

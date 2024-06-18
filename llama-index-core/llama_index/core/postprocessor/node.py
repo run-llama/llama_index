@@ -4,6 +4,7 @@ import logging
 from typing import Dict, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.response_synthesizers import (
@@ -12,6 +13,7 @@ from llama_index.core.response_synthesizers import (
 )
 from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle
 from llama_index.core.service_context import ServiceContext
+from llama_index.core.settings import Settings, llm_from_settings_or_context
 from llama_index.core.storage.docstore import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
@@ -278,11 +280,13 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     """
 
     docstore: BaseDocumentStore
-    service_context: ServiceContext
+    service_context: Optional[ServiceContext] = None
+    llm: Optional[LLM] = None
     num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
+    response_mode: ResponseMode = Field(default=ResponseMode.COMPACT)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -310,6 +314,8 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
+        llm = self.llm or llm_from_settings_or_context(Settings, self.service_context)
+
         if query_bundle is None:
             raise ValueError("Missing query bundle.")
 
@@ -324,10 +330,10 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
             # use response builder instead of llm directly
             # to be more robust to handling long context
             response_builder = get_response_synthesizer(
-                service_context=self.service_context,
+                llm=llm,
                 text_qa_template=infer_prev_next_prompt,
                 refine_template=refine_infer_prev_next_prompt,
-                response_mode=ResponseMode.TREE_SUMMARIZE,
+                response_mode=self.response_mode,
             )
             raw_pred = response_builder.get_response(
                 text_chunks=[node.node.get_content()],

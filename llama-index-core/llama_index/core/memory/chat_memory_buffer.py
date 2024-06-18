@@ -4,7 +4,10 @@ from typing import Any, Callable, Dict, List, Optional
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field, root_validator
 from llama_index.core.llms.llm import LLM
-from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
+from llama_index.core.memory.types import (
+    DEFAULT_CHAT_STORE_KEY,
+    BaseChatStoreMemory,
+)
 from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
 from llama_index.core.utils import get_tokenizer
 
@@ -12,7 +15,7 @@ DEFAULT_TOKEN_LIMIT_RATIO = 0.75
 DEFAULT_TOKEN_LIMIT = 3000
 
 
-class ChatMemoryBuffer(BaseMemory):
+class ChatMemoryBuffer(BaseChatStoreMemory):
     """Simple buffer for storing chat history."""
 
     token_limit: int
@@ -101,7 +104,9 @@ class ChatMemoryBuffer(BaseMemory):
 
         return cls(**data)
 
-    def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
+    def get(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
         """Get chat history."""
         chat_history = self.get_all()
 
@@ -109,20 +114,26 @@ class ChatMemoryBuffer(BaseMemory):
             raise ValueError("Initial token count exceeds token limit")
 
         message_count = len(chat_history)
-        token_count = (
-            self._token_count_for_message_count(message_count) + initial_token_count
-        )
+
+        cur_messages = chat_history[-message_count:]
+        token_count = self._token_count_for_messages(cur_messages) + initial_token_count
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
+            if chat_history[-message_count].role == MessageRole.TOOL:
+                # all tool messages should be preceded by an assistant message
+                # if we remove a tool message, we need to remove the assistant message too
+                message_count -= 1
+
             if chat_history[-message_count].role == MessageRole.ASSISTANT:
                 # we cannot have an assistant message at the start of the chat history
                 # if after removal of the first, we have an assistant message,
                 # we need to remove the assistant message too
                 message_count -= 1
 
+            cur_messages = chat_history[-message_count:]
             token_count = (
-                self._token_count_for_message_count(message_count) + initial_token_count
+                self._token_count_for_messages(cur_messages) + initial_token_count
             )
 
         # catch one message longer than token limit
@@ -131,26 +142,9 @@ class ChatMemoryBuffer(BaseMemory):
 
         return chat_history[-message_count:]
 
-    def get_all(self) -> List[ChatMessage]:
-        """Get all chat history."""
-        return self.chat_store.get_messages(self.chat_store_key)
-
-    def put(self, message: ChatMessage) -> None:
-        """Put chat history."""
-        self.chat_store.add_message(self.chat_store_key, message)
-
-    def set(self, messages: List[ChatMessage]) -> None:
-        """Set chat history."""
-        self.chat_store.set_messages(self.chat_store_key, messages)
-
-    def reset(self) -> None:
-        """Reset chat history."""
-        self.chat_store.delete_messages(self.chat_store_key)
-
-    def _token_count_for_message_count(self, message_count: int) -> int:
-        if message_count <= 0:
+    def _token_count_for_messages(self, messages: List[ChatMessage]) -> int:
+        if len(messages) <= 0:
             return 0
 
-        chat_history = self.get_all()
-        msg_str = " ".join(str(m.content) for m in chat_history[-message_count:])
+        msg_str = " ".join(str(m.content) for m in messages)
         return len(self.tokenizer_fn(msg_str))

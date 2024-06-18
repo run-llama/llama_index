@@ -98,6 +98,7 @@ class QueryPlanTool(BaseTool):
         self._response_synthesizer = response_synthesizer
         self._name = name
         self._description_prefix = description_prefix
+        self._custom_metadata = None
 
     @classmethod
     def from_defaults(
@@ -122,6 +123,9 @@ class QueryPlanTool(BaseTool):
     @property
     def metadata(self) -> ToolMetadata:
         """Metadata."""
+        if self._custom_metadata is not None:
+            return self._custom_metadata
+
         tools_description = "\n\n".join(
             [
                 f"Tool Name: {tool.metadata.name}\n"
@@ -135,6 +139,10 @@ class QueryPlanTool(BaseTool):
         {tools_description}
         """
         return ToolMetadata(description, self._name, fn_schema=QueryPlan)
+
+    @metadata.setter
+    def metadata(self, value: ToolMetadata):
+        self._custom_metadata = value
 
     def _execute_node(
         self, node: QueryNode, nodes_dict: Dict[int, QueryNode]
@@ -177,6 +185,11 @@ class QueryPlanTool(BaseTool):
                 raw_input={"query": node.query_str},
                 raw_output=response_obj,
             )
+
+            if node.tool_name in self._query_tools_dict:
+                tool = self._query_tools_dict[node.tool_name]
+                print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
+                response = tool(node.query_str)
 
         else:
             # this is a leaf request, execute the query string using the specified tool

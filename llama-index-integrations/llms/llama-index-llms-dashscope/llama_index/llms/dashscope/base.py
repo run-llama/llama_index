@@ -86,7 +86,19 @@ def call_with_messages(
 
 
 class DashScope(CustomLLM):
-    """DashScope LLM."""
+    """DashScope LLM.
+
+    Examples:
+        `pip install llama-index-llms-dashscope`
+
+        ```python
+        from llama_index.llms.dashscope import DashScope, DashScopeGenerationModels
+
+        dashscope_llm = DashScope(model_name=DashScopeGenerationModels.QWEN_MAX)
+        response = llm.complete("What is the meaning of life?")
+        print(response.text)
+        ```
+    """
 
     model_name: str = Field(
         default=DashScopeGenerationModels.QWEN_MAX,

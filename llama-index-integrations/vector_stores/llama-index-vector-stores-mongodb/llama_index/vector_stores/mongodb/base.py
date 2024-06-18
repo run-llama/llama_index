@@ -44,6 +44,45 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     - a connection string associated with a MongoDB Atlas Cluster
     that has an Atlas Vector Search index
 
+    To get started head over to the [Atlas quick start](https://www.mongodb.com/docs/atlas/getting-started/).
+
+    Once your store is created, be sure to enable indexing in the Atlas GUI.
+
+    Please refer to the [documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/)
+    to get more details on how to define an Atlas Vector Search index. You can name the index {ATLAS_VECTOR_SEARCH_INDEX_NAME}
+    and create the index on the namespace {DB_NAME}.{COLLECTION_NAME}.
+    Finally, write the following definition in the JSON editor on MongoDB Atlas:
+
+    ```
+    {
+        "name": "index_name",
+        "type": "vectorSearch",
+        "fields":[
+            {
+            "type": "vector",
+            "path": "embedding",
+            "numDimensions": 1536,
+            "similarity": "cosine"
+            }
+        ]
+    }
+    ```
+
+
+    Examples:
+        `pip install llama-index-vector-stores-mongodb`
+
+        ```python
+        import pymongo
+        from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
+
+        # Ensure you have the MongoDB URI with appropriate credentials
+        mongo_uri = "mongodb+srv://<username>:<password>@<host>?retryWrites=true&w=majority"
+        mongodb_client = pymongo.MongoClient(mongo_uri)
+
+        # Create an instance of MongoDBAtlasVectorSearch
+        vector_store = MongoDBAtlasVectorSearch(mongodb_client)
+        ```
     """
 
     stores_text: bool = True
@@ -64,7 +103,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         db_name: str = "default_db",
         collection_name: str = "default_collection",
         index_name: str = "default",
-        id_key: str = "id",
+        id_key: str = "_id",
         embedding_key: str = "embedding",
         text_key: str = "text",
         metadata_key: str = "metadata",
@@ -89,13 +128,13 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
-            if "MONGO_URI" not in os.environ:
+            if "MONGODB_URI" not in os.environ:
                 raise ValueError(
-                    "Must specify MONGO_URI via env variable "
+                    "Must specify MONGODB_URI via env variable "
                     "if not directly passing in client."
                 )
             self._mongodb_client = MongoClient(
-                os.environ["MONGO_URI"],
+                os.environ["MONGODB_URI"],
                 driver=DriverInfo(name="llama-index", version=version("llama-index")),
             )
 
@@ -154,7 +193,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
         """
         # delete by filtering on the doc_id metadata
-        self._collection.delete_one(
+        self._collection.delete_many(
             filter={self._metadata_key + ".ref_doc_id": ref_doc_id}, **delete_kwargs
         )
 

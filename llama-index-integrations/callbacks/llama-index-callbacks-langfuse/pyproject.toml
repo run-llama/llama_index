@@ -13,7 +13,7 @@ contains_example = false
 import_path = "llama_index.callbacks.langfuse"
 
 [tool.llamahub.class_authors]
-LangfuseCallbackHandler = "llama-index"
+langfuse_callback_handler = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -28,12 +28,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-callbacks-langfuse"
 readme = "README.md"
-version = "0.1.2"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.8"
-langfuse = "^2.18.0"
+langfuse = "^2.21.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

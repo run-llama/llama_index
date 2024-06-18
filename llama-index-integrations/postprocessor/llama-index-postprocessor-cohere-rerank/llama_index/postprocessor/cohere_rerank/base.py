@@ -3,8 +3,15 @@ from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
+
+dispatcher = get_dispatcher(__name__)
 
 
 class CohereRerank(BaseNodePostprocessor):
@@ -45,6 +52,12 @@ class CohereRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
         if len(nodes) == 0:
@@ -59,7 +72,10 @@ class CohereRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            texts = [node.node.get_content() for node in nodes]
+            texts = [
+                node.node.get_content(metadata_mode=MetadataMode.EMBED)
+                for node in nodes
+            ]
             results = self._client.rerank(
                 model=self.model,
                 top_n=self.top_n,
@@ -68,11 +84,12 @@ class CohereRerank(BaseNodePostprocessor):
             )
 
             new_nodes = []
-            for result in results:
+            for result in results.results:
                 new_node_with_score = NodeWithScore(
                     node=nodes[result.index].node, score=result.relevance_score
                 )
                 new_nodes.append(new_node_with_score)
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes

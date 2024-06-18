@@ -1,5 +1,19 @@
-from typing import Any, Callable, Dict, Optional, Sequence
-from anthropic.types import ContentBlockDeltaEvent
+import anthropic
+import json
+from anthropic.types import ContentBlockDeltaEvent, TextBlock
+from anthropic.types.tool_use_block import ToolUseBlock
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -24,21 +38,41 @@ from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
+    force_single_tool_call,
+    is_function_calling_model,
     messages_to_anthropic_messages,
 )
 from llama_index.core.utils import Tokenizer
 
-import anthropic
+if TYPE_CHECKING:
+    from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.tools.types import BaseTool
+
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
-class Anthropic(LLM):
+class Anthropic(FunctionCallingLLM):
+    """Anthropic LLM.
+
+    Examples:
+        `pip install llama-index-llms-anthropic`
+
+        ```python
+        from llama_index.llms.anthropic import Anthropic
+
+        llm = Anthropic(model="claude-instant-1")
+        resp = llm.stream_complete("Paul Graham is ")
+        for r in resp:
+            print(r.delta, end="")
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_ANTHROPIC_MODEL, description="The anthropic model to use."
     )
@@ -65,8 +99,8 @@ class Anthropic(LLM):
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _client: anthropic.Anthropic = PrivateAttr()
+    _aclient: anthropic.AsyncAnthropic = PrivateAttr()
 
     def __init__(
         self,
@@ -79,6 +113,7 @@ class Anthropic(LLM):
         api_key: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
@@ -89,10 +124,18 @@ class Anthropic(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         self._client = anthropic.Anthropic(
-            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            default_headers=default_headers,
         )
         self._aclient = anthropic.AsyncAnthropic(
-            api_key=api_key, base_url=base_url, timeout=timeout, max_retries=max_retries
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+            default_headers=default_headers,
         )
 
         super().__init__(
@@ -122,6 +165,7 @@ class Anthropic(LLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
+            is_function_calling_model=is_function_calling_model(self.model),
         )
 
     @property
@@ -146,6 +190,19 @@ class Anthropic(LLM):
             **kwargs,
         }
 
+    def _get_content_and_tool_calls(
+        self, response: Any
+    ) -> Tuple[str, List[ToolUseBlock]]:
+        tool_calls = []
+        content = ""
+        for content_block in response.content:
+            if isinstance(content_block, TextBlock):
+                content += content_block.text
+            elif isinstance(content_block, ToolUseBlock):
+                tool_calls.append(content_block.dict())
+
+        return content, tool_calls
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
@@ -157,9 +214,14 @@ class Anthropic(LLM):
             system=system_prompt,
             **all_kwargs,
         )
+
+        content, tool_calls = self._get_content_and_tool_calls(response)
+
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response.content[0].text
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
             ),
             raw=dict(response),
         )
@@ -217,9 +279,14 @@ class Anthropic(LLM):
             stream=False,
             **all_kwargs,
         )
+
+        content, tool_calls = self._get_content_and_tool_calls(response)
+
         return ChatResponse(
             message=ChatMessage(
-                role=MessageRole.ASSISTANT, content=response.content[0].text
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
             ),
             raw=dict(response),
         )
@@ -263,3 +330,112 @@ class Anthropic(LLM):
     ) -> CompletionResponseAsyncGen:
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
+
+    def chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        tool_dicts = []
+        for tool in tools:
+            tool_dicts.append(
+                {
+                    "name": tool.metadata.name,
+                    "description": tool.metadata.description,
+                    "input_schema": tool.metadata.get_parameters_dict(),
+                }
+            )
+
+        response = self.chat(chat_history, tools=tool_dicts, **kwargs)
+
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+
+        return response
+
+    async def achat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Predict and call the tool."""
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        tool_dicts = []
+        for tool in tools:
+            tool_dicts.append(
+                {
+                    "name": tool.metadata.name,
+                    "description": tool.metadata.description,
+                    "input_schema": tool.metadata.get_parameters_dict(),
+                }
+            )
+
+        response = await self.achat(chat_history, tools=tool_dicts, **kwargs)
+
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "AgentChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            if (
+                "input" not in tool_call
+                or "id" not in tool_call
+                or "name" not in tool_call
+            ):
+                raise ValueError("Invalid tool call.")
+            if tool_call["type"] != "tool_use":
+                raise ValueError("Invalid tool type. Unsupported by Anthropic")
+            argument_dict = (
+                json.loads(tool_call["input"])
+                if isinstance(tool_call["input"], str)
+                else tool_call["input"]
+            )
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call["id"],
+                    tool_name=tool_call["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections

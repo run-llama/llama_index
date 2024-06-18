@@ -27,7 +27,7 @@ from llama_index.core.schema import (
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
 )
 from llama_index.packs.raptor.clustering import get_clusters
 
@@ -59,13 +59,18 @@ class SummaryModule(BaseModel):
         arbitrary_types_allowed = True
 
     def __init__(
-        self, llm: Optional[LLM] = None, summary_prompt: str = DEFAULT_SUMMARY_PROMPT
+        self,
+        llm: Optional[LLM] = None,
+        summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
+        num_workers: int = 4,
     ) -> None:
         response_synthesizer = get_response_synthesizer(
             response_mode="tree_summarize", use_async=True, llm=llm
         )
         super().__init__(
-            response_synthesizer=response_synthesizer, summary_prompt=summary_prompt
+            response_synthesizer=response_synthesizer,
+            summary_prompt=summary_prompt,
+            num_workers=num_workers,
         )
 
     async def generate_summaries(
@@ -107,7 +112,7 @@ class RaptorRetriever(BaseRetriever):
         similarity_top_k: int = 2,
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         transformations: Optional[List[TransformComponent]] = None,
         summary_module: Optional[SummaryModule] = None,
         existing_index: Optional[VectorStoreIndex] = None,
@@ -333,7 +338,7 @@ class RaptorPack(BaseLlamaPack):
         documents: List[BaseNode],
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         similarity_top_k: int = 2,
         mode: QueryModes = "collapsed",
         verbose: bool = True,

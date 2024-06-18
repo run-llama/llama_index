@@ -13,19 +13,19 @@ RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
 try:
     from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
-    RECOGNIZED_LLMS[OpenAI.class_name()] = OpenAI
+    RECOGNIZED_LLMS[OpenAI.class_name()] = OpenAI  # pants: no-infer-dep
 except ImportError:
     pass
 
 try:
     from llama_index.llms.azure_openai import AzureOpenAI  # pants: no-infer-dep
 
-    RECOGNIZED_LLMS[AzureOpenAI.class_name()] = AzureOpenAI
+    RECOGNIZED_LLMS[AzureOpenAI.class_name()] = AzureOpenAI  # pants: no-infer-dep
 except ImportError:
     pass
 
 try:
-    from llama_index.llms.huggingface import (
+    from llama_index.llms.huggingface_api import (
         HuggingFaceInferenceAPI,
     )  # pants: no-infer-dep
 

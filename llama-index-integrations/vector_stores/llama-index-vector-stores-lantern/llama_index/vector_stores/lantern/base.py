@@ -112,7 +112,7 @@ def get_data_model(
     Index(
         hnsw_indexname,
         model.embedding,  # type: ignore
-        postgresql_using="hnsw",
+        postgresql_using="lantern_hnsw",
         postgresql_with={
             "m": m,
             "ef_construction": ef_construction,
@@ -125,6 +125,36 @@ def get_data_model(
 
 
 class LanternVectorStore(BasePydanticVectorStore):
+    """Latern vector store.
+
+    Examples:
+        `pip install llama-index-vector-stores-lantern`
+
+        ```python
+        from llama_index.vector_stores.lantern import LanternVectorStore
+
+        # Set up connection details
+        connection_string = "postgresql://postgres:postgres@localhost:5432"
+        db_name = "postgres"
+        url = make_url(connection_string)
+
+        # Create an instance of LanternVectorStore
+        vector_store = LanternVectorStore.from_params(
+            database=db_name,
+            host=url.host,
+            password=url.password,
+            port=url.port,
+            user=url.username,
+            table_name="your_table_name",
+            embed_dim=1536,  # openai embedding dimension
+            m=16,  # HNSW M parameter
+            ef_construction=128,  # HNSW ef construction parameter
+            ef=64,  # HNSW ef search parameter
+        )
+        ```
+
+    """
+
     from sqlalchemy.sql.selectable import Select
 
     stores_text = True
@@ -442,6 +472,11 @@ class LanternVectorStore(BasePydanticVectorStore):
         from sqlalchemy.types import UserDefinedType
 
         class REGCONFIG(UserDefinedType):
+            # The TypeDecorator.cache_ok class-level flag indicates if this custom TypeDecorator is safe to be used as part of a cache key.
+            # If the TypeDecorator is not guaranteed to produce the same bind/result behavior and SQL generation every time,
+            # this flag should be set to False; otherwise if the class produces the same behavior each time, it may be set to True.
+            cache_ok = True
+
             def get_col_spec(self, **kw: Any) -> str:
                 return "regconfig"
 

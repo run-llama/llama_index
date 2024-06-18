@@ -75,6 +75,7 @@ class DenseXRetrievalPack(BaseLlamaPack):
         embed_model: Optional[BaseEmbedding] = None,
         text_splitter: TextSplitter = SentenceSplitter(),
         similarity_top_k: int = 4,
+        streaming: bool = False,
     ) -> None:
         """Init params."""
         self._proposition_llm = proposition_llm or OpenAI(
@@ -112,7 +113,9 @@ class DenseXRetrievalPack(BaseLlamaPack):
         )
 
         self.query_engine = RetrieverQueryEngine.from_args(
-            self.retriever, service_context=service_context
+            self.retriever,
+            service_context=service_context,
+            streaming=streaming,
         )
 
     async def _aget_proposition(self, node: TextNode) -> List[TextNode]:

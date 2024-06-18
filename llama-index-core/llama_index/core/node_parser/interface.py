@@ -1,7 +1,7 @@
 """Node parser interface."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Sequence
+from typing import Any, Callable, Dict, List, Sequence
 
 from llama_index.core.bridge.pydantic import Field, validator
 from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
@@ -55,6 +55,59 @@ class NodeParser(TransformComponent, ABC):
     ) -> List[BaseNode]:
         ...
 
+    async def _aparse_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        return self._parse_nodes(nodes, show_progress=show_progress, **kwargs)
+
+    def _postprocess_parsed_nodes(
+        self, nodes: List[BaseNode], parent_doc_map: Dict[str, Document]
+    ) -> List[BaseNode]:
+        for i, node in enumerate(nodes):
+            parent_doc = parent_doc_map.get(node.ref_doc_id, None)
+
+            if parent_doc is not None:
+                start_char_idx = parent_doc.text.find(
+                    node.get_content(metadata_mode=MetadataMode.NONE)
+                )
+
+                # update start/end char idx
+                if start_char_idx >= 0:
+                    node.start_char_idx = start_char_idx
+                    node.end_char_idx = start_char_idx + len(
+                        node.get_content(metadata_mode=MetadataMode.NONE)
+                    )
+
+                # update metadata
+                if self.include_metadata:
+                    node.metadata.update(parent_doc.metadata)
+
+            if self.include_prev_next_rel:
+                # establish prev/next relationships if nodes share the same source_node
+                if (
+                    i > 0
+                    and node.source_node
+                    and nodes[i - 1].source_node
+                    and nodes[i - 1].source_node.node_id == node.source_node.node_id
+                ):
+                    node.relationships[NodeRelationship.PREVIOUS] = nodes[
+                        i - 1
+                    ].as_related_node_info()
+                if (
+                    i < len(nodes) - 1
+                    and node.source_node
+                    and nodes[i + 1].source_node
+                    and nodes[i + 1].source_node.node_id == node.source_node.node_id
+                ):
+                    node.relationships[NodeRelationship.NEXT] = nodes[
+                        i + 1
+                    ].as_related_node_info()
+
+        return nodes
+
     def get_nodes_from_documents(
         self,
         documents: Sequence[Document],
@@ -74,39 +127,27 @@ class NodeParser(TransformComponent, ABC):
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         ) as event:
             nodes = self._parse_nodes(documents, show_progress=show_progress, **kwargs)
+            nodes = self._postprocess_parsed_nodes(nodes, doc_id_to_document)
 
-            for i, node in enumerate(nodes):
-                if (
-                    node.ref_doc_id is not None
-                    and node.ref_doc_id in doc_id_to_document
-                ):
-                    ref_doc = doc_id_to_document[node.ref_doc_id]
-                    start_char_idx = ref_doc.text.find(
-                        node.get_content(metadata_mode=MetadataMode.NONE)
-                    )
+            event.on_end({EventPayload.NODES: nodes})
 
-                    # update start/end char idx
-                    if start_char_idx >= 0:
-                        node.start_char_idx = start_char_idx
-                        node.end_char_idx = start_char_idx + len(
-                            node.get_content(metadata_mode=MetadataMode.NONE)
-                        )
+        return nodes
 
-                    # update metadata
-                    if self.include_metadata:
-                        node.metadata.update(
-                            doc_id_to_document[node.ref_doc_id].metadata
-                        )
+    async def aget_nodes_from_documents(
+        self,
+        documents: Sequence[Document],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        doc_id_to_document = {doc.id_: doc for doc in documents}
 
-                if self.include_prev_next_rel:
-                    if i > 0:
-                        node.relationships[NodeRelationship.PREVIOUS] = nodes[
-                            i - 1
-                        ].as_related_node_info()
-                    if i < len(nodes) - 1:
-                        node.relationships[NodeRelationship.NEXT] = nodes[
-                            i + 1
-                        ].as_related_node_info()
+        with self.callback_manager.event(
+            CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
+        ) as event:
+            nodes = await self._aparse_nodes(
+                documents, show_progress=show_progress, **kwargs
+            )
+            nodes = self._postprocess_parsed_nodes(nodes, doc_id_to_document)
 
             event.on_end({EventPayload.NODES: nodes})
 
@@ -114,6 +155,9 @@ class NodeParser(TransformComponent, ABC):
 
     def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
         return self.get_nodes_from_documents(nodes, **kwargs)
+
+    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        return await self.aget_nodes_from_documents(nodes, **kwargs)
 
 
 class TextSplitter(NodeParser):

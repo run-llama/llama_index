@@ -28,7 +28,31 @@ from llama_index.llms.watsonx.utils import (
 
 
 class WatsonX(LLM):
-    """IBM WatsonX LLM."""
+    """
+    IBM WatsonX LLM.
+
+    *Deprecated:* Use ``llama_index.llms.ibm.base.WatsonxLLM`` instead.
+    To install llama-index-llms-ibm run `pip install -U llama-index-llms-ibm` .
+
+    Examples:
+        `pip install llama-index-llms-watsonx`
+
+        ```python
+        from llama_index.llms.watsonx import WatsonX
+
+        credentials = {
+            "url": "https://enter.your-ibm.url",
+            "apikey": "insert_your_api_key",
+        }
+
+        project_id = "insert_your_project_id"
+
+        llm = WatsonX(credentials=credentials, project_id=project_id)
+
+        resp = llm.complete("Paul Graham is")
+        print(resp)
+        ```
+    """
 
     model_id: str = Field(description="The Model to use.")
     max_new_tokens: int = Field(description="The maximum number of tokens to generate.")
@@ -45,7 +69,7 @@ class WatsonX(LLM):
     def __init__(
         self,
         credentials: Dict[str, Any],
-        model_id: Optional[str] = "ibm/mpt-7b-instruct2",
+        model_id: Optional[str] = "ibm/granite-13b-chat-v2",
         project_id: Optional[str] = None,
         space_id: Optional[str] = None,
         max_new_tokens: Optional[int] = 512,

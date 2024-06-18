@@ -246,10 +246,10 @@ class OpenAIEmbedding(BaseEmbedding):
     )
 
     api_key: str = Field(description="The OpenAI API key.")
-    api_base: str = Field(
+    api_base: Optional[str] = Field(
         default=DEFAULT_OPENAI_API_BASE, description="The base URL for OpenAI API."
     )
-    api_version: str = Field(
+    api_version: Optional[str] = Field(
         default=DEFAULT_OPENAI_API_VERSION, description="The version for OpenAI API."
     )
 
@@ -297,6 +297,7 @@ class OpenAIEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        num_workers: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -331,6 +332,7 @@ class OpenAIEmbedding(BaseEmbedding):
             reuse_client=reuse_client,
             timeout=timeout,
             default_headers=default_headers,
+            num_workers=num_workers,
             **kwargs,
         )
 

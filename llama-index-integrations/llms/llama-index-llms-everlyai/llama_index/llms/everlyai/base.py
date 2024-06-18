@@ -13,6 +13,20 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 class EverlyAI(OpenAI):
+    """EverlyAI LLM.
+
+    Examples:
+        `pip install llama-index-llms-everlyai`
+
+        ```python
+        from llama_index.llms.everlyai import EverlyAI
+
+        llm = EverlyAI(api_key="your-api-key")
+        response = llm.complete("Hello World!")
+        print(response)
+        ```
+    """
+
     def __init__(
         self,
         model: str = DEFAULT_MODEL,

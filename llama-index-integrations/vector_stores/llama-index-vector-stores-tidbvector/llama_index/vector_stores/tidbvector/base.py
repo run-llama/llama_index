@@ -19,7 +19,7 @@ from llama_index.core.vector_stores.utils import (
 _logger = logging.getLogger(__name__)
 
 DEFAULT_VECTOR_TABLE_NAME = "llama_index_vector_store"
-DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2", "inner_product"
+DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
 
 
 class TiDBVectorStore(BasePydanticVectorStore):
@@ -35,7 +35,7 @@ class TiDBVectorStore(BasePydanticVectorStore):
         connection_string: str,
         table_name: str = DEFAULT_VECTOR_TABLE_NAME,
         distance_strategy: str = DEFAULT_DISTANCE_STRATEGY,
-        vector_dimension: Optional[int] = None,
+        vector_dimension: int = 1536,
         *,
         engine_args: Optional[Dict[str, Any]] = None,
         drop_existing_table: bool = False,
@@ -64,8 +64,8 @@ class TiDBVectorStore(BasePydanticVectorStore):
                 store vector data. If you do not provide a table name,
                 a default table named `llama_index_vector_store` will be created automatically
             distance_strategy: The strategy used for similarity search,
-                defaults to "cosine", valid values: "l2", "cosine", "inner_product".
-            vector_dimension: The dimension of the vector, defaults to None.
+                defaults to "cosine", valid values: "l2", "cosine".
+            vector_dimension: The dimension of the vector, defaults to 1536.
             engine_args (Optional[Dict[str, Any]], optional): Additional engine arguments. Defaults to None.
             drop_existing_table: Drop the existing TiDB table before initializing,
                 defaults to False.

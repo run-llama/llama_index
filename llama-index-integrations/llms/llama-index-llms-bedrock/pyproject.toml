@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-bedrock"
 readme = "README.md"
-version = "0.1.3"
+version = "0.1.9"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-llama-index-llms-anthropic = "^0.1.1"
+llama-index-llms-anthropic = "^0.1.7"
 boto3 = "^1.34.26"
 
 [tool.poetry.group.dev.dependencies]

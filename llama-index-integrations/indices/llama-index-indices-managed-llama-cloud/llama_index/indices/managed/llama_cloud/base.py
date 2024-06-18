@@ -12,6 +12,7 @@ from llama_index_client import PipelineType, ProjectCreate, StatusEnum
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_APP_URL, DEFAULT_PROJECT_NAME
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.core.ingestion.api_utils import (
@@ -21,6 +22,7 @@ from llama_index.core.ingestion.api_utils import (
     get_pipeline_create,
 )
 from llama_index.core.schema import BaseNode, Document, TransformComponent
+from llama_index.core.settings import Settings
 
 
 class LlamaCloudIndex(BaseManagedIndex):
@@ -37,6 +39,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
         show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Index."""
@@ -56,6 +59,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._app_url = app_url
         self._timeout = timeout
         self._show_progress = show_progress
+        self._service_context = None
+        self._callback_manager = callback_manager or Settings.callback_manager
 
     @classmethod
     def from_documents(  # type: ignore

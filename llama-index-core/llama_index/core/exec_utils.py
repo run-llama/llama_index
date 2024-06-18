@@ -45,20 +45,16 @@ ALLOWED_BUILTINS = {
     "float": float,
     "format": format,
     "frozenset": frozenset,
-    "getattr": getattr,
-    "hasattr": hasattr,
     "hash": hash,
     "hex": hex,
     "int": int,
     "isinstance": isinstance,
     "issubclass": issubclass,
-    "iter": iter,
     "len": len,
     "list": list,
     "map": map,
     "max": max,
     "min": min,
-    "next": next,
     "oct": oct,
     "ord": ord,
     "pow": pow,
@@ -68,7 +64,6 @@ ALLOWED_BUILTINS = {
     "reversed": reversed,
     "round": round,
     "set": set,
-    "setattr": setattr,
     "slice": slice,
     "sorted": sorted,
     "str": str,
@@ -91,26 +86,58 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     return restricted_globals
 
 
+vulnerable_code_snippets = [
+    "os.",
+]
+
+
 class DunderVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.has_access_to_private_entity = False
+        self.has_access_to_disallowed_builtin = False
+
+        builtins = globals()["__builtins__"].keys()
+        self._builtins = builtins
 
     def visit_Name(self, node: ast.Name) -> None:
         if node.id.startswith("_"):
             self.has_access_to_private_entity = True
+        if node.id not in ALLOWED_BUILTINS and node.id in self._builtins:
+            self.has_access_to_disallowed_builtin = True
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         if node.attr.startswith("_"):
             self.has_access_to_private_entity = True
+        if node.attr not in ALLOWED_BUILTINS and node.attr in self._builtins:
+            self.has_access_to_disallowed_builtin = True
         self.generic_visit(node)
 
 
 def _contains_protected_access(code: str) -> bool:
+    # do not allow imports
+    imports_modules = False
     tree = ast.parse(code)
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.Import):
+            imports_modules = True
+        elif isinstance(node, ast.ImportFrom):
+            imports_modules = True
+        else:
+            continue
+
     dunder_visitor = DunderVisitor()
     dunder_visitor.visit(tree)
-    return dunder_visitor.has_access_to_private_entity
+
+    for vulnerable_code_snippet in vulnerable_code_snippets:
+        if vulnerable_code_snippet in code:
+            dunder_visitor.has_access_to_disallowed_builtin = True
+
+    return (
+        dunder_visitor.has_access_to_private_entity
+        or dunder_visitor.has_access_to_disallowed_builtin
+        or imports_modules
+    )
 
 
 def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
@@ -124,7 +151,8 @@ def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
         __source = __source.decode()
     if _contains_protected_access(__source):
         raise RuntimeError(
-            "Execution of code containing references to private or dunder methods is forbidden!"
+            "Execution of code containing references to private or dunder methods, "
+            "disallowed builtins, or any imports, is forbidden!"
         )
 
 

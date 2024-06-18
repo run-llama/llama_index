@@ -1,14 +1,19 @@
+import logging
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.core.callbacks.base_handler import BaseCallbackHandler
+from llama_index.core.callbacks.pythonically_printing_base_handler import (
+    PythonicallyPrintingBaseHandler,
+)
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 
 
-class SimpleLLMHandler(BaseCallbackHandler):
+class SimpleLLMHandler(PythonicallyPrintingBaseHandler):
     """Callback handler for printing llms inputs/outputs."""
 
-    def __init__(self) -> None:
-        super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+        super().__init__(
+            event_starts_to_ignore=[], event_ends_to_ignore=[], logger=logger
+        )
 
     def start_trace(self, trace_id: Optional[str] = None) -> None:
         return
@@ -27,21 +32,21 @@ class SimpleLLMHandler(BaseCallbackHandler):
             prompt = str(payload.get(EventPayload.PROMPT))
             completion = str(payload.get(EventPayload.COMPLETION))
 
-            print(f"** Prompt: **\n{prompt}")
-            print("*" * 50)
-            print(f"** Completion: **\n{completion}")
-            print("*" * 50)
-            print("\n")
+            self._print(f"** Prompt: **\n{prompt}")
+            self._print("*" * 50)
+            self._print(f"** Completion: **\n{completion}")
+            self._print("*" * 50)
+            self._print("\n")
         elif EventPayload.MESSAGES in payload:
             messages = cast(List[ChatMessage], payload.get(EventPayload.MESSAGES, []))
             messages_str = "\n".join([str(x) for x in messages])
             response = str(payload.get(EventPayload.RESPONSE))
 
-            print(f"** Messages: **\n{messages_str}")
-            print("*" * 50)
-            print(f"** Response: **\n{response}")
-            print("*" * 50)
-            print("\n")
+            self._print(f"** Messages: **\n{messages_str}")
+            self._print("*" * 50)
+            self._print(f"** Response: **\n{response}")
+            self._print("*" * 50)
+            self._print("\n")
 
     def on_event_start(
         self,

@@ -1,13 +1,13 @@
 from typing import Any, Callable, Optional, Sequence
-
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
 )
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.callbacks import llm_completion_callback
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.types import PydanticProgramMode
 
@@ -76,3 +76,11 @@ class MockLLM(CustomLLM):
                 )
 
         return gen_response(self.max_tokens) if self.max_tokens else gen_prompt()
+
+
+class MockLLMWithNonyieldingChatStream(MockLLM):
+    @llm_chat_callback()
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        yield from []

@@ -4,7 +4,7 @@ import pytest
 import uuid
 from typing import List, Generator
 
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
@@ -68,7 +68,7 @@ def node_embeddings() -> List[TextNode]:
         TextNode(
             text="lorem ipsum",
             id_="c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
-            # relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
             metadata={
                 "author": "Stephen King",
                 "theme": "Friendship",
@@ -78,7 +78,7 @@ def node_embeddings() -> List[TextNode]:
         TextNode(
             text="lorem ipsum",
             id_="c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
-            # relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
             metadata={
                 "director": "Francis Ford Coppola",
                 "theme": "Mafia",
@@ -88,7 +88,7 @@ def node_embeddings() -> List[TextNode]:
         TextNode(
             text="lorem ipsum",
             id_="c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
-            # relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")},
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-2")},
             metadata={
                 "director": "Christopher Nolan",
             },
@@ -97,8 +97,8 @@ def node_embeddings() -> List[TextNode]:
         TextNode(
             text="I was taught that the way of progress was neither swift nor easy.",
             id_="0b31ae71-b797-4e88-8495-031371a7752e",
-            # relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-3")},
-            metadate={
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-3")},
+            metadata={
                 "author": "Marie Curie",
             },
             embedding=[0.0, 0.0, 0.9],
@@ -109,8 +109,8 @@ def node_embeddings() -> List[TextNode]:
                 + " Curiosity has its own reason for existing."
             ),
             id_="bd2e080b-159a-4030-acc3-d98afd2ba49b",
-            # relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-4")},
-            metadate={
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-4")},
+            metadata={
                 "author": "Albert Einstein",
             },
             embedding=[0.0, 0.0, 0.5],
@@ -121,8 +121,8 @@ def node_embeddings() -> List[TextNode]:
                 + " I am a free human being with an independent will."
             ),
             id_="f658de3b-8cef-4d1c-8bed-9a263c907251",
-            # relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="text-5")},
-            metadate={
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-5")},
+            metadata={
                 "author": "Charlotte Bronte",
             },
             embedding=[0.0, 0.0, 0.3],
@@ -153,6 +153,6 @@ def test_functionality(
     query_result = os_store.query(query)
     assert query_result.nodes
     assert query_result.nodes[0].get_content() == exp_node.text
-    # delete
-    os_store.delete(exp_node.id_)
+    # delete one node using its associated doc_id
+    os_store.delete("test-1")
     assert count_docs_in_index(os_store) == len(node_embeddings) - 1

@@ -11,14 +11,16 @@ import time
 from typing import Any, Dict, List, Optional, Union
 
 from azure.storage.blob import ContainerClient
+
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BaseReader, BasePydanticReader
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
 
 
-class AzStorageBlobReader(BaseReader):
+class AzStorageBlobReader(BasePydanticReader):
     """General reader for any Azure Storage Blob file or directory.
 
     Args:
@@ -42,34 +44,25 @@ class AzStorageBlobReader(BaseReader):
             The credentials with which to authenticate. This is optional if the account URL already has a SAS token.
     """
 
-    def __init__(
-        self,
-        *args: Any,
-        container_name: str,
-        prefix: str = "",
-        blob: Optional[str] = None,
-        name_starts_with: Optional[str] = None,
-        include: Optional[Any] = None,
-        file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
-        connection_string: Optional[str] = None,
-        account_url: Optional[str] = None,
-        credential: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Initializes Azure Storage Account."""
-        super().__init__(*args, **kwargs)
+    container_name: str
+    prefix: Optional[str] = ""
+    blob: Optional[str] = None
+    name_starts_with: Optional[str] = None
+    include: Optional[Any] = None
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
+    connection_string: Optional[str] = None
+    account_url: Optional[str] = None
+    credential: Optional[Any] = None
+    is_remote: bool = True
 
-        self.container_name = container_name
-        self.prefix = prefix
-        self.connection_string = connection_string
-        self.blob = blob
-        self.name_starts_with = name_starts_with
-        self.include = include
-        self.file_extractor = file_extractor
-        self.account_url = account_url
-        self.credential = credential
-        # Not in use. As part of the TODO below. Is part of the kwargs.
-        # self.preloaded_data_path = kwargs.get('preloaded_data_path', None)
+    # Not in use. As part of the TODO below. Is part of the kwargs.
+    # self.preloaded_data_path = kwargs.get('preloaded_data_path', None)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AzStorageBlobReader"
 
     def load_data(self) -> List[Document]:
         """Load file(s) from Azure Storage Blob."""
@@ -89,7 +82,8 @@ class AzStorageBlobReader(BaseReader):
             if self.blob:
                 blob_client = container_client.get_blob_client(self.blob)
                 stream = blob_client.download_blob()
-                download_file_path = os.path.join(temp_dir, stream.name)
+                sanitized_file_name = stream.name.replace("/", "-")
+                download_file_path = os.path.join(temp_dir, sanitized_file_name)
                 logger.info(f"Start download of {self.blob}")
                 start_time = time.time()
                 with open(file=download_file_path, mode="wb") as download_file:
@@ -107,7 +101,8 @@ class AzStorageBlobReader(BaseReader):
                     self.name_starts_with, self.include
                 )
                 for obj in blobs_list:
-                    download_file_path = os.path.join(temp_dir, obj.name)
+                    sanitized_file_name = obj.name.replace("/", "-")
+                    download_file_path = os.path.join(temp_dir, sanitized_file_name)
                     logger.info(f"Start download of {obj.name}")
                     start_time = time.time()
                     blob_client = container_client.get_blob_client(obj)

@@ -28,13 +28,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-huggingface"
 readme = "README.md"
-version = "0.1.4"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-transformers = "^4.37.0"
-torch = "^2.1.2"
+sentence-transformers = ">=2.6.1"
 
 [tool.poetry.dependencies.huggingface-hub]
 extras = ["inference"]

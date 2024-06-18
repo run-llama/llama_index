@@ -4,6 +4,8 @@ import os
 from typing import Any, Dict, List, Optional
 
 import requests
+
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
     MetadataMode,
@@ -13,7 +15,7 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import get_tqdm_iterable
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -53,7 +55,7 @@ def convert_docs_to_json(nodes: List[BaseNode]) -> List[Dict]:
     return docs
 
 
-class ChatGPTRetrievalPluginClient(VectorStore):
+class ChatGPTRetrievalPluginClient(BasePydanticVectorStore):
     """ChatGPT Retrieval Plugin Client.
 
     In this client, we make use of the endpoints defined by ChatGPT.
@@ -68,6 +70,12 @@ class ChatGPTRetrievalPluginClient(VectorStore):
     stores_text: bool = True
     is_embedding_query: bool = False
 
+    _endpoint_url: str = PrivateAttr()
+    _bearer_token: Optional[str] = PrivateAttr()
+    _retries: Optional[Retry] = PrivateAttr()
+    _batch_size: int = PrivateAttr()
+    _s: requests.Session = PrivateAttr()
+
     def __init__(
         self,
         endpoint_url: str,
@@ -77,6 +85,8 @@ class ChatGPTRetrievalPluginClient(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        super().__init__()
+
         self._endpoint_url = endpoint_url
         self._bearer_token = bearer_token or os.getenv("BEARER_TOKEN")
         self._retries = retries
@@ -84,6 +94,10 @@ class ChatGPTRetrievalPluginClient(VectorStore):
 
         self._s = requests.Session()
         self._s.mount("http://", HTTPAdapter(max_retries=self._retries))
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ChatGPTRetrievalPluginClient"
 
     @property
     def client(self) -> None:

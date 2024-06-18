@@ -20,6 +20,7 @@ class PROVIDERS(str, Enum):
 
 class Models(str, Enum):
     TITAN_EMBEDDING = "amazon.titan-embed-text-v1"
+    TITAN_EMBEDDING_V2_0 = "amazon.titan-embed-text-v2:0"
     TITAN_EMBEDDING_G1_TEXT_02 = "amazon.titan-embed-g1-text-02"
     COHERE_EMBED_ENGLISH_V3 = "cohere.embed-english-v3"
     COHERE_EMBED_MULTILINGUAL_V3 = "cohere.embed-multilingual-v3"
@@ -38,23 +39,17 @@ PROVIDER_SPECIFIC_IDENTIFIERS = {
 
 
 class BedrockEmbedding(BaseEmbedding):
-    model: str = Field(description="The modelId of the Bedrock model to use.")
+    model_name: str = Field(description="The modelId of the Bedrock model to use.")
     profile_name: Optional[str] = Field(
         description="The name of aws profile to use. If not given, then the default profile is used.",
-        exclude=True,
     )
-    aws_access_key_id: Optional[str] = Field(
-        description="AWS Access Key ID to use", exclude=True
-    )
+    aws_access_key_id: Optional[str] = Field(description="AWS Access Key ID to use")
     aws_secret_access_key: Optional[str] = Field(
-        description="AWS Secret Access Key to use", exclude=True
+        description="AWS Secret Access Key to use"
     )
-    aws_session_token: Optional[str] = Field(
-        description="AWS Session Token to use", exclude=True
-    )
+    aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
     region_name: Optional[str] = Field(
         description="AWS region name to use. Uses region configured in AWS CLI if not passed",
-        exclude=True,
     )
     botocore_session: Optional[Any] = Field(
         description="Use this Botocore session instead of creating a new default one.",
@@ -78,7 +73,7 @@ class BedrockEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: str = Models.TITAN_EMBEDDING,
+        model_name: str = Models.TITAN_EMBEDDING,
         profile_name: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -109,7 +104,7 @@ class BedrockEmbedding(BaseEmbedding):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
-        config = None
+
         try:
             import boto3
             from botocore.config import Config
@@ -141,7 +136,7 @@ class BedrockEmbedding(BaseEmbedding):
             self._client = session.client("bedrock", config=config)
 
         super().__init__(
-            model=model,
+            model_name=model_name,
             max_retries=max_retries,
             timeout=timeout,
             botocore_config=config,
@@ -165,7 +160,9 @@ class BedrockEmbedding(BaseEmbedding):
     def list_supported_models() -> Dict[str, List[str]]:
         list_models = {}
         for provider in PROVIDERS:
-            list_models[provider.value] = [m.value for m in Models]
+            list_models[provider.value] = [
+                m.value for m in Models if provider.value in m.value
+            ]
         return list_models
 
     @classmethod
@@ -337,12 +334,12 @@ class BedrockEmbedding(BaseEmbedding):
         if self._client is None:
             raise ValueError("Client not set")
 
-        provider = self.model.split(".")[0]
+        provider = self.model_name.split(".")[0]
         request_body = self._get_request_body(provider, payload, type)
 
         response = self._client.invoke_model(
             body=request_body,
-            modelId=self.model,
+            modelId=self.model_name,
             accept="application/json",
             contentType="application/json",
         )
@@ -360,7 +357,7 @@ class BedrockEmbedding(BaseEmbedding):
         return self._get_embedding(text, "text")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        provider = self.model.split(".")[0]
+        provider = self.model_name.split(".")[0]
         if provider == PROVIDERS.COHERE:
             return self._get_embedding(texts, "text")
         return super()._get_text_embeddings(texts)
@@ -382,25 +379,49 @@ class BedrockEmbedding(BaseEmbedding):
             Sample Payload of type dict of following format
             {
                 'texts': ["This is a test document", "This is another document"],
-                'input_type': 'search_document',
-                'truncate': 'NONE'
+                'input_type': 'search_document'
             }
 
         """
         if provider == PROVIDERS.AMAZON:
             if isinstance(payload, list):
                 raise ValueError("Amazon provider does not support list of texts")
-            request_body = json.dumps({"inputText": payload})
+
+            titan_body_request = {"inputText": payload}
+
+            # Titan Embedding V2.0 has additional body parameters to check.
+            if "dimensions" in self.additional_kwargs:
+                if self.model_name == Models.TITAN_EMBEDDING_V2_0:
+                    titan_body_request["dimensions"] = self.additional_kwargs[
+                        "dimensions"
+                    ]
+                else:
+                    raise ValueError(
+                        "'dimensions' param not supported outside of 'titan-embed-text-v2:0' model."
+                    )
+            if "normalize" in self.additional_kwargs:
+                if self.model_name == Models.TITAN_EMBEDDING_V2_0:
+                    titan_body_request["normalize"] = self.additional_kwargs[
+                        "normalize"
+                    ]
+                else:
+                    raise ValueError(
+                        "'normalize' param not supported outside of 'titan-embed-text-v2:0' model."
+                    )
+
+            request_body = json.dumps(titan_body_request)
+
         elif provider == PROVIDERS.COHERE:
             input_types = {
                 "text": "search_document",
                 "query": "search_query",
             }
+            payload = [payload] if isinstance(payload, str) else payload
+            payload = [p[:2048] if len(p) > 2048 else p for p in payload]
             request_body = json.dumps(
                 {
-                    "texts": [payload] if isinstance(payload, str) else payload,
+                    "texts": payload,
                     "input_type": input_types[input_type],
-                    "truncate": "NONE",
                 }
             )
         else:

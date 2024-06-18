@@ -1,8 +1,9 @@
-from typing import Any, Callable, List, Protocol, Tuple, runtime_checkable
+from typing import Any, Callable, List, Optional, Protocol, Tuple, runtime_checkable
 
 from llama_index.core.vector_stores.types import VectorStoreQueryResult
 
-SparseEncoderCallable = Callable[[List[str]], Tuple[List[List[int]], List[List[float]]]]
+BatchSparseEncoding = Tuple[List[List[int]], List[List[float]]]
+SparseEncoderCallable = Callable[[List[str]], BatchSparseEncoding]
 
 
 @runtime_checkable
@@ -34,7 +35,7 @@ def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
     if torch.cuda.is_available():
         model = model.to("cuda")
 
-    def compute_vectors(texts: List[str]) -> Tuple[List[List[int]], List[List[float]]]:
+    def compute_vectors(texts: List[str]) -> BatchSparseEncoding:
         """
         Computes vectors from logits and attention mask using ReLU, log, and max operations.
         """
@@ -59,6 +60,35 @@ def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
             vecs.append(batch[indices[-1]].tolist())
 
         return indices, vecs
+
+    return compute_vectors
+
+
+def fastembed_sparse_encoder(
+    model_name: str = "prithvida/Splade_PP_en_v1",
+    batch_size: int = 256,
+    cache_dir: Optional[str] = None,
+    threads: Optional[int] = None,
+) -> SparseEncoderCallable:
+    try:
+        from fastembed.sparse.sparse_text_embedding import SparseTextEmbedding
+    except ImportError as e:
+        raise ImportError(
+            "Could not import FastEmbed. "
+            "Please install it with `pip install fastembed`"
+        ) from e
+
+    model = SparseTextEmbedding(model_name, cache_dir=cache_dir, threads=threads)
+
+    def compute_vectors(texts: List[str]) -> BatchSparseEncoding:
+        embeddings = model.embed(texts, batch_size=batch_size)
+        indices, values = zip(
+            *[
+                (embedding.indices.tolist(), embedding.values.tolist())
+                for embedding in embeddings
+            ]
+        )
+        return list(indices), list(values)
 
     return compute_vectors
 

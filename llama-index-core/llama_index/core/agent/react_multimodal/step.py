@@ -294,11 +294,13 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         task.extra_state["sources"].append(tool_output)
 
-        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        observation_step = ObservationReasoningStep(
+            observation=str(tool_output), return_direct=tool.metadata.return_direct
+        )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, False
+        return current_reasoning, tool.metadata.return_direct
 
     async def _aprocess_actions(
         self,
@@ -330,11 +332,13 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         task.extra_state["sources"].append(tool_output)
 
-        observation_step = ObservationReasoningStep(observation=str(tool_output))
+        observation_step = ObservationReasoningStep(
+            observation=str(tool_output), return_direct=tool.metadata.return_direct
+        )
         current_reasoning.append(observation_step)
         if self._verbose:
             print_text(f"{observation_step.get_content()}\n", color="blue")
-        return current_reasoning, False
+        return current_reasoning, tool.metadata.return_direct
 
     def _get_response(
         self,
@@ -350,6 +354,11 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
             response_step = cast(ResponseReasoningStep, current_reasoning[-1])
             response_str = response_step.response
+        elif (
+            isinstance(current_reasoning[-1], ObservationReasoningStep)
+            and current_reasoning[-1].return_direct
+        ):
+            response_str = current_reasoning[-1].observation
         else:
             response_str = current_reasoning[-1].get_content()
 
@@ -388,9 +397,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         # an intermediate step in the middle
         if step.input is not None:
             self._add_user_step_to_reasoning(
-                step,
-                task.extra_state["new_memory"],
-                task.extra_state["current_reasoning"],
+                step=step,
+                memory=task.extra_state["new_memory"],
+                current_reasoning=task.extra_state["current_reasoning"],
                 verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs
@@ -428,9 +437,9 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         """Run step."""
         if step.input is not None:
             self._add_user_step_to_reasoning(
-                step,
-                task.extra_state["new_memory"],
-                task.extra_state["current_reasoning"],
+                step=step,
+                memory=task.extra_state["new_memory"],
+                current_reasoning=task.extra_state["current_reasoning"],
                 verbose=self._verbose,
             )
         # TODO: see if we want to do step-based inputs

@@ -3,7 +3,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from deprecated import deprecated
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, LogProb, CompletionResponse
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from tenacity import (
@@ -21,6 +21,9 @@ import openai
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
+from openai.types.completion import Completion
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -39,6 +42,11 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
+    "gpt-4-1106-vision-preview": 128000,
+    "gpt-4-turbo-2024-04-09": 128000,
+    "gpt-4-turbo": 128000,
+    "gpt-4o": 128000,
+    "gpt-4o-2024-05-13": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,
@@ -49,8 +57,11 @@ GPT4_MODELS: Dict[str, int] = {
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
+    "gpt-4o": 128000,
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
+    # 0125 (2024) model (JSON mode)
+    "gpt-35-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-35-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -60,15 +71,13 @@ AZURE_TURBO_MODELS: Dict[str, int] = {
 
 TURBO_MODELS: Dict[str, int] = {
     # stable model names:
-    #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
-    #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
-    #   resolves to gpt-3.5-turbo-1106 after
-    "gpt-3.5-turbo": 4096,
+    #   resolves to gpt-3.5-turbo-0125 as of 2024-04-29.
+    "gpt-3.5-turbo": 16384,
     # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
     # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
     # 0125 (2024) model (JSON mode)
-    "gpt-3.5-turbo-0125": 16385,
+    "gpt-3.5-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -135,7 +144,7 @@ def create_retry_decorator(
     random_exponential: bool = False,
     stop_after_delay_seconds: Optional[float] = None,
     min_seconds: float = 4,
-    max_seconds: float = 10,
+    max_seconds: float = 60,
 ) -> Callable[[Any], Any]:
     wait_strategy = (
         wait_random_exponential(min=min_seconds, max=max_seconds)
@@ -154,11 +163,10 @@ def create_retry_decorator(
         retry=(
             retry_if_exception_type(
                 (
-                    openai.APITimeoutError,
-                    openai.APIError,
                     openai.APIConnectionError,
+                    openai.APITimeoutError,
                     openai.RateLimitError,
-                    openai.APIStatusError,
+                    openai.InternalServerError,
                 )
             )
         ),
@@ -258,6 +266,62 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
         additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+
+
+def from_openai_token_logprob(
+    openai_token_logprob: ChatCompletionTokenLogprob,
+) -> List[LogProb]:
+    """Convert a single openai token logprob to generic list of logprobs."""
+    result = []
+    if openai_token_logprob.top_logprobs:
+        try:
+            result = [
+                LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
+                for el in openai_token_logprob.top_logprobs
+            ]
+        except Exception as e:
+            print(openai_token_logprob)
+            raise
+    return result
+
+
+def from_openai_token_logprobs(
+    openai_token_logprobs: Sequence[ChatCompletionTokenLogprob],
+) -> List[List[LogProb]]:
+    """Convert openai token logprobs to generic list of LogProb."""
+    result = []
+    for token_logprob in openai_token_logprobs:
+        if logprobs := from_openai_token_logprob(token_logprob):
+            result.append(logprobs)
+    return result
+
+
+def from_openai_completion_logprob(
+    openai_completion_logprob: Dict[str, float]
+) -> List[LogProb]:
+    """Convert openai completion logprobs to generic list of LogProb."""
+    return [
+        LogProb(token=t, logprob=v, bytes=[])
+        for t, v in openai_completion_logprob.items()
+    ]
+
+
+def from_openai_completion_logprobs(
+    openai_completion_logprobs: Logprobs,
+) -> List[List[LogProb]]:
+    """Convert openai completion logprobs to generic list of LogProb."""
+    result = []
+    if openai_completion_logprobs.top_logprobs:
+        result = [
+            from_openai_completion_logprob(completion_logprob)
+            for completion_logprob in openai_completion_logprobs.top_logprobs
+        ]
+    return result
+
+
+def from_openai_completion(openai_completion: Completion) -> CompletionResponse:
+    """Convert openai completion to CompletionResponse."""
+    text = openai_completion.choices[0].text
 
 
 def from_openai_messages(

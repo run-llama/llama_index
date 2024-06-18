@@ -19,10 +19,81 @@ Header 2 content
         ]
     )
     assert len(splits) == 2
-    assert splits[0].metadata == {"Header 1": "Main Header"}
-    assert splits[1].metadata == {"Header 1": "Header 2"}
+    assert splits[0].metadata == {"Header_1": "Main Header"}
+    assert splits[1].metadata == {"Header_1": "Header 2"}
     assert splits[0].text == "Main Header\n\nHeader 1 content"
     assert splits[1].text == "Header 2\nHeader 2 content"
+
+
+def test_header_splits_with_indented_code_blocks() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""Some text
+# Header 1
+## Header 2
+### Header 3
+```txt
+Non indented block code
+```
+A list begins here:
+
+* Element 1
+
+    ```txt
+    # has some indented code, but it's not handled as that.
+    ```
+* Element 2
+
+```txt
+    # also has some code, but unbalanced fences (different number of spaces). Everything after this is considered code block!
+ ```
+
+* Element 3
+* Element 4
+### Another Header 3
+ ```txt
+# has some wrongly indented fence, and leads to incorrect header detection.
+```
+
+## Another Header 2
+    """
+            )
+        ]
+    )
+
+    assert len(splits) == 6
+
+    assert splits[0].metadata == {}
+    assert splits[0].text == "Some text"
+
+    assert splits[1].metadata == {"Header_1": "Header 1"}
+    assert splits[1].text == "Header 1"
+
+    assert splits[2].metadata == {"Header_1": "Header 1", "Header_2": "Header 2"}
+    assert splits[2].text == "Header 2"
+
+    assert splits[3].metadata == {
+        "Header_1": "Header 1",
+        "Header_2": "Header 2",
+        "Header_3": "Header 3",
+    }
+    assert splits[3].text.endswith("* Element 4")
+
+    assert splits[4].metadata == {
+        "Header_1": "Header 1",
+        "Header_2": "Header 2",
+        "Header_3": "Another Header 3",
+    }
+    assert splits[4].text.endswith("```")
+
+    assert splits[5].metadata == {
+        "Header_1": "Header 1",
+        "Header_2": "Another Header 2",
+    }
+    assert splits[5].text == "Another Header 2"
 
 
 def test_non_header_splits() -> None:
@@ -80,11 +151,11 @@ Content
         ]
     )
     assert len(splits) == 4
-    assert splits[0].metadata == {"Header 1": "Main Header"}
-    assert splits[1].metadata == {"Header 1": "Main Header", "Header 2": "Sub-header"}
+    assert splits[0].metadata == {"Header_1": "Main Header"}
+    assert splits[1].metadata == {"Header_1": "Main Header", "Header_2": "Sub-header"}
     assert splits[2].metadata == {
-        "Header 1": "Main Header",
-        "Header 2": "Sub-header",
-        "Header 3": "Sub-sub header",
+        "Header_1": "Main Header",
+        "Header_2": "Sub-header",
+        "Header_3": "Sub-sub header",
     }
-    assert splits[3].metadata == {"Header 1": "New title"}
+    assert splits[3].metadata == {"Header_1": "New title"}

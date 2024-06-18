@@ -9,7 +9,7 @@ from typing import Any, List, Type, TypeVar
 import rockset
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -56,7 +56,27 @@ def _get_client(api_key: str | None, api_server: str | None, client: Any | None)
     return client
 
 
-class RocksetVectorStore(VectorStore):
+class RocksetVectorStore(BasePydanticVectorStore):
+    """Rockset Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-rocksetdb`
+
+        ```python
+        from llama_index.vector_stores.rocksetdb import RocksetVectorStore
+
+        # Set up RocksetVectorStore with necessary configurations
+        vector_store = RocksetVectorStore(
+            collection="my_collection",
+            api_key="your_rockset_api_key",
+            api_server="https://api.use1a1.rockset.com",
+            embedding_col="my_embedding",
+            metadata_col="node",
+            distance_func=RocksetVectorStore.DistanceFunc.DOT_PRODUCT
+        )
+        ```
+    """
+
     stores_text: bool = True
     is_embedding_query: bool = True
     flat_metadata: bool = False
@@ -65,6 +85,16 @@ class RocksetVectorStore(VectorStore):
         COSINE_SIM = "COSINE_SIM"
         EUCLIDEAN_DIST = "EUCLIDEAN_DIST"
         DOT_PRODUCT = "DOT_PRODUCT"
+
+    rockset: ModuleType
+    rs: Any
+    workspace: str
+    collection: str
+    text_key: str
+    embedding_col: str
+    metadata_col: str
+    distance_func: DistanceFunc
+    distance_order: str
 
     def __init__(
         self,
@@ -97,16 +127,18 @@ class RocksetVectorStore(VectorStore):
                 vector relationship
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
         """
-        self.rockset = _get_rockset()
-        self.rs = _get_client(api_key, api_server, client)
-        self.workspace = workspace
-        self.collection = collection
-        self.text_key = text_key
-        self.embedding_col = embedding_col
-        self.metadata_col = metadata_col
-        self.distance_func = distance_func
-        self.distance_order = (
-            "ASC" if distance_func is distance_func.EUCLIDEAN_DIST else "DESC"
+        super().__init__(
+            rockset=_get_rockset(),
+            rs=_get_client(api_key, api_server, client),
+            collection=collection,
+            text_key=text_key,
+            embedding_col=embedding_col,
+            metadata_col=metadata_col,
+            workspace=workspace,
+            distance_func=distance_func,
+            distance_order=(
+                "ASC" if distance_func is distance_func.EUCLIDEAN_DIST else "DESC"
+            ),
         )
 
         try:
@@ -115,6 +147,10 @@ class RocksetVectorStore(VectorStore):
             # set_application method does not exist.
             # rockset version < 2.1.0
             pass
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "RocksetVectorStore"
 
     @property
     def client(self) -> Any:
@@ -221,11 +257,11 @@ class RocksetVectorStore(VectorStore):
                 LIMIT
                     {query.similarity_top_k}
             """,
-            params={
-                filter.key: filter.value for filter in query.filters.legacy_filters()
-            }
-            if query.filters
-            else {},
+            params=(
+                {filter.key: filter.value for filter in query.filters.legacy_filters()}
+                if query.filters
+                else {}
+            ),
         )
 
         similarities: List[float] | None = [] if query.query_embedding else None

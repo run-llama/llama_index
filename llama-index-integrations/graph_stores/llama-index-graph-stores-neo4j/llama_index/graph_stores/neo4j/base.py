@@ -128,7 +128,7 @@ class Neo4jGraphStore(GraphStore):
 
         query = (
             f"""MATCH p=(n1:{self.node_label})-[*1..{depth}]->() """
-            f"""{"WHERE n1.id IN $subjs" if subjs else ""} """
+            f"""WHERE toLower(n1.id) IN {[subj.lower() for subj in subjs] if subjs else []}"""
             "UNWIND relationships(p) AS rel "
             "WITH n1.id AS subj, p, apoc.coll.flatten(apoc.coll.toSet("
             "collect([type(rel), endNode(rel).id]))) AS flattened_rels "

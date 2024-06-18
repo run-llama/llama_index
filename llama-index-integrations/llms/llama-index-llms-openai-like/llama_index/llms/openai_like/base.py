@@ -22,7 +22,8 @@ from transformers import AutoTokenizer
 
 
 class OpenAILike(OpenAI):
-    """
+    """OpenaAILike LLM.
+
     OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
     3rd party tools that provide an openai-compatible api.
 
@@ -33,6 +34,18 @@ class OpenAILike(OpenAI):
     variables or the api_key and api_base constructor arguments.
     OPENAI_API_KEY/api_key can normally be set to anything in this case,
     but will depend on the tool you're using.
+
+    Examples:
+        `pip install llama-index-llms-openai-like`
+
+        ```python
+        from llama_index.llms.openai_like import OpenAILike
+
+        llm = OpenAILike(model="my model", api_base="https://hostname.com/v1", api_key="fake")
+
+        response = llm.complete("Hello World!")
+        print(str(response))
+        ```
     """
 
     context_window: int = Field(

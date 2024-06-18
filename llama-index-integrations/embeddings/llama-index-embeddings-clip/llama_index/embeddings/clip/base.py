@@ -7,6 +7,7 @@ from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import ImageType
 from PIL import Image
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,8 @@ class ClipEmbedding(MultiModalEmbedding):
 
         try:
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            if self.model_name not in AVAILABLE_CLIP_MODELS:
+            is_local_path = os.path.exists(self.model_name)
+            if not is_local_path and self.model_name not in AVAILABLE_CLIP_MODELS:
                 raise ValueError(
                     f"Model name {self.model_name} is not available in CLIP."
                 )

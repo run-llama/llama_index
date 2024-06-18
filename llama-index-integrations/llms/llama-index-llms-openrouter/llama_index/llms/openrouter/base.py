@@ -15,6 +15,32 @@ DEFAULT_MODEL = "gryphe/mythomax-l2-13b"
 
 
 class OpenRouter(OpenAILike):
+    """OpenRouter LLM.
+
+    To instantiate the `OpenRouter` class, you will need to provide an API key. You can set the API key either as an environment variable `OPENROUTER_API_KEY` or directly in the class
+    constructor. If setting it in the class constructor, it would look like this:
+
+    If you haven't signed up for an API key yet, you can do so on the OpenRouter website at (https://openrouter.ai). Once you have your API key, you can use the `OpenRouter` class to interact
+    with the LLM for tasks like chatting, streaming, and completing prompts.
+
+    Examples:
+        `pip install llama-index-llms-openrouter`
+
+        ```python
+        from llama_index.llms.openrouter import OpenRouter
+
+        llm = OpenRouter(
+            api_key="<your-api-key>",
+            max_tokens=256,
+            context_window=4096,
+            model="gryphe/mythomax-l2-13b",
+        )
+
+        response = llm.complete("Hello World!")
+        print(str(response))
+        ```
+    """
+
     model: str = Field(
         description="The OpenRouter model to use. See https://openrouter.ai/models for options."
     )

@@ -1,4 +1,3 @@
-from threading import Thread
 from typing import Any, Callable, Generator, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -19,13 +18,30 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 
 from langchain.base_language import BaseLanguageModel
 
 
 class LangChainLLM(LLM):
-    """Adapter for a LangChain LLM."""
+    """Adapter for a LangChain LLM.
+
+    Examples:
+        `pip install llama-index-llms-langchain`
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        from llama_index.llms.langchain import LangChainLLM
+
+        llm = LangChainLLM(llm=ChatOpenAI(...))
+
+        response_gen = llm.stream_complete("What is the meaning of life?")
+
+        for r in response_gen:
+            print(r.delta, end="")
+        ```
+    """
 
     _llm: Any = PrivateAttr()
 

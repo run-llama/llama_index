@@ -18,6 +18,7 @@ from llama_index.core.indices.struct_store.sql_retriever import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.objects.table_node_mapping import SQLTableSchema
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
@@ -75,8 +76,14 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
     NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
+
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
     """
 
     def __init__(
@@ -137,6 +144,11 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
 
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
 
     Args:
         index (SQLStructStoreIndex): A SQL Struct Store Index
@@ -200,6 +212,23 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
+        # If LLM returns SQLQuery: or ```sql, extract the SQL query
+        sql_query_start = response.find("SQLQuery:")
+        if sql_query_start != -1:
+            response = response[sql_query_start:]
+            response = response.replace("SQLQuery:", "")
+        sql_markdown_start = response.find("```sql")
+        if sql_markdown_start != -1:
+            response = response.replace("```sql", "")
+        response = response.replace("```", "")
+        # If LLM talks between the end of query and SQL result
+        # find semi-colon and remove everything after it
+        semi_colon = response.find(";")
+        if semi_colon != -1:
+            response = response[: semi_colon + 1]
+        # Replace escaped single quotes, happens when
+        # there's a ' in the value (e.g. "I'm")
+        response = response.replace("\\'", "''")
         return response.strip()
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
@@ -301,6 +330,14 @@ def _validate_prompt(
 
 
 class BaseSQLTableQueryEngine(BaseQueryEngine):
+    """Base SQL Table query engine.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
+    """
+
     def __init__(
         self,
         llm: Optional[LLM] = None,
@@ -309,6 +346,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         callback_manager: Optional[CallbackManager] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         verbose: bool = False,
+        streaming: bool = False,
         # deprecated
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
@@ -332,10 +370,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         self._synthesize_response = synthesize_response
         self._verbose = verbose
+        self._streaming = streaming
         super().__init__(
             callback_manager=callback_manager
             or callback_manager_from_settings_or_context(Settings, service_context),
-            **kwargs,
         )
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -378,6 +416,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 text_qa_template=partial_synthesis_prompt,
                 refine_template=self._refine_synthesis_prompt,
                 verbose=self._verbose,
+                streaming=self._streaming,
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
@@ -423,6 +462,11 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
     Natural language SQL Table query engine.
 
     Read NLStructStoreQueryEngine's docstring for more info on NL SQL.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
     """
 
     def __init__(
@@ -437,6 +481,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         tables: Optional[Union[List[str], List[Table]]] = None,
         service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -452,6 +497,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             tables=tables,
             context_str_prefix=context_str_prefix,
             service_context=service_context,
+            embed_model=embed_model,
             sql_only=sql_only,
             callback_manager=callback_manager,
             verbose=verbose,
@@ -480,6 +526,11 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
     we can infer embedding vectors in the sql query.
 
     NOTE: this is a beta feature
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
 
     """
 

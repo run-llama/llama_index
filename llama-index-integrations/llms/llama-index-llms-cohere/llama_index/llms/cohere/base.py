@@ -26,14 +26,31 @@ from llama_index.llms.cohere.utils import (
     cohere_modelname_to_contextsize,
     completion_with_retry,
     messages_to_cohere_history,
+    remove_documents_from_messages,
 )
 
 import cohere
 
 
 class Cohere(LLM):
+    """Cohere LLM.
+
+    Examples:
+        `pip install llama-index-llms-cohere`
+
+        ```python
+        from llama_index.llms.cohere import Cohere
+
+        llm = Cohere(model="command", api_key=api_key)
+        resp = llm.complete("Paul Graham is ")
+        print(resp)
+        ```
+    """
+
     model: str = Field(description="The cohere model to use.")
-    temperature: float = Field(description="The temperature to use for sampling.")
+    temperature: float = Field(
+        description="The temperature to use for sampling.", default=None
+    )
     max_retries: int = Field(
         default=10, description="The maximum number of API retries."
     )
@@ -47,9 +64,9 @@ class Cohere(LLM):
 
     def __init__(
         self,
-        model: str = "command",
-        temperature: float = 0.5,
-        max_tokens: int = 512,
+        model: str = "command-r",
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = 8192,
         timeout: Optional[float] = None,
         max_retries: int = 10,
         api_key: Optional[str] = None,
@@ -116,8 +133,10 @@ class Cohere(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        history = messages_to_cohere_history(messages[:-1])
         prompt = messages[-1].content
+        remaining, documents = remove_documents_from_messages(messages[:-1])
+        history = messages_to_cohere_history(remaining)
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         if all_kwargs["model"] not in CHAT_MODELS:
             raise ValueError(f"{all_kwargs['model']} not supported for chat")
@@ -133,6 +152,7 @@ class Cohere(LLM):
             chat=True,
             message=prompt,
             chat_history=history,
+            documents=documents,
             **all_kwargs,
         )
         return ChatResponse(
@@ -168,8 +188,10 @@ class Cohere(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        history = messages_to_cohere_history(messages[:-1])
         prompt = messages[-1].content
+        remaining, documents = remove_documents_from_messages(messages[:-1])
+        history = messages_to_cohere_history(remaining)
+
         all_kwargs = self._get_all_kwargs(**kwargs)
         all_kwargs["stream"] = True
         if all_kwargs["model"] not in CHAT_MODELS:
@@ -180,6 +202,7 @@ class Cohere(LLM):
             chat=True,
             message=prompt,
             chat_history=history,
+            documents=documents,
             **all_kwargs,
         )
 

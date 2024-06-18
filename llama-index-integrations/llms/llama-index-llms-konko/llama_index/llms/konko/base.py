@@ -49,6 +49,33 @@ class ModelInfo:
 
 
 class Konko(LLM):
+    """Konko LLM.
+
+    Examples:
+        `pip install llama-index-llms-konko`
+
+        ```python
+        import os
+        from llama_index.llms.konko import Konko
+        from llama_index.core.llms import ChatMessage
+
+        # Set up the Konko LLM with the desired model
+        llm = Konko(model="meta-llama/llama-2-13b-chat")
+
+        # Set the Konko API key
+        os.environ["KONKO_API_KEY"] = "<your-api-key>"
+
+        # Create a ChatMessage object
+        message = ChatMessage(role="user", content="Explain Big Bang Theory briefly")
+
+        # Call the chat method with the ChatMessage object
+        response = llm.chat([message])
+
+        # Print the response
+        print(response)
+        ```
+    """
+
     model: str = Field(
         default=DEFAULT_KONKO_MODEL, description="The konko model to use."
     )

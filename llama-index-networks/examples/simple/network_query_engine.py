@@ -6,8 +6,8 @@ script. Run `python contributor.py`.
 
 import asyncio
 from llama_index.llms.openai import OpenAI
-from llama_index.networks.contributor import ContributorClient
-from llama_index.networks.query_engine import NetworkQueryEngine
+from llama_index.networks.contributor.query_engine import ContributorClient
+from llama_index.networks.network.query_engine import NetworkQueryEngine
 
 client = ContributorClient.from_config_file(env_file=".env.contributor.client")
 

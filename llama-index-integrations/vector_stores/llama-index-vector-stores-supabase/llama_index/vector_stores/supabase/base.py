@@ -35,9 +35,23 @@ class SupabaseVectorStore(BasePydanticVectorStore):
     Args:
         postgres_connection_string (str):
             postgres connection string
-
         collection_name (str):
             name of the collection to store the embeddings in
+        dimension (int, optional):
+            dimension of the embeddings. Defaults to 1536.
+
+    Examples:
+        `pip install llama-index-vector-stores-supabase`
+
+        ```python
+        from llama_index.vector_stores.supabase import SupabaseVectorStore
+
+        # Set up SupabaseVectorStore
+        vector_store = SupabaseVectorStore(
+            postgres_connection_string="postgresql://<user>:<password>@<host>:<port>/<db_name>",
+            collection_name="base_demo",
+        )
+        ```
 
     """
 
@@ -66,6 +80,13 @@ class SupabaseVectorStore(BasePydanticVectorStore):
             self._collection = self._client.create_collection(
                 name=collection_name, dimension=dimension
             )
+
+    def __del__(self) -> None:
+        """Close the client when the object is deleted."""
+        try:  # try-catch in case the attribute is not present
+            self._client.disconnect()
+        except AttributeError:
+            pass
 
     @property
     def client(self) -> None:

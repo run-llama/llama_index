@@ -4,23 +4,23 @@ import sys
 from typing import Any, List, Optional
 from urllib.parse import urlparse
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.llms import ChatMessage
-from llama_index.core.storage.chat_store.base import BaseChatStore
-
 import redis
 from redis import Redis
 from redis.cluster import RedisCluster
 
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.llms import ChatMessage
+from llama_index.core.storage.chat_store.base import BaseChatStore
+
 
 # Convert a ChatMessage to a json object for Redis
 def _message_to_dict(message: ChatMessage) -> dict:
-    return {"type": message.role, "content": message.content}
+    return message.dict()
 
 
 # Convert the json object in Redis to a ChatMessage
 def _dict_to_message(d: dict) -> ChatMessage:
-    return ChatMessage(role=d["type"], content=d["content"])
+    return ChatMessage.parse_obj(d)
 
 
 class RedisChatStore(BaseChatStore):
