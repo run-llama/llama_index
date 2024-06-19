@@ -422,7 +422,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 query=query_bundle.query_str,
                 nodes=retrieved_nodes,
             )
-            # cast(Dict, response.metadata).update(metadata)
+            cast(Dict, response.metadata).update(metadata)
             return cast(Response, response)
         else:
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
