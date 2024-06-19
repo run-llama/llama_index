@@ -3,6 +3,7 @@
 An index that that is built on top of an existing vector store.
 
 """
+
 import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, cast
@@ -315,4 +316,4 @@ class AWSDocDbVectorStore(BasePydanticVectorStore):
         return self._index_crud.delete_index()
 
     def __del__(self) -> None:
-        self.docdb_client.close()
+        self._docdb_client.close()

@@ -1,8 +1,8 @@
 """Google Drive files reader."""
 
+import json
 import logging
 import os
-import json
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -10,10 +10,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader, BasePydanticReader
-from llama_index.core.bridge.pydantic import PrivateAttr, Field
+from llama_index.core.readers.base import BasePydanticReader, BaseReader
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -87,27 +88,6 @@ class GoogleDriveReader(BasePydanticReader):
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
-        self._creds = None
-        self._is_cloud = (is_cloud,)
-        # Download Google Docs/Slides/Sheets as actual files
-        # See https://developers.google.com/drive/v3/web/mime-types
-        self._mimetypes = {
-            "application/vnd.google-apps.document": {
-                "mimetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "extension": ".docx",
-            },
-            "application/vnd.google-apps.spreadsheet": {
-                "mimetype": (
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                ),
-                "extension": ".xlsx",
-            },
-            "application/vnd.google-apps.presentation": {
-                "mimetype": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "extension": ".pptx",
-            },
-        }
-
         # Read the file contents so they can be serialized and stored.
         if client_config is None and os.path.isfile(credentials_path):
             with open(credentials_path, encoding="utf-8") as json_file:
@@ -143,6 +123,27 @@ class GoogleDriveReader(BasePydanticReader):
             **kwargs,
         )
 
+        self._creds = None
+        self._is_cloud = is_cloud
+        # Download Google Docs/Slides/Sheets as actual files
+        # See https://developers.google.com/drive/v3/web/mime-types
+        self._mimetypes = {
+            "application/vnd.google-apps.document": {
+                "mimetype": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "extension": ".docx",
+            },
+            "application/vnd.google-apps.spreadsheet": {
+                "mimetype": (
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ),
+                "extension": ".xlsx",
+            },
+            "application/vnd.google-apps.presentation": {
+                "mimetype": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "extension": ".pptx",
+            },
+        }
+
     @classmethod
     def class_name(cls) -> str:
         return "GoogleDriveReader"
@@ -156,8 +157,6 @@ class GoogleDriveReader(BasePydanticReader):
         Returns:
             credentials
         """
-        from google_auth_oauthlib.flow import InstalledAppFlow
-
         # First, we need the Google API credentials for the app
         creds = None
 

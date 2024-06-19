@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.8.3"
   PYTHON_VERSION: "3.10"
 
 jobs:

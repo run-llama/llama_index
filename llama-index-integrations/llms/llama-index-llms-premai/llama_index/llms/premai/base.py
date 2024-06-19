@@ -27,6 +27,8 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.llms.llm import LLM
 
+from llama_index.llms.premai.utils import prepare_messages_before_chat
+
 from premai import Prem
 
 
@@ -139,7 +141,6 @@ class PremAI(LLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             temperature=self.temperature,
-            top_p=self.top_p,
         )
 
     @property
@@ -181,65 +182,43 @@ class PremAI(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
-        chat_messages = []
 
-        for message in messages:
-            if "system_prompt" in all_kwargs and message.role.value == "system":
-                continue
+        chat_messages, all_kwargs = prepare_messages_before_chat(
+            messages=messages, **all_kwargs
+        )
 
-            elif "system_prompt" not in all_kwargs and message.role.value == "system":
-                all_kwargs["system_prompt"] = message.content
-            else:
-                chat_messages.append(
-                    {"role": message.role.value, "content": message.content}
-                )
         response = self._client.chat.completions.create(
             project_id=self.project_id, messages=chat_messages, **all_kwargs
         )
         if not response.choices:
             raise ChatPremError("ChatResponse must have at least one candidate")
 
-        chat_responses: Sequence[ChatResponse] = []
+        choice = response.choices[0]
+        role = choice.message.role
 
-        for choice in response.choices:
-            role = choice.message.role
-            if role is None:
-                raise ChatPremError(f"ChatResponse {choice} must have a role.")
-            content = choice.message.content or ""
-            chat_responses.append(
-                ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    raw={
-                        "role": role,
-                        "content": content,
-                        "document_chunks": [
-                            chunk.to_dict() for chunk in response.document_chunks
-                        ],
-                    },
-                )
-            )
+        if role is None:
+            raise ChatPremError(f"ChatResponse {choice} must have a role.")
+        content = choice.message.content or ""
 
-        if "is_completion" in kwargs:
-            return chat_responses[0]
-
-        return chat_responses
+        return ChatResponse(
+            message=ChatMessage(role=role, content=content),
+            raw={
+                "role": role,
+                "content": content,
+                "document_chunks": [
+                    chunk.to_dict() for chunk in response.document_chunks
+                ],
+            },
+        )
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        chat_messages = []
+        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
 
-        for message in messages:
-            if "system_prompt" in all_kwargs and message.role.value == "system":
-                continue
-
-            elif "system_prompt" not in all_kwargs and message.role.value == "system":
-                all_kwargs["system_prompt"] = message.content
-            else:
-                chat_messages.append(
-                    {"role": message.role.value, "content": message.content}
-                )
+        chat_messages, all_kwargs = prepare_messages_before_chat(
+            messages=messages, **all_kwargs
+        )
 
         response_generator = self._client.chat.completions.create(
             project_id=self.project_id,

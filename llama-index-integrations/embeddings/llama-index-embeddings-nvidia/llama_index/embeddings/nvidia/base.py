@@ -14,12 +14,17 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
 
-BASE_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia/"
+# integrate.api.nvidia.com is the default url for most models, any
+# bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
+BASE_URL = "https://integrate.api.nvidia.com/v1/"
 DEFAULT_MODEL = "NV-Embed-QA"
 
+# because MODEL_ENDPOINT_MAP is used to construct KNOWN_URLS, we need to
+# include at least one model w/ https://integrate.api.nvidia.com/v1/
 MODEL_ENDPOINT_MAP = {
-    DEFAULT_MODEL: BASE_URL,
+    "NV-Embed-QA": "https://ai.api.nvidia.com/v1/retrieval/nvidia/",
     "snowflake/arctic-embed-l": "https://ai.api.nvidia.com/v1/retrieval/snowflake/arctic-embed-l",
+    "nvidia/nv-embed-v1": "https://integrate.api.nvidia.com/v1/",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
@@ -145,6 +150,7 @@ class NVIDIAEmbedding(BaseEmbedding):
     def available_models(self) -> List[Model]:
         """Get available models."""
         ids = MODEL_ENDPOINT_MAP.keys()
+        # TODO: hosted now has a model listing, need to merge known and listed models
         if not self._is_hosted:
             ids = [model.id for model in self._client.models.list()]
         return [Model(id=id) for id in ids]

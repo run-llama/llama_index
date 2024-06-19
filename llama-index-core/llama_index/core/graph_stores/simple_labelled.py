@@ -273,3 +273,35 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         net = Network(notebook=False, directed=True)
         net.from_nx(G)
         net.write_html(name)
+
+    def show_jupyter_graph(self) -> None:
+        """Visualizes the graph structure of the graph store.
+
+        NOTE: This function requires yfiles_jupyter_graphs to be installed.
+        NOTE: This method exclusively works in jupyter environments.
+
+        """
+        try:
+            from yfiles_jupyter_graphs import GraphWidget
+        except ImportError:
+            raise ImportError(
+                "Please install yfiles_jupyter_graphs to visualize the graph: `pip install yfiles_jupyter_graphs`"
+            )
+
+        w = GraphWidget()
+        nodes = []
+        edges = []
+        for node in self.graph.nodes.values():
+            node = {"id": node.id, "properties": {"label": node.id}}
+            nodes.append(node)
+        for triplet in self.graph.triplets:
+            edge = {
+                "id": triplet[1],
+                "start": triplet[0],
+                "end": triplet[2],
+                "properties": {"label": triplet[1]},
+            }
+            edges.append(edge)
+        w.nodes = nodes
+        w.edges = edges
+        display(w)

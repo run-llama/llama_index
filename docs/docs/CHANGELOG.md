@@ -1,5 +1,268 @@
 # ChangeLog
 
+## [2024-06-17]
+
+### `llama-index-core`[0.10.46]
+
+- Fix Pin tenacity and numpy in core (#14203)
+- Add precision and recall metrics (#14170)
+- Enable Function calling and agent runner for Vertex AI (#14088)
+- Fix for batch_gather (#14162)
+
+### `llama-index-utils-huggingface` [0.1.1]
+
+- Remove sentence-transformers dependency from HuggingFace utils package (#14204)
+
+### `llama-index-finetuning` [0.1.8]
+
+- Add MistralAI Finetuning API support (#14101)
+
+### `llama-index-llms-mistralai` [0.1.16]
+
+- Update MistralAI (#14199)
+
+### `llama-index-llms-bedrock-converse` [0.1.0]
+
+- fix: 🐛 Fix Bedrock Converse' pyproject.toml for the PyPI release (#14197)
+
+### `llama-index-utils-azure` [0.1.1]
+
+- Use typical include llama_index/ (#14196)
+- Feature/azure_table_storage (#14182)
+
+### `llama-index-embeddings-nvidia` [0.1.4]
+
+- add support for nvidia/nv-embed-v1 (https://huggingface.co/nvidia/NV-Embed-v1) (#14194)
+
+### `llama-index-retrievers-you` [0.1.3]
+
+- add news retriever (#13934)
+
+### `llama-index-storage-kvstore-azure` [0.1.1]
+
+- Fixes a bug where there is a missing await. (#14177)
+
+### `llama-index-embeddings-nomic` [0.4.0post1]
+
+- Restore Nomic Embed einops dependency (#14176)
+
+### `llama-index-retrievers-bm25` [0.1.4]
+
+- Changing BM25Retriever \_retrieve to use numpy methods (#14015)
+
+### `llama-index-llms-gemini` [0.1.11]
+
+- Add missing @llm_chat_callback() to Gemini.stream_chat (#14166)
+
+### `llama-index-llms-vertex` [0.2.0]
+
+- Enable Function calling and agent runner for Vertex AI (#14088)
+
+### `llama-index-vector-stores-opensearch` [0.1.11]
+
+- feat: support VectorStoreQueryMode.TEXT_SEARCH on OpenSearch VectorStore (#14153)
+
+## [2024-06-14]
+
+### `llama-index-core` [0.10.45]
+
+- Fix parsing sql query.py (#14109)
+- Implement NDCG metric (#14100)
+- Fixed System Prompts for Structured Generation (#14026)
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+- Add PandasExcelReader class for parsing excel files (#13991)
+- feat: add spans to ingestion pipeline (#14062)
+
+### `llama-index-vector-stores-qdrant` [0.2.10]
+
+- Fix Qdrant nodes (#14149)
+
+### `llama-index-readers-mongodb` [0.1.7]
+
+- Fixes TypeError: sequence item : expected str instance, int found
+
+### `llama-index-indices-managed-vertexai` [0.0.1]
+
+- feat: Add Managed Index for LlamaIndex on Vertex AI for RAG (#13626)
+
+### `llama-index-llms-oci-genai` [0.1.1]
+
+- Feature/add command r support oci genai (#14080)
+
+### `llama-index-vector-stores-milvus` [0.1.20]
+
+- MilvusVectorStore: always include text_key in output_fields (#14076)
+
+### `llama-index-packs-mixture-of-agents` [0.1.0]
+
+- Add Mixture Of Agents paper implementation (#14112)
+
+### `llama-index-llms-text-generation-inference` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-llms-huggingface-api` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-embeddings-huggingface-api` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-utils-huggingface` [0.1.0]
+
+- Split HuggingFace embeddings in HuggingFace API and TextGenerationInference packages (#14013)
+
+### `llama-index-llms-watsonx` [0.1.8]
+
+- Feat: IBM watsonx.ai llm and embeddings integration (#13600)
+
+### `llama-index-llms-ibm` [0.1.0]
+
+- Feat: IBM watsonx.ai llm and embeddings integration (#13600)
+
+### `llama-index-embeddings-ibm` [0.1.0]
+
+- Feat: IBM watsonx.ai llm and embeddings integration (#13600)
+
+### `llama-index-vector-stores-milvus` [0.1.19]
+
+- Fix to milvus filter enum parsing (#14111)
+
+### `llama-index-llms-anthropic` [0.1.13]
+
+- fix anthropic llm calls (#14108)
+
+### `llama-index-storage-index-store-postgres` [0.1.4]
+
+- Wrong mongo name was used instead of Postgres (#14107)
+
+### `llama-index-embeddings-bedrock` [0.2.1]
+
+- Remove unnecessary excluded from fields in Bedrock embedding (#14085)
+
+### `llama-index-finetuning` [0.1.7]
+
+- Feature/added trust remote code (#14102)
+
+### `llama-index-readers-file` [0.1.25]
+
+- nit: fix for pandas excel reader (#14086)
+
+### `llama-index-llms-anthropic` [0.1.12]
+
+- Update anthropic dependency to 0.26.2 minimum version (#14091)
+
+### `llama-index-llms-llama-cpp` [0.1.4]
+
+- Add support for Llama 3 Instruct prompt format (#14072)
+
+### `llama-index-llms-bedrock-converse` [0.1.8]
+
+- Implement Bedrock Converse API for function calling (#14055)
+
+### `llama-index-vector-stores-postgres` [0.1.11]
+
+- fix/postgres-metadata-in-filter-single-elem (#14035)
+
+### `llama-index-readers-file` [0.1.24]
+
+- Add PandasExcelReader class for parsing excel files (#13991)
+
+### `llama-index-embeddings-ipex-llm` [0.1.4]
+
+- Update dependency of llama-index-embeddings-ipex-llm
+
+### `llama-index-embeddings-gemini` [0.1.8]
+
+- Add api key as field in Gemini Embedding (#14061)
+
+### `llama-index-vector-stores-milvus` [0.1.18]
+
+- Expand milvus vector store filter options (#13961)
+
+## [2024-06-10]
+
+### `llama-index-core` [0.10.44]
+
+- Add WEBP and GIF to supported image types for SimpleDirectoryReader (#14038)
+- refactor: add spans to abstractmethods via mixin (#14003)
+- Adding streaming support for SQLAutoVectorQueryEngine (#13947)
+- add option to specify embed_model to NLSQLTableQueryEngine (#14006)
+- add spans for multimodal LLMs (#13966)
+- change to compact in auto prev next (#13940)
+- feat: add exception events for streaming errors (#13917)
+- feat: add spans for tools (#13916)
+
+### `llama-index-embeddings-azure-openai` [0.1.10]
+
+- Fix error when using azure_ad without setting the API key (#13970)
+
+### `llama-index-embeddings-jinaai` [0.2.0]
+
+- add Jina Embeddings MultiModal (#13861)
+
+### `llama-index-embeddings-nomic` [0.3.0]
+
+- Add Nomic multi modal embeddings (#13920)
+
+### `llama-index-graph-stores-neo4j` [0.2.3]
+
+- ensure cypher returns list before iterating (#13938)
+
+### `llama-index-llms-ai21` [0.2.0]
+
+- Add AI21 Labs Jamba-Instruct Support (#14030)
+
+### `llama-index-llms-deepinfra` [0.1.2]
+
+- fix(deepinfrallm): default max_tokens (#13998)
+
+### `llama-index-llms-vllm` [0.1.8]
+
+- correct `__del__()` Vllm (#14053)
+
+### `llama-index-packs-zenguard` [0.1.0]
+
+- Add ZenGuard llamapack (#13959)
+
+### `llama-index-readers-google` [0.2.7]
+
+- fix how class attributes are set in google drive reader (#14022)
+- Add Google Maps Text Search Reader (#13884)
+
+### `llama-index-readers-jira` [0.1.4]
+
+- Jira personal access token with hosted instances (#13890)
+
+### `llama-index-readers-mongodb` [0.1.6]
+
+- set document ids when loading (#14000)
+
+### `llama-index-retrievers-duckdb-retriever` [0.1.0]
+
+- Add DuckDBRetriever (#13929)
+
+### `llama-index-vector-stores-chroma` [0.1.9]
+
+- Add inclusion filter to chromadb (#14010)
+
+### `llama-index-vector-stores-lancedb` [0.1.5]
+
+- Fix LanceDBVectorStore `add()` logic (#13993)
+
+### `llama-index-vector-stores-milvus` [0.1.17]
+
+- Support all filter operators for Milvus vector store (#13745)
+
+### `llama-index-vector-stores-postgres` [0.1.10]
+
+- Broaden SQLAlchemy support in llama-index-vector-stores-postgres to 1.4+ (#13936)
+
+### `llama-index-vector-stores-qdrant` [0.2.9]
+
+- Qdrant: Create payload index for `doc_id` (#14001)
+
 ## [2024-06-02]
 
 ### `llama-index-core` [0.10.43]

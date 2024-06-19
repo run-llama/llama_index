@@ -1,12 +1,14 @@
+import json
 from typing import (
     Any,
     Callable,
     Dict,
     Optional,
     Sequence,
+    List,
+    Union,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.llms.llm import LLM
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
@@ -32,6 +34,7 @@ from llama_index.core.llms.callbacks import (
 from llama_index.llms.deepinfra.utils import (
     chat_messages_to_list,
     maybe_extract_from_json,
+    force_single_tool_call,
 )
 
 from llama_index.llms.deepinfra.constants import (
@@ -40,12 +43,16 @@ from llama_index.llms.deepinfra.constants import (
     CHAT_API_ENDPOINT,
     ENV_VARIABLE,
     DEFAULT_MODEL_NAME,
+    DEFAULT_MAX_TOKENS,
+    TOOL_CHOICE,
 )
 
 from llama_index.llms.deepinfra.client import DeepInfraClient
+from llama_index.llms.deepinfra.types import ToolCallMessage
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 
 
-class DeepInfraLLM(LLM):
+class DeepInfraLLM(FunctionCallingLLM):
     """DeepInfra LLM.
 
     Examples:
@@ -78,6 +85,7 @@ class DeepInfraLLM(LLM):
         lte=1.0,
     )
     max_tokens: Optional[int] = Field(
+        default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate.",
         gt=0,
     )
@@ -102,7 +110,7 @@ class DeepInfraLLM(LLM):
         model: str = DEFAULT_MODEL_NAME,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = DEFAULT_MAX_TOKENS,
         max_retries: int = 10,
         api_base: str = API_BASE,
         timeout: Optional[float] = None,
@@ -150,6 +158,10 @@ class DeepInfraLLM(LLM):
             num_output=self.max_tokens,
             is_chat_model=self._is_chat_model,
             model=self.model,
+            model_name=self.model,
+            is_function_calling_model=self._client.is_function_calling_model(
+                self.model
+            ),
         )
 
     @property
@@ -210,11 +222,15 @@ class DeepInfraLLM(LLM):
         messages = chat_messages_to_list(messages)
         payload = self._build_payload(messages=messages, **kwargs)
         result = self._client.request(CHAT_API_ENDPOINT, payload)
-
+        mo = result["choices"][-1]["message"]
+        additional_kwargs = {
+            "tool_calls": mo.get("tool_calls", []) or [],
+        }
         return ChatResponse(
             message=ChatMessage(
-                role=result["choices"][-1]["message"]["role"],
-                content=result["choices"][-1]["message"]["content"],
+                role=mo["role"],
+                content=mo["content"],
+                additional_kwargs=additional_kwargs,
             ),
             raw=result,
         )
@@ -319,10 +335,13 @@ class DeepInfraLLM(LLM):
         payload = self._build_payload(messages=messages, **kwargs)
 
         result = await self._client.arequest(CHAT_API_ENDPOINT, payload)
+        mo = result["choices"][-1]["message"]
+        additional_kwargs = {"tool_calls": mo.get("tool_calls", []) or []}
         return ChatResponse(
             message=ChatMessage(
-                role=result["choices"][-1]["message"]["role"],
-                content=result["choices"][-1]["message"]["content"],
+                role=mo["role"],
+                content=mo["content"],
+                additional_kwargs=additional_kwargs,
             ),
             raw=result,
         )
@@ -366,6 +385,95 @@ class DeepInfraLLM(LLM):
                     )
 
         return gen()
+
+    def chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
+    ) -> ChatResponse:
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = self.chat(
+            messages,
+            tools=tool_specs,
+            tool_choice=TOOL_CHOICE,
+            **kwargs,
+        )
+
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    async def achat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
+    ) -> ChatResponse:
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        response = await self.achat(
+            messages,
+            tools=tool_specs,
+            tool_choice=TOOL_CHOICE,
+            **kwargs,
+        )
+
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "AgentChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call_dict in tool_calls:
+            tool_call = ToolCallMessage.parse_obj(tool_call_dict)
+            argument_dict = json.loads(tool_call.function.arguments)
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.id,
+                    tool_name=tool_call.function.name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
 
     # Utility Methods
     def get_model_endpoint(self) -> str:
