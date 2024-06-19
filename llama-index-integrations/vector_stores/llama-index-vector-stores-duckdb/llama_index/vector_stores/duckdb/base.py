@@ -5,7 +5,7 @@ import json
 from typing import Any, List, Optional
 import os
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -153,7 +153,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     @classmethod
     def from_local(
-        cls, 
+        cls,
         database_path: str,
         table_name: Optional[str] = "documents",
         # schema_name: Optional[str] = "main",
@@ -278,7 +278,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 flat_metadata=self.flat_metadata,
             ),
         )
-    
+
     def _table_row_to_node(self, row: Any) -> BaseNode:
         return metadata_dict_to_node(json.loads(row[3]), row[1])
 

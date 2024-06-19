@@ -78,9 +78,7 @@ def text_node_list() -> List[TextNode]:
             embedding=[0.0, 0.0, 0.3],
         ),
         TextNode(
-            text=(
-                "中文用户来了。"
-            ),
+            text=("中文用户来了。"),
             id_="943ef4e5-b5bc-4b85-b0d7-bc4fb25417db",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-6")},
             metadata={
@@ -99,7 +97,7 @@ def text_node_list() -> List[TextNode]:
             },
             embedding=[0.9, 0.3, 0.3],
             excluded_embed_metadata_keys=["excluded_embed"],
-            excluded_llm_metadata_keys=["excluded_llm", "metadata", "keys"]
+            excluded_llm_metadata_keys=["excluded_llm", "metadata", "keys"],
         ),
     ]
 
@@ -132,14 +130,21 @@ def test_duckdb_add_and_query(
     assert res.nodes[0].excluded_embed_metadata_keys == []
     assert res.nodes[0].excluded_llm_metadata_keys == []
     assert res.nodes[0].source_node.node_id == "test-0"
-    
+
     res = vector_store.query(
         VectorStoreQuery(query_embedding=[0.9, 0.3, 0.3], similarity_top_k=1)
     )
     assert res.nodes
     assert res.nodes[0].node_id == "e8f0c6cb-8d35-4240-a60a-b57070b3960f"
-    assert res.nodes[0].get_content() == "Vector stores contain embedding vectors of ingested document chunks (and sometimes the document chunks as well)."
+    assert (
+        res.nodes[0].get_content()
+        == "Vector stores contain embedding vectors of ingested document chunks (and sometimes the document chunks as well)."
+    )
     assert res.nodes[0].metadata.get("author") == "Emma Johnson"
     assert res.nodes[0].excluded_embed_metadata_keys == ["excluded_embed"]
-    assert res.nodes[0].excluded_llm_metadata_keys == ["excluded_llm", "metadata", "keys"]
+    assert res.nodes[0].excluded_llm_metadata_keys == [
+        "excluded_llm",
+        "metadata",
+        "keys",
+    ]
     assert res.nodes[0].source_node.node_id == "test-7"
