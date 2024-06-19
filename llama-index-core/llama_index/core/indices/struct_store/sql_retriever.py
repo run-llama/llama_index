@@ -402,9 +402,12 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]
-        
+
         for table_schema_obj in table_schema_objs:
-            context_strs.append(table_schema_obj.table_info)
+            if table_schema_obj.table_info:
+                context_strs.append(table_schema_obj.table_info)
+            else:
+                logger.warn("Missing table info")
 
         return "\n\n".join(context_strs)
 
