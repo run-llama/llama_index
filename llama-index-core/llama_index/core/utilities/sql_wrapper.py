@@ -7,7 +7,6 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection
 
-
 class SQLDatabase:
     """
     SQL Database.
@@ -186,7 +185,7 @@ class SQLDatabase:
             table_info += table_opt_context    
         table.table_info = table_info
      
-        return table_info
+        return table
 
     def get_single_table_info(self, table) -> str:
         """Get table info for a single table."""

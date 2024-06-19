@@ -80,24 +80,24 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             table_schema=table_schema,
             full_table_name=full_table_name,
             context_str=node.metadata.get("context"),
-            table_info=node.metadata.get("table_info")
+            table_info=node.metadata.get("table_info"),
         )
-
-    async def to_nodes_from_tables(tables: List[SQLTableSchema]) -> List[TextNode]:
+    
+    @staticmethod
+    async def to_nodes_from_tables(tables: list[SQLTableSchema]) -> list[TextNode]:
         nodes = []
         for table in tables:
             table_text = (
-                f"Schema of table {obj.full_table_name}:\n"
-                f"{tables.table_info}\n"
+                f"Schema of table {table.full_table_name}:\n" f"{table.table_info}\n"
             )
 
             metadata = {"name": table.full_table_name}
 
-            if obj.context_str is not None:
+            if table.context_str is not None:
                 table_text += f"Context of table {table.full_table_name}:\n"
                 table_text += table.context_str
                 metadata["context"] = table.context_str
-            
+
             metadata["table_info"] = table.table_info
             nodes.append(
                 TextNode(
@@ -108,6 +108,7 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
                 )
             )
         return nodes
+
     @property
     def obj_node_mapping(self) -> Dict[int, Any]:
         """The mapping data structure between node and object."""
