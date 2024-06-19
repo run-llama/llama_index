@@ -4,6 +4,7 @@ A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
+
 import os
 import time
 from typing import Any, List, Optional, Sequence, Type
@@ -214,10 +215,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         kwargs["retriever"] = self.as_retriever(**kwargs)
         return RetrieverQueryEngine.from_args(**kwargs)
 
-    def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
-        """Insert a set of documents (each a node)."""
-        raise NotImplementedError("_insert not implemented for LlamaCloudIndex.")
-
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
@@ -227,3 +224,22 @@ class LlamaCloudIndex(BaseManagedIndex):
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
         """Update a document and it's corresponding nodes."""
         raise NotImplementedError("update_ref_doc not implemented for LlamaCloudIndex.")
+
+    def build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> None:
+        """Build the index from nodes."""
+        raise NotImplementedError(
+            "build_index_from_nodes not implemented for LlamaCloudIndex."
+        )
+
+    def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Insert a set of nodes."""
+        raise NotImplementedError("insert_nodes not implemented for LlamaCloudIndex.")
+
+    def delete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a set of nodes."""
+        raise NotImplementedError("delete_nodes not implemented for LlamaCloudIndex.")

@@ -23,8 +23,8 @@ def test_upload_eval_dataset() -> None:
     )
 
     client = PlatformApi(base_url=base_url, token=api_key)
-    eval_dataset = client.eval.get_dataset(dataset_id=eval_dataset_id)
+    eval_dataset = client.evals.get_dataset(dataset_id=eval_dataset_id)
     assert eval_dataset.name == "test_dataset" + python_version
 
-    eval_questions = client.eval.get_questions(dataset_id=eval_dataset_id)
+    eval_questions = client.evals.get_questions(dataset_id=eval_dataset_id)
     assert len(eval_questions) == 2

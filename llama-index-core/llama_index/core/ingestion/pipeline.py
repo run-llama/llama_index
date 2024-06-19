@@ -9,26 +9,19 @@ from functools import partial, reduce
 from hashlib import sha256
 from itertools import repeat
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Sequence, Union, cast
+from typing import Any, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
 from llama_index_client import (
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
-    Pipeline,
-    PipelineType,
-    Project,
-    ProjectCreate,
 )
 
 from llama_index.core.constants import (
-    DEFAULT_APP_URL,
-    DEFAULT_BASE_URL,
     DEFAULT_PIPELINE_NAME,
     DEFAULT_PROJECT_NAME,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.ingestion.api_utils import get_client
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.core.ingestion.data_sources import (
     ConfigurableDataSources,
@@ -73,7 +66,8 @@ def deserialize_source_component(
 
 
 def remove_unstable_values(s: str) -> str:
-    """Remove unstable key/value pairs.
+    """
+    Remove unstable key/value pairs.
 
     Examples include:
     - <__main__.Test object at 0x7fb9f3793f50>
@@ -105,7 +99,8 @@ def run_transformations(
     cache_collection: Optional[str] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
-    """Run a series of transformations on a set of nodes.
+    """
+    Run a series of transformations on a set of nodes.
 
     Args:
         nodes: The nodes to transform.
@@ -140,7 +135,8 @@ async def arun_transformations(
     cache_collection: Optional[str] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
-    """Run a series of transformations on a set of nodes.
+    """
+    Run a series of transformations on a set of nodes.
 
     Args:
         nodes: The nodes to transform.
@@ -176,7 +172,8 @@ def arun_transformations_wrapper(
     cache_collection: Optional[str] = None,
     **kwargs: Any,
 ) -> List[BaseNode]:
-    """Wrapper for async run_transformation. To be used in loop.run_in_executor
+    """
+    Wrapper for async run_transformation. To be used in loop.run_in_executor
     within a ProcessPoolExecutor.
     """
     loop = asyncio.new_event_loop()
@@ -195,7 +192,8 @@ def arun_transformations_wrapper(
 
 
 class DocstoreStrategy(str, Enum):
-    """Document de-duplication de-deduplication strategies work by comparing the hashes or ids stored in the document store.
+    """
+    Document de-duplication de-deduplication strategies work by comparing the hashes or ids stored in the document store.
        They require a document store to be set which must be persisted across pipeline runs.
 
     Attributes:
@@ -213,7 +211,8 @@ class DocstoreStrategy(str, Enum):
 
 
 class IngestionPipeline(BaseModel):
-    """An ingestion pipeline that can be applied to data.
+    """
+    An ingestion pipeline that can be applied to data.
 
     Args:
         name (str, optional):
@@ -292,14 +291,6 @@ class IngestionPipeline(BaseModel):
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
 
-    base_url: str = Field(
-        default=DEFAULT_BASE_URL, description="Base URL for the LlamaCloud API"
-    )
-    app_url: str = Field(
-        default=DEFAULT_APP_URL, description="Base URL for the LlamaCloud app"
-    )
-    api_key: Optional[str] = Field(default=None, description="LlamaCloud API key")
-
     class Config:
         arbitrary_types_allowed = True
 
@@ -314,17 +305,10 @@ class IngestionPipeline(BaseModel):
         cache: Optional[IngestionCache] = None,
         docstore: Optional[BaseDocumentStore] = None,
         docstore_strategy: DocstoreStrategy = DocstoreStrategy.UPSERTS,
-        base_url: Optional[str] = None,
-        app_url: Optional[str] = None,
-        api_key: Optional[str] = None,
         disable_cache: bool = False,
     ) -> None:
         if transformations is None:
             transformations = self._get_default_transformations()
-
-        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
-        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
 
         super().__init__(
             name=name,
@@ -336,163 +320,8 @@ class IngestionPipeline(BaseModel):
             cache=cache or IngestionCache(),
             docstore=docstore,
             docstore_strategy=docstore_strategy,
-            base_url=base_url,
-            app_url=app_url,
-            api_key=api_key,
             disable_cache=disable_cache,
         )
-
-    @classmethod
-    def from_pipeline_name(
-        cls,
-        name: str,
-        project_name: str = DEFAULT_PROJECT_NAME,
-        base_url: Optional[str] = None,
-        cache: Optional[IngestionCache] = None,
-        api_key: Optional[str] = None,
-        app_url: Optional[str] = None,
-        vector_store: Optional[BasePydanticVectorStore] = None,
-        disable_cache: bool = False,
-    ) -> "IngestionPipeline":
-        """Create an ingestion pipeline from a pipeline name."""
-        base_url = base_url or os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
-        assert base_url is not None
-
-        api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
-
-        client = get_client(api_key=api_key, base_url=base_url)
-
-        projects: List[Project] = client.project.list_projects(
-            project_name=project_name
-        )
-        if len(projects) < 0:
-            raise ValueError(f"Project with name {project_name} not found")
-
-        project = projects[0]
-        assert project.id is not None, "Project ID should not be None"
-
-        pipelines: List[Pipeline] = client.pipeline.search_pipelines(
-            project_name=project_name, pipeline_name=name
-        )
-        if len(pipelines) < 0:
-            raise ValueError(f"Pipeline with name {name} not found")
-
-        pipeline = pipelines[0]
-
-        transformations: List[TransformComponent] = []
-        for configured_transformation in pipeline.configured_transformations:
-            component_dict = cast(dict, configured_transformation.component)
-            transformation_component_type = (
-                configured_transformation.configurable_transformation_type
-            )
-            transformation = deserialize_transformation_component(
-                component_dict, transformation_component_type
-            )
-            transformations.append(transformation)
-
-        documents = []
-        readers = []
-        for data_source in pipeline.data_sources:
-            component_dict = cast(dict, data_source.component)
-            source_component_type = data_source.source_type
-
-            if data_source.source_type == ConfigurableDataSourceNames.READER:
-                source_component = deserialize_source_component(
-                    component_dict, source_component_type
-                )
-                readers.append(source_component)
-            elif data_source.source_type == ConfigurableDataSourceNames.DOCUMENT:
-                source_component = deserialize_source_component(
-                    component_dict, source_component_type
-                )
-                if (
-                    isinstance(source_component, BaseNode)
-                    and source_component.get_content()
-                ):
-                    documents.append(source_component)
-
-        return cls(
-            name=name,
-            project_name=project_name,
-            transformations=transformations,
-            readers=readers,
-            documents=documents,
-            vector_store=vector_store,
-            base_url=base_url,
-            cache=cache,
-            disable_cache=disable_cache,
-            api_key=api_key,
-            app_url=app_url,
-        )
-
-    def register(
-        self,
-        verbose: bool = True,
-        documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
-    ) -> str:
-        """Register the pipeline with the LlamaCloud API."""
-        client = get_client(api_key=self.api_key, base_url=self.base_url)
-
-        input_nodes = self._prepare_inputs(documents, nodes)
-
-        project = client.project.upsert_project(
-            request=ProjectCreate(name=self.project_name)
-        )
-        assert project.id is not None, "Project ID should not be None"
-
-        # avoid circular import
-        from llama_index.core.ingestion.api_utils import get_pipeline_create
-
-        pipeline_create = get_pipeline_create(
-            self.name,
-            client,
-            PipelineType.PLAYGROUND,
-            project_name=self.project_name,
-            transformations=self.transformations,
-            input_nodes=input_nodes,
-            readers=self.readers,
-        )
-
-        # upload
-        pipeline = client.project.upsert_pipeline_for_project(
-            project.id,
-            request=pipeline_create,
-        )
-        assert pipeline.id is not None, "Pipeline ID should not be None"
-
-        # Print playground URL if not running remote
-        if verbose:
-            print(
-                f"Pipeline available at: {self.app_url}/project/{project.id}/playground/{pipeline.id}"
-            )
-
-        return pipeline.id
-
-    def run_remote(
-        self,
-        documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
-    ) -> str:
-        client = get_client(api_key=self.api_key, base_url=self.base_url)
-
-        pipeline_id = self.register(documents=documents, nodes=nodes, verbose=False)
-
-        # start pipeline?
-        # the `PipeLineExecution` object should likely generate a URL at some point
-        pipeline_execution = client.pipeline.create_playground_job(pipeline_id)
-
-        assert (
-            pipeline_execution.id is not None
-        ), "Pipeline execution ID should not be None"
-
-        print(
-            f"Find your remote results here: {self.app_url}/"
-            f"pipelines/execution?id={pipeline_execution.id}"
-        )
-
-        return pipeline_execution.id
 
     def persist(
         self,
