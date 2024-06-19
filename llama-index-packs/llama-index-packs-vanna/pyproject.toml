@@ -29,12 +29,12 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-vanna"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 kaleido = "0.2.1"
-vanna = "0.0.36"
+vanna = ">0.5.5"
 llama-index-core = "^0.10.11.post1"
 
 [tool.poetry.group.dev.dependencies]
