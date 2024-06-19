@@ -58,6 +58,8 @@ def validate_and_convert_stringable(input: Any) -> str:
         return str(new_input_list)
     elif isinstance(input, ChatResponse):
         return input.message.content or ""
+    elif isinstance(input, NodeWithScore) and isinstance(input.node, TextNode):
+        return input.get_content()
     elif isinstance(input, get_args(StringableInput)):
         return str(input)
     else:
