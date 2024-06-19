@@ -13,6 +13,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
+    metadata_dict_to_node,
     node_to_metadata_dict,
 )
 
@@ -260,6 +261,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 flat_metadata=self.flat_metadata,
             ),
         )
+    
+    def _table_row_to_node(self, row: Any) -> BaseNode:
+        return metadata_dict_to_node(json.loads(row[3]), row[1])
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
@@ -391,12 +395,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 _final_results = _conn.execute(_ddb_query).fetchall()
 
         for _row in _final_results:
-            node = TextNode(
-                id_=_row[0],
-                text=_row[1],
-                embedding=_row[2],
-                metadata=json.loads(_row[3]),
-            )
+            node = self._table_row_to_node(_row)
             nodes.append(node)
             similarities.append(_row[4])
             ids.append(_row[0])
