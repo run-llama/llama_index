@@ -1,16 +1,16 @@
 """Agent components."""
 
-from inspect import signature
-from typing import Any, Callable, Dict, Optional, Set, Tuple, cast
+from typing import Any, Callable, Dict, Optional, Set
 
 from llama_index.core.base.query_pipeline.query import (
-    InputKeys,
-    OutputKeys,
     QueryComponent,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.query_pipeline.components.function import FnComponent, get_parameters
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.query_pipeline.components.function import (
+    FnComponent,
+    get_parameters,
+)
+
 # from llama_index.core.query_pipeline.components.input import InputComponent
 
 
@@ -25,12 +25,14 @@ class BaseStatefulComponent(QueryComponent):
         """Reset state."""
         self.state = {}
 
+
 class StatefulFnComponent(BaseStatefulComponent, FnComponent):
     """Query component that takes in an arbitrary function.
 
     Stateful version of `FnComponent`. Expects functions to have `state` as the first argument.
-    
+
     """
+
     def __init__(
         self,
         fn: Callable,
@@ -40,7 +42,6 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
         **kwargs: Any
     ) -> None:
         """Init params."""
-
         # determine parameters
         default_req_params, default_opt_params = get_parameters(fn)
         # make sure task and step are part of the list, and remove them from the list
@@ -56,8 +57,14 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
             req_params = default_req_params
         if opt_params is None:
             opt_params = default_opt_params
-    
-        super().__init__(fn=fn, req_params=req_params, opt_params=opt_params, state=state or {}, **kwargs)
+
+        super().__init__(
+            fn=fn,
+            req_params=req_params,
+            opt_params=opt_params,
+            state=state or {},
+            **kwargs
+        )
 
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""

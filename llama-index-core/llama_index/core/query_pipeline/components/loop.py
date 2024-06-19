@@ -4,10 +4,9 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
 )
 from llama_index.core.query_pipeline.query import QueryPipeline
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
-from typing import Any, Dict, Optional, List, cast, Callable
-from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
+from typing import Any, Dict, Optional, Callable
 
 # def _get_stateful_components(query_component: QueryComponent) -> List[BaseStatefulComponent]:
 #     """Get stateful components."""
@@ -21,14 +20,16 @@ from llama_index.core.query_pipeline.components.stateful import BaseStatefulComp
 
 #     return stateful_components
 
+
 class LoopComponent(QueryComponent):
-    """Loop component.
-    
-    """
+    """Loop component."""
 
     pipeline: QueryPipeline = Field(..., description="Query pipeline")
     should_exit_fn: Optional[Callable] = Field(..., description="Should exit function")
-    add_output_to_input_fn: Optional[Callable] = Field(..., description="Add output to input function. If not provided, will reuse the original input for the next iteration. If provided, will call the function to combine the output into the input for the next iteration.")
+    add_output_to_input_fn: Optional[Callable] = Field(
+        ...,
+        description="Add output to input function. If not provided, will reuse the original input for the next iteration. If provided, will call the function to combine the output into the input for the next iteration.",
+    )
     max_iterations: Optional[int] = Field(5, description="Max iterations")
 
     class Config:
@@ -36,13 +37,18 @@ class LoopComponent(QueryComponent):
 
     def __init__(
         self,
-        pipeline: QueryPipeline, 
+        pipeline: QueryPipeline,
         should_exit_fn: Optional[Callable] = None,
         add_output_to_input_fn: Optional[Callable] = None,
         max_iterations: Optional[int] = 5,
     ) -> None:
         """Init params."""
-        super().__init__(pipeline=pipeline, should_exit_fn=should_exit_fn, add_output_to_input_fn=add_output_to_input_fn, max_iterations=max_iterations)
+        super().__init__(
+            pipeline=pipeline,
+            should_exit_fn=should_exit_fn,
+            add_output_to_input_fn=add_output_to_input_fn,
+            max_iterations=max_iterations,
+        )
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -53,7 +59,6 @@ class LoopComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""
-
         current_input = kwargs
         for i in range(self.max_iterations):
             output = self.pipeline.run_component(**current_input)
@@ -65,7 +70,7 @@ class LoopComponent(QueryComponent):
             if self.add_output_to_input_fn:
                 current_input = self.add_output_to_input_fn(current_input, output)
 
-        return output 
+        return output
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component (async)."""
@@ -80,7 +85,7 @@ class LoopComponent(QueryComponent):
             if self.add_output_to_input_fn:
                 current_input = self.add_output_to_input_fn(current_input, output)
 
-        return output 
+        return output
 
     @property
     def input_keys(self) -> InputKeys:

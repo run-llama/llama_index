@@ -33,8 +33,6 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.utils import print_text
 from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
-from llama_index.core.bridge.pydantic import root_validator, validator
-
 
 
 # TODO: Make this (safely) pydantic?
@@ -156,7 +154,10 @@ def clean_graph_attributes_copy(graph: networkx.MultiDiGraph) -> networkx.MultiD
 
     return graph_copy
 
-def get_stateful_components(query_component: QueryComponent) -> List[BaseStatefulComponent]:
+
+def get_stateful_components(
+    query_component: QueryComponent,
+) -> List[BaseStatefulComponent]:
     """Get stateful components."""
     stateful_components: List[BaseStatefulComponent] = []
     for c in query_component.sub_query_components:
@@ -169,14 +170,18 @@ def get_stateful_components(query_component: QueryComponent) -> List[BaseStatefu
     return stateful_components
 
 
-def update_stateful_components(stateful_components: List[BaseStatefulComponent], state: Dict[str, Any]) -> None:
+def update_stateful_components(
+    stateful_components: List[BaseStatefulComponent], state: Dict[str, Any]
+) -> None:
     """Update stateful components."""
     for stateful_component in stateful_components:
         # stateful_component.partial(state=state)
         stateful_component.state = state
 
 
-def get_and_update_stateful_components(query_component: QueryComponent, state: Dict[str, Any]) -> List[BaseStatefulComponent]:
+def get_and_update_stateful_components(
+    query_component: QueryComponent, state: Dict[str, Any]
+) -> List[BaseStatefulComponent]:
     """Get and update stateful components."""
     stateful_components = get_stateful_components(query_component)
     update_stateful_components(stateful_components, state)
@@ -243,7 +248,6 @@ class QueryPipeline(QueryComponent):
         """Update state."""
         self.state = state
         get_and_update_stateful_components(self, state)
-        
 
     def reset_state(self) -> None:
         """Reset state."""
@@ -864,7 +868,6 @@ class QueryPipeline(QueryComponent):
         for module_key, module_input in run_state.all_module_inputs.items():
             if module_key in run_state.executed_modules:
                 continue  # Module already executed
-
 
             if all(
                 key in module_input

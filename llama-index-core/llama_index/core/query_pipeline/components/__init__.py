@@ -31,5 +31,5 @@ __all__ = [
     "SelectorComponent",
     "ToolRunnerComponent",
     "StatefulFnComponent",
-    "LoopComponent"
+    "LoopComponent",
 ]

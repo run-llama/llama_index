@@ -172,8 +172,8 @@ def test_stateful_fn_pipeline() -> None:
     p = QueryPipeline()
     p.add_modules(
         {
-            "m1": StatefulFnComponent(fn=stateful_foo_fn), 
-            "m2": StatefulFnComponent(fn=stateful_foo_fn)
+            "m1": StatefulFnComponent(fn=stateful_foo_fn),
+            "m2": StatefulFnComponent(fn=stateful_foo_fn),
         }
     )
     p.add_link("m1", "m2", src_key="output", dest_key="a")
@@ -189,7 +189,7 @@ def test_stateful_fn_pipeline() -> None:
         pipeline=p,
         should_exit_fn=lambda x: x["output"] > 10,
         # add_output_to_input_fn=lambda cur_input, output: {"a": output},
-        max_iterations=1
+        max_iterations=1,
     )
     output = loop_component.run_component(a=1, b=2)
     assert output["output"] == 8
@@ -202,9 +202,8 @@ def test_stateful_fn_pipeline() -> None:
         pipeline=p,
         should_exit_fn=lambda x: x["output"] > 10,
         add_output_to_input_fn=lambda cur_input, output: {"a": output["output"]},
-        max_iterations=5
+        max_iterations=5,
     )
     assert loop_component.run_component(a=1, b=2)["output"] == 38
-    
 
     # test loop component
