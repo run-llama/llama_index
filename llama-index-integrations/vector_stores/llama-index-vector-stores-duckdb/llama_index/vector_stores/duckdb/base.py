@@ -153,7 +153,21 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     @classmethod
     def from_local(
-        cls, database_path: str, table_name: str = "documents"
+        cls, 
+        database_path: str,
+        table_name: Optional[str] = "documents",
+        # schema_name: Optional[str] = "main",
+        embed_dim: Optional[int] = None,
+        # hybrid_search: Optional[bool] = False,
+        text_search_config: Optional[dict] = {
+            "stemmer": "english",
+            "stopwords": "english",
+            "ignore": "(\\.|[^a-z])+",
+            "strip_accents": True,
+            "lower": True,
+            "overwrite": False,
+        },
+        **kwargs: Any,
     ) -> "DuckDBVectorStore":
         """Load a DuckDB vector store from a local file."""
         with DuckDBLocalContext(database_path) as _conn:
@@ -173,7 +187,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         _cls = cls(
             database_name=os.path.basename(database_path),
             table_name=table_name,
+            embed_dim=embed_dim,
+            text_search_config=text_search_config,
             persist_dir=os.path.dirname(database_path),
+            **kwargs,
         )
         _cls._is_initialized = True
 
