@@ -20,6 +20,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from opensearchpy import AsyncOpenSearch
+from opensearchpy.client import Client as OSClient
 from opensearchpy.exceptions import NotFoundError
 from opensearchpy.helpers import async_bulk
 
@@ -64,8 +65,10 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        engine: Optional[str] = "nmslib",
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
+        os_client: Optional[OSClient | None] = None,
         **kwargs: Any,
     ):
         """Init params."""
@@ -73,7 +76,7 @@ class OpensearchVectorClient:
             method = {
                 "name": "hnsw",
                 "space_type": "l2",
-                "engine": "nmslib",
+                "engine": engine,
                 "parameters": {"ef_construction": 256, "m": 48},
             }
         if embedding_field is None:
@@ -102,7 +105,9 @@ class OpensearchVectorClient:
                 }
             },
         }
-        self._os_client = self._get_async_opensearch_client(self._endpoint, **kwargs)
+        self._os_client = os_client or self._get_async_opensearch_client(
+            self._endpoint, **kwargs
+        )
         not_found_error = self._import_not_found_error()
 
         event_loop = asyncio.get_event_loop()
