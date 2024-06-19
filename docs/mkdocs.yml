@@ -766,6 +766,7 @@ nav:
           - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
+          - ./api_reference/embeddings/ibm.md
           - ./api_reference/embeddings/ibm_watsonx.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
@@ -851,6 +852,7 @@ nav:
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
+          - ./api_reference/llms/ibm.md
           - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
@@ -1230,6 +1232,7 @@ nav:
           - ./api_reference/readers/trello.md
           - ./api_reference/readers/twitter.md
           - ./api_reference/readers/txtai.md
+          - ./api_reference/readers/upstage.md
           - ./api_reference/readers/weather.md
           - ./api_reference/readers/weaviate.md
           - ./api_reference/readers/web.md
@@ -1986,6 +1989,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-ibm
             - ../llama-index-integrations/llms/llama-index-llms-bedrock-converse
             - ../llama-index-integrations/llms/llama-index-llms-ibm
+            - ../llama-index-integrations/readers/llama-index-readers-upstage
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
