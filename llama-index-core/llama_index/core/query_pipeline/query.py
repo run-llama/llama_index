@@ -616,6 +616,13 @@ class QueryPipeline(QueryComponent):
                 raise ValueError("Only one free input key is allowed.")
             # set kwargs
             kwargs[next(iter(root_module.free_req_input_keys))] = args[0]
+
+        # if one kwarg and module only needs one kwarg, align them
+        if len(root_module.free_req_input_keys) == 1 and len(kwargs) == 1:
+            module_input_key = next(iter(root_module.free_req_input_keys))
+            kwarg = next(iter(kwargs.values()))
+            kwargs = {module_input_key: kwarg}
+
         return root_key, kwargs
 
     def get_input_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
