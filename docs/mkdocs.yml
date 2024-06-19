@@ -201,6 +201,7 @@ nav:
           - ./examples/embeddings/llamafile.ipynb
           - ./examples/embeddings/llm_rails.ipynb
           - ./examples/embeddings/mistralai.ipynb
+          - ./examples/embeddings/mixedbreadai.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
@@ -387,6 +388,7 @@ nav:
           - ./examples/multi_tenancy/multi_tenancy_rag.ipynb
       - Node Parsers & Text Splitters:
           - ./examples/node_parsers/semantic_chunking.ipynb
+          - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/CohereRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
@@ -397,6 +399,7 @@ nav:
           - ./examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
           - ./examples/node_postprocessor/LongContextReorder.ipynb
           - ./examples/node_postprocessor/MetadataReplacementDemo.ipynb
+          - ./examples/node_postprocessor/MixedbreadAIRerank.ipynb
           - ./examples/node_postprocessor/NVIDIARerank.ipynb
           - ./examples/node_postprocessor/OptimizerDemo.ipynb
           - ./examples/node_postprocessor/PII.ipynb
@@ -776,6 +779,7 @@ nav:
           - ./api_reference/embeddings/llamafile.md
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
+          - ./api_reference/embeddings/mixedbreadai.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/oci_genai.md
@@ -900,6 +904,7 @@ nav:
           - ./api_reference/llms/vllm.md
           - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
+          - ./api_reference/llms/you.md
       - Llama Datasets:
           - ./api_reference/llama_dataset/index.md
       - Llama Packs:
@@ -1025,6 +1030,7 @@ nav:
           - ./api_reference/postprocessor/long_context_reorder.md
           - ./api_reference/postprocessor/longllmlingua.md
           - ./api_reference/postprocessor/metadata_replacement.md
+          - ./api_reference/postprocessor/mixedbreadai_rerank.md
           - ./api_reference/postprocessor/nvidia_rerank.md
           - ./api_reference/postprocessor/openvino_rerank.md
           - ./api_reference/postprocessor/presidio.md
@@ -1202,6 +1208,7 @@ nav:
           - ./api_reference/readers/patentsview.md
           - ./api_reference/readers/pathway.md
           - ./api_reference/readers/pdb.md
+          - ./api_reference/readers/pdf_marker.md
           - ./api_reference/readers/pdf_table.md
           - ./api_reference/readers/pebblo.md
           - ./api_reference/readers/pinecone.md
@@ -1990,6 +1997,10 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-bedrock-converse
             - ../llama-index-integrations/llms/llama-index-llms-ibm
             - ../llama-index-integrations/readers/llama-index-readers-upstage
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-mixedbreadai
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-mixedbreadai-rerank
+            - ../llama-index-integrations/readers/llama-index-readers-pdf-marker
+            - ../llama-index-integrations/llms/llama-index-llms-you
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
