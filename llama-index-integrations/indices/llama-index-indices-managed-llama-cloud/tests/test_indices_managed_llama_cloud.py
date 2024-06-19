@@ -21,6 +21,7 @@ def test_class():
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.integration()
 def test_retrieve():
+    os.environ["OPENAI_API_KEY"] = openai_api_key
     index = LlamaCloudIndex(
         name="test",  # assumes this pipeline exists
         project_name="Default",
@@ -31,16 +32,17 @@ def test_retrieve():
     nodes = index.as_retriever().retrieve(query)
     assert nodes is not None and len(nodes) > 0
 
-    os.environ["OPENAI_API_KEY"] = openai_api_key
     response = index.as_query_engine().query(query)
-    assert response is not None and len(response) > 0
+    assert response is not None and len(response.response) > 0
 
 
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api keyset"
 )
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.integration()
 def test_documents_crud():
+    os.environ["OPENAI_API_KEY"] = openai_api_key
     documents = [
         Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
     ]
@@ -79,8 +81,8 @@ def test_documents_crud():
 
     index.refresh_ref_docs(
         [
-            Document(text="Hello world.", doc_id="3", metadata={"source", "refreshed"}),
             Document(text="Hello world.", doc_id="1", metadata={"source": "refreshed"}),
+            Document(text="Hello world.", doc_id="3", metadata={"source": "refreshed"}),
         ]
     )
     docs = index.ref_doc_info

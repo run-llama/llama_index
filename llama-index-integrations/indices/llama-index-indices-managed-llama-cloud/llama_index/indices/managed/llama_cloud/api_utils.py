@@ -41,8 +41,6 @@ def get_pipeline_create(
 ) -> PipelineCreate:
     """Get a pipeline create object."""
     transformations = transformations or []
-    readers = readers or []
-    input_nodes = input_nodes or []
 
     configured_transformations: List[ConfiguredTransformation] = []
     for transformation in transformations:
