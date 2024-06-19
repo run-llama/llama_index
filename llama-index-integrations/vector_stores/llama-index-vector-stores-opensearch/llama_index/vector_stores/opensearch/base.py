@@ -68,7 +68,7 @@ class OpensearchVectorClient:
         engine: Optional[str] = "nmslib",
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
-        os_client: Optional[OSClient | None] = None,
+        os_client: Optional[OSClient] = None,
         **kwargs: Any,
     ):
         """Init params."""
