@@ -1,10 +1,8 @@
 from typing import List, Optional
 
 from llama_index_client import (
-    ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
     ConfiguredTransformationItem,
-    DataSourceCreate,
     PipelineCreate,
     PipelineType,
     ProjectCreate,
@@ -13,9 +11,6 @@ from llama_index_client.client import PlatformApi
 
 from llama_index.core.constants import (
     DEFAULT_PROJECT_NAME,
-)
-from llama_index.core.ingestion.data_sources import (
-    ConfiguredDataSource,
 )
 from llama_index.core.ingestion.transformations import (
     ConfiguredTransformation,
@@ -74,47 +69,12 @@ def get_pipeline_create(
         # remove callback manager
         configured_transformation_items[-1].component.pop("callback_manager", None)  # type: ignore
 
-    data_sources = []
-    for reader in readers:
-        if reader.reader.is_remote:
-            configured_data_source = ConfiguredDataSource.from_component(
-                reader,
-            )
-            source_type = ConfigurableDataSourceNames[
-                configured_data_source.configurable_data_source_type.name
-            ]
-            data_sources.append(
-                DataSourceCreate(
-                    name=configured_data_source.name,
-                    source_type=source_type,
-                    component=configured_data_source.component,
-                )
-            )
-        else:
-            documents = reader.read()
-            input_nodes += documents
-
-    for node in input_nodes:
-        configured_data_source = ConfiguredDataSource.from_component(node)
-        source_type = ConfigurableDataSourceNames[
-            configured_data_source.configurable_data_source_type.name
-        ]
-        data_sources.append(
-            DataSourceCreate(
-                name=configured_data_source.name,
-                source_type=source_type,
-                component=node,
-            )
-        )
-
-    project = client.project.upsert_project(request=ProjectCreate(name=project_name))
+    project = client.projects.upsert_project(request=ProjectCreate(name=project_name))
     assert project.id is not None, "Project ID should not be None"
 
     # upload
     return PipelineCreate(
         name=pipeline_name,
         configured_transformations=configured_transformation_items,
-        data_sources=data_sources,
-        data_sinks=[],
         pipeline_type=pipeline_type,
     )

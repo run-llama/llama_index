@@ -17,9 +17,11 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_APP_URL, DEFAULT_PROJECT_NAME
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.core.ingestion.api_utils import (
-    default_transformations,
     get_aclient,
     get_client,
+)
+from llama_index.indices.managed.llama_cloud.api_utils import (
+    default_transformations,
     get_pipeline_create,
 )
 from llama_index.core.schema import BaseNode, Document, TransformComponent
@@ -90,7 +92,7 @@ class LlamaCloudIndex(BaseManagedIndex):
             input_nodes=documents,
         )
 
-        project = client.project.upsert_project(
+        project = client.projects.upsert_project(
             request=ProjectCreate(name=project_name)
         )
         if project.id is None:
@@ -99,7 +101,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         if verbose:
             print(f"Created project {project.id} with name {project.name}")
 
-        pipeline = client.project.upsert_pipeline_for_project(
+        pipeline = client.pipelines.upsert_pipeline(
             project_id=project.id, request=pipeline_create
         )
         if pipeline.id is None:
