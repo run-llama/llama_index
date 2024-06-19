@@ -26,7 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Nathan LENAS <nathan.lenas@lmddc.lu>"]
 description = "llama-index readers marker integration"
-license = "MIT"
+license = "GPL-3.0-or-later"
 name = "llama-index-readers-pdf-marker"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
