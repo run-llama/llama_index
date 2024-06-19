@@ -183,7 +183,9 @@ class SQLDatabase:
         if table.context_str:
             table_opt_context = " The table description is: "
             table_opt_context += table.context_str
-            table_info += table_opt_context        
+            table_info += table_opt_context    
+        table.table_info = table_info
+     
         return table_info
 
     def get_single_table_info(self, table) -> str:

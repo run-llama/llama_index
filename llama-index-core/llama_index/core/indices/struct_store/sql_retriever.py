@@ -403,18 +403,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]
         
-        tasks = []
-        try:
-            async with self._sql_database._engine.connect() as conn:
-                async with asyncio.TaskGroup() as tg:
-                    for table_schema_obj in table_schema_objs:
-                        task = tg.create_task(conn.run_sync(
-                            self._sql_database.get_single_table_info_async, table_schema_obj
-                        ))
-                        tasks.append(task)
-        except Exception as e:
-            print(f'Error --> {e}')
-        context_strs = [task.result() for task in tasks]
+        for table_schema_obj in table_schema_objs:
+            context_strs.append(table_schema_obj.table_info)
 
         return "\n\n".join(context_strs)
 
