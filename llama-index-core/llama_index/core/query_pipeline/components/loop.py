@@ -8,18 +8,6 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from typing import Any, Dict, Optional, Callable
 
-# def _get_stateful_components(query_component: QueryComponent) -> List[BaseStatefulComponent]:
-#     """Get stateful components."""
-#     stateful_components: List[BaseStatefulComponent] = []
-#     for c in query_component.sub_query_components:
-#         if isinstance(c, BaseStatefulComponent):
-#             stateful_components.append(cast(BaseStatefulComponent, c))
-
-#         if len(c.sub_query_components) > 0:
-#             stateful_components.extend(_get_stateful_components(c))
-
-#     return stateful_components
-
 
 class LoopComponent(QueryComponent):
     """Loop component."""
