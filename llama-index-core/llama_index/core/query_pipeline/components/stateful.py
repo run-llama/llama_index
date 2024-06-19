@@ -17,7 +17,13 @@ from llama_index.core.query_pipeline.components.function import FnComponent, get
 class BaseStatefulComponent(QueryComponent):
     """Takes in agent inputs and transforms it into desired outputs."""
 
+    state: Dict[str, Any] = Field(
+        default_factory=dict, description="State of the pipeline."
+    )
 
+    def reset_state(self) -> None:
+        """Reset state."""
+        self.state = {}
 
 class StatefulFnComponent(BaseStatefulComponent, FnComponent):
     """Query component that takes in an arbitrary function.
@@ -25,12 +31,12 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
     Stateful version of `FnComponent`. Expects functions to have `state` as the first argument.
     
     """
-
     def __init__(
         self,
         fn: Callable,
         req_params: Optional[Set[str]] = None,
         opt_params: Optional[Set[str]] = None,
+        state: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> None:
         """Init params."""
@@ -45,19 +51,34 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
 
         default_req_params = default_req_params - {"state"}
         default_opt_params = default_opt_params - {"state"}
-    
-        super().__init__(fn=fn, req_params=req_params, opt_params=opt_params, **kwargs)
-    
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys(
-            required_keys={"state", *self._req_params},
-            optional_keys=self._opt_params,
-        )
 
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        # output can be anything, overrode validate function
-        return OutputKeys.from_keys({self.output_key})
+        if req_params is None:
+            req_params = default_req_params
+        if opt_params is None:
+            opt_params = default_opt_params
+    
+        super().__init__(fn=fn, req_params=req_params, opt_params=opt_params, state=state or {}, **kwargs)
+
+    def _run_component(self, **kwargs: Any) -> Dict:
+        """Run component."""
+        kwargs.update({"state": self.state})
+        return super()._run_component(**kwargs)
+
+    async def _arun_component(self, **kwargs: Any) -> Any:
+        """Async run component."""
+        kwargs.update({"state": self.state})
+        return await super()._arun_component(**kwargs)
+
+    # @property
+    # def input_keys(self) -> InputKeys:
+    #     """Input keys."""
+    #     return InputKeys.from_keys(
+    #         required_keys={"state", *self._req_params},
+    #         optional_keys=self._opt_params,
+    #     )
+
+    # @property
+    # def output_keys(self) -> OutputKeys:
+    #     """Output keys."""
+    #     # output can be anything, overrode validate function
+    #     return OutputKeys.from_keys({self.output_key})

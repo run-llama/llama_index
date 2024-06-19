@@ -176,28 +176,32 @@ def test_stateful_fn_pipeline() -> None:
             "m2": StatefulFnComponent(fn=stateful_foo_fn)
         }
     )
-    p.add_link("m1", "m2", src_key="output", dest_key="a", input_fn=lambda x: x["new"])
-    # p.add_link("m1", "m2", src_key="output", dest_key="state", input_fn=lambda x: x["state"])
-    # output = p.run(a=1, b=2)
-    # assert output == 6
+    p.add_link("m1", "m2", src_key="output", dest_key="a")
+    output = p.run(a=1, b=2)
+    assert output == 8
+    p.reset_state()
+    output = p.run(a=1, b=2)
+    assert output == 8
 
     # try one iteration
+    p.reset_state()
     loop_component = LoopComponent(
         pipeline=p,
-        should_exit_fn=lambda x: x > 10,
+        should_exit_fn=lambda x: x["output"] > 10,
         # add_output_to_input_fn=lambda cur_input, output: {"a": output},
         max_iterations=1
     )
     output = loop_component.run_component(a=1, b=2)
-    assert output["output"] == 6
+    assert output["output"] == 8
 
     # try two iterations
+    p.reset_state()
     # loop 1: 0 + 1 + 2 = 3, 3 + 3 + 2 = 8
     # loop 2: 8 + 8 + 2 = 18, 18 + 18 + 2 = 38
     loop_component = LoopComponent(
         pipeline=p,
-        should_exit_fn=lambda x: x > 10,
-        add_output_to_input_fn=lambda cur_input, output: {"a": output},
+        should_exit_fn=lambda x: x["output"] > 10,
+        add_output_to_input_fn=lambda cur_input, output: {"a": output["output"]},
         max_iterations=5
     )
     assert loop_component.run_component(a=1, b=2)["output"] == 38

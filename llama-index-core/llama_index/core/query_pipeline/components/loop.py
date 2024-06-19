@@ -9,17 +9,17 @@ from llama_index.core.callbacks.base import CallbackManager
 from typing import Any, Dict, Optional, List, cast, Callable
 from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
 
-def _get_stateful_components(query_component: QueryComponent) -> List[BaseStatefulComponent]:
-    """Get stateful components."""
-    stateful_components: List[BaseStatefulComponent] = []
-    for c in query_component.sub_query_components:
-        if isinstance(c, BaseStatefulComponent):
-            stateful_components.append(cast(BaseStatefulComponent, c))
+# def _get_stateful_components(query_component: QueryComponent) -> List[BaseStatefulComponent]:
+#     """Get stateful components."""
+#     stateful_components: List[BaseStatefulComponent] = []
+#     for c in query_component.sub_query_components:
+#         if isinstance(c, BaseStatefulComponent):
+#             stateful_components.append(cast(BaseStatefulComponent, c))
 
-        if len(c.sub_query_components) > 0:
-            stateful_components.extend(_get_stateful_components(c))
+#         if len(c.sub_query_components) > 0:
+#             stateful_components.extend(_get_stateful_components(c))
 
-    return stateful_components
+#     return stateful_components
 
 class LoopComponent(QueryComponent):
     """Loop component.
@@ -49,20 +49,10 @@ class LoopComponent(QueryComponent):
         # TODO: implement
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        pass
-
-    @property
-    def stateful_components(self) -> List[BaseStatefulComponent]:
-        """Get stateful component."""
-        # TODO: do this directly within the query pipeline
-        return _get_stateful_components(self.pipeline)
+        return input
 
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""
-        state = {}
-        # partial agent output component with state
-        for stateful_component in self.stateful_components:
-            stateful_component.partial(state=state)
 
         current_input = kwargs
         for i in range(self.max_iterations):
@@ -75,11 +65,22 @@ class LoopComponent(QueryComponent):
             if self.add_output_to_input_fn:
                 current_input = self.add_output_to_input_fn(current_input, output)
 
-        return self.pipeline.run_component(**kwargs)
+        return output 
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component (async)."""
-        return await self.pipeline.arun_component(**kwargs)
+        current_input = kwargs
+        for i in range(self.max_iterations):
+            output = await self.pipeline.arun_component(**current_input)
+            if self.should_exit_fn:
+                should_exit = self.should_exit_fn(output)
+                if should_exit:
+                    break
+
+            if self.add_output_to_input_fn:
+                current_input = self.add_output_to_input_fn(current_input, output)
+
+        return output 
 
     @property
     def input_keys(self) -> InputKeys:
