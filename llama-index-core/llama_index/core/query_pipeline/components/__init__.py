@@ -15,6 +15,7 @@ from llama_index.core.query_pipeline.components.router import (
     SelectorComponent,
 )
 from llama_index.core.query_pipeline.components.tool_runner import ToolRunnerComponent
+from llama_index.core.query_pipeline.components.stateful import StatefulFnComponent
 
 __all__ = [
     "AgentFnComponent",
@@ -28,4 +29,5 @@ __all__ = [
     "RouterComponent",
     "SelectorComponent",
     "ToolRunnerComponent",
+    "StatefulFnComponent"
 ]
