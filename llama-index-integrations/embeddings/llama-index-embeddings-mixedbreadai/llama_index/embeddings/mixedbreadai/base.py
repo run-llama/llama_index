@@ -15,37 +15,53 @@ logger = logging.getLogger(__name__)
 
 
 class MixedbreadAIEmbedding(BaseEmbedding):
-    """Class for Mixedbread AI embeddings.
+    """
+    Class to get embeddings using the mixedbread ai embedding API with models such as 'mixedbread-ai/mxbai-embed-large-v1'.
 
     Args:
+        api_key (Optional[str]): mixedbread ai API key. Defaults to None.
         model_name (str): Model for embedding. Defaults to "mixedbread-ai/mxbai-embed-large-v1".
-        api_key (Optional[str]): Mixedbread API key. Defaults to None.
-        encoding_format (EncodingFormat): Encoding formats. Defaults to EncodingFormat.FLOAT.
+        encoding_format (EncodingFormat): Encoding format for embeddings. Defaults to EncodingFormat.FLOAT.
         truncation_strategy (TruncationStrategy): Truncation strategy. Defaults to TruncationStrategy.START.
         normalized (bool): Whether to normalize the embeddings. Defaults to True.
-        dimensions (Optional[int]): Number of dimensions for embeddings. Only applicable for Matryoshka-based models.
-        prompt(Optional[str]): An optional prompt to provide context to the model.
+        dimensions (Optional[int]): Number of dimensions for embeddings. Only applicable for models with matryoshka support.
+        prompt (Optional[str]): An optional prompt to provide context to the model.
+        embed_batch_size (Optional[int]): The batch size for embedding calls. Defaults to 128.
+        callback_manager (Optional[CallbackManager]): Manager for handling callbacks.
+        timeout (Optional[float]): Timeout for API calls.
+        max_retries (Optional[int]): Maximum number of retries for API calls.
+        httpx_client (Optional[httpx.Client]): Custom HTTPX client.
+        httpx_async_client (Optional[httpx.AsyncClient]): Custom asynchronous HTTPX client.
     """
 
-    # Instance variables initialized via Pydantic's mechanism
-    api_key: str = Field(description="The Mixedbread AI API key.")
-    model_name: str = Field(description="The model name to use for embedding.")
+    api_key: str = Field(description="The mixedbread ai API key.", min_length=1)
+    model_name: str = Field(
+        default="mixedbread-ai/mxbai-embed-large-v1",
+        description="Model to use for embeddings.",
+        min_length=1,
+    )
     encoding_format: EncodingFormat = Field(
-        description="Encoding format for the embeddings."
+        default=EncodingFormat.FLOAT, description="Encoding format for the embeddings."
     )
     truncation_strategy: TruncationStrategy = Field(
-        description="Truncation strategy for input text."
+        default=TruncationStrategy.START,
+        description="Truncation strategy for input text.",
     )
     normalized: bool = Field(
         default=True, description="Whether to normalize the embeddings."
     )
     dimensions: Optional[int] = Field(
         default=None,
-        description="Number of dimensions for embeddings. Only applicable "
-        "for Matryoshka-based models.",
+        description="Number of dimensions for embeddings. Only applicable for models with matryoshka support.",
+        gt=0,
     )
     prompt: Optional[str] = Field(
-        default=None, description="An optional prompt to provide context to the model."
+        default=None,
+        description="An optional prompt to provide context to the model.",
+        min_length=1,
+    )
+    embed_batch_size: int = Field(
+        default=128, description="The batch size for embedding calls.", gt=0, lte=256
     )
 
     _client: MixedbreadAI = PrivateAttr()
@@ -70,13 +86,13 @@ class MixedbreadAIEmbedding(BaseEmbedding):
         **kwargs: Any,
     ):
         if embed_batch_size is None:
-            embed_batch_size = 32  # Default batch size for Mixedbread AI
+            embed_batch_size = 128  # Default batch size for mixedbread ai
 
         try:
             api_key = api_key or os.environ["MXBAI_API_KEY"]
         except KeyError:
             raise ValueError(
-                "Must pass in Mixedbread AI API key or "
+                "Must pass in mixedbread ai API key or "
                 "specify via MXBAI_API_KEY environment variable "
             )
 
@@ -110,7 +126,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     def _get_embedding(self, texts: List[str]) -> List[List[float]]:
         """
-        Get embeddings for a list of texts.
+        Get embeddings for a list of texts using the mixedbread ai API.
 
         Args:
             texts (List[str]): List of texts to embed.
@@ -132,7 +148,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     async def _aget_embedding(self, texts: List[str]) -> List[List[float]]:
         """
-        Asynchronously get embeddings for a list of texts.
+        Asynchronously get embeddings for a list of texts using the mixedbread ai API.
 
         Args:
             texts (List[str]): List of texts to embed.
@@ -154,7 +170,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """
-        Get embedding for a query.
+        Get embedding for a query using the mixedbread ai API.
 
         Args:
             query (str): Query text.
@@ -166,7 +182,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """
-        Asynchronously get embedding for a query.
+        Asynchronously get embedding for a query using the mixedbread ai API.
 
         Args:
             query (str): Query text.
@@ -179,7 +195,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """
-        Get embedding for a text.
+        Get embedding for a text using the mixedbread ai API.
 
         Args:
             text (str): Text to embed.
@@ -191,7 +207,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """
-        Asynchronously get embedding for a text.
+        Asynchronously get embedding for a text using the mixedbread ai API.
 
         Args:
             text (str): Text to embed.
@@ -204,7 +220,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
-        Get embeddings for multiple texts.
+        Get embeddings for multiple texts using the mixedbread ai API.
 
         Args:
             texts (List[str]): List of texts to embed.
@@ -216,7 +232,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
-        Asynchronously get embeddings for multiple texts.
+        Asynchronously get embeddings for multiple texts using the mixedbread ai API.
 
         Args:
             texts (List[str]): List of texts to embed.
