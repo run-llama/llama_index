@@ -1,4 +1,6 @@
-from typing import Type
+from __future__ import annotations
+
+from typing import Type, Any, Iterable
 from unittest import mock
 
 import pytest
@@ -78,6 +80,20 @@ _FAKE_COMPLETION_RESPONSE = CompletionResponse(
     text="42",
     raw=_FAKE_RAW_COMPLETION_RESPONSE,
 )
+
+
+class AsyncIterator:
+    def __init__(self, iterable: Iterable) -> None:
+        self._iterable = iter(iterable)
+
+    def __aiter__(self) -> AsyncIterator:
+        return self
+
+    async def __anext__(self) -> Any:
+        try:
+            return next(self._iterable)
+        except StopIteration:
+            raise StopAsyncIteration
 
 
 def test_text_inference_embedding_class():
@@ -257,6 +273,131 @@ def test_stream_complete():
     )
 
 
+@pytest.mark.asyncio()
+async def test_achat():
+    messages = ChatMessage(role="user", content="What is the meaning of life?")
+    expected_chat_response = ChatResponse(
+        message=ChatMessage(role="assistant", content="42"),
+        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.to_dict(),
+    )
+
+    with mock.patch(
+        "llama_index.llms.ai21.base.AsyncAI21Client", side_effect=mock.AsyncMock
+    ):
+        llm = AI21(api_key=_FAKE_API_KEY)
+
+    llm._async_client.chat.completions.create.return_value = (
+        _FAKE_CHAT_COMPLETIONS_RESPONSE
+    )
+
+    actual_response = await llm.achat(messages=[messages])
+
+    assert actual_response == expected_chat_response
+
+    llm._async_client.chat.completions.create.assert_called_once_with(
+        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        stream=False,
+        **llm._get_all_kwargs(),
+    )
+
+
+@pytest.mark.asyncio()
+async def test_acomplete():
+    expected_chat_response = CompletionResponse(
+        text="42",
+        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.to_dict(),
+    )
+
+    with mock.patch(
+        "llama_index.llms.ai21.base.AsyncAI21Client", side_effect=mock.AsyncMock
+    ):
+        llm = AI21(api_key=_FAKE_API_KEY)
+
+    llm._async_client.chat.completions.create.return_value = (
+        _FAKE_CHAT_COMPLETIONS_RESPONSE
+    )
+
+    actual_response = await llm.acomplete(prompt="What is the meaning of life?")
+
+    assert actual_response == expected_chat_response
+
+    # Since we actually call chat.completions - check that the call was made to it
+    llm._async_client.chat.completions.create.assert_called_once_with(
+        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        stream=False,
+        **llm._get_all_kwargs(),
+    )
+    llm._async_client.completion.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_astream_chat():
+    messages = ChatMessage(role="user", content="What is the meaning of life?")
+
+    with mock.patch(
+        "llama_index.llms.ai21.base.AsyncAI21Client", side_effect=mock.AsyncMock
+    ):
+        llm = AI21(api_key=_FAKE_API_KEY)
+
+    llm._async_client.chat.completions.create.return_value = AsyncIterator(
+        _FAKE_STREAM_CHUNKS
+    )
+
+    actual_response = await llm.astream_chat(messages=[messages])
+
+    expected_chunks = [
+        ChatResponse(
+            message=ChatMessage(role="assistant", content=""),
+            delta="",
+            raw=_FAKE_STREAM_CHUNKS[0].to_dict(),
+        ),
+        ChatResponse(
+            message=ChatMessage(role="assistant", content="42"),
+            delta="42",
+            raw=_FAKE_STREAM_CHUNKS[1].to_dict(),
+        ),
+    ]
+
+    actual_response = [r async for r in actual_response]
+
+    assert list(actual_response) == expected_chunks
+
+    llm._async_client.chat.completions.create.assert_called_once_with(
+        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        stream=True,
+        **llm._get_all_kwargs(),
+    )
+
+
+@pytest.mark.asyncio()
+async def test_astream_complete():
+    expected_stream_completion_chunks_response = [
+        CompletionResponse(text="", delta="", raw=_FAKE_STREAM_CHUNKS[0].to_dict()),
+        CompletionResponse(text="42", delta="42", raw=_FAKE_STREAM_CHUNKS[1].to_dict()),
+    ]
+
+    with mock.patch(
+        "llama_index.llms.ai21.base.AsyncAI21Client", side_effect=mock.AsyncMock
+    ):
+        llm = AI21(api_key=_FAKE_API_KEY)
+        llm._async_client.chat.completions.create.return_value = AsyncIterator(
+            _FAKE_STREAM_CHUNKS
+        )
+
+    actual_response = await llm.astream_complete(prompt="What is the meaning of life?")
+
+    actual_response = [r async for r in actual_response]
+
+    assert actual_response == expected_stream_completion_chunks_response
+
+    # Since we actually call chat.completions - check that the call was made to it
+    llm._async_client.chat.completions.create.assert_called_once_with(
+        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        stream=True,
+        **llm._get_all_kwargs(),
+    )
+
+
 def test_stream_complete_when_j2__should_raise_error():
     llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
 
@@ -271,6 +412,24 @@ def test_chat_complete_when_j2__should_raise_error():
         llm.stream_chat(
             messages=[ChatMessage(role="user", content="What is the meaning of life?")]
         )
+
+
+@pytest.mark.asyncio()
+async def test_achat_complete_when_j2__should_raise_error():
+    llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
+
+    with pytest.raises(ValueError):
+        await llm.astream_chat(
+            messages=[ChatMessage(role="user", content="What is the meaning of life?")]
+        )
+
+
+@pytest.mark.asyncio()
+async def test_astream_complete_when_j2__should_raise_error():
+    llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
+
+    with pytest.raises(ValueError):
+        await llm.astream_complete(prompt="What is the meaning of life?")
 
 
 @pytest.mark.parametrize(
