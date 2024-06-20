@@ -1,5 +1,151 @@
 # ChangeLog
 
+## [2024-06-19]
+
+### `llama-index-core` [0.10.47]
+
+- added average precision as a retrieval metric (#14189)
+- added `.show_jupyter_graph()` method visualizing default simple graph_store in jupyter notebooks (#14104)
+- corrected the behaviour of nltk file lookup (#14040)
+- Added helper args to generate_qa_pairs (#14054)
+- Add new chunking semantic chunking method: double-pass merging (#13629)
+- enable stepwise execution of query pipelines (#14117)
+- Replace tenacity upper limit by only rejecting 8.4.0 (#14218)
+- propagate error_on_no_tool_call kwarg in `llm.predict_and_call()` (#14253)
+- in query pipeline, avoid casting nodes as strings and use `get_content()` instead (#14242)
+- Fix NLSQLTableQueryEngine response metadata (#14169)
+- do not overwrite relations in default simple property graph (#14244)
+
+### `llama-index-embeddings-ipex-llm` [0.1.5]
+
+- Enable selecting Intel GPU for ipex embedding integrations (#14214)
+
+### `llama-index-embeddings-mixedbreadai` [0.1.0]
+
+- add mixedbread ai integration (#14161)
+
+### `llama-index-graph-stores-neo4j` [0.2.5]
+
+- Add default node property to neo4j upsert relations (#14095)
+
+### `llama-index-indices-managed-postgresml` [0.3.0]
+
+- Added re-ranking into the PostgresML Managed Index (#14134)
+
+### `llama-index-llms-ai21` [0.3.0]
+
+- use async AI21 client for async methods (#14193)
+
+### `llama-index-llms-bedrock-converse` [0.1.2]
+
+- Added (fake) async calls to avoid errors (#14241)
+
+### `llama-index-llms-deepinfra` [0.1.3]
+
+- Add function calling to deep infra llm (#14127)
+
+### `llama-index-llms-ipex-llm` [0.1.8]
+
+- Enable selecting Intel GPU for ipex embedding integrations (#14214)
+
+### `llama-index-llms-oci-genai` [0.1.1]
+
+- add command r support oci genai (#14080)
+
+### `llama-index-llms-premai` [0.1.7]
+
+- Prem AI Templates Llama Index support (#14105)
+
+### `llama-index-llms-you` [0.1.0]
+
+- Integrate You.com conversational APIs (#14207)
+
+### `llama-index-readers-mongodb` [0.1.8]
+
+- Add metadata field "collection_name" to SimpleMongoReader (#14245)
+
+### `llama-index-readers-pdf-marker` [0.1.0]
+
+- add marker-pdf reader (#14099)
+
+### `llama-index-readers-upstage` [0.1.0]
+
+- Added upstage as a reader (#13415)
+
+### `llama-index-postprocessor-mixedbreadai-rerank` [0.1.0]
+
+- add mixedbread ai integration (#14161)
+
+### `llama-index-vector-stores-lancedb` [0.1.6]
+
+- LanceDB: code cleanup, minor updates (#14077)
+
+### `llama-index-vector-stores-opensearch` [0.1.12]
+
+- add option to customize default OpenSearch Client and Engine (#14249)
+
+## [2024-06-17]
+
+### `llama-index-core`[0.10.46]
+
+- Fix Pin tenacity and numpy in core (#14203)
+- Add precision and recall metrics (#14170)
+- Enable Function calling and agent runner for Vertex AI (#14088)
+- Fix for batch_gather (#14162)
+
+### `llama-index-utils-huggingface` [0.1.1]
+
+- Remove sentence-transformers dependency from HuggingFace utils package (#14204)
+
+### `llama-index-finetuning` [0.1.8]
+
+- Add MistralAI Finetuning API support (#14101)
+
+### `llama-index-llms-mistralai` [0.1.16]
+
+- Update MistralAI (#14199)
+
+### `llama-index-llms-bedrock-converse` [0.1.0]
+
+- fix: 🐛 Fix Bedrock Converse' pyproject.toml for the PyPI release (#14197)
+
+### `llama-index-utils-azure` [0.1.1]
+
+- Use typical include llama_index/ (#14196)
+- Feature/azure_table_storage (#14182)
+
+### `llama-index-embeddings-nvidia` [0.1.4]
+
+- add support for nvidia/nv-embed-v1 (https://huggingface.co/nvidia/NV-Embed-v1) (#14194)
+
+### `llama-index-retrievers-you` [0.1.3]
+
+- add news retriever (#13934)
+
+### `llama-index-storage-kvstore-azure` [0.1.1]
+
+- Fixes a bug where there is a missing await. (#14177)
+
+### `llama-index-embeddings-nomic` [0.4.0post1]
+
+- Restore Nomic Embed einops dependency (#14176)
+
+### `llama-index-retrievers-bm25` [0.1.4]
+
+- Changing BM25Retriever \_retrieve to use numpy methods (#14015)
+
+### `llama-index-llms-gemini` [0.1.11]
+
+- Add missing @llm_chat_callback() to Gemini.stream_chat (#14166)
+
+### `llama-index-llms-vertex` [0.2.0]
+
+- Enable Function calling and agent runner for Vertex AI (#14088)
+
+### `llama-index-vector-stores-opensearch` [0.1.11]
+
+- feat: support VectorStoreQueryMode.TEXT_SEARCH on OpenSearch VectorStore (#14153)
+
 ## [2024-06-14]
 
 ### `llama-index-core` [0.10.45]

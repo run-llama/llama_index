@@ -127,3 +127,45 @@ print(tokens)
 text = tokenizer.decode(tokens)
 print(text)
 ```
+
+## Async Support
+
+You can also use the async functionalities
+
+### async chat
+
+```python
+from llama_index.llms.ai21 import AI21
+from llama_index.core.base.llms.types import ChatMessage
+
+
+async def main():
+    api_key = "your_api_key"
+    llm = AI21(model="jamba-instruct", api_key=api_key)
+
+    messages = [
+        ChatMessage(role="user", content="What is the meaning of life?")
+    ]
+    response = await llm.achat(messages)
+    print(response.message.content)
+```
+
+### async stream_chat
+
+```python
+from llama_index.llms.ai21 import AI21
+from llama_index.core.base.llms.types import ChatMessage
+
+
+async def main():
+    api_key = "your_api_key"
+    llm = AI21(model="jamba-instruct", api_key=api_key)
+
+    messages = [
+        ChatMessage(role="user", content="What is the meaning of life?")
+    ]
+    response = await llm.astream_chat(messages)
+
+    async for chunk in response:
+        print(chunk.message.content)
+```

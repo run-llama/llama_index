@@ -32,7 +32,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-llama-index-utils-huggingface = "^0.1.0"
+llama-index-utils-huggingface = "^0.1.1"
 
 [tool.poetry.dependencies.huggingface-hub]
 extras = ["inference"]

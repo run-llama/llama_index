@@ -411,6 +411,17 @@ mkdocs["nav"][api_ref_idx]["API Reference"] = sorted(
     key=lambda x: next(iter(x.keys())) if isinstance(x, dict) else x,
 )
 
+# sort the examples
+for idx, item in enumerate(mkdocs["nav"][examples_idx]["Examples"]):
+    if isinstance(item, dict):
+        for key in item:
+            mkdocs["nav"][examples_idx]["Examples"][idx][key] = sorted(
+                mkdocs["nav"][examples_idx]["Examples"][idx][key],
+                key=lambda x: next(iter(x.keys()))
+                if isinstance(x, dict)
+                else x,
+            )
+
 
 # update search paths
 for i, plugin in enumerate(mkdocs["plugins"]):
