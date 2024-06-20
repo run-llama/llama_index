@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import json
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -67,7 +66,7 @@ class TogglReader(BaseReader):
         items = []
         for item in raw_items:
             if out_format == TogglOutFormat.json:
-                text = json.dumps(item)
+                text = item.model_dump_json()
             elif out_format == TogglOutFormat.markdown:
                 text = f"""# {item.description}
                     **Start:** {item.start}
@@ -75,7 +74,7 @@ class TogglReader(BaseReader):
                     **Duration:** {item.dur}
                     **Tags:** {",".join(item.tags)}
                 """
-            doc = Document(text=json.dumps(text))
+            doc = Document(text=text)
             doc.metadata = {**doc.metadata, **item.dict()}
             items.append(doc)
         return items
