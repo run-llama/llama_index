@@ -52,7 +52,14 @@ nav:
           - Cost Analysis:
               - ./understanding/evaluating/cost_analysis/index.md
               - ./understanding/evaluating/cost_analysis/usage_pattern.md
-      - Putting it all Together: ./understanding/putting_it_all_together/
+      - Putting it all Together:
+          - ./understanding/putting_it_all_together/index.md
+          - Full-stack web application: ./understanding/putting_it_all_together/apps/
+          - Q&A Patterns: ./understanding/putting_it_all_together/q_and_a/
+          - Chatbots: ./understanding/putting_it_all_together/chatbots/
+          - Structured data: ./understanding/putting_it_all_together/structured_data/
+          - Agents: ./understanding/putting_it_all_together/agents.md
+          - Graphs: ./understanding/putting_it_all_together/graphs.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
