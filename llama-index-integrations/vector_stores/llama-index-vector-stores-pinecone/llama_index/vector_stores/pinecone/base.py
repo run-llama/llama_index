@@ -356,6 +356,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     def add(
         self,
         nodes: List[BaseNode],
+        prefix: Optional[str] = None,
         **add_kwargs: Any,
     ) -> List[str]:
         """
@@ -388,7 +389,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 )[0]
                 entry[SPARSE_VECTOR_KEY] = sparse_vector
 
-            ids.append(node_id)
+            if prefix:
+                ids.append(f"{prefix}_{node_id}")
+            else:
+                ids.append(node_id)
             entries.append(entry)
         self._pinecone_index.upsert(
             entries,
