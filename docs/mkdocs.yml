@@ -31,12 +31,21 @@ nav:
   - Learn:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
-      - Loading & Ingestion:
-          - ./understanding/loading/loading.md
-          - ./understanding/loading/llamahub.md
-      - Indexing & Embedding: ./understanding/indexing/indexing.md
-      - Storing: ./understanding/storing/storing.md
-      - Querying: ./understanding/querying/querying.md
+      - Building a RAG pipeline:
+          - Building a RAG pipeline: ./understanding/rag/index.md
+          - Loading & Ingestion:
+              - ./understanding/loading/loading.md
+              - ./understanding/loading/llamahub.md
+          - Indexing & Embedding: ./understanding/indexing/indexing.md
+          - Storing: ./understanding/storing/storing.md
+          - Querying: ./understanding/querying/querying.md
+      - Building an agent:
+          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Agents with local models: ./understanding/agent/local_models.md
+          - Adding RAG to an agent: ./understanding/agent/rag_agent.md
+          - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
+          - Memory: ./understanding/agent/memory.md
+          - Adding other tools: ./understanding/agent/tools.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
