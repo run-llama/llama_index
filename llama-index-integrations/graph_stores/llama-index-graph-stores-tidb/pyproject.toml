@@ -13,6 +13,7 @@ import_path = "llama_index.graph_stores.tidb"
 
 [tool.llamahub.class_authors]
 TiDBGraphStore = "llama-index"
+TiDBPropertyGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

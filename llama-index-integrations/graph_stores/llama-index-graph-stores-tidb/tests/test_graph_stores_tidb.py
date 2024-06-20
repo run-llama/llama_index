@@ -5,6 +5,6 @@ from llama_index.graph_stores.tidb import TiDBGraphStore
 
 
 @patch("llama_index.graph_stores.tidb.TiDBGraphStore")
-def test_kuzu_graph_store(MockTiDBGraphStore: MagicMock):
+def test_tidb_graph_store(MockTiDBGraphStore: MagicMock):
     instance: TiDBGraphStore = MockTiDBGraphStore.return_value()
     assert isinstance(instance, GraphStore)
