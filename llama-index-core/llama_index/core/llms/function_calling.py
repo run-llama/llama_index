@@ -72,6 +72,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
@@ -97,7 +98,9 @@ class FunctionCallingLLM(LLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-        tool_calls = self.get_tool_calls_from_response(response)
+        tool_calls = self.get_tool_calls_from_response(
+            response, error_on_no_tool_call=error_on_no_tool_call
+        )
         tool_outputs = [
             call_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
@@ -121,6 +124,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
@@ -146,7 +150,9 @@ class FunctionCallingLLM(LLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-        tool_calls = self.get_tool_calls_from_response(response)
+        tool_calls = self.get_tool_calls_from_response(
+            response, error_on_no_tool_call=error_on_no_tool_call
+        )
         tool_tasks = [
             acall_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls

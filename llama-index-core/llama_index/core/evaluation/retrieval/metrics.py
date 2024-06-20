@@ -281,14 +281,17 @@ class AveragePrecision(BaseRetrievalMetric):
         ):
             raise ValueError("Retrieved ids and expected ids must be provided")
 
-        retrieved_set = set(retrieved_ids)
         expected_set = set(expected_ids)
-        ap = sum(
-            len(expected_set.intersection(retrieved_ids[:i])) / i
-            for i in range(1, len(retrieved_ids) + 1)
-        ) / len(retrieved_set)
 
-        return RetrievalMetricResult(score=ap)
+        relevant_count, total_precision = 0, 0.0
+        for i, retrieved_id in enumerate(retrieved_ids, start=1):
+            if retrieved_id in expected_set:
+                relevant_count += 1
+                total_precision += relevant_count / i
+
+        average_precision = total_precision / len(expected_set)
+
+        return RetrievalMetricResult(score=average_precision)
 
 
 DiscountedGainMode = Literal["linear", "exponential"]
