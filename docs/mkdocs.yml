@@ -7,6 +7,7 @@ extra_css:
 extra_javascript:
   - javascript/mendablesearch.js
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -30,19 +31,35 @@ nav:
   - Learn:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
-      - Loading & Ingestion:
-          - ./understanding/loading/loading.md
-          - ./understanding/loading/llamahub.md
-      - Indexing & Embedding: ./understanding/indexing/indexing.md
-      - Storing: ./understanding/storing/storing.md
-      - Querying: ./understanding/querying/querying.md
+      - Building a RAG pipeline:
+          - Building a RAG pipeline: ./understanding/rag/index.md
+          - Loading & Ingestion:
+              - ./understanding/loading/loading.md
+              - ./understanding/loading/llamahub.md
+          - Indexing & Embedding: ./understanding/indexing/indexing.md
+          - Storing: ./understanding/storing/storing.md
+          - Querying: ./understanding/querying/querying.md
+      - Building an agent:
+          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Agents with local models: ./understanding/agent/local_models.md
+          - Adding RAG to an agent: ./understanding/agent/rag_agent.md
+          - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
+          - Memory: ./understanding/agent/memory.md
+          - Adding other tools: ./understanding/agent/tools.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
           - Cost Analysis:
               - ./understanding/evaluating/cost_analysis/index.md
               - ./understanding/evaluating/cost_analysis/usage_pattern.md
-      - Putting it all Together: ./understanding/putting_it_all_together/
+      - Putting it all Together:
+          - ./understanding/putting_it_all_together/index.md
+          - Full-stack web application: ./understanding/putting_it_all_together/apps/
+          - Q&A Patterns: ./understanding/putting_it_all_together/q_and_a/
+          - Chatbots: ./understanding/putting_it_all_together/chatbots/
+          - Structured data: ./understanding/putting_it_all_together/structured_data/
+          - Agents: ./understanding/putting_it_all_together/agents.md
+          - Graphs: ./understanding/putting_it_all_together/graphs.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
