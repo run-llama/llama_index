@@ -28,6 +28,7 @@ from llama_index.core.vector_stores.utils import (
 from llama_index.vector_stores.pinecone.utils import (
     _import_pinecone,
     _is_pinecone_v3,
+    _is_serverless,
 )
 
 ID_KEY = "id"
@@ -402,20 +403,30 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
         return ids
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    def delete(
+        self, ref_doc_id: str, id_prefix: Optional[str] = None, **delete_kwargs: Any
+    ) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes by metadata for pod-based indexes and by prefix for serverless indexes.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
-
+            id_prefix (Optional[str]): The ID prefix to use for serverless indexes.
         """
-        # delete by filtering on the doc_id metadata
-        self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": ref_doc_id}},
-            namespace=self.namespace,
-            **delete_kwargs,
-        )
+        if not _is_serverless(self._pinecone_index.name):
+            # delete by filtering on the doc_id metadata
+            self._pinecone_index.delete(
+                filter={"doc_id": {"$eq": ref_doc_id}},
+                namespace=self.namespace,
+                **delete_kwargs,
+            )
+        else:
+            # delete by prefix
+            for ids in self._pinecone_index.list(
+                prefix=id_prefix, namespace=self.namespace, **delete_kwargs
+            ):
+                print(ids)
+                self._pinecone_index.delete(ids, namespace=self.namespace)
 
     @property
     def client(self) -> Any:
