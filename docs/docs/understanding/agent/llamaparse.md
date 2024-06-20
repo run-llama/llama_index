@@ -19,7 +19,15 @@ We unfortunately get an unhelpful answer:
 The budget allocated funds to a new green investments tax credit, but the exact amount was not specified in the provided context information.
 ```
 
-This is bad, because we happen to know the exact number is in the document! But the PDF is complicated, with tables and multi-column layout, and the LLM is missing the answer. Luckily, we can use LlamaParse to help us out. Let's bring it in as as import:
+This is bad, because we happen to know the exact number is in the document! But the PDF is complicated, with tables and multi-column layout, and the LLM is missing the answer. Luckily, we can use LlamaParse to help us out.
+
+First, you need a LlamaCloud API key. You can [get one for free](https://cloud.llamaindex.ai/) by signing up for LlamaCloud. Then put it in your `.env` file just like your OpenAI key:
+
+```bash
+LLAMA_CLOUD_API_KEY=llx-xxxxx
+```
+
+Now you're ready to use LlamaParse in your code. Let's bring it in as as import:
 
 ```python
 from llama_parse import LlamaParse

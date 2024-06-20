@@ -67,7 +67,9 @@ def add(a: float, b: float) -> float:
 add_tool = FunctionTool.from_defaults(fn=add)
 ```
 
-As you can see, these are regular vanilla Python functions. The docstring comments provide metadata to the agent about what the tool does. We then create `FunctionTool` objects from these functions, which wrap them in a way that the agent can understand.
+As you can see, these are regular vanilla Python functions. The docstring comments provide metadata to the agent about what the tool does: if your LLM is having trouble figuring out which tool to use, these docstrings are what you should tweak first.
+
+After each function is defined we create `FunctionTool` objects from these functions, which wrap them in a way that the agent can understand.
 
 ## Initialize the LLM
 
