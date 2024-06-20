@@ -73,6 +73,7 @@ LIMIT :limit;
 
 
 class TiDBPropertyGraphStore(PropertyGraphStore):
+    # TiDB does not support graph cypher queries
     supports_structured_queries: bool = False
     supports_vector_queries: bool = True
 
@@ -411,9 +412,7 @@ class TiDBPropertyGraphStore(PropertyGraphStore):
         self, query: str, param_map: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Query the graph store with statement and parameters."""
-        raise NotImplementedError(
-            "Structured queries are not supported by TiDB property graph store."
-        )
+        raise NotImplementedError("TiDB does not support cypher queries.")
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
