@@ -89,6 +89,8 @@ The current price of NVDA (NVIDIA Corporation) is $135.58.
 
 Perfect! As you can see, using existing tools is a snap.
 
+As always, you can check [the repo](https://github.com/run-llama/python-agents-tutorial/blob/main/6_tools.py) to see this code all in one place.
+
 ## Building and contributing your own tools
 
 We love open source contributions of new tools! You can see an example of [what the code of the Yahoo finance tool looks like](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-yahoo-finance/llama_index/tools/yahoo_finance/base.py):

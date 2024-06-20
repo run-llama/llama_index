@@ -1,55 +1,10 @@
 # Memory
 
-We've now made several additions and subtractions to our code. To make it clear what we're using, here's the current state of our agent. It's using OpenAI for the LLM and LlamaParse to enhance parsing:
+We've now made several additions and subtractions to our code. To make it clear what we're using, you can see [the current code for our agent](https://github.com/run-llama/python-agents-tutorial/blob/main/5_memory.py) in the repo. It's using OpenAI for the LLM and LlamaParse to enhance parsing.
+
+We've also added 3 questions in a row. Let's see how the agent handles them:
 
 ```python
-from dotenv import load_dotenv
-
-load_dotenv()
-from llama_index.core.agent import ReActAgent
-from llama_index.llms.openai import OpenAI
-from llama_index.core.tools import FunctionTool
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
-from llama_parse import LlamaParse
-from llama_index.core.tools import QueryEngineTool
-
-# settings
-Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0)
-
-
-# function tools
-def multiply(a: float, b: float) -> float:
-    """Multiply two numbers and returns the product"""
-    return a * b
-
-
-multiply_tool = FunctionTool.from_defaults(fn=multiply)
-
-
-def add(a: float, b: float) -> float:
-    """Add two numbers and returns the sum"""
-    return a + b
-
-
-add_tool = FunctionTool.from_defaults(fn=add)
-
-# rag pipeline
-documents = LlamaParse(result_type="markdown").load_data(
-    "./data/2023_canadian_budget.pdf"
-)
-index = VectorStoreIndex.from_documents(documents)
-query_engine = index.as_query_engine()
-
-budget_tool = QueryEngineTool.from_defaults(
-    query_engine,
-    name="canadian_budget_2023",
-    description="A RAG engine with some basic facts about the 2023 Canadian federal budget. Ask natural-language questions about the budget.",
-)
-
-agent = ReActAgent.from_tools(
-    [multiply_tool, add_tool, budget_tool], verbose=True
-)
-
 response = agent.chat(
     "How much exactly was allocated to a tax credit to promote investment in green technologies in the 2023 Canadian federal budget?"
 )
@@ -69,7 +24,7 @@ response = agent.chat(
 print(response)
 ```
 
-As you can see, we've asked the agent 3 questions in a row. This is demonstrating a powerful feature of agents in LlamaIndex: memory. Let's see what the output looks like:
+This is demonstrating a powerful feature of agents in LlamaIndex: memory. Let's see what the output looks like:
 
 ```
 Started parsing the file under job_id cac11eca-45e0-4ea9-968a-25f1ac9b8f99

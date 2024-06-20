@@ -58,4 +58,6 @@ Answer: The solution to the expression 20+(2*4) is 28.
 The solution to the expression 20+(2*4) is 28.
 ```
 
+Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/2_local_agent.py) to see what this final code looks like.
+
 You can now continue the rest of the tutorial with a local model if you prefer. We'll keep using OpenAI as we move on to [adding RAG to your agent](./rag_agent.md).

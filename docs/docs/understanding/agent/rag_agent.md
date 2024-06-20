@@ -99,4 +99,6 @@ Answer: The total amount of the 2023 Canadian federal budget multiplied by 3 is 
 The total amount of the 2023 Canadian federal budget multiplied by 3 is $1,490.70 billion.
 ```
 
+As usual, you can check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/3_rag_agent.py) to see this code all together.
+
 Excellent! Your agent can now use any arbitrarily advanced query engine to help answer questions. You can also add as many different RAG engines as you need to consult different data sources. Next, we'll look at how we can answer more advanced questions [using LlamaParse](./llamaparse.md).

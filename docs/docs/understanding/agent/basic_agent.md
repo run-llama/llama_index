@@ -6,6 +6,8 @@ In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM
 
 ## Getting started
 
+You can find all of this code in [the tutorial repo](https://github.com/run-llama/python-agents-tutorial).
+
 To avoid conflicts and keep things clean, we'll start a new Python virtual environment. You can use any virtual environment manager, but we'll use `poetry` here:
 
 ```bash
@@ -109,6 +111,6 @@ Answer: The result of 20 + (2 * 4) is 28.
 The result of 20 + (2 * 4) is 28.
 ```
 
-As you can see, the agent picks the correct tools one after the other and combines the answers to give the final result.
+As you can see, the agent picks the correct tools one after the other and combines the answers to give the final result. Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/1_basic_agent.py) to see what the final code should look like.
 
 Congratulations! You've built the most basic kind of agent. Next you can find out how to use [local models](./local_models.md) or skip to [adding RAG to your agent](./rag_agent.md).

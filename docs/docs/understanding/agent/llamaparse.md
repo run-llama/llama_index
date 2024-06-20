@@ -46,4 +46,6 @@ We do!
 $20 billion was allocated to a tax credit to promote investment in green technologies in the 2023 Canadian federal budget.
 ```
 
+You can always check [the repo](https://github.com/run-llama/python-agents-tutorial/blob/main/4_llamaparse.py) to what this code looks like.
+
 As you can see, parsing quality makes a big difference to what the LLM can understand, even for relatively simple questions. Next let's see how [memory](./memory.md) can help us with more complex questions.
