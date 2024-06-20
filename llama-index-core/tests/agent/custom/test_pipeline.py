@@ -15,9 +15,7 @@ from llama_index.core.query_pipeline.components.agent import (
     AgentInputComponent,
     CustomAgentComponent,
 )
-from llama_index.core.query_pipeline.components.stateful import (
-    StatefulFnComponent
-)
+from llama_index.core.query_pipeline.components.stateful import StatefulFnComponent
 
 
 def mock_fn(a: str) -> str:
@@ -42,12 +40,16 @@ def mock_agent_output_fn(
     is_done = state["count"] >= state["max_count"]
     return AgentChatResponse(response=str(output)), is_done
 
+
 def mock_agent_input_fn_stateful(state: Dict[str, Any]) -> str:
     """Mock agent input function (for StatefulFnComponent)."""
     d = mock_agent_input_fn(state["task"], state["step_state"])
     return d["a"]
 
-def mock_agent_output_fn_stateful(state: Dict[str, Any], output: str) -> Tuple[AgentChatResponse, bool]:
+
+def mock_agent_output_fn_stateful(
+    state: Dict[str, Any], output: str
+) -> Tuple[AgentChatResponse, bool]:
     """Mock agent output function (for StatefulFnComponent)."""
     return mock_agent_output_fn(state["task"], state["step_state"], output)
 

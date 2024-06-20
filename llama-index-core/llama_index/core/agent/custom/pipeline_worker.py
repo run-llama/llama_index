@@ -184,8 +184,19 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         """Run step."""
         self.preprocess(task, step)
 
-        # agent_response, is_done = self.pipeline.run(state=step.step_state, task=task)
-        agent_response, is_done = self.pipeline.run()
+        # HACK: do a try/except for now. Fine since old agent components are deprecated
+        try:
+            self.agent_input_component
+            uses_deprecated = True
+        except ValueError:
+            uses_deprecated = False
+
+        if uses_deprecated:
+            agent_response, is_done = self.pipeline.run(
+                state=step.step_state, task=task
+            )
+        else:
+            agent_response, is_done = self.pipeline.run()
         response = self._get_task_step_response(agent_response, step, is_done)
         # sync step state with task state
         task.extra_state.update(step.step_state)
@@ -198,10 +209,19 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         """Run step (async)."""
         self.preprocess(task, step)
 
-        # agent_response, is_done = await self.pipeline.arun(
-        #     state=step.step_state, task=task
-        # )
-        agent_response, is_done = await self.pipeline.arun()
+        # HACK: do a try/except for now. Fine since old agent components are deprecated
+        try:
+            self.agent_input_component
+            uses_deprecated = True
+        except ValueError:
+            uses_deprecated = False
+
+        if uses_deprecated:
+            agent_response, is_done = await self.pipeline.arun(
+                state=step.step_state, task=task
+            )
+        else:
+            agent_response, is_done = await self.pipeline.arun()
         response = self._get_task_step_response(agent_response, step, is_done)
         task.extra_state.update(step.step_state)
         return response
