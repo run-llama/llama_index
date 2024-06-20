@@ -53,8 +53,15 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
 
     Barebones agent worker that takes in a query pipeline.
 
-    Assumes that the first component in the query pipeline is an
-    `AgentInputComponent` and last is `AgentFnComponent`.
+    **Default Workflow**: The default workflow assumes that you compose
+    a query pipeline with `StatefulFnComponent` objects. This allows you to store, update
+    and retrieve state throughout the executions of the query pipeline by the agent.
+
+    The task and step state of the agent are stored in this `state` variable via a special key.
+    Of course you can choose to store other variables in this state as well.
+
+    **Deprecated Workflow**: The deprecated workflow assumes that the first component in the
+    query pipeline is an `AgentInputComponent` and last is `AgentFnComponent`.
 
     Args:
         pipeline (QueryPipeline): Query pipeline
@@ -63,6 +70,8 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
 
     pipeline: QueryPipeline = Field(..., description="Query pipeline")
     callback_manager: CallbackManager = Field(..., exclude=True)
+    task_key: str = Field("task", description="Key to store task in state")
+    step_state_key: str = Field("step_state", description="Key to store step in state")
 
     class Config:
         arbitrary_types_allowed = True
@@ -71,6 +80,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         self,
         pipeline: QueryPipeline,
         callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize."""
         if callback_manager is not None:
@@ -81,14 +91,19 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         super().__init__(
             pipeline=pipeline,
             callback_manager=callback_manager,
+            **kwargs,
         )
         # validate query pipeline
-        self.agent_input_component
+        # self.agent_input_component
         self.agent_components
 
     @property
     def agent_input_component(self) -> AgentInputComponent:
-        """Get agent input component."""
+        """Get agent input component.
+
+        NOTE: This is deprecated and will be removed in the future.
+
+        """
         root_key = self.pipeline.get_root_keys()[0]
         if not isinstance(self.pipeline.module_dict[root_key], AgentInputComponent):
             raise ValueError(
@@ -102,6 +117,26 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     def agent_components(self) -> List[AgentFnComponent]:
         """Get agent output component."""
         return _get_agent_components(self.pipeline)
+
+    def preprocess(self, task: Task, step: TaskStep) -> None:
+        """Preprocessing flow.
+
+        This runs preprocessing to propagate the task and step as variables
+        to relevant components in the query pipeline.
+
+        Contains deprecated flow of updating agent components.
+        But also contains main flow of updating StatefulFnComponent components.
+
+        """
+        # NOTE: this is deprecated
+        # partial agent output component with task and step
+        for agent_fn_component in self.agent_components:
+            agent_fn_component.partial(task=task, state=step.step_state)
+
+        # update stateful components
+        self.pipeline.update_state(
+            {self.task_key: task, self.step_state_key: step.step_state}
+        )
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
@@ -147,11 +182,10 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
-        # partial agent output component with task and step
-        for agent_fn_component in self.agent_components:
-            agent_fn_component.partial(task=task, state=step.step_state)
+        self.preprocess(task, step)
 
-        agent_response, is_done = self.pipeline.run(state=step.step_state, task=task)
+        # agent_response, is_done = self.pipeline.run(state=step.step_state, task=task)
+        agent_response, is_done = self.pipeline.run()
         response = self._get_task_step_response(agent_response, step, is_done)
         # sync step state with task state
         task.extra_state.update(step.step_state)
@@ -162,13 +196,12 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
-        # partial agent output component with task and step
-        for agent_fn_component in self.agent_components:
-            agent_fn_component.partial(task=task, state=step.step_state)
+        self.preprocess(task, step)
 
-        agent_response, is_done = await self.pipeline.arun(
-            state=step.step_state, task=task
-        )
+        # agent_response, is_done = await self.pipeline.arun(
+        #     state=step.step_state, task=task
+        # )
+        agent_response, is_done = await self.pipeline.arun()
         response = self._get_task_step_response(agent_response, step, is_done)
         task.extra_state.update(step.step_state)
         return response

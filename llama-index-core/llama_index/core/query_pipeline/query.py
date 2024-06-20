@@ -182,7 +182,11 @@ def update_stateful_components(
 def get_and_update_stateful_components(
     query_component: QueryComponent, state: Dict[str, Any]
 ) -> List[BaseStatefulComponent]:
-    """Get and update stateful components."""
+    """Get and update stateful components.
+
+    Assign all stateful components in the query component with the state.
+
+    """
     stateful_components = get_stateful_components(query_component)
     update_stateful_components(stateful_components, state)
     return stateful_components
@@ -245,8 +249,13 @@ class QueryPipeline(QueryComponent):
         get_and_update_stateful_components(self, state)
 
     def set_state(self, state: Dict[str, Any]) -> None:
-        """Update state."""
+        """Set state."""
         self.state = state
+        get_and_update_stateful_components(self, state)
+
+    def update_state(self, state: Dict[str, Any]) -> None:
+        """Update state."""
+        self.state.update(state)
         get_and_update_stateful_components(self, state)
 
     def reset_state(self) -> None:
@@ -328,6 +337,7 @@ class QueryPipeline(QueryComponent):
 
         self.module_dict[module_key] = cast(QueryComponent, module)
         self.dag.add_node(module_key)
+        # propagate state to new modules added
         # TODO: there's more efficient ways to do this
         get_and_update_stateful_components(self, self.state)
 
