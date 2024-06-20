@@ -38,10 +38,10 @@ class TogglReader(BaseReader):
             out_format (TogglOutFormat): The output format.
         """
         return self.loop.run_until_complete(
-            self._load_data(workspace_id, project_id, start_date, end_date, out_format)
+            self.aload_data(workspace_id, project_id, start_date, end_date, out_format)
         )
 
-    async def _load_data(
+    async def aload_data(
         self,
         workspace_id: str,
         project_id: str,
