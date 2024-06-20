@@ -27,7 +27,6 @@ class TogglTrackItem(BaseModel):
     project_color: str
     project_hex_color: str
     task: Optional[str]
-    billable: Optional[str]
     is_billable: bool
     cur: Optional[str]
     tags: List[str]
