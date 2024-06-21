@@ -22,6 +22,19 @@ You can then inspect the files at `./mixture_of_agents_pack` and use them as a t
 
 ## Code Usage
 
+You can use LlamaPack in the following ways:
+
+1. Install the LlamaPack.
+2. Download the LlamaPack.
+
+### 1. Install the LlamaPack:
+
+```bash
+pip install llama-index-packs-mixture-of-agents
+```
+
+### 2. Download LlamaPack:
+
 You can download the pack to a the `./mixture_of_agents_pack` directory:
 
 ```python
@@ -31,6 +44,15 @@ from llama_index.core.llama_pack import download_llama_pack
 MixtureOfAgentsPack = download_llama_pack(
     "MixtureOfAgentsPack", "./mixture_of_agents_pack"
 )
+```
+
+Once installed or downloaded, you can use the LlamaPack as follows:
+
+```python
+# Necessary for async operations in Jupyter notebooks
+import nest_asyncio
+
+nest_asyncio.apply()
 
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.mistralai import MistralAI
