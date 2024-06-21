@@ -85,7 +85,24 @@ class SQLRetriever(BaseRetriever):
             query_bundle = str_or_query_bundle
         raw_response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
         if self._return_raw:
-            return [NodeWithScore(node=TextNode(text=raw_response_str))], metadata
+            return [
+                NodeWithScore(
+                    node=TextNode(
+                        text=raw_response_str,
+                        metadata={
+                            "sql_query": query_bundle.query_str,
+                            "result": metadata["result"],
+                            "col_keys": metadata["col_keys"],
+                        },
+                        excluded_embed_metadata_keys=[
+                            "sql_query",
+                            "result",
+                            "col_keys",
+                        ],
+                        excluded_llm_metadata_keys=["sql_query", "result", "col_keys"],
+                    )
+                )
+            ], metadata
         else:
             # return formatted
             results = metadata["result"]

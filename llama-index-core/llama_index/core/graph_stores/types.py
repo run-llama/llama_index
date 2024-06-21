@@ -111,6 +111,18 @@ class LabelledPropertyGraph(BaseModel):
         default_factory=set, description="List of triplets (subject, relation, object)."
     )
 
+    def _get_relation_key(
+        self,
+        relation: Optional[Relation] = None,
+        subj_id: Optional[str] = None,
+        obj_id: Optional[str] = None,
+        rel_id: Optional[str] = None,
+    ) -> str:
+        """Get relation id."""
+        if relation:
+            return f"{relation.source_id}_{relation.label}_{relation.target_id}"
+        return f"{subj_id}_{rel_id}_{obj_id}"
+
     def get_all_nodes(self) -> List[LabelledNode]:
         """Get all entities."""
         return list(self.nodes.values())
@@ -122,7 +134,13 @@ class LabelledPropertyGraph(BaseModel):
     def get_triplets(self) -> List[Triplet]:
         """Get all triplets."""
         return [
-            (self.nodes[subj], self.relations[rel], self.nodes[obj])
+            (
+                self.nodes[subj],
+                self.relations[
+                    self._get_relation_key(obj_id=obj, subj_id=subj, rel_id=rel)
+                ],
+                self.nodes[obj],
+            )
             for subj, rel, obj in self.triplets
         ]
 
@@ -135,7 +153,7 @@ class LabelledPropertyGraph(BaseModel):
         self.triplets.add((subj.id, rel.id, obj.id))
         self.nodes[subj.id] = subj
         self.nodes[obj.id] = obj
-        self.relations[rel.id] = rel
+        self.relations[self._get_relation_key(relation=rel)] = rel
 
     def add_node(self, node: LabelledNode) -> None:
         """Add a node."""
@@ -163,8 +181,10 @@ class LabelledPropertyGraph(BaseModel):
             del self.nodes[subj.id]
         if obj.id in self.nodes:
             del self.nodes[obj.id]
-        if rel.id in self.relations:
-            del self.relations[rel.id]
+
+        rel_key = self._get_relation_key(relation=rel)
+        if rel_key in self.relations:
+            del self.relations[rel_key]
 
     def delete_node(self, node: LabelledNode) -> None:
         """Delete a node."""
@@ -173,8 +193,9 @@ class LabelledPropertyGraph(BaseModel):
 
     def delete_relation(self, relation: Relation) -> None:
         """Delete a relation."""
-        if relation.id in self.relations:
-            del self.relations[relation.id]
+        rel_key = self._get_relation_key(relation=relation)
+        if rel_key in self.relations:
+            del self.relations[rel_key]
 
 
 @runtime_checkable
