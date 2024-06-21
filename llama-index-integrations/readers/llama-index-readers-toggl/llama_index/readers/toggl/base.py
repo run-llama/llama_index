@@ -69,12 +69,32 @@ class TogglReader(BaseReader):
                 text = item.model_dump_json()
             elif out_format == TogglOutFormat.markdown:
                 text = f"""# {item.description}
-                    **Start:** {item.start}
-                    **End:** {item.end}
-                    **Duration:** {item.dur}
+                    **Start:** {item.start:%Y-%m-%d %H:%M:%S%z}
+                    **End:** {item.end:%Y-%m-%d %H:%M:%S%z}
+                    **Duration:** {self.milliseconds_to_postgresql_interval(item.dur)}
                     **Tags:** {",".join(item.tags)}
                 """
             doc = Document(text=text)
             doc.metadata = {**doc.metadata, **item.dict()}
             items.append(doc)
         return items
+
+    def milliseconds_to_postgresql_interval(self, milliseconds):
+        seconds, milliseconds = divmod(milliseconds, 1000)
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+
+        interval = ""
+        if days > 0:
+            interval += f"{days}d"
+        if hours > 0:
+            interval += f"{hours}h"
+        if minutes > 0:
+            interval += f"{minutes}m"
+        if seconds > 0 or milliseconds > 0:
+            interval += f"{seconds}s"
+        if milliseconds > 0:
+            interval += f"{milliseconds}ms"
+
+        return interval
