@@ -1856,7 +1856,7 @@ plugins:
             - ../llama-index-integrations/question_gen/llama-index-question-gen-guidance
             - ../llama-index-integrations/question_gen/llama-index-question-gen-openai
             - ../llama-index-integrations/llms/llama-index-llms-palm
-            - ../llama-index-integrations/llms/llama-index-llms-watsonx
+            - ../llama-index-integrations/llms/llama-index-llms-ibm-watsonx
             - ../llama-index-integrations/llms/llama-index-llms-cohere
             - ../llama-index-integrations/llms/llama-index-llms-nvidia-triton
             - ../llama-index-integrations/llms/llama-index-llms-ai21
@@ -2018,6 +2018,7 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-mixedbreadai-rerank
             - ../llama-index-integrations/readers/llama-index-readers-pdf-marker
             - ../llama-index-integrations/llms/llama-index-llms-you
+            - ../llama-index-integrations/llms/llama-index-llms-watsonx
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
