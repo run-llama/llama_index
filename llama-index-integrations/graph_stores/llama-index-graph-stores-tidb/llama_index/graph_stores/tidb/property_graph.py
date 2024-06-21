@@ -388,7 +388,12 @@ class TiDBPropertyGraphStore(PropertyGraphStore):
             if properties:
                 for key, value in properties.items():
                     relation_stmt = relation_stmt.filter(
-                        self._relation_model.properties[key].astext == value
+                        self._relation_model.source.has(
+                            self._node_model.properties[key] == value
+                        )
+                        | self._relation_model.target.has(
+                            self._node_model.properties[key] == value
+                        )
                     )
             session.execute(relation_stmt)
 
@@ -403,7 +408,7 @@ class TiDBPropertyGraphStore(PropertyGraphStore):
             if properties:
                 for key, value in properties.items():
                     entity_stmt = entity_stmt.filter(
-                        self._node_model.properties[key].astext == value
+                        self._node_model.properties[key] == value
                     )
             session.execute(entity_stmt)
             session.commit()

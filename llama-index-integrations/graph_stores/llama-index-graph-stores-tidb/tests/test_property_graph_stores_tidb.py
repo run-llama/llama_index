@@ -40,13 +40,24 @@ class TestTiDBPropertyGraphStore(TestCase):
         assert len(g.get_triplets(properties={"p1": "v1"})) == 1
         assert len(g.get_triplets(properties={"p1": "v2"})) == 0
 
-    def test_delete(self):
+    def test_delete_by_entity_names(self):
         g = get_store()
 
         g.upsert_nodes([self.e1, self.e2])
         g.upsert_relations([self.r])
         assert len(g.get_triplets(entity_names=["e1"])) == 1
         g.delete(entity_names=["e1"])
+        assert len(g.get_triplets(entity_names=["e1"])) == 0
+
+    def test_delete_by_entity_properties(self):
+        g = get_store()
+
+        g.upsert_nodes([self.e1, self.e2])
+        g.upsert_relations([self.r])
+        assert len(g.get_triplets(entity_names=["e1"])) == 1
+        g.delete(properties={"p1": "not exist"})
+        assert len(g.get_triplets(entity_names=["e1"])) == 1
+        g.delete(properties={"p1": "v1"})
         assert len(g.get_triplets(entity_names=["e1"])) == 0
 
     def test_get(self):
