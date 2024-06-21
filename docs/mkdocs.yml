@@ -133,6 +133,7 @@ nav:
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
+          - ./examples/cookbooks/crewai_llamaindex.ipynb
           - ./examples/cookbooks/llama3_cookbook.ipynb
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
@@ -180,7 +181,6 @@ nav:
           - ./examples/data_connectors/simple_directory_reader.ipynb
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
-          - ./examples/data_connectors/upstage.ipynb
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
@@ -785,6 +785,7 @@ nav:
           - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
+          - ./api_reference/embeddings/ibm.md
           - ./api_reference/embeddings/ibm_watsonx.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
@@ -871,6 +872,7 @@ nav:
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
+          - ./api_reference/llms/ibm.md
           - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
@@ -916,6 +918,7 @@ nav:
           - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
+          - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
           - ./api_reference/llms/you.md
       - Llama Datasets:
@@ -951,6 +954,7 @@ nav:
           - ./api_reference/packs/llama_dataset_metadata.md
           - ./api_reference/packs/llama_guard_moderator.md
           - ./api_reference/packs/llava_completion.md
+          - ./api_reference/packs/mixture_of_agents.md
           - ./api_reference/packs/multi_document_agents.md
           - ./api_reference/packs/multi_tenancy_rag.md
           - ./api_reference/packs/multidoc_autoretrieval.md
