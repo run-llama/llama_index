@@ -162,6 +162,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         if verbose:
             print("Done!")
 
+        # we have to wait for pipeline ingestion because retrieval only works when
+        # the pipeline status is success
         self._wait_for_pipeline_ingestion(verbose, raise_on_error)
 
     def _get_pipeline_id(self) -> str:
