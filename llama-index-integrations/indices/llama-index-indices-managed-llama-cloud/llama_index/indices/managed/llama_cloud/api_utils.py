@@ -1,13 +1,13 @@
 from typing import List, Optional
 
-from llama_index_client import (
+from llama_cloud import (
     ConfigurableTransformationNames,
     ConfiguredTransformationItem,
     PipelineCreate,
     PipelineType,
     ProjectCreate,
 )
-from llama_index_client.client import PlatformApi
+from llama_cloud.client import LlamaCloud
 
 from llama_index.core.constants import (
     DEFAULT_PROJECT_NAME,
@@ -32,7 +32,7 @@ def default_transformations() -> List[TransformComponent]:
 
 def get_pipeline_create(
     pipeline_name: str,
-    client: PlatformApi,
+    client: LlamaCloud,
     pipeline_type: PipelineType,
     project_name: str = DEFAULT_PROJECT_NAME,
     transformations: Optional[List[TransformComponent]] = None,

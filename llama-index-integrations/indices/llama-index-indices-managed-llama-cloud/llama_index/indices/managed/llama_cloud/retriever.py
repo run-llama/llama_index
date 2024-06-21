@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
-from llama_index_client import TextNodeWithScore
-from llama_index_client.resources.pipelines.client import OMIT, PipelineType
+from llama_cloud import TextNodeWithScore
+from llama_cloud.resources.pipelines.client import OMIT, PipelineType
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_PROJECT_NAME

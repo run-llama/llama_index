@@ -9,7 +9,7 @@ import os
 import time
 from typing import Any, List, Optional, Sequence, Type
 
-from llama_index_client import (
+from llama_cloud import (
     PipelineType,
     ProjectCreate,
     ManagedIngestionStatus,
@@ -23,7 +23,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_APP_URL, DEFAULT_PROJECT_NAME
 from llama_index.core.indices.managed.base import BaseManagedIndex
 
-from llama_index_client.core.api_error import ApiError
+from llama_cloud.core.api_error import ApiError
 from llama_index.core.ingestion.api_utils import (
     get_aclient,
     get_client,

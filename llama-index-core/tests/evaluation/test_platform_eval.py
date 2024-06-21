@@ -3,7 +3,7 @@ import sys
 
 import pytest
 from llama_index.core.evaluation.eval_utils import upload_eval_dataset
-from llama_index_client.client import PlatformApi
+from llama_cloud.client import LlamaCloud
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
@@ -22,7 +22,7 @@ def test_upload_eval_dataset() -> None:
         overwrite=True,
     )
 
-    client = PlatformApi(base_url=base_url, token=api_key)
+    client = LlamaCloud(base_url=base_url, token=api_key)
     eval_dataset = client.evals.get_dataset(dataset_id=eval_dataset_id)
     assert eval_dataset.name == "test_dataset" + python_version
 

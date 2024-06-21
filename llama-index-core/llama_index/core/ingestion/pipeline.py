@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
-from llama_index_client import (
+from llama_cloud import (
     ConfigurableDataSourceNames,
     ConfigurableTransformationNames,
 )

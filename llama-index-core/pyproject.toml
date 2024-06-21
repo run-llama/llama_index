@@ -68,7 +68,7 @@ dirtyjson = "^1.0.8"
 tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
-llamaindex-py-client = "^0.1.19"
+llama-cloud = "^0.0.6"
 wrapt = "*"
 
 [tool.poetry.group.dev.dependencies]

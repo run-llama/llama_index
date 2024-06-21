@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from llama_index_client import ProjectCreate
-from llama_index_client.types.eval_question_create import EvalQuestionCreate
+from llama_cloud import ProjectCreate
+from llama_cloud.types.eval_question_create import EvalQuestionCreate
 
 from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
