@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.llms.llm import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.objects.table_node_mapping import SQLTableSchema
@@ -84,7 +85,24 @@ class SQLRetriever(BaseRetriever):
             query_bundle = str_or_query_bundle
         raw_response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
         if self._return_raw:
-            return [NodeWithScore(node=TextNode(text=raw_response_str))], metadata
+            return [
+                NodeWithScore(
+                    node=TextNode(
+                        text=raw_response_str,
+                        metadata={
+                            "sql_query": query_bundle.query_str,
+                            "result": metadata["result"],
+                            "col_keys": metadata["col_keys"],
+                        },
+                        excluded_embed_metadata_keys=[
+                            "sql_query",
+                            "result",
+                            "col_keys",
+                        ],
+                        excluded_llm_metadata_keys=["sql_query", "result", "col_keys"],
+                    )
+                )
+            ], metadata
         else:
             # return formatted
             results = metadata["result"]
@@ -109,7 +127,7 @@ class SQLParserMode(str, Enum):
     PGVECTOR = "pgvector"
 
 
-class BaseSQLParser(ABC):
+class BaseSQLParser(DispatcherSpanMixin, ABC):
     """Base SQL Parser."""
 
     @abstractmethod

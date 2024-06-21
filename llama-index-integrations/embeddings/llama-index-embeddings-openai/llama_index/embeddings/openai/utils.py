@@ -57,9 +57,8 @@ def create_retry_decorator(
         retry=(
             retry_if_exception_type(
                 (
-                    openai.APITimeoutError,
-                    openai.APIError,
                     openai.APIConnectionError,
+                    openai.APITimeoutError,
                     openai.RateLimitError,
                     openai.InternalServerError,
                 )

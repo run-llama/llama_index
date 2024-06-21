@@ -11,6 +11,7 @@ try:
         create_model,
         root_validator,
         validator,
+        parse_obj_as,
     )
     from pydantic.v1.error_wrappers import ValidationError
     from pydantic.v1.fields import FieldInfo
@@ -28,6 +29,7 @@ except ImportError:
         create_model,
         root_validator,
         validator,
+        parse_obj_as,
     )
     from pydantic.error_wrappers import ValidationError
     from pydantic.fields import FieldInfo
@@ -48,4 +50,5 @@ __all__ = [
     "ValidationError",
     "GenericModel",
     "BaseConfig",
+    "parse_obj_as",
 ]

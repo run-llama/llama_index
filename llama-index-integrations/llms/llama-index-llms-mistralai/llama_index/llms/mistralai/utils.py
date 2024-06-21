@@ -11,12 +11,19 @@ MISTRALAI_MODELS: Dict[str, int] = {
     "mistral-small-latest": 32000,
     "mistral-medium-latest": 32000,
     "mistral-large-latest": 32000,
+    "codestral-latest": 32000,
 }
 
 MISTRALAI_FUNCTION_CALLING_MODELS = ("mistral-large-latest", "open-mixtral-8x22b")
 
+MISTRALAI_CODE_MODELS = "codestral-latest"
+
 
 def mistralai_modelname_to_contextsize(modelname: str) -> int:
+    # handling finetuned models
+    if modelname.startswith("ft:"):
+        modelname = modelname.split(":")[1]
+
     if modelname not in MISTRALAI_MODELS:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid MistralAI model name."
@@ -28,3 +35,7 @@ def mistralai_modelname_to_contextsize(modelname: str) -> int:
 
 def is_mistralai_function_calling_model(modelname: str) -> bool:
     return modelname in MISTRALAI_FUNCTION_CALLING_MODELS
+
+
+def is_mistralai_code_model(modelname: str) -> bool:
+    return modelname in MISTRALAI_CODE_MODELS

@@ -7,17 +7,29 @@ Welcome to the beginning of Understanding LlamaIndex. This is a series of short,
 !!! tip
     If you've already read our [high-level concepts](../getting_started/concepts.md) page you'll recognize several of these steps.
 
-There are a series of key steps involved in building any LLM-powered application, whether it's answering questions about your data, creating a chatbot, or an autonomous agent. Throughout our documentation, you'll notice sections are arranged roughly in the order you'll perform these steps while building your app. You'll learn about:
+This tutorial has two main parts: **Building a RAG pipeline** and **Building an agent**, with some smaller sections before and after. Here's what to expect:
 
-- **[Using LLMs](./using_llms/using_llms.md)**: whether it's OpenAI or any number of hosted LLMs or a locally-run model of your own, LLMs are used at every step of the way, from indexing and storing to querying and parsing your data. LlamaIndex comes with a huge number of reliable, tested prompts and we'll also show you how to customize your own.
+- **[Using LLMs](./using_llms/using_llms.md)**: hit the ground running by getting started working with LLMs. We'll show you how to use any of our [dozens of supported LLMs](../module_guides/models/llms/modules/), whether via remote API calls or running locally on your machine.
 
-- **[Loading](./loading/loading.md)**: getting your data from wherever it lives, whether that's unstructured text, PDFs, databases, or APIs to other applications. LlamaIndex has hundreds of connectors to every data source over at [LlamaHub](https://llamahub.ai/).
+- **Building a RAG pipeline**: Retrieval-Augmented Generation (RAG) is a key technique for getting your data into an LLM, and a component of more sophisticated agentic systems. We'll show you how to build a full-featured RAG pipeline that can answer questions about your data. This includes:
 
-- **[Indexing](./indexing/indexing.md)**: once you've got your data there are an infinite number of ways to structure access to that data to ensure your applications is always working with the most relevant data. LlamaIndex has a huge number of these strategies built-in and can help you select the best ones.
+    - **[Loading & Ingestion](./loading/loading.md)**: Getting your data from wherever it lives, whether that's unstructured text, PDFs, databases, or APIs to other applications. LlamaIndex has hundreds of connectors to every data source over at [LlamaHub](https://llamahub.ai/).
 
-- **[Storing](./storing/storing.md)**: you will probably find it more efficient to store your data in indexed form, or pre-processed summaries provided by an LLM, often in a specialized database known as a `Vector Store` (see below). You can also store your indexes, metadata and more.
+    - **[Indexing and Embedding](./indexing/indexing.md)**: Once you've got your data there are an infinite number of ways to structure access to that data to ensure your applications is always working with the most relevant data. LlamaIndex has a huge number of these strategies built-in and can help you select the best ones.
 
-- **[Querying](./querying/querying.md)**: every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
+    - **[Storing](./storing/storing.md)**: You will probably find it more efficient to store your data in indexed form, or pre-processed summaries provided by an LLM, often in a specialized database known as a `Vector Store` (see below). You can also store your indexes, metadata and more.
+
+    - **[Querying](./querying/querying.md)**: Every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
+
+- **Building an agent**: agents are LLM-powered knowledge workers that can interact with the world via a set of tools. Those tools can be RAG engines such as you learned how to build in the previous section, or any arbitrary code. This tutorial includes:
+
+    - **[Building a basic agent](./agent/basic_agent.md)**: We show you how to build a simple agent that can interact with the world via a set of tools.
+
+    - **[Using local models with agents](./agent/local_models.md)**: Agents can be built to use local models, which can be important for performance or privacy reasons.
+
+    - **[Adding RAG to an agent](./agent/rag_agent.md)**: The RAG pipelines you built in the previous tutorial can be used as a tool by an agent, giving your agent powerful information-retrieval capabilities.
+
+    - **[Adding other tools](./agent/tools.md)**: Let's add more sophisticated tools to your agent, such as API integrations.
 
 - **[Putting it all together](./putting_it_all_together/index.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
 

@@ -13,6 +13,7 @@ from llama_index.core.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle
@@ -186,7 +187,7 @@ class Task(BaseModel):
     )
 
 
-class BaseAgentWorker(PromptMixin):
+class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     """Base agent worker."""
 
     class Config:

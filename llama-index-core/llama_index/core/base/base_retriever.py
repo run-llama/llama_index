@@ -30,6 +30,7 @@ from llama_index.core.schema import (
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.retrieval import (
     RetrievalEndEvent,
     RetrievalStartEvent,
@@ -39,7 +40,7 @@ import llama_index.core.instrumentation as instrument
 dispatcher = instrument.get_dispatcher(__name__)
 
 
-class BaseRetriever(ChainableMixin, PromptMixin):
+class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Base retriever."""
 
     def __init__(
@@ -224,10 +225,8 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 a QueryBundle object.
 
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
         self._check_callback_manager()
-        dispatch_event(
+        dispatcher.event(
             RetrievalStartEvent(
                 str_or_query_bundle=str_or_query_bundle,
             )
@@ -246,7 +245,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        dispatch_event(
+        dispatcher.event(
             RetrievalEndEvent(
                 str_or_query_bundle=str_or_query_bundle,
                 nodes=nodes,
@@ -257,9 +256,8 @@ class BaseRetriever(ChainableMixin, PromptMixin):
     @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
-        dispatch_event = dispatcher.get_dispatch_event()
 
-        dispatch_event(
+        dispatcher.event(
             RetrievalStartEvent(
                 str_or_query_bundle=str_or_query_bundle,
             )
@@ -280,7 +278,7 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-        dispatch_event(
+        dispatcher.event(
             RetrievalEndEvent(
                 str_or_query_bundle=str_or_query_bundle,
                 nodes=nodes,

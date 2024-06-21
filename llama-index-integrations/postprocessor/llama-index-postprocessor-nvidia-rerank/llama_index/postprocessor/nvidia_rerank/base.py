@@ -11,12 +11,19 @@ from llama_index.core.instrumentation.events.rerank import (
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 import requests
-
+import warnings
+from deprecated import deprecated
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 
 DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
-DEFAULT_BASE_URL = "https://ai.api.nvidia.com/v1"
+BASE_URL = "https://ai.api.nvidia.com/v1"
+
+MODEL_ENDPOINT_MAP = {
+    DEFAULT_MODEL: BASE_URL,
+}
+
+KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
 
 dispatcher = get_dispatcher(__name__)
 
@@ -45,35 +52,71 @@ class NVIDIARerank(BaseNodePostprocessor):
         ge=1,
         description="The maximum batch size supported by the inference server.",
     )
-    _api_key: str = PrivateAttr("API_KEY_NOT_PROVIDED")  # TODO: should be SecretStr
+    _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
-    _base_url: str = PrivateAttr(DEFAULT_BASE_URL)
+    _is_hosted: bool = PrivateAttr(True)
+    _base_url: str = PrivateAttr(BASE_URL)
 
     def _set_api_key(self, nvidia_api_key: str = None, api_key: str = None) -> None:
         self._api_key = get_from_param_or_env(
             "api_key",
             nvidia_api_key or api_key,
             "NVIDIA_API_KEY",
-            "API_KEY_NOT_PROVIDED",
+            "NO_API_KEY_PROVIDED",
         )
 
     def __init__(
         self,
+        model: str = DEFAULT_MODEL,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
         **kwargs: Any,
     ):
-        super().__init__(**kwargs)
+        """
+        Initialize a NVIDIARerank instance.
 
-        self._set_api_key(nvidia_api_key, api_key)
+        This class provides access to a NVIDIA NIM for reranking. By default, it connects to a hosted NIM, but can be configured to connect to an on-premises NIM using the `base_url` parameter. An API key is required for hosted NIM.
+
+        Args:
+            model (str): The model to use for reranking.
+            nvidia_api_key (str, optional): The NVIDIA API key. Defaults to None.
+            api_key (str, optional): The API key. Defaults to None.
+            base_url (str, optional): The base URL of the on-premises NIM. Defaults to None.
+            **kwargs: Additional keyword arguments.
+
+        API Key:
+        - The recommended way to provide the API key is through the `NVIDIA_API_KEY` environment variable.
+        """
+        super().__init__(model=model, **kwargs)
+
+        self._base_url = base_url or MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+
+        self._api_key = get_from_param_or_env(
+            "api_key",
+            nvidia_api_key or api_key,
+            "NVIDIA_API_KEY",
+            "NO_API_KEY_PROVIDED",
+        )
+
+        self._is_hosted = self._base_url in KNOWN_URLS
+
+        if self._is_hosted and self._api_key == "NO_API_KEY_PROVIDED":
+            warnings.warn(
+                "An API key is required for hosted NIM. This will become an error in 0.2.0."
+            )
 
     @property
     def available_models(self) -> List[Model]:
         """Get available models."""
-        # there is one model on ai.nvidia.com and available as a local NIM
-        ids = [DEFAULT_MODEL]
+        # all available models are in the map
+        ids = MODEL_ENDPOINT_MAP.keys()
         return [Model(id=id) for id in ids]
 
+    @deprecated(
+        version="0.1.2",
+        reason="Will be removed in 0.2. Construct with `base_url` instead.",
+    )
     def mode(
         self,
         mode: Literal["nvidia", "nim"] = "nvidia",
@@ -83,29 +126,20 @@ class NVIDIARerank(BaseNodePostprocessor):
         api_key: Optional[str] = None,
     ) -> "NVIDIARerank":
         """
-        Change the mode.
-
-        There are two modes, "nvidia" and "nim". The "nvidia" mode is the default mode
-        and is used to interact with hosted NVIDIA NIMs. The "nim" mode is
-        used to interact with local NVIDIA NIM endpoints, which are typically hosted
-        on-premises.
-
-        For the "nvidia" mode, the "api_key" parameter is available to specify your
-        API key. If not specified, the NVIDIA_API_KEY environment variable will be used.
-
-        For the "nim" mode, the "base_url" is required and "model" is recommended. Set
-        base_url to the url of your NVIDIA NIM endpoint. For instance,
-        "https://localhost:1976/v1", it should end in "/v1". Additionally, the "model"
-        parameter must be set to the name of the model inside the NIM.
+        Deprecated: use NVIDIARerank(base_url=...) instead.
         """
         if isinstance(self, str):
             raise ValueError("Please construct the model before calling mode()")
 
-        if mode == "nim":
+        self._is_hosted = mode == "nvidia"
+
+        if not self._is_hosted:
             if not base_url:
                 raise ValueError("base_url is required for nim mode")
+        else:
+            api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY")
         if not base_url:
-            base_url = DEFAULT_BASE_URL
+            base_url = BASE_URL
 
         self._mode = mode
         if base_url:
@@ -128,7 +162,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         if model:
             self.model = model
         if api_key:
-            self._set_api_key(api_key)
+            self._api_key = api_key
 
         return self
 
@@ -141,8 +175,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        dispatch_event = dispatcher.get_dispatch_event()
-        dispatch_event(
+        dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
                 nodes=nodes,
@@ -191,7 +224,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                 }
                 # the hosted NIM path is different from the local NIM path
                 url = self._base_url
-                if self._mode == "nvidia":
+                if self._is_hosted:
                     url += "/retrieval/nvidia/reranking"
                 else:
                     url += "/ranking"
@@ -231,5 +264,5 @@ class NVIDIARerank(BaseNodePostprocessor):
             results = results[: self.top_n]
             event.on_end(payload={EventPayload.NODES: results})
 
-        dispatch_event(ReRankEndEvent(nodes=results))
+        dispatcher.event(ReRankEndEvent(nodes=results))
         return results

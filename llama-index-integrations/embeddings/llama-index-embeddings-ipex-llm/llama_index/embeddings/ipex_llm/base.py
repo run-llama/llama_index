@@ -11,7 +11,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.utils import get_cache_dir, infer_torch_device
+from llama_index.core.utils import get_cache_dir
 from llama_index.embeddings.ipex_llm.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     BGE_MODELS,
@@ -53,11 +53,16 @@ class IpexLLMEmbedding(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         cache_folder: Optional[str] = None,
         trust_remote_code: bool = False,
-        device: Optional[str] = None,
+        device: str = "cpu",
         callback_manager: Optional[CallbackManager] = None,
         **model_kwargs,
     ):
-        self._device = device or infer_torch_device()
+        if device not in ["cpu", "xpu"] and not device.startswith("xpu:"):
+            raise ValueError(
+                "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
+                f"or 'xpu:<device_id>', but you have: {device}."
+            )
+        self._device = device
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -84,13 +89,11 @@ class IpexLLMEmbedding(BaseEmbedding):
             **model_kwargs,
         )
 
-        if self._device == "cpu":
-            self._model = _optimize_pre(self._model)
-            self._model = _optimize_post(self._model)
-        # TODO: optimize using ipex-llm optimize_model
-        elif self._device == "xpu":
-            self._model = _optimize_pre(self._model)
-            self._model = _optimize_post(self._model)
+        # Apply ipex-llm optimizations
+        self._model = _optimize_pre(self._model)
+        self._model = _optimize_post(self._model)
+        if self._device == "xpu":
+            # TODO: apply `ipex_llm.optimize_model`
             self._model = self._model.half().to(self._device)
 
         if max_length:

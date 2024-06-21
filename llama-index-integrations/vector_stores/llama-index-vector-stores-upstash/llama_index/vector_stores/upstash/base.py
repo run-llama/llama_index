@@ -108,6 +108,8 @@ class UpstashVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
+    namespace: str = ""
+
     batch_size: int
     _index: Index = PrivateAttr()
 
@@ -121,7 +123,12 @@ class UpstashVectorStore(BasePydanticVectorStore):
         return self._index
 
     def __init__(
-        self, url: str, token: str, batch_size: int = DEFAULT_BATCH_SIZE
+        self,
+        url: str,
+        token: str,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        # Upstash uses ("") as the default namespace, if not provided
+        namespace: str = "",
     ) -> None:
         """
         Create a UpstashVectorStore. The index can be created using the Upstash console.
@@ -134,7 +141,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
         Raises:
             ImportError: If the upstash-vector python package is not installed.
         """
-        super().__init__(batch_size=batch_size)
+        super().__init__(batch_size=batch_size, namespace=namespace)
         self._index = Index(url=url, token=token)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
@@ -156,7 +163,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
                 ids.append(node.node_id)
                 vectors.append((node.node_id, node.embedding, metadata_dict))
 
-            self.client.upsert(vectors=vectors)
+            self.client.upsert(vectors=vectors, namespace=self.namespace)
 
         return ids
 
@@ -195,6 +202,7 @@ class UpstashVectorStore(BasePydanticVectorStore):
             include_vectors=True,
             include_metadata=True,
             filter=_to_upstash_filters(query.filters),
+            namespace=self.namespace,
         )
 
         top_k_nodes = []

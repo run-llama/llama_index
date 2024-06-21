@@ -268,7 +268,7 @@ class StructuredPlannerAgent(BasePlanningAgentRunner):
 
         return plan_id
 
-    async def acreate_tasks(self, input: str, **kwargs: Any) -> str:
+    async def acreate_plan(self, input: str, **kwargs: Any) -> str:
         """Create plan (async). Returns the plan_id."""
         tools = self.get_tools(input)
         tools_str = ""

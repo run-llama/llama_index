@@ -11,8 +11,13 @@ def get_api_key(instance: Any) -> str:
     return instance.api_key
 
 
-def test_create_without_api_key(masked_env_var: str) -> None:
-    NVIDIA()
+def test_create_default_url_without_api_key(masked_env_var: str) -> None:
+    with pytest.warns(UserWarning):
+        NVIDIA()
+
+
+def test_create_unknown_url_without_api_key(masked_env_var: str) -> None:
+    NVIDIA(base_url="https://test_url/v1")
 
 
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
@@ -35,7 +40,8 @@ def test_api_key_priority(masked_env_var: str) -> None:
 
 @pytest.mark.integration()
 def test_missing_api_key_error(masked_env_var: str) -> None:
-    client = NVIDIA()
+    with pytest.warns(UserWarning):
+        client = NVIDIA()
     with pytest.raises(Exception) as exc_info:
         client.complete("Hello, world!").text
     message = str(exc_info.value)
@@ -53,6 +59,6 @@ def test_bogus_api_key_error(masked_env_var: str) -> None:
 
 @pytest.mark.integration()
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
-def test_api_key(param: str, masked_env_var: str) -> None:
-    client = NVIDIA(**{param: masked_env_var})
+def test_api_key(chat_model: str, mode: dict, param: str, masked_env_var: str) -> None:
+    client = NVIDIA(model=chat_model, **{**mode, **{param: masked_env_var}})
     assert client.complete("Hello, world!").text

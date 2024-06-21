@@ -30,11 +30,20 @@ class ConfluenceReader(BaseReader):
         oauth2 (dict): Atlassian OAuth 2.0, minimum fields are `client_id` and `token`, where `token` is a dict and must at least contain "access_token" and "token_type".
         base_url (str): 'base_url' for confluence cloud instance, this is suffixed with '/wiki', eg 'https://yoursite.atlassian.com/wiki'
         cloud (bool): connecting to Confluence Cloud or self-hosted instance
+        api_token (str): Confluence API token, see https://confluence.atlassian.com/cloud/api-tokens-938839638.html
+        user_name (str): Confluence username, used for basic auth. Must be used with `password`.
+        password (str): Confluence password, used for basic auth. Must be used with `user_name`.
 
     """
 
     def __init__(
-        self, base_url: str = None, oauth2: Optional[Dict] = None, cloud: bool = True
+        self,
+        base_url: str = None,
+        oauth2: Optional[Dict] = None,
+        cloud: bool = True,
+        api_token: Optional[str] = None,
+        user_name: Optional[str] = None,
+        password: Optional[str] = None,
     ) -> None:
         if base_url is None:
             raise ValueError("Must provide `base_url`")
@@ -52,17 +61,17 @@ class ConfluenceReader(BaseReader):
         if oauth2:
             self.confluence = Confluence(url=base_url, oauth2=oauth2, cloud=cloud)
         else:
-            api_token = os.getenv(CONFLUENCE_API_TOKEN)
+            api_token = api_token or os.getenv(CONFLUENCE_API_TOKEN)
             if api_token is not None:
                 self.confluence = Confluence(url=base_url, token=api_token, cloud=cloud)
             else:
-                user_name = os.getenv(CONFLUENCE_USERNAME)
+                user_name = user_name or os.getenv(CONFLUENCE_USERNAME)
                 if user_name is None:
                     raise ValueError(
                         "Must set environment variable `CONFLUENCE_USERNAME` if oauth,"
                         " oauth2, or `CONFLUENCE_API_TOKEN` are not provided."
                     )
-                password = os.getenv(CONFLUENCE_PASSWORD)
+                password = password or os.getenv(CONFLUENCE_PASSWORD)
                 if password is None:
                     raise ValueError(
                         "Must set environment variable `CONFLUENCE_PASSWORD` if oauth,"

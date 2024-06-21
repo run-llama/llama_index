@@ -2,6 +2,8 @@
 default_language_version:
   python: python3
 
+exclude: "llama-index-integrations/vector_stores/llama-index-vector-stores-wordlift/manager_client/.*"
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -95,7 +97,7 @@ repos:
         args:
           [
             "--ignore-words-list",
-            "astroid,gallary,momento,narl,ot,rouge,nin,gere",
+            "astroid,gallary,momento,narl,ot,rouge,nin,gere,asend",
           ]
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0

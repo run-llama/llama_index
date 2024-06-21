@@ -4,7 +4,7 @@ This tool allows Agents to generate images using OpenAI's DALL-E model. To see m
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/openai_image_generation.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-openai/examples/multimodal_openai_image.ipynb).
 
 ### Usage with Agent
 
