@@ -786,7 +786,6 @@ nav:
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
           - ./api_reference/embeddings/ibm.md
-          - ./api_reference/embeddings/ibm_watsonx.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
           - ./api_reference/embeddings/ipex_llm.md
@@ -873,7 +872,6 @@ nav:
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
           - ./api_reference/llms/ibm.md
-          - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
           - ./api_reference/llms/konko.md
@@ -1856,7 +1854,6 @@ plugins:
             - ../llama-index-integrations/question_gen/llama-index-question-gen-guidance
             - ../llama-index-integrations/question_gen/llama-index-question-gen-openai
             - ../llama-index-integrations/llms/llama-index-llms-palm
-            - ../llama-index-integrations/llms/llama-index-llms-ibm-watsonx
             - ../llama-index-integrations/llms/llama-index-llms-cohere
             - ../llama-index-integrations/llms/llama-index-llms-nvidia-triton
             - ../llama-index-integrations/llms/llama-index-llms-ai21
