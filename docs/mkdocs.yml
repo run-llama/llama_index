@@ -7,6 +7,7 @@ extra_css:
 extra_javascript:
   - javascript/mendablesearch.js
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -30,19 +31,35 @@ nav:
   - Learn:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
-      - Loading & Ingestion:
-          - ./understanding/loading/loading.md
-          - ./understanding/loading/llamahub.md
-      - Indexing & Embedding: ./understanding/indexing/indexing.md
-      - Storing: ./understanding/storing/storing.md
-      - Querying: ./understanding/querying/querying.md
+      - Building a RAG pipeline:
+          - Building a RAG pipeline: ./understanding/rag/index.md
+          - Loading & Ingestion:
+              - ./understanding/loading/loading.md
+              - ./understanding/loading/llamahub.md
+          - Indexing & Embedding: ./understanding/indexing/indexing.md
+          - Storing: ./understanding/storing/storing.md
+          - Querying: ./understanding/querying/querying.md
+      - Building an agent:
+          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Agents with local models: ./understanding/agent/local_models.md
+          - Adding RAG to an agent: ./understanding/agent/rag_agent.md
+          - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
+          - Memory: ./understanding/agent/memory.md
+          - Adding other tools: ./understanding/agent/tools.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
           - Cost Analysis:
               - ./understanding/evaluating/cost_analysis/index.md
               - ./understanding/evaluating/cost_analysis/usage_pattern.md
-      - Putting it all Together: ./understanding/putting_it_all_together/
+      - Putting it all Together:
+          - ./understanding/putting_it_all_together/index.md
+          - Full-stack web application: ./understanding/putting_it_all_together/apps/
+          - Q&A Patterns: ./understanding/putting_it_all_together/q_and_a/
+          - Chatbots: ./understanding/putting_it_all_together/chatbots/
+          - Structured data: ./understanding/putting_it_all_together/structured_data/
+          - Agents: ./understanding/putting_it_all_together/agents.md
+          - Graphs: ./understanding/putting_it_all_together/graphs.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
@@ -201,6 +218,7 @@ nav:
           - ./examples/embeddings/llamafile.ipynb
           - ./examples/embeddings/llm_rails.ipynb
           - ./examples/embeddings/mistralai.ipynb
+          - ./examples/embeddings/mixedbreadai.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
@@ -328,7 +346,6 @@ nav:
           - ./examples/llm/vertex.ipynb
           - ./examples/llm/vicuna.ipynb
           - ./examples/llm/vllm.ipynb
-          - ./examples/llm/watsonx.ipynb
           - ./examples/llm/xinference_local_deployment.ipynb
       - Llama Datasets:
           - ./examples/llama_dataset/downloading_llama_datasets.ipynb
@@ -387,6 +404,7 @@ nav:
           - ./examples/multi_tenancy/multi_tenancy_rag.ipynb
       - Node Parsers & Text Splitters:
           - ./examples/node_parsers/semantic_chunking.ipynb
+          - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/CohereRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
@@ -397,6 +415,7 @@ nav:
           - ./examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
           - ./examples/node_postprocessor/LongContextReorder.ipynb
           - ./examples/node_postprocessor/MetadataReplacementDemo.ipynb
+          - ./examples/node_postprocessor/MixedbreadAIRerank.ipynb
           - ./examples/node_postprocessor/NVIDIARerank.ipynb
           - ./examples/node_postprocessor/OptimizerDemo.ipynb
           - ./examples/node_postprocessor/PII.ipynb
@@ -766,7 +785,6 @@ nav:
           - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
-          - ./api_reference/embeddings/ibm.md
           - ./api_reference/embeddings/ibm_watsonx.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
@@ -776,6 +794,7 @@ nav:
           - ./api_reference/embeddings/llamafile.md
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
+          - ./api_reference/embeddings/mixedbreadai.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/oci_genai.md
@@ -852,7 +871,6 @@ nav:
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
-          - ./api_reference/llms/ibm.md
           - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
@@ -898,8 +916,8 @@ nav:
           - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
-          - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
+          - ./api_reference/llms/you.md
       - Llama Datasets:
           - ./api_reference/llama_dataset/index.md
       - Llama Packs:
@@ -1025,6 +1043,7 @@ nav:
           - ./api_reference/postprocessor/long_context_reorder.md
           - ./api_reference/postprocessor/longllmlingua.md
           - ./api_reference/postprocessor/metadata_replacement.md
+          - ./api_reference/postprocessor/mixedbreadai_rerank.md
           - ./api_reference/postprocessor/nvidia_rerank.md
           - ./api_reference/postprocessor/openvino_rerank.md
           - ./api_reference/postprocessor/presidio.md
@@ -1202,6 +1221,7 @@ nav:
           - ./api_reference/readers/patentsview.md
           - ./api_reference/readers/pathway.md
           - ./api_reference/readers/pdb.md
+          - ./api_reference/readers/pdf_marker.md
           - ./api_reference/readers/pdf_table.md
           - ./api_reference/readers/pebblo.md
           - ./api_reference/readers/pinecone.md
@@ -1990,6 +2010,10 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-bedrock-converse
             - ../llama-index-integrations/llms/llama-index-llms-ibm
             - ../llama-index-integrations/readers/llama-index-readers-upstage
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-mixedbreadai
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-mixedbreadai-rerank
+            - ../llama-index-integrations/readers/llama-index-readers-pdf-marker
+            - ../llama-index-integrations/llms/llama-index-llms-you
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
