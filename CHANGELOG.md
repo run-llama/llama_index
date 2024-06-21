@@ -1,5 +1,23 @@
 # ChangeLog
 
+## [2024-06-21]
+
+### `llama-index-core` [0.10.48]
+
+- Improve efficiency of average precision (#14260)
+- add crewai + llamaindex cookbook (#14266)
+- Add mimetype field to TextNode (#14279)
+- Improve IBM watsonx.ai docs (#14271)
+- Updated frontpage of docs, added agents guide, and more (#14089)
+
+### `llama-index-llms-anthropic` [0.1.14]
+
+- Add support for claude 3.5 (#14277)
+
+### `llama-index-llms-bedrock-converse` [0.1.4]
+
+- Implement Bedrock Converse API for function calling (#14055)
+
 ## [2024-06-19]
 
 ### `llama-index-core` [0.10.47]
