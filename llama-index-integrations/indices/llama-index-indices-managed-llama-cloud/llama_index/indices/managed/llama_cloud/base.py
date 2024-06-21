@@ -14,6 +14,7 @@ from llama_index_client import (
     ProjectCreate,
     ManagedIngestionStatus,
     CloudDocumentCreate,
+    CloudDocument,
 )
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -297,12 +298,22 @@ class LlamaCloudIndex(BaseManagedIndex):
         return RetrieverQueryEngine.from_args(**kwargs)
 
     @property
-    def ref_doc_info(self) -> Dict[str, RefDocInfo]:
+    def ref_doc_info(self, batch_size: int = 100) -> Dict[str, RefDocInfo]:
         """Retrieve a dict mapping of ingested documents and their metadata. The nodes list is empty."""
         pipeline_id = self._get_pipeline_id()
-        pipeline_documents = self._client.pipelines.list_pipeline_documents(
-            pipeline_id=pipeline_id
-        )
+        pipeline_documents: List[CloudDocument] = []
+        skip = 0
+        limit = batch_size
+        while True:
+            batch = self._client.pipelines.list_pipeline_documents(
+                pipeline_id=pipeline_id,
+                skip=skip,
+                limit=limit,
+            )
+            if not batch:
+                break
+            pipeline_documents.extend(batch)
+            skip += limit
         return {
             doc.id: RefDocInfo(metadata=doc.metadata, node_ids=[])
             for doc in pipeline_documents
