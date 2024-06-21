@@ -88,7 +88,6 @@ class LlamaCloudIndex(BaseManagedIndex):
 
     def _wait_for_pipeline_ingestion(
         self,
-        pipeline_id: str,
         verbose: bool = False,
         raise_on_partial_success: bool = False,
     ) -> None:
@@ -100,9 +99,9 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         is_done = False
         while not is_done:
-            status = client.pipelines.get_pipeline(
-                pipeline_id=pipeline_id, with_managed_ingestion_status=True
-            )
+            status = client.pipelines.get_pipeline_status(
+                pipeline_id=pipeline_id
+            ).status
             if status == ManagedIngestionStatus.ERROR or (
                 raise_on_partial_success
                 and status == ManagedIngestionStatus.PARTIAL_SUCCESS
@@ -163,8 +162,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         if verbose:
             print("Done!")
 
-        # we have to sync the pipeline to make sure it has a correct status
-        client.pipelines.sync_pipeline(pipeline_id=pipeline_id)
         self._wait_for_pipeline_ingestion(verbose, raise_on_error)
 
     def _get_pipeline_id(self) -> str:
@@ -261,7 +258,9 @@ class LlamaCloudIndex(BaseManagedIndex):
             ],
         )
         doc_ids = [doc.id for doc in upserted_documents]
-        index._wait_for_documents_ingestion(doc_ids, verbose, raise_on_error)
+        index._wait_for_documents_ingestion(
+            doc_ids, verbose=verbose, raise_on_error=raise_on_error
+        )
 
         print(f"Find your index at {app_url}/project/{project.id}/deploy/{pipeline.id}")
 
@@ -409,6 +408,11 @@ class LlamaCloudIndex(BaseManagedIndex):
                 logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
             else:
                 raise
+
+        # we have to wait for the pipeline instead of the document, because the document is already deleted
+        self._wait_for_pipeline_ingestion(
+            verbose=verbose, raise_on_partial_success=False
+        )
 
     # Nodes related methods (not implemented for LlamaCloudIndex)
 
