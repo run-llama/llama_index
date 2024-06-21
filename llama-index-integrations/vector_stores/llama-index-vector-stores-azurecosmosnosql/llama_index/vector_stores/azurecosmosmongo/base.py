@@ -9,12 +9,30 @@ import requests
 from typing import Any, Optional, Dict, cast, List
 
 from azure.cosmos import CosmosClient, PartitionKey
-from llama_index.core.schema import BaseNode, MetadataMode
-from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQueryResult, VectorStoreQuery
-from llama_index.core.vector_stores.utils import node_to_metadata_dict
-from openai.lib.azure import AzureOpenAI
+from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
+#from openai.lib.azure import AzureOpenAI
+from llama_index.llms.azure_openai import AzureOpenAI
 from openai.resources import Embeddings
-from pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
+from llama_index.core.vector_stores.utils import (
+    legacy_metadata_dict_to_node,
+    metadata_dict_to_node,
+    node_to_metadata_dict,
+)
+
+#for test:
+from llama_index.core import VectorStoreIndex
+from llama_index.core import StorageContext
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core import Settings
+import textwrap
 
 logger = logging.getLogger(__name__)
 
@@ -26,16 +44,23 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
     -the ``azure-cosmos`` python package installed
     -from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
     """
+    stores_text: bool = True
+    flat_metadata: bool = True
 
-    # _cosmosdb_client: Any = PrivateAttr()
-    # _database_name: Any = PrivateAttr()
-    # _container_name: Any = PrivateAttr()
-    # _embedding: Any = PrivateAttr()
-    # _vector_embedding_policy: Any = PrivateAttr()
-    # _indexing_policy: Any = PrivateAttr()
-    # _cosmos_container_properties: Any = PrivateAttr()
-    # _cosmos_database_properties: Any = PrivateAttr()
-    # _create_container: Any = PrivateAttr()
+    _cosmos_client: Any = PrivateAttr()
+    _database_name: Any = PrivateAttr()
+    _container_name: Any = PrivateAttr()
+    _embedding_key: Any = PrivateAttr()
+    _vector_embedding_policy: Any = PrivateAttr()
+    _indexing_policy: Any = PrivateAttr()
+    _cosmos_container_properties: Any = PrivateAttr()
+    _cosmos_database_properties: Any = PrivateAttr()
+    _create_container: Any = PrivateAttr()
+    _database: Any = PrivateAttr()
+    _container: Any = PrivateAttr()
+    _id_key: Any = PrivateAttr()
+    _text_key: Any = PrivateAttr()
+    _metadata_key: Any = PrivateAttr()
 
     def __init__(
             self,
@@ -47,7 +72,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             database_name: str = "vectorSearchDB",
             container_name: str = "vectorSearchContainer",
             create_container: bool = True,
-
+            id_key: str = "id",
+            text_key: str = "text",
+            metadata_key: str = "metadata",
+            **kwargs: Any,
     ) -> None:
         """Initialize the vector store.
 
@@ -63,8 +91,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         """
         super().__init__()
 
-        if self._cosmosdb_client is not None:
-            self._cosmosdb_client = cast(CosmosClient, cosmos_client)
+        #self._container_name = container_name
+
+        if cosmos_client is not None:
+            self._cosmos_client = cast(CosmosClient, cosmos_client)
 
         if create_container:
             if (
@@ -83,7 +113,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                     "or empty in the vector_embedding_policy."
                 )
             if (
-                    self._cosmos_container_properties["partition_key"] is None
+                    cosmos_container_properties["partition_key"] is None
             ):
                 raise ValueError(
                     "partition_key cannot be null "
@@ -96,6 +126,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         self._indexing_policy = indexing_policy
         self._cosmos_container_properties = cosmos_container_properties
         self._cosmos_database_properties = cosmos_database_properties
+        self._id_key = id_key
+        self._text_key = text_key
+        self._metadata_key = metadata_key
+        self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
 
         self._database = self._cosmos_client.create_database_if_not_exists(
             id=self._database_name,
@@ -123,8 +157,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             initial_headers=self._cosmos_container_properties.get("initial_headers"),
             vector_embedding_policy=self._vector_embedding_policy,
         )
-
-        self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
 
     def add(
             self,
@@ -184,7 +216,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
     @property
     def client(self) -> Any:
         """Return CosmosDB client."""
-        return self._cosmosdb_client
+        return self._cosmos_client
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         params: Dict[str, Any] = {
@@ -193,20 +225,22 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             "k": query.similarity_top_k,
         }
 
-        #I'm supposed to have an error here if the input is missing something
-
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
 
         for item in self._container.query_items(
-                query='SELECT TOP @k c.id, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)',
-                parameters=[{"name": "@k", "value": VectorStoreQuery["similarity_top_k"]},
-                            {"name": "@embedding", "value": VectorStoreQuery["query_embedding"]}],
-                enable_cross_partition_query=True
-        ):
-            node = item
-            node_id = item['id']
+                query='SELECT TOP @k c.id, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)',
+                parameters=[{"name": "@k", "value": params['k']},
+                            {"name": "@embedding", "value": params["vector"]}],
+                enable_cross_partition_query=True):
+            #print(item)
+
+            node = metadata_dict_to_node(item[self._metadata_key])
+            node.set_content(item[self._text_key])
+            #print(node)
+
+            node_id = item[self._id_key]
             node_score = item['SimilarityScore']
 
             top_k_ids.append(node_id)
@@ -234,29 +268,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 def main():
     # Creating a client based on azure portal details
     global cosmos_database_properties_test
-    URL = ''
-    KEY = ''
+    URL = 'COSMOS_CLIENT_URL'
+    KEY = 'COSMOS_CLIENT_KEY'
     client = CosmosClient(URL, credential=KEY)
     print(client)
-
-    # Create the directory structure for the data if it doesn't exist
-    os.makedirs('data/10k/', exist_ok=True)
-
-    #Copilot:
-    # Define the URL of the file to download
-    file_url = 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/10k/uber_2021.pdf'
-
-    # Define the local path where the file will be saved
-    #local_file_path = 'data/10k/uber_2021.pdf'
-
-    # Download the file and save it to the local path
-    # response = requests.get(file_url)
-    # if response.status_code == 200:
-    #     with open(local_file_path, 'wb') as file:
-    #         file.write(response.content)
-    #     print(f"File downloaded and saved as {local_file_path}")
-    # else:
-    #     print(f"Failed to download the file. Status code: {response.status_code}")
 
     #llama index example:
     indexing_policy = {
@@ -281,18 +296,29 @@ def main():
     cosmos_container_properties_test = {"partition_key": partition_key}
     cosmos_database_properties_test = {}
 
-    OPENAI_API_KEY = ""
-    OPENAI_API_BASE = ""
+    OPENAI_API_KEY = "OPENAI_API_KEY"
+    OPENAI_API_BASE = "OPENAI_API_BASE"
 
-    var = os.environ["OPENAI_API_KEY"] = ""
+    os.environ["OPENAI_API_KEY"] = 'OPENAI_API_KEY'
 
-    openai_client = AzureOpenAI(
+    llm = AzureOpenAI(
+        model="gpt-35-turbo",
+        deployment_name="gpt-35-turbo",
+        azure_endpoint=OPENAI_API_BASE,
         api_key=os.getenv("OPENAI_API_KEY"),
-        api_version="2024-02-01",
-        azure_endpoint=OPENAI_API_BASE
+        api_version="2023-05-15",
     )
 
-    embedding_test = Embeddings(openai_client)
+    embed_model = AzureOpenAIEmbedding(
+        model="text-embedding-ada-002",
+        deployment_name="vector_search_task",
+        azure_endpoint=OPENAI_API_BASE,
+        api_key=os.getenv("OPENAI_API_KEY"),
+        api_version="2023-05-15",
+    )
+
+    Settings.llm=llm
+    Settings.embed_model=embed_model
 
     store = AzureCosmosDBNoSqlVectorSearch(cosmos_client=client,
                                            vector_embedding_policy=vector_embedding_policy,
@@ -301,5 +327,22 @@ def main():
                                            cosmos_database_properties=cosmos_database_properties_test,
                                            create_container=True,)
 
+    storage_context = StorageContext.from_defaults(vector_store=store)
+
+    paul_graham_doc = SimpleDirectoryReader(
+        input_files=[r"\llama_index\docs\docs\examples\data\paul_graham\paul_graham_essay.txt"]
+    ).load_data()
+
+    index = VectorStoreIndex.from_documents(
+        paul_graham_doc, storage_context=storage_context
+    )
+
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What did the author love working on?")
+
+    print(textwrap.fill(str(response), 100))
+
+    response_two = query_engine.query("What did he/she do in summer of 2016?")
+    print(textwrap.fill(str(response_two), 100))
 
 main()
