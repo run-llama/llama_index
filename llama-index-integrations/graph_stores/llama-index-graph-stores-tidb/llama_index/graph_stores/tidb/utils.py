@@ -27,13 +27,11 @@ def check_db_availability(engine: Engine, check_vector: bool = False) -> None:
             ) from e
 
 
-def get_or_create(session: Session, model, defaults=None, **kwargs):
+def get_or_create(session: Session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:
         return instance, False
     else:
-        if defaults:
-            kwargs.update(defaults)
         instance = model(**kwargs)
         session.add(instance)
         session.commit()
