@@ -294,6 +294,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
                         "Vector and keyword index don't index the same node label"
                     )
 
+    @property
     def client(self) -> neo4j.GraphDatabase.driver:
         return self._driver
 
