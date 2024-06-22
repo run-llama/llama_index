@@ -58,12 +58,12 @@ LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-
 
 Some popular use cases for LlamaIndex and context augmentation in general include:
 
-- [Question-Answering](./use_cases/q_and_a/) (Retrieval-Augmented Generation aka RAG)
-- [Chatbots](./use_cases/chatbots/)
-- [Document Understanding and Data Extraction](./use_cases/extraction/)
-- [Autonomous Agents](./use_cases/agents/) that can perform research and take actions
-- [Multi-modal applications](./use_cases/multimodal/) that combine text, images, and other data types
-- [Fine-tuning](./use_cases/fine_tuning/) models on data to improve performance
+- [Question-Answering](./use_cases/q_and_a/index.md) (Retrieval-Augmented Generation aka RAG)
+- [Chatbots](./use_cases/chatbots.md)
+- [Document Understanding and Data Extraction](./use_cases/extraction.md)
+- [Autonomous Agents](./use_cases/agents.md) that can perform research and take actions
+- [Multi-modal applications](./use_cases/multimodal.md) that combine text, images, and other data types
+- [Fine-tuning](./use_cases/fine_tuning.md) models on data to improve performance
 
 Check out our [use cases](./use_cases/index.md) documentation for more examples and links to tutorials.
 
@@ -99,7 +99,7 @@ response = query_engine.query("Some question about the data should go here")
 print(response)
 ```
 
-If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](./getting_started/starter_example/) or [any model that runs on your laptop](./getting_started/starter_example_local/).
+If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](./getting_started/starter_example.md) or [any model that runs on your laptop](./getting_started/starter_example_local.md).
 
 ## LlamaCloud
 
@@ -130,7 +130,7 @@ Need help? Have a feature suggestion? Join the LlamaIndex community:
 
 ### Contributing
 
-We are open-source and always welcome contributions to the project! Check out our [contributing guide](./CONTRIBUTING) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
+We are open-source and always welcome contributions to the project! Check out our [contributing guide](./CONTRIBUTING.md) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
 
 ## Related projects
 
