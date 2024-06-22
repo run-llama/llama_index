@@ -617,7 +617,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # iterate over stream, break out if is final answer after the "Answer: "
         full_response = ChatResponse(
-            message=ChatMessage(content=None, role="assistant")
+            message=ChatMessage(content=None, role=MessageRole.ASSISTANT)
         )
         is_done = False
         for latest_chunk in chat_stream:
@@ -689,13 +689,14 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # iterate over stream, break out if is final answer after the "Answer: "
         full_response = ChatResponse(
-            message=ChatMessage(content=None, role="assistant")
+            message=ChatMessage(content=None, role=MessageRole.ASSISTANT)
         )
         is_done = False
         async for latest_chunk in chat_stream:
             full_response = latest_chunk
             is_done = self._infer_stream_chunk_is_final(latest_chunk)
             if is_done:
+                full_response.delta = full_response.message.content
                 break
 
         if not is_done:
@@ -719,7 +720,7 @@ class ReActAgentWorker(BaseAgentWorker):
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._async_add_back_chunk_to_stream(
-                chunk=latest_chunk, chat_stream=chat_stream
+                chunk=full_response, chat_stream=chat_stream
             )
 
             agent_response = StreamingAgentChatResponse(
