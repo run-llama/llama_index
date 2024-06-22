@@ -79,7 +79,9 @@ class Upstage(OpenAI):
         default=True,
     )
 
-    api_key: str = Field(default=None, description="The Upstage API key.")
+    api_key: str = Field(
+        default=None, alias="upstage_api_key", description="The Upstage API key."
+    )
     api_base: str = Field(
         default="https://api.upstage.ai/v1/solar",
         description="The Upstage API base URL.",
@@ -112,6 +114,8 @@ class Upstage(OpenAI):
         output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any
     ) -> None:
+        if "upstage_api_key" in kwargs:
+            api_key = kwargs.pop("upstage_api_key")
         additional_kwargs = additional_kwargs or {}
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base

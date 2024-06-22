@@ -51,7 +51,7 @@ class UpstageEmbedding(OpenAIEmbedding):
         default_factory=dict, description="Additional kwargs for the Upstage API."
     )
 
-    api_key: str = Field(description="The Upstage API key.")
+    api_key: str = Field(alias="upstage_api_key", description="The Upstage API key.")
     api_base: Optional[str] = Field(
         default=DEFAULT_UPSTAGE_API_BASE, description="The base URL for Upstage API."
     )
@@ -85,6 +85,9 @@ class UpstageEmbedding(OpenAIEmbedding):
             raise ValueError(
                 f"embed_batch_size should be less than or equal to {MAX_EMBED_BATCH_SIZE}."
             )
+
+        if "upstage_api_key" in kwargs:
+            api_key = kwargs.pop("upstage_api_key")
 
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base

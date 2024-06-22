@@ -116,6 +116,22 @@ class OpenAI(FunctionCallingLLM):
     """
     OpenAI LLM.
 
+    Args:
+        model: name of the OpenAI model to use.
+        temperature: a float from 0 to 1 controlling randomness in generation; higher will lead to more creative, less deterministic responses.
+        max_tokens: the maximum number of tokens to generate.
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        max_retries: How many times to retry the API call if it fails.
+        timeout: How long to wait, in seconds, for an API call before failing.
+        reuse_client: Reuse the OpenAI client between requests. When doing anything with large volumes of async API calls, setting this to false can improve stability.
+        api_key: Your OpenAI api key
+        api_base: The base URL of the API to call
+        api_version: the version of the API to call
+        callback_manager: the callback manager is used for observability.
+        default_headers: override the default headers for API requests.
+        http_client: pass in your own httpx.Client instance.
+        async_http_client: pass in your own httpx.AsyncClient instance.
+
     Examples:
         `pip install llama-index-llms-openai`
 
