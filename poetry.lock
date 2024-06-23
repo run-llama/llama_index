@@ -832,13 +832,13 @@ devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benc
 
 [[package]]
 name = "filelock"
-version = "3.15.3"
+version = "3.15.4"
 description = "A platform independent file lock."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "filelock-3.15.3-py3-none-any.whl", hash = "sha256:0151273e5b5d6cf753a61ec83b3a9b7d8821c39ae9af9d7ecf2f9e2f17404103"},
-    {file = "filelock-3.15.3.tar.gz", hash = "sha256:e1199bf5194a2277273dacd50269f0d87d0682088a3c561c15674ea9005d8635"},
+    {file = "filelock-3.15.4-py3-none-any.whl", hash = "sha256:6ca1fffae96225dab4c6eaf1c4f4f28cd2568d3ec2a44e15a08520504de468e7"},
+    {file = "filelock-3.15.4.tar.gz", hash = "sha256:2207938cbc1844345cb01a5a95524dae30f0ce089eba5b00378295a17e3e90cb"},
 ]
 
 [package.extras]
@@ -1157,13 +1157,13 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "7.2.0"
+version = "7.2.1"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_metadata-7.2.0-py3-none-any.whl", hash = "sha256:04e4aad329b8b948a5711d394fa8759cb80f009225441b4f2a02bd4d8e5f426c"},
-    {file = "importlib_metadata-7.2.0.tar.gz", hash = "sha256:3ff4519071ed42740522d494d04819b666541b9752c43012f85afb2cc220fcc6"},
+    {file = "importlib_metadata-7.2.1-py3-none-any.whl", hash = "sha256:ffef94b0b66046dd8ea2d619b701fe978d9264d38f3998bc4c27ec3b146a87c8"},
+    {file = "importlib_metadata-7.2.1.tar.gz", hash = "sha256:509ecb2ab77071db5137c655e24ceb3eee66e7bbc6574165d0d114d9fc4bbe68"},
 ]
 
 [package.dependencies]
@@ -1504,6 +1504,21 @@ files = [
 ]
 
 [[package]]
+name = "llama-cloud"
+version = "0.0.6"
+description = ""
+optional = false
+python-versions = "<4,>=3.8"
+files = [
+    {file = "llama_cloud-0.0.6-py3-none-any.whl", hash = "sha256:0f07c8a865be632b543dec2bcad350a68a61f13413a7421b4b03de32c36f0194"},
+    {file = "llama_cloud-0.0.6.tar.gz", hash = "sha256:33b94cd119133dcb2899c9b69e8e1c36aec7bc7e80062c55c65f15618722e091"},
+]
+
+[package.dependencies]
+httpx = ">=0.20.0"
+pydantic = ">=1.10"
+
+[[package]]
 name = "llama-index-agent-openai"
 version = "0.2.7"
 description = "llama-index agent openai integration"
@@ -1537,13 +1552,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.48"
+version = "0.10.49"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.48-py3-none-any.whl", hash = "sha256:320ede0a4a33e7582a6c600c53f9aa2ee8290abfa6e315c4c6fab65bd1d1116b"},
-    {file = "llama_index_core-0.10.48.tar.gz", hash = "sha256:160140adc085a23d346c562cf9089a6f69fb78d0cc9443bfa8a94381a3296bd9"},
+    {file = "llama_index_core-0.10.49-py3-none-any.whl", hash = "sha256:9664259ba3fbd9c90f625cafd473364c454b6b6d6aa81fbb03644a5203e91956"},
+    {file = "llama_index_core-0.10.49.tar.gz", hash = "sha256:d6bbf5179bad77422b9b9053ef65cf640df87093050f9a84020e9b3eb8b83055"},
 ]
 
 [package.dependencies]
@@ -1553,7 +1568,7 @@ deprecated = ">=1.2.9.3"
 dirtyjson = ">=1.0.8,<2.0.0"
 fsspec = ">=2023.5.0"
 httpx = "*"
-llamaindex-py-client = ">=0.1.18,<0.2.0"
+llama-cloud = ">=0.0.6,<0.0.7"
 nest-asyncio = ">=1.5.8,<2.0.0"
 networkx = ">=3.0"
 nltk = ">=3.8.1,<4.0.0"
@@ -4144,13 +4159,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.26.2"
+version = "20.26.3"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "virtualenv-20.26.2-py3-none-any.whl", hash = "sha256:a624db5e94f01ad993d476b9ee5346fdf7b9de43ccaee0e0197012dc838a0e9b"},
-    {file = "virtualenv-20.26.2.tar.gz", hash = "sha256:82bf0f4eebbb78d36ddaee0283d43fe5736b53880b8a8cdcd37390a07ac3741c"},
+    {file = "virtualenv-20.26.3-py3-none-any.whl", hash = "sha256:8cc4a31139e796e9a7de2cd5cf2489de1217193116a8fd42328f1bd65f434589"},
+    {file = "virtualenv-20.26.3.tar.gz", hash = "sha256:4c43a2a236279d9ea36a0d76f98d84bd6ca94ac4e0f4a3b9d46d05e10fea542a"},
 ]
 
 [package.dependencies]
@@ -4442,4 +4457,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "19fc4f395efe95708a08067839c56c031f779956c97e710622a410d24b159677"
+content-hash = "872eafc7dcbb9bb007ee3574ff5d2dbf2918107ee6db234a4508c8c1d552faa3"
