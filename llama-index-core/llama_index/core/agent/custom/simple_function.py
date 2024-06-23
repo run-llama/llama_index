@@ -7,10 +7,7 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Tuple,
-    Set,
-    cast,
 )
 
 from llama_index.core.agent.types import (
@@ -19,7 +16,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
@@ -28,11 +25,7 @@ from llama_index.core.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
 )
-from llama_index.core.llms.llm import LLM
-from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.core.objects.base import ObjectRetriever
-from llama_index.core.settings import Settings
-from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools import adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.query_pipeline.components.function import get_parameters
 
@@ -50,6 +43,7 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
         initial_state (Dict[str, Any]): The initial state
 
     """
+
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -57,13 +51,8 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
     initial_state: Dict[str, Any] = Field(
         default_factory=dict, description="Initial state dictionary."
     )
-    task_input_key: str = Field(
-        default="__task__", description="Task"
-    )
-    output_key: str = Field(
-        default="__output__", description="output"
-    )
-    
+    task_input_key: str = Field(default="__task__", description="Task")
+    output_key: str = Field(default="__output__", description="output")
 
     verbose: bool = Field(False, description="Verbose mode.")
 
@@ -85,15 +74,10 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
                 "StatefulFnComponent must have 'state' as required parameters"
             )
 
-        super().__init__(
-            fn=fn,
-            async_fn=async_fn,
-            initial_state=initial_state
-        )
+        super().__init__(fn=fn, async_fn=async_fn, initial_state=initial_state)
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
-
         step_state = {
             **self.initial_state,
             self.task_input_key: task,
@@ -143,8 +127,10 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
         """
         current_state, is_done = self.fn(state)
         # TODO: return auxiliary response
-        return AgentChatResponse(
-            response=state[self.output_key], metadata=current_state), is_done
+        return (
+            AgentChatResponse(response=state[self.output_key], metadata=current_state),
+            is_done,
+        )
 
     async def _arun_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
@@ -162,9 +148,10 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
         else:
             current_state, is_done = await self.async_fn(state)
         # TODO: return auxiliary response
-        return AgentChatResponse(
-            response=state[self.output_key], metadata=current_state
-        ), is_done
+        return (
+            AgentChatResponse(response=state[self.output_key], metadata=current_state),
+            is_done,
+        )
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
@@ -203,8 +190,6 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
-        pass
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
-        pass
