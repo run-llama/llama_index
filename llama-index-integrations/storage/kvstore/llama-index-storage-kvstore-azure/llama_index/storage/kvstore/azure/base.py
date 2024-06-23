@@ -257,11 +257,11 @@ class AzureKVStore(BaseKVStore):
 
             entities.append(entity)
 
-        for batch in (
-            entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
-        ):
+        entities_len = len(entities)
+        for start in range(0, entities_len, batch_size):
             table_client.submit_transaction(
-                (TransactionOperation.UPSERT, entity) for entity in batch
+                (TransactionOperation.UPSERT, entities[i])
+                for i in range(start, min(start + batch_size, entities_len))
             )
 
     async def aput_all(
@@ -302,11 +302,11 @@ class AzureKVStore(BaseKVStore):
 
             entities.append(entity)
 
-        for batch in (
-            entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
-        ):
+        entities_len = len(entities)
+        for start in range(0, entities_len, batch_size):
             await atable_client.submit_transaction(
-                (TransactionOperation.UPSERT, entity) for entity in batch
+                (TransactionOperation.UPSERT, entities[i])
+                for i in range(start, min(start + batch_size, entities_len))
             )
 
     def get(
