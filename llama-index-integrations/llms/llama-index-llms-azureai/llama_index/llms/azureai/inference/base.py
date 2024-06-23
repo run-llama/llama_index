@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
 
 from azure.core.credentials import AzureKeyCredential
-from azure.ai.inference.models import ChatCompletionsToolCall
+from azure.ai.inference.models import ChatCompletionsToolCall, ChatRequestMessage
 
 DEFAULT_AZUREAI_ENDPOINT = "https://inference.ai.azure.com"
 DEFAULT_AZUREAI_MAX_TOKENS = 2048
@@ -47,8 +47,17 @@ DEFAULT_AZUREAI_MAX_TOKENS = 2048
 
 def to_inference_message(
     messages: Sequence[ChatMessage],
-) -> List[dict]:
-    return [m.dict() for m in messages]
+) -> List[ChatRequestMessage]:
+    new_messages = []
+    for m in messages:
+        tool_calls = m.additional_kwargs.get("tool_calls")
+        new_messages.append(
+            ChatRequestMessage(
+                {"role": m.role, "content": m.content, "tool_calls": tool_calls}
+            )
+        )
+
+    return new_messages
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -103,20 +112,19 @@ class AzureAIModelInference(FunctionCallingLLM):
 
     _client: ChatCompletionsClient = PrivateAttr()
     _async_client: ChatCompletionsClientAsync = PrivateAttr()
-    _model_name: str = PrivateAttr()
-    _model_type: str = PrivateAttr()
-    _model_provider: str = PrivateAttr()
+    _model_name: str = PrivateAttr(None)
+    _model_type: str = PrivateAttr(None)
+    _model_provider: str = PrivateAttr(None)
 
     def __init__(
         self,
-        endpoint: str = DEFAULT_AZUREAI_ENDPOINT,
+        endpoint: str = None,
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: int = DEFAULT_AZUREAI_MAX_TOKENS,
         timeout: int = 120,
         max_retries: int = 5,
         model: Optional[str] = None,
-        seed: Optional[int] = None,
         model_extras: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -165,7 +173,6 @@ class AzureAIModelInference(FunctionCallingLLM):
             model_extras=model_extras,
             timeout=timeout,
             max_retries=max_retries,
-            seed=seed,
             model=model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -181,7 +188,6 @@ class AzureAIModelInference(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-
         if not self._model_name:
             model_info = self._client.get_model_info()
             if model_info:
@@ -201,10 +207,10 @@ class AzureAIModelInference(FunctionCallingLLM):
         base_kwargs = {
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "seed": self.seed,
         }
         if self.model:
             base_kwargs["model"] = self.model
+
         return {
             **base_kwargs,
             **self.model_extras,
