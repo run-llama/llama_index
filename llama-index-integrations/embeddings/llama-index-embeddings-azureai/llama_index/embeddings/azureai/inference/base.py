@@ -81,7 +81,7 @@ class AzureAIModelInference(BaseEmbedding):
         )
 
         super().__init__(
-            model_name=model,
+            model_name=model or "unknown",
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
