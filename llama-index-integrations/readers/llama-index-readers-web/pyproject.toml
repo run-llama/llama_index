@@ -44,7 +44,7 @@ license = "MIT"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.1.19"
+version = "0.1.20"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -58,7 +58,7 @@ requests = "^2.31.0"
 urllib3 = ">=1.1.0"
 playwright = ">=1.30,<2.0"
 newspaper3k = "^0.2.8"
-spider-client = "^0.0.11"
+spider-client = "^0.0.27"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
