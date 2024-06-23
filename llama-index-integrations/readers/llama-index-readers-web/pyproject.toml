@@ -58,7 +58,7 @@ requests = "^2.31.0"
 urllib3 = ">=1.1.0"
 playwright = ">=1.30,<2.0"
 newspaper3k = "^0.2.8"
-spider-client = "^0.0.11"
+spider-client = "^0.0.27"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
