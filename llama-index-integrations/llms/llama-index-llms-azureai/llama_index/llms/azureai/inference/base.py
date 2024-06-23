@@ -89,7 +89,10 @@ class AzureAIModelInference(FunctionCallingLLM):
         ```
     """
 
-    model: Optional[str] = Field(default=None, description="The model id to use.")
+    model: Optional[str] = Field(
+        default=None,
+        description="The model id to use. For endpoints running a single model, this parameter is optional",
+    )
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
@@ -100,12 +103,6 @@ class AzureAIModelInference(FunctionCallingLLM):
         default=DEFAULT_AZUREAI_MAX_TOKENS,
         description="The maximum number of tokens to generate.",
         gt=0,
-    )
-    timeout: float = Field(
-        default=120, description="The timeout to use in seconds.", gte=0
-    )
-    max_retries: int = Field(
-        default=5, description="The maximum number of API retries.", gte=0
     )
     seed: str = Field(default=None, description="The random seed to use for sampling.")
     model_extras: Dict[str, Any] = Field(
@@ -124,8 +121,6 @@ class AzureAIModelInference(FunctionCallingLLM):
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: int = DEFAULT_AZUREAI_MAX_TOKENS,
-        timeout: int = 120,
-        max_retries: int = 5,
         model: Optional[str] = None,
         model_extras: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -134,6 +129,7 @@ class AzureAIModelInference(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        **kwargs: Dict[str, Any],
     ) -> None:
         model_extras = model_extras or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -156,26 +152,16 @@ class AzureAIModelInference(FunctionCallingLLM):
             )
 
         self._client = ChatCompletionsClient(
-            endpoint=endpoint,
-            credential=credential,
-            timeout=timeout,
-            max_retries=max_retries,
+            endpoint=endpoint, credential=credential, **kwargs
         )
 
         self._async_client = ChatCompletionsClientAsync(
-            endpoint=endpoint,
-            credential=credential,
-            timeout=timeout,
-            max_retries=max_retries,
+            endpoint=endpoint, credential=credential, **kwargs
         )
 
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
-            model_extras=model_extras,
-            timeout=timeout,
-            max_retries=max_retries,
-            model=model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
