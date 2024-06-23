@@ -227,7 +227,7 @@ class AzureKVStore(BaseKVStore):
 
     def put_all(
         self,
-        kv_pairs: List[Tuple[str, Optional[dict]]],
+        kv_pairs: List[Tuple[str, dict]],
         collection: str = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -244,18 +244,14 @@ class AzureKVStore(BaseKVStore):
         )
         table_client = self._table_service_client.create_table_if_not_exists(table_name)
 
-        entities = []
-        for key, val in kv_pairs:
-            entity = {
+        entities = [
+            {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
+                **serialize(self.service_mode, val),
             }
-
-            if val is not None:
-                serialized_val = serialize(self.service_mode, val)
-                entity.update(serialized_val)
-
-            entities.append(entity)
+            for key, val in kv_pairs
+        ]
 
         entities_len = len(entities)
         for start in range(0, entities_len, batch_size):
@@ -266,7 +262,7 @@ class AzureKVStore(BaseKVStore):
 
     async def aput_all(
         self,
-        kv_pairs: List[Tuple[str, Optional[dict]]],
+        kv_pairs: List[Tuple[str, dict]],
         collection: str = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -289,18 +285,14 @@ class AzureKVStore(BaseKVStore):
             table_name
         )
 
-        entities = []
-        for key, val in kv_pairs:
-            entity = {
+        entities = [
+            {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
+                **serialize(self.service_mode, val),
             }
-
-            if val is not None:
-                serialized_val = serialize(self.service_mode, val)
-                entity.update(serialized_val)
-
-            entities.append(entity)
+            for key, val in kv_pairs
+        ]
 
         entities_len = len(entities)
         for start in range(0, entities_len, batch_size):
