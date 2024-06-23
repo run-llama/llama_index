@@ -177,7 +177,8 @@ class BedrockConverse(FunctionCallingLLM):
             asession = aioboto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 and/or aioboto3 package not found, install with" "'pip install boto3 aioboto3"
+                "boto3 and/or aioboto3 package not found, install with"
+                "'pip install boto3 aioboto3"
             )
 
         # Prior to general availability, custom boto3 wheel files were

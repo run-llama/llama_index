@@ -210,7 +210,10 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
-def _create_retry_decorator_async(client: Any, max_retries: int) -> Callable[[Any], Any]:
+
+def _create_retry_decorator_async(
+    client: Any, max_retries: int
+) -> Callable[[Any], Any]:
     min_seconds = 4
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
@@ -227,7 +230,9 @@ def _create_retry_decorator_async(client: Any, max_retries: int) -> Callable[[An
         reraise=True,
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
-        retry=(retry_if_exception_type()),  # TODO: Add throttling exception in async version
+        retry=(
+            retry_if_exception_type()
+        ),  # TODO: Add throttling exception in async version
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -269,6 +274,7 @@ def converse_with_retry(
 
     return _conversion_with_retry(**converse_kwargs)
 
+
 async def converse_with_retry_async(
     client: Any,
     model: str,
@@ -281,7 +287,9 @@ async def converse_with_retry_async(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator_async(client=client, max_retries=max_retries)
+    retry_decorator = _create_retry_decorator_async(
+        client=client, max_retries=max_retries
+    )
     converse_kwargs = {
         "modelId": model,
         "messages": messages,
@@ -305,6 +313,7 @@ async def converse_with_retry_async(
         return await client.converse(**kwargs)
 
     return await _conversion_with_retry(**converse_kwargs)
+
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
     """
