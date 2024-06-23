@@ -68,7 +68,6 @@ class AzureAIModelInference(BaseEmbedding):
             raise ValueError(
                 "You must provide an credential to use the Azure AI model inference LLM."
             )
-        self.model_extras = kwargs
         self._client = EmbeddingsClient(
             endpoint=endpoint,
             credential=credential,
@@ -85,6 +84,7 @@ class AzureAIModelInference(BaseEmbedding):
             model_name=model or "unknown",
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            **kwargs,
         )
 
     @classmethod
