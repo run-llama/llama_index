@@ -227,7 +227,7 @@ class AzureKVStore(BaseKVStore):
 
     def put_all(
         self,
-        kv_pairs: List[Tuple[str, Optional[dict]]],
+        kv_pairs: List[Tuple[str, dict]],
         collection: str = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -244,29 +244,25 @@ class AzureKVStore(BaseKVStore):
         )
         table_client = self._table_service_client.create_table_if_not_exists(table_name)
 
-        entities = []
-        for key, val in kv_pairs:
-            entity = {
+        entities = [
+            {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
+                **serialize(self.service_mode, val),
             }
+            for key, val in kv_pairs
+        ]
 
-            if val is not None:
-                serialized_val = serialize(self.service_mode, val)
-                entity.update(serialized_val)
-
-            entities.append(entity)
-
-        for batch in (
-            entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
-        ):
+        entities_len = len(entities)
+        for start in range(0, entities_len, batch_size):
             table_client.submit_transaction(
-                (TransactionOperation.UPSERT, entity) for entity in batch
+                (TransactionOperation.UPSERT, entities[i])
+                for i in range(start, min(start + batch_size, entities_len))
             )
 
     async def aput_all(
         self,
-        kv_pairs: List[Tuple[str, Optional[dict]]],
+        kv_pairs: List[Tuple[str, dict]],
         collection: str = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -289,24 +285,20 @@ class AzureKVStore(BaseKVStore):
             table_name
         )
 
-        entities = []
-        for key, val in kv_pairs:
-            entity = {
+        entities = [
+            {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
+                **serialize(self.service_mode, val),
             }
+            for key, val in kv_pairs
+        ]
 
-            if val is not None:
-                serialized_val = serialize(self.service_mode, val)
-                entity.update(serialized_val)
-
-            entities.append(entity)
-
-        for batch in (
-            entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
-        ):
+        entities_len = len(entities)
+        for start in range(0, entities_len, batch_size):
             await atable_client.submit_transaction(
-                (TransactionOperation.UPSERT, entity) for entity in batch
+                (TransactionOperation.UPSERT, entities[i])
+                for i in range(start, min(start + batch_size, entities_len))
             )
 
     def get(
