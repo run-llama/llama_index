@@ -210,6 +210,27 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
+def _create_retry_decorator_async(client: Any, max_retries: int) -> Callable[[Any], Any]:
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    try:
+        import aioboto3  # noqa
+    except ImportError as e:
+        raise ImportError(
+            "You must install the `aioboto3` package to use Bedrock."
+            "Please `pip install aioboto3`"
+        ) from e
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(retry_if_exception_type()),  # TODO: Add throttling exception in async version
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
 
 def converse_with_retry(
     client: Any,
@@ -248,6 +269,42 @@ def converse_with_retry(
 
     return _conversion_with_retry(**converse_kwargs)
 
+async def converse_with_retry_async(
+    client: Any,
+    model: str,
+    messages: Sequence[Dict[str, Any]],
+    max_retries: int = 3,
+    system_prompt: Optional[str] = None,
+    max_tokens: int = 1000,
+    temperature: float = 0.1,
+    stream: bool = False,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator_async(client=client, max_retries=max_retries)
+    converse_kwargs = {
+        "modelId": model,
+        "messages": messages,
+        "inferenceConfig": {
+            "maxTokens": max_tokens,
+            "temperature": temperature,
+        },
+    }
+    if system_prompt:
+        converse_kwargs["system"] = [{"text": system_prompt}]
+    if tool_config := kwargs.get("tools"):
+        converse_kwargs["toolConfig"] = tool_config
+    converse_kwargs = join_two_dicts(
+        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+    )
+
+    @retry_decorator
+    async def _conversion_with_retry(**kwargs: Any) -> Any:
+        if stream:
+            return await client.converse_stream(**kwargs)
+        return await client.converse(**kwargs)
+
+    return await _conversion_with_retry(**converse_kwargs)
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
     """

@@ -15,6 +15,8 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
+    ChatResponseAsyncGen,
+    CompletionResponseAsyncGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
@@ -28,6 +30,8 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
@@ -36,6 +40,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
     bedrock_modelname_to_context_size,
     converse_with_retry,
+    converse_with_retry_async,
     force_single_tool_call,
     is_bedrock_function_calling_model,
     join_two_dicts,
@@ -130,6 +135,7 @@ class BedrockConverse(FunctionCallingLLM):
         region_name: Optional[str] = None,
         botocore_session: Optional[Any] = None,
         client: Optional[Any] = None,
+        aclient: Optional[Any] = None,
         timeout: Optional[float] = 60.0,
         max_retries: Optional[int] = 10,
         botocore_config: Optional[Any] = None,
@@ -155,6 +161,7 @@ class BedrockConverse(FunctionCallingLLM):
         config = None
         try:
             import boto3
+            import aioboto3
             from botocore.config import Config
 
             config = (
@@ -167,21 +174,27 @@ class BedrockConverse(FunctionCallingLLM):
                 else botocore_config
             )
             session = boto3.Session(**session_kwargs)
+            asession = aioboto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 and/or aioboto3 package not found, install with" "'pip install boto3 aioboto3"
             )
 
         # Prior to general availability, custom boto3 wheel files were
         # distributed that used the bedrock service to invokeModel.
         # This check prevents any services still using those wheel files
         # from breaking
-        if client is not None:
-            self._client = client
+        if (client is not None) or (aclient is not None):
+            if client is not None:
+                self._client = client
+            if aclient is not None:
+                self._aclient = aclient
         elif "bedrock-runtime" in session.get_available_services():
             self._client = session.client("bedrock-runtime", config=config)
+            self._aclient = asession.client("bedrock-runtime", config=config)
         else:
             self._client = session.client("bedrock", config=config)
+            self._aclient = asession.client("bedrock", config=config)
 
         super().__init__(
             temperature=temperature,
@@ -386,29 +399,124 @@ class BedrockConverse(FunctionCallingLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        # TODO convert to async; do synchronous chat for now
-        return self.chat(messages, **kwargs)
+        # convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        # invoke LLM in AWS Bedrock Converse with retry
+        response = await converse_with_retry_async(
+            client=self._aclient,
+            messages=converse_messages,
+            system_prompt=self.system_prompt,
+            max_retries=self.max_retries,
+            stream=False,
+            **all_kwargs,
+        )
+
+        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
+            response
+        )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={
+                    "tool_calls": tool_calls,
+                    "tool_call_id": tool_call_ids,
+                    "status": status,
+                },
+            ),
+            raw=dict(response),
+        )
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        # TODO convert to async; do synchronous completion for now
-        return self.complete(prompt, formatted=formatted, **kwargs)
+        complete_fn = achat_to_completion_decorator(self.achat)
+        return await complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        # TODO convert to async; do synchronous chat for now
-        return self.stream_chat(messages, **kwargs)
+    ) -> ChatResponseAsyncGen:
+        # convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        # invoke LLM in AWS Bedrock Converse with retry
+        response = await converse_with_retry_async(
+            client=self._aclient,
+            messages=converse_messages,
+            system_prompt=self.system_prompt,
+            max_retries=self.max_retries,
+            stream=True,
+            **all_kwargs,
+        )
+
+        async def gen() -> ChatResponseAsyncGen:
+            content = {}
+            role = MessageRole.ASSISTANT
+            for chunk in response["stream"]:
+                if content_block_delta := chunk.get("contentBlockDelta"):
+                    content_delta = content_block_delta["delta"]
+                    content = join_two_dicts(content, content_delta)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
+                            },
+                        ),
+                        delta=content_delta.get("text", ""),
+                        raw=response,
+                    )
+                elif content_block_start := chunk.get("contentBlockStart"):
+                    tool_use = content_block_start["toolUse"]
+                    content = join_two_dicts(content, tool_use)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
+                            },
+                        ),
+                        raw=response,
+                    )
+
+        return gen()
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseGen:
-        # TODO convert to async; do synchronous completion for now
-        return self.stream_complete(prompt, formatted=formatted, **kwargs)
+    ) -> CompletionResponseAsyncGen:
+        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await astream_complete_fn(prompt, **kwargs)
 
     def chat_with_tools(
         self,
@@ -445,15 +553,21 @@ class BedrockConverse(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
-        # TODO convert to async; do synchronous chat for now
-        return self.chat_with_tools(
-            tools=tools,
-            user_msg=user_msg,
-            chat_history=chat_history,
-            verbose=verbose,
-            allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs,
-        )
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        # convert Llama Index tools to AWS Bedrock Converse tools
+        tool_dicts = tools_to_converse_tools(tools)
+
+        response = await self.achat(chat_history, tools=tool_dicts, **kwargs)
+
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+
+        return response
 
     def get_tool_calls_from_response(
         self,
