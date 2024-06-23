@@ -1,3 +1,5 @@
+"""Azure AI model inference chat completions client."""
+
 import json
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 
@@ -67,7 +69,7 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class AzureAIModelInference(FunctionCallingLLM):
-    """Azure AI model inference LLM.
+    """Azure AI model inference for LLM.
 
     Examples:
         `pip install llama-index-llms-azureai`
@@ -184,7 +186,7 @@ class AzureAIModelInference(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "AzureAIModelInference"
+        return "AzureAIModelInferenceLLM"
 
     @property
     def metadata(self) -> LLMMetadata:
