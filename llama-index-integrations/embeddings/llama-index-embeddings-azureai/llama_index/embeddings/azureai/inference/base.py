@@ -49,7 +49,8 @@ class AzureAIModelInference(BaseEmbedding):
         model: str = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
-        **kwargs: Any,
+        client_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any
     ):
         endpoint = get_from_param_or_env(
             "endpoint", endpoint, "AZUREAI_ENDPOINT_URL", DEFAULT_AZUREAI_ENDPOINT
@@ -67,62 +68,72 @@ class AzureAIModelInference(BaseEmbedding):
             raise ValueError(
                 "You must provide an credential to use the Azure AI model inference LLM."
             )
-
+        self.model_extras = kwargs
         self._client = EmbeddingsClient(
             endpoint=endpoint,
             credential=credential,
-            **kwargs,
+            **client_kwargs,
         )
 
         self._async_client = EmbeddingsClientAsync(
             endpoint=endpoint,
             credential=credential,
-            **kwargs,
+            **client_kwargs,
         )
 
         super().__init__(
             model_name=model or "unknown",
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            **kwargs,
         )
 
     @classmethod
     def class_name(cls) -> str:
         return "AzureAIModelInferenceEmbeddings"
 
+    @property
+    def _model_kwargs(self) -> Dict[str, Any]:
+        additional_kwargs = {}
+        if self.model:
+            additional_kwargs["model"] = self.model
+        if self.model_extras:
+            # pass any extra model parameter as model extra
+            additional_kwargs["model_extras"] = self.model_extras
+
+        return additional_kwargs
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
-        return self._client.embed(model=self.model, input=[query]).data[0].embedding
+        return self._client.embed(input=[query], **self._model_kwargs).data[0].embedding
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         return (
-            (await self._async_client.embed(model=self.model_name, input=[query]))
+            (await self._async_client.embed(input=[query], **self._model_kwargs))
             .data[0]
             .embedding
         )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
-        return self._client.embed(model=self.model_name, input=[text]).data[0].embedding
+        return self._client.embed(input=[text], **self._model_kwargs).data[0].embedding
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return (
-            (await self._async_client.embed(model=self.model_name, input=[text]))
+            (await self._async_client.embed(input=[text], **self._model_kwargs))
             .data[0]
             .embedding
         )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
-        embedding_response = self._client.embed(model=self.model_name, input=texts).data
+        embedding_response = self._client.embed(input=texts, **self._model_kwargs).data
         return [embed.embedding for embed in embedding_response]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         embedding_response = await self._async_client.embed(
-            model=self.model_name, input=texts
+            input=texts, **self._model_kwargs
         )
         return [embed.embedding for embed in embedding_response.data]
