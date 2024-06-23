@@ -106,10 +106,15 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
             fs=s3fs,
         )
 
-    def load_s3_files_as_docs(self, temp_dir=None) -> List[Document]:
+    def _load_s3_files_as_docs(self) -> List[Document]:
         """Load file(s) from S3."""
         loader = self._get_simple_directory_reader()
         return loader.load_data()
+
+    def _aload_s3_files_as_docs(self) -> List[Document]:
+        """Asynchronously load file(s) from S3."""
+        loader = self._get_simple_directory_reader()
+        return loader.aload_data()
 
     def _adjust_documents(self, documents: List[Document]) -> List[Document]:
         for doc in documents:
@@ -135,7 +140,26 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
                 DeprecationWarning,
             )
 
-        documents = self.load_s3_files_as_docs()
+        documents = self._load_s3_files_as_docs()
+        return self._adjust_documents(documents)
+
+    async def aload_data(self, custom_temp_subdir: str = None) -> List[Document]:
+        """
+        Asynchronously load the file(s) from S3.
+
+        Args:
+            custom_temp_subdir (str, optional): This parameter is deprecated and unused. Defaults to None.
+
+        Returns:
+            List[Document]: A list of documents loaded from S3.
+        """
+        if custom_temp_subdir is not None:
+            warnings.warn(
+                "The `custom_temp_subdir` parameter is deprecated and unused. Please remove it from your code.",
+                DeprecationWarning,
+            )
+
+        documents = await self._aload_s3_files_as_docs()
         return self._adjust_documents(documents)
 
     def list_resources(self, **kwargs) -> List[str]:
