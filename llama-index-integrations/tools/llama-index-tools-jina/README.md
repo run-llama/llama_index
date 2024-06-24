@@ -1,5 +1,13 @@
 # LlamaIndex Tools Integration: Jina
 
+## Installation
+
+Ensure your system has Python installed and proceed with the following installations via pip:
+
+```bash
+pip install llama-index-tools-jina
+```
+
 ## Jina Search Tool
 
 This tool enables agents to search and retrieve results from the Jina search api. This tool will search the web and return the top five results with their URLs and contents, each in clean, LLM-friendly text.
