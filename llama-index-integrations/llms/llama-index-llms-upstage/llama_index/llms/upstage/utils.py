@@ -36,7 +36,7 @@ def resolve_upstage_credentials(
 
 
 def is_chat_model(model: str) -> bool:
-    return model in CHAT_MODELS
+    return True
 
 
 def is_function_calling_model(model: str) -> bool:
