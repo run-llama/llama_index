@@ -247,10 +247,21 @@ class SchemaLLMPathExtractor(TransformComponent):
             obj_type = triplet.object.type
 
             # check relations
-            if relation not in self.kg_validation_schema.get(
-                subject_type, [relation]
-            ) and relation not in self.kg_validation_schema.get(obj_type, [relation]):
-                continue
+            if self.kg_validation_schema.get("relationships"):
+                # This is only hit if the schema is a list of triples
+                schema_relationships = [
+                    triple[1]
+                    for triple in self.kg_validation_schema.get("relationships", [])
+                ]
+                if relation not in schema_relationships:
+                    continue
+            else:
+                if relation not in self.kg_validation_schema.get(
+                    subject_type, [relation]
+                ) and relation not in self.kg_validation_schema.get(
+                    obj_type, [relation]
+                ):
+                    continue
 
             # remove self-references
             if subject.lower() == obj.lower():
