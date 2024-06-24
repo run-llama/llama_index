@@ -38,9 +38,6 @@ class JinaToolSpec(BaseToolSpec):
 
         Args:
             query (str): The query to be passed to Jina Search.
-            search_lang (str): The search language preference (ISO 639-1), default is "en".
-            num_results (int): The number of search results returned in response, default is 5.
-
         Returns:
             [Document]: A list of documents containing search results.
         """
