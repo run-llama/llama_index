@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.tools.jina"
 
 [tool.llamahub.class_authors]
-CLASS = "Yash-1511"
+JinaToolSpec = "Yash-1511"
 
 [tool.mypy]
 disallow_untyped_defs = true
