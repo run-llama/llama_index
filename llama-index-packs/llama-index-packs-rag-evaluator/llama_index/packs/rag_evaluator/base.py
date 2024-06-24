@@ -54,7 +54,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             assert isinstance(judge_llm, LLM)
             self.judge_llm = judge_llm
 
-        embed_model = embed_model or Settings.embed_model
+        self.embed_model = embed_model or Settings.embed_model
         self.show_progress = show_progress
         self.evals = {
             "correctness": [],
@@ -108,7 +108,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             llm=self.judge_llm,
         )
         judges["semantic_similarity"] = SemanticSimilarityEvaluator(
-            embed_model=self.embedding_llm
+            embed_model=self.embed_model
         )
         return judges
 
