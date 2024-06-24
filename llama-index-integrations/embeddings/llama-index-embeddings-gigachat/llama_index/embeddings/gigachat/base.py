@@ -10,8 +10,6 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 
 from gigachat import GigaChat  # Install GigaChat API library via 'pip install gigachat'
 
-MAX_BATCH_SIZE_CHARS = 1000000
-MAX_BATCH_SIZE_PARTS = 90
 
 class GigaChatEmbedding(BaseEmbedding):
     """
@@ -81,7 +79,6 @@ class GigaChatEmbedding(BaseEmbedding):
         """
         embeddings = self._client.embeddings(queries).data
         return [embeds_obj.embedding for embeds_obj in embeddings]
-
 
     async def _aget_query_embeddings(self, queries: List[str]) -> List[List[float]]:
         """Asynchronously embed documents using a GigaChat embeddings model.
