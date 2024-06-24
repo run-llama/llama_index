@@ -1,0 +1,3 @@
+# LlamaIndex Embeddings Integration: GigaChat
+
+
