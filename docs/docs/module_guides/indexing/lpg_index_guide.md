@@ -214,7 +214,7 @@ Explicitly declaring the retriever allows you to customize several options. Here
 ```python
 from llama_index.core.indices.property_graph import LLMSynonymRetriever
 
-DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
+prompt = (
     "Given some initial query, generate synonyms or related keywords up to {max_keywords} in total, "
     "considering possible cases of capitalization, pluralization, common expressions, etc.\n"
     "Provide all synonyms/keywords separated by '^' symbols: 'keyword1^keyword2^...'\n"

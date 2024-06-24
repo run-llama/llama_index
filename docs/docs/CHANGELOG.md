@@ -1,5 +1,36 @@
 # ChangeLog
 
+## [2024-06-23]
+
+### `llama-index-core` [0.10.49]
+
+- Improvements to `llama-cloud` and client dependencies (#14254)
+
+### `llama-index-indices-managed-llama-cloud` [0.2.1]
+
+- Improve the interface and client interactions in `LlamaCloudIndex` (#14254)
+
+### `llama-index-llms-bedrock-converse` [0.1.3]
+
+- add claude sonnet 3.5 to bedrock converse (#14306)
+
+### `llama-index-llms-upstage` [0.1.2]
+
+- set default context size (#14293)
+- add api_key alias on upstage llm and embeddings (#14233)
+
+### `llama-index-storage-kvstore-azure` [0.1.2]
+
+- Optimized inserts (#14321)
+
+### `llama-index-utils-azure` [0.1.1]
+
+- azure_table_storage params bug (#14182)
+
+### `llama-index-vector-stores-neo4jvector` [0.1.6]
+
+- Add neo4j client method (#14314)
+
 ## [2024-06-21]
 
 ### `llama-index-core` [0.10.48]
