@@ -22,7 +22,7 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.query_engine import BaseQueryEngine
-from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.settings import Settings
 from llama_index.llms.openai import OpenAI
 from openai import RateLimitError
 from tqdm.asyncio import tqdm_asyncio
@@ -42,7 +42,7 @@ class RagEvaluatorPack(BaseLlamaPack):
         query_engine: BaseQueryEngine,
         rag_dataset: BaseLlamaDataset,
         judge_llm: Optional[LLM] = None,
-        embedding_llm: Optional[BaseEmbedding] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         show_progress: bool = True,
     ):
         self.query_engine = query_engine
@@ -54,11 +54,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             assert isinstance(judge_llm, LLM)
             self.judge_llm = judge_llm
 
-        if embedding_llm is None:
-            self.embedding_llm = OpenAIEmbedding()
-        else:
-            assert isinstance(embedding_llm, BaseEmbedding)
-            self.embedding_llm = embedding_llm
+        embed_model = embed_model or Settings.embed_model
         self.show_progress = show_progress
         self.evals = {
             "correctness": [],
