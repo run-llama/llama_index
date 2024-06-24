@@ -1252,6 +1252,7 @@ nav:
           - ./api_reference/readers/string_iterable.md
           - ./api_reference/readers/stripe_docs.md
           - ./api_reference/readers/telegram.md
+          - ./api_reference/readers/toggl.md
           - ./api_reference/readers/trello.md
           - ./api_reference/readers/twitter.md
           - ./api_reference/readers/txtai.md
@@ -1324,6 +1325,7 @@ nav:
               - ./api_reference/storage/graph_stores/neo4j.md
               - ./api_reference/storage/graph_stores/neptune.md
               - ./api_reference/storage/graph_stores/simple.md
+              - ./api_reference/storage/graph_stores/tidb.md
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/dynamodb.md
@@ -2017,6 +2019,8 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-pdf-marker
             - ../llama-index-integrations/llms/llama-index-llms-you
             - ../llama-index-integrations/llms/llama-index-llms-watsonx
+            - ../llama-index-integrations/graph_stores/llama-index-graph-stores-tidb
+            - ../llama-index-integrations/readers/llama-index-readers-toggl
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
