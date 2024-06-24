@@ -1,4 +1,5 @@
 """Token splitter."""
+
 import logging
 from typing import Callable, List, Optional
 
@@ -168,7 +169,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         new_splits = []
         for split in splits:
-            split_len = len(self._tokenizer(split))
+            split_len = len(self._tokenizer(split.strip()))
             if split_len <= chunk_size:
                 new_splits.append(split)
             else:
@@ -190,7 +191,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         cur_chunk: List[str] = []
         cur_len = 0
         for split in splits:
-            split_len = len(self._tokenizer(split))
+            split_len = len(self._tokenizer(split.strip()))
             if split_len > chunk_size:
                 _logger.warning(
                     f"Got a split of size {split_len}, ",
@@ -212,7 +213,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 while cur_len > self.chunk_overlap or cur_len + split_len > chunk_size:
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
-                    cur_len -= len(self._tokenizer(first_chunk))
+                    cur_len -= len(self._tokenizer(first_chunk.strip()))
 
             cur_chunk.append(split)
             cur_len += split_len

@@ -15,7 +15,11 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
 def split_text_keep_separator(text: str, separator: str) -> List[str]:
     """Split text with separator and keep the separator at the end of each split."""
     parts = text.split(separator)
-    result = [separator + s if i > 0 else s for i, s in enumerate(parts)]
+    result = (
+        [s + separator for s in parts[:-1]] + [parts[-1]]
+        if parts[-1]
+        else [s + separator for s in parts[:-1]]
+    )
     return [s for s in result if s]
 
 
