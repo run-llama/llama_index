@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Dict
 
 
 class YException(Exception):
@@ -9,7 +9,7 @@ class YException(Exception):
 class YAuth:
     """Class to handle authentication using folder ID and API key."""
 
-    def __init__(self, folder_id, api_key=None, iam_token=None) -> None:
+    def __init__(self, folder_id: str = None, api_key: str = None) -> None:
         """
         Initialize the YAuth object with folder_id and api_key.
 
@@ -35,7 +35,7 @@ class YAuth:
         return None
 
     @staticmethod
-    def from_dict(js):
+    def from_dict(js: Dict[str, str]) -> Optional['YAuth']:
         """
         Create a YAuth instance from a dictionary.
 
@@ -50,7 +50,7 @@ class YAuth:
         )
 
     @staticmethod
-    def from_config_file(fn):
+    def from_config_file(fn: str) -> 'YAuth':
         """
         Create a YAuth instance from a configuration file.
 
@@ -62,7 +62,7 @@ class YAuth:
         return YAuth.from_dict(js)
 
     @staticmethod
-    def from_params(kwargs):
+    def from_params(kwargs) -> 'YAuth':
         """
         Create a YAuth instance from parameters.
 
