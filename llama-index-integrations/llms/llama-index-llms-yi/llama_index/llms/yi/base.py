@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
@@ -21,7 +22,7 @@ from transformers import AutoTokenizer
 
 
 DEFAULT_YI_MODEL = "yi-large"
-DEFAULT_YI_ENDPOINT = "https://api.01.ai"
+DEFAULT_YI_ENDPOINT = "https://api.01.ai/v1"
 
 YI_MODELS: Dict[str, int] = {
     "yi-large": 16000,
@@ -80,11 +81,20 @@ class Yi(OpenAI):
         ),
     )
 
-    api_key: str = Field(default=None, description="The 01.AI API key.")
-    api_base: str = Field(
-        default=DEFAULT_YI_ENDPOINT, description="The base URL for 01.AI API."
-    )
-    api_version: str = Field(default="v1", description="The API version for 01.AI API.")
+    def __init__(
+        self,
+        model: str = DEFAULT_YI_MODEL,
+        api_key: Optional[str] = None,
+        api_base: Optional[str] = DEFAULT_YI_ENDPOINT,
+        **kwargs: Any,
+    ) -> None:
+        api_key = api_key or os.environ.get("YI_API_KEY", None)
+        super().__init__(
+            model=model,
+            api_key=api_key,
+            api_base=api_base,
+            **kwargs,
+        )
 
     @property
     def metadata(self) -> LLMMetadata:
