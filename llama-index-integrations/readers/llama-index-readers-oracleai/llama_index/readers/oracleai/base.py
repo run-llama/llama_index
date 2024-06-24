@@ -430,9 +430,9 @@ class OracleTextSplitter:
 
 # get the Oracle connection
 conn = oracledb.connect(
-    user="ut",
-    password="ut",
-    dsn="phoenix104636.dev3sub3phx.databasede3phx.oraclevcn.com/v5.regress.rdbms.dev.us.oracle.com",
+    user="<username>",
+    password="<password>",
+    dsn="<hostname/service_name>",
 )
 print("Oracle connection is established...")
 
