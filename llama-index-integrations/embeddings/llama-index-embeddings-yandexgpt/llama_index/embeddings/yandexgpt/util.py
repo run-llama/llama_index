@@ -1,12 +1,15 @@
 import json
+from typing import Optional
+
 
 class YException(Exception):
     """Custom exception for YAuth related errors."""
-    pass
+
 
 class YAuth:
     """Class to handle authentication using folder ID and API key."""
-    def __init__(self, folder_id, api_key=None, iam_token=None):
+
+    def __init__(self, folder_id, api_key=None, iam_token=None) -> None:
         """
         Initialize the YAuth object with folder_id and api_key.
 
@@ -17,7 +20,7 @@ class YAuth:
         self.api_key = api_key
 
     @property
-    def headers(self):
+    def headers(self) -> Optional[dict]:
         """
         Generate authentication headers.
 
@@ -25,9 +28,11 @@ class YAuth:
         """
         if self.folder_id is not None and self.api_key is not None:
             return {
-                        "Authorization" : f"Api-key {self.api_key}",
-                        "x-folder-id" : self.folder_id
-                   }
+                "Authorization": f"Api-key {self.api_key}",
+                "x-folder-id": self.folder_id,
+            }
+
+        return None
 
     @staticmethod
     def from_dict(js):
@@ -38,9 +43,11 @@ class YAuth:
         :return: A YAuth instance.
         :raises YException: If 'folder_id' or 'api_key' is not provided.
         """
-        if js.get('folder_id') is not None and js.get('api_key') is not None:
-            return YAuth(js['folder_id'],api_key=js['api_key'])
-        raise YException("Cannot create valid authentication object: you need to provide folder_id and either iam token or api_key fields")
+        if js.get("folder_id") is not None and js.get("api_key") is not None:
+            return YAuth(js["folder_id"], api_key=js["api_key"])
+        raise YException(
+            "Cannot create valid authentication object: you need to provide folder_id and either iam token or api_key fields"
+        )
 
     @staticmethod
     def from_config_file(fn):
@@ -50,7 +57,7 @@ class YAuth:
         :param fn: Path to the JSON configuration file.
         :return: A YAuth instance.
         """
-        with open(fn, 'r', encoding='utf-8') as f:
+        with open(fn, encoding="utf-8") as f:
             js = json.load(f)
         return YAuth.from_dict(js)
 
@@ -62,6 +69,6 @@ class YAuth:
         :param kwargs: A dictionary containing either a 'config' file path or direct 'folder_id' and 'api_key'.
         :return: A YAuth instance.
         """
-        if kwargs.get('config') is not None:
-            return YAuth.from_config_file(kwargs['config'])
+        if kwargs.get("config") is not None:
+            return YAuth.from_config_file(kwargs["config"])
         return YAuth.from_dict(kwargs)

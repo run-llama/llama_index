@@ -4,7 +4,6 @@ import time
 import asyncio
 import aiohttp
 import requests
-from enum import Enum
 from typing import Any, List, Optional
 from tenacity import Retrying, RetryError, stop_after_attempt, wait_fixed
 
@@ -16,9 +15,11 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.embeddings.yandexgpt.util import YAuth, YException
+from llama_index.embeddings.yandexgpt.util import YException
 
-DEFAULT_YANDEXGPT_API_BASE = "https://llm.api.cloud.yandex.net/foundationModels/v1/textEmbedding"
+DEFAULT_YANDEXGPT_API_BASE = (
+    "https://llm.api.cloud.yandex.net/foundationModels/v1/textEmbedding"
+)
 
 
 class YandexGPTEmbedding(BaseEmbedding):
@@ -32,7 +33,7 @@ class YandexGPTEmbedding(BaseEmbedding):
       embed_batch_size (int): The batch size for embedding. Defaults to DEFAULT_EMBED_BATCH_SIZE.
       callback_manager (Optional[CallbackManager]): Callback manager for hooks.
 
-      Example:
+    Example:
         . code-block:: python
 
             from llama_index.embeddings.yandexgpt import YandexGPTEmbedding
@@ -42,21 +43,21 @@ class YandexGPTEmbedding(BaseEmbedding):
                 folder_id="your-folder-id",
             )
     """
+
     api_key: str = Field(description="The YandexGPT API key.")
     folder_id: str = Field(description="The folder id for YandexGPT API.")
     retries: int = 6
     sleep_interval: float = 0.1
 
     def __init__(
-            self,
-            api_key: Optional[str] = None,
-            folder_id: Optional[str] = None,
-            model_name: str = "general:embedding",
-            embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-            callback_manager: Optional[CallbackManager] = None,
-            **kwargs: Any,
+        self,
+        api_key: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        model_name: str = "general:embedding",
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
-
         if not api_key:
             raise ValueError(
                 "You must provide an API key or IAM token to use YandexGPT. "
@@ -69,7 +70,9 @@ class YandexGPTEmbedding(BaseEmbedding):
             )
 
         api_key = get_from_param_or_env("api_key", api_key, "YANDEXGPT_KEY")
-        folder_id = get_from_param_or_env("folder_id", folder_id, "YANDEXGPT_CATALOG_ID")
+        folder_id = get_from_param_or_env(
+            "folder_id", folder_id, "YANDEXGPT_CATALOG_ID"
+        )
 
         super().__init__(
             model_name=model_name,
@@ -103,26 +106,29 @@ class YandexGPTEmbedding(BaseEmbedding):
         Raises:
           YException: If an error occurs during embedding.
         """
-        payload = {
-            "modelUri": self._getModelUri(is_document),
-            "text": text
-        }
+        payload = {"modelUri": self._getModelUri(is_document), "text": text}
         header = {
             "Content-Type": "application/json",
             "Authorization": f"Api-Key {self.api_key}",
-            "x-data-logging-enabled": "false"
+            "x-data-logging-enabled": "false",
         }
         try:
-            for attempt in Retrying(stop=stop_after_attempt(self.retries), wait=wait_fixed(self.sleep_interval)):
+            for attempt in Retrying(
+                stop=stop_after_attempt(self.retries),
+                wait=wait_fixed(self.sleep_interval),
+            ):
                 with attempt:
-                    response = requests.post(DEFAULT_YANDEXGPT_API_BASE,
-                                        json=payload, headers=header)
+                    response = requests.post(
+                        DEFAULT_YANDEXGPT_API_BASE, json=payload, headers=header
+                    )
                     response = response.json()
-                    if 'embedding' in response:
-                        return response['embedding']
+                    if "embedding" in response:
+                        return response["embedding"]
                     raise YException(f"No embedding found, result returned: {response}")
         except RetryError:
-            raise YException(f"Error computing embeddings after {self.retries} retries. Result returned:\n{response}")
+            raise YException(
+                f"Error computing embeddings after {self.retries} retries. Result returned:\n{response}"
+            )
 
     async def _aembed(self, text, is_document=False) -> List[float]:
         """
@@ -138,26 +144,32 @@ class YandexGPTEmbedding(BaseEmbedding):
         Raises:
           YException: If an error occurs during embedding.
         """
-        payload = {
-            "modelUri": self._getModelUri(is_document),
-            "text": text
-        }
+        payload = {"modelUri": self._getModelUri(is_document), "text": text}
         header = {
             "Content-Type": "application/json",
             "Authorization": f"Api-Key {self.api_key}",
-            "x-data-logging-enabled": "false"
+            "x-data-logging-enabled": "false",
         }
         try:
-            for attempt in Retrying(stop=stop_after_attempt(self.retries), wait=wait_fixed(self.sleep_interval)):
+            for attempt in Retrying(
+                stop=stop_after_attempt(self.retries),
+                wait=wait_fixed(self.sleep_interval),
+            ):
                 with attempt:
                     async with aiohttp.ClientSession() as session:
-                        async with session.post(DEFAULT_YANDEXGPT_API_BASE, json=payload, headers=header) as response:
+                        async with session.post(
+                            DEFAULT_YANDEXGPT_API_BASE, json=payload, headers=header
+                        ) as response:
                             result = await response.json()
-                            if 'embedding' in result:
-                                return result['embedding']
-                            raise YException(f"No embedding found, result returned: {result}")
+                            if "embedding" in result:
+                                return result["embedding"]
+                            raise YException(
+                                f"No embedding found, result returned: {result}"
+                            )
         except RetryError:
-            raise YException(f"Error computing embeddings after {self.retries} retries. Result returned:\n{result}")
+            raise YException(
+                f"Error computing embeddings after {self.retries} retries. Result returned:\n{result}"
+            )
 
     def _get_query_embedding(self, text: str) -> List[float]:
         """Get query embedding sync."""
