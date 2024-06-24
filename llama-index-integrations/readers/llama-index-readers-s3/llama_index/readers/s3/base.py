@@ -111,10 +111,10 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
         loader = self._get_simple_directory_reader()
         return loader.load_data()
 
-    def _aload_s3_files_as_docs(self) -> List[Document]:
+    async def _aload_s3_files_as_docs(self) -> List[Document]:
         """Asynchronously load file(s) from S3."""
         loader = self._get_simple_directory_reader()
-        return loader.aload_data()
+        return await loader.aload_data()
 
     def _adjust_documents(self, documents: List[Document]) -> List[Document]:
         for doc in documents:
