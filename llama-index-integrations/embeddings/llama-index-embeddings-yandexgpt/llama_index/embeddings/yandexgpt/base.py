@@ -83,7 +83,7 @@ class YandexGPTEmbedding(BaseEmbedding):
             **kwargs,
         )
 
-    def _getModelUri(self, is_document=False) -> str:
+    def _getModelUri(self, is_document: bool = False) -> str:
         """Construct the model URI based on whether the text is a document or a query."""
         return f"emb://{self.folder_id}/text-search-{'doc' if is_document else 'query'}/latest"
 
@@ -92,7 +92,7 @@ class YandexGPTEmbedding(BaseEmbedding):
         """Return the class name."""
         return "YandexGPTEmbedding"
 
-    def _embed(self, text, is_document=False) -> List[float]:
+    def _embed(self, text: str, is_document: bool = False) -> List[float]:
         """
         Embeds text using the YandexGPT Cloud API synchronously.
 
@@ -130,7 +130,7 @@ class YandexGPTEmbedding(BaseEmbedding):
                 f"Error computing embeddings after {self.retries} retries. Result returned:\n{response}"
             )
 
-    async def _aembed(self, text, is_document=False) -> List[float]:
+    async def _aembed(self, text: str, is_document: bool = False) -> List[float]:
         """
         Embeds text using the YandexGPT Cloud API asynchronously.
 
