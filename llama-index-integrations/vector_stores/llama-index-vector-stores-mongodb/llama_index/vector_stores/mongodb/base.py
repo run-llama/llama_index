@@ -102,11 +102,13 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         mongodb_client: Optional[Any] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
-        index_name: str = "default",
+        vector_index_name: str = "vector_index",
         id_key: str = "_id",
         embedding_key: str = "embedding",
         text_key: str = "text",
         metadata_key: str = "metadata",
+        fulltext_index_name: str = "fulltext_index",
+        index_name: str = None,
         insert_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
@@ -116,7 +118,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             mongodb_client: A MongoDB client.
             db_name: A MongoDB database name.
             collection_name: A MongoDB collection name.
-            index_name: A MongoDB Atlas Vector Search index name.
+            vector_index_name: A MongoDB Atlas *Vector* Search index name. ($vectorSearch)
             id_key: The data field to use as the id.
             embedding_key: A MongoDB field that will contain
             the embedding for each document.
@@ -124,6 +126,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             metadata_key: A MongoDB field that will contain
             the metadata for each document.
             insert_kwargs: The kwargs used during `insert`.
+            fulltext_index_name: A MongoDB Atlas *full-text* Search index name. ($search)
+            index_name: DEPRECATED: Please use vector_index_name.
         """
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
@@ -138,8 +142,17 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 driver=DriverInfo(name="llama-index", version=version("llama-index")),
             )
 
+        if index_name is not None:
+            logger.warning("index_name is deprecated. Please use vector_index_name")
+            if vector_index_name is None:
+                vector_index_name = index_name
+            else:
+                logger.warning(
+                    "vector_index_name and index_name both specified. Will use vector_index_name"
+                )
+
         self._collection = self._mongodb_client[db_name][collection_name]
-        self._index_name = index_name
+        self._vector_index_name = vector_index_name
         self._embedding_key = embedding_key
         self._id_key = id_key
         self._text_key = text_key
@@ -208,7 +221,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             "path": self._embedding_key,
             "numCandidates": query.similarity_top_k * 10,
             "limit": query.similarity_top_k,
-            "index": self._index_name,
+            "index": self._vector_index_name,
         }
         if query.filters:
             params["filter"] = _to_mongodb_filter(query.filters)
