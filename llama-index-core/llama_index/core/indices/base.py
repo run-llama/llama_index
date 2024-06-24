@@ -92,8 +92,7 @@ class BaseIndex(Generic[IS], ABC):
             if index_struct is None:
                 nodes = nodes or []
                 index_struct = self.build_index_from_nodes(
-                    nodes + objects,  # type: ignore
-                    **kwargs
+                    nodes + objects, **kwargs  # type: ignore
                 )
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
@@ -204,10 +203,14 @@ class BaseIndex(Generic[IS], ABC):
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
     @abstractmethod
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode], **build_kwargs: Any) -> IS:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> IS:
         """Build the index from nodes."""
 
-    def build_index_from_nodes(self, nodes: Sequence[BaseNode], **build_kwargs: Any) -> IS:
+    def build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> IS:
         """Build the index from nodes."""
         self._docstore.add_documents(nodes, allow_update=True)
         return self._build_index_from_nodes(nodes, **build_kwargs)
