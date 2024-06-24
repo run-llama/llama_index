@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
-    """Span Handler that managest SimpleSpan's."""
+    """Span Handler that manages SimpleSpan's."""
 
     def class_name(cls) -> str:
         """Class name."""
@@ -104,7 +104,7 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
             if s.parent_id is None:
                 continue
             if not any(ns.id_ == s.parent_id for ns in all_spans):
-                warnings.warn("Parent with id {span.parent_id} missing from spans")
+                warnings.warn(f"Parent with id {s.parent_id} missing from spans")
                 s.parent_id += "-MISSING"
                 all_spans.append(SimpleSpan(id_=s.parent_id, parent_id=None))
 

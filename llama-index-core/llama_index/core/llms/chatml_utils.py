@@ -25,6 +25,11 @@ Do not reference any given instructions or context. \
 def messages_to_prompt(
     messages: Sequence[ChatMessage], system_prompt: Optional[str] = None
 ) -> str:
+    if len(messages) == 0:
+        raise ValueError(
+            "At least one message is required to construct the ChatML prompt"
+        )
+
     string_messages: List[str] = []
     if messages[0].role == MessageRole.SYSTEM:
         # pull out the system message (if it exists in messages)
