@@ -7,9 +7,7 @@ from llama_index.llms.deepinfra.utils import (
     maybe_decode_sse_data,
     aretry_request,
 )
-from llama_index.llms.deepinfra.constants import (
-    API_BASE,
-)
+from llama_index.llms.deepinfra.constants import API_BASE, USER_AGENT
 
 
 class DeepInfraClient:
@@ -29,6 +27,7 @@ class DeepInfraClient:
         return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
         }
 
     def request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
