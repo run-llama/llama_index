@@ -38,6 +38,7 @@ class JinaToolSpec(BaseToolSpec):
 
         Args:
             query (str): The query to be passed to Jina Search.
+
         Returns:
             [Document]: A list of documents containing search results.
         """
@@ -46,7 +47,13 @@ class JinaToolSpec(BaseToolSpec):
         }
         response = self._make_request(search_params)
         return [
-            Document(text=result["content"], extra_info={
-                     "url": result["url"], "title": result["title"], "description": result["description"]})
+            Document(
+                text=result["content"],
+                extra_info={
+                    "url": result["url"],
+                    "title": result["title"],
+                    "description": result["description"],
+                },
+            )
             for result in response["data"]
         ]
