@@ -568,6 +568,8 @@ class OpenAI(FunctionCallingLLM):
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -809,6 +811,8 @@ class OpenAI(FunctionCallingLLM):
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
