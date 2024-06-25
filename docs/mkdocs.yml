@@ -75,7 +75,6 @@ nav:
           - ./examples/agent/agent_builder.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
           - ./examples/agent/agent_runner/agent_runner.ipynb
-          - ./examples/agent/agent_runner/agent_runner_rag.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
