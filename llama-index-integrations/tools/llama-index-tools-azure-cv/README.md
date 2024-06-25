@@ -6,7 +6,7 @@ You will need to set up an api key and computer vision instance using Azure, lea
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/azure_vision.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-azure-cv/examples/azure_vision.ipynb)
 
 Here's an example usage of the AzureCVToolSpec.
 

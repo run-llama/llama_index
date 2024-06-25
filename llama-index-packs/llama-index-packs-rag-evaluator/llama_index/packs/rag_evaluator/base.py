@@ -20,8 +20,9 @@ from llama_index.core.evaluation.notebook_utils import (
 from llama_index.core.llama_dataset import BaseLlamaDataset, BaseLlamaPredictionDataset
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
+from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.query_engine import BaseQueryEngine
-from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.settings import Settings
 from llama_index.llms.openai import OpenAI
 from openai import RateLimitError
 from tqdm.asyncio import tqdm_asyncio
@@ -41,6 +42,7 @@ class RagEvaluatorPack(BaseLlamaPack):
         query_engine: BaseQueryEngine,
         rag_dataset: BaseLlamaDataset,
         judge_llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         show_progress: bool = True,
     ):
         self.query_engine = query_engine
@@ -51,6 +53,8 @@ class RagEvaluatorPack(BaseLlamaPack):
         else:
             assert isinstance(judge_llm, LLM)
             self.judge_llm = judge_llm
+
+        self.embed_model = embed_model or Settings.embed_model
         self.show_progress = show_progress
         self.evals = {
             "correctness": [],
@@ -104,7 +108,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             llm=self.judge_llm,
         )
         judges["semantic_similarity"] = SemanticSimilarityEvaluator(
-            embed_model=OpenAIEmbedding()
+            embed_model=self.embed_model
         )
         return judges
 

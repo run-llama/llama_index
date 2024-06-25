@@ -24,7 +24,6 @@ from llama_index.vector_stores.weaviate.utils import (
     create_default_schema,
     get_all_properties,
     get_node_similarity,
-    parse_get_response,
     to_node,
 )
 
@@ -59,6 +58,10 @@ def _transform_weaviate_filter_operator(operator: str) -> str:
         return "greater_or_equal"
     elif operator == "<=":
         return "less_or_equal"
+    elif operator == "any":
+        return "contains_any"
+    elif operator == "all":
+        return "contains_all"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -246,29 +249,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        where_filter = {
-            "path": ["ref_doc_id"],
-            "operator": "Equal",
-            "valueText": ref_doc_id,
-        }
+        collection = self._client.collections.get(self.index_name)
+
+        where_filter = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
+
         if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
-            where_filter = {
-                "operator": "And",
-                "operands": [where_filter, delete_kwargs["filter"]],  # type: ignore
-            }
+            where_filter = where_filter & _to_weaviate_filter(delete_kwargs["filter"])
 
-        query = (
-            self._client.query.get(self.index_name)
-            .with_additional(["id"])
-            .with_where(where_filter)
-            .with_limit(10000)  # 10,000 is the max weaviate can fetch
-        )
-
-        query_result = query.do()
-        parsed_result = parse_get_response(query_result)
-        entries = parsed_result[self.index_name]
-        for entry in entries:
-            self._client.data_object.delete(entry["_additional"]["id"], self.index_name)
+        collection.data.delete_many(where=where_filter)
 
     def delete_index(self) -> None:
         """Delete the index associated with the client.

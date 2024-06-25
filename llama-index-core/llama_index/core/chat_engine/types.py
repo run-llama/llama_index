@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from queue import Queue, Empty
 from threading import Event
-from typing import AsyncGenerator, Generator, List, Optional, Union
+from typing import AsyncGenerator, Generator, List, Optional, Union, Dict, Any
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -17,6 +17,7 @@ from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.tools import ToolOutput
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.chat_engine import (
     StreamChatErrorEvent,
     StreamChatEndEvent,
@@ -51,6 +52,7 @@ class AgentChatResponse:
     sources: List[ToolOutput] = field(default_factory=list)
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     is_dummy_stream: bool = False
+    metadata: Optional[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
         if self.sources and not self.source_nodes:
@@ -154,16 +156,15 @@ class StreamingAgentChatResponse:
             raise ValueError(
                 "chat_stream is None. Cannot write to history without chat_stream."
             )
-        dispatch_event = dispatcher.get_dispatch_event()
 
         # try/except to prevent hanging on error
-        dispatch_event(StreamChatStartEvent())
+        dispatcher.event(StreamChatStartEvent())
         try:
             final_text = ""
             for chat in self.chat_stream:
                 self.is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatch_event(
+                    dispatcher.event(
                         StreamChatDeltaReceivedEvent(
                             delta=chat.delta,
                         )
@@ -176,7 +177,7 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatch_event(StreamChatErrorEvent(exception=e))
+            dispatcher.event(StreamChatErrorEvent(exception=e))
             self.exception = e
 
             # This act as is_done events for any consumers waiting
@@ -185,7 +186,7 @@ class StreamingAgentChatResponse:
             # force the queue reader to see the exception
             self.put_in_queue("")
             raise
-        dispatch_event(StreamChatEndEvent())
+        dispatcher.event(StreamChatEndEvent())
 
         self.is_done = True
 
@@ -201,7 +202,6 @@ class StreamingAgentChatResponse:
         on_stream_end_fn: Optional[callable] = None,
     ) -> None:
         self._ensure_async_setup()
-        dispatch_event = dispatcher.get_dispatch_event()
 
         if self.achat_stream is None:
             raise ValueError(
@@ -210,13 +210,13 @@ class StreamingAgentChatResponse:
             )
 
         # try/except to prevent hanging on error
-        dispatch_event(StreamChatStartEvent())
+        dispatcher.event(StreamChatStartEvent())
         try:
             final_text = ""
             async for chat in self.achat_stream:
                 self.is_function = is_function(chat.message)
                 if chat.delta:
-                    dispatch_event(
+                    dispatcher.event(
                         StreamChatDeltaReceivedEvent(
                             delta=chat.delta,
                         )
@@ -232,7 +232,7 @@ class StreamingAgentChatResponse:
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
-            dispatch_event(StreamChatErrorEvent(exception=e))
+            dispatcher.event(StreamChatErrorEvent(exception=e))
             self.exception = e
 
             # These act as is_done events for any consumers waiting
@@ -242,7 +242,7 @@ class StreamingAgentChatResponse:
             # force the queue reader to see the exception
             self.aput_in_queue("")
             raise
-        dispatch_event(StreamChatEndEvent())
+        dispatcher.event(StreamChatEndEvent())
         self.is_done = True
 
         # These act as is_done events for any consumers waiting
@@ -298,7 +298,7 @@ class StreamingAgentChatResponse:
 AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
 
 
-class BaseChatEngine(ABC):
+class BaseChatEngine(DispatcherSpanMixin, ABC):
     """Base Chat Engine."""
 
     @abstractmethod

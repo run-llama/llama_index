@@ -2,11 +2,12 @@ from abc import abstractmethod
 from typing import List
 
 from llama_index.core.indices.query.schema import QueryBundle, QueryType
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptMixin
 from llama_index.core.schema import NodeWithScore
 
 
-class BaseImageRetriever(PromptMixin):
+class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
     """Base Image Retriever Abstraction."""
 
     def text_to_image_retrieve(

@@ -4,11 +4,11 @@ This tool provides agents the ability to easily execute GraphQL queries against 
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/graphql.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-graphql/examples/graphql.ipynb)
 
 Here's an example usage of the GraphQLToolSpec.
 
-This tool works best when the Agent has access to the GraphQL schema for the server. See [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/shopify.ipynb) for an example of using a tool with a file loader to create even more powerful Agents.
+This tool works best when the Agent has access to the GraphQL schema for the server. See [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-shopify/examples/shopify.ipynb) for an example of using a tool with a file loader to create even more powerful Agents.
 
 ```python
 from llama_index.tools.graphql import GraphQLToolSpec

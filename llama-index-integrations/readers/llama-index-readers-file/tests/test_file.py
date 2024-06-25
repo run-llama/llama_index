@@ -2,10 +2,12 @@
 
 from multiprocessing import cpu_count
 from tempfile import TemporaryDirectory
-from typing import Any, Dict
+from typing import Any, Dict, List
+import hashlib
 
 import pytest
 from llama_index.core.readers.file.base import SimpleDirectoryReader
+from llama_index.core.schema import Document
 
 try:
     from llama_index.readers.file import PDFReader
@@ -472,3 +474,65 @@ def test_parallel_load() -> None:
         # check paths. Split handles path_part_X doc_ids from md and json files
         for doc in documents:
             assert str(doc.node_id).split("_part")[0] in doc_paths
+
+
+def _compare_document_lists(
+    documents1: List[Document], documents2: List[Document]
+) -> None:
+    assert len(documents1) == len(documents2)
+    hashes_1 = {doc.hash for doc in documents1}
+    hashes_2 = {doc.hash for doc in documents2}
+    assert hashes_1 == hashes_2
+
+
+@pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
+def test_list_and_read_file_workflow() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        with open(f"{tmp_dir}/test1.txt", "w") as f:
+            f.write("test1")
+        with open(f"{tmp_dir}/test2.txt", "w") as f:
+            f.write("test2")
+
+        reader = SimpleDirectoryReader(tmp_dir)
+        original_docs = reader.load_data()
+
+        files = reader.list_resources()
+        assert len(files) == 2
+
+        new_docs: List[Document] = []
+        for file in files:
+            file_info = reader.get_resource_info(file)
+            assert file_info is not None
+            assert len(file_info) == 4
+
+            new_docs.extend(reader.load_resource(file))
+
+        _compare_document_lists(original_docs, new_docs)
+
+        new_docs = reader.load_resources(files)
+        _compare_document_lists(original_docs, new_docs)
+
+
+@pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
+def test_read_file_content() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        with open(f"{tmp_dir}/test1.txt", "w") as f:
+            f.write("test1")
+        with open(f"{tmp_dir}/test2.txt", "w") as f:
+            f.write("test2")
+
+        files_checksum = {
+            f"{tmp_dir}/test1.txt": hashlib.md5(
+                open(f"{tmp_dir}/test1.txt", "rb").read()
+            ).hexdigest(),
+            f"{tmp_dir}/test2.txt": hashlib.md5(
+                open(f"{tmp_dir}/test2.txt", "rb").read()
+            ).hexdigest(),
+        }
+
+        reader = SimpleDirectoryReader(tmp_dir)
+
+        for file in files_checksum:
+            content = reader.read_file_content(file)
+            checksum = hashlib.md5(content).hexdigest()
+            assert checksum == files_checksum[file]

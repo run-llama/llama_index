@@ -1,37 +1,80 @@
 import pytest
 
 from llama_index.llms.nvidia import NVIDIA as Interface
-from llama_index.llms.nvidia.base import BASE_URL
+from llama_index.llms.nvidia.base import BASE_URL, KNOWN_URLS
 
 
-def test_mode_switch_nvidia_throws_without_key(masked_env_var: str):
+def test_mode_switch_nvidia_throws_without_key_deprecated(masked_env_var: str):
     x = Interface()
     with pytest.raises(ValueError):
-        x.mode("nvidia")
+        with pytest.warns(DeprecationWarning):
+            x.mode("nvidia")
 
 
-def test_mode_switch_nvidia_with_key(masked_env_var: str):
-    Interface().mode("nvidia", api_key="test")
+def test_mode_switch_nvidia_with_key_deprecated(masked_env_var: str):
+    with pytest.warns(DeprecationWarning):
+        Interface().mode("nvidia", api_key="test")
 
 
-def test_mode_switch_nim_throws_without_url():
+def test_mode_switch_nim_throws_without_url_deprecated():
     instance = Interface()
     with pytest.raises(ValueError):
-        instance.mode("nim")
+        with pytest.warns(DeprecationWarning):
+            instance.mode("nim")
 
 
-def test_mode_switch_nim_with_url():
-    Interface().mode("nim", base_url="test")
+def test_mode_switch_nim_with_url_deprecated():
+    with pytest.warns(DeprecationWarning):
+        Interface().mode("nim", base_url="test")
 
 
-def test_mode_switch_param_setting():
+def test_mode_switch_param_setting_deprecated():
     instance = Interface(model="dummy")
 
-    instance1 = instance.mode("nim", base_url="https://test_url/v1/")
+    with pytest.warns(DeprecationWarning):
+        instance1 = instance.mode("nim", base_url="https://test_url/v1/")
     assert instance1.model == "dummy"
     assert str(instance1.api_base) == "https://test_url/v1/"
 
-    instance2 = instance1.mode("nvidia", api_key="test", model="dummy-2")
+    with pytest.warns(DeprecationWarning):
+        instance2 = instance1.mode("nvidia", api_key="test", model="dummy-2")
     assert instance2.model == "dummy-2"
     assert str(instance2.api_base) == BASE_URL
     assert instance2.api_key == "test"
+
+
+UNKNOWN_URLS = [
+    "https://test_url/v1",
+    "https://test_url/v1/",
+    "https://test_url/.../v1",
+    "http://test_url/v1",
+    "http://test_url/v1/",
+    "http://test_url/.../v1/",
+]
+
+
+@pytest.mark.parametrize("base_url", UNKNOWN_URLS)
+def test_mode_switch_unknown_base_url_without_key(masked_env_var: str, base_url: str):
+    Interface(base_url=base_url)
+
+
+@pytest.mark.parametrize("base_url", UNKNOWN_URLS)
+@pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
+def test_mode_switch_unknown_base_url_with_key(
+    masked_env_var: str, param: str, base_url: str
+):
+    Interface(base_url=base_url, **{param: "test"})
+
+
+@pytest.mark.parametrize("base_url", KNOWN_URLS)
+def test_mode_switch_known_base_url_without_key(masked_env_var: str, base_url: str):
+    with pytest.warns(UserWarning):
+        Interface(base_url=base_url)
+
+
+@pytest.mark.parametrize("base_url", KNOWN_URLS)
+@pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
+def test_mode_switch_known_base_url_with_key(
+    masked_env_var: str, base_url: str, param: str
+):
+    Interface(base_url=base_url, **{param: "test"})

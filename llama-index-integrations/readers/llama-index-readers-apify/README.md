@@ -25,27 +25,21 @@ and set your [Apify API token](https://console.apify.com/account/integrations) i
 
 ```python
 from llama_index.core import Document
-
-
-# Converts a single record from the Actor's resulting dataset to the LlamaIndex format
-def tranform_dataset_item(item):
-    return Document(
-        text=item.get("text"),
-        extra_info={
-            "url": item.get("url"),
-        },
-    )
-
-
 from llama_index.readers.apify import ApifyActor
 
 reader = ApifyActor("<My Apify API token>")
+
 documents = reader.load_data(
     actor_id="apify/website-content-crawler",
     run_input={
-        "startUrls": [{"url": "https://gpt-index.readthedocs.io/en/latest"}]
+        "startUrls": [{"url": "https://docs.llamaindex.ai/en/latest/"}]
     },
-    dataset_mapping_function=tranform_dataset_item,
+    dataset_mapping_function=lambda item: Document(
+        text=item.get("text"),
+        metadata={
+            "url": item.get("url"),
+        },
+    ),
 )
 ```
 
@@ -75,23 +69,16 @@ and set your [Apify API token](https://console.apify.com/account/integrations) i
 
 ```python
 from llama_index.core import Document
-
-
-# Converts a single record from the Apify dataset to the LlamaIndex format
-def tranform_dataset_item(item):
-    return Document(
-        text=item.get("text"),
-        extra_info={
-            "url": item.get("url"),
-        },
-    )
-
-
 from llama_index.readers.apify import ApifyDataset
 
 reader = ApifyDataset("<Your Apify API token>")
 documents = reader.load_data(
     dataset_id="<Apify Dataset ID>",
-    dataset_mapping_function=tranform_dataset_item,
+    dataset_mapping_function=lambda item: Document(
+        text=item.get("text"),
+        metadata={
+            "url": item.get("url"),
+        },
+    ),
 )
 ```

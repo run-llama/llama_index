@@ -27,12 +27,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-lancedb"
 readme = "README.md"
-version = "0.1.3"
+version = "0.1.6"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 llama-index-core = "^0.10.1"
-lancedb = "^0.5.1"
+lancedb = ">=0.8.0"
+tantivy = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -41,6 +42,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "*"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"

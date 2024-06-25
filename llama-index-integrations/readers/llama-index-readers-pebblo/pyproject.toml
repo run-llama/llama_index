@@ -35,6 +35,7 @@ version = "0.1.1"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
+langchain-community = ">=0.0.303"
 langchain = ">=0.0.303"
 requests = "^2"
 
