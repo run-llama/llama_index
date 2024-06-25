@@ -69,16 +69,16 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     _id_tensor_name: str = PrivateAttr()
 
     def __init__(
-            self,
-            dataset_path: str = "llama_index",
-            token: Optional[str] = None,
-            read_only: Optional[bool] = False,
-            ingestion_batch_size: int = 1024,
-            ingestion_num_workers: int = 4,
-            overwrite: bool = False,
-            exec_option: Optional[str] = None,
-            verbose: bool = True,
-            **kwargs: Any,
+        self,
+        dataset_path: str = "llama_index",
+        token: Optional[str] = None,
+        read_only: Optional[bool] = False,
+        ingestion_batch_size: int = 1024,
+        ingestion_num_workers: int = 4,
+        overwrite: bool = False,
+        exec_option: Optional[str] = None,
+        verbose: bool = True,
+        **kwargs: Any,
     ) -> None:
         """
         Args:
@@ -144,12 +144,11 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         self._vectorstore.summary()
 
     def get_nodes(
-            self,
-            node_ids: Optional[List[str]] = None,
-            filters: Optional[MetadataFilters] = None,
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
         """Get nodes from vector store."""
-
         if not node_ids:
             data = self._vectorstore.search(filter=lambda x: True)
         else:
