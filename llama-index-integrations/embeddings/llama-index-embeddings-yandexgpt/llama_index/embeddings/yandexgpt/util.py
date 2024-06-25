@@ -35,7 +35,7 @@ class YAuth:
         return None
 
     @staticmethod
-    def from_dict(js: Dict[str, str]) -> Optional['YAuth']:
+    def from_dict(js: Dict[str, str]) -> Optional["YAuth"]:
         """
         Create a YAuth instance from a dictionary.
 
@@ -50,7 +50,7 @@ class YAuth:
         )
 
     @staticmethod
-    def from_config_file(fn: str) -> 'YAuth':
+    def from_config_file(fn: str) -> "YAuth":
         """
         Create a YAuth instance from a configuration file.
 
@@ -62,7 +62,7 @@ class YAuth:
         return YAuth.from_dict(js)
 
     @staticmethod
-    def from_params(kwargs) -> 'YAuth':
+    def from_params(kwargs) -> "YAuth":
         """
         Create a YAuth instance from parameters.
 
