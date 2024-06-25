@@ -22,7 +22,7 @@ The reasoning loop depends on the type of agent. We have support for the followi
 
 - Function Calling Agents (integrates with any function calling LLM)
 - ReAct agent (works across any chat/text completion endpoint).
-- "Advanced Agents": LLMCompiler (https://llamahub.ai/l/llama-packs/llama-index-packs-agents-llm-compiler?from=), Chain-of-Abstraction (https://llamahub.ai/l/llama-packs/llama-index-packs-agents-coa?from=), Language Agent Tree Search (https://llamahub.ai/l/llama-packs/llama-index-packs-agents-lats?from=), and more.
+- "Advanced Agents": [LLMCompiler](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-llm-compiler?from=), [Chain-of-Abstraction](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-coa?from=), [Language Agent Tree Search](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-lats?from=), and more.
 
 ### Tool Abstractions
 

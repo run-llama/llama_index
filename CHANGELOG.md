@@ -1,5 +1,21 @@
 # ChangeLog
 
+## [2024-06-24]
+
+### `llama-index-core` [0.10.50]
+
+- added dead simple `FnAgentWorker` for custom agents (#14329)
+- Pass the kwargs on when build_index_from_nodes (#14341)
+- make async utils a bit more robust to nested async (#14356)
+
+### `llama-index-llms-upstage` [0.1.3]
+
+- every llm is a chat model (#14334)
+
+### `llama-index-packs-rag-evaluator` [0.1.5]
+
+- added possibility to run local embedding model in RAG evaluation packages (#14352)
+
 ## [2024-06-23]
 
 ### `llama-index-core` [0.10.49]
