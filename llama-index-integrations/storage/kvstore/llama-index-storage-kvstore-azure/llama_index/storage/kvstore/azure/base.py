@@ -41,8 +41,8 @@ class AzureKVStore(BaseKVStore):
 
     def __init__(
         self,
-        table_client: Any,
-        atable_client: Optional[Any] = None,
+        table_service_client: Any,
+        atable_service_client: Optional[Any] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
         *args: Any,
@@ -64,9 +64,9 @@ class AzureKVStore(BaseKVStore):
 
         super().__init__(*args, **kwargs)
 
-        self._table_client = cast(TableServiceClient, table_client)
+        self._table_service_client = cast(TableServiceClient, table_service_client)
         self._atable_service_client = cast(
-            Optional[AsyncTableServiceClient], atable_client
+            Optional[AsyncTableServiceClient], atable_service_client
         )
 
     @classmethod
@@ -185,7 +185,8 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        self._table_client.create_table_if_not_exists(table_name).upsert_entity(
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
+        table_client.upsert_entity(
             {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
@@ -212,9 +213,10 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        await self._atable_service_client.create_table_if_not_exists(
+        atable_client = await self._atable_service_client.create_table_if_not_exists(
             table_name
-        ).upsert_entity(
+        )
+        await atable_client.upsert_entity(
             {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
@@ -225,7 +227,7 @@ class AzureKVStore(BaseKVStore):
 
     def put_all(
         self,
-        kv_pairs: List[Tuple[str, Optional[dict]]],
+        kv_pairs: List[Tuple[str, dict]],
         collection: str = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -240,31 +242,27 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
 
-        entities = []
-        for key, val in kv_pairs:
-            entity = {
+        entities = [
+            {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
+                **serialize(self.service_mode, val),
             }
+            for key, val in kv_pairs
+        ]
 
-            if val is not None:
-                serialized_val = serialize(self.service_mode, val)
-                entity.update(serialized_val)
-
-            entities.append(entity)
-
-        for batch in (
-            entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
-        ):
+        entities_len = len(entities)
+        for start in range(0, entities_len, batch_size):
             table_client.submit_transaction(
-                (TransactionOperation.UPSERT, entity) for entity in batch
+                (TransactionOperation.UPSERT, entities[i])
+                for i in range(start, min(start + batch_size, entities_len))
             )
 
     async def aput_all(
         self,
-        kv_pairs: List[Tuple[str, Optional[dict]]],
+        kv_pairs: List[Tuple[str, dict]],
         collection: str = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -287,24 +285,20 @@ class AzureKVStore(BaseKVStore):
             table_name
         )
 
-        entities = []
-        for key, val in kv_pairs:
-            entity = {
+        entities = [
+            {
                 "PartitionKey": self.partition_key,
                 "RowKey": key,
+                **serialize(self.service_mode, val),
             }
+            for key, val in kv_pairs
+        ]
 
-            if val is not None:
-                serialized_val = serialize(self.service_mode, val)
-                entity.update(serialized_val)
-
-            entities.append(entity)
-
-        for batch in (
-            entities[i : i + batch_size] for i in range(0, len(entities), batch_size)
-        ):
+        entities_len = len(entities)
+        for start in range(0, entities_len, batch_size):
             await atable_client.submit_transaction(
-                (TransactionOperation.UPSERT, entity) for entity in batch
+                (TransactionOperation.UPSERT, entities[i])
+                for i in range(start, min(start + batch_size, entities_len))
             )
 
     def get(
@@ -323,7 +317,7 @@ class AzureKVStore(BaseKVStore):
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
 
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         try:
             entity = table_client.get_entity(
                 partition_key=self.partition_key, row_key=key, select=select
@@ -372,7 +366,7 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         entities = table_client.list_entities(
             filter=f"PartitionKey eq '{self.partition_key}'",
             select=select,
@@ -419,7 +413,7 @@ class AzureKVStore(BaseKVStore):
         table_name = (
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         table_client.delete_entity(partition_key=self.partition_key, row_key=key)
         return True
 
@@ -456,7 +450,7 @@ class AzureKVStore(BaseKVStore):
             DEFAULT_COLLECTION if not collection else sanitize_table_name(collection)
         )
 
-        table_client = self._table_client.create_table_if_not_exists(table_name)
+        table_client = self._table_service_client.create_table_if_not_exists(table_name)
         try:
             entities = table_client.query_entities(
                 query_filter=query_filter, select=select

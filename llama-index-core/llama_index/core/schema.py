@@ -357,6 +357,9 @@ class BaseNode(BaseComponent):
 
 class TextNode(BaseNode):
     text: str = Field(default="", description="Text content of the node.")
+    mimetype: str = Field(
+        default="text/plain", description="MIME type of the node content."
+    )
     start_char_idx: Optional[int] = Field(
         default=None, description="Start char index of the node."
     )
