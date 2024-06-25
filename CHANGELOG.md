@@ -1,5 +1,70 @@
 # ChangeLog
 
+## [2024-06-24]
+
+### `llama-index-core` [0.10.50]
+
+- added dead simple `FnAgentWorker` for custom agents (#14329)
+- Pass the kwargs on when build_index_from_nodes (#14341)
+- make async utils a bit more robust to nested async (#14356)
+
+### `llama-index-llms-upstage` [0.1.3]
+
+- every llm is a chat model (#14334)
+
+### `llama-index-packs-rag-evaluator` [0.1.5]
+
+- added possibility to run local embedding model in RAG evaluation packages (#14352)
+
+## [2024-06-23]
+
+### `llama-index-core` [0.10.49]
+
+- Improvements to `llama-cloud` and client dependencies (#14254)
+
+### `llama-index-indices-managed-llama-cloud` [0.2.1]
+
+- Improve the interface and client interactions in `LlamaCloudIndex` (#14254)
+
+### `llama-index-llms-bedrock-converse` [0.1.3]
+
+- add claude sonnet 3.5 to bedrock converse (#14306)
+
+### `llama-index-llms-upstage` [0.1.2]
+
+- set default context size (#14293)
+- add api_key alias on upstage llm and embeddings (#14233)
+
+### `llama-index-storage-kvstore-azure` [0.1.2]
+
+- Optimized inserts (#14321)
+
+### `llama-index-utils-azure` [0.1.1]
+
+- azure_table_storage params bug (#14182)
+
+### `llama-index-vector-stores-neo4jvector` [0.1.6]
+
+- Add neo4j client method (#14314)
+
+## [2024-06-21]
+
+### `llama-index-core` [0.10.48]
+
+- Improve efficiency of average precision (#14260)
+- add crewai + llamaindex cookbook (#14266)
+- Add mimetype field to TextNode (#14279)
+- Improve IBM watsonx.ai docs (#14271)
+- Updated frontpage of docs, added agents guide, and more (#14089)
+
+### `llama-index-llms-anthropic` [0.1.14]
+
+- Add support for claude 3.5 (#14277)
+
+### `llama-index-llms-bedrock-converse` [0.1.4]
+
+- Implement Bedrock Converse API for function calling (#14055)
+
 ## [2024-06-19]
 
 ### `llama-index-core` [0.10.47]

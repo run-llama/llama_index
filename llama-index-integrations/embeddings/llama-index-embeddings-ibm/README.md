@@ -1,6 +1,6 @@
 # LlamaIndex Embeddings Integration: IBM
 
-This package integrates the LlamaIndex LLMs API with the IBM watsonx.ai Foundation Models API by leveraging `ibm-watsonx-ai` [SDK](https://ibm.github.io/watsonx-ai-python-sdk/index.html). With this integration, you can use one of the embedding models that are available in IBM watsonx.ai to embed a single string or a list of strings.
+This package provides the integration between LlamaIndex and IBM watsonx.ai through the `ibm-watsonx-ai` SDK.
 
 ## Installation
 
@@ -14,7 +14,7 @@ pip install llama-index-embeddings-ibm
 
 To use IBM's models, you must have an IBM Cloud user API key. Here's how to obtain and set up your API key:
 
-1. **Obtain an API Key:** For more details on how to create and manage an API key, refer to [Managing user API keys](https://cloud.ibm.com/docs/account?topic=account-userapikey&interface=ui).
+1. **Obtain an API Key:** For more details on how to create and manage an API key, refer to IBM's [documentation](https://cloud.ibm.com/docs/account?topic=account-userapikey&interface=ui).
 2. **Set the API Key as an Environment Variable:** For security reasons, it's recommended to not hard-code your API key directly in your scripts. Instead, set it up as an environment variable. You can use the following code to prompt for the API key and set it as an environment variable:
 
 ```python
@@ -25,7 +25,7 @@ watsonx_api_key = getpass()
 os.environ["WATSONX_APIKEY"] = watsonx_api_key
 ```
 
-Alternatively, you can set the environment variable in your terminal.
+In alternative, you can set the environment variable in your terminal.
 
 - **Linux/macOS:** Open your terminal and execute the following command:
 
@@ -48,16 +48,16 @@ You might need to adjust embedding parameters for different tasks.
 truncate_input_tokens = 3
 ```
 
-Initialize the `WatsonxEmbeddings` class with the previously set parameters.
+Initialize the `WatsonxEmbeddings` class with previously set parameters.
 
 **Note**:
 
-- To provide context for the API call, you must pass the `project_id` or `space_id`. To get your project or space ID, open your project or space, go to the **Manage** tab, and click **General**. For more information see: [Project documentation](https://www.ibm.com/docs/en/watsonx-as-a-service?topic=projects) or [Deployment space documentation](https://www.ibm.com/docs/en/watsonx/saas?topic=spaces-creating-deployment).
-- Depending on the region of your provisioned service instance, use one of the URLs listed in [watsonx.ai API Authentication](https://ibm.github.io/watsonx-ai-python-sdk/setup_cloud.html#authentication).
+- To provide context for the API call, you must add `project_id` or `space_id`. For more information see [documentation](https://www.ibm.com/docs/en/watsonx-as-a-service?topic=projects).
+- Depending on the region of your provisioned service instance, use one of the urls described [here](https://ibm.github.io/watsonx-ai-python-sdk/setup_cloud.html#authentication).
 
-In this example, we’ll use the `project_id` and Dallas URL.
+In this example, we’ll use the `project_id` and Dallas url.
 
-You need to specify the `model_id` that will be used for inferencing.
+You need to specify `model_id` that will be used for inferencing.
 
 ```python
 from llama_index.embeddings.ibm import WatsonxEmbeddings
@@ -70,7 +70,7 @@ watsonx_embedding = WatsonxEmbeddings(
 )
 ```
 
-Alternatively, you can use Cloud Pak for Data credentials. For details, see [watsonx.ai software setup](https://ibm.github.io/watsonx-ai-python-sdk/setup_cpd.html).
+Alternatively you can use Cloud Pak for Data credentials. For details, see [documentation](https://ibm.github.io/watsonx-ai-python-sdk/setup_cpd.html).
 
 ```python
 watsonx_embedding = WatsonxEmbeddings(
@@ -79,7 +79,7 @@ watsonx_embedding = WatsonxEmbeddings(
     username="PASTE YOUR USERNAME HERE",
     password="PASTE YOUR PASSWORD HERE",
     instance_id="openshift",
-    version="4.8",
+    version="5.0",
     project_id="PASTE YOUR PROJECT_ID HERE",
     truncate_input_tokens=truncate_input_tokens,
 )

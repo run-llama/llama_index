@@ -32,7 +32,6 @@ nav:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
       - Building a RAG pipeline:
-          - Building a RAG pipeline: ./understanding/rag/index.md
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
@@ -76,7 +75,6 @@ nav:
           - ./examples/agent/agent_builder.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
           - ./examples/agent/agent_runner/agent_runner.ipynb
-          - ./examples/agent/agent_runner/agent_runner_rag.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
@@ -133,6 +131,7 @@ nav:
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
+          - ./examples/cookbooks/crewai_llamaindex.ipynb
           - ./examples/cookbooks/llama3_cookbook.ipynb
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
@@ -180,7 +179,6 @@ nav:
           - ./examples/data_connectors/simple_directory_reader.ipynb
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
-          - ./examples/data_connectors/upstage.ipynb
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
@@ -785,7 +783,7 @@ nav:
           - ./api_reference/embeddings/huggingface_openvino.md
           - ./api_reference/embeddings/huggingface_optimum.md
           - ./api_reference/embeddings/huggingface_optimum_intel.md
-          - ./api_reference/embeddings/ibm_watsonx.md
+          - ./api_reference/embeddings/ibm.md
           - ./api_reference/embeddings/index.md
           - ./api_reference/embeddings/instructor.md
           - ./api_reference/embeddings/ipex_llm.md
@@ -871,6 +869,7 @@ nav:
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
+          - ./api_reference/llms/ibm.md
           - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
@@ -916,6 +915,7 @@ nav:
           - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
+          - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
           - ./api_reference/llms/you.md
       - Llama Datasets:
@@ -951,6 +951,7 @@ nav:
           - ./api_reference/packs/llama_dataset_metadata.md
           - ./api_reference/packs/llama_guard_moderator.md
           - ./api_reference/packs/llava_completion.md
+          - ./api_reference/packs/mixture_of_agents.md
           - ./api_reference/packs/multi_document_agents.md
           - ./api_reference/packs/multi_tenancy_rag.md
           - ./api_reference/packs/multidoc_autoretrieval.md
@@ -1249,6 +1250,7 @@ nav:
           - ./api_reference/readers/string_iterable.md
           - ./api_reference/readers/stripe_docs.md
           - ./api_reference/readers/telegram.md
+          - ./api_reference/readers/toggl.md
           - ./api_reference/readers/trello.md
           - ./api_reference/readers/twitter.md
           - ./api_reference/readers/txtai.md
@@ -1321,6 +1323,7 @@ nav:
               - ./api_reference/storage/graph_stores/neo4j.md
               - ./api_reference/storage/graph_stores/neptune.md
               - ./api_reference/storage/graph_stores/simple.md
+              - ./api_reference/storage/graph_stores/tidb.md
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/dynamodb.md
@@ -1693,6 +1696,7 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-dashscope
             - ../llama-index-integrations/agent/llama-index-agent-openai
             - ../llama-index-integrations/agent/llama-index-agent-openai-legacy
+            - ../llama-index-integrations/agent/llama-index-agent-dashscope
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-postgres
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-redis
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-firestore
@@ -1852,7 +1856,6 @@ plugins:
             - ../llama-index-integrations/question_gen/llama-index-question-gen-guidance
             - ../llama-index-integrations/question_gen/llama-index-question-gen-openai
             - ../llama-index-integrations/llms/llama-index-llms-palm
-            - ../llama-index-integrations/llms/llama-index-llms-watsonx
             - ../llama-index-integrations/llms/llama-index-llms-cohere
             - ../llama-index-integrations/llms/llama-index-llms-nvidia-triton
             - ../llama-index-integrations/llms/llama-index-llms-ai21
@@ -2014,6 +2017,9 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-mixedbreadai-rerank
             - ../llama-index-integrations/readers/llama-index-readers-pdf-marker
             - ../llama-index-integrations/llms/llama-index-llms-you
+            - ../llama-index-integrations/llms/llama-index-llms-watsonx
+            - ../llama-index-integrations/graph_stores/llama-index-graph-stores-tidb
+            - ../llama-index-integrations/readers/llama-index-readers-toggl
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
