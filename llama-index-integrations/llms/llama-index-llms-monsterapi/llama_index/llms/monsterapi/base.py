@@ -9,11 +9,15 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai import OpenAI
 
+from pydantic import Field
+
 DEFAULT_API_BASE = "https://llm.monsterapi.ai/v1"
 DEFAULT_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 
 class MonsterLLM(OpenAI):
+    model_info: dict = Field(description = "Model info field with pricing and other llm model information in json structure.", default={})
+
     """MonsterAPI LLM.
 
     Monster Deploy enables you to host any vLLM supported large language model (LLM) like Tinyllama, Mixtral, Phi-2 etc as a rest API endpoint on MonsterAPI's cost optimised GPU cloud.
@@ -88,8 +92,6 @@ class MonsterLLM(OpenAI):
         api_base = get_from_param_or_env("api_base", api_base, "MONSTER_API_BASE")
         api_key = get_from_param_or_env("api_key", api_key, "MONSTER_API_KEY")
 
-        self.model_info = self.__fetch_model_details(api_base, api_key)
-
         super().__init__(
             model=model,
             temperature=temperature,
@@ -105,6 +107,8 @@ class MonsterLLM(OpenAI):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        self.model_info = self.__fetch_model_details(api_base, api_key)
 
     @classmethod
     def class_name(cls) -> str:
@@ -130,10 +134,7 @@ class MonsterLLM(OpenAI):
         response.raise_for_status()
 
         details = response.json()
-        return {
-            model: specs["maximum_context_length"]
-            for model, specs in details["maximum_context_length"].items()
-        }
+        return details["maximum_context_length"]
 
     def __modelname_to_contextsize(self, model_name):
         return self.model_info.get(model_name)
