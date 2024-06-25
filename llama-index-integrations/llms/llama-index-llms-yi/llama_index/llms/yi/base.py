@@ -30,7 +30,6 @@ YI_MODELS: Dict[str, int] = {
 
 
 def yi_modelname_to_context_size(modelname: str) -> int:
-
     if modelname not in YI_MODELS:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid 01.AI model name."
