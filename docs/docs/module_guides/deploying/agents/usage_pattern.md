@@ -155,7 +155,8 @@ If you wish to define a custom agent, the easiest way to do so is to just define
 The `state` variable passed in and out of the function can contain anything you want it to, whether it's tools or arbitrary variables. It also contains task and output objects.
 
 ```python
-# Trivial function that multiplies an input number by 2 each time.
+## This is an example showing a trivial function that multiplies an input number by 2 each time.
+## Pass this into an agent
 def multiply_agent_fn(state: dict) -> Tuple[Dict[str, Any], bool]:
     """Mock agent input function."""
     if "max_count" not in state:
@@ -175,6 +176,12 @@ def multiply_agent_fn(state: dict) -> Tuple[Dict[str, Any], bool]:
 
     # the output of this function should be a tuple of the state variable and is_done
     return state, is_done
+
+
+from llama_index.core.agent import FnAgentWorker
+
+agent = FnAgentWorker(fn=mock_foo_fn, initial_state={"max_count": 5}).as_agent()
+agent.query("5")
 
 ```
 
