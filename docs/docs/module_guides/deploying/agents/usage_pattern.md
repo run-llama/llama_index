@@ -181,7 +181,7 @@ def multiply_agent_fn(state: dict) -> Tuple[Dict[str, Any], bool]:
 from llama_index.core.agent import FnAgentWorker
 
 agent = FnAgentWorker(
-    fn=mock_foo_fn, initial_state={"max_count": 5}
+    fn=multiply_agent_fn, initial_state={"max_count": 5}
 ).as_agent()
 agent.query("5")
 ```
