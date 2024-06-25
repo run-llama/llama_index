@@ -16,7 +16,10 @@ DEFAULT_MODEL = "meta-llama/Meta-Llama-3-8B-Instruct"
 
 
 class MonsterLLM(OpenAI):
-    model_info: dict = Field(description = "Model info field with pricing and other llm model information in json structure.", default={})
+    model_info: dict = Field(
+        description="Model info field with pricing and other llm model information in json structure.",
+        default={},
+    )
 
     """MonsterAPI LLM.
 
@@ -46,7 +49,7 @@ class MonsterLLM(OpenAI):
         1. MonsterAPI Private LLM Deployment use case
         ```python
         from llama_index.llms.monsterapi import MonsterLLM
-        # User monsterAPI Deploy service to launch a deployment 
+        # User monsterAPI Deploy service to launch a deployment
         # then get api_endpoint and api_auth_token and use them as api_base and api_key respectively.
         llm = MonsterLLM(
             model = "whatever is the basemodel used to deploy the llm",
