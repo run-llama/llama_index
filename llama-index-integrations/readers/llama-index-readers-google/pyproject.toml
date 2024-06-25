@@ -14,6 +14,7 @@ import_path = "llama_index.readers.google"
 [tool.llamahub.class_authors]
 GmailReader = "bbornsztein"
 GoogleCalendarReader = "ong"
+GoogleChatReader = "jonathanhliu21"
 GoogleDocsReader = "jerryjliu"
 GoogleDriveReader = "ravi03071991"
 GoogleKeepReader = "pycui"
