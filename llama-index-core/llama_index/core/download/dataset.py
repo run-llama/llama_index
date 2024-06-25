@@ -107,7 +107,7 @@ def get_dataset_info(
                 os.makedirs(local_library_dir)
 
             # Update cache
-            with open(local_library_path, "w") as f:
+            with open(local_library_path, "w", encoding="utf-8") as f:
                 f.write(library_raw_content)
 
     if dataset_id is None:
@@ -150,7 +150,7 @@ def download_dataset_and_source_files(
             str(remote_lfs_dir_path), f"/llama_datasets/{dataset_id}/{base_file_name}"
         )
 
-        with open(f"{module_path}/{base_file_name}", "w") as f:
+        with open(f"{module_path}/{base_file_name}", "w", encoding="utf-8") as f:
             f.write(dataset_raw_content)
 
         # Get content of source files
@@ -176,7 +176,7 @@ def download_dataset_and_source_files(
                         f"/llama_datasets/{dataset_id}/{source_files_dir_path}/{source_file}",
                     )
                     with open(
-                        f"{module_path}/{source_files_dir_path}/{source_file}", "w"
+                        f"{module_path}/{source_files_dir_path}/{source_file}", "w", encoding="utf-8"
                     ) as f:
                         f.write(source_file_raw_content)
 
