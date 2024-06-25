@@ -13,7 +13,7 @@ from warnings import warn
 
 import llama_index.core
 from llama_index.core.bridge.pydantic import PrivateAttr
-from astrapy.db import AstraDB
+from astrapy import DataAPIClient
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
@@ -59,8 +59,6 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         api_endpoint (str): The Astra DB JSON API endpoint for your database.
         embedding_dimension (int): length of the embedding vectors in use.
         namespace (Optional[str]): The namespace to use. If not provided, 'default_keyspace'
-        ttl_seconds (Optional[int]): expiration time for inserted entries.
-            Default is no expiration.
 
     Examples:
         `pip install llama-index-vector-stores-astra`
@@ -83,9 +81,8 @@ class AstraDBVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = True
 
     _embedding_dimension: int = PrivateAttr()
-    _ttl_seconds: Optional[int] = PrivateAttr()
-    _astra_db: Any = PrivateAttr()
-    _astra_db_collection: Any = PrivateAttr()
+    _database: Any = PrivateAttr()
+    _collection: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -101,46 +98,49 @@ class AstraDBVectorStore(BasePydanticVectorStore):
 
         # Set all the required class parameters
         self._embedding_dimension = embedding_dimension
-        self._ttl_seconds = ttl_seconds
 
-        _logger.debug("Creating the Astra DB table")
+        if ttl_seconds is not None:
+            warn(
+                "Parameter `ttl_seconds` is not supported for `AstraDBVectorStore`",
+                UserWarning,
+                stacklevel=2,
+            )
 
-        # Build the Astra DB object
-        self._astra_db = AstraDB(
-            api_endpoint=api_endpoint,
-            token=token,
-            namespace=namespace,
+        _logger.debug("Creating the Astra DB collection")
+
+        # Build the Database object
+        self._database = DataAPIClient(
             caller_name=getattr(llama_index, "__name__", "llama_index"),
             caller_version=getattr(llama_index.core, "__version__", None),
+        ).get_database(
+            api_endpoint,
+            token=token,
+            namespace=namespace,
         )
 
-        from astrapy.api import APIRequestError
+        from astrapy.exceptions import DataAPIException
 
         try:
             # Create and connect to the newly created collection
-            self._astra_db_collection = self._astra_db.create_collection(
-                collection_name=collection_name,
+            self._collection = self._database.create_collection(
+                name=collection_name,
                 dimension=embedding_dimension,
-                options={"indexing": {"deny": NON_INDEXED_FIELDS}},
+                indexing={"deny": NON_INDEXED_FIELDS},
             )
-        except APIRequestError:
+        except DataAPIException:
             # possibly the collection is preexisting and has legacy
             # indexing settings: verify
-            get_coll_response = self._astra_db.get_collections(
-                options={"explain": True}
-            )
-            collections = (get_coll_response["status"] or {}).get("collections") or []
             preexisting = [
-                collection
-                for collection in collections
-                if collection["name"] == collection_name
+                coll_descriptor
+                for coll_descriptor in self._database.list_collections()
+                if coll_descriptor.name == collection_name
             ]
             if preexisting:
                 pre_collection = preexisting[0]
                 # if it has no "indexing", it is a legacy collection;
                 # otherwise it's unexpected warn and proceed at user's risk
-                pre_col_options = pre_collection.get("options") or {}
-                if "indexing" not in pre_col_options:
+                pre_col_idx_opts = pre_collection.options.indexing or {}
+                if not pre_col_idx_opts:
                     warn(
                         (
                             f"Collection '{collection_name}' is detected as "
@@ -148,31 +148,31 @@ class AstraDBVectorStore(BasePydanticVectorStore):
                             "(either created manually or by older versions "
                             "of this plugin). This implies stricter "
                             "limitations on the amount of text"
-                            " each entry can store. Consider reindexing anew on a"
+                            " each entry can store. Consider indexing anew on a"
                             " fresh collection to be able to store longer texts."
                         ),
                         UserWarning,
                         stacklevel=2,
                     )
-                    self._astra_db_collection = self._astra_db.collection(
-                        collection_name=collection_name,
+                    self._collection = self._database.get_collection(
+                        collection_name,
                     )
                 else:
-                    options_json = json.dumps(pre_col_options["indexing"])
+                    options_json = json.dumps(pre_col_idx_opts)
                     warn(
                         (
                             f"Collection '{collection_name}' has unexpected 'indexing'"
                             f" settings (options.indexing = {options_json})."
                             " This can result in odd behaviour when running "
                             " metadata filtering and/or unwarranted limitations"
-                            " on storing long texts. Consider reindexing anew on a"
+                            " on storing long texts. Consider indexing anew on a"
                             " fresh collection."
                         ),
                         UserWarning,
                         stacklevel=2,
                     )
-                    self._astra_db_collection = self._astra_db.collection(
-                        collection_name=collection_name,
+                    self._collection = self._database.get_collection(
+                        collection_name,
                     )
             else:
                 # other exception
