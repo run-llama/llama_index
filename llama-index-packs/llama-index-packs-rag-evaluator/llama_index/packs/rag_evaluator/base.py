@@ -4,6 +4,8 @@ import time
 import warnings
 from collections import deque
 from typing import Any, List, Optional
+import os
+from pathlib import Path
 
 import pandas as pd
 import tqdm
@@ -66,9 +68,14 @@ class RagEvaluatorPack(BaseLlamaPack):
         self.eval_queue = deque(range(len(rag_dataset.examples)))
         self.prediction_dataset = None
         if result_path is None:
-            self.result_path = "./"
+            self.result_path = Path.cwd()
         else: 
-            self.result_path = result_path
+            self.result_path = Path(result_path)
+            if not self.result_path.is_absolute():
+                self.result_path = Path.cwd() / self.result_path
+
+        if not os.path.exists(self.result_path):
+            os.makedirs(self.result_path)
 
     async def _amake_predictions(
         self,
@@ -228,7 +235,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             "relevancy": [e.dict() for e in self.evals["relevancy"]],
         }
 
-        with open(self.result_path + "/" + "_evaluations.json", "w") as json_file:
+        with open(os.path.join(self.result_path, "_evaluations.json"), "w") as json_file:
             json.dump(evaluations_objects, json_file)
 
     def _prepare_and_save_benchmark_results(self):
@@ -268,7 +275,7 @@ class RagEvaluatorPack(BaseLlamaPack):
         mean_scores_df.index = mean_scores_df.index.set_names(["metrics"])
 
         # save mean_scores_df
-        mean_scores_df.to_csv(self.result_path + "/" + "benchmark.csv")
+        mean_scores_df.to_csv(os.path.join(self.result_path, "benchmark.csv"))
         return mean_scores_df
 
     def _make_evaluations(
