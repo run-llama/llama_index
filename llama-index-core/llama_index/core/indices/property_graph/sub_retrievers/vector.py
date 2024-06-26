@@ -11,7 +11,11 @@ from llama_index.core.graph_stores.types import (
 )
 from llama_index.core.settings import Settings
 from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStore, MetadataFilters
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStore,
+    MetadataFilters,
+)
 
 
 class VectorContextRetriever(BasePGRetriever):

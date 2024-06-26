@@ -529,10 +529,17 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
         conditions = None
-        if (query.filters):
-            conditions = [f"e.{filter.key} {filter.operator.value} {filter.value}" for filter in query.filters.filters]
-        filters = f' {query.filters.condition.value} '.join(conditions).replace("==", "=") if conditions != None else '1 = 1'
-        
+        if query.filters:
+            conditions = [
+                f"e.{filter.key} {filter.operator.value} {filter.value}"
+                for filter in query.filters.filters
+            ]
+        filters = (
+            f" {query.filters.condition.value} ".join(conditions).replace("==", "=")
+            if conditions is not None
+            else "1 = 1"
+        )
+
         data = self.structured_query(
             f"""MATCH (e:`__Entity__`)
             WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
