@@ -59,16 +59,16 @@ class GoogleChatReader(BasePydanticReader):
         for space_name in space_names:
             all_msgs = self._get_msgs(
                 service, space_name, num_messages, after, before, order_asc
-            )
-            msgs_sorted = self._sort_msgs(space_name, all_msgs, order_asc)
+            )  # gets raw API output in list of dict
+            msgs_sorted = self._sort_msgs(
+                space_name, all_msgs
+            )  # puts messages into list of Document objects
             res.extend(msgs_sorted)
             logger.info(f"Successfully retrieved messages from {space_name}")
 
         return res
 
-    def _sort_msgs(
-        self, space_name: str, all_msgs: List[Dict[str, Any]], order_asc: bool
-    ) -> Document:
+    def _sort_msgs(self, space_name: str, all_msgs: List[Dict[str, Any]]) -> Document:
         """Sorts messages from space and puts them into Document.
 
         Args:
@@ -79,18 +79,22 @@ class GoogleChatReader(BasePydanticReader):
         Returns:
             Document: Document with messages
         """
-        # msgs_reorder = self._reorder_threads(all_msgs, order_asc)
-
         res = []
-        id_to_text = self._id_to_text(all_msgs)
-        thread_msg_cnt = self._get_thread_msg_cnt(all_msgs)
+        id_to_text = self._id_to_text(
+            all_msgs
+        )  # maps message ID to text (useful for retrieving info about quote replies)
+        thread_msg_cnt = self._get_thread_msg_cnt(
+            all_msgs
+        )  # gets message count in each thread
         for msg in all_msgs:
             if any(
                 i not in msg for i in ("name", "text", "thread", "sender", "createTime")
             ):
+                # invalid message
                 continue
 
             if "name" not in msg["thread"] or "name" not in msg["sender"]:
+                # invalid message
                 continue
 
             metadata = {
@@ -103,10 +107,13 @@ class GoogleChatReader(BasePydanticReader):
                 "quotedMessageMetadata" in msg
                 and msg["quotedMessageMetadata"]["name"] in id_to_text
             ):
+                # metadata for a quote reply
                 metadata["quoted_msg"] = id_to_text[
                     msg["quotedMessageMetadata"]["name"]
                 ]
 
+            # adds metadata for threads
+            # all threads with a message count of 1 gets counted as the "main thread"
             thread_id = msg["thread"]["name"]
             if thread_msg_cnt[thread_id] > 1:
                 metadata["thread_id"] = thread_id
@@ -151,6 +158,7 @@ class GoogleChatReader(BasePydanticReader):
         for msg in all_msgs:
             thread_name = msg["thread"]["name"]
             if thread_name not in threads_dict:
+                # add thread name to dict
                 threads_dict[thread_name] = 1
             else:
                 threads_dict[thread_name] += 1
