@@ -1,4 +1,5 @@
-"""Azure Storage Blob file and directory reader.
+"""
+Azure Storage Blob file and directory reader.
 
 A loader that fetches a file or iterates through a directory from Azure Storage Blob.
 
@@ -30,7 +31,8 @@ logger = logging.getLogger(__name__)
 class AzStorageBlobReader(
     BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin
 ):
-    """General reader for any Azure Storage Blob file or directory.
+    """
+    General reader for any Azure Storage Blob file or directory.
 
     Args:
         container_name (str): name of the container for the blob.
@@ -89,36 +91,24 @@ class AzStorageBlobReader(
         blob_meta = {}
 
         if self.blob:
-            blob_client = container_client.get_blob_client(self.blob)
-            stream = blob_client.download_blob()
-            sanitized_file_name = stream.name.replace("/", "-")
+            blobs_list = [self.blob]
+        else:
+            blobs_list = container_client.list_blobs(
+                self.name_starts_with, self.include
+            )
+
+        for obj in blobs_list:
+            sanitized_file_name = obj.name.replace("/", "-")
             download_file_path = os.path.join(temp_dir, sanitized_file_name)
-            logger.info(f"Start download of {self.blob}")
+            logger.info(f"Start download of {obj.name}")
             start_time = time.time()
+            blob_client = container_client.get_blob_client(obj)
+            stream = blob_client.download_blob()
             with open(file=download_file_path, mode="wb") as download_file:
                 stream.readinto(download_file)
             blob_meta[sanitized_file_name] = blob_client.get_blob_properties()
             end_time = time.time()
-            logger.info(f"{self.blob} downloaded in {end_time - start_time} seconds.")
-        else:
-            logger.info("Listing blobs")
-            blobs_list = container_client.list_blobs(
-                self.name_starts_with, self.include
-            )
-            for obj in blobs_list:
-                sanitized_file_name = obj.name.replace("/", "-")
-                download_file_path = os.path.join(temp_dir, sanitized_file_name)
-                logger.info(f"Start download of {obj.name}")
-                start_time = time.time()
-                blob_client = container_client.get_blob_client(obj)
-                stream = blob_client.download_blob()
-                with open(file=download_file_path, mode="wb") as download_file:
-                    stream.readinto(download_file)
-                blob_meta[sanitized_file_name] = blob_client.get_blob_properties()
-                end_time = time.time()
-                logger.info(
-                    f"{obj.name} downloaded in {end_time - start_time} seconds."
-                )
+            logger.debug(f"{obj.name} downloaded in {end_time - start_time} seconds.")
 
         return blob_meta
 
