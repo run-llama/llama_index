@@ -34,7 +34,7 @@ def chat_messages_to_conversational_kwargs(
         raise NotImplementedError("Messages passed in must be of odd length.")
     last_message = messages[-1]
     kwargs: Dict[str, Any] = {
-        "text": last_message.content,
+        "text": last_message,
         **last_message.additional_kwargs,
     }
     if len(messages) != 1:
