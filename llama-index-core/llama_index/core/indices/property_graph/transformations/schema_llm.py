@@ -251,16 +251,13 @@ class SchemaLLMPathExtractor(TransformComponent):
                 isinstance(self.kg_validation_schema, dict)
                 and "relationships" in self.kg_validation_schema
             ):
-                # Schema is a dictionary with a 'relationships' key
+                # Schema is a dictionary with a 'relationships' key and triples as values
                 if (subject_type, relation, obj_type) not in self.kg_validation_schema[
                     "relationships"
                 ]:
-                    print(
-                        f"\nThe following triplet is skipped as it isn't in the validation schema: ({subject_type}, {relation}, {obj_type})"
-                    )
                     continue
             else:
-                # Schema is the original format
+                # Schema is the backwards-compat format
                 if relation not in self.kg_validation_schema.get(
                     subject_type, [relation]
                 ) and relation not in self.kg_validation_schema.get(
