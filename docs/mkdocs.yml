@@ -870,7 +870,6 @@ nav:
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
           - ./api_reference/llms/ibm.md
-          - ./api_reference/llms/ibm_watsonx.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
           - ./api_reference/llms/konko.md
@@ -915,7 +914,6 @@ nav:
           - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
-          - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
           - ./api_reference/llms/you.md
       - Llama Datasets:
@@ -2191,6 +2189,7 @@ plugins:
         ./examples/embeddings/text_embedding_inference.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/text_embedding_inference/
         ./examples/embeddings/together.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/together/
         ./examples/embeddings/voyageai.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/voyageai/
+        ./examples/embeddings/ibm_watsonx.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/ibm_watsonx/
         ./examples/evaluation/BeirEvaluation.html: https://docs.llamaindex.ai/en/stable/examples/evaluation/BeirEvaluation/
         ./examples/evaluation/Deepeval.html: https://docs.llamaindex.ai/en/stable/examples/evaluation/Deepeval/
         ./examples/evaluation/HotpotQADistractor.html: https://docs.llamaindex.ai/en/stable/examples/evaluation/HotpotQADistractor/
@@ -2302,7 +2301,7 @@ plugins:
         ./examples/llm/vertex.html: https://docs.llamaindex.ai/en/stable/examples/llm/vertex/
         ./examples/llm/vicuna.html: https://docs.llamaindex.ai/en/stable/examples/llm/vicuna/
         ./examples/llm/vllm.html: https://docs.llamaindex.ai/en/stable/examples/llm/vllm/
-        ./examples/llm/watsonx.html: https://docs.llamaindex.ai/en/stable/examples/llm/watsonx/
+        ./examples/llm/ibm_watsonx.html: https://docs.llamaindex.ai/en/stable/examples/llm/ibm_watsonx/
         ./examples/llm/xinference_local_deployment.html: https://docs.llamaindex.ai/en/stable/examples/llm/xinference_local_deployment/
         ./examples/low_level/evaluation.html: https://docs.llamaindex.ai/en/stable/examples/low_level/evaluation/
         ./examples/low_level/fusion_retriever.html: https://docs.llamaindex.ai/en/stable/examples/low_level/fusion_retriever/
