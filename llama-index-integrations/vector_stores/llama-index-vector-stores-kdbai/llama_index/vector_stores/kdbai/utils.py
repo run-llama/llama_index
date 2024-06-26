@@ -16,12 +16,16 @@ def default_sparse_encoder_v2(texts: List[str]) -> Dict[int, int]:
         )
 
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    tokenized_texts = tokenizer(texts, padding=True, truncation=True, max_length=512)["input_ids"]
+    tokenized_texts = tokenizer(texts, padding=True, truncation=True, max_length=512)[
+        "input_ids"
+    ]
 
-    flat_tokenized_texts = [token_id for sublist in tokenized_texts for token_id in sublist]
+    flat_tokenized_texts = [
+        token_id for sublist in tokenized_texts for token_id in sublist
+    ]
 
-    sparse_encoding = dict(Counter(flat_tokenized_texts))
-    return sparse_encoding
+    return dict(Counter(flat_tokenized_texts))
+
 
 # MATCH THE METADATA COLUMN DATA TYPE TO ITS PYTYPE
 def convert_metadata_col_v2(column_name, column_type, column_value):
@@ -39,6 +43,7 @@ def convert_metadata_col_v2(column_name, column_type, column_value):
         logger.error(
             f"Failed to convert column {column_name} to qtype {column_type}: {e}"
         )
+
 
 def default_sparse_encoder_v1(texts: List[str]) -> List[Dict[int, int]]:
     try:
@@ -60,6 +65,7 @@ def default_sparse_encoder_v1(texts: List[str]) -> List[Dict[int, int]]:
         results.append(sparse_encoding)
     return results
 
+
 def convert_metadata_col_v1(column, value):
     try:
         if column["pytype"] == "str":
@@ -75,6 +81,3 @@ def convert_metadata_col_v1(column, value):
         logger.error(
             f"Failed to convert column {column['name']} to type {column['pytype']}: {e}"
         )
-
-
-    

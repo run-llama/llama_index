@@ -17,9 +17,9 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.kdbai.utils import (
-    default_sparse_encoder_v1, 
+    default_sparse_encoder_v1,
     convert_metadata_col_v1,
-    default_sparse_encoder_v2, 
+    default_sparse_encoder_v2,
     convert_metadata_col_v2,
 )
 
@@ -84,7 +84,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
         if hybrid_search:
             if sparse_encoder is None:
-                if kdbai.version("kdbai_client") >= '1.2.0':
+                if kdbai.version("kdbai_client") >= "1.2.0":
                     self._sparse_encoder = default_sparse_encoder_v2
                 else:
                     self._sparse_encoder = default_sparse_encoder_v1
@@ -125,22 +125,22 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 "Could not import kdbai_client package."
                 "Please add it to the dependencies."
             )
-        
+
         df = pd.DataFrame()
         docs = []
 
-        if kdbai.version("kdbai_client") >= '1.2.0':
-            schema = self._table.schema['schema']['c']
-            types = self._table.schema['schema']['t'].decode('utf-8')
+        if kdbai.version("kdbai_client") >= "1.2.0":
+            schema = self._table.schema["schema"]["c"]
+            types = self._table.schema["schema"]["t"].decode("utf-8")
         else:
             schema = self._table.schema()["columns"]
 
         if self.hybrid_search:
-            if kdbai.version("kdbai_client") >= '1.2.0':
+            if kdbai.version("kdbai_client") >= "1.2.0":
                 schema = [item for item in schema if item != "sparseVectors"]
             else:
                 schema = [item for item in schema if item["name"] != "sparseVectors"]
-        
+
         try:
             for node in nodes:
                 doc = {
@@ -154,8 +154,11 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
                 # handle extra columns
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
-                    if kdbai.version("kdbai_client") >= '1.2.0':
-                        for column_name, column_type in zip(schema[len(DEFAULT_COLUMN_NAMES):], types[len(DEFAULT_COLUMN_NAMES):]):
+                    if kdbai.version("kdbai_client") >= "1.2.0":
+                        for column_name, column_type in zip(
+                            schema[len(DEFAULT_COLUMN_NAMES) :],
+                            types[len(DEFAULT_COLUMN_NAMES) :],
+                        ):
                             try:
                                 doc[column_name] = convert_metadata_col_v2(
                                     column_name, column_type, node.metadata[column_name]
@@ -192,9 +195,8 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
         except Exception as e:
             logger.error(f"Error preparing data for KDB.AI: {e}.")
-        
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
 
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         try:
             import kdbai_client as kdbai
 
@@ -205,7 +207,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 "Could not import kdbai_client package."
                 "Please add it to the dependencies."
             )
-        
+
         if query.filters is None:
             filter = []
         else:
@@ -214,7 +216,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         if self.hybrid_search:
             alpha = query.alpha if query.alpha is not None else 0.5
 
-            if kdbai.version("kdbai_client") >= '1.2.0':
+            if kdbai.version("kdbai_client") >= "1.2.0":
                 sparse_vectors = [self._sparse_encoder([query.query_str])]
             else:
                 sparse_vectors = self._sparse_encoder([query.query_str])
