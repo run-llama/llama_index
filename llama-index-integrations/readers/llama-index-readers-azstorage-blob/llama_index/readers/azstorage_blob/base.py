@@ -27,7 +27,9 @@ from llama_index.core.readers.base import (
 logger = logging.getLogger(__name__)
 
 
-class AzStorageBlobReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
+class AzStorageBlobReader(
+    BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin
+):
     """General reader for any Azure Storage Blob file or directory.
 
     Args:
@@ -97,9 +99,7 @@ class AzStorageBlobReader(BasePydanticReader, ResourcesReaderMixin, FileSystemRe
                 stream.readinto(download_file)
             blob_meta[sanitized_file_name] = blob_client.get_blob_properties()
             end_time = time.time()
-            logger.info(
-                f"{self.blob} downloaded in {end_time - start_time} seconds."
-            )
+            logger.info(f"{self.blob} downloaded in {end_time - start_time} seconds.")
         else:
             logger.info("Listing blobs")
             blobs_list = container_client.list_blobs(
@@ -126,14 +126,10 @@ class AzStorageBlobReader(BasePydanticReader, ResourcesReaderMixin, FileSystemRe
         meta: dict = file_metadata
 
         creation_time = meta.get("creation_time")
-        creation_time = (
-            creation_time.strftime("%Y-%m-%d") if creation_time else None
-        )
+        creation_time = creation_time.strftime("%Y-%m-%d") if creation_time else None
 
         last_modified = meta.get("last_modified")
-        last_modified = (
-            last_modified.strftime("%Y-%m-%d") if last_modified else None
-        )
+        last_modified = last_modified.strftime("%Y-%m-%d") if last_modified else None
 
         last_accessed_on = meta.get("last_accessed_on")
         last_accessed_on = (
@@ -155,15 +151,16 @@ class AzStorageBlobReader(BasePydanticReader, ResourcesReaderMixin, FileSystemRe
 
         return extracted_meta
 
-    def _load_documents_with_metadata(self, files_metadata: Dict[str, Any], temp_dir: str) -> List[Document]:
+    def _load_documents_with_metadata(
+        self, files_metadata: Dict[str, Any], temp_dir: str
+    ) -> List[Document]:
         """Load documents from a directory and extract metadata."""
+
         def get_metadata(file_name: str) -> Dict[str, Any]:
             return files_metadata.get(file_name, {})
 
         loader = SimpleDirectoryReader(
-            temp_dir,
-            file_extractor=self.file_extractor,
-            file_metadata=get_metadata
+            temp_dir, file_extractor=self.file_extractor, file_metadata=get_metadata
         )
 
         return loader.load_data()
@@ -199,13 +196,19 @@ class AzStorageBlobReader(BasePydanticReader, ResourcesReaderMixin, FileSystemRe
             blob_client = container_client.get_blob_client(resource_id)
             stream = blob_client.download_blob()
             with tempfile.TemporaryDirectory() as temp_dir:
-                download_file_path = os.path.join(temp_dir, resource_id.replace("/", "-"))
+                download_file_path = os.path.join(
+                    temp_dir, resource_id.replace("/", "-")
+                )
                 with open(file=download_file_path, mode="wb") as download_file:
                     stream.readinto(download_file)
-                return self._load_documents_with_metadata({resource_id: blob_client.get_blob_properties()}, temp_dir)
+                return self._load_documents_with_metadata(
+                    {resource_id: blob_client.get_blob_properties()}, temp_dir
+                )
         except Exception as e:
-          logger.error(f"Error loading resource {resource_id} from AzStorageBlob: {e}")
-          raise
+            logger.error(
+                f"Error loading resource {resource_id} from AzStorageBlob: {e}"
+            )
+            raise
 
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         """Read the content of a file from Azure Storage Blob."""
