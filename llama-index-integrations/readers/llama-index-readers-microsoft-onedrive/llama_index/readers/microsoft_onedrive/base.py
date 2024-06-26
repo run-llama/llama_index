@@ -73,7 +73,6 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
     _is_interactive_auth = PrivateAttr(False)
     _authority = PrivateAttr()
-    _downloaded_files_metadata = PrivateAttr({})
 
     def __init__(
         self,
