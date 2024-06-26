@@ -46,7 +46,7 @@ class RagEvaluatorPack(BaseLlamaPack):
         judge_llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
         show_progress: bool = True,
-        result_path = None,
+        result_path: Optional[str] = None,
     ):
         self.query_engine = query_engine
         self.rag_dataset = rag_dataset
@@ -69,7 +69,7 @@ class RagEvaluatorPack(BaseLlamaPack):
         self.prediction_dataset = None
         if result_path is None:
             self.result_path = Path.cwd()
-        else: 
+        else:
             self.result_path = Path(result_path)
             if not self.result_path.is_absolute():
                 self.result_path = Path.cwd() / self.result_path
@@ -235,7 +235,9 @@ class RagEvaluatorPack(BaseLlamaPack):
             "relevancy": [e.dict() for e in self.evals["relevancy"]],
         }
 
-        with open(os.path.join(self.result_path, "_evaluations.json"), "w") as json_file:
+        with open(
+            os.path.join(self.result_path, "_evaluations.json"), "w"
+        ) as json_file:
             json.dump(evaluations_objects, json_file)
 
     def _prepare_and_save_benchmark_results(self):
