@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 SCOPES = [
     "https://www.googleapis.com/auth/chat.messages.readonly",
-    "https://www.googleapis.com/auth/userinfo.profile",
 ]
 
 
@@ -80,11 +79,12 @@ class GoogleChatReader(BasePydanticReader):
         Returns:
             Document: Document with messages
         """
-        msgs_reorder = self._reorder_threads(all_msgs, order_asc)
+        # msgs_reorder = self._reorder_threads(all_msgs, order_asc)
 
         res = []
         id_to_text = self._id_to_text(all_msgs)
-        for msg in msgs_reorder:
+        thread_msg_cnt = self._get_thread_msg_cnt(all_msgs)
+        for msg in all_msgs:
             if any(
                 i not in msg for i in ("name", "text", "thread", "sender", "createTime")
             ):
@@ -95,15 +95,23 @@ class GoogleChatReader(BasePydanticReader):
 
             metadata = {
                 "space_id": space_name,
-                "thread_id": msg["thread"]["name"],
                 "sender_id": msg["sender"]["name"],
                 "timestamp": msg["createTime"],
             }
 
-            if "quotedMessageMetadata" in msg:
+            if (
+                "quotedMessageMetadata" in msg
+                and msg["quotedMessageMetadata"]["name"] in id_to_text
+            ):
                 metadata["quoted_msg"] = id_to_text[
                     msg["quotedMessageMetadata"]["name"]
                 ]
+
+            thread_id = msg["thread"]["name"]
+            if thread_msg_cnt[thread_id] > 1:
+                metadata["thread_id"] = thread_id
+            else:
+                metadata["thread_id"] = "Main Thread"
 
             doc = Document(id_=msg["name"], text=msg["text"], metadata=metadata)
             res.append(doc)
@@ -129,45 +137,25 @@ class GoogleChatReader(BasePydanticReader):
 
         return res
 
-    def _reorder_threads(
-        self, all_msgs: List[Dict[str, Any]], order_asc: bool
-    ) -> List[Dict[str, Any]]:
-        """Reorders threads in message list.
+    def _get_thread_msg_cnt(self, all_msgs: List[Dict[str, Any]]) -> Dict[str, int]:
+        """Gets message count for each thread ID.
 
         Args:
             all_msgs (List[Dict[str, Any]]): All messages
-            order_asc (bool): If ordered by ascending order
 
         Returns:
-            List[Dict[str, Any]]: Messages, but with threads reordered to be underneath their parent
+            Dict[str, int]: Maps thread ID -> count of messages that were in that thread
         """
-        if not order_asc:
-            all_msgs = all_msgs[::-1]
-
-        # maps thread ID -> list of message objects associated with that ID
+        # maps thread ID -> count
         threads_dict = {}
         for msg in all_msgs:
             thread_name = msg["thread"]["name"]
             if thread_name not in threads_dict:
-                threads_dict[thread_name] = [msg]
+                threads_dict[thread_name] = 1
             else:
-                threads_dict[thread_name].append(msg)
+                threads_dict[thread_name] += 1
 
-        # loop through original messages
-        # extend res list with a list of messages that have the same thread ID
-        # only works if messages are in ascending time order
-        res = []
-        for msg in all_msgs:
-            if "threadReply" in msg:
-                continue
-
-            thread_name = msg["thread"]["name"]
-            res.extend(threads_dict[thread_name])
-
-        if not order_asc:
-            res = res[::-1]
-
-        return res
+        return threads_dict
 
     def _get_msgs(
         self,
@@ -212,12 +200,14 @@ class GoogleChatReader(BasePydanticReader):
 
         # Get all messages from space
         while num_messages == -1 or len(all_msgs) < num_messages:
+            req_msg = num_messages - len(all_msgs)
+
             result = (
                 service.spaces()
                 .messages()
                 .list(
                     parent=parent,
-                    pageSize=num_messages if num_messages != -1 else 1000,
+                    pageSize=req_msg if num_messages != -1 else 1000,
                     pageToken=page_token,
                     filter=filter_str,
                     orderBy=order_by,
@@ -226,13 +216,11 @@ class GoogleChatReader(BasePydanticReader):
                 .execute()
             )
 
-            if not result or "messages" not in result:
-                break
-
-            all_msgs.extend(result["messages"])
+            if result and "messages" in result:
+                all_msgs.extend(result["messages"])
 
             # if no more messages to load
-            if "nextPageToken" not in result:
+            if not result or "nextPageToken" not in result:
                 break
 
             page_token = result["nextPageToken"]
