@@ -12,7 +12,7 @@ contains_example = true
 import_path = "llama_index.embeddings.yandexgpt"
 
 [tool.llamahub.class_authors]
-VoyageEmbedding = "llama-index"
+YandexGPTEmbedding = "KirillKukharev"
 
 [tool.mypy]
 disallow_untyped_defs = true
