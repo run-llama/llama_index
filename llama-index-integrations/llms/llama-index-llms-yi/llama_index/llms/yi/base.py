@@ -51,7 +51,7 @@ class Yi(OpenAI):
         # get api key from: https://platform.01.ai/
         llm = Yi(model="yi-large", api_key="YOUR_API_KEY")
 
-        response = llm.chat("Hi, who are you?")
+        response = llm.complete("Hi, who are you?")
         print(response)
         ```
     """
