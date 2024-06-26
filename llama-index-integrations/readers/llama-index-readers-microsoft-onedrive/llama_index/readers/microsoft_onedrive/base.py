@@ -569,29 +569,16 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         if not file_paths:
             file_paths = self.file_paths
 
-        if not temp_dir:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                return self._init_download_and_get_metadata(
-                    temp_dir=temp_dir,
-                    folder_id=folder_id,
-                    file_ids=file_ids,
-                    folder_path=folder_path,
-                    file_paths=file_paths,
-                    recursive=recursive,
-                    mime_types=mime_types,
-                    userprincipalname=userprincipalname,
-                )
-        else:
-            return self._init_download_and_get_metadata(
-                temp_dir=temp_dir,
-                folder_id=folder_id,
-                file_ids=file_ids,
-                folder_path=folder_path,
-                file_paths=file_paths,
-                recursive=recursive,
-                mime_types=mime_types,
-                userprincipalname=userprincipalname,
-            )
+        return self._init_download_and_get_metadata(
+            temp_dir=temp_dir,
+            folder_id=folder_id,
+            file_ids=file_ids,
+            folder_path=folder_path,
+            file_paths=file_paths,
+            recursive=recursive,
+            mime_types=mime_types,
+            userprincipalname=userprincipalname,
+        )
 
     def load_data(
         self,
