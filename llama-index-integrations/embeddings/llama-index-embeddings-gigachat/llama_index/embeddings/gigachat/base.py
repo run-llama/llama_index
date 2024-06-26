@@ -32,15 +32,17 @@ class GigaChatEmbedding(BaseEmbedding):
     type: str = "gigachat"
 
     def __init__(
-            self,
-            name: Optional[str] = "Embeddings",
-            auth_data: Optional[str] = None,
-            scope: Optional[str] = None,
-            embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
-            callback_manager: Optional[CallbackManager] = None,
-            **kwargs: Any,
+        self,
+        name: Optional[str] = "Embeddings",
+        auth_data: Optional[str] = None,
+        scope: Optional[str] = None,
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
-        auth_data = get_from_param_or_env("auth_data", auth_data, "GIGACHAT_AUTH_DATA", "")
+        auth_data = get_from_param_or_env(
+            "auth_data", auth_data, "GIGACHAT_AUTH_DATA", ""
+        )
         if not auth_data:
             raise ValueError(
                 "You must provide an AUTH DATA to use GigaChat. "
@@ -51,11 +53,11 @@ class GigaChatEmbedding(BaseEmbedding):
                 "GigaChat scope cannot be 'None'. Set 'GIGACHAT_API_PERS' for personal use or 'GIGACHAT_API_CORP' for corporate use."
             )
         try:
-            self._client = GigaChat(scope=scope, credentials=auth_data, verify_ssl_certs=False)
+            self._client = GigaChat(
+                scope=scope, credentials=auth_data, verify_ssl_certs=False
+            )
         except Exception as e:
-            raise ValueError(
-                f"GigaChat client failed to initialize. Error: {e}"
-            ) from e
+            raise ValueError(f"GigaChat client failed to initialize. Error: {e}") from e
         super().__init__(
             model_name=name,
             embed_batch_size=embed_batch_size,
@@ -101,9 +103,7 @@ class GigaChatEmbedding(BaseEmbedding):
         Returns:
             Embeddings for the document.
         """
-        return (
-            self._client.embeddings(query).data[0].embedding
-        )
+        return self._client.embeddings(query).data[0].embedding
 
     async def _aget_query_embedding(self, query: List[str]) -> List[float]:
         """Asynchronously embed a query using GigaChat embeddings model.
@@ -114,9 +114,7 @@ class GigaChatEmbedding(BaseEmbedding):
         Returns:
             Embeddings for the document.
         """
-        return (
-            await self._client.aembeddings(query)
-        ).data[0].embedding
+        return (await self._client.aembeddings(query)).data[0].embedding
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Synchronously embed a text using GigaChat embeddings model.
@@ -127,9 +125,7 @@ class GigaChatEmbedding(BaseEmbedding):
         Returns:
             Embeddings for the text.
         """
-        return (
-            self._client.embeddings([text]).data[0].embedding
-        )
+        return self._client.embeddings([text]).data[0].embedding
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously embed a text using GigaChat embeddings model.
@@ -140,6 +136,4 @@ class GigaChatEmbedding(BaseEmbedding):
         Returns:
             Embeddings for the text.
         """
-        return (
-            await self._client.aembeddings([text])
-        ).data[0].embedding
+        return (await self._client.aembeddings([text])).data[0].embedding

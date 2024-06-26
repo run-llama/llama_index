@@ -18,8 +18,8 @@ from llama_index.embeddings.yandexgpt import YandexGPTEmbedding
 
 **Initialization Parameters:**
 
-   - `api_key`: The API key for Yandex Cloud. This key is required for authenticating requests.
-   - `folder_id`: The folder ID for Yandex Cloud.
+- `api_key`: The API key for Yandex Cloud. This key is required for authenticating requests.
+- `folder_id`: The folder ID for Yandex Cloud.
 
 ```python
 embeddings = YandexGPTEmbedding(
