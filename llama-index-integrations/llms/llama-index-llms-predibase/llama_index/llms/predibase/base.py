@@ -159,7 +159,7 @@ class PredibaseLLM(CustomLLM):
             return Predibase(api_token=self.predibase_api_key)
         except ValueError as e:
             raise ValueError(
-                'Your "PREDIBASE_API_TOKEN" is not correct.  Please try again'
+                'Your "PREDIBASE_API_TOKEN" is not correct.  Please try again.'
             ) from e
 
     @classmethod
