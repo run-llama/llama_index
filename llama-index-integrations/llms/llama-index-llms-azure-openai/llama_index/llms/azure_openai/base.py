@@ -35,8 +35,8 @@ class AzureOpenAI(OpenAI):
         This may change in the future.
     - `AZURE_OPENAI_ENDPOINT`: your endpoint should look like the following
         https://YOUR_RESOURCE_NAME.openai.azure.com/
-    - `AZURE_OPENAI_API_KEY`: your API key if the api type is `azure`| Or pass through `AZURE_AD_TOKEN_PROVIDER` 
-        and set `use_azure_ad = True` to use managed identity with Azure Entra ID 
+    - `AZURE_OPENAI_API_KEY`: your API key if the api type is `azure`| Or pass through `AZURE_AD_TOKEN_PROVIDER`
+        and set `use_azure_ad = True` to use managed identity with Azure Entra ID
 
     More information can be found here:
         https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quickstart?tabs=command-line&pivots=programming-language-python
@@ -59,10 +59,10 @@ class AzureOpenAI(OpenAI):
             api_version=aoai_api_version,
         )
         ```
-        
+
         Using managed identity (passing a token provider instead of an API key):
 
-        ```python
+         ```python
         from llama_index.llms.azure_openai import AzureOpenAI
 
         aoai_endpoint = "YOUR_AZURE_OPENAI_ENDPOINT"
