@@ -215,6 +215,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         batch_size: int = 200,
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
         retrieval_strategy: Optional[AsyncRetrievalStrategy] = None,
+        **kwargs
     ) -> None:
         nest_asyncio.apply()
 
@@ -232,12 +233,16 @@ class ElasticsearchStore(BasePydanticVectorStore):
                 distance=DistanceMetric[distance_strategy]
             )
 
-        metadata_mappings = {
+        base_metadata_mappings = {
             "document_id": {"type": "keyword"},
             "doc_id": {"type": "keyword"},
             "ref_doc_id": {"type": "keyword"},
         }
 
+        metadata_mappings = kwargs.pop('metadata_mappings', None)
+            if metadata_mappings:
+                base_metadata_mappings.update(metadata_mappings)
+                
         self._store = AsyncVectorStore(
             user_agent=get_user_agent(),
             client=es_client,
