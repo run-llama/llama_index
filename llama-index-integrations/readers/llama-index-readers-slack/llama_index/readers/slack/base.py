@@ -1,14 +1,16 @@
 """Slack reader."""
 import logging
 import os
+import re
 import time
 from datetime import datetime
 from ssl import SSLContext
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+
 
 logger = logging.getLogger(__name__)
 
@@ -193,16 +195,34 @@ class SlackReader(BasePydanticReader):
         )
 
     def load_data(
-        self, channel_ids: List[str], reverse_chronological: bool = True
+        self,
+        channel_ids: Optional[List[str]] = None,
+        channel_patterns: Optional[List[str]] = None,
+        reverse_chronological: bool = True,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """Load data from Slack channels based on IDs or name regex patterns.
 
         Args:
-            channel_ids (List[str]): List of channel ids to read.
+            channel_ids (Optional[List[str]]): List of channel IDs to read.
+            channel_patterns (Optional[List[str]]): List of channel name patterns (names or regex) to read.
+            reverse_chronological (bool): Whether to read messages in reverse chronological order.
 
         Returns:
             List[Document]: List of documents.
         """
+        if not channel_ids and not channel_patterns:
+            raise ValueError("Must specify either `channel_ids` or `channel_patterns`.")
+
+        # Get channel IDs from patterns if provided
+        if channel_patterns:
+            pattern_channel_ids = self._get_channel_ids(patterns=channel_patterns)
+            if not pattern_channel_ids:
+                logger.warning("No channels found matching the given patterns.")
+            if channel_ids:
+                # Combine and remove duplicates
+                channel_ids = list(set(channel_ids + pattern_channel_ids))
+            else:
+                channel_ids = pattern_channel_ids
         results = []
         for channel_id in channel_ids:
             channel_content = self._read_channel(
@@ -217,7 +237,70 @@ class SlackReader(BasePydanticReader):
             )
         return results
 
+    def _is_regex(self, pattern: str) -> bool:
+        """Check if a string is a regex pattern."""
+        try:
+            re.compile(pattern)
+            return True
+        except re.error:
+            return False
+
+    def _list_channels(self) -> List[Dict[str, Any]]:
+        """List all channels (public and private)."""
+        from slack_sdk.errors import SlackApiError
+
+        try:
+            result = self._client.conversations_list(
+                types="public_channel,private_channel"
+            )
+            return result["channels"]
+        except SlackApiError as e:
+            logger.error(f"Error fetching channels: {e.response['error']}")
+            return []
+
+    def _filter_channels(
+        self, channels: List[Dict[str, Any]], patterns: List[str]
+    ) -> List[Dict[str, Any]]:
+        """Filter channels based on the provided names and regex patterns."""
+        regex_patterns = [pattern for pattern in patterns if self._is_regex(pattern)]
+        exact_names = [pattern for pattern in patterns if not self._is_regex(pattern)]
+
+        # Match Exact Channel names
+        filtered_channels = [
+            channel for channel in channels if channel["name"] in exact_names
+        ]
+
+        # Match Regex Patterns
+        for channel in channels:
+            for pattern in regex_patterns:
+                if re.match(pattern, channel["name"]):
+                    filtered_channels.append(channel)
+        return filtered_channels
+
+    def _get_channel_ids(self, patterns: List[str]) -> List[str]:
+        """Get list of channel IDs based on names and regex patterns."""
+        channels = self._list_channels()
+        logger.info(f"Total channels fetched: {len(channels)}")
+
+        filtered_channels = self._filter_channels(channels=channels, patterns=patterns)
+        logger.info(f"Channels matching patterns: {len(filtered_channels)}")
+
+        return [channel["id"] for channel in filtered_channels]
+
 
 if __name__ == "__main__":
     reader = SlackReader()
-    logger.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))
+
+    # load data using only channel ids
+    logger.info(reader.load_data(channel_ids=["C079KD1M8J3", "C078YQP5B51"]))
+
+    # load data using exact channel names and regex patterns
+    logger.info(reader.load_data(channel_patterns=["^dev.*", "^qa.*", "test_channel"]))
+
+    # load data using both channel ids and channel names/ regex patterns
+    logger.info(
+        reader.load_data(
+            channel_ids=["C079KD1M8J3", "C078YQP5B51"],
+            channel_patterns=["^dev.*", "^qa.*", "test_channel"],
+        )
+    )
