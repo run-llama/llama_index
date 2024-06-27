@@ -296,7 +296,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
         """
         return asyncio.get_event_loop().run_until_complete(
-            self.async_add(nodes, create_index_if_not_exists=create_index_if_not_exists)
+            self.async_add(nodes, create_index_if_not_exists=create_index_if_not_exists, **add_kwargs)
         )
 
     async def async_add(
