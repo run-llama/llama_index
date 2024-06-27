@@ -1,7 +1,7 @@
 import hmac
 import hashlib
 import urllib.parse
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from datetime import datetime, timezone
 import urllib.parse
 
@@ -32,7 +32,7 @@ def encode_canonical_query(query: str) -> str:
     return "&".join(items)
 
 
-def encode_canonical_headers(headers: Dict[str, str], host: str) -> tuple[str, str]:
+def encode_canonical_headers(headers: Dict[str, str], host: str) -> Tuple[str, str]:
     """
     Encoding the HTTTP headers.
     """
