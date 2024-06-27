@@ -62,8 +62,9 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
             PDFReader,
             PptxReader,
             VideoAudioReader,
-            JSONReader,
         )  # pants: no-infer-dep
+
+        from llama_index.readers import JSONReader
     except ImportError:
         raise ImportError("`llama-index-readers-file` package not found")
 
