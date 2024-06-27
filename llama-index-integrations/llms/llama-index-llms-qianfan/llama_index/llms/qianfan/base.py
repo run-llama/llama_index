@@ -242,6 +242,7 @@ class Qianfan(CustomLLM):
         :param secret_key: The Secret Key paired with the Access Key.
         :param model_name: The name of the model service. For example: ERNIE-4.0-8K.
         :param context_windows: The context window size. for example: 8192.
+            The LLMs developed by Baidu all carry context window size in their names.
         """
         service_list = await aget_service_list(access_key, secret_key, ["chat"])
         try:
@@ -363,6 +364,8 @@ class Qianfan(CustomLLM):
     ) -> CompletionResponse:
         """
         Not implemented.
+
+        The LLM developed by Baidu does not support the complete function.
         """
         raise NotImplementedError("complete is not supported for Qianfan-LLM")
 
@@ -372,5 +375,7 @@ class Qianfan(CustomLLM):
     ) -> CompletionResponseGen:
         """
         Not implemented.
+
+        The LLM developed by Baidu does not support the complete function.
         """
         raise NotImplementedError("stream_complete is not supported for Qianfan-LLM")
