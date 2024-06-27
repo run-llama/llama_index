@@ -75,7 +75,6 @@ nav:
           - ./examples/agent/agent_builder.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
           - ./examples/agent/agent_runner/agent_runner.ipynb
-          - ./examples/agent/agent_runner/agent_runner_rag.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
@@ -1697,6 +1696,7 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-dashscope
             - ../llama-index-integrations/agent/llama-index-agent-openai
             - ../llama-index-integrations/agent/llama-index-agent-openai-legacy
+            - ../llama-index-integrations/agent/llama-index-agent-dashscope
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-postgres
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-redis
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-firestore
