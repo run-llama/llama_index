@@ -215,7 +215,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
         batch_size: int = 200,
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
         retrieval_strategy: Optional[AsyncRetrievalStrategy] = None,
-        **kwargs
+        metadata_mappings: Optional[Dict[str, Dict[str, str]]] = None,
+        **kwargs,
     ) -> None:
         nest_asyncio.apply()
 
@@ -239,10 +240,9 @@ class ElasticsearchStore(BasePydanticVectorStore):
             "ref_doc_id": {"type": "keyword"},
         }
 
-        metadata_mappings = kwargs.pop('metadata_mappings', None)
-            if metadata_mappings:
-                base_metadata_mappings.update(metadata_mappings)
-                
+        if metadata_mappings is not None:
+            metadata_mappings.update(base_metadata_mappings)
+
         self._store = AsyncVectorStore(
             user_agent=get_user_agent(),
             client=es_client,
@@ -301,7 +301,11 @@ class ElasticsearchStore(BasePydanticVectorStore):
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
         """
         return asyncio.get_event_loop().run_until_complete(
-            self.async_add(nodes, create_index_if_not_exists=create_index_if_not_exists, **add_kwargs)
+            self.async_add(
+                nodes,
+                create_index_if_not_exists=create_index_if_not_exists,
+                **add_kwargs,
+            )
         )
 
     async def async_add(
