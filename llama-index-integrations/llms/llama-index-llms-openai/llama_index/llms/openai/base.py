@@ -850,7 +850,7 @@ class OpenAI(FunctionCallingLLM):
 
         response = self.chat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=resolve_tool_choice(tool_choice),
             **kwargs,
         )
@@ -883,7 +883,7 @@ class OpenAI(FunctionCallingLLM):
 
         response = await self.achat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=resolve_tool_choice(tool_choice),
             **kwargs,
         )
