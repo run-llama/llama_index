@@ -6,6 +6,30 @@ from llama_index.embeddings.nvidia import NVIDIAEmbedding as Interface
 
 from typing import Any
 
+from pytest_httpx import HTTPXMock
+
+
+@pytest.fixture()
+def mock_local_models(httpx_mock: HTTPXMock):
+    mock_response = {
+        "data": [
+            {
+                "id": "model1",
+                "object": "model",
+                "created": 1234567890,
+                "owned_by": "OWNER",
+                "root": "model1",
+            }
+        ]
+    }
+
+    httpx_mock.add_response(
+        url="https://test_url/v1/models",
+        method="GET",
+        json=mock_response,
+        status_code=200,
+    )
+
 
 def get_api_key(instance: Any) -> str:
     return instance._client.api_key
@@ -16,6 +40,7 @@ def test_create_default_url_without_api_key(masked_env_var: str) -> None:
         Interface()
 
 
+@pytest.mark.usefixtures("mock_local_models")
 def test_create_unknown_url_without_api_key(masked_env_var: str) -> None:
     Interface(base_url="https://test_url/v1")
 
