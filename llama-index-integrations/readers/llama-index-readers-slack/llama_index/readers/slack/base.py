@@ -238,7 +238,7 @@ class SlackReader(BasePydanticReader):
             return result["channels"]
         except SlackApiError as e:
             logger.error(f"Error fetching channels: {e.response['error']}")
-            return []
+            raise
 
     def _filter_channels(
         self, channels: List[Dict[str, Any]], patterns: List[str]
@@ -268,8 +268,15 @@ class SlackReader(BasePydanticReader):
         Returns:
             List[Document]: List of documents.
         """
+        if not channel_patterns:
+            raise ValueError("No channel patterns provided.")
+
         channels = self._list_channels()
         logger.info(f"Total channels fetched: {len(channels)}")
+
+        if not channels:
+            logger.info("No channels found in Slack.")
+            return []
 
         filtered_channels = self._filter_channels(
             channels=channels, patterns=channel_patterns
@@ -277,11 +284,14 @@ class SlackReader(BasePydanticReader):
         logger.info(f"Channels matching patterns: {len(filtered_channels)}")
 
         if not filtered_channels:
-            logger.warning(
+            logger.info(
                 "None of the channel names or pattern matched with Slack Channels."
             )
+            return []
 
-        return [channel["id"] for channel in filtered_channels]
+        channel_ids = [channel["id"] for channel in filtered_channels]
+
+        return list(set(channel_ids))
 
 
 if __name__ == "__main__":
