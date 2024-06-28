@@ -240,8 +240,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
             "ref_doc_id": {"type": "keyword"},
         }
 
-        if metadata_mappings is not None:
-            metadata_mappings.update(base_metadata_mappings)
+        metadata_mappings = metadata_mappings or {}
+        metadata_mappings.update(base_metadata_mappings)
 
         self._store = AsyncVectorStore(
             user_agent=get_user_agent(),
