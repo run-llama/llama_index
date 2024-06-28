@@ -198,6 +198,26 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         return [x for x in nodes if filter_func(x)]
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        if filters:
+            self._vectorstore.delete(
+                ids=[
+                    x.node_id
+                    for x in self.get_nodes(node_ids=node_ids, filters=filters)
+                ]
+            )
+        else:
+            self._vectorstore.delete(ids=node_ids)
+
+    def clear(self) -> None:
+        """Clear the vector store."""
+        self._vectorstore.delete(filter=lambda x: True)
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
