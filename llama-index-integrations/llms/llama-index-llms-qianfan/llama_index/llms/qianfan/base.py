@@ -10,9 +10,17 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     CompletionResponse,
     CompletionResponseGen,
+    CompletionResponseAsyncGen,
 )
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
+    llm_completion_callback,
+)
+from llama_index.core.base.llms.generic_utils import (
+    chat_to_completion_decorator,
+    achat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.core.llms.custom import CustomLLM
@@ -181,6 +189,9 @@ class Qianfan(CustomLLM):
         :param context_windows: The context window size. for example: 8192.
         :param llm_type: The LLM type. Currently, only the chat type is supported.
         """
+        if llm_type != "chat":
+            raise NotImplementedError("Only the chat type is supported.")
+
         self._client = Client(access_key, secret_key)
 
         super().__init__(
@@ -358,24 +369,64 @@ class Qianfan(CustomLLM):
 
         return gen()
 
-    @llm_chat_callback()
+    @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         """
-        Not implemented.
-
+        Request to complete a message that begins with the specified prompt.
         The LLM developed by Baidu does not support the complete function.
-        """
-        raise NotImplementedError("complete is not supported for Qianfan-LLM")
+        Here use a converter to convert the chat function to a complete function.
 
-    @llm_chat_callback()
+        :param prompt: The prompt message at the beginning of the completed content.
+        :return: CompletionResponse.
+        """
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
+
+    @llm_completion_callback()
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        """
+        Asynchronous request to complete a message that begins with the specified prompt.
+        The LLM developed by Baidu does not support the complete function.
+        Here use a converter to convert the chat function to a complete function.
+
+        :param prompt: The prompt message at the beginning of the completed content.
+        :return: A CompletionResponse object.
+        """
+        complete_fn = achat_to_completion_decorator(self.achat)
+        return await complete_fn(prompt, **kwargs)
+
+    @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         """
-        Not implemented.
-
+        Request to complete a message that begins with the specified prompt,
+        and the response is returned in a stream.
         The LLM developed by Baidu does not support the complete function.
+        Here use a converter to convert the chat function to a complete function.
+
+        :param prompt: The prompt message at the beginning of the completed content.
+        :return: A CompletionResponseGen object.
         """
-        raise NotImplementedError("stream_complete is not supported for Qianfan-LLM")
+        complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return complete_fn(prompt, **kwargs)
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        """
+        Asynchronous request to complete a message that begins with the specified prompt,
+        and the response is returned in a stream.
+        The LLM developed by Baidu does not support the complete function.
+        Here use a converter to convert the chat function to a complete function.
+
+        :param prompt: The prompt message at the beginning of the completed content.
+        :return: A CompletionResponseAsyncGen object.
+        """
+        complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await complete_fn(prompt, **kwargs)
