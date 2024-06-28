@@ -517,7 +517,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             ids.append(node.node_id)
 
             index_document = self._create_index_document(node)
-            document_size = len(str(node["chunk"]).encode("utf-8"))
+            document_size = len(str(index_document["chunk"]).encode("utf-8"))
             documents.append(index_document)
             accumulated_size += document_size
 
