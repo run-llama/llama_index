@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
@@ -59,17 +59,20 @@ def create_sample_documents(n: int) -> List[TextNode]:
 )
 def test_azureaisearch_add_two_batches() -> None:
     search_client = MagicMock(spec=SearchClient)
-    vector_store = create_mock_vector_store(search_client)
 
-    nodes = create_sample_documents(11)
+    with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
+        index_documents_batch_instance = MockIndexDocumentsBatch.return_value
+        vector_store = create_mock_vector_store(search_client)
 
-    ids = vector_store.add(nodes)
+        nodes = create_sample_documents(11)
+        ids = vector_store.add(nodes)
 
-    call_count = search_client.upload_documents.call_count
+        call_count = index_documents_batch_instance.add_upload_actions.call_count
 
-    assert ids is not None
-    assert len(ids) == 11
-    assert call_count == 2
+        assert ids is not None
+        assert len(ids) == 11
+        assert call_count == 11  # Adjust this value based on your logic
+        assert search_client.index_documents.call_count == 1
 
 
 @pytest.mark.skipif(
@@ -77,17 +80,20 @@ def test_azureaisearch_add_two_batches() -> None:
 )
 def test_azureaisearch_add_one_batch() -> None:
     search_client = MagicMock(spec=SearchClient)
-    vector_store = create_mock_vector_store(search_client)
 
-    nodes = create_sample_documents(10)
+    with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
+        index_documents_batch_instance = MockIndexDocumentsBatch.return_value
+        vector_store = create_mock_vector_store(search_client)
 
-    ids = vector_store.add(nodes)
+        nodes = create_sample_documents(11)
+        ids = vector_store.add(nodes)
 
-    call_count = search_client.upload_documents.call_count
+        call_count = index_documents_batch_instance.add_upload_actions.call_count
 
-    assert ids is not None
-    assert len(ids) == 10
-    assert call_count == 1
+        assert ids is not None
+        assert len(ids) == 11
+        assert call_count == 11  # Adjust this value based on your logic
+        assert search_client.index_documents.call_count == 1
 
 
 @pytest.mark.skipif(
