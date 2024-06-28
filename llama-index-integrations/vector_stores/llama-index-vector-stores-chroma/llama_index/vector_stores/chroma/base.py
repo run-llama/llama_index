@@ -443,7 +443,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results["ids"] = [[]]
 
         for node_id, text, metadata in zip(
-            results["ids"][0], results["documents"], results["metadatas"]
+            results["ids"], results["documents"], results["metadatas"]
         ):
             try:
                 node = metadata_dict_to_node(metadata)
