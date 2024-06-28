@@ -508,31 +508,37 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         documents = []
         ids = []
+        accumulated_size = 0
+        max_size = 16 * 1024 * 1024  # 16MB in bytes
+        max_docs = 1000
 
         for node in nodes:
             logger.debug(f"Processing embedding: {node.node_id}")
             ids.append(node.node_id)
 
             index_document = self._create_index_document(node)
-
+            document_size = len(str(node["chunk"]).encode("utf-8"))
             documents.append(index_document)
+            accumulated_size += document_size
 
-            if len(documents) >= 10:
+            if len(documents) >= max_docs or accumulated_size >= max_size:
                 logger.info(
                     f"Uploading batch of size {len(documents)}, "
-                    f"current progress {len(ids)} of {len(nodes)}"
+                    f"current progress {len(ids)} of {len(nodes)}, "
+                    f"accumulated size {accumulated_size / (1024 * 1024):.2f} MB"
                 )
                 self._search_client.merge_or_upload_documents(documents)
                 documents = []
+                accumulated_size = 0
 
-        # Upload remaining batch of less than 10 documents
-        if len(documents) > 0:
+        # Upload remaining batch
+        if documents:
             logger.info(
                 f"Uploading remaining batch of size {len(documents)}, "
-                f"current progress {len(ids)} of {len(nodes)}"
+                f"current progress {len(ids)} of {len(nodes)}, "
+                f"accumulated size {accumulated_size / (1024 * 1024):.2f} MB"
             )
             self._search_client.merge_or_upload_documents(documents)
-            documents = []
 
         return ids
 
