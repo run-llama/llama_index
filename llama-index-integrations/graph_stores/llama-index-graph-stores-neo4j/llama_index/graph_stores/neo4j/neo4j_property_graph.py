@@ -472,7 +472,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             response = self.structured_query(
                 f"""
                 MATCH (e:`__Entity__`)
-                WHERE e.id='{id}'
+                WHERE e.id=$id
                 MATCH p=(e)-[r*1..{depth}]-(other)
                 WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
                 UNWIND relationships(p) AS rel
@@ -487,7 +487,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         endNode{{.* , embedding: Null, id: Null}} AS target_properties
                 LIMIT toInteger($limit)
                 """,
-                param_map={"limit": limit},
+                param_map={"id": id, "limit": limit},
             )
             response = response if response else []
             limit -= len(response)
