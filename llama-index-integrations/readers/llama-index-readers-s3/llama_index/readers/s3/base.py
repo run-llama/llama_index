@@ -67,6 +67,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     aws_session_token: Optional[str] = None
     s3_endpoint_url: Optional[str] = None
     custom_reader_path: Optional[str] = None
+    invalidate_s3fs_cache: bool = True
 
     @classmethod
     def class_name(cls) -> str:
@@ -75,12 +76,16 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     def _get_s3fs(self):
         from s3fs import S3FileSystem
 
-        return S3FileSystem(
+        s3fs = S3FileSystem(
             key=self.aws_access_id,
             endpoint_url=self.s3_endpoint_url,
             secret=self.aws_access_secret,
             token=self.aws_session_token,
         )
+        if self.invalidate_s3fs_cache:
+            s3fs.invalidate_cache()
+
+        return s3fs
 
     def _get_simple_directory_reader(self) -> SimpleDirectoryReader:
         # we don't want to keep the reader as a field in the class to keep it serializable
