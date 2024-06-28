@@ -20,6 +20,10 @@ MISTRALAI_CODE_MODELS = "codestral-latest"
 
 
 def mistralai_modelname_to_contextsize(modelname: str) -> int:
+    # handling finetuned models
+    if modelname.startswith("ft:"):
+        modelname = modelname.split(":")[1]
+
     if modelname not in MISTRALAI_MODELS:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid MistralAI model name."

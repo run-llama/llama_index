@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from deprecated import deprecated
 
 import torch
 from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
@@ -455,6 +456,10 @@ def chat_messages_to_conversational_kwargs(
     return kwargs
 
 
+@deprecated(
+    "Deprecated in favor of `HuggingFaceInferenceAPI` from `llama-index-llms-huggingface-api` which should be used instead.",
+    action="always",
+)
 class HuggingFaceInferenceAPI(CustomLLM):
     """
     Wrapper on the Hugging Face's Inference API.
@@ -685,6 +690,10 @@ class HuggingFaceInferenceAPI(CustomLLM):
         raise NotImplementedError
 
 
+@deprecated(
+    "Deprecated in favor of `TextGenerationInference` from `llama-index-llms-text-generation-inference` which should be used instead.",
+    action="always",
+)
 class TextGenerationInference(FunctionCallingLLM):
     model_name: Optional[str] = Field(
         default=None,
@@ -1002,7 +1011,7 @@ class TextGenerationInference(FunctionCallingLLM):
 
         response = self.chat(
             messages=messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
         )
@@ -1034,7 +1043,7 @@ class TextGenerationInference(FunctionCallingLLM):
 
         response = self.achat(
             messages=messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
         )

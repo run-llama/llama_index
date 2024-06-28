@@ -61,6 +61,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an Azure connection string."""
         azure_kvstore = AzureKVStore.from_connection_string(
@@ -74,6 +75,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     @classmethod
@@ -87,6 +89,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an account name and key."""
         azure_kvstore = AzureKVStore.from_account_and_key(
@@ -101,6 +104,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     @classmethod
@@ -114,6 +118,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from a SAS token."""
         azure_kvstore = AzureKVStore.from_sas_token(
@@ -128,6 +133,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     @classmethod
@@ -140,6 +146,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an AAD token."""
         azure_kvstore = AzureKVStore.from_aad_token(
@@ -153,6 +160,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     def _extract_doc_metadatas(

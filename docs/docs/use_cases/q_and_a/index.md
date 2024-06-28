@@ -11,8 +11,8 @@ LlamaIndex can pull in unstructured text, PDFs, Notion and Slack documents and m
 
 The simplest queries involve either semantic search or summarization.
 
-- **Semantic search**: A query about specific information in a document that matches the query terms and/or semantic intent. This is typically executed with simple vector retrieval (top-k). [Example of semantic search](../../understanding/putting_it_all_together/q_and_a.md#semantic-search)
-- **Summarization**: condensing a large amount of data into a short summary relevant to your current question. [Example of summarization](../../understanding/putting_it_all_together/q_and_a.md#summarization)
+- **Semantic search**: A query about specific information in a document that matches the query terms and/or semantic intent. This is typically executed with simple vector retrieval (top-k). [Example of semantic search](../../understanding/putting_it_all_together/q_and_a/#semantic-search)
+- **Summarization**: condensing a large amount of data into a short summary relevant to your current question. [Example of summarization](../../understanding/putting_it_all_together/q_and_a/#summarization)
 
 
 

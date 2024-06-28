@@ -21,6 +21,7 @@ from llama_index.core.indices.query.query_transform.prompts import (
     ImageOutputQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.core.prompts.mixin import (
@@ -36,7 +37,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 
-class BaseQueryTransform(ChainableMixin, PromptMixin):
+class BaseQueryTransform(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """
     Base class for query transform.
 

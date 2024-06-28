@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_UPSTAGE_API_BASE = "https://api.upstage.ai/v1/solar"
+DEFAULT_CONTEXT_WINDOW = 32768
 CHAT_MODELS = {
     "solar-1-mini-chat": 32768,
 }
@@ -35,7 +36,7 @@ def resolve_upstage_credentials(
 
 
 def is_chat_model(model: str) -> bool:
-    return model in CHAT_MODELS
+    return True
 
 
 def is_function_calling_model(model: str) -> bool:
@@ -44,7 +45,5 @@ def is_function_calling_model(model: str) -> bool:
 
 def upstage_modelname_to_contextsize(modelname: str) -> int:
     if modelname not in ALL_AVAILABLE_MODELS:
-        raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid Upstage model name in: {', '.join(ALL_AVAILABLE_MODELS.keys())}"
-        )
+        return DEFAULT_CONTEXT_WINDOW
     return CHAT_MODELS[modelname]

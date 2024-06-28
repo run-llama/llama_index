@@ -290,6 +290,39 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_single_element(
+    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+    assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key",
+                value=["test_value"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "bbb"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
     pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:

@@ -48,6 +48,10 @@ def _transform_chroma_filter_operator(operator: str) -> str:
         return "$gte"
     elif operator == "<=":
         return "$lte"
+    elif operator == "in":
+        return "$in"
+    elif operator == "nin":
+        return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -439,7 +443,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results["ids"] = [[]]
 
         for node_id, text, metadata in zip(
-            results["ids"][0], results["documents"], results["metadatas"]
+            results["ids"], results["documents"], results["metadatas"]
         ):
             try:
                 node = metadata_dict_to_node(metadata)

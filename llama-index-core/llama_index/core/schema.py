@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
 from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
 from typing_extensions import Self
 
@@ -116,7 +117,7 @@ class BaseComponent(BaseModel):
         return cls.from_dict(data, **kwargs)
 
 
-class TransformComponent(BaseComponent):
+class TransformComponent(BaseComponent, DispatcherSpanMixin):
     """Base class for transform components."""
 
     class Config:
@@ -356,6 +357,9 @@ class BaseNode(BaseComponent):
 
 class TextNode(BaseNode):
     text: str = Field(default="", description="Text content of the node.")
+    mimetype: str = Field(
+        default="text/plain", description="MIME type of the node content."
+    )
     start_char_idx: Optional[int] = Field(
         default=None, description="Start char index of the node."
     )

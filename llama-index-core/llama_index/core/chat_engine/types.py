@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from queue import Queue, Empty
 from threading import Event
-from typing import AsyncGenerator, Generator, List, Optional, Union
+from typing import AsyncGenerator, Generator, List, Optional, Union, Dict, Any
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -17,6 +17,7 @@ from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.tools import ToolOutput
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.chat_engine import (
     StreamChatErrorEvent,
     StreamChatEndEvent,
@@ -51,6 +52,7 @@ class AgentChatResponse:
     sources: List[ToolOutput] = field(default_factory=list)
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     is_dummy_stream: bool = False
+    metadata: Optional[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
         if self.sources and not self.source_nodes:
@@ -296,7 +298,7 @@ class StreamingAgentChatResponse:
 AGENT_CHAT_RESPONSE_TYPE = Union[AgentChatResponse, StreamingAgentChatResponse]
 
 
-class BaseChatEngine(ABC):
+class BaseChatEngine(DispatcherSpanMixin, ABC):
     """Base Chat Engine."""
 
     @abstractmethod
