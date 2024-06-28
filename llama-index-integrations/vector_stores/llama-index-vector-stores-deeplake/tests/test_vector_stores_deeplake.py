@@ -1,3 +1,5 @@
+import pytest
+
 from llama_index.core import Document
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -100,3 +102,28 @@ def test_e2e():
             )
         )
     ] == ["Doc 1", "Doc 2"]
+
+    vs.delete_nodes(node_ids=[ids[0], ids[2]])
+    assert [x.text for x in vs.get_nodes()] == ["Doc 2"]
+
+    vs.add(
+        nodes=[
+            Document(text="Doc 4", embedding=[1, 2, 1], metadata={"a": "4", "b": 14}),
+            Document(text="Doc 5", embedding=[1, 2, 2], metadata={"a": "5", "b": 15}),
+            Document(text="Doc 6", embedding=[1, 2, 3], metadata={"a": "6", "b": 16}),
+        ]
+    )
+
+    vs.delete_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="b", value=14, operator=FilterOperator.GT),
+            ]
+        )
+    )
+    assert [x.text for x in vs.get_nodes()] == ["Doc 2", "Doc 4"]
+
+    vs.clear()
+    with pytest.raises(ValueError) as e:
+        vs.get_nodes()
+    assert str(e.value) == "specified dataset is empty"
