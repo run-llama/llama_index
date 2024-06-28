@@ -65,7 +65,7 @@ def test_azureaisearch_add_two_batches() -> None:
 
     ids = vector_store.add(nodes)
 
-    call_count = search_client.merge_or_upload_documents.call_count
+    call_count = search_client.upload_documents.call_count
 
     assert ids is not None
     assert len(ids) == 11
@@ -83,7 +83,7 @@ def test_azureaisearch_add_one_batch() -> None:
 
     ids = vector_store.add(nodes)
 
-    call_count = search_client.merge_or_upload_documents.call_count
+    call_count = search_client.upload_documents.call_count
 
     assert ids is not None
     assert len(ids) == 10
