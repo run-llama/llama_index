@@ -12,6 +12,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     Args:
     api_key: The Firecrawl API key.
+    api_url: url to be passed to FirecrawlApp for local deployment
     url: The url to be crawled (or)
     mode: The mode to run the loader in. Default is "crawl".
     Options include "scrape" (single url) and
@@ -24,6 +25,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     firecrawl: Optional[object] = Field(None)
     api_key: str
+    api_url: Optional[str]
     mode: Optional[str]
     params: Optional[dict]
 
@@ -32,6 +34,7 @@ class FireCrawlWebReader(BasePydanticReader):
     def __init__(
         self,
         api_key: str,
+        api_url: Optional[str] = None,
         mode: Optional[str] = "crawl",
         params: Optional[dict] = None,
     ) -> None:
@@ -43,7 +46,10 @@ class FireCrawlWebReader(BasePydanticReader):
             raise ImportError(
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
             )
-        self.firecrawl = FirecrawlApp(api_key=api_key)
+        if api_url:
+            self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
+        else:
+            self.firecrawl = FirecrawlApp(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:
