@@ -4,7 +4,13 @@ import pytest
 from typing import List
 
 from llama_index.core.schema import Document, TextNode
-from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    MetadataFilter,
+    MetadataFilters,
+    FilterOperator,
+    FilterCondition,
+)
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
 
@@ -44,12 +50,12 @@ def test_vectorstore(
         ids = vector_store.add(nodes)
         assert set(ids) == {node.node_id for node in nodes}
 
-        # 2. test query()
+        # 2a. test default query()
         query_str = "What are LLMs useful for?"
         n_similar = 2
         query_embedding = OpenAIEmbedding().get_text_embedding(query_str)
         query = VectorStoreQuery(
-            query_str=query_str,
+            query_str="",  # query_str, Is this used in default search?
             query_embedding=query_embedding,
             similarity_top_k=n_similar,
         )
@@ -67,6 +73,65 @@ def test_vectorstore(
         assert all(score > 0.89 for score in query_responses.similarities)
         assert any("LLM" in node.text for node in query_responses.nodes)
         assert all(id_res in ids for id_res in query_responses.ids)
+
+        # 2b. test query() with simple filter
+
+        # In order to filter within $vectorSearch,
+        # one needs to have an index on the field.  # TODO Check whether separate index is ok, or just within vector index
+        # One can do this by adding an additional member to "fields" list of vector index
+        # like so: { "type": "filter", "path": "text }
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="text",
+                    value="How do we best augment LLMs with our own private data?",
+                    operator=FilterOperator.NE,
+                )
+            ]
+        )
+        query = VectorStoreQuery(
+            query_str=query_str,
+            query_embedding=query_embedding,
+            similarity_top_k=n_similar,
+            filters=filters,
+        )
+        responses_with_filter = vector_store.query(query=query)
+        assert len(responses_with_filter.ids) == n_similar
+        assert all(
+            filters.filters[0].value not in node.text
+            for node in responses_with_filter.nodes
+        )
+
+        # 2c. test query() with multiple filters
+        filter_out_texts = [
+            "How do we best augment LLMs with our own private data?",
+            "easily used with LLMs.",
+        ]
+        filters_compoound = MetadataFilters(
+            condition=FilterCondition.AND,
+            filters=[
+                MetadataFilter(
+                    key="text", value=filter_out_texts[0], operator=FilterOperator.NE
+                ),
+                MetadataFilter(
+                    key="text", value=filter_out_texts[1], operator=FilterOperator.NE
+                ),
+            ],
+        )
+        query = VectorStoreQuery(
+            query_str=query_str,
+            query_embedding=query_embedding,
+            similarity_top_k=n_similar,
+            filters=filters_compoound,
+        )
+        responses_with_filter_compound = vector_store.query(query=query)
+        assert len(responses_with_filter_compound.ids) == n_similar
+        assert all(
+            ftext not in node.text
+            for node in responses_with_filter_compound.nodes
+            for ftext in filter_out_texts
+        )
+        assert set(responses_with_filter_compound.ids) != set(responses_with_filter.ids)
 
         # 3. Test delete()
         # Remember, the current API deletes by *ref_doc_id*, not *node_id*.

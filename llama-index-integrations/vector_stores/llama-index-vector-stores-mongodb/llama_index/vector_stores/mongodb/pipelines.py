@@ -2,7 +2,11 @@
 
 """
 from typing import Any, Dict, List, TypeVar
-from llama_index.core.vector_stores.types import MetadataFilters, FilterOperator
+from llama_index.core.vector_stores.types import (
+    MetadataFilters,
+    FilterOperator,
+    FilterCondition,
+)
 
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
@@ -62,13 +66,26 @@ def filters_to_mql(filters: MetadataFilters) -> Dict[str, Any]:
     """
     if filters is None:
         return {}
-    if filters.condition.AND:
-        mql = {"$and": [{mf.key: mf.value} for mf in filters]}
-    elif filters.condition.OR:
-        mql = {"$or": [{mf.key: mf.value} for mf in filters]}
+    if len(filters.filters) == 1:
+        mf = filters.filters[0]
+        mql = {mf.key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+    elif filters.condition == FilterCondition.AND:
+        mql = {
+            "$and": [
+                {mf.key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+                for mf in filters.filters
+            ]
+        }
+    elif filters.condition == FilterCondition.OR:
+        mql = {
+            "$or": [
+                {mf.key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+                for mf in filters.filters
+            ]
+        }
     else:
-        assert len(filters) == 1
-        mql = {"$or": {filters[0].key: filters[0].value}}
+        logger.debug(f"filters.condition not recognized. Returning empty dict")
+        mql = {}
 
     return mql
 
@@ -137,7 +154,7 @@ def map_lc_mql_filter_operators(operator: str) -> str:
         # FilterOperator.CONTAINS: "NA", # not supported as filter. Try $in
     }
     try:
-        return map(operator)
+        return map[operator]
     except KeyError:
         if operator in [FilterOperator.TEXT_MATCH, FilterOperator.CONTAINS]:
             logger.error(f"operator not supported as a filter. See $text")

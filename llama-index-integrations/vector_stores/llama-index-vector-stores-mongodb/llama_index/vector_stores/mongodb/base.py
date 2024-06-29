@@ -34,6 +34,8 @@ from llama_index.vector_stores.mongodb.pipelines import (
 )
 from pymongo import MongoClient
 from pymongo.driver_info import DriverInfo
+from pymongo.collection import Collection
+
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +67,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
     ```
     {
-        "name": "index_name",
+        "name": "vector_index",
         "type": "vectorSearch",
         "fields":[
             {
@@ -169,7 +171,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     "vector_index_name and index_name both specified. Will use vector_index_name"
                 )
 
-        self._collection = self._mongodb_client[db_name][collection_name]
+        self._collection: Collection = self._mongodb_client[db_name][collection_name]
         self._vector_index_name = vector_index_name
         self._embedding_key = embedding_key
         self._id_key = id_key
