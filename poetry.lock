@@ -672,33 +672,33 @@ typing-inspect = ">=0.4.0,<1"
 
 [[package]]
 name = "debugpy"
-version = "1.8.1"
+version = "1.8.2"
 description = "An implementation of the Debug Adapter Protocol for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "debugpy-1.8.1-cp310-cp310-macosx_11_0_x86_64.whl", hash = "sha256:3bda0f1e943d386cc7a0e71bfa59f4137909e2ed947fb3946c506e113000f741"},
-    {file = "debugpy-1.8.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dda73bf69ea479c8577a0448f8c707691152e6c4de7f0c4dec5a4bc11dee516e"},
-    {file = "debugpy-1.8.1-cp310-cp310-win32.whl", hash = "sha256:3a79c6f62adef994b2dbe9fc2cc9cc3864a23575b6e387339ab739873bea53d0"},
-    {file = "debugpy-1.8.1-cp310-cp310-win_amd64.whl", hash = "sha256:7eb7bd2b56ea3bedb009616d9e2f64aab8fc7000d481faec3cd26c98a964bcdd"},
-    {file = "debugpy-1.8.1-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:016a9fcfc2c6b57f939673c874310d8581d51a0fe0858e7fac4e240c5eb743cb"},
-    {file = "debugpy-1.8.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fd97ed11a4c7f6d042d320ce03d83b20c3fb40da892f994bc041bbc415d7a099"},
-    {file = "debugpy-1.8.1-cp311-cp311-win32.whl", hash = "sha256:0de56aba8249c28a300bdb0672a9b94785074eb82eb672db66c8144fff673146"},
-    {file = "debugpy-1.8.1-cp311-cp311-win_amd64.whl", hash = "sha256:1a9fe0829c2b854757b4fd0a338d93bc17249a3bf69ecf765c61d4c522bb92a8"},
-    {file = "debugpy-1.8.1-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:3ebb70ba1a6524d19fa7bb122f44b74170c447d5746a503e36adc244a20ac539"},
-    {file = "debugpy-1.8.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a2e658a9630f27534e63922ebf655a6ab60c370f4d2fc5c02a5b19baf4410ace"},
-    {file = "debugpy-1.8.1-cp312-cp312-win32.whl", hash = "sha256:caad2846e21188797a1f17fc09c31b84c7c3c23baf2516fed5b40b378515bbf0"},
-    {file = "debugpy-1.8.1-cp312-cp312-win_amd64.whl", hash = "sha256:edcc9f58ec0fd121a25bc950d4578df47428d72e1a0d66c07403b04eb93bcf98"},
-    {file = "debugpy-1.8.1-cp38-cp38-macosx_11_0_x86_64.whl", hash = "sha256:7a3afa222f6fd3d9dfecd52729bc2e12c93e22a7491405a0ecbf9e1d32d45b39"},
-    {file = "debugpy-1.8.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d915a18f0597ef685e88bb35e5d7ab968964b7befefe1aaea1eb5b2640b586c7"},
-    {file = "debugpy-1.8.1-cp38-cp38-win32.whl", hash = "sha256:92116039b5500633cc8d44ecc187abe2dfa9b90f7a82bbf81d079fcdd506bae9"},
-    {file = "debugpy-1.8.1-cp38-cp38-win_amd64.whl", hash = "sha256:e38beb7992b5afd9d5244e96ad5fa9135e94993b0c551ceebf3fe1a5d9beb234"},
-    {file = "debugpy-1.8.1-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:bfb20cb57486c8e4793d41996652e5a6a885b4d9175dd369045dad59eaacea42"},
-    {file = "debugpy-1.8.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:efd3fdd3f67a7e576dd869c184c5dd71d9aaa36ded271939da352880c012e703"},
-    {file = "debugpy-1.8.1-cp39-cp39-win32.whl", hash = "sha256:58911e8521ca0c785ac7a0539f1e77e0ce2df753f786188f382229278b4cdf23"},
-    {file = "debugpy-1.8.1-cp39-cp39-win_amd64.whl", hash = "sha256:6df9aa9599eb05ca179fb0b810282255202a66835c6efb1d112d21ecb830ddd3"},
-    {file = "debugpy-1.8.1-py2.py3-none-any.whl", hash = "sha256:28acbe2241222b87e255260c76741e1fbf04fdc3b6d094fcf57b6c6f75ce1242"},
-    {file = "debugpy-1.8.1.zip", hash = "sha256:f696d6be15be87aef621917585f9bb94b1dc9e8aced570db1b8a6fc14e8f9b42"},
+    {file = "debugpy-1.8.2-cp310-cp310-macosx_11_0_x86_64.whl", hash = "sha256:7ee2e1afbf44b138c005e4380097d92532e1001580853a7cb40ed84e0ef1c3d2"},
+    {file = "debugpy-1.8.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3f8c3f7c53130a070f0fc845a0f2cee8ed88d220d6b04595897b66605df1edd6"},
+    {file = "debugpy-1.8.2-cp310-cp310-win32.whl", hash = "sha256:f179af1e1bd4c88b0b9f0fa153569b24f6b6f3de33f94703336363ae62f4bf47"},
+    {file = "debugpy-1.8.2-cp310-cp310-win_amd64.whl", hash = "sha256:0600faef1d0b8d0e85c816b8bb0cb90ed94fc611f308d5fde28cb8b3d2ff0fe3"},
+    {file = "debugpy-1.8.2-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:8a13417ccd5978a642e91fb79b871baded925d4fadd4dfafec1928196292aa0a"},
+    {file = "debugpy-1.8.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:acdf39855f65c48ac9667b2801234fc64d46778021efac2de7e50907ab90c634"},
+    {file = "debugpy-1.8.2-cp311-cp311-win32.whl", hash = "sha256:2cbd4d9a2fc5e7f583ff9bf11f3b7d78dfda8401e8bb6856ad1ed190be4281ad"},
+    {file = "debugpy-1.8.2-cp311-cp311-win_amd64.whl", hash = "sha256:d3408fddd76414034c02880e891ea434e9a9cf3a69842098ef92f6e809d09afa"},
+    {file = "debugpy-1.8.2-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:5d3ccd39e4021f2eb86b8d748a96c766058b39443c1f18b2dc52c10ac2757835"},
+    {file = "debugpy-1.8.2-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:62658aefe289598680193ff655ff3940e2a601765259b123dc7f89c0239b8cd3"},
+    {file = "debugpy-1.8.2-cp312-cp312-win32.whl", hash = "sha256:bd11fe35d6fd3431f1546d94121322c0ac572e1bfb1f6be0e9b8655fb4ea941e"},
+    {file = "debugpy-1.8.2-cp312-cp312-win_amd64.whl", hash = "sha256:15bc2f4b0f5e99bf86c162c91a74c0631dbd9cef3c6a1d1329c946586255e859"},
+    {file = "debugpy-1.8.2-cp38-cp38-macosx_11_0_x86_64.whl", hash = "sha256:5a019d4574afedc6ead1daa22736c530712465c0c4cd44f820d803d937531b2d"},
+    {file = "debugpy-1.8.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:40f062d6877d2e45b112c0bbade9a17aac507445fd638922b1a5434df34aed02"},
+    {file = "debugpy-1.8.2-cp38-cp38-win32.whl", hash = "sha256:c78ba1680f1015c0ca7115671fe347b28b446081dada3fedf54138f44e4ba031"},
+    {file = "debugpy-1.8.2-cp38-cp38-win_amd64.whl", hash = "sha256:cf327316ae0c0e7dd81eb92d24ba8b5e88bb4d1b585b5c0d32929274a66a5210"},
+    {file = "debugpy-1.8.2-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:1523bc551e28e15147815d1397afc150ac99dbd3a8e64641d53425dba57b0ff9"},
+    {file = "debugpy-1.8.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e24ccb0cd6f8bfaec68d577cb49e9c680621c336f347479b3fce060ba7c09ec1"},
+    {file = "debugpy-1.8.2-cp39-cp39-win32.whl", hash = "sha256:7f8d57a98c5a486c5c7824bc0b9f2f11189d08d73635c326abef268f83950326"},
+    {file = "debugpy-1.8.2-cp39-cp39-win_amd64.whl", hash = "sha256:16c8dcab02617b75697a0a925a62943e26a0330da076e2a10437edd9f0bf3755"},
+    {file = "debugpy-1.8.2-py2.py3-none-any.whl", hash = "sha256:16e16df3a98a35c63c3ab1e4d19be4cbc7fdda92d9ddc059294f18910928e0ca"},
+    {file = "debugpy-1.8.2.zip", hash = "sha256:95378ed08ed2089221896b9b3a8d021e642c24edc8fef20e5d4342ca8be65c00"},
 ]
 
 [[package]]
@@ -934,13 +934,13 @@ files = [
 
 [[package]]
 name = "fsspec"
-version = "2024.6.0"
+version = "2024.6.1"
 description = "File-system specification"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fsspec-2024.6.0-py3-none-any.whl", hash = "sha256:58d7122eb8a1a46f7f13453187bfea4972d66bf01618d37366521b1998034cee"},
-    {file = "fsspec-2024.6.0.tar.gz", hash = "sha256:f579960a56e6d8038a9efc8f9c77279ec12e6299aa86b0769a7e9c46b94527c2"},
+    {file = "fsspec-2024.6.1-py3-none-any.whl", hash = "sha256:3cb443f8bcd2efb31295a5b9fdb02aee81d8452c80d28f97a6d0959e6cee101e"},
+    {file = "fsspec-2024.6.1.tar.gz", hash = "sha256:fad7d7e209dd4c1208e3bbfda706620e0da5142bebbd9c384afb95b07e798e49"},
 ]
 
 [package.extras]
@@ -1157,13 +1157,13 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "7.2.1"
+version = "8.0.0"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_metadata-7.2.1-py3-none-any.whl", hash = "sha256:ffef94b0b66046dd8ea2d619b701fe978d9264d38f3998bc4c27ec3b146a87c8"},
-    {file = "importlib_metadata-7.2.1.tar.gz", hash = "sha256:509ecb2ab77071db5137c655e24ceb3eee66e7bbc6574165d0d114d9fc4bbe68"},
+    {file = "importlib_metadata-8.0.0-py3-none-any.whl", hash = "sha256:15584cf2b1bf449d98ff8a6ff1abef57bf20f3ac6454f431736cd3e660921b2f"},
+    {file = "importlib_metadata-8.0.0.tar.gz", hash = "sha256:188bd24e4c346d3f0a933f275c2fec67050326a856b9a359881d7c2a697e8812"},
 ]
 
 [package.dependencies]
@@ -1552,13 +1552,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.50"
+version = "0.10.51"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.50-py3-none-any.whl", hash = "sha256:8a1fc49d65156002bb7f4c82458385ee440bd11f81d1bc39ed03ce94f53c9c74"},
-    {file = "llama_index_core-0.10.50.tar.gz", hash = "sha256:9e64dd54b19aca235b360b2f81d6f93014f1439304cc9369a0e53e4cba9e33aa"},
+    {file = "llama_index_core-0.10.51-py3-none-any.whl", hash = "sha256:34051f188258bfb71335e018dcdf54291ef4feda15cadebb9be0402e98bd1d27"},
+    {file = "llama_index_core-0.10.51.tar.gz", hash = "sha256:40b7052a6127810032b2d0b6abd72dd1767d8dd589c0f13747c4307942e81dd5"},
 ]
 
 [package.dependencies]
@@ -1656,13 +1656,13 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.1.22"
+version = "0.1.24"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.1.22-py3-none-any.whl", hash = "sha256:84a8c910671460ad724ed818192f209f7481e71bcc6528553ba7e66db2e14bcd"},
-    {file = "llama_index_llms_openai-0.1.22.tar.gz", hash = "sha256:729bf2ea7043517465e1d585089512b77d8b3ce92233a67c138d5d621061ed56"},
+    {file = "llama_index_llms_openai-0.1.24-py3-none-any.whl", hash = "sha256:c7b71cd34765e2d080d5eaf23c602877cc74fea162b59d53965273b2d4c4a56a"},
+    {file = "llama_index_llms_openai-0.1.24.tar.gz", hash = "sha256:9031bd155c303f89cc51cfcc75d7d6f12fffa4274f2f9c7f67d4140350d13d56"},
 ]
 
 [package.dependencies]
@@ -2514,13 +2514,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.35.3"
+version = "1.35.7"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.3-py3-none-any.whl", hash = "sha256:7b26544cef80f125431c073ffab3811d2421fbb9e30d3bd5c2436aba00b042d5"},
-    {file = "openai-1.35.3.tar.gz", hash = "sha256:d6177087f150b381d49499be782d764213fdf638d391b29ca692b84dd675a389"},
+    {file = "openai-1.35.7-py3-none-any.whl", hash = "sha256:3d1e0b0aac9b0db69a972d36dc7efa7563f8e8d65550b27a48f2a0c2ec207e80"},
+    {file = "openai-1.35.7.tar.gz", hash = "sha256:009bfa1504c9c7ef64d87be55936d142325656bbc6d98c68b669d6472e4beb09"},
 ]
 
 [package.dependencies]
@@ -4442,4 +4442,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "2e5bcddd25b9716ef3bebd1c048d0a161cb752e447d10aa2b723c37f6465f26c"
+content-hash = "4ad0726de1f94e5dac1652aab55a1baa7dcd381dc4a7cc9f6c28fefda31e27ef"
