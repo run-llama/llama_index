@@ -9,6 +9,11 @@
 - Implemented `_list_channels` method to fetch all channels (public and private) from Slack.
 - Implemented `_filter_channels` method to filter channels based on provided names and regex patterns.
 
+### Fixed
+
+- Improved error handling for `not_in_channel` error in `SlackReader`. The reader now properly logs the error and stops retrying, preventing indefinite loops.
+- Enhanced `rate-limiting` handling by implementing a default retry interval, ensuring better control over retries.
+
 ## [0.1.2] - 2024-02-13
 
 - Add maintainers and keywords from library.json (llamahub)

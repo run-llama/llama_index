@@ -126,15 +126,22 @@ class SlackReader(BasePydanticReader):
 
                 next_cursor = result["response_metadata"]["next_cursor"]
             except SlackApiError as e:
-                if e.response["error"] == "ratelimited":
+                error = e.response["error"]
+                if error == "ratelimited":
+                    retry_after = int(e.response.headers.get("retry-after", 1))
                     logger.error(
-                        "Rate limit error reached, sleeping for: {} seconds".format(
-                            e.response.headers["retry-after"]
-                        )
+                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
                     )
-                    time.sleep(int(e.response.headers["retry-after"]))
+                    time.sleep(retry_after)
+                elif error == "not_in_channel":
+                    logger.error(
+                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
+                    )
+                    break
                 else:
-                    logger.error(f"Error parsing conversation replies: {e}")
+                    logger.error(
+                        f"Error parsing conversation replies for channel {channel_id}: {e}"
+                    )
                     break
 
         return "\n\n".join(messages_text)
@@ -178,15 +185,23 @@ class SlackReader(BasePydanticReader):
                 next_cursor = result["response_metadata"]["next_cursor"]
 
             except SlackApiError as e:
-                if e.response["error"] == "ratelimited":
+                error = e.response["error"]
+                if error == "ratelimited":
+                    retry_after = int(e.response.headers.get("retry-after", 1))
                     logger.error(
-                        "Rate limit error reached, sleeping for: {} seconds".format(
-                            e.response.headers["retry-after"]
-                        )
+                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
                     )
-                    time.sleep(int(e.response.headers["retry-after"]))
+                    time.sleep(retry_after)
+                elif error == "not_in_channel":
+                    logger.error(
+                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
+                    )
+                    break
                 else:
-                    logger.error(f"Error parsing conversation replies: {e}")
+                    logger.error(
+                        f"Error parsing conversation replies for channel {channel_id}: {e}"
+                    )
+                    break
 
         return (
             "\n\n".join(result_messages)
