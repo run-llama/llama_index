@@ -125,14 +125,18 @@ class KVDocumentStore(BaseDocumentStore):
     def _merge_ref_doc_kv_pairs(self, ref_doc_kv_pairs: dict) -> List[Tuple[str, dict]]:
         merged_ref_doc_kv_pairs = []
         for key, kv_pairs in ref_doc_kv_pairs.items():
-            merged_node_ids = []
-            metadata = {}
-            for kv_pair in kv_pairs:
-                merged_node_ids.extend(kv_pair[1].get("node_ids", []))
-                metadata.update(kv_pair[1].get("metadata", {}))
-            merged_ref_doc_kv_pairs.append(
-                (key, {"node_ids": merged_node_ids, "metadata": metadata})
-            )
+            merged_ref_doc_kv_pairs = []
+            for key, kv_pairs in ref_doc_kv_pairs.items():
+                merged_node_ids = set()
+                metadata = {}
+                for kv_pair in kv_pairs:
+                    merged_node_ids = merged_node_ids.union(
+                        set(kv_pair[1].get("node_ids", []))
+                    )
+                    metadata.update(kv_pair[1].get("metadata", {}))
+                merged_ref_doc_kv_pairs.append(
+                    (key, {"node_ids": list(merged_node_ids), "metadata": metadata})
+                )
 
         return merged_ref_doc_kv_pairs
 
