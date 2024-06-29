@@ -624,7 +624,6 @@ class NodeWithScore(BaseComponent):
     def get_embedding(self) -> List[float]:
         return self.node.get_embedding()
 
-
 # Document Classes for Readers
 
 

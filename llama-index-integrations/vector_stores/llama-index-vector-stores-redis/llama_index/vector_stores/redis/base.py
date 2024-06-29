@@ -20,6 +20,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    FilterOperator
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -35,6 +36,7 @@ from llama_index.vector_stores.redis.utils import (
 
 import redis
 from redis import DataError
+from redis import Redis
 from redis.client import Redis as RedisType
 from redis.commands.search.field import VectorField
 from redis.exceptions import RedisError
@@ -66,6 +68,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         index_args: Optional[Dict[str, Any]] = None,
         metadata_fields: Optional[List[str]] = None,
         redis_url: str = "redis://localhost:6379",
+        redis_client: Optional[Redis] = None,
         overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -113,7 +116,10 @@ class RedisVectorStore(BasePydanticVectorStore):
         """
         try:
             # connect to redis from url
-            self._redis_client = redis.from_url(redis_url, **kwargs)
+            if redis_client:
+                self._redis_client = redis_client
+            else:
+                self._redis_client = redis.from_url(redis_url, **kwargs)
             # check if redis has redisearch module installed
             check_redis_modules_exist(self._redis_client)
         except ValueError as e:
@@ -249,7 +255,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             vector_field=self._vector_field,
             filters=filters,
         )
-
+        
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 
@@ -356,7 +362,6 @@ class RedisVectorStore(BasePydanticVectorStore):
             # TODO: make sure we're preventing overwriting other keys (e.g. text,
             #   doc_id, id, and other vector fields)
             fields.append(TagField(metadata_field, sortable=False))
-
         _logger.info(f"Creating index {self._index_name}")
         self._redis_client.ft(self._index_name).create_index(
             fields=fields,
@@ -446,11 +451,24 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     tokenizer = TokenEscaper()
 
     filter_strings = []
+    filter_in_strings = {}
     for filter in metadata_filters.legacy_filters():
         # adds quotes around the value to ensure that the filter is treated as an
         #   exact match
-        filter_string = f"@{filter.key}:{{{tokenizer.escape(str(filter.value))}}}"
+        
+        if filter.operator == FilterOperator.IN:
+            if len(filter.value.split()) > 1:
+                filter.value = f'"{filter.value}"'
+            if filter.key in filter_in_strings:
+                filter_in_strings[filter.key].append(filter.value)
+            else:
+                filter_in_strings[filter.key] = [filter.value]
+        else:
+            filter_string = f"@{filter.key}:{{{tokenizer.escape(str(filter.value))}}}"
+            filter_strings.append(filter_string)
+    for key, value_list in filter_in_strings.items():
+        values = "|".join(value_list)
+        filter_string = f"@{filter.key}:{values}"
         filter_strings.append(filter_string)
-
     joined_filter_strings = " & ".join(filter_strings)
-    return f"({joined_filter_strings})"
+    return f'({joined_filter_strings})'
