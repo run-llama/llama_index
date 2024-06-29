@@ -56,13 +56,11 @@ def filters_to_mql(filters: MetadataFilters) -> Dict[str, Any]:
 
     See: See https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter
 
-
     Args:
         filters:
 
     Returns:
         MQL version of the filter.
-
     """
     if filters is None:
         return {}
@@ -213,8 +211,8 @@ def final_hybrid_stage(
             "$addFields": {
                 "score": {
                     "$add": [
-                        {"$mult": [alpha, "$vector_score"]},
-                        {"$mult": [{"$sub": [1.0, alpha]}, "$fulltext_score"]},
+                        {"$multiply": [alpha, "$vector_score"]},
+                        {"$multiply": [{"$subtract": [1.0, alpha]}, "$fulltext_score"]},
                     ]
                 }
             }

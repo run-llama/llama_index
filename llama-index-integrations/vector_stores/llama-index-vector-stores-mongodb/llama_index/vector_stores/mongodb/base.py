@@ -270,6 +270,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             pipeline.append({"$limit": query.similarity_top_k})
 
         elif query.mode == VectorStoreQueryMode.HYBRID:
+            if query.hybrid_top_k is None:
+                raise ValueError(
+                    f"hybrid_top_k not set. You must use this, not similarity_top_k in hybrid mode."
+                )
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             logger.debug(f"Running {query.mode} mode query pipeline")
             scores_fields = ["vector_score", "fulltext_score"]
@@ -281,7 +285,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                         query_vector=query.query_embedding,
                         search_field=self._embedding_key,
                         index_name=self._vector_index_name,
-                        limit=query.similarity_top_k,
+                        limit=query.hybrid_top_k,
                         filter=filters_to_mql(query.filters),
                         oversampling_factor=self._oversampling_factor,
                     )
@@ -303,7 +307,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 filter = filters_to_mql(query.filters)
                 if filter:
                     text_pipeline.append({"$match": filter})
-                text_pipeline.append({"$limit": query.similarity_top_k})
+                text_pipeline.append({"$limit": query.hybrid_top_k})
                 text_pipeline.extend(reciprocal_rank_stage("fulltext_score"))
                 combine_pipelines(pipeline, text_pipeline, self._collection.name)
 
@@ -316,7 +320,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             )
 
             # Remove embeddings unless requested.
-            if self._embedding_key not in query.output_fields:
+            if (
+                query.output_fields is None
+                or self._embedding_key not in query.output_fields
+            ):
                 pipeline.append({"$project": {self._embedding_key: 0}})
 
         else:
