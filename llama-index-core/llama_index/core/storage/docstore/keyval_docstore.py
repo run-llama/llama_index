@@ -127,15 +127,17 @@ class KVDocumentStore(BaseDocumentStore):
         for key, kv_pairs in ref_doc_kv_pairs.items():
             merged_ref_doc_kv_pairs = []
             for key, kv_pairs in ref_doc_kv_pairs.items():
-                merged_node_ids = set()
+                merged_node_ids = []
                 metadata = {}
                 for kv_pair in kv_pairs:
-                    merged_node_ids = merged_node_ids.union(
-                        set(kv_pair[1].get("node_ids", []))
+                    nodes = kv_pair[1].get("node_ids", [])
+                    new_nodes = set(nodes).difference(set(merged_node_ids))
+                    merged_node_ids.extend(
+                        [node for node in nodes if node in new_nodes]
                     )
                     metadata.update(kv_pair[1].get("metadata", {}))
                 merged_ref_doc_kv_pairs.append(
-                    (key, {"node_ids": list(merged_node_ids), "metadata": metadata})
+                    (key, {"node_ids": merged_node_ids, "metadata": metadata})
                 )
 
         return merged_ref_doc_kv_pairs
