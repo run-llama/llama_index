@@ -1,0 +1,2 @@
+pandas
+pyiceberg[s3fs,glue,pandas]
