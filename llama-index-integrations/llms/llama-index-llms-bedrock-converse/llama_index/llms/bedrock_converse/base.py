@@ -385,32 +385,30 @@ class BedrockConverse(FunctionCallingLLM):
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError("Async chat is not supported for Bedrock Converse.")
+    ) -> ChatResponse:
+        # TODO convert to async; do synchronous chat for now
+        return self.chat(messages, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async completion is not supported for Bedrock Converse."
-        )
+    ) -> CompletionResponse:
+        # TODO convert to async; do synchronous completion for now
+        return self.complete(prompt, formatted=formatted, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async stream chat is not supported for Bedrock Converse."
-        )
+    ) -> ChatResponseGen:
+        # TODO convert to async; do synchronous chat for now
+        return self.stream_chat(messages, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async stream completion is not supported for Bedrock Converse."
-        )
+    ) -> CompletionResponseGen:
+        # TODO convert to async; do synchronous completion for now
+        return self.stream_complete(prompt, formatted=formatted, **kwargs)
 
     def chat_with_tools(
         self,
@@ -431,7 +429,7 @@ class BedrockConverse(FunctionCallingLLM):
         # convert Llama Index tools to AWS Bedrock Converse tools
         tool_dicts = tools_to_converse_tools(tools)
 
-        response = self.chat(chat_history, tools=tool_dicts, **kwargs)
+        response = self.chat(chat_history, tools=tool_dicts or None, **kwargs)
 
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
@@ -446,9 +444,15 @@ class BedrockConverse(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async chat with tools is not supported for Bedrock Converse."
+    ) -> ChatResponse:
+        # TODO convert to async; do synchronous chat for now
+        return self.chat_with_tools(
+            tools=tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
         )
 
     def get_tool_calls_from_response(

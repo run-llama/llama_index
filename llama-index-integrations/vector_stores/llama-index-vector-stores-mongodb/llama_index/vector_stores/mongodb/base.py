@@ -13,6 +13,7 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
+    MetadataFilter,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -28,12 +29,23 @@ from pymongo.driver_info import DriverInfo
 logger = logging.getLogger(__name__)
 
 
-def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
+def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
     """Convert from standard dataclass to filter dict."""
-    filters = {}
+    filters = []
+
     for filter in standard_filters.legacy_filters():
-        filters[filter.key] = filter.value
-    return filters
+        if isinstance(filter, MetadataFilters):
+            filters.append(_to_mongodb_filter(filter))
+        elif isinstance(filter, MetadataFilter):
+            if isinstance(filter.value, list):
+                filters.append({filter.key: {"$in": filter.value}})
+            else:
+                filters.append({filter.key: filter.value})
+
+    if standard_filters.condition == "or":
+        return {"$or": filters}
+    else:
+        return {"$and": filters}
 
 
 class MongoDBAtlasVectorSearch(BasePydanticVectorStore):

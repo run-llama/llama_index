@@ -42,7 +42,11 @@ def default_agent_input_fn(task: Any, state: dict) -> dict:
 
 
 class AgentInputComponent(QueryComponent):
-    """Takes in agent inputs and transforms it into desired outputs."""
+    """Takes in agent inputs and transforms it into desired outputs.
+
+    NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
+
+    """
 
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
@@ -148,6 +152,8 @@ class AgentFnComponent(BaseAgentComponent):
     """Function component for agents.
 
     Designed to let users easily modify state.
+
+    NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
 
     """
 
@@ -256,6 +262,8 @@ class CustomAgentComponent(BaseAgentComponent):
     """Custom component for agents.
 
     Designed to let users easily modify state.
+
+    NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
 
     """
 

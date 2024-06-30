@@ -142,6 +142,158 @@ class MRR(BaseRetrievalMetric):
         return RetrievalMetricResult(score=mrr_score)
 
 
+class Precision(BaseRetrievalMetric):
+    """Precision metric.
+
+    The `K`-value in `Precision@K` usually corresponds to `top_k` of the retriever.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "precision"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute precision based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed precision score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        precision = len(retrieved_set & expected_set) / len(retrieved_set)
+
+        return RetrievalMetricResult(score=precision)
+
+
+class Recall(BaseRetrievalMetric):
+    """Recall metric.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "recall"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute recall based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed recall score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        retrieved_set = set(retrieved_ids)
+        expected_set = set(expected_ids)
+        recall = len(retrieved_set & expected_set) / len(expected_set)
+
+        return RetrievalMetricResult(score=recall)
+
+
+class AveragePrecision(BaseRetrievalMetric):
+    """Average Precision (AP) metric.
+
+    Attributes:
+        metric_name (str): The name of the metric.
+    """
+
+    metric_name: ClassVar[str] = "ap"
+
+    def compute(
+        self,
+        query: Optional[str] = None,
+        expected_ids: Optional[List[str]] = None,
+        retrieved_ids: Optional[List[str]] = None,
+        expected_texts: Optional[List[str]] = None,
+        retrieved_texts: Optional[List[str]] = None,
+    ) -> RetrievalMetricResult:
+        """Compute average precision based on the provided inputs and selected method.
+
+        Parameters:
+            query (Optional[str]): The query string (not used in the current implementation).
+            expected_ids (Optional[List[str]]): Expected document IDs.
+            retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
+            expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
+            retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
+
+        Raises:
+            ValueError: If the necessary IDs are not provided.
+
+        Returns:
+            RetrievalMetricResult: The result with the computed average precision score.
+        """
+        # Checking for the required arguments
+        if (
+            retrieved_ids is None
+            or expected_ids is None
+            or not retrieved_ids
+            or not expected_ids
+        ):
+            raise ValueError("Retrieved ids and expected ids must be provided")
+
+        expected_set = set(expected_ids)
+
+        relevant_count, total_precision = 0, 0.0
+        for i, retrieved_id in enumerate(retrieved_ids, start=1):
+            if retrieved_id in expected_set:
+                relevant_count += 1
+                total_precision += relevant_count / i
+
+        average_precision = total_precision / len(expected_set)
+
+        return RetrievalMetricResult(score=average_precision)
+
+
 DiscountedGainMode = Literal["linear", "exponential"]
 
 
@@ -199,7 +351,7 @@ class NDCG(BaseRetrievalMetric):
             ValueError: If the necessary IDs are not provided.
 
         Returns:
-            RetrievalMetricResult: The result with the computed MRR score.
+            RetrievalMetricResult: The result with the computed NDCG score.
         """
         # Checking for the required arguments
         if (
@@ -296,6 +448,9 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
 METRIC_REGISTRY: Dict[str, Type[BaseRetrievalMetric]] = {
     "hit_rate": HitRate,
     "mrr": MRR,
+    "precision": Precision,
+    "recall": Recall,
+    "ap": AveragePrecision,
     "ndcg": NDCG,
     "cohere_rerank_relevancy": CohereRerankRelevancyMetric,
 }

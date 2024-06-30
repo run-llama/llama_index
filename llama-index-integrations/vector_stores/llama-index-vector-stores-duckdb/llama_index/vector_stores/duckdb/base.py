@@ -5,7 +5,7 @@ import json
 from typing import Any, List, Optional
 import os
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -13,6 +13,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
+    metadata_dict_to_node,
     node_to_metadata_dict,
 )
 
@@ -152,7 +153,21 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     @classmethod
     def from_local(
-        cls, database_path: str, table_name: str = "documents"
+        cls,
+        database_path: str,
+        table_name: Optional[str] = "documents",
+        # schema_name: Optional[str] = "main",
+        embed_dim: Optional[int] = None,
+        # hybrid_search: Optional[bool] = False,
+        text_search_config: Optional[dict] = {
+            "stemmer": "english",
+            "stopwords": "english",
+            "ignore": "(\\.|[^a-z])+",
+            "strip_accents": True,
+            "lower": True,
+            "overwrite": False,
+        },
+        **kwargs: Any,
     ) -> "DuckDBVectorStore":
         """Load a DuckDB vector store from a local file."""
         with DuckDBLocalContext(database_path) as _conn:
@@ -172,7 +187,10 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         _cls = cls(
             database_name=os.path.basename(database_path),
             table_name=table_name,
+            embed_dim=embed_dim,
+            text_search_config=text_search_config,
             persist_dir=os.path.dirname(database_path),
+            **kwargs,
         )
         _cls._is_initialized = True
 
@@ -260,6 +278,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 flat_metadata=self.flat_metadata,
             ),
         )
+
+    def _table_row_to_node(self, row: Any) -> BaseNode:
+        return metadata_dict_to_node(json.loads(row[3]), row[1])
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
@@ -391,12 +412,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 _final_results = _conn.execute(_ddb_query).fetchall()
 
         for _row in _final_results:
-            node = TextNode(
-                id_=_row[0],
-                text=_row[1],
-                embedding=_row[2],
-                metadata=json.loads(_row[3]),
-            )
+            node = self._table_row_to_node(_row)
             nodes.append(node)
             similarities.append(_row[4])
             ids.append(_row[0])
