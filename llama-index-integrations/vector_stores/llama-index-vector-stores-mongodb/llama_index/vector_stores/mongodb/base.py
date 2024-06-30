@@ -38,14 +38,14 @@ def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
             filters.append(_to_mongodb_filter(filter))
         elif isinstance(filter, MetadataFilter):
             if isinstance(filter.value, list):
-                filters.append({filter.key: {'$in': filter.value}})
+                filters.append({filter.key: {"$in": filter.value}})
             else:
                 filters.append({filter.key: filter.value})
 
-    if standard_filters.condition == 'or':
-        return {'$or': filters}
+    if standard_filters.condition == "or":
+        return {"$or": filters}
     else:
-        return {'$and': filters}
+        return {"$and": filters}
 
 
 class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
