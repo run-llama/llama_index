@@ -75,17 +75,3 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
         """Async run component."""
         kwargs.update({"state": self.state})
         return await super()._arun_component(**kwargs)
-
-    # @property
-    # def input_keys(self) -> InputKeys:
-    #     """Input keys."""
-    #     return InputKeys.from_keys(
-    #         required_keys={"state", *self._req_params},
-    #         optional_keys=self._opt_params,
-    #     )
-
-    # @property
-    # def output_keys(self) -> OutputKeys:
-    #     """Output keys."""
-    #     # output can be anything, overrode validate function
-    #     return OutputKeys.from_keys({self.output_key})
