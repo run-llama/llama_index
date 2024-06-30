@@ -39,7 +39,7 @@ class JinaRerank(BaseNodePostprocessor):
         self.model = model
         self._session = requests.Session()
         self._session.headers.update(
-            {"Authorization": f"Bearer {api_key}", "Accept-Encoding": "identity"}
+            {"Authorization": f"Bearer {self.api_key}", "Accept-Encoding": "identity"}
         )
 
     @classmethod
