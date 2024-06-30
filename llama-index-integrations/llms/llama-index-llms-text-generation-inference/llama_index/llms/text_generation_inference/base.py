@@ -367,7 +367,7 @@ class TextGenerationInference(FunctionCallingLLM):
 
         response = self.chat(
             messages=messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
         )
@@ -399,7 +399,7 @@ class TextGenerationInference(FunctionCallingLLM):
 
         response = self.achat(
             messages=messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
         )

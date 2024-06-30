@@ -130,9 +130,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if hasattr(self, "_site_id_with_host_name"):
             return self._site_id_with_host_name
 
-        site_information_endpoint = (
-            f"https://graph.microsoft.com/v1.0/sites?search={sharepoint_site_name}"
-        )
+        site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
+
         self._authorization_headers = {"Authorization": f"Bearer {access_token}"}
 
         response = requests.get(
@@ -145,7 +144,14 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 len(response.json()["value"]) > 0
                 and "id" in response.json()["value"][0]
             ):
-                return response.json()["value"][0]["id"]
+                # find the site with the specified name
+                for site in response.json()["value"]:
+                    if site["name"].lower() == sharepoint_site_name.lower():
+                        return site["id"]
+
+                raise ValueError(
+                    f"The specified sharepoint site {sharepoint_site_name} is not found."
+                )
             else:
                 raise ValueError(
                     f"The specified sharepoint site {sharepoint_site_name} is not found."

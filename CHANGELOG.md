@@ -1,5 +1,91 @@
 # ChangeLog
 
+## [2024-06-28]
+
+### `llama-index-core` [0.10.51]
+
+- fixed issue with function calling llms and empty tool calls (#14453)
+- Fix ChatMessage not considered as stringable in query pipeline (#14378)
+- Update schema llm path extractor to also take a list of valid triples (#14357)
+- Pass the kwargs on when `build_index_from_nodes` (#14341)
+
+### `llama-index-agent-dashscope` [0.1.0]
+
+- Add Alibaba Cloud dashscope agent (#14318)
+
+### `llama-index-graph-stores-neo4j` [0.2.6]
+
+- Add MetadataFilters to neo4j_property_graph (#14362)
+
+### `llama-index-llms-nvidia` [0.1.4]
+
+- add known context lengths for hosted models (#14436)
+
+### `llama-index-llms-perplexity` [0.1.4]
+
+- update available models (#14409)
+
+### `llama-index-llms-predibase` [0.1.6]
+
+- Better error handling for invalid API token (#14440)
+
+### `llama-index-llms-yi` [0.1.0]
+
+- Integrate Yi model (#14353)
+
+### `llama-index-readers-google` [0.2.9]
+
+- Creates Data Loader for Google Chat (#14397)
+
+### `llama-index-readers-s3` [0.1.10]
+
+- Invalidate s3fs cache in S3Reader (#14441)
+
+### `llama-index-readers-structured-data` [0.1.0]
+
+- Add StructuredDataReader support for xlsx, csv, json and jsonl (#14369)
+
+### `llama-index-tools-jina` [0.1.0]
+
+- Integrating a new tool called jina search (#14317)
+
+### `llama-index-vector-stores-astradb` [0.1.8]
+
+- Update Astra DB vector store to use modern astrapy library (#14407)
+
+### `llama-index-vector-stores-chromadb` [0.1.10]
+
+- Fix the index accessing of ids of chroma get (#14434)
+
+### `llama-index-vector-stores-deeplake` [0.1.4]
+
+- Implemented delete_nodes() and clear() in deeplake vector store (#14457)
+- Implemented get_nodes() in deeplake vector store (#14388)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.1]
+
+- Add support for dynamic metadata fields in Elasticsearch index creation (#14431)
+
+### `llama-index-vector-stores-kdbai` [0.1.7]
+
+- Kdbai version compatible (#14402)
+
+## [2024-06-24]
+
+### `llama-index-core` [0.10.50]
+
+- added dead simple `FnAgentWorker` for custom agents (#14329)
+- Pass the kwargs on when build_index_from_nodes (#14341)
+- make async utils a bit more robust to nested async (#14356)
+
+### `llama-index-llms-upstage` [0.1.3]
+
+- every llm is a chat model (#14334)
+
+### `llama-index-packs-rag-evaluator` [0.1.5]
+
+- added possibility to run local embedding model in RAG evaluation packages (#14352)
+
 ## [2024-06-23]
 
 ### `llama-index-core` [0.10.49]
