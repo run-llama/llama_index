@@ -171,34 +171,34 @@ class YandexGPTEmbedding(BaseEmbedding):
                 f"Error computing embeddings after {self.retries} retries. Result returned:\n{result}"
             )
 
-    def _get_query_embedding(self, text: str) -> List[float]:
-        """Get query embedding sync."""
+    def _get_text_embedding(self, text: str) -> List[float]:
+        """Get text embedding sync."""
         return self._embed(text, is_document=True)
 
-    def _get_query_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get list of queries embeddings sync."""
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get list of texts embeddings sync."""
         embeddings = []
         for text in texts:
             embeddings.append(self._embed(text, is_document=True))
             time.sleep(self.sleep_interval)
         return embeddings
 
-    def _get_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding sync."""
+    def _get_query_embedding(self, text: str) -> List[float]:
+        """Get query embedding sync."""
         return self._embed(text, is_document=False)
 
-    async def _aget_query_embedding(self, text: str) -> List[float]:
-        """Get query embedding async."""
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        """Get query text async."""
         return await self._aembed(text, is_document=True)
 
-    async def _aget_query_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get list of queries embeddings async."""
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get list of texts embeddings async."""
         embeddings = []
         for text in texts:
             embeddings.append(await self._aembed(text, is_document=True))
             await asyncio.sleep(self.sleep_interval)
         return embeddings
 
-    async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding async."""
+    async def _aget_query_embedding(self, text: str) -> List[float]:
+        """Get query embedding async."""
         return await self._aembed(text, is_document=False)
