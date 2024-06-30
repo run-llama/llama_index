@@ -19,7 +19,6 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.llms.generic_utils import messages_to_prompt
 from llama_index.core.llms.llm import LLM
-from llama_index.core.agent.utils import add_user_step_to_memory
 from llama_index.core.prompts import PromptTemplate
 
 import llama_index.core.instrumentation as instrument
