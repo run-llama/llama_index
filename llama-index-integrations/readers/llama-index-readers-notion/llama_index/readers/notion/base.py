@@ -190,7 +190,7 @@ class NotionPageReader(BasePydanticReader):
         return page_ids
 
     def load_data(
-        self, page_ids: List[str] = [], database_ids: List[str] = []
+        self, page_ids: List[str] = [], database_ids: Optional[List[str]] = None
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -202,8 +202,10 @@ class NotionPageReader(BasePydanticReader):
             List[Document]: List of documents.
 
         """
+        database_ids = database_ids or []
+
         if not page_ids and not database_ids:
-            raise ValueError("Must specify either `page_ids` or `database_id`.")
+            raise ValueError("Must specify either `page_ids` or `database_ids`.")
         docs = []
         if database_ids is not None:
             for database_id in database_ids:
