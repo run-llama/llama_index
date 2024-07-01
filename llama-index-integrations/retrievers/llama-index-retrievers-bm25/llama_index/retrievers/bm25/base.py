@@ -88,7 +88,8 @@ class BM25Retriever(BaseRetriever):
         top_n = scores.argsort()[::-1][: self._similarity_top_k]
 
         nodes: List[NodeWithScore] = []
-        for ix, score in zip(top_n, scores):
-            nodes.append(NodeWithScore(node=self._nodes[ix], score=float(score)))
+        for ix in top_n:
+            print(ix, scores[ix])
+            nodes.append(NodeWithScore(node=self._nodes[ix], score=float(scores[ix])))
 
         return nodes
