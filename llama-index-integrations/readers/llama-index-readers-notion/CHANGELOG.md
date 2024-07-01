@@ -1,14 +1,6 @@
 # CHANGELOG
 
-## [0.1.2] - 2024-02-13
-
-- Add maintainers and keywords from library.json (llamahub)
-
 ## [0.1.8] - 2024-07-01
-
-# Change Log for Notion Reader
-
-## Version Update
 
 ### New Features
 
@@ -30,3 +22,7 @@
 ### Example Usage
 
 1. **Main Block**: Added examples for listing databases within a workplace.
+
+## [0.1.2] - 2024-02-13
+
+- Add maintainers and keywords from library.json (llamahub)
