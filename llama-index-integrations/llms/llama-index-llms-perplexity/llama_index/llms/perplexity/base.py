@@ -136,13 +136,16 @@ class Perplexity(LLM):
         )
 
     def _get_context_window(self) -> int:
+        # Check https://docs.perplexity.ai/docs/model-cards for latest model information
         model_context_windows = {
-            "sonar-small-chat": 16384,
-            "sonar-small-online": 12000,
-            "sonar-medium-chat": 16384,
-            "sonar-medium-online": 12000,
-            "codellama-34b-instruct": 16384,
-            "mistral-7b-instruct": 16384,
+            # Perplexity Models
+            "llama-3-sonar-small-32k-chat": 32768,
+            "llama-3-sonar-small-32k-online": 28000,
+            "llama-3-sonar-large-32k-chat": 32768,
+            "llama-3-sonar-large-32k-online": 28000,
+            # Open Source Models
+            "llama-3-8b-instruct": 8192,
+            "llama-3-70b-instruct": 8192,
             "mixtral-8x7b-instruct": 16384,
         }
         return model_context_windows.get(
@@ -150,12 +153,16 @@ class Perplexity(LLM):
         )  # Default to 4096 if model not found
 
     def _is_chat_model(self) -> bool:
+        # Check https://docs.perplexity.ai/docs/model-cards for latest model information
         chat_models = {
-            "sonar-small-chat",
-            "sonar-small-online",
-            "sonar-medium-chat",
-            "sonar-medium-online" "codellama-34b-instruct",
-            "mistral-7b-instruct",
+            # Perplexity Models
+            "llama-3-sonar-small-32k-chat",
+            "llama-3-sonar-small-32k-online",
+            "llama-3-sonar-large-32k-chat",
+            "llama-3-sonar-large-32k-online",
+            # Open Source Models
+            "llama-3-8b-instruct",
+            "llama-3-70b-instruct",
             "mixtral-8x7b-instruct",
         }
         return self.model in chat_models

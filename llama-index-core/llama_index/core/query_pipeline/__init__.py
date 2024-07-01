@@ -20,6 +20,9 @@ from llama_index.core.query_pipeline.query import (
     ChainableMixin,
     QueryComponent,
 )
+from llama_index.core.query_pipeline.components.stateful import StatefulFnComponent
+from llama_index.core.query_pipeline.components.loop import LoopComponent
+
 from llama_index.core.base.query_pipeline.query import (
     CustomQueryComponent,
 )
@@ -40,4 +43,6 @@ __all__ = [
     "ChainableMixin",
     "QueryComponent",
     "CustomQueryComponent",
+    "StatefulFnComponent",
+    "LoopComponent",
 ]

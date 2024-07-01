@@ -310,7 +310,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             """
             UNWIND $data AS row
             MERGE (source {id: row.source_id})
+            ON CREATE SET source:Chunk
             MERGE (target {id: row.target_id})
+            ON CREATE SET target:Chunk
             WITH source, target, row
             CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
             RETURN count(*)
@@ -526,14 +528,26 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
+        conditions = None
+        if query.filters:
+            conditions = [
+                f"e.{filter.key} {filter.operator.value} {filter.value}"
+                for filter in query.filters.filters
+            ]
+        filters = (
+            f" {query.filters.condition.value} ".join(conditions).replace("==", "=")
+            if conditions is not None
+            else "1 = 1"
+        )
+
         data = self.structured_query(
-            """MATCH (e:`__Entity__`)
-            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension
+            f"""MATCH (e:`__Entity__`)
+            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
             WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
             ORDER BY score DESC LIMIT toInteger($limit)
             RETURN e.id AS name,
                [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
-               e{.* , embedding: Null, name: Null, id: Null} AS properties,
+               e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
                score""",
             param_map={
                 "embedding": query.query_embedding,
