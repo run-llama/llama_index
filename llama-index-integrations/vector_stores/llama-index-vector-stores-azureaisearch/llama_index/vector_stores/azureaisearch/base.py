@@ -586,17 +586,21 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                         "is of type azure.search.documents.SearchClient"
                     )
 
-            if not (
-                (self._index_client and self._search_client)
-                or (self._async_index_client and self._async_search_client)
-            ):
-                raise ValueError(
-                    "search_or_index_client must be of type "
-                    "azure.search.documents.SearchIndexClient or "
-                    "azure.search.documents.SearchClient or "
-                    "azure.search.documents.aio.SearchIndexClient or "
-                    "azure.search.documents.aio.SearchClient"
-                )
+            if isinstance(search_or_index_client, AsyncSearchIndexClient):
+                if not self._async_index_client and not self._async_search_client:
+                    raise ValueError(
+                        "search_or_index_client must be of type "
+                        "azure.search.documents.SearchIndexClient or "
+                        "azure.search.documents.SearchClient"
+                    )
+
+            if isinstance(search_or_index_client, SearchIndexClient):
+                if not self._index_client and not self._search_client:
+                    raise ValueError(
+                        "search_or_index_client must be of type "
+                        "azure.search.documents.SearchIndexClient or "
+                        "azure.search.documents.SearchClient"
+                    )
         else:
             raise ValueError("search_or_index_client not specified")
 
