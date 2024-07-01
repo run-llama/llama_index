@@ -136,6 +136,9 @@ def messages_to_converse_messages(
                     }
                 )
         # convert tool calls to the AWS Bedrock Converse format
+        # NOTE tool calls might show up within any message,
+        # e.g. within assistant message or in consecutive tool calls,
+        # thus this tool call check is done for all messages
         tool_calls = message.additional_kwargs.get("tool_calls", [])
         content = []
         for tool_call in tool_calls:
