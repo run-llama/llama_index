@@ -349,7 +349,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             )
         else:
             if self.api_key is None:
-                self._table.add(data, mode=self.mode)
+                self._table.add(data, mode="append")
             else:
                 self._table.add(data)
 
