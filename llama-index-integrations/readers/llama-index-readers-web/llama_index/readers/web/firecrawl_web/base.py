@@ -39,7 +39,7 @@ class FireCrawlWebReader(BasePydanticReader):
         params: Optional[dict] = None,
     ) -> None:
         """Initialize with parameters."""
-        super().__init__(api_key=api_key, mode=mode, params=params)
+        super().__init__(api_key=api_key, api_url=api_url, mode=mode, params=params)
         try:
             from firecrawl import FirecrawlApp
         except ImportError:
