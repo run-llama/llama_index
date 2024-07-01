@@ -1,4 +1,4 @@
-from typing import Sequence, Literal
+from typing import Sequence, Literal, List
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 
@@ -32,10 +32,10 @@ class ServiceListResult(BaseModel):
     All model service items.
     """
 
-    common: list[ServiceItem]
+    common: List[ServiceItem]
     """built-in model service"""
 
-    custom: list[ServiceItem]
+    custom: List[ServiceItem]
     """custom model service"""
 
 
