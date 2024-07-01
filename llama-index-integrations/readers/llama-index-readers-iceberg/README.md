@@ -1,5 +1,7 @@
 # LlamaIndex Readers Integration: Iceberg
+
 TODO
+
 ```bash
 pip install llama-index-readers-iceberg
 ```
@@ -18,7 +20,7 @@ docs = IcebergReader().load_data(
     region="us-west-2",
     namespace="my_dataset",
     table="my_table",
-    metadata_columns=['_id', '_age', '_name']
+    metadata_columns=["_id", "_age", "_name"],
 )
 ```
 
