@@ -26,6 +26,7 @@ KNOWN_URLS = [
 
 class Model(BaseModel):
     id: str
+    base_model: Optional[str]
 
 
 class NVIDIA(OpenAILike):
@@ -36,7 +37,7 @@ class NVIDIA(OpenAILike):
 
     def __init__(
         self,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = None,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = BASE_URL,
@@ -70,15 +71,7 @@ class NVIDIA(OpenAILike):
             "NO_API_KEY_PROVIDED",
         )
 
-        self._is_hosted = base_url in KNOWN_URLS
-
-        if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
-            warnings.warn(
-                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
-            )
-
         super().__init__(
-            model=model,
             api_key=api_key,
             api_base=base_url,
             max_tokens=max_tokens,
@@ -86,10 +79,47 @@ class NVIDIA(OpenAILike):
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             **kwargs,
         )
+        self.model = model
+        self._is_hosted = base_url in KNOWN_URLS
+
+        if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
+            warnings.warn(
+                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
+            )
+
+        if not model:
+            self.__set_default_model()
+
+    def __set_default_model(self):
+        """Set default model."""
+        if not self._is_hosted:
+            valid_models = [
+                model.id
+                for model in self.available_models
+                if not model.base_model or model.base_model == model.id
+            ]
+            self.model = next(iter(valid_models), None)
+            if self.model:
+                warnings.warn(
+                    f"Default model is set as: {self.model}. \n"
+                    "Set model using model parameter. \n"
+                    "To get available models use available_models property.",
+                    UserWarning,
+                )
+            else:
+                raise ValueError("No locally hosted model was found.")
+        else:
+            self.model = DEFAULT_MODEL
 
     @property
     def available_models(self) -> List[Model]:
-        models = self._get_client().models.list().data
+        models = [
+            Model(
+                id=model.id,
+                base_model=getattr(model, "params", {}).get("root", None),
+            )
+            for model in self._get_client().models.list().data
+        ]
         # only exclude models in hosted mode. in non-hosted mode, the administrator has control
         # over the model name and may deploy an excluded name that will work.
         if self._is_hosted:
