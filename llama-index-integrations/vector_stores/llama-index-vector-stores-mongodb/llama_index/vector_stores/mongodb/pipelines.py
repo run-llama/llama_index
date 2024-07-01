@@ -17,8 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 def fulltext_search_stage(
-    query: str, search_field, index_name: str, operator: str = "text", **kwargs: Any
-) -> Dict[str, Any]:
+    query: str,
+    search_field,
+    index_name: str,
+    operator: str = "text",
+    filter: Dict[str, Any] = None,
+    limit: int = 10,
+    **kwargs: Any,
+) -> List[Dict[str, Any]]:
     """Full-Text search.
 
     Args:
@@ -34,12 +40,18 @@ def fulltext_search_stage(
         - MongoDB Full-Text Search <https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search>
         - MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>
     """
-    return {
-        "$search": {
-            "index": index_name,
-            operator: {"query": query, "path": search_field},
-        }
-    }
+    pipeline = [
+        {
+            "$search": {
+                "index": index_name,
+                operator: {"query": query, "path": search_field},
+            }
+        },
+    ]
+    if filter:
+        pipeline.append({"$match": filter})
+    pipeline.append({"$limit": limit})
+    return pipeline
 
 
 def filters_to_mql(filters: MetadataFilters) -> Dict[str, Any]:
@@ -93,7 +105,7 @@ def vector_search_stage(
     search_field: str,
     index_name: str,
     limit: int = 4,
-    filter: MongoDBDocumentType = None,
+    filter: Dict[str, Any] = None,
     oversampling_factor=10,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -114,6 +126,8 @@ def vector_search_stage(
     Returns:
         Dictionary defining the $vectorSearch
     """
+    if filter is None:
+        filter = {}
     return {
         "$vectorSearch": {
             "index": index_name,

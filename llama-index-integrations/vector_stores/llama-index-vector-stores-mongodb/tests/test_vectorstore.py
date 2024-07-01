@@ -56,7 +56,6 @@ def test_vectorstore(
         n_similar = 2
         query_embedding = OpenAIEmbedding().get_text_embedding(query_str)
         query = VectorStoreQuery(
-            query_str="",  # query_str, Is this used in default search?
             query_embedding=query_embedding,
             similarity_top_k=n_similar,
         )
@@ -78,7 +77,7 @@ def test_vectorstore(
         # 2b. test query() default with simple filter
 
         # In order to filter within $vectorSearch,
-        # one needs to have an index on the field.  # TODO Check whether separate index is ok, or just within vector index
+        # one needs to have an index on the field.
         # One can do this by adding an additional member to "fields" list of vector index
         # like so: { "type": "filter", "path": "text }
         filters = MetadataFilters(
@@ -146,7 +145,7 @@ def test_vectorstore(
         retries = 5
         while retries and not result_found:
             fulltext_result = vector_store.query(query=query)
-            if len(fulltext_result.nodes) == n_similar:
+            if fulltext_result.ids:  # if len(fulltext_result.nodes) == n_similar:
                 result_found = True
             else:
                 sleep(2)

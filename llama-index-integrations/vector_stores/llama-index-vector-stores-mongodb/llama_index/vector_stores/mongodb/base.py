@@ -237,37 +237,39 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         return self._mongodb_client
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        if query.mode == VectorStoreQueryMode.DEFAULT and query.query_embedding:
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            if not query.query_embedding:
+                raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
             # Atlas Vector Search, potentially with filter
             logger.debug(f"Running {query.mode} mode query pipeline")
+            filter = filters_to_mql(query.filters)
             pipeline = [
                 vector_search_stage(
                     query_vector=query.query_embedding,
                     search_field=self._embedding_key,
                     index_name=self._vector_index_name,
                     limit=query.similarity_top_k,
-                    filter=filters_to_mql(query.filters),
+                    filter=filter,
                     oversampling_factor=self._oversampling_factor,
                 ),
                 {"$set": {"score": {"$meta": "vectorSearchScore"}}},
             ]
 
-        elif query.mode == VectorStoreQueryMode.TEXT_SEARCH and query.query_str:
+        elif query.mode == VectorStoreQueryMode.TEXT_SEARCH:
             # Atlas Full-Text Search, potentially with filter
+            if not query.query_str:
+                raise ValueError("query_str in VectorStoreQueryMode.TEXT_SEARCH ")
             logger.debug(f"Running {query.mode} mode query pipeline")
-            pipeline = [
-                fulltext_search_stage(  # TODO - Move rest of the pipeline into method
-                    query=query.query_str,
-                    search_field=self._text_key,
-                    index_name=self._fulltext_index_name,
-                    operator="text",
-                ),
-                {"$set": {"score": {"$meta": "searchScore"}}},
-            ]
             filter = filters_to_mql(query.filters)
-            if filter:
-                pipeline.append({"$match": filter})
-            pipeline.append({"$limit": query.similarity_top_k})
+            pipeline = fulltext_search_stage(
+                query=query.query_str,
+                search_field=self._text_key,
+                index_name=self._fulltext_index_name,
+                operator="text",
+                filter=filter,
+                limit=query.similarity_top_k,
+            )
+            pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
 
         elif query.mode == VectorStoreQueryMode.HYBRID:
             if query.hybrid_top_k is None:
@@ -277,6 +279,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             logger.debug(f"Running {query.mode} mode query pipeline")
             scores_fields = ["vector_score", "fulltext_score"]
+            filter = filters_to_mql(query.filters)
             pipeline = []
             # Vector Search pipeline
             if query.query_embedding:
@@ -286,7 +289,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                         search_field=self._embedding_key,
                         index_name=self._vector_index_name,
                         limit=query.hybrid_top_k,
-                        filter=filters_to_mql(query.filters),
+                        filter=filter,
                         oversampling_factor=self._oversampling_factor,
                     )
                 ]
@@ -295,23 +298,18 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
             # Full-Text Search pipeline
             if query.query_str:
-                text_pipeline = [
-                    fulltext_search_stage(
-                        query=query.query_str,
-                        search_field=self._text_key,
-                        index_name=self._fulltext_index_name,
-                        operator="text",
-                    ),
-                    {"$set": {"score": {"$meta": "searchScore"}}},
-                ]
-                filter = filters_to_mql(query.filters)
-                if filter:
-                    text_pipeline.append({"$match": filter})
-                text_pipeline.append({"$limit": query.hybrid_top_k})
+                text_pipeline = fulltext_search_stage(
+                    query=query.query_str,
+                    search_field=self._text_key,
+                    index_name=self._fulltext_index_name,
+                    operator="text",
+                    filter=filter,
+                    limit=query.hybrid_top_k,
+                )
                 text_pipeline.extend(reciprocal_rank_stage("fulltext_score"))
                 combine_pipelines(pipeline, text_pipeline, self._collection.name)
 
-            # Sum and sort pipeline
+            # Compute weighted sum and sort pipeline
             alpha = (
                 query.alpha or 0.5
             )  # If no alpha is given, equal weighting is applied
