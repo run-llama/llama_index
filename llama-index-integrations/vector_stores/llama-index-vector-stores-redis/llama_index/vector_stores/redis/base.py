@@ -115,13 +115,15 @@ class RedisVectorStore(BasePydanticVectorStore):
             >>>     overwrite=True)
         """
         try:
-            # connect to redis from url
+            
             if redis_client:
                 self._redis_client = redis_client
+            # connect to redis from url
             else:
                 self._redis_client = redis.from_url(redis_url, **kwargs)
             # check if redis has redisearch module installed
             check_redis_modules_exist(self._redis_client)
+            
         except ValueError as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
