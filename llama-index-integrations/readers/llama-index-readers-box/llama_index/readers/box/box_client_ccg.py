@@ -24,8 +24,6 @@ class BoxConfigCCG:
         self.enterprise_id = os.getenv("BOX_ENTERPRISE_ID")
         self.ccg_user_id = os.getenv("BOX_CCG_USER_ID")
 
-        self.cache_file = os.getenv("BOX_CACHE_FILE", ".ccg.tk")
-
 
 def get_ccg_enterprise_client(config: BoxConfigCCG) -> BoxClient:
     """Returns a box sdk Client object."""
@@ -55,4 +53,37 @@ def get_ccg_user_client(config: BoxConfigCCG, user_id: str) -> BoxClient:
 
     return BoxClient(auth)
 
-    # return client
+
+def reader_box_client_ccg(
+    box_client_id: str,
+    box_client_secret: str,
+    box_enterprise_id: str = None,
+    box_user_id: str = None,
+) -> BoxClient:
+    """
+    Creates a BoxClient instance using CCG authentication.
+
+    Args:
+        box_client_id: Client ID for Box API access.
+        box_client_secret: Client secret for Box API access.
+        box_enterprise_id: Optional enterprise ID for enterprise authentication.
+        box_user_id: Optional user ID for user authentication.
+
+    Returns:
+        A BoxClient instance authenticated with CCG.
+    """
+    token_storage_filename = ".enterprise" if box_user_id is None else ".user"
+    ccg = CCGConfig(
+        client_id=box_client_id,
+        client_secret=box_client_secret,
+        enterprise_id=box_enterprise_id,
+        user_id=box_user_id,
+        token_storage=FileWithInMemoryCacheTokenStorage(
+            filename=token_storage_filename
+        ),
+    )
+
+    auth = BoxCCGAuth(ccg)
+    if box_user_id:
+        auth.with_user_subject(box_user_id)
+    return BoxClient(auth)
