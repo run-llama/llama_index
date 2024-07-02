@@ -51,6 +51,8 @@ def _get_agent_components(query_component: QueryComponent) -> List[BaseAgentComp
 class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     """Query Pipeline agent worker.
 
+    NOTE: This is now deprecated. Use `FnAgentWorker` instead to build a stateful agent.
+
     Barebones agent worker that takes in a query pipeline.
 
     **Default Workflow**: The default workflow assumes that you compose
