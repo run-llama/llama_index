@@ -53,6 +53,7 @@ from llama_index.core import (
     SimpleDirectoryReader,
     VectorStoreIndex,
     StorageContext,
+    load_index_from_storage,
 )
 
 # NOTE: for local testing only, do NOT deploy with your key hardcoded
@@ -64,6 +65,7 @@ index = None
 def initialize_index():
     global index
     storage_context = StorageContext.from_defaults()
+    index_dir = "./.index"
     if os.path.exists(index_dir):
         index = load_index_from_storage(storage_context)
     else:
