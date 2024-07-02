@@ -52,6 +52,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     )
     attach_permission_metadata: bool = True
     drive_name: Optional[str] = None
+    drive_id: Optional[str] = None
 
     _authorization_headers = PrivateAttr()
     _site_id_with_host_name = PrivateAttr()
@@ -71,8 +72,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         drive_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self._drive_id = drive_id
-
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
@@ -82,6 +81,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             sharepoint_folder_id=sharepoint_folder_id,
             file_extractor=file_extractor,
             drive_name=drive_name,
+            drive_id=drive_id,
             **kwargs,
         )
 
@@ -180,6 +180,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         if hasattr(self, "_drive_id"):
             return self._drive_id
+
+        if self.drive_id:
+            return self.drive_id
 
         self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
 
