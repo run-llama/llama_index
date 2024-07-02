@@ -520,8 +520,8 @@ class IndexNode(TextNode):
                 data["obj"] = self.obj.dict()
             else:
                 data["obj"] = json.dumps(self.obj)
-        except Exception:
-            raise ValueError("IndexNode obj is not serializable: " + str(self.obj))
+        except Exception as exc:
+            raise ValueError(f"IndexNode obj is not serializable: {self.obj}") from exc
 
         return data
 

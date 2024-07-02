@@ -32,13 +32,11 @@ from llama_index.core.utils import get_cache_dir
 def _try_load_openai_llm():
     try:
         from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
-
         return OpenAI(model="gpt-3.5-turbo", streaming=True)
-    except ImportError:
+    except ImportError as exc:
         raise ImportError(
             "`llama-index-llms-openai` package not found, "
-            "please run `pip install llama-index-llms-openai`"
-        )
+            "please run `pip install llama-index-llms-openai`") from exc
 
 
 RAG_HISTORY_FILE_NAME = "files_history.txt"

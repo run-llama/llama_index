@@ -37,10 +37,7 @@ def asyncio_run(coro: Coroutine) -> Any:
         try:
             return asyncio.run(coro)
         except RuntimeError as e:
-            raise RuntimeError(
-                "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
-                "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
-            )
+            raise RuntimeError('Detected nested async. Please use nest_asyncio.apply() to allow nested event loops.Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc.') from e
 
     except Exception as e:
         # Catch any other exceptions and re-raise with more context
