@@ -35,6 +35,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_site_name (Optional[str]): The name of the SharePoint site to download from.
         sharepoint_folder_path (Optional[str]): The path of the SharePoint folder to download from.
         sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
+        drive_name (Optional[str]): The name of the drive to download from.
+        drive_id (Optional[str]): The ID of the drive to download from. Overrides drive_name.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
         attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
