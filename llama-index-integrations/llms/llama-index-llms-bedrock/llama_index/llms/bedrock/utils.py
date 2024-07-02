@@ -147,7 +147,9 @@ class AnthropicProvider(Provider):
             return ""
 
     def get_text_from_response(self, response: dict) -> str:
-        return response["content"][0]["text"]
+        if response["content"]:
+            return response["content"][0]["text"]
+        return ""
 
     def get_request_body(self, prompt: Sequence[Dict], inference_parameters: dict):
         if len(prompt) > 0 and prompt[0]["role"] == "system":
