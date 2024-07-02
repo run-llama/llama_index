@@ -1,5 +1,7 @@
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.llms.upstage import Upstage
+import pytest
 
 
 def test_text_inference_llm_class():
@@ -9,10 +11,29 @@ def test_text_inference_llm_class():
 
 def test_upstage_llm_api_key_alias():
     api_key = "test_key"
-    embedding1 = Upstage(api_key=api_key)
-    embedding2 = Upstage(upstage_api_key=api_key)
-    embedding3 = Upstage(error_api_key=api_key)
+    llm1 = Upstage(api_key=api_key)
+    llm2 = Upstage(upstage_api_key=api_key)
+    llm3 = Upstage(error_api_key=api_key)
 
-    assert embedding1.api_key == api_key
-    assert embedding2.api_key == api_key
-    assert embedding3.api_key == ""
+    assert llm1.api_key == api_key
+    assert llm2.api_key == api_key
+    assert llm3.api_key == ""
+
+
+def test_upstage_tokenizer():
+    llm = Upstage()
+    tokenizer = llm._tokenizer
+
+    with pytest.raises(Exception):
+        llm = Upstage(tokenizer_name="wrong name")
+        tokenizer = llm._tokenizer
+
+
+def test_upstage_tokenizer_count_tokens():
+    llm = Upstage()
+    assert (
+        llm.get_num_tokens_from_message(
+            [ChatMessage(role=MessageRole.USER, content="Hello World")]
+        )
+        == 12
+    )
