@@ -134,7 +134,6 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         elif isinstance(self._table, kdbai.TablePyKx):
             schema = self._table.schema["schema"]["c"]
             types = self._table.schema["schema"]["t"].decode("utf-8")
-        
 
         if self.hybrid_search:
             if isinstance(self._table, kdbai.Table):
