@@ -148,4 +148,5 @@ def get_pipeline_create(
         data_sources=data_sources,
         data_sinks=[],
         pipeline_type=pipeline_type,
+        llama_parse_enabled=False,
     )
