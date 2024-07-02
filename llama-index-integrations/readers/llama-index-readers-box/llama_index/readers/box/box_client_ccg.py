@@ -21,18 +21,14 @@ class BoxConfigCCG:
         self.client_secret = os.getenv("BOX_CLIENT_SECRET", "YOUR_BOX_CLIENT_SECRET")
 
         # CCG configurations
-        self.enterprise_id = os.getenv(
-            "BOX_ENTERPRISE_ID", "YOUR_BOX_ENTERPRISE_ID (optional)"
-        )
-        self.ccg_user_id = os.getenv(
-            "BOX_CCG_USER_ID", "YOUR_BOX_CCG_USER_ID (optional)"
-        )
+        self.enterprise_id = os.getenv("BOX_ENTERPRISE_ID", "YOUR_BOX_ENTERPRISE_ID")
+        self.ccg_user_id = os.getenv("BOX_CCG_USER_ID")
 
 
 def reader_box_client_ccg(
     box_client_id: str,
     box_client_secret: str,
-    box_enterprise_id: str = None,
+    box_enterprise_id: str,
     box_user_id: str = None,
 ) -> BoxClient:
     """
@@ -41,7 +37,7 @@ def reader_box_client_ccg(
     Args:
         box_client_id: Client ID for Box API access.
         box_client_secret: Client secret for Box API access.
-        box_enterprise_id: Optional enterprise ID for enterprise authentication.
+        box_enterprise_id: Enterprise ID for enterprise authentication.
         box_user_id: Optional user ID for user authentication.
 
     Returns:

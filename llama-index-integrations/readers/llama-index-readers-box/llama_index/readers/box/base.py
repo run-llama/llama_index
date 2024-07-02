@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class BoxReader(BasePydanticReader):
     box_client_id: str
     box_client_secret: str
-    box_enterprise_id: str = None
+    box_enterprise_id: str
     box_user_id: str = None
     # client: BoxClient
 
