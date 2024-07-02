@@ -925,6 +925,31 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
         return azure_query_result_search.search()
 
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        odata_filter = None
+        if query.filters is not None:
+            odata_filter = self._create_odata_filter(query.filters)
+        azure_query_result_search: AzureQueryResultSearchBase = (
+            AzureQueryResultSearchDefault(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        )
+        if query.mode == VectorStoreQueryMode.SPARSE:
+            azure_query_result_search = AzureQueryResultSearchSparse(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            azure_query_result_search = AzureQueryResultSearchHybrid(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+            azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        return await azure_query_result_search.asearch()
+
 
 class AzureQueryResultSearchBase:
     def __init__(
@@ -1007,10 +1032,69 @@ class AzureQueryResultSearchBase:
             nodes=node_result, similarities=score_result, ids=id_result
         )
 
+    async def _acreate_query_result(
+        self, search_query: str, vectors: Optional[List[Any]]
+    ) -> VectorStoreQueryResult:
+        results = await self._search_client.search(
+            search_text=search_query,
+            vector_queries=vectors,
+            top=self._query.similarity_top_k,
+            select=self._select_fields,
+            filter=self._odata_filter,
+        )
+
+        id_result = []
+        node_result = []
+        score_result = []
+
+        async for result in results:
+            node_id = result[self._field_mapping["id"]]
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
+            score = result["@search.score"]
+            chunk = result[self._field_mapping["chunk"]]
+
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(chunk)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=chunk,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            logger.debug(f"Retrieved node id {node_id} with node data of {node}")
+
+            id_result.append(node_id)
+            node_result.append(node)
+            score_result.append(score)
+
+        logger.debug(
+            f"Search query '{search_query}' returned {len(id_result)} results."
+        )
+
+        return VectorStoreQueryResult(
+            nodes=node_result, similarities=score_result, ids=id_result
+        )
+
     def search(self) -> VectorStoreQueryResult:
         search_query = self._create_search_query()
         vectors = self._create_query_vector()
         return self._create_query_result(search_query, vectors)
+
+    async def asearch(self) -> VectorStoreQueryResult:
+        search_query = self._create_search_query()
+        vectors = self._create_query_vector()
+        return await self._acreate_query_result(search_query, vectors)
 
 
 class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
