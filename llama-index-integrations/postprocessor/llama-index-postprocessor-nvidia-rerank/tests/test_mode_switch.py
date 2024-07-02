@@ -20,13 +20,7 @@ def mock_local_models(requests_mock: Mocker, base_url: str) -> None:
         url=f"{base_url}/models",
         json={
             "data": [
-                {
-                    "id": "model1",
-                    "object": "model",
-                    "created": 1234567890,
-                    "owned_by": "OWNER",
-                    "root": "model1",
-                },
+                {"id": "model1"},
             ]
         },
     )
