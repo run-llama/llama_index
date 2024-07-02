@@ -3,5 +3,9 @@
         "llama-index-integrations/readers/llama-index-readers-box"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "dotenv",
+        "Pydantic"
+    ]
 }
