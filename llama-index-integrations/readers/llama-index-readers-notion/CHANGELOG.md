@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.1.9] - 2024-07-02
+
+### Bug Fixes
+
+- **Fixed `load_data` method**: Removed reassignment of `database_ids`, allowing the function to correctly check the else condition when `database_ids` is `None`.
+
 ## [0.1.8] - 2024-07-01
 
 ### New Features
