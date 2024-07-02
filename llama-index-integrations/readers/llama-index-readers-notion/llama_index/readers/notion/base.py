@@ -196,14 +196,12 @@ class NotionPageReader(BasePydanticReader):
 
         Args:
             page_ids (List[str]): List of page ids to load.
-            database_id (str): Database_id from which to load page ids.
+            database_ids Optional (List[str]): List database ids from which to load page ids.
 
         Returns:
             List[Document]: List of documents.
 
         """
-        database_ids = database_ids or []
-
         if not page_ids and not database_ids:
             raise ValueError("Must specify either `page_ids` or `database_ids`.")
         docs = []
