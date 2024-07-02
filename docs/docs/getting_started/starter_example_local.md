@@ -33,7 +33,7 @@ In the same folder where you created the `data` folder, create a file called `st
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface.base import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
