@@ -70,8 +70,8 @@ def test_mixins(box_integration_testing_config):
         box_user_id=box_config.ccg_user_id,
     )
 
-    # docs = reader.load_data()
-    # assert len(docs) > 0
+    docs = reader.load_data()
+    assert len(docs) > 0
 
     # resources = reader.list_resources()
     # assert len(resources) == len(docs)
