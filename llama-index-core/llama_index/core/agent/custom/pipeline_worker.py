@@ -31,6 +31,7 @@ from llama_index.core.query_pipeline.components.agent import (
 )
 from llama_index.core.query_pipeline.query import QueryPipeline
 from llama_index.core.tools import ToolOutput
+from deprecated import deprecated
 
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
@@ -48,6 +49,7 @@ def _get_agent_components(query_component: QueryComponent) -> List[BaseAgentComp
     return agent_components
 
 
+@deprecated("Use `FnAgentWorker` instead to build a stateful agent.")
 class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     """Query Pipeline agent worker.
 
