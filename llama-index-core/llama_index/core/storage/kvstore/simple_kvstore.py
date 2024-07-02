@@ -84,8 +84,8 @@ class SimpleKVStore(BaseInMemoryKVStore):
         if not fs.exists(dirpath):
             fs.makedirs(dirpath)
 
-        with fs.open(persist_path, "w") as f:
-            f.write(json.dumps(self._data))
+        with fs.open(persist_path, "w", encoding="utf-8") as f:
+            f.write(json.dumps(self._data, ensure_ascii=False, indent=4))
 
     @classmethod
     def from_persist_path(
