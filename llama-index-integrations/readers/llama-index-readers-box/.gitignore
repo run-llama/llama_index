@@ -118,6 +118,8 @@ ENV/
 env.bak/
 venv.bak/
 pyvenv.cfg
+.enterprise.db
+.user.db
 
 # Spyder project settings
 .spyderproject
