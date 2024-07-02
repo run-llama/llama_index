@@ -194,7 +194,7 @@ class PandasExcelReader(BaseReader):
                     Document(text="\n".join(text_list), metadata=extra_info or {})
                 )
             else:
-                documents.append(
+                documents.extend(
                     [
                         Document(text=text, metadata=extra_info or {})
                         for text in text_list
@@ -214,7 +214,7 @@ class PandasExcelReader(BaseReader):
                         Document(text="\n".join(text_list), metadata=extra_info or {})
                     )
                 else:
-                    documents.append(
+                    documents.extend(
                         [
                             Document(text=text, metadata=extra_info or {})
                             for text in text_list
