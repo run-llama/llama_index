@@ -2,6 +2,34 @@ import pytest
 
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank as Interface
 from llama_index.postprocessor.nvidia_rerank.base import KNOWN_URLS, BASE_URL
+from requests_mock import Mocker
+
+UNKNOWN_URLS = [
+    "https://test_url/v1",
+    "https://test_url/v1/",
+    "https://test_url/.../v1",
+    "http://test_url/v1",
+    "http://test_url/v1/",
+    "http://test_url/.../v1/",
+]
+
+
+@pytest.fixture()
+def mock_local_models(requests_mock: Mocker, base_url: str) -> None:
+    requests_mock.get(
+        url=f"{base_url}/models",
+        json={
+            "data": [
+                {
+                    "id": "model1",
+                    "object": "model",
+                    "created": 1234567890,
+                    "owned_by": "OWNER",
+                    "root": "model1",
+                },
+            ]
+        },
+    )
 
 
 def test_mode_switch_throws_without_key_deprecated(masked_env_var: str):
@@ -43,25 +71,17 @@ def test_mode_switch_param_setting_deprecated():
     assert instance2._api_key == "test"
 
 
-UNKNOWN_URLS = [
-    "https://test_url/v1",
-    "https://test_url/v1/",
-    "https://test_url/.../v1",
-    "http://test_url/v1",
-    "http://test_url/v1/",
-    "http://test_url/.../v1/",
-]
-
-
 @pytest.mark.parametrize("base_url", UNKNOWN_URLS)
-def test_mode_switch_unknown_base_url_without_key(masked_env_var: str, base_url: str):
+def test_mode_switch_unknown_base_url_without_key(
+    mock_local_models, masked_env_var: str, base_url: str
+):
     Interface(base_url=base_url)
 
 
 @pytest.mark.parametrize("base_url", UNKNOWN_URLS)
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
 def test_mode_switch_unknown_base_url_with_key(
-    masked_env_var: str, param: str, base_url: str
+    mock_local_models, masked_env_var: str, param: str, base_url: str
 ):
     Interface(base_url=base_url, **{param: "test"})
 

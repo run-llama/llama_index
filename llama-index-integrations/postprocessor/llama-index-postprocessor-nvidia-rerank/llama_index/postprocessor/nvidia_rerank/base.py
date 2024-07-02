@@ -30,6 +30,7 @@ dispatcher = get_dispatcher(__name__)
 
 class Model(BaseModel):
     id: str
+    base_model: Optional[str]
 
 
 class NVIDIARerank(BaseNodePostprocessor):
@@ -39,7 +40,6 @@ class NVIDIARerank(BaseNodePostprocessor):
         validate_assignment = True
 
     model: Optional[str] = Field(
-        default=DEFAULT_MODEL,
         description="The NVIDIA API Catalog reranker to use.",
     )
     top_n: Optional[int] = Field(
@@ -67,7 +67,7 @@ class NVIDIARerank(BaseNodePostprocessor):
 
     def __init__(
         self,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = None,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
@@ -106,12 +106,81 @@ class NVIDIARerank(BaseNodePostprocessor):
                 "An API key is required for hosted NIM. This will become an error in 0.2.0."
             )
 
+        if not model:
+            self.__set_default_model()
+
+    def __set_default_model(self):
+        """Set default model."""
+        if not self._is_hosted:
+            valid_models = [
+                model.id
+                for model in self.available_models
+                if not model.base_model or model.base_model == model.id
+            ]
+            self.model = next(iter(valid_models), None)
+            if self.model:
+                warnings.warn(
+                    f"Default model is set as: {self.model}. \n"
+                    "Set model using model parameter. \n"
+                    "To get available models use available_models property.",
+                    UserWarning,
+                )
+            else:
+                raise ValueError("No locally hosted model was found.")
+        else:
+            self.model = DEFAULT_MODEL
+
+    def _get_models(self) -> List[Model]:
+        session = requests.Session()
+
+        _headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Accept": "application/json",
+        }
+
+        url = self._base_url + "/models"
+        response = session.get(url, headers=_headers)
+        response.raise_for_status()
+        # expected response format:
+        # {
+        #     "data": [
+        #         {
+        #             "id": 0,
+        #             "root": 0.0
+        #         },
+        #         ...
+        #     ]
+        # }
+        assert (
+            "data" in response.json()
+        ), "Response does not contain expected 'data' key"
+        assert isinstance(
+            response.json()["data"], list
+        ), "Response 'data' is not a list"
+        assert all(
+            isinstance(result, dict) for result in response.json()["data"]
+        ), "Response 'data' is not a list of dictionaries"
+        assert all(
+            "id" in result for result in response.json()["data"]
+        ), "Response 'rankings' is not a list of dictionaries with 'id'"
+
+        return [
+            Model(
+                id=model["id"],
+                base_model=getattr(model, "params", {}).get("root", None),
+            )
+            for model in response.json()["data"]
+        ]
+
     @property
     def available_models(self) -> List[Model]:
         """Get available models."""
         # all available models are in the map
         ids = MODEL_ENDPOINT_MAP.keys()
-        return [Model(id=id) for id in ids]
+        if not self._is_hosted:
+            return self._get_models()
+        else:
+            return [Model(id=id) for id in ids]
 
     @deprecated(
         version="0.1.2",
