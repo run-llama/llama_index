@@ -442,11 +442,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 sharepoint_folder_path
             )
 
-        print(
-            f"Downloading files from SharePoint site: {sharepoint_site_name}, folder: {sharepoint_folder_path}"
-            f"Folder id: {sharepoint_folder_id}"
-        )
-
         return self._download_files_and_extract_metadata(
             sharepoint_folder_id,
             download_dir,
