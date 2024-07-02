@@ -28,10 +28,11 @@ from llama_index.vector_stores.weaviate.utils import (
 )
 
 import weaviate
-from weaviate import Client
 import weaviate.classes as wvc
 
+
 _logger = logging.getLogger(__name__)
+_WEAVIATE_DEFAULT_GRPC_PORT = 50051
 
 
 def _transform_weaviate_filter_condition(condition: str) -> str:
@@ -101,7 +102,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     k most similar nodes.
 
     Args:
-        weaviate_client (weaviate.Client): WeaviateClient
+        weaviate_client (weaviate.WeaviateClient): WeaviateClient
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
 
@@ -109,14 +110,19 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         `pip install llama-index-vector-stores-weaviate`
 
         ```python
+        from llama_index.vector_stores.weaviate import WeaviateVectorStore
         import weaviate
 
-        resource_owner_config = weaviate.AuthClientPassword(
+        resource_owner_config = weaviate.auth.AuthClientPassword(
             username="<username>",
             password="<password>",
         )
-        client = weaviate.Client(
-            "https://llama-test-ezjahb4m.weaviate.network",
+        connection_params = weaviate.connect.ConnectionParams.from_url(
+            url="https://llama-test-ezjahb4m.weaviate.network",
+            grpc_port=50051,
+        )
+        client = weaviate.WeaviateClient(
+            connection_params=connection_params,
             auth_client_secret=resource_owner_config,
         )
 
@@ -138,7 +144,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        weaviate_client: Optional[Any] = None,
+        weaviate_client: Optional[weaviate.WeaviateClient] = None,
         class_prefix: Optional[str] = None,
         index_name: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -158,6 +164,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             )
         else:
             self._client = cast(weaviate.WeaviateClient, weaviate_client)
+
+        if not self._client.is_connected():
+            self._client.connect()
 
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
@@ -187,7 +196,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     def from_params(
         cls,
         url: str,
-        auth_config: Any,
+        auth_config: Optional[Any] = None,
         index_name: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         client_kwargs: Optional[Dict[str, Any]] = None,
@@ -195,13 +204,22 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     ) -> "WeaviateVectorStore":
         """Create WeaviateVectorStore from config."""
         client_kwargs = client_kwargs or {}
-        weaviate_client = Client(
-            url=url, auth_client_secret=auth_config, **client_kwargs
+        if isinstance(auth_config, dict):
+            auth_config = weaviate.auth.AuthApiKey(auth_config)
+        weaviate_client = weaviate.WeaviateClient(
+            connection_params=weaviate.connect.ConnectionParams.from_url(
+                url=url,
+                grpc_port=client_kwargs.pop("grpc_port", _WEAVIATE_DEFAULT_GRPC_PORT),
+                grpc_secure=client_kwargs.pop("grpc_secure", False),
+            ),
+            auth_client_secret=auth_config,
+            **client_kwargs,
         )
+        weaviate_client.connect()
         return cls(
             weaviate_client=weaviate_client,
             url=url,
-            auth_config=auth_config.__dict__,
+            auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs,
             index_name=index_name,
             text_key=text_key,
