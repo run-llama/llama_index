@@ -17,8 +17,7 @@ def get_embeddings(api_key: str, api_base: str, model_name: str, input: List[str
         model=model_name,
         input=input,
     )
-    embeddings = [result["embedding"] for result in response.data]
-    return embeddings
+    return [result["embedding"] for result in response.data]
 
 
 class LiteLLMEmbedding(BaseEmbedding):
@@ -62,10 +61,9 @@ class LiteLLMEmbedding(BaseEmbedding):
         return embeddings[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        embeddings = get_embeddings(
+        return get_embeddings(
             api_key=self.api_key,
             api_base=self.api_base,
             model_name=self.model_name,
             input=texts,
         )
-        return embeddings
