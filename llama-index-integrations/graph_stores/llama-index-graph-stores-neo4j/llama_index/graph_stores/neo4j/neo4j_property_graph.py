@@ -463,38 +463,37 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         triples = []
 
         ids = [node.id for node in graph_nodes]
-
-        responses = []
-        for id in ids:
-            if limit <= 0:
-                break
-            # Needs some optimization
-            response = self.structured_query(
-                f"""
-                MATCH (e:`__Entity__`)
-                WHERE e.id=$id
-                MATCH p=(e)-[r*1..{depth}]-(other)
-                WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
-                UNWIND relationships(p) AS rel
-                WITH distinct rel
-                WITH startNode(rel) AS source,
-                    type(rel) AS type,
-                    endNode(rel) AS endNode
-                RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
-                        source{{.* , embedding: Null, id: Null}} AS source_properties,
-                        type,
-                        endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
-                        endNode{{.* , embedding: Null, id: Null}} AS target_properties
-                LIMIT toInteger($limit)
-                """,
-                param_map={"id": id, "limit": limit},
-            )
-            response = response if response else []
-            limit -= len(response)
-            responses += response
+        # Needs some optimization
+        response = self.structured_query(
+            f"""
+            WITH $ids AS id_list
+            UNWIND range(0, size(id_list) - 1) AS idx
+            MATCH (e:`__Entity__`)
+            WHERE e.id = id_list[idx]
+            MATCH p=(e)-[r*1..{depth}]-(other)
+            WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
+            UNWIND relationships(p) AS rel
+            WITH distinct rel, idx
+            WITH startNode(rel) AS source,
+                type(rel) AS type,
+                endNode(rel) AS endNode,
+                idx
+            LIMIT toInteger($limit)
+            RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
+                source{{.* , embedding: Null, id: Null}} AS source_properties,
+                type,
+                endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                endNode{{.* , embedding: Null, id: Null}} AS target_properties,
+                idx
+            ORDER BY idx
+            LIMIT toInteger($limit)
+            """,
+            param_map={"ids": ids, "limit": limit},
+        )
+        response = response if response else []
 
         ignore_rels = ignore_rels or []
-        for record in responses:
+        for record in response:
             if record["type"] in ignore_rels:
                 continue
 
