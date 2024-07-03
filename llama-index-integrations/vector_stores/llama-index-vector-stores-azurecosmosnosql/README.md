@@ -1,1 +1,1 @@
-# LlamaIndex Vector_Stores Integration: Azurecosmosmongo
+# LlamaIndex Vector_Stores Integration: Azurecosmosnosql
