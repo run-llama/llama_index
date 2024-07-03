@@ -111,7 +111,7 @@ class MonsterLLM(OpenAI):
             output_parser=output_parser,
         )
 
-        self.model_info = self.__fetch_model_details(api_base, api_key)
+        self.model_info = self._fetch_model_details(api_base, api_key)
 
     @classmethod
     def class_name(cls) -> str:
@@ -120,7 +120,7 @@ class MonsterLLM(OpenAI):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self.__modelname_to_contextsize(self.model),
+            context_window=self._modelname_to_contextsize(self.model),
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
@@ -131,7 +131,7 @@ class MonsterLLM(OpenAI):
     def _is_chat_model(self) -> bool:
         return True
 
-    def __fetch_model_details(self, api_base: str, api_key: str):
+    def _fetch_model_details(self, api_base: str, api_key: str):
         headers = {"Authorization": f"Bearer {api_key}", "accept": "application/json"}
         response = requests.get(f"{api_base}/models/info", headers=headers)
         response.raise_for_status()
@@ -139,5 +139,5 @@ class MonsterLLM(OpenAI):
         details = response.json()
         return details["maximum_context_length"]
 
-    def __modelname_to_contextsize(self, model_name):
+    def _modelname_to_contextsize(self, model_name):
         return self.model_info.get(model_name)
