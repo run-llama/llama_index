@@ -136,7 +136,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self.enhcnaced_schema = enhanced_schema
+        self.enhanced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password), **neo4j_kwargs
         )
@@ -767,7 +767,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         formatted_node_props = []
         formatted_rel_props = []
 
-        if self.enhcnaced_schema:
+        if self.enhanced_schema:
             # Enhanced formatting for nodes
             for node_type, properties in schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")
