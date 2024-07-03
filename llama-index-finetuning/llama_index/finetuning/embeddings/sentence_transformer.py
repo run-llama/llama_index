@@ -26,6 +26,7 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
         evaluation_steps: int = 50,
         use_all_docs: bool = False,
         trust_remote_code: bool = False,
+        device: Optional[Any] = None
     ) -> None:
         """Init params."""
         from sentence_transformers import InputExample, SentenceTransformer, losses
@@ -35,7 +36,9 @@ class SentenceTransformersFinetuneEngine(BaseEmbeddingFinetuneEngine):
 
         self.model_id = model_id
         self.model_output_path = model_output_path
-        self.model = SentenceTransformer(model_id, trust_remote_code=trust_remote_code)
+        self.model = SentenceTransformer(
+            model_id, trust_remote_code=trust_remote_code, device=device
+        )
 
         self.use_all_docs = use_all_docs
 
