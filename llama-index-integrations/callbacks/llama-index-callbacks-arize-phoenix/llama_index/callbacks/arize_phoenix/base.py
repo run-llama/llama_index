@@ -19,7 +19,7 @@ def arize_phoenix_callback_handler(**kwargs: Any) -> BaseCallbackHandler:
             SimpleSpanProcessor(OTLPSpanExporter(endpoint))
         )
 
-        LlamaIndexInstrumentor().instrument(
+        return LlamaIndexInstrumentor().instrument(
             tracer_provider=kwargs.get("tracer_provider", tracer_provider)
         )
     except ImportError:
