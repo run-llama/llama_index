@@ -74,7 +74,7 @@ def test_serialize(box_unit_testing_config: BoxConfigCCG):
 ####################################################################################################
 
 
-def test_box_reader_pdf(box_reader: BoxReader):
+def test_box_reader_csv(box_reader: BoxReader):
     test_data = get_testing_data()
     docs = box_reader.load_data(file_ids=[test_data["test_csv_id"]])
     assert len(docs) == 1
@@ -82,9 +82,10 @@ def test_box_reader_pdf(box_reader: BoxReader):
 
 def test_box_reader_folder(box_reader: BoxReader):
     # Very slow test
-    raise pytest.skip(
-        f"Create a .env file with the Box credentials to run integration tests."
-    )
+    if False:
+        raise pytest.skip(
+            f"Create a .env file with the Box credentials to run integration tests."
+        )
     test_data = get_testing_data()
     docs = box_reader.load_data(folder_id=test_data["test_folder_id"])
     assert len(docs) >= 1

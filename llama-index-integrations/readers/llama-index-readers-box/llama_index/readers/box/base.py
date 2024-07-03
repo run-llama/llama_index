@@ -12,7 +12,7 @@ from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.readers.box.box_client_ccg import reader_box_client_ccg
 
-from box_sdk_gen import BoxAPIError, BoxClient, ByteStream, FileMini
+from box_sdk_gen import BoxAPIError, BoxClient, ByteStream, File
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class BoxReader(BasePydanticReader):
             file = client.files.get_file_by_id(file_id)
             logger.info(f"Getting file: {file.id} {file.name} {file.type}")
             local_path = self._download_file_by_id(client, file, temp_dir)
-            resource_info = self._extract_metadata_from_file(file)
+            resource_info = file.to_dict()
             payloads.append(
                 _BoxResourcePayload(
                     resource_info=resource_info,
@@ -98,19 +98,8 @@ class BoxReader(BasePydanticReader):
             )
         return payloads
 
-    def _extract_metadata_from_file(self, file: FileMini) -> Dict[str, Any]:
-        return {
-            "box_file": file.id,
-            "name": file.name,
-            "type": file.type,
-            "size": file.size,
-            "created_at": file.created_at,
-            "modified_at": file.modified_at,
-            "etag": file.etag,
-        }
-
     def _download_file_by_id(
-        self, client: BoxClient, box_file: FileMini, temp_dir: str
+        self, client: BoxClient, box_file: File, temp_dir: str
     ) -> str:
         # Save the downloaded file to the specified local directory.
         file_path = os.path.join(temp_dir, box_file.name)
@@ -136,4 +125,5 @@ class BoxReader(BasePydanticReader):
                 payloads.extend(self._get_files(client, [item.id], temp_dir))
             if item.type == "folder":
                 logger.info(f"Skipping folder: {item.id} {item.name}")
+                # TODO: Implement Box recursive folder download
         return payloads
