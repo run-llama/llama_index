@@ -31,6 +31,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
+    is_mistralai_code_model,
     mistralai_modelname_to_contextsize,
 )
 
@@ -373,7 +374,7 @@ class MistralAI(FunctionCallingLLM):
 
         response = self.chat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -404,7 +405,7 @@ class MistralAI(FunctionCallingLLM):
 
         response = await self.achat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -444,3 +445,24 @@ class MistralAI(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def fill_in_middle(
+        self, prompt: str, suffix: str, stop: Optional[List[str]] = None
+    ) -> CompletionResponse:
+        if not is_mistralai_code_model(self.model):
+            raise ValueError(
+                "Please provide code model from MistralAI. Currently supported code model is 'codestral-latest'."
+            )
+
+        if stop:
+            response = self._client.completion(
+                model=self.model, prompt=prompt, suffix=suffix, stop=stop
+            )
+        else:
+            response = self._client.completion(
+                model=self.model, prompt=prompt, suffix=suffix
+            )
+
+        return CompletionResponse(
+            text=response.choices[0].message.content, raw=dict(response)
+        )

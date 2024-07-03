@@ -39,7 +39,8 @@ SLINGSHOT_RERANKER_ID = 272725719
 class VectaraReranker(str, Enum):
     NONE = "none"
     MMR = "mmr"
-    SLINGSHOT = "slingshot"
+    SLINGSHOT_ALT_NAME = "slingshot"
+    SLINGSHOT = "multilingual_reranker_v1"
 
 
 class VectaraRetriever(BaseRetriever):
@@ -49,8 +50,8 @@ class VectaraRetriever(BaseRetriever):
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
-        reranker (str): reranker to use: none, mmr or slingshot.
-            Note that "slingshot" is a Vectara Scale feature only.
+        reranker (str): reranker to use: none, mmr or multilingual_reranker_v1.
+            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -102,7 +103,10 @@ class VectaraRetriever(BaseRetriever):
             self._rerank_k = rerank_k
             self._mmr_diversity_bias = mmr_diversity_bias
             self._reranker_id = MMR_RERANKER_ID
-        elif reranker == VectaraReranker.SLINGSHOT:
+        elif (
+            reranker == VectaraReranker.SLINGSHOT
+            or reranker == VectaraReranker.SLINGSHOT_ALT_NAME
+        ):
             self._rerank = True
             self._rerank_k = rerank_k
             self._reranker_id = SLINGSHOT_RERANKER_ID
@@ -335,6 +339,7 @@ class VectaraRetriever(BaseRetriever):
             str: conversation ID, if applicable
         """
         data = self._build_vectara_query_body(query_bundle.query_str, chat, conv_id)
+
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
@@ -351,9 +356,16 @@ class VectaraRetriever(BaseRetriever):
             return [], {"text": ""}, ""
 
         result = response.json()
+        status = result["responseSet"][0]["status"]
+        if len(status) > 0 and status[0]["code"] != "OK":
+            _logger.error(
+                f"Query failed (code {status[0]['code']}, msg={status[0]['statusDetail']}"
+            )
+            return [], {"text": ""}, ""
 
         responses = result["responseSet"][0]["response"]
         documents = result["responseSet"][0]["document"]
+
         if self._summary_enabled:
             summaryJson = result["responseSet"][0]["summary"][0]
             if len(summaryJson["status"]) > 0:

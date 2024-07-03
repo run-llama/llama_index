@@ -79,6 +79,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "memory": "Memory",
     "multi_modal_llms": "Multi-Modal LLMs",
     "node_parsers": "Node Parsers & Text Splitters",
+    "node_parser": "Node Parsers & Text Splitters",
     "objects": "Object Stores",
     "output_parsers": "Output Parsers",
     "postprocessor": "Node Postprocessors",
@@ -409,6 +410,17 @@ mkdocs["nav"][api_ref_idx]["API Reference"] = sorted(
     mkdocs["nav"][api_ref_idx]["API Reference"],
     key=lambda x: next(iter(x.keys())) if isinstance(x, dict) else x,
 )
+
+# sort the examples
+for idx, item in enumerate(mkdocs["nav"][examples_idx]["Examples"]):
+    if isinstance(item, dict):
+        for key in item:
+            mkdocs["nav"][examples_idx]["Examples"][idx][key] = sorted(
+                mkdocs["nav"][examples_idx]["Examples"][idx][key],
+                key=lambda x: next(iter(x.keys()))
+                if isinstance(x, dict)
+                else x,
+            )
 
 
 # update search paths

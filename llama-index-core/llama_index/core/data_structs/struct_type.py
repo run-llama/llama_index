@@ -98,6 +98,7 @@ class IndexStructType(str, Enum):
     # for KG index
     KG = "kg"
     SIMPLE_KG = "simple_kg"
+    SIMPLE_LPG = "simple_lpg"
     NEBULAGRAPH = "nebulagraph"
     FALKORDB = "falkordb"
 

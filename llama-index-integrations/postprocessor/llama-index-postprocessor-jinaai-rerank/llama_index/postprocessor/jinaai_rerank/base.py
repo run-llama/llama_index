@@ -39,7 +39,7 @@ class JinaRerank(BaseNodePostprocessor):
         self.model = model
         self._session = requests.Session()
         self._session.headers.update(
-            {"Authorization": f"Bearer {api_key}", "Accept-Encoding": "identity"}
+            {"Authorization": f"Bearer {self.api_key}", "Accept-Encoding": "identity"}
         )
 
     @classmethod
@@ -51,8 +51,7 @@ class JinaRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        dispatcher_event = dispatcher.get_dispatch_event()
-        dispatcher_event(
+        dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
                 nodes=nodes,
@@ -101,5 +100,5 @@ class JinaRerank(BaseNodePostprocessor):
                 new_nodes.append(new_node_with_score)
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
-        dispatcher_event(ReRankEndEvent(nodes=new_nodes))
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes

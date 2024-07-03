@@ -1,6 +1,6 @@
 """Init file of LlamaIndex."""
 
-__version__ = "0.10.38"
+__version__ = "0.10.51"
 
 import logging
 from logging import NullHandler
@@ -28,6 +28,7 @@ from llama_index.core.indices import (
     GPTVectorStoreIndex,
     KeywordTableIndex,
     KnowledgeGraphIndex,
+    PropertyGraphIndex,
     ListIndex,
     RAKEKeywordTableIndex,
     SimpleKeywordTableIndex,
@@ -95,6 +96,7 @@ __all__ = [
     "TreeIndex",
     "DocumentSummaryIndex",
     "KnowledgeGraphIndex",
+    "PropertyGraphIndex",
     # indices - legacy names
     "GPTKeywordTableIndex",
     "GPTKnowledgeGraphIndex",

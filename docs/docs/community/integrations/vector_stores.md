@@ -873,6 +873,7 @@ documents = reader.load_data(
 - [Azure Cosmos DB](../../examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb)
 - [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
 - [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
+- [Couchbase](../../examples/vector_stores/CouchbaseVectorStoreDemo.ipynb)
 - [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
 - [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
 - [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)

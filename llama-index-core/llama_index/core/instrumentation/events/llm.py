@@ -96,6 +96,23 @@ class LLMCompletionStartEvent(BaseEvent):
         return "LLMCompletionStartEvent"
 
 
+class LLMCompletionInProgressEvent(BaseEvent):
+    """LLMCompletionInProgressEvent.
+
+    Args:
+        prompt (str): The prompt to be completed.
+        response (CompletionResponse): Completion response.
+    """
+
+    prompt: str
+    response: CompletionResponse
+
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "LLMCompletionInProgressEvent"
+
+
 class LLMCompletionEndEvent(BaseEvent):
     """LLMCompletionEndEvent.
 

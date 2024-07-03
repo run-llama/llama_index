@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.deepinfra"
 
 [tool.llamahub.class_authors]
-DeepInfraLLM = "ovuruska"
+DeepInfraLLM = "deepinfra"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,19 +21,20 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Oguz Vuruskaneer <oguzvuruskaner@gmail.com>"]
 description = "llama-index llms deepinfra integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-deepinfra"
 readme = "README.md"
-version = "0.0.1"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 llama-index-llms-openai = "^0.1.1"
 aiohttp = "^3.8.1"
+tenacity = ">=8.1.0,<8.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

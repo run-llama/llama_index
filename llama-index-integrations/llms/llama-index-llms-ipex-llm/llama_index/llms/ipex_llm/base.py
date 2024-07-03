@@ -3,8 +3,7 @@
 # llms/llama-index-llms-huggingface/llama_index/llms/huggingface/base.py
 
 import logging
-from threading import Thread
-from typing import Any, Callable, List, Optional, Sequence, Literal
+from typing import Any, Callable, List, Optional, Sequence
 
 import torch
 from llama_index.core.base.llms.types import (
@@ -32,7 +31,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 from transformers import (
     StoppingCriteria,
     StoppingCriteriaList,
@@ -145,7 +144,7 @@ class IpexLLM(CustomLLM):
         load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Literal["cpu", "xpu"] = "cpu",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -197,10 +196,10 @@ class IpexLLM(CustomLLM):
             self._model = self._load_model(
                 low_bit_model, load_in_4bit, load_in_low_bit, model_name, model_kwargs
             )
-        if device_map not in ["cpu", "xpu"]:
+        if device_map not in ["cpu", "xpu"] and not device_map.startswith("xpu:"):
             raise ValueError(
-                "IpexLLM currently only supports device to be 'cpu' or 'xpu', "
-                f"but you have: {device_map}."
+                "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
+                f"or 'xpu:<device_id>', but you have: {device_map}."
             )
         if "xpu" in device_map:
             self._model = self._model.to(device_map)
@@ -292,7 +291,7 @@ class IpexLLM(CustomLLM):
         load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Literal["cpu", "xpu"] = "cpu",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -338,7 +337,7 @@ class IpexLLM(CustomLLM):
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Literal["cpu", "xpu"] = "cpu",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,

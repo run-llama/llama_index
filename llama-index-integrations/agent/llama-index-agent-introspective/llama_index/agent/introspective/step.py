@@ -3,7 +3,6 @@
 import logging
 import uuid
 from typing import Any, List, Optional
-
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -20,19 +19,9 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.tools import BaseTool
-from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
-
-
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
-    name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
 
 
 class IntrospectiveAgentWorker(BaseAgentWorker):
@@ -146,19 +135,17 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
             task.extra_state["main"]["sources"] = main_agent_response.sources
             task.extra_state["main"]["memory"] = main_agent.memory
         else:
-            add_user_step_to_memory(
-                step, task.extra_state["main"]["memory"], verbose=self._verbose
-            )
-            original_response = step.input
-            task.extra_state["main"]["memory"].put(
-                ChatMessage(content=original_response, role="assistant")
-            )
+            pass
 
         # run reflective agent
         reflective_agent_messages = task.extra_state["main"]["memory"].get()
         reflective_agent = self._reflective_agent_worker.as_agent(
             chat_history=reflective_agent_messages
         )
+        # NOTE: atm you *need* to pass an input string to `chat`, even if the memory is already
+        # preloaded. Input will be concatenated on top of chat history from memory
+        # which will be used to generate the response.
+        # TODO: make agent interface more flexible
         reflective_agent_response = reflective_agent.chat(original_response)
         task.extra_state["reflection"]["sources"] = reflective_agent_response.sources
         task.extra_state["reflection"]["memory"] = reflective_agent.memory

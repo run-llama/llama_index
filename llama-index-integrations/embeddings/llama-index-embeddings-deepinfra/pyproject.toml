@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.embeddings.deepinfra"
 
 [tool.llamahub.class_authors]
-DeepInfraEmbeddingModel = "llama-index"
+DeepInfraEmbeddingModel = "deepinfra"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,13 +21,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Oguz Vuruskaner <oguzvuruskaner@gmail.com>"]
 description = "llama-index embeddings deepinfra integration"
 license = "MIT"
 name = "llama-index-embeddings-deepinfra"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

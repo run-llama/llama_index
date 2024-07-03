@@ -17,6 +17,7 @@
         - PDFReader
         - PagedCSVReader
         - PandasCSVReader
+        - PandasExcelReader
         - PptxReader
         - PyMuPDFReader
         - RTFReader

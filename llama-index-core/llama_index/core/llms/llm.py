@@ -326,9 +326,7 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             LLMStructuredPredictStartEvent(
                 output_cls=output_cls, template=prompt, template_args=prompt_args
             )
@@ -341,7 +339,7 @@ class LLM(BaseLLM):
         )
 
         result = program(**prompt_args)
-        dispatch_event(LLMStructuredPredictEndEvent(output=result))
+        dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     @dispatcher.span
@@ -381,9 +379,7 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        dispatcher.event(
             LLMStructuredPredictStartEvent(
                 output_cls=output_cls, template=prompt, template_args=prompt_args
             )
@@ -397,7 +393,7 @@ class LLM(BaseLLM):
         )
 
         result = await program.acall(**prompt_args)
-        dispatch_event(LLMStructuredPredictEndEvent(output=result))
+        dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     # -- Prompt Chaining --
@@ -428,9 +424,9 @@ class LLM(BaseLLM):
             print(output)
             ```
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(LLMPredictStartEvent(template=prompt, template_args=prompt_args))
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -442,7 +438,7 @@ class LLM(BaseLLM):
             response = self.complete(formatted_prompt, formatted=True)
             output = response.text
         parsed_output = self._parse_output(output)
-        dispatch_event(LLMPredictEndEvent(output=parsed_output))
+        dispatcher.event(LLMPredictEndEvent(output=parsed_output))
         return parsed_output
 
     @dispatcher.span
@@ -474,8 +470,9 @@ class LLM(BaseLLM):
         """
         self._log_template_data(prompt, **prompt_args)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-        dispatch_event(LLMPredictStartEvent(template=prompt, template_args=prompt_args))
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
         if self.metadata.is_chat_model:
             messages = self._get_messages(prompt, **prompt_args)
             chat_response = self.stream_chat(messages)
@@ -516,9 +513,9 @@ class LLM(BaseLLM):
             print(output)
             ```
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(LLMPredictStartEvent(template=prompt, template_args=prompt_args))
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
         self._log_template_data(prompt, **prompt_args)
 
         if self.metadata.is_chat_model:
@@ -531,7 +528,7 @@ class LLM(BaseLLM):
             output = response.text
 
         parsed_output = self._parse_output(output)
-        dispatch_event(LLMPredictEndEvent(output=parsed_output))
+        dispatcher.event(LLMPredictEndEvent(output=parsed_output))
         return parsed_output
 
     @dispatcher.span
@@ -563,8 +560,9 @@ class LLM(BaseLLM):
         """
         self._log_template_data(prompt, **prompt_args)
 
-        dispatch_event = dispatcher.get_dispatch_event()
-        dispatch_event(LLMPredictStartEvent(template=prompt, template_args=prompt_args))
+        dispatcher.event(
+            LLMPredictStartEvent(template=prompt, template_args=prompt_args)
+        )
         if self.metadata.is_chat_model:
             messages = self._get_messages(prompt, **prompt_args)
             chat_response = await self.astream_chat(messages)
