@@ -20,7 +20,7 @@ def arize_phoenix_callback_handler(**kwargs: Any) -> BaseCallbackHandler:
         )
 
         LlamaIndexInstrumentor().instrument(
-            tracer_provider=kwargs.get("trace_provider", tracer_provider)
+            tracer_provider=kwargs.get("tracer_provider", tracer_provider)
         )
     except ImportError:
         # using an older version of arize
