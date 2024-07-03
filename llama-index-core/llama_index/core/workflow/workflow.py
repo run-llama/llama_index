@@ -1,8 +1,8 @@
 import asyncio
-
+import warnings
 
 from .decorators import step
-from .events import StartEvent, EndEvent
+from .events import StartEvent, StopEvent, Event, EventType
 from .utils import get_steps_from_class
 
 
@@ -16,46 +16,47 @@ class Workflow:
         self._timeout = timeout
         self._queues = {}
         self._tasks = set()
+        self._events = []
 
         self.prepare()
         self.loop = None
-        self.events = []
 
     def prepare(self):
         for name, step in get_steps_from_class(self):
             self._queues[name] = asyncio.Queue()
 
-            async def _task(queue, meth, target_events):
+            async def _task(name, queue, step, target_events):
                 while True:
                     ev = await queue.get()
-                    if type(ev) != target_event:
+                    if type(ev) not in target_events:
                         continue
 
-                    new_ev = await meth(ev)
+                    new_ev = await step(ev)
                     if new_ev is None:
-                        break
+                        continue
 
-                    self.send_event(new_ev)
+                    if not isinstance(new_ev, Event):
+                        warnings.warn(
+                            f"Step function {name} didn't return an Event instance. Returned value: {new_ev}"
+                        )
+                    else:
+                        self.send_event(new_ev)
 
-            t = asyncio.create_task(
-                _task(self._queues[name], step, getattr(step, "__target_events"))
+            self._tasks.add(
+                asyncio.create_task(
+                    _task(
+                        name, self._queues[name], step, getattr(step, "__target_events")
+                    )
+                )
             )
-            self.tasks.add(t)
-
-    def subscribe(self):
-        task_id = len(self.queues) + 1
-        self.queues[task_id] = asyncio.Queue()
-        return task_id
-
-    def unsubscribe(self, task_id):
-        del self.queues[task_id]
 
     def send_event(self, message):
-        self.events.append(message)
-        for queue in self.queues.values():
+        for queue in self._queues.values():
             queue.put_nowait(message)
+        self._events.append(message)
 
     async def run(self, **kwargs):
+        self._events = []
         async with asyncio.timeout(self.timeout):
             self.send_event(StartEvent(kwargs))
             try:
@@ -63,9 +64,10 @@ class Workflow:
             except asyncio.CancelledError:
                 pass
 
-    @step
-    async def done(self, ev: EndEvent):
-        for t in self.tasks:
+    @step(StopEvent)
+    async def done(self, _: EventType):
+        """Tears down the whole workflow and stop execution."""
+        for t in self._tasks:
             t.cancel()
         print("Broker log:")
-        print("\n".join(str(type(ev).__name__) for ev in self.events))
+        print("\n".join(str(type(ev).__name__) for ev in self._events))
