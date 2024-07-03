@@ -33,6 +33,7 @@ def box_reader(box_integration_testing_config: BoxConfigCCG):
 
 def get_testing_data() -> dict:
     return {
+        "disable_slow_tests": True,
         "test_folder_id": "273257908044",
         "test_doc_id": "1579334243393",
         "test_ppt_id": "994852771390",
@@ -82,10 +83,9 @@ def test_box_reader_csv(box_reader: BoxReader):
 
 def test_box_reader_folder(box_reader: BoxReader):
     # Very slow test
-    if False:
-        raise pytest.skip(
-            f"Create a .env file with the Box credentials to run integration tests."
-        )
     test_data = get_testing_data()
+    if test_data["disable_slow_tests"]:
+        raise pytest.skip(f"Slow integration tests are disabled.")
+
     docs = box_reader.load_data(folder_id=test_data["test_folder_id"])
     assert len(docs) >= 1
