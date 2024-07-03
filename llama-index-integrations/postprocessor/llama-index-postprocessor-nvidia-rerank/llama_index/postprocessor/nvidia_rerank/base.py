@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, Literal, Generator
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
@@ -138,19 +138,10 @@ class NVIDIARerank(BaseNodePostprocessor):
             "Accept": "application/json",
         }
 
-        url = self._base_url + "/models"
+        url = urljoin(self._base_url, "/models")
         response = session.get(url, headers=_headers)
         response.raise_for_status()
-        # expected response format:
-        # {
-        #     "data": [
-        #         {
-        #             "id": 0,
-        #             "root": 0.0
-        #         },
-        #         ...
-        #     ]
-        # }
+
         assert (
             "data" in response.json()
         ), "Response does not contain expected 'data' key"

@@ -28,12 +28,11 @@ def mock_unknown_urls(httpx_mock: HTTPXMock, base_url: str):
         ]
     }
 
-    # for url in UNKNOWN_URLS:
     if base_url.endswith("/"):
         base_url = base_url[:-1]
 
     httpx_mock.add_response(
-        url=f"{base_url}/models",  # Ensure URL doesn't end with a '/'
+        url=f"{base_url}/models",
         method="GET",
         json=mock_response,
         status_code=200,
