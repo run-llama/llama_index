@@ -1552,13 +1552,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.52"
+version = "0.10.52.post1"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.52-py3-none-any.whl", hash = "sha256:fdb580604f5152c9fdf8ccba1c0ffb46313e43a40864d36ba61f8019b2b11ea0"},
-    {file = "llama_index_core-0.10.52.tar.gz", hash = "sha256:97dd932213fc38c932d13549fe7e1c3aac2856deac77deae9ea960bea2f1f802"},
+    {file = "llama_index_core-0.10.52.post1-py3-none-any.whl", hash = "sha256:df74890d4df65c5973b58a482487070fea9384cf5c53fcb708b3661bcca9c44c"},
+    {file = "llama_index_core-0.10.52.post1.tar.gz", hash = "sha256:48a2f4891eefed6909cc545784f224df315b1c3e5ca2cb587c4e8325d4a9e5ce"},
 ]
 
 [package.dependencies]
@@ -1656,13 +1656,13 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.1.24"
+version = "0.1.25"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.1.24-py3-none-any.whl", hash = "sha256:c7b71cd34765e2d080d5eaf23c602877cc74fea162b59d53965273b2d4c4a56a"},
-    {file = "llama_index_llms_openai-0.1.24.tar.gz", hash = "sha256:9031bd155c303f89cc51cfcc75d7d6f12fffa4274f2f9c7f67d4140350d13d56"},
+    {file = "llama_index_llms_openai-0.1.25-py3-none-any.whl", hash = "sha256:d1922ad2f2bb4697a6ee2f61793aeb2f5c5606302639559dd9bb0a1d6ab9e73f"},
+    {file = "llama_index_llms_openai-0.1.25.tar.gz", hash = "sha256:49750f71d58e762a597ce639a2ccb119195c47aefa8a48c55c77be8a5cec4bc5"},
 ]
 
 [package.dependencies]
@@ -4466,4 +4466,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "766dcb08bed3cd6b201533a8246731003689d535259a017f2b22c320b34ff6c7"
+content-hash = "ebb346b4f4a6a357d572da7edfa74212424025e9b5f6bc57be402150c806d195"
