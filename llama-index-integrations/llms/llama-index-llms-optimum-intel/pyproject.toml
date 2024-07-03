@@ -11,7 +11,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.openvino"
+import_path = "llama_index.llms.OptimumIntelLLM"
 
 [tool.llamahub.class_authors]
 OptimumIntelLLM = "llama-index"
