@@ -604,7 +604,11 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
         if isinstance(user_msg, ChatMessage):
