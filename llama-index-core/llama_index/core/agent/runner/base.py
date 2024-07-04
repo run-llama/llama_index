@@ -559,6 +559,7 @@ class AgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
+        print("!!!====> HERE <++++++++=========!!!!!")
         if chat_history is not None:
             self.memory.set(chat_history)
         task = self.create_task(message)
