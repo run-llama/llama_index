@@ -1,6 +1,9 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import httpx
+from llama_index.core.base.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -18,24 +21,22 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.base.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.llm import (
+    LLMChatEndEvent,
+    LLMChatInProgressEvent,
+    LLMChatStartEvent,
+    LLMCompletionEndEvent,
+    LLMCompletionInProgressEvent,
+    LLMCompletionStartEvent,
 )
-from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
-    MultiModalLLMMetadata,
-)
+from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
 from llama_index.llms.openai.utils import (
     from_openai_message,
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
-from llama_index.multi_modal_llms.openai.utils import (
-    GPT4V_MODELS,
-    generate_openai_multi_modal_chat_message,
-)
-
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
@@ -44,6 +45,13 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
+
+from llama_index.multi_modal_llms.openai.utils import (
+    GPT4V_MODELS,
+    generate_openai_multi_modal_chat_message,
+)
+
+dispatcher = get_dispatcher(__name__)
 
 
 class OpenAIMultiModal(MultiModalLLM):
@@ -214,9 +222,22 @@ class OpenAIMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+        messages = [
+            generate_openai_multi_modal_chat_message(
+                prompt=prompt,
+                role=MessageRole.USER,
+                image_documents=image_documents,
+                image_detail=self.image_detail,
+            )
+        ]
+        dispatcher.event(
+            LLMChatStartEvent(
+                model_dict={},
+                messages=messages,
+                additional_kwargs=kwargs,
+            )
         )
+        message_dict = to_openai_message_dicts(messages)
         response = self._client.chat.completions.create(
             messages=message_dict,
             stream=False,
@@ -250,9 +271,22 @@ class OpenAIMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+        messages = [
+            generate_openai_multi_modal_chat_message(
+                prompt=prompt,
+                role=MessageRole.USER,
+                image_documents=image_documents,
+                image_detail=self.image_detail,
+            )
+        ]
+        dispatcher.event(
+            LLMChatStartEvent(
+                model_dict={},
+                messages=messages,
+                additional_kwargs=kwargs,
+            )
         )
+        message_dict = to_openai_message_dicts(messages)
 
         def gen() -> CompletionResponseGen:
             text = ""
