@@ -23,12 +23,7 @@ from llama_index.core.constants import (
 )
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.llm import (
-    LLMChatEndEvent,
-    LLMChatInProgressEvent,
     LLMChatStartEvent,
-    LLMCompletionEndEvent,
-    LLMCompletionInProgressEvent,
-    LLMCompletionStartEvent,
 )
 from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
