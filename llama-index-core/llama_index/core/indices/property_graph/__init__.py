@@ -26,6 +26,9 @@ from llama_index.core.indices.property_graph.transformations.schema_llm import (
 from llama_index.core.indices.property_graph.transformations.simple_llm import (
     SimpleLLMPathExtractor,
 )
+from llama_index.core.indices.property_graph.transformations.advanced_llm import (
+    AdvancedLLMPathExtractor,
+)
 from llama_index.core.indices.property_graph.utils import default_parse_triplets_fn
 
 __all__ = [
@@ -43,6 +46,7 @@ __all__ = [
     "ImplicitPathExtractor",
     "SchemaLLMPathExtractor",
     "SimpleLLMPathExtractor",
+    "AdvancedLLMPathExtractor",
     # Utils
     "default_parse_triplets_fn",
     "CUSTOM_RETRIEVE_TYPE",
