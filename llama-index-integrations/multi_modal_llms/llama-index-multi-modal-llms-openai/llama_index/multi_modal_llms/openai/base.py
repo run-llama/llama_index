@@ -21,7 +21,6 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
@@ -43,8 +42,6 @@ from llama_index.multi_modal_llms.openai.utils import (
     GPT4V_MODELS,
     generate_openai_multi_modal_chat_message,
 )
-
-dispatcher = get_dispatcher(__name__)
 
 
 class OpenAIMultiModal(MultiModalLLM):
