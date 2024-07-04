@@ -14,7 +14,7 @@ from llama_index.core.graph_stores.types import (
 )
 
 from llama_index.core.prompts.default_prompts import (
-    DEFAULT_ADVANCED_EXTRACT_PROMPT,
+    DEFAULT_DYNAMIC_EXTRACT_PROMPT,
 )
 
 def default_parse_advanced_triplets(llm_output: str) -> List[tuple]:
@@ -42,9 +42,9 @@ def default_parse_advanced_triplets(llm_output: str) -> List[tuple]:
     
     return triplets
 
-class AdvancedLLMPathExtractor(TransformComponent):
+class DynamicLLMPathExtractor(TransformComponent):
     """
-    AdvancedLLMPathExtractor is a component for extracting structured information from text
+    DynamicLLMPathExtractor is a component for extracting structured information from text
     to build a knowledge graph. It uses an LLM to identify entities and their relationships,
     with the ability to infer entity types and expand upon an initial ontology.
 
@@ -87,7 +87,7 @@ class AdvancedLLMPathExtractor(TransformComponent):
         allowed_relation_types: Optional[List[str]] = None,
     ) -> None:
         """
-        Initialize the AdvancedLLMPathExtractor.
+        Initialize the DynamicLLMPathExtractor.
 
         Args:
             llm (Optional[LLM]): The language model to use. If None, uses the default from Settings.
@@ -104,7 +104,7 @@ class AdvancedLLMPathExtractor(TransformComponent):
             extract_prompt = PromptTemplate(extract_prompt)
 
         if extract_prompt is None:
-            extract_prompt = DEFAULT_ADVANCED_EXTRACT_PROMPT
+            extract_prompt = DEFAULT_DYNAMIC_EXTRACT_PROMPT
 
         super().__init__(
             llm=llm or Settings.llm,
@@ -119,7 +119,7 @@ class AdvancedLLMPathExtractor(TransformComponent):
     @classmethod
     def class_name(cls) -> str:
         """Return the name of the class."""
-        return "AdvancedLLMPathExtractor"
+        return "DynamicLLMPathExtractor"
 
     def __call__(
         self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any

@@ -333,7 +333,7 @@ DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
     prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT,
 )
 
-DEFAULT_ADVANCED_EXTRACT_PROMPT = PromptTemplate(
+DEFAULT_DYNAMIC_EXTRACT_PROMPT = PromptTemplate(
     """
     You are a state-of-the-art algorithm designed to extract structured information to build a knowledge graph. Your task is to identify entities and their relationships in the provided text.
 
