@@ -113,6 +113,11 @@ class FunctionCallingLLM(LLM):
         else:
             if len(tool_outputs) > 1:
                 raise ValueError("Invalid")
+            elif len(tool_outputs) == 0:
+                return AgentChatResponse(
+                    response=response.message.content, sources=tool_outputs
+                )
+
             return AgentChatResponse(
                 response=tool_outputs[0].content, sources=tool_outputs
             )
@@ -166,6 +171,11 @@ class FunctionCallingLLM(LLM):
         else:
             if len(tool_outputs) > 1:
                 raise ValueError("Invalid")
+            elif len(tool_outputs) == 0:
+                return AgentChatResponse(
+                    response=response.message.content, sources=tool_outputs
+                )
+
             return AgentChatResponse(
                 response=tool_outputs[0].content, sources=tool_outputs
             )

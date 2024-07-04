@@ -264,7 +264,7 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
     for key, value in dict2.items():
         if key not in new_dict:
             new_dict[key] = value
-        if key in new_dict:
+        else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
             else:

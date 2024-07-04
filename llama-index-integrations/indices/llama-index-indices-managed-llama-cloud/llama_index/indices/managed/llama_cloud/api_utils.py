@@ -75,4 +75,6 @@ def get_pipeline_create(
         name=pipeline_name,
         configured_transformations=configured_transformation_items,
         pipeline_type=pipeline_type,
+        # we are uploading document dicrectly, so we don't need llama parse
+        llama_parse_enabled=False,
     )

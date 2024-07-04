@@ -72,8 +72,8 @@ class TextToCypherRetriever(BasePGRetriever):
             filtered = {}
             for key, value in query_output.items():
                 if (
-                    key in self.allowed_output_fields
-                    or self.allowed_output_fields is None
+                    self.allowed_output_fields is None
+                    or key in self.allowed_output_fields
                 ):
                     filtered[key] = value
                 elif isinstance(value, (dict, list)):
@@ -101,6 +101,7 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
+        parsed_cypher_query = response
         if self.allowed_output_fields is not None:
             parsed_cypher_query = self._parse_generated_cyher(response)
 
@@ -134,6 +135,7 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
+        parsed_cypher_query = response
         if self.allowed_output_fields is not None:
             parsed_cypher_query = self._parse_generated_cyher(response)
 
