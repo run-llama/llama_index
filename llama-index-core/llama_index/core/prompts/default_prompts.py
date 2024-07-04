@@ -333,88 +333,39 @@ DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
     prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT,
 )
 
+DEFAULT_DYNAMIC_EXTRACT_TMPL = (
+    "Extract up to {max_knowledge_triplets} knowledge triplets from the given text. "
+    "Each triplet should be in the form of (head, relation, tail) with their respective types.\n"
+    "---------------------\n"
+    "INITIAL ONTOLOGY:\n"
+    "Entity Types: {allowed_entity_types}\n"
+    "Relation Types: {allowed_relation_types}\n"
+    "\n"
+    "Use these types as a starting point, but introduce new types if necessary based on the context.\n"
+    "\n"
+    "GUIDELINES:\n"
+    "- Output in JSON format: [{{'head': '', 'head_type': '', 'relation': '', 'tail': '', 'tail_type': ''}}]\n"
+    "- Use the most complete form for entities (e.g., 'United States of America' instead of 'USA')\n"
+    "- Keep entities concise (3-5 words max)\n"
+    "- Break down complex phrases into multiple triplets\n"
+    "- Ensure the knowledge graph is coherent and easily understandable\n"
+    "---------------------\n"
+    "EXAMPLE:\n"
+    "Text: Tim Cook, CEO of Apple Inc., announced the new Apple Watch that monitors heart health. "
+    "UC Berkeley researchers studied the benefits of apples.\n"
+    "Output:\n"
+    "[{{'head': 'Tim Cook', 'head_type': 'PERSON', 'relation': 'CEO_OF', 'tail': 'Apple Inc.', 'tail_type': 'COMPANY'}},\n"
+    " {{'head': 'Apple Inc.', 'head_type': 'COMPANY', 'relation': 'PRODUCES', 'tail': 'Apple Watch', 'tail_type': 'PRODUCT'}},\n"
+    " {{'head': 'Apple Watch', 'head_type': 'PRODUCT', 'relation': 'MONITORS', 'tail': 'heart health', 'tail_type': 'HEALTH_METRIC'}},\n"
+    " {{'head': 'UC Berkeley', 'head_type': 'UNIVERSITY', 'relation': 'STUDIES', 'tail': 'benefits of apples', 'tail_type': 'RESEARCH_TOPIC'}}]\n"
+    "---------------------\n"
+    "Text: {text}\n"
+    "Output:\n"
+)
+
 DEFAULT_DYNAMIC_EXTRACT_PROMPT = PromptTemplate(
-    """
-    You are a state-of-the-art algorithm designed to extract structured information to build a knowledge graph. Your task is to identify entities and their relationships in the provided text.
-
-    MAIN INSTRUCTIONS:
-    1. Generate the output in JSON format containing a list of JSON objects.
-    2. Each object must have the keys: "head", "head_type", "relation", "tail", and "tail_type".
-    3. The "head" key must contain the text of the extracted entity.
-    4. The "head_type" key must contain the type of the extracted entity.
-    5. The "relation" key must contain the type of relationship between "head" and "tail".
-    6. The "tail" key must represent the text of an extracted entity that is the target of the relationship.
-    7. The "tail_type" key must contain the type of the target entity.
-
-    IMPORTANT GUIDELINES:
-    - Extract as many entities and relationships as possible.
-    - Maintain entity consistency: always use the most complete identifier for an entity.
-    - For entities with multiple representations (e.g., full name vs. initials), always choose the most complete and descriptive form.
-    - Ensure that the knowledge graph is coherent and easily understandable.
-    - Do not add any explanation or additional text, only the requested JSON.
-    - Keep entities concise: Entities should typically be no longer than 3-5 words.
-    - Break down complex phrases: If a potential entity is a long phrase, break it into multiple entities and relationships.
-    - Disambiguate entities with the same name but different types (e.g., Apple the company vs. apple the fruit).
-
-    INITIAL ONTOLOGY:
-    Entity Types: {allowed_entity_types}
-    Relationship Types: {allowed_relation_types}
-
-    Use the above types as a starting point, but feel free to introduce new types if necessary based on the context of the text.
-
-    EXAMPLE:
-    Text: "Tim Cook (TC), CEO of Apple Inc., announced that the company's new Apple Watch can monitor heart health. Meanwhile, scientists at UC Berkeley studied the nutritional benefits of eating an apple a day."
-    Output:
-    [
-        {{
-            "head": "Tim Cook",
-            "head_type": "PERSON",
-            "relation": "HAS_ALIAS",
-            "tail": "TC",
-            "tail_type": "ABBREVIATION"
-        }},
-        {{
-            "head": "Tim Cook",
-            "head_type": "PERSON",
-            "relation": "CEO_OF",
-            "tail": "Apple Inc.",
-            "tail_type": "COMPANY"
-        }},
-        {{
-            "head": "Apple Inc.",
-            "head_type": "COMPANY",
-            "relation": "PRODUCES",
-            "tail": "Apple Watch",
-            "tail_type": "PRODUCT"
-        }},
-        {{
-            "head": "Apple Watch",
-            "head_type": "PRODUCT",
-            "relation": "MONITORS",
-            "tail": "heart health",
-            "tail_type": "HEALTH_METRIC"
-        }},
-        {{
-            "head": "UC Berkeley",
-            "head_type": "UNIVERSITY",
-            "relation": "CONDUCTED_STUDY_ON",
-            "tail": "nutritional benefits",
-            "tail_type": "RESEARCH_TOPIC"
-        }},
-        {{
-            "head": "apple",
-            "head_type": "FRUIT",
-            "relation": "HAS_PROPERTY",
-            "tail": "nutritional benefits",
-            "tail_type": "HEALTH_ATTRIBUTE"
-        }}
-    ]
-
-    Text to analyze:
-    {text}
-
-    JSON Output:
-    """
+    DEFAULT_DYNAMIC_EXTRACT_TMPL,
+    prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
 )
 
 ############################################

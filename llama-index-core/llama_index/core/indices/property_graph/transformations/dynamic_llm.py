@@ -158,11 +158,11 @@ class DynamicLLMPathExtractor(TransformComponent):
                 text=text,
                 max_knowledge_triplets=self.max_triplets_per_chunk,
                 allowed_entity_types=", ".join(self.allowed_entity_types)
-                if self.allowed_entity_types
-                else "No initial entity types provided",
+                if len(self.allowed_entity_types) > 0
+                else "No entity types provided, You are free to define them.",
                 allowed_relation_types=", ".join(self.allowed_relation_types)
-                if self.allowed_relation_types
-                else "No initial relation types provided",
+                if len(self.allowed_relation_types) > 0
+                else "No relation types provided, You are free to define them.",
             )
             triplets = self.parse_fn(llm_response)
         except Exception as e:
