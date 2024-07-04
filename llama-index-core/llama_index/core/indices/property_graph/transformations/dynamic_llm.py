@@ -17,6 +17,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_DYNAMIC_EXTRACT_PROMPT,
 )
 
+
 def default_parse_advanced_triplets(llm_output: str) -> List[tuple]:
     """
     Parse the LLM output and convert it into a list of entity-relation-entity triplets.
@@ -35,12 +36,15 @@ def default_parse_advanced_triplets(llm_output: str) -> List[tuple]:
 
     triplets = []
     for item in parsed_output:
-        head = EntityNode(name=item['head'], label=item['head_type'])
-        tail = EntityNode(name=item['tail'], label=item['tail_type'])
-        relation = Relation(source_id=head.id, target_id=tail.id, label=item['relation'])
+        head = EntityNode(name=item["head"], label=item["head_type"])
+        tail = EntityNode(name=item["tail"], label=item["tail_type"])
+        relation = Relation(
+            source_id=head.id, target_id=tail.id, label=item["relation"]
+        )
         triplets.append((head, relation, tail))
-    
+
     return triplets
+
 
 class DynamicLLMPathExtractor(TransformComponent):
     """
@@ -153,12 +157,16 @@ class DynamicLLMPathExtractor(TransformComponent):
                 self.extract_prompt,
                 text=text,
                 max_knowledge_triplets=self.max_triplets_per_chunk,
-                allowed_entity_types=", ".join(self.allowed_entity_types) if self.allowed_entity_types else "No initial entity types provided",
-                allowed_relation_types=", ".join(self.allowed_relation_types) if self.allowed_relation_types else "No initial relation types provided",
+                allowed_entity_types=", ".join(self.allowed_entity_types)
+                if self.allowed_entity_types
+                else "No initial entity types provided",
+                allowed_relation_types=", ".join(self.allowed_relation_types)
+                if self.allowed_relation_types
+                else "No initial relation types provided",
             )
             triplets = self.parse_fn(llm_response)
         except Exception as e:
-            print(f"Error during extraction: {str(e)}")
+            print(f"Error during extraction: {e!s}")
             triplets = []
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
