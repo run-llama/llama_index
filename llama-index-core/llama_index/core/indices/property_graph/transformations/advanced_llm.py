@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Callable, List, Optional, Union, Literal
+from typing import Any, Callable, List, Optional, Union
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.schema import TransformComponent, BaseNode
@@ -16,8 +16,6 @@ from llama_index.core.graph_stores.types import (
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_ADVANCED_EXTRACT_PROMPT,
 )
-
-
 
 def default_parse_advanced_triplets(llm_output: str) -> List[tuple]:
     """
@@ -50,10 +48,15 @@ class AdvancedLLMPathExtractor(TransformComponent):
     to build a knowledge graph. It uses an LLM to identify entities and their relationships,
     with the ability to infer entity types and expand upon an initial ontology.
 
-    This extractor improves upon SimpleLLMPathExtractor  by:
-    1.
+    This extractor improves upon SimpleLLMPathExtractor by:
+    1. Detecting entity types instead of labeling them generically as "entity" and "chunk".
+    2. Accepting an initial ontology as input, specifying desired nodes and relationships.
+    3. Encouraging ontology expansion through its prompt design.
 
-    This extractor is different from SchemaLLMPathExtractor because : 
+    This extractor differs from SchemaLLMPathExtractor because:
+    1. It interprets the passed possible entities and relations as an initial ontology.
+    2. It encourages expansion of the initial ontology in the prompt.
+    3. It aims for flexibility in knowledge graph construction while still providing guidance.
 
     Attributes:
         llm (LLM): The language model used for extraction.
