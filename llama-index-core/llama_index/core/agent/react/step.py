@@ -301,7 +301,12 @@ class ReActAgentWorker(BaseAgentWorker):
                 EventPayload.TOOL: tool.metadata,
             },
         ) as event:
+            import time
+            start_time = time.time()
             tool_output = await tool.acall(**reasoning_step.action_input)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f'USED TOOL for action {reasoning_step.action}. Took {elapsed_time} seconds')
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
 
         task.extra_state["sources"].append(tool_output)
@@ -488,7 +493,12 @@ class ReActAgentWorker(BaseAgentWorker):
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
+        import time
+        start_time = time.time()
         chat_response = await self._llm.achat(input_chat)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f'USING LLM: {elapsed_time} seconds')
         # given react prompt outputs, call tools or return response
         reasoning_steps, is_done = await self._aprocess_actions(
             task, tools, output=chat_response

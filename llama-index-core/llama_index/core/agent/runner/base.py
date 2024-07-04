@@ -2,6 +2,7 @@ import os
 from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
+import time 
 
 from llama_index.core.agent.types import (
     BaseAgent,
@@ -566,10 +567,14 @@ class AgentRunner(BaseAgentRunner):
 
         result_output = None
         while True:
+            start_time = time.time()
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
                 task.task_id, mode=mode, tool_choice=tool_choice
             )
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f'TOOL CHOICE: {tool_choice} took {elapsed_time} seconds.')
 
             if cur_step_output.is_last:
                 result_output = cur_step_output
