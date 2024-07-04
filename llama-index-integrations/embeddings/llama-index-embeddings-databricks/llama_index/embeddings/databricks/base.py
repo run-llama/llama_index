@@ -31,7 +31,7 @@ class DatabricksEmbedding(BaseEmbedding):
     """
 
     additional_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs for the OpenAI API."
+        default_factory=dict, description="Additional kwargs as for the OpenAI API."
     )
 
     model: str = Field(
@@ -50,15 +50,8 @@ class DatabricksEmbedding(BaseEmbedding):
     reuse_client: bool = Field(
         default=True,
         description=(
-            "Reuse the OpenAI client between requests. When doing anything with large "
+            "Reuse the client between requests. When doing anything with large "
             "volumes of async API calls, setting this to false can improve stability."
-        ),
-    )
-    dimensions: Optional[int] = Field(
-        default=None,
-        description=(
-            "The number of dimensions on the output embedding vectors. "
-            "Works only with v3 embedding models."
         ),
     )
 
@@ -73,7 +66,6 @@ class DatabricksEmbedding(BaseEmbedding):
         model: str,
         endpoint: Optional[str] = None,
         embed_batch_size: int = 100,
-        dimensions: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         max_retries: int = 10,
@@ -86,8 +78,6 @@ class DatabricksEmbedding(BaseEmbedding):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
-        if dimensions is not None:
-            additional_kwargs["dimensions"] = dimensions
 
         api_key = get_from_param_or_env("api_key", api_key, "DATABRICKS_TOKEN")
         endpoint = get_from_param_or_env(
@@ -98,7 +88,6 @@ class DatabricksEmbedding(BaseEmbedding):
             model=model,
             endpoint=endpoint,
             embed_batch_size=embed_batch_size,
-            dimensions=dimensions,
             callback_manager=callback_manager,
             model_name=model,
             additional_kwargs=additional_kwargs,
