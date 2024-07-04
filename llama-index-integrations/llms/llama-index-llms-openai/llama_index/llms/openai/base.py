@@ -571,7 +571,7 @@ class OpenAI(LLM):
             astream_complete_fn = self._astream_complete
         return await astream_complete_fn(prompt, **kwargs)
 
-    # @llm_retry_decorator
+    @llm_retry_decorator
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
