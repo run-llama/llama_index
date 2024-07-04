@@ -58,7 +58,6 @@ nav:
           - Chatbots: ./understanding/putting_it_all_together/chatbots/
           - Structured data: ./understanding/putting_it_all_together/structured_data/
           - Agents: ./understanding/putting_it_all_together/agents.md
-          - Graphs: ./understanding/putting_it_all_together/graphs.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md

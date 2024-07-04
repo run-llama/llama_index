@@ -1,5 +1,6 @@
 """KG Retrievers."""
 
+import deprecated
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -61,6 +62,13 @@ class KGRetrieverMode(str, Enum):
     HYBRID = "hybrid"
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KGTableRetriever is deprecated, it is recommended to use "
+        "PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KGTableRetriever(BaseRetriever):
     """KG Table Retriever.
 
@@ -407,6 +415,13 @@ DEFAULT_SYNONYM_EXPAND_PROMPT = PromptTemplate(
 )
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KnowledgeGraphRAGRetriever is deprecated, it is recommended to use "
+        "PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KnowledgeGraphRAGRetriever(BaseRetriever):
     """
     Knowledge Graph RAG retriever.
