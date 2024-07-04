@@ -22,7 +22,7 @@ from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.instrumentation.events.llm import LLMChatStartEvent
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
 from llama_index.llms.openai.utils import (
@@ -211,26 +211,14 @@ class OpenAIMultiModal(MultiModalLLM):
             "total_tokens": usage.get("total_tokens", 0),
         }
 
+    @llm_completion_callback()
     def _complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        messages = [
-            generate_openai_multi_modal_chat_message(
-                prompt=prompt,
-                role=MessageRole.USER,
-                image_documents=image_documents,
-                image_detail=self.image_detail,
-            )
-        ]
-        dispatcher.event(
-            LLMChatStartEvent(
-                model_dict={},
-                messages=messages,
-                additional_kwargs=kwargs,
-            )
+        message_dict = self._get_multi_modal_chat_messages(
+            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
-        message_dict = to_openai_message_dicts(messages)
         response = self._client.chat.completions.create(
             messages=message_dict,
             stream=False,
@@ -243,6 +231,7 @@ class OpenAIMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_chat_callback()
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
@@ -260,26 +249,14 @@ class OpenAIMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_completion_callback()
     def _stream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        messages = [
-            generate_openai_multi_modal_chat_message(
-                prompt=prompt,
-                role=MessageRole.USER,
-                image_documents=image_documents,
-                image_detail=self.image_detail,
-            )
-        ]
-        dispatcher.event(
-            LLMChatStartEvent(
-                model_dict={},
-                messages=messages,
-                additional_kwargs=kwargs,
-            )
+        message_dict = self._get_multi_modal_chat_messages(
+            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
-        message_dict = to_openai_message_dicts(messages)
 
         def gen() -> CompletionResponseGen:
             text = ""
@@ -308,6 +285,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
         return gen()
 
+    @llm_chat_callback()
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -382,6 +360,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     # ===== Async Endpoints =====
 
+    @llm_completion_callback()
     async def _acomplete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponse:
@@ -406,6 +385,7 @@ class OpenAIMultiModal(MultiModalLLM):
     ) -> CompletionResponse:
         return await self._acomplete(prompt, image_documents, **kwargs)
 
+    @llm_completion_callback()
     async def _astream_complete(
         self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
@@ -441,6 +421,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
         return gen()
 
+    @llm_chat_callback()
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -460,6 +441,7 @@ class OpenAIMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_chat_callback()
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
