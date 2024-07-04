@@ -1,6 +1,6 @@
 import asyncio
-import json
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Tuple
+import re 
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.schema import TransformComponent, BaseNode
@@ -17,34 +17,33 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_DYNAMIC_EXTRACT_PROMPT,
 )
 
-
-def default_parse_advanced_triplets(llm_output: str) -> List[tuple]:
+def default_parse_dynamic_triplets(llm_output: str) -> List[Tuple[EntityNode, Relation, EntityNode]]:
     """
     Parse the LLM output and convert it into a list of entity-relation-entity triplets.
+    This function is flexible and can handle various output formats.
 
     Args:
-        llm_output (str): The JSON string output from the LLM.
+        llm_output (str): The output from the LLM, which may be JSON-like or plain text.
 
     Returns:
-        List[tuple]: A list of (head, relation, tail) triplets, where head and tail are EntityNodes,
-                     and relation is a Relation object.
+        List[Tuple[EntityNode, Relation, EntityNode]]: A list of triplets.
     """
-    try:
-        parsed_output = json.loads(llm_output)
-    except json.JSONDecodeError:
-        return []
-
     triplets = []
-    for item in parsed_output:
-        head = EntityNode(name=item["head"], label=item["head_type"])
-        tail = EntityNode(name=item["tail"], label=item["tail_type"])
-        relation = Relation(
-            source_id=head.id, target_id=tail.id, label=item["relation"]
-        )
-        triplets.append((head, relation, tail))
+
+    # Regular expression to match the structure of each dictionary in the list
+    pattern = r"{'head': '(.*?)', 'head_type': '(.*?)', 'relation': '(.*?)', 'tail': '(.*?)', 'tail_type': '(.*?)'}"
+    
+    # Find all matches in the output
+    matches = re.findall(pattern, llm_output)
+
+    for match in matches:
+        head, head_type, relation, tail, tail_type = match
+        head_node = EntityNode(name=head, label=head_type)
+        tail_node = EntityNode(name=tail, label=tail_type)
+        relation_node = Relation(source_id=head_node.id, target_id=tail_node.id, label=relation)
+        triplets.append((head_node, relation_node, tail_node))
 
     return triplets
-
 
 class DynamicLLMPathExtractor(TransformComponent):
     """
@@ -84,7 +83,7 @@ class DynamicLLMPathExtractor(TransformComponent):
         self,
         llm: Optional[LLM] = None,
         extract_prompt: Optional[Union[str, PromptTemplate]] = None,
-        parse_fn: Callable = default_parse_advanced_triplets,
+        parse_fn: Callable = default_parse_dynamic_triplets,
         max_triplets_per_chunk: int = 10,
         num_workers: int = 4,
         allowed_entity_types: Optional[List[str]] = None,
