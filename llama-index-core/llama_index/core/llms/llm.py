@@ -613,6 +613,12 @@ class LLM(BaseLLM):
 
         if isinstance(user_msg, ChatMessage):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -665,6 +671,12 @@ class LLM(BaseLLM):
 
         if isinstance(user_msg, ChatMessage):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -675,7 +687,7 @@ class LLM(BaseLLM):
         step = worker.initialize_step(task)
 
         try:
-            output = await worker.arun_step(step, task).output
+            output = (await worker.arun_step(step, task)).output
 
             # react agent worker inserts a "Observation: " prefix to the response
             if output.response and output.response.startswith("Observation: "):
