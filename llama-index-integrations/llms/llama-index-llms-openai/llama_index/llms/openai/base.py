@@ -526,7 +526,9 @@ class OpenAI(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         achat_fn: Callable[..., Awaitable[ChatResponse]]
+        print('==>Entered achat<==')
         if self._use_chat_completions(kwargs):
+            print('==>Entering _achat<==')
             achat_fn = self._achat
         else:
             achat_fn = acompletion_to_chat_decorator(self._acomplete)
@@ -573,11 +575,17 @@ class OpenAI(LLM):
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        print('==>Entering _achat<==')
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
+        import time
+        start_time = time.time()
         response = await aclient.chat.completions.create(
             messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
         )
+        end_time = time.time()
+        elapsed_time = start_time = end_time
+        print(f"==> AI took {elapsed_time} seconds")
         message_dict = response.choices[0].message
         message = from_openai_message(message_dict)
         logprobs_dict = response.choices[0].logprobs
