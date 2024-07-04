@@ -269,7 +269,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
                 prompt += (
                     "\n".join(
                         [
-                            f"Calling function: {call.function.name} with args: {call.function.arguments}"
+                            f"Calling a function: {call!s}"
                             for call in msg.additional_kwargs.get("tool_calls", [])
                         ]
                     )
