@@ -22,9 +22,7 @@ from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.instrumentation.events.llm import (
-    LLMChatStartEvent,
-)
+from llama_index.core.instrumentation.events.llm import LLMChatStartEvent
 from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
 from llama_index.llms.openai.utils import (
