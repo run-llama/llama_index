@@ -5,6 +5,7 @@ Build a KG by extracting triplets, and leveraging the KG during query-time.
 """
 
 import logging
+import deprecated
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -33,6 +34,15 @@ from llama_index.core.utils import get_tqdm_iterable
 logger = logging.getLogger(__name__)
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "The KnowledgeGraphIndex class has been deprecated. "
+        "Please use the new PropertyGraphIndex class instead. "
+        "If a certain graph store integration is missing in the new class, "
+        "please open an issue on the GitHub repository or contribute it!"
+    ),
+)
 class KnowledgeGraphIndex(BaseIndex[KG]):
     """Knowledge Graph Index.
 
