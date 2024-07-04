@@ -54,7 +54,10 @@ def generate_openai_multi_modal_chat_message(
         elif image_document.image_url and image_document.image_url != "":
             image_content = {
                 "type": "image_url",
-                "image_url": image_document.image_url,
+                "image_url": {
+                    "url": image_document.image_url,
+                    "detail": image_detail,
+                },
             }
         elif image_document.image_path and image_document.image_path != "":
             base64_image = encode_image(image_document.image_path)
