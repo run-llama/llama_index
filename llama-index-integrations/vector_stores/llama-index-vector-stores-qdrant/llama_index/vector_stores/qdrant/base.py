@@ -35,7 +35,6 @@ from llama_index.vector_stores.qdrant.utils import (
     fastembed_sparse_encoder,
 )
 from qdrant_client.http import models as rest
-from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
     FieldCondition,
     Filter,
