@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Any, List, Optional, Tuple, Dict
 from enum import Enum
+import urllib.parse
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -301,7 +302,7 @@ class VectaraRetriever(BaseRetriever):
                         continue
 
                     # Yield the summary chunk
-                    chunk = summary["text"]
+                    chunk = urllib.parse.unquote(summary["text"])
                     stream_response.text += chunk
                     stream_response.delta = chunk
                     yield stream_response
@@ -388,7 +389,11 @@ class VectaraRetriever(BaseRetriever):
                 return [], {"text": ""}, ""
 
             summary = {
-                "text": (summaryJson["text"] if self._summary_enabled else None),
+                "text": (
+                    urllib.parse.unquote(summaryJson["text"])
+                    if self._summary_enabled
+                    else None
+                ),
                 "fcs": summaryJson["factualConsistency"]["score"],
             }
             if summaryJson.get("chat", None):
