@@ -29,12 +29,13 @@ license = "MIT"
 maintainers = ["arun-soliton"]
 name = "llama-index-readers-microsoft-sharepoint"
 readme = "README.md"
-version = "0.2.4"
+version = "0.2.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.37.post1"
 requests = "^2.31.0"
+llama-index-readers-file = "^0.1.27"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
