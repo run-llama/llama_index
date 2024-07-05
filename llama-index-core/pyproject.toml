@@ -126,8 +126,6 @@ url = "https://pypi.nvidia.com"
 
 [tool.ruff]
 exclude = [
-    "examples",
-    "llama_index/core/_static",
     "notebooks",
 ]
 ignore = [
