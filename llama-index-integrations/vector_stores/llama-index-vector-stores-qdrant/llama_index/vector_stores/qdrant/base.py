@@ -80,6 +80,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         max_retries (int): maximum number of retries in case of a failure. Defaults to 3
         client_kwargs (Optional[dict]): additional kwargs for QdrantClient and AsyncQdrantClient
         enable_hybrid (bool): whether to enable hybrid search using dense and sparse vectors
+        fastembed_sparse_model (Optional[str]): name of the FastEmbed sparse model to use, if any
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
