@@ -112,6 +112,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
     index_doc_id: bool
+    fastembed_sparse_model: Optional[str]
 
     _client: qdrant_client.QdrantClient = PrivateAttr()
     _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
@@ -132,6 +133,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         max_retries: int = 3,
         client_kwargs: Optional[dict] = None,
         enable_hybrid: bool = False,
+        fastembed_sparse_model: Optional[str] = None,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
@@ -173,13 +175,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._collection_initialized = False
 
         # setup hybrid search if enabled
-        if enable_hybrid:
+        if enable_hybrid or fastembed_sparse_model is not None:
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
-                collection_name
+                collection_name, fastembed_sparse_model=fastembed_sparse_model
             )
             self._sparse_query_fn = (
                 sparse_query_fn
-                or self.get_default_sparse_query_encoder(collection_name)
+                or self.get_default_sparse_query_encoder(
+                    collection_name, fastembed_sparse_model=fastembed_sparse_model
+                )
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
@@ -195,6 +199,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             client_kwargs=client_kwargs or {},
             enable_hybrid=enable_hybrid,
             index_doc_id=index_doc_id,
+            fastembed_sparse_model=fastembed_sparse_model,
         )
 
     @classmethod
@@ -574,7 +579,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     # Newly created collection will have the new sparse vector name
                     sparse_vectors_config={
                         SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams()
+                            index=rest.SparseIndexParams(),
+                            modifier=rest.Modifier.IDF
+                            if "bm42" in self.fastembed_sparse_model
+                            else rest.Modifier.NONE,
                         )
                     },
                 )
@@ -622,7 +630,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     },
                     sparse_vectors_config={
                         SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams()
+                            index=rest.SparseIndexParams(),
+                            modifier=rest.Modifier.IDF
+                            if "bm42" in self.fastembed_sparse_model
+                            else rest.Modifier.NONE,
                         )
                     },
                 )
@@ -1124,17 +1135,23 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
     def get_default_sparse_doc_encoder(
-        self, collection_name: str
+        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
-        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+        if fastembed_sparse_model is not None:
+            return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
+
+        return fastembed_sparse_encoder()
 
     def get_default_sparse_query_encoder(
-        self, collection_name: str
+        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
 
-        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+        if fastembed_sparse_model is not None:
+            return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
+
+        return fastembed_sparse_encoder()
