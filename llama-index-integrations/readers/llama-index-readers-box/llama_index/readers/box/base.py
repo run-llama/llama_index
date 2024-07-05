@@ -12,7 +12,16 @@ from llama_index.core.readers.base import (
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import BaseModel, Field
 
-from box_sdk_gen import BoxAPIError, BoxClient, ByteStream, File, CCGConfig, BoxCCGAuth
+from box_sdk_gen import (
+    BoxAPIError,
+    BoxClient,
+    ByteStream,
+    File,
+    CCGConfig,
+    JWTConfig,
+    BoxCCGAuth,
+    BoxJWTAuth,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +33,7 @@ class _BoxResourcePayload(BaseModel):
 
 # TODO: Implement , ResourcesReaderMixin, FileSystemReaderMixin
 class BoxReader(BasePydanticReader):
-    box_config: CCGConfig
+    box_config: Union[CCGConfig, JWTConfig]
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
@@ -37,14 +46,18 @@ class BoxReader(BasePydanticReader):
         # check what type of object the box_config is:
         if isinstance(self.box_config, CCGConfig):
             auth = BoxCCGAuth(self.box_config)
-            if (
-                self.box_config.user_id
-                and self.box_config.user_id != "YOUR_BOX_CCG_USER_ID (optional)"
-            ):
+            if self.box_config.user_id:
                 auth.with_user_subject(self.box_config.user_id)
             return BoxClient(auth)
 
-        raise ValueError("Box config is not a CCGConfig object")
+        elif isinstance(self.box_config, JWTConfig):
+            auth = BoxJWTAuth(self.box_config)
+            if self.box_config.user_id:
+                auth.with_user_subject(self.box_config.user_id)
+
+            return BoxClient(auth)
+
+        raise ValueError("Box config is not a CCGConfig or JWTConfig object")
 
     def load_data(
         self,

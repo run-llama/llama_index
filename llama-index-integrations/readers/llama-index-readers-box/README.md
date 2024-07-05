@@ -18,7 +18,7 @@ BOX_CLIENT_SECRET = YOUR_CLIENT_SECRET
 
 # CCG Settings
 BOX_ENTERPRISE_ID = YOUR_BOX_ENTERPRISE_ID
-BOX_CCG_USER_ID = YOUR_BOX_USER_ID (optional)
+BOX_USER_ID = YOUR_BOX_USER_ID (optional)
 ```
 
 By default the CCG client will use a service account associated with the application. Depending on how the files are shared, the service account may not have access to all the files.

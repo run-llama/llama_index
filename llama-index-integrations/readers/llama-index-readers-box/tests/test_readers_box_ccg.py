@@ -17,7 +17,7 @@ def box_environment_ccg():
 
     # CCG configurations
     enterprise_id = os.getenv("BOX_ENTERPRISE_ID", "YOUR_BOX_ENTERPRISE_ID")
-    ccg_user_id = os.getenv("BOX_CCG_USER_ID")
+    ccg_user_id = os.getenv("BOX_USER_ID")
 
     return {
         "client_id": client_id,
@@ -28,7 +28,7 @@ def box_environment_ccg():
 
 
 @pytest.fixture(scope="module")
-def box_unit_testing_config(box_environment_ccg: CCGConfig):
+def ccg_unit_testing(box_environment_ccg):
     box_config = box_environment_ccg
     return CCGConfig(
         client_id=box_config["client_id"],
@@ -39,8 +39,8 @@ def box_unit_testing_config(box_environment_ccg: CCGConfig):
 
 
 @pytest.fixture(scope="module")
-def box_integration_testing_config(box_unit_testing_config: CCGConfig):
-    box_config = box_unit_testing_config
+def ccg_integration_testing(ccg_unit_testing: CCGConfig):
+    box_config = ccg_unit_testing
     if box_config.client_id == "YOUR_BOX_CLIENT_ID":
         raise pytest.skip(
             f"Create a .env file with the Box credentials to run integration tests."
@@ -49,8 +49,8 @@ def box_integration_testing_config(box_unit_testing_config: CCGConfig):
 
 
 @pytest.fixture(scope="module")
-def box_reader(box_integration_testing_config: CCGConfig):
-    box_config = box_integration_testing_config
+def box_reader_ccg(ccg_integration_testing: CCGConfig):
+    box_config = ccg_integration_testing
 
     return BoxReader(box_config=box_config)
 
@@ -73,8 +73,8 @@ def test_class():
     assert BaseReader.__name__ in names_of_base_classes
 
 
-def test_reader_init(box_unit_testing_config: CCGConfig):
-    box_config = box_unit_testing_config
+def test_reader_init(ccg_unit_testing: CCGConfig):
+    box_config = ccg_unit_testing
     reader = BoxReader(box_config=box_config)
 
     # schema = reader.schema()
@@ -95,17 +95,17 @@ def test_reader_init(box_unit_testing_config: CCGConfig):
 ####################################################################################################
 
 
-def test_box_reader_csv(box_reader: BoxReader):
+def test_box_reader_csv(box_reader_ccg: BoxReader):
     test_data = get_testing_data()
-    docs = box_reader.load_data(file_ids=[test_data["test_csv_id"]])
+    docs = box_reader_ccg.load_data(file_ids=[test_data["test_csv_id"]])
     assert len(docs) == 1
 
 
-def test_box_reader_folder(box_reader: BoxReader):
+def test_box_reader_folder(box_reader_ccg: BoxReader):
     # Very slow test
     test_data = get_testing_data()
     if test_data["disable_slow_tests"]:
         raise pytest.skip(f"Slow integration tests are disabled.")
 
-    docs = box_reader.load_data(folder_id=test_data["test_folder_id"])
+    docs = box_reader_ccg.load_data(folder_id=test_data["test_folder_id"])
     assert len(docs) >= 1
