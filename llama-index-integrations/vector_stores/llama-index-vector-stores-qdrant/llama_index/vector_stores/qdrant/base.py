@@ -121,6 +121,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
+    _dense_config: Optional[rest.VectorParams] = PrivateAttr()
+    _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
 
     def __init__(
         self,
@@ -133,6 +135,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         parallel: int = 1,
         max_retries: int = 3,
         client_kwargs: Optional[dict] = None,
+        dense_config: Optional[rest.VectorParams] = None,
+        sparse_config: Optional[rest.SparseVectorParams] = None,
         enable_hybrid: bool = False,
         fastembed_sparse_model: Optional[str] = None,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
@@ -189,6 +193,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
             )
+
+        self._sparse_config = sparse_config
+        self._dense_config = dense_config
 
         super().__init__(
             collection_name=collection_name,
@@ -567,33 +574,32 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or rest.SparseVectorParams(
+            index=rest.SparseIndexParams(),
+            modifier=rest.Modifier.IDF
+            if "bm42" in self.fastembed_sparse_model
+            else rest.Modifier.NONE,
+        )
+
         try:
             if self.enable_hybrid:
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        DENSE_VECTOR_NAME: rest.VectorParams(
-                            size=vector_size,
-                            distance=rest.Distance.COSINE,
-                        )
+                        DENSE_VECTOR_NAME: dense_config,
                     },
                     # Newly created collection will have the new sparse vector name
-                    sparse_vectors_config={
-                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams(),
-                            modifier=rest.Modifier.IDF
-                            if "bm42" in self.fastembed_sparse_model
-                            else rest.Modifier.NONE,
-                        )
-                    },
+                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
                 )
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
-                    vectors_config=rest.VectorParams(
-                        size=vector_size,
-                        distance=rest.Distance.COSINE,
-                    ),
+                    vectors_config=dense_config,
                 )
 
             # To improve search performance Qdrant recommends setting up
@@ -619,32 +625,29 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or rest.SparseVectorParams(
+            index=rest.SparseIndexParams(),
+            modifier=rest.Modifier.IDF
+            if "bm42" in self.fastembed_sparse_model
+            else rest.Modifier.NONE,
+        )
+
         try:
             if self.enable_hybrid:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config={
-                        DENSE_VECTOR_NAME: rest.VectorParams(
-                            size=vector_size,
-                            distance=rest.Distance.COSINE,
-                        )
-                    },
-                    sparse_vectors_config={
-                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams(),
-                            modifier=rest.Modifier.IDF
-                            if "bm42" in self.fastembed_sparse_model
-                            else rest.Modifier.NONE,
-                        )
-                    },
+                    vectors_config={DENSE_VECTOR_NAME: dense_config},
+                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
                 )
             else:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config=rest.VectorParams(
-                        size=vector_size,
-                        distance=rest.Distance.COSINE,
-                    ),
+                    vectors_config=dense_config,
                 )
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
