@@ -32,7 +32,6 @@ nav:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
       - Building a RAG pipeline:
-          - Building a RAG pipeline: ./understanding/rag/index.md
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
@@ -59,7 +58,6 @@ nav:
           - Chatbots: ./understanding/putting_it_all_together/chatbots/
           - Structured data: ./understanding/putting_it_all_together/structured_data/
           - Agents: ./understanding/putting_it_all_together/agents.md
-          - Graphs: ./understanding/putting_it_all_together/graphs.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
@@ -76,7 +74,6 @@ nav:
           - ./examples/agent/agent_builder.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
           - ./examples/agent/agent_runner/agent_runner.ipynb
-          - ./examples/agent/agent_runner/agent_runner_rag.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
@@ -84,6 +81,7 @@ nav:
           - ./examples/agent/bedrock_converse_agent.ipynb
           - ./examples/agent/coa_agent.ipynb
           - ./examples/agent/custom_agent.ipynb
+          - ./examples/agent/dashscope_agent.ipynb
           - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
           - ./examples/agent/lats_agent.ipynb
           - ./examples/agent/llm_compiler.ipynb
@@ -157,6 +155,7 @@ nav:
           - ./examples/data_connectors/DiscordDemo.ipynb
           - ./examples/data_connectors/FaissDemo.ipynb
           - ./examples/data_connectors/GithubRepositoryReaderDemo.ipynb
+          - ./examples/data_connectors/GoogleChatDemo.ipynb
           - ./examples/data_connectors/GoogleDocsDemo.ipynb
           - ./examples/data_connectors/GoogleDriveDemo.ipynb
           - ./examples/data_connectors/GoogleMapsTextSearchReaderDemo.ipynb
@@ -284,6 +283,7 @@ nav:
           - ./examples/llm/bedrock.ipynb
           - ./examples/llm/bedrock_converse.ipynb
           - ./examples/llm/clarifai.ipynb
+          - ./examples/llm/cleanlab.ipynb
           - ./examples/llm/cohere.ipynb
           - ./examples/llm/dashscope.ipynb
           - ./examples/llm/databricks.ipynb
@@ -347,6 +347,7 @@ nav:
           - ./examples/llm/vicuna.ipynb
           - ./examples/llm/vllm.ipynb
           - ./examples/llm/xinference_local_deployment.ipynb
+          - ./examples/llm/yi.ipynb
       - Llama Datasets:
           - ./examples/llama_dataset/downloading_llama_datasets.ipynb
           - ./examples/llama_dataset/labelled-rag-datasets.ipynb
@@ -734,6 +735,7 @@ nav:
       - ./api_reference/index.md
       - Agents:
           - ./api_reference/agent/coa.md
+          - ./api_reference/agent/dashscope.md
           - ./api_reference/agent/index.md
           - ./api_reference/agent/introspective.md
           - ./api_reference/agent/lats.md
@@ -791,6 +793,7 @@ nav:
           - ./api_reference/embeddings/ipex_llm.md
           - ./api_reference/embeddings/jinaai.md
           - ./api_reference/embeddings/langchain.md
+          - ./api_reference/embeddings/litellm.md
           - ./api_reference/embeddings/llamafile.md
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
@@ -858,6 +861,7 @@ nav:
           - ./api_reference/llms/bedrock.md
           - ./api_reference/llms/bedrock_converse.md
           - ./api_reference/llms/clarifai.md
+          - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cohere.md
           - ./api_reference/llms/custom_llm.md
           - ./api_reference/llms/dashscope.md
@@ -916,8 +920,8 @@ nav:
           - ./api_reference/llms/upstage.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
-          - ./api_reference/llms/watsonx.md
           - ./api_reference/llms/xinference.md
+          - ./api_reference/llms/yi.md
           - ./api_reference/llms/you.md
       - Llama Datasets:
           - ./api_reference/llama_dataset/index.md
@@ -1183,6 +1187,7 @@ nav:
           - ./api_reference/readers/hubspot.md
           - ./api_reference/readers/huggingface_fs.md
           - ./api_reference/readers/hwp.md
+          - ./api_reference/readers/iceberg.md
           - ./api_reference/readers/imdb_review.md
           - ./api_reference/readers/index.md
           - ./api_reference/readers/intercom.md
@@ -1250,7 +1255,9 @@ nav:
           - ./api_reference/readers/steamship.md
           - ./api_reference/readers/string_iterable.md
           - ./api_reference/readers/stripe_docs.md
+          - ./api_reference/readers/structured_data.md
           - ./api_reference/readers/telegram.md
+          - ./api_reference/readers/toggl.md
           - ./api_reference/readers/trello.md
           - ./api_reference/readers/twitter.md
           - ./api_reference/readers/txtai.md
@@ -1323,6 +1330,7 @@ nav:
               - ./api_reference/storage/graph_stores/neo4j.md
               - ./api_reference/storage/graph_stores/neptune.md
               - ./api_reference/storage/graph_stores/simple.md
+              - ./api_reference/storage/graph_stores/tidb.md
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/dynamodb.md
@@ -1429,6 +1437,7 @@ nav:
           - ./api_reference/tools/graphql.md
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
+          - ./api_reference/tools/jina.md
           - ./api_reference/tools/load_and_search.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
@@ -1695,6 +1704,7 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-dashscope
             - ../llama-index-integrations/agent/llama-index-agent-openai
             - ../llama-index-integrations/agent/llama-index-agent-openai-legacy
+            - ../llama-index-integrations/agent/llama-index-agent-dashscope
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-postgres
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-redis
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-firestore
@@ -2016,6 +2026,14 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-pdf-marker
             - ../llama-index-integrations/llms/llama-index-llms-you
             - ../llama-index-integrations/llms/llama-index-llms-watsonx
+            - ../llama-index-integrations/graph_stores/llama-index-graph-stores-tidb
+            - ../llama-index-integrations/readers/llama-index-readers-toggl
+            - ../llama-index-integrations/tools/llama-index-tools-jina
+            - ../llama-index-integrations/readers/llama-index-readers-structured-data
+            - ../llama-index-integrations/llms/llama-index-llms-yi
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-litellm
+            - ../llama-index-integrations/readers/llama-index-readers-iceberg
+            - ../llama-index-integrations/llms/llama-index-llms-cleanlab
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2174,6 +2192,7 @@ plugins:
         ./examples/embeddings/google_palm.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_palm/
         ./examples/embeddings/gradient.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/gradient/
         ./examples/embeddings/huggingface.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/huggingface/
+        ./examples/embeddings/ibm_watsonx.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/ibm_watsonx/
         ./examples/embeddings/jina_embeddings.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/jina_embeddings/
         ./examples/embeddings/jinaai_embeddings.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/jinaai_embeddings/
         ./examples/embeddings/llamafile.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/llamafile/
@@ -2262,6 +2281,7 @@ plugins:
         ./examples/llm/gradient_model_adapter.html: https://docs.llamaindex.ai/en/stable/examples/llm/gradient_model_adapter/
         ./examples/llm/groq.html: https://docs.llamaindex.ai/en/stable/examples/llm/groq/
         ./examples/llm/huggingface.html: https://docs.llamaindex.ai/en/stable/examples/llm/huggingface/
+        ./examples/llm/ibm_watsonx.html: https://docs.llamaindex.ai/en/stable/examples/llm/ibm_watsonx/
         ./examples/llm/konko.html: https://docs.llamaindex.ai/en/stable/examples/llm/konko/
         ./examples/llm/langchain.html: https://docs.llamaindex.ai/en/stable/examples/llm/langchain/
         ./examples/llm/litellm.html: https://docs.llamaindex.ai/en/stable/examples/llm/litellm/
@@ -2298,7 +2318,6 @@ plugins:
         ./examples/llm/vertex.html: https://docs.llamaindex.ai/en/stable/examples/llm/vertex/
         ./examples/llm/vicuna.html: https://docs.llamaindex.ai/en/stable/examples/llm/vicuna/
         ./examples/llm/vllm.html: https://docs.llamaindex.ai/en/stable/examples/llm/vllm/
-        ./examples/llm/watsonx.html: https://docs.llamaindex.ai/en/stable/examples/llm/watsonx/
         ./examples/llm/xinference_local_deployment.html: https://docs.llamaindex.ai/en/stable/examples/llm/xinference_local_deployment/
         ./examples/low_level/evaluation.html: https://docs.llamaindex.ai/en/stable/examples/low_level/evaluation/
         ./examples/low_level/fusion_retriever.html: https://docs.llamaindex.ai/en/stable/examples/low_level/fusion_retriever/

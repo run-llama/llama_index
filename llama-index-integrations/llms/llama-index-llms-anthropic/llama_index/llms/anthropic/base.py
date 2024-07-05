@@ -357,7 +357,7 @@ class Anthropic(FunctionCallingLLM):
                 }
             )
 
-        response = self.chat(chat_history, tools=tool_dicts, **kwargs)
+        response = self.chat(chat_history, tools=tool_dicts or None, **kwargs)
 
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
@@ -390,7 +390,7 @@ class Anthropic(FunctionCallingLLM):
                 }
             )
 
-        response = await self.achat(chat_history, tools=tool_dicts, **kwargs)
+        response = await self.achat(chat_history, tools=tool_dicts or None, **kwargs)
 
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)

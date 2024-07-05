@@ -6,6 +6,10 @@ import pytest
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import ChatMessage, MessageRole, MockLLM
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+    Function,
+)
 from llama_index.core.memory.chat_summary_memory_buffer import (
     ChatSummaryMemoryBuffer,
 )
@@ -22,6 +26,19 @@ def _get_role_alternating_order(i: int):
 
 USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
 ASSISTANT_CHAT_MESSAGE = ChatMessage(role=MessageRole.ASSISTANT, content="first answer")
+ASSISTANT_TOOL_CALLING_MESSAGE = ChatMessage(
+    role=MessageRole.ASSISTANT,
+    content=None,
+    additional_kwargs={
+        "tool_calls": [
+            ChatCompletionMessageToolCall(
+                id="call_Opq33YZVi0usHbNcrvEYN9QO",
+                function=Function(arguments='{"a":363,"b":42}', name="add"),
+                type="function",
+            )
+        ]
+    },
+)
 TOOL_CHAT_MESSAGE = ChatMessage(role=MessageRole.TOOL, content="first tool")
 USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(USER_CHAT_MESSAGE.content)))
 LONG_USER_CHAT_MESSAGE = ChatMessage(
@@ -116,6 +133,32 @@ def test_put_get_summarize_long_message(summarizer_llm) -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
         chat_history=[LONG_USER_CHAT_MESSAGE],
         token_limit=2,
+        llm=summarizer_llm,
+    )
+
+    # When I get the chat history from the memory
+    history = memory.get()
+
+    # Then the history should contain the summarized message
+    assert len(history) == 1
+    assert history[0].content == FIRST_SUMMARY_RESPONSE
+
+
+def test_put_get_summarize_message_with_tool_call(summarizer_llm) -> None:
+    # Given one message with more tokens than token_limit and tool calls
+    # This case test 2 things:
+    #   1. It can summarize the ASSISTANT_TOOL_CALLING_MESSAGE with content=None (Issue #14014).
+    #   2. In `_handle_assistant_and_tool_messages`, when chat_history_full_text only
+    #      contains tool calls or assistant messages, it could add them all into
+    #      `chat_history_to_be_summarized`, without triggering the IndexError.
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=[
+            LONG_USER_CHAT_MESSAGE,
+            ASSISTANT_TOOL_CALLING_MESSAGE,
+            TOOL_CHAT_MESSAGE,
+            ASSISTANT_CHAT_MESSAGE,
+        ],
+        token_limit=LONG_USER_CHAT_MESSAGE_TOKENS,
         llm=summarizer_llm,
     )
 

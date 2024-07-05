@@ -568,6 +568,8 @@ class OpenAI(FunctionCallingLLM):
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -809,6 +811,8 @@ class OpenAI(FunctionCallingLLM):
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -846,8 +850,8 @@ class OpenAI(FunctionCallingLLM):
 
         response = self.chat(
             messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice),
+            tools=tool_specs or None,
+            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -879,8 +883,8 @@ class OpenAI(FunctionCallingLLM):
 
         response = await self.achat(
             messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice),
+            tools=tool_specs or None,
+            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:
