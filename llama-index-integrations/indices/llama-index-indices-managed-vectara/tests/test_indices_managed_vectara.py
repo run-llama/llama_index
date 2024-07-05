@@ -120,13 +120,15 @@ def vectara2():
     except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
 
-    file_path = "paul_graham_essay.txt"
-    id = vectara2.insert_file(file_path)
+    file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
+    id = vectara2.insert_file(
+        file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
+    )
 
     yield vectara2
 
     # Tear down code
-    print(vectara2._delete_doc(id))
+    vectara2._delete_doc(id)
 
 
 def test_file_upload(vectara2) -> None:
@@ -156,3 +158,11 @@ def test_file_upload(vectara2) -> None:
     query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
+
+    # test query with Vectara summarization (default)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=3, citations_url_pattern="{doc.url}"
+    )
+    res = query_engine.query("How is Paul related to Reddit?")
+    assert "paul graham" in str(res).lower() and "reddit" in str(res).lower()
+    assert "https://www.paulgraham.com/worked.html" in str(res).lower()
