@@ -7,7 +7,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.embeddings.utils import format_query, format_text
+from llama_index.utils.huggingface import format_query, format_text
 
 DEFAULT_URL = "http://127.0.0.1:8080"
 
