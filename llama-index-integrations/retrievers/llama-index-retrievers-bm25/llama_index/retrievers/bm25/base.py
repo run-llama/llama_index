@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List, Optional, cast
+from typing import Any, Callable, List, Optional, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -7,6 +7,10 @@ from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
 from llama_index.core.storage.docstore.types import BaseDocumentStore
+from llama_index.core.vector_stores.utils import (
+    node_to_metadata_dict,
+    metadata_dict_to_node,
+)
 
 import bm25s
 import Stemmer
@@ -16,28 +20,61 @@ logger = logging.getLogger(__name__)
 
 
 class BM25Retriever(BaseRetriever):
+    """A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
+
+    Args:
+        nodes (List[BaseNode], optional):
+            The nodes to index. If not provided, an existing BM25 object must be passed.
+        stemmer (Stemmer.Stemmer, optional):
+            The stemmer to use. Defaults to an english stemmer.
+        language (str, optional):
+            The language to use for stopword removal. Defaults to "en".
+        existing_bm25 (bm25s.BM25, optional):
+            An existing BM25 object to use. If not provided, nodes must be passed.
+        similarity_top_k (int, optional):
+            The number of results to return. Defaults to DEFAULT_SIMILARITY_TOP_K.
+        callback_manager (CallbackManager, optional):
+            The callback manager to use. Defaults to None.
+        objects (List[IndexNode], optional):
+            The objects to retrieve. Defaults to None.
+        object_map (dict, optional):
+            A map of object IDs to nodes. Defaults to None.
+        verbose (bool, optional):
+            Whether to show progress. Defaults to False.
+    """
+
     def __init__(
         self,
-        nodes: List[BaseNode],
-        stemmer: Stemmer.Stemmer,
+        nodes: Optional[List[BaseNode]] = None,
+        stemmer: Optional[Stemmer.Stemmer] = None,
         language: str = "en",
+        existing_bm25: Optional[bm25s.BM25] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
     ) -> None:
-        self.nodes = nodes
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
-        self.corpus_tokens = bm25s.tokenize(
-            [node.get_content() for node in nodes],
-            stopwords=language,
-            stemmer=stemmer,
-            show_progress=verbose,
-        )
-        self.bm25 = bm25s.BM25()
-        self.bm25.index(self.corpus_tokens, show_progress=verbose)
+
+        if existing_bm25 is not None:
+            self.bm25 = existing_bm25
+            self.corpus = existing_bm25.corpus
+        else:
+            if nodes is None:
+                raise ValueError("Please pass nodes or an existing BM25 object.")
+
+            self.corpus = [node_to_metadata_dict(node) for node in nodes]
+
+            corpus_tokens = bm25s.tokenize(
+                [node.get_content() for node in nodes],
+                stopwords=language,
+                stemmer=stemmer,
+                show_progress=verbose,
+            )
+            self.bm25 = bm25s.BM25()
+            self.bm25.index(corpus_tokens, show_progress=verbose)
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
@@ -86,6 +123,16 @@ class BM25Retriever(BaseRetriever):
             verbose=verbose,
         )
 
+    def persist(self, path: str, **kwargs: Any) -> None:
+        """Persist the retriever to a directory."""
+        self.bm25.save(path, corpus=self.corpus, **kwargs)
+
+    @classmethod
+    def from_persist_dir(cls, path: str, **kwargs: Any) -> "BM25Retriever":
+        """Load the retriever from a directory."""
+        bm25 = bm25s.BM25.load(path, load_corpus=True, **kwargs)
+        return cls(existing_bm25=bm25)
+
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query = query_bundle.query_str
         tokenized_query = bm25s.tokenize(
@@ -101,6 +148,12 @@ class BM25Retriever(BaseRetriever):
 
         nodes: List[NodeWithScore] = []
         for idx, score in zip(indexes, scores):
-            nodes.append(NodeWithScore(node=self.nodes[int(idx)], score=float(score)))
+            # idx can be an int or a dict of the node
+            if isinstance(idx, dict):
+                node = metadata_dict_to_node(idx)
+            else:
+                node_dict = self.corpus[int(idx)]
+                node = metadata_dict_to_node(node_dict)
+            nodes.append(NodeWithScore(node=node, score=float(score)))
 
         return nodes
