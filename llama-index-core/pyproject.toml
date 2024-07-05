@@ -132,7 +132,7 @@ exclude = [
 ]
 ignore = [
     "COM812",  # Too aggressive
-    "D212",  # Using D213
+    "D213",  # LlamaIndex uses Google docstring style
     "D417",  # Too aggressive
     "F541",  # Messes with prompts.py
     "TCH002",
