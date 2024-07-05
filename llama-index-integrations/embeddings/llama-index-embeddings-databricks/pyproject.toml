@@ -10,7 +10,7 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-contains_example = false
+contains_example = true
 import_path = "llama_index.embeddings.databricks"
 
 [tool.llamahub.class_authors]
