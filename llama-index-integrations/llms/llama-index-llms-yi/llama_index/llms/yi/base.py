@@ -25,7 +25,7 @@ DEFAULT_YI_MODEL = "yi-large"
 DEFAULT_YI_ENDPOINT = "https://api.01.ai/v1"
 
 YI_MODELS: Dict[str, int] = {
-    "yi-large": 16000,
+    "yi-large": 32000,
 }
 
 
