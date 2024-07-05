@@ -1,17 +1,25 @@
 import inspect
 
-from llama_index.core.workflow.events import Event, EventType
+from llama_index.core.workflow.events import Event
 
 
-def get_events_from_signature(fn) -> list[EventType]:
-    """Given a function, extract the list of Event types accepted by inspecting its signature."""
-    events: list[EventType] = []
+def valid_step_signature(fn) -> bool:
+    """Given a function, ensure the signature is compatible with a workflow step.
+
+    Two types of signatures are supported:
+        - self, *args, for class methods
+        - *args, for free functions
+    """
     sig = inspect.signature(fn)
-    for type in sig.parameters.values():
-        event_type = type.annotation
-        if issubclass(event_type, Event):
-            events.append(event_type)
-    return events
+    try:
+        sig.bind(Event)
+    except TypeError:
+        try:
+            sig.bind(object(), Event)
+        except TypeError:
+            return False
+
+    return True
 
 
 def get_steps_from_class(_class: object) -> dict:

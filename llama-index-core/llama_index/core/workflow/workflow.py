@@ -18,10 +18,6 @@ class Workflow:
         self._tasks = set()
         self._events = []
 
-        self.prepare()
-        self.loop = None
-
-    def prepare(self):
         for name, step in get_steps_from_class(self):
             self._queues[name] = asyncio.Queue()
 
@@ -51,16 +47,22 @@ class Workflow:
             )
 
     def send_event(self, message):
+        """Dispatches an event to all the queues available."""
         for queue in self._queues.values():
             queue.put_nowait(message)
         self._events.append(message)
 
     async def run(self, **kwargs):
+        """Entrypoint for every workflow.
+
+        The user input is wrapped into a StartEvent that's dispatched to initiate
+        the workflow
+        """
         self._events = []
-        async with asyncio.timeout(self.timeout):
+        async with asyncio.timeout(self._timeout):
             self.send_event(StartEvent(kwargs))
             try:
-                await asyncio.gather(*list(self.tasks))
+                await asyncio.gather(*list(self._tasks))
             except asyncio.CancelledError:
                 pass
 

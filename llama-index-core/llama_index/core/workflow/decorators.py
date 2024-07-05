@@ -1,3 +1,6 @@
+from .utils import valid_step_signature
+
+
 def step(*events):
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -8,6 +11,9 @@ def step(*events):
     """
 
     def decorator(fn):
+        if not valid_step_signature(fn):
+            msg = "Wrong signature for step function: must be either (self, *args) or (*args)"
+            raise ValueError(msg)
         fn.__target_events = events
         return fn
 
