@@ -2,14 +2,15 @@ import logging
 import os
 import shutil
 import tempfile
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 
 from llama_index.core.readers import SimpleDirectoryReader
 from llama_index.core.readers.base import (
     BasePydanticReader,
+    BaseReader,
 )
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.readers.box.box_client_ccg import reader_box_client_ccg
 
 from box_sdk_gen import BoxAPIError, BoxClient, ByteStream, File
@@ -22,12 +23,15 @@ class _BoxResourcePayload(BaseModel):
     downloaded_file_path: Optional[str]
 
 
+# TODO: Implement , ResourcesReaderMixin, FileSystemReaderMixin
 class BoxReader(BasePydanticReader):
     box_client_id: str
     box_client_secret: str
     box_enterprise_id: str
     box_user_id: str = None
-    # client: BoxClient
+    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
+        default=None, exclude=True
+    )
 
     @classmethod
     def class_name(cls) -> str:
@@ -78,6 +82,7 @@ class BoxReader(BasePydanticReader):
             simple_loader = SimpleDirectoryReader(
                 input_dir=temp_dir,
                 file_metadata=get_metadata,
+                file_extractor=self.file_extractor,
             )
             return simple_loader.load_data()
 
