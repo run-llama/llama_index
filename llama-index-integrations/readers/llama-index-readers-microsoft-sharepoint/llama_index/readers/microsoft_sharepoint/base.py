@@ -551,6 +551,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     sharepoint_folder_id,
                     recursive,
                 )
+
                 # return self.files_metadata
                 return self._load_documents_with_metadata(
                     files_metadata, temp_dir, recursive
@@ -580,7 +581,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             headers=self._authorization_headers,
         )
         items = response.json().get("value", [])
-
         file_paths = []
         for item in items:
             if "folder" in item and recursive:
@@ -684,7 +684,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 # Fetch drive contents
                 drive_contents = self._list_drive_contents()
                 file_paths.extend(drive_contents)
-
         except Exception as exp:
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
             raise
