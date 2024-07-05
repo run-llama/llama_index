@@ -2,7 +2,7 @@ import asyncio
 import warnings
 
 from .decorators import step
-from .events import StartEvent, StopEvent, Event, EventType
+from .events import StartEvent, StopEvent, Event
 from .utils import get_steps_from_class
 
 
@@ -17,8 +17,10 @@ class Workflow:
         self._queues = {}
         self._tasks = set()
         self._events = []
+        self._retval = None
 
-        for name, step in get_steps_from_class(self):
+    def _start(self):
+        for name, step in get_steps_from_class(self).items():
             self._queues[name] = asyncio.Queue()
 
             async def _task(name, queue, step, target_events):
@@ -59,6 +61,9 @@ class Workflow:
         the workflow
         """
         self._events = []
+        if not self._tasks:
+            self._start()
+
         async with asyncio.timeout(self._timeout):
             self.send_event(StartEvent(kwargs))
             try:
@@ -66,10 +71,14 @@ class Workflow:
             except asyncio.CancelledError:
                 pass
 
+            return self._retval
+
     @step(StopEvent)
-    async def done(self, _: EventType):
+    async def done(self, ev: StopEvent):
         """Tears down the whole workflow and stop execution."""
+        # Stop all the tasks
         for t in self._tasks:
             t.cancel()
-        print("Broker log:")
-        print("\n".join(str(type(ev).__name__) for ev in self._events))
+        # Remove any reference to the tasks
+        self._tasks = set()
+        self._retval = ev.msg or None
