@@ -1,6 +1,6 @@
 import asyncio
 from typing import Any, Callable, List, Optional, Union, Tuple
-import re 
+import re
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.schema import TransformComponent, BaseNode
@@ -17,7 +17,10 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_DYNAMIC_EXTRACT_PROMPT,
 )
 
-def default_parse_dynamic_triplets(llm_output: str) -> List[Tuple[EntityNode, Relation, EntityNode]]:
+
+def default_parse_dynamic_triplets(
+    llm_output: str,
+) -> List[Tuple[EntityNode, Relation, EntityNode]]:
     """
     Parse the LLM output and convert it into a list of entity-relation-entity triplets.
     This function is flexible and can handle various output formats.
@@ -32,7 +35,7 @@ def default_parse_dynamic_triplets(llm_output: str) -> List[Tuple[EntityNode, Re
 
     # Regular expression to match the structure of each dictionary in the list
     pattern = r"{'head': '(.*?)', 'head_type': '(.*?)', 'relation': '(.*?)', 'tail': '(.*?)', 'tail_type': '(.*?)'}"
-    
+
     # Find all matches in the output
     matches = re.findall(pattern, llm_output)
 
@@ -40,10 +43,13 @@ def default_parse_dynamic_triplets(llm_output: str) -> List[Tuple[EntityNode, Re
         head, head_type, relation, tail, tail_type = match
         head_node = EntityNode(name=head, label=head_type)
         tail_node = EntityNode(name=tail, label=tail_type)
-        relation_node = Relation(source_id=head_node.id, target_id=tail_node.id, label=relation)
+        relation_node = Relation(
+            source_id=head_node.id, target_id=tail_node.id, label=relation
+        )
         triplets.append((head_node, relation_node, tail_node))
 
     return triplets
+
 
 class DynamicLLMPathExtractor(TransformComponent):
     """

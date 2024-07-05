@@ -364,8 +364,7 @@ DEFAULT_DYNAMIC_EXTRACT_TMPL = (
 )
 
 DEFAULT_DYNAMIC_EXTRACT_PROMPT = PromptTemplate(
-    DEFAULT_DYNAMIC_EXTRACT_TMPL,
-    prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
+    DEFAULT_DYNAMIC_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
 )
 
 ############################################
