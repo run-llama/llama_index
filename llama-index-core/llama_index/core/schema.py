@@ -786,7 +786,7 @@ class Document(TextNode):
             metadata=doc.metadata,
             excluded_embed_metadata_keys=doc.excluded_embed_metadata_keys,
             excluded_llm_metadata_keys=doc.excluded_llm_metadata_keys,
-            id=doc.id,
+            id_=doc.id,
         )
 
 
