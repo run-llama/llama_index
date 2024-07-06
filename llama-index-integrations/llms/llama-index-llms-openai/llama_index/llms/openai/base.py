@@ -10,6 +10,7 @@ from typing import (
     cast,
     runtime_checkable,
 )
+import datetime
 
 import httpx
 import tiktoken
@@ -73,6 +74,22 @@ llm_retry_decorator = create_retry_decorator(
     stop_after_delay_seconds=60,
     min_seconds=1,
     max_seconds=20,
+)
+
+import redis
+import os
+
+redis_client = redis.Redis(  # type: ignore[call-overload]
+    # username=os.getenv("REDIS_USERNAME"),
+    # password=os.getenv("REDIS_PASSWORD"),
+    host=os.getenv("REDIS_DROPLET_HOST"),
+    port=os.getenv("REDIS_DROPLET_PORT"),
+    decode_responses=False,
+    ssl=False,
+)
+
+redis_client.json().set(
+    "aichat", "$", {"time_elapsed": [], "time_completed": [], "errors": []}
 )
 
 
@@ -526,9 +543,9 @@ class OpenAI(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         achat_fn: Callable[..., Awaitable[ChatResponse]]
-        print('==>Entered achat<==')
+        print("==>Entered achat<==")
         if self._use_chat_completions(kwargs):
-            print('==>Entering _achat<==')
+            print("==>Entering _achat<==")
             achat_fn = self._achat
         else:
             achat_fn = acompletion_to_chat_decorator(self._acomplete)
@@ -571,25 +588,35 @@ class OpenAI(LLM):
             astream_complete_fn = self._astream_complete
         return await astream_complete_fn(prompt, **kwargs)
 
-    @llm_retry_decorator
+    # @llm_retry_decorator
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        print('==>Entering _achat<==')
+        print("==>Entering _achat<==")
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
         import time
+
         start_time = time.time()
-        response = await aclient.chat.completions.create(
-            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
-        )
+        try:
+            response = await aclient.chat.completions.create(
+                messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
+            )
+        except Exception:
+            redis_client.numincrby("aichat", "$['errors']", 1)
+            raise SystemError
         end_time = time.time()
-        elapsed_time = start_time = end_time
+        elapsed_time = end_time - start_time
+        redis_client.json().arrappend("aichat", "$['time_elapsed']", elapsed_time)
+        redis_client.json().arrappend(
+            "aichat", "$['time_completed']", str(datetime.datetime.now())
+        )
+
         print(f"==> AI took {elapsed_time} seconds")
+
         message_dict = response.choices[0].message
         message = from_openai_message(message_dict)
         logprobs_dict = response.choices[0].logprobs
-
         return ChatResponse(
             message=message,
             raw=response,
