@@ -604,7 +604,7 @@ class OpenAI(LLM):
                 messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
             )
         except Exception:
-            redis_client.numincrby("aichat", "$['errors']", 1)
+            redis_client.json().numincrby("aichat", "$['errors']", 1)
             raise SystemError
         end_time = time.time()
         elapsed_time = end_time - start_time
