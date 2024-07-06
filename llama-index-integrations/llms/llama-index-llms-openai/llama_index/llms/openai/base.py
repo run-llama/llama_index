@@ -88,6 +88,7 @@ redis_client = redis.Redis(  # type: ignore[call-overload]
     ssl=False,
 )
 
+redis_client.json().delete("aichat", "$")
 redis_client.json().set(
     "aichat", "$", {"time_elapsed": [], "time_completed": [], "errors": []}
 )
