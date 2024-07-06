@@ -181,6 +181,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         # setup hybrid search if enabled
         if enable_hybrid or fastembed_sparse_model is not None:
+            enable_hybrid = True
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
                 collection_name, fastembed_sparse_model=fastembed_sparse_model
             )
@@ -582,7 +583,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
             modifier=rest.Modifier.IDF
-            if "bm42" in self.fastembed_sparse_model
+            if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
             else rest.Modifier.NONE,
         )
 
@@ -633,7 +634,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
             modifier=rest.Modifier.IDF
-            if "bm42" in self.fastembed_sparse_model
+            if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
             else rest.Modifier.NONE,
         )
 
