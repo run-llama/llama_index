@@ -13,10 +13,15 @@
 - add cloud document converter (#14608)
 - fix KnowledgeGraphIndex arg 'kg_triple_extract_template' typo error (#14619)
 - Fix: Update `UnstructuredElementNodeParser` due to change in unstructured (#14606)
+- Update ReAct Step to solve issue with incomplete generation (#14587)
 
 ### `llama-index-callbacks-promptlayer` [0.1.3]
 
 - Conditions logging to promptlayer on successful request (#14632)
+
+### `llama-index-embeddings-databricks` [0.1.0]
+
+- Add integration embeddings databricks (#14590)
 
 ### `llama-index-llms-ai21` [0.3.1]
 
