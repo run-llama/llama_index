@@ -451,13 +451,16 @@ class ReActAgentWorker(BaseAgentWorker):
             next_steps=new_steps,
         )
 
-    def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
+    def _infer_stream_chunk_is_final(
+        self, chunk: ChatResponse, missed_chunks_storage: list
+    ) -> bool:
         """Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
         Args:
             chunk (ChatResponse): the current chunk stream to check
+            missed_chunks_storage (list): list to store missed chunks
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
@@ -465,22 +468,26 @@ class ReActAgentWorker(BaseAgentWorker):
         latest_content = chunk.message.content
         if latest_content:
             # doesn't follow thought-action format
-            if len(latest_content) > len("Thought") and not latest_content.startswith(
-                "Thought"
-            ):
+            # keep first chunks
+            if len(latest_content) < len("Thought"):
+                missed_chunks_storage.append(chunk)
+            elif not latest_content.startswith("Thought"):
                 return True
             elif "Answer: " in latest_content:
+                missed_chunks_storage.clear()
                 return True
         return False
 
     def _add_back_chunk_to_stream(
-        self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
+        self,
+        chunks: List[ChatResponse],
+        chat_stream: Generator[ChatResponse, None, None],
     ) -> Generator[ChatResponse, None, None]:
         """Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
-            chunk (ChatResponse): the chunk to add back to the beginning of the
+            chunks List[ChatResponse]: the chunks to add back to the beginning of the
                                     chat_stream.
 
         Return:
@@ -488,13 +495,15 @@ class ReActAgentWorker(BaseAgentWorker):
         """
 
         def gen() -> Generator[ChatResponse, None, None]:
-            yield chunk
+            yield from chunks
             yield from chat_stream
 
         return gen()
 
     async def _async_add_back_chunk_to_stream(
-        self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
+        self,
+        chunks: List[ChatResponse],
+        chat_stream: AsyncGenerator[ChatResponse, None],
     ) -> AsyncGenerator[ChatResponse, None]:
         """Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
@@ -502,13 +511,15 @@ class ReActAgentWorker(BaseAgentWorker):
         NOTE: this itself is not an async function.
 
         Args:
-            chunk (ChatResponse): the chunk to add back to the beginning of the
+            chunks List[ChatResponse]: the chunks to add back to the beginning of the
                                     chat_stream.
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
         """
-        yield chunk
+        for chunk in chunks:
+            yield chunk
+
         async for item in chat_stream:
             yield item
 
@@ -619,10 +630,13 @@ class ReActAgentWorker(BaseAgentWorker):
         full_response = ChatResponse(
             message=ChatMessage(content=None, role="assistant")
         )
+        missed_chunks_storage = []
         is_done = False
         for latest_chunk in chat_stream:
             full_response = latest_chunk
-            is_done = self._infer_stream_chunk_is_final(latest_chunk)
+            is_done = self._infer_stream_chunk_is_final(
+                latest_chunk, missed_chunks_storage
+            )
             if is_done:
                 break
 
@@ -646,7 +660,7 @@ class ReActAgentWorker(BaseAgentWorker):
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._add_back_chunk_to_stream(
-                chunk=latest_chunk, chat_stream=chat_stream
+                chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
             agent_response = StreamingAgentChatResponse(
@@ -691,10 +705,13 @@ class ReActAgentWorker(BaseAgentWorker):
         full_response = ChatResponse(
             message=ChatMessage(content=None, role="assistant")
         )
+        missed_chunks_storage = []
         is_done = False
         async for latest_chunk in chat_stream:
             full_response = latest_chunk
-            is_done = self._infer_stream_chunk_is_final(latest_chunk)
+            is_done = self._infer_stream_chunk_is_final(
+                latest_chunk, missed_chunks_storage
+            )
             if is_done:
                 break
 
@@ -719,7 +736,7 @@ class ReActAgentWorker(BaseAgentWorker):
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._async_add_back_chunk_to_stream(
-                chunk=latest_chunk, chat_stream=chat_stream
+                chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
             agent_response = StreamingAgentChatResponse(
