@@ -200,6 +200,7 @@ nav:
           - ./examples/embeddings/cohereai.ipynb
           - ./examples/embeddings/custom_embeddings.ipynb
           - ./examples/embeddings/dashscope_embeddings.ipynb
+          - ./examples/embeddings/databricks.ipynb
           - ./examples/embeddings/deepinfra.ipynb
           - ./examples/embeddings/elasticsearch.ipynb
           - ./examples/embeddings/fastembed.ipynb
@@ -332,11 +333,13 @@ nav:
           - ./examples/llm/openllm.ipynb
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino.ipynb
+          - ./examples/llm/optimum_intel.ipynb
           - ./examples/llm/palm.ipynb
           - ./examples/llm/perplexity.ipynb
           - ./examples/llm/portkey.ipynb
           - ./examples/llm/predibase.ipynb
           - ./examples/llm/premai.ipynb
+          - ./examples/llm/qianfan.ipynb
           - ./examples/llm/rungpt.ipynb
           - ./examples/llm/sagemaker_endpoint_llm.ipynb
           - ./examples/llm/solar.ipynb
@@ -615,6 +618,7 @@ nav:
           - ./examples/vector_stores/pinecone_auto_retriever.ipynb
           - ./examples/vector_stores/pinecone_metadata_filter.ipynb
           - ./examples/vector_stores/postgres.ipynb
+          - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
   - Component Guides:
       - ./module_guides/index.md
@@ -774,6 +778,7 @@ nav:
           - ./api_reference/embeddings/cloudflare_workersai.md
           - ./api_reference/embeddings/cohere.md
           - ./api_reference/embeddings/dashscope.md
+          - ./api_reference/embeddings/databricks.md
           - ./api_reference/embeddings/deepinfra.md
           - ./api_reference/embeddings/elasticsearch.md
           - ./api_reference/embeddings/fastembed.md
@@ -853,6 +858,7 @@ nav:
           - ./api_reference/instrumentation/span_handlers.md
           - ./api_reference/instrumentation/span_types.md
       - LLMs:
+          - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
           - ./api_reference/llms/alephalpha.md
           - ./api_reference/llms/anthropic.md
@@ -910,6 +916,7 @@ nav:
           - ./api_reference/llms/portkey.md
           - ./api_reference/llms/predibase.md
           - ./api_reference/llms/premai.md
+          - ./api_reference/llms/qianfan.md
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
@@ -2034,6 +2041,9 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-litellm
             - ../llama-index-integrations/readers/llama-index-readers-iceberg
             - ../llama-index-integrations/llms/llama-index-llms-cleanlab
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-databricks
+            - ../llama-index-integrations/llms/llama-index-llms-optimum-intel
+            - ../llama-index-integrations/llms/llama-index-llms-qianfan
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
