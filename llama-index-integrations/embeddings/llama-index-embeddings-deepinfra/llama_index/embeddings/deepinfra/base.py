@@ -19,6 +19,8 @@ ENV_VARIABLE = "DEEPINFRA_API_TOKEN"
 DEFAULT_MODEL_ID = "sentence-transformers/clip-ViT-B-32"
 """Maximum batch size for embedding requests."""
 MAX_BATCH_SIZE = 1024
+"""User agent"""
+USER_AGENT = "llama-index-embeddings-deepinfra"
 
 
 class DeepInfraEmbeddingModel(BaseEmbedding):
@@ -93,10 +95,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
                 json={
                     "inputs": chunk,
                 },
-                headers={
-                    "Authorization": f"Bearer {self._api_token}",
-                    "Content-Type": "application/json",
-                },
+                headers=self._get_headers(),
             )
             response.raise_for_status()
             embeddings.extend(response.json()["embeddings"])
@@ -129,10 +128,7 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
                     json={
                         "inputs": chunk,
                     },
-                    headers={
-                        "Authorization": f"Bearer {self._api_token}",
-                        "Content-Type": "application/json",
-                    },
+                    headers=self._get_headers(),
                 ) as resp:
                     response = await resp.json()
                     embeddings.extend(response["embeddings"])
@@ -205,6 +201,16 @@ class DeepInfraEmbeddingModel(BaseEmbedding):
         return (
             [self._text_prefix + text for text in texts] if self._text_prefix else texts
         )
+
+    def _get_headers(self) -> dict:
+        """
+        Get headers.
+        """
+        return {
+            "Authorization": f"Bearer {self._api_token}",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+        }
 
 
 def _chunk(items: List[str], batch_size: int = MAX_BATCH_SIZE) -> List[List[str]]:

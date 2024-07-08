@@ -294,6 +294,10 @@ class Neo4jVectorStore(BasePydanticVectorStore):
                         "Vector and keyword index don't index the same node label"
                     )
 
+    @property
+    def client(self) -> neo4j.GraphDatabase.driver:
+        return self._driver
+
     def _verify_version(self) -> None:
         """
         Check if the connected Neo4j database version supports vector indexing.

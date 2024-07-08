@@ -43,7 +43,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.10.46"
+version = "0.10.53"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -57,7 +57,7 @@ numpy = "<2.0.0"  # Pin until we adapt to Numpy v2
 openai = ">=1.1.0"
 pandas = "*"
 python = ">=3.8.1,<4.0"
-tenacity = ">=8.2.0,<8.4.0"  # Pinning until we update to v8.4.0
+tenacity = ">=8.2.0,!=8.4.0,<9.0.0"  # Avoid 8.4.0 which lacks tenacity.asyncio
 tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
@@ -68,7 +68,7 @@ dirtyjson = "^1.0.8"
 tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
-llamaindex-py-client = "^0.1.18"
+llama-cloud = "^0.0.6"
 wrapt = "*"
 
 [tool.poetry.group.dev.dependencies]

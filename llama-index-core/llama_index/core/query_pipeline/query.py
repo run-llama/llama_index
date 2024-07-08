@@ -9,6 +9,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
@@ -31,6 +32,27 @@ from llama_index.core.base.query_pipeline.query import (
     ComponentIntermediates,
 )
 from llama_index.core.utils import print_text
+from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
+
+
+# TODO: Make this (safely) pydantic?
+class RunState:
+    def __init__(
+        self,
+        module_dict: Dict[str, QueryComponent],
+        module_input_dict: Dict[str, Dict[str, Any]],
+    ):
+        self.all_module_inputs: Dict[str, Dict[str, Any]] = {
+            module_key: {} for module_key in module_dict
+        }
+
+        for module_key, input_dict in module_input_dict.items():
+            self.all_module_inputs[module_key] = input_dict
+
+        self.module_dict = module_dict
+        self.result_outputs: Dict[str, Any] = {}
+        self.intermediate_outputs: Dict[str, ComponentIntermediates] = {}
+        self.executed_modules: Set[str] = set()
 
 
 def get_output(
@@ -133,6 +155,43 @@ def clean_graph_attributes_copy(graph: networkx.MultiDiGraph) -> networkx.MultiD
     return graph_copy
 
 
+def get_stateful_components(
+    query_component: QueryComponent,
+) -> List[BaseStatefulComponent]:
+    """Get stateful components."""
+    stateful_components: List[BaseStatefulComponent] = []
+    for c in query_component.sub_query_components:
+        if isinstance(c, BaseStatefulComponent):
+            stateful_components.append(cast(BaseStatefulComponent, c))
+
+        if len(c.sub_query_components) > 0:
+            stateful_components.extend(get_stateful_components(c))
+
+    return stateful_components
+
+
+def update_stateful_components(
+    stateful_components: List[BaseStatefulComponent], state: Dict[str, Any]
+) -> None:
+    """Update stateful components."""
+    for stateful_component in stateful_components:
+        # stateful_component.partial(state=state)
+        stateful_component.state = state
+
+
+def get_and_update_stateful_components(
+    query_component: QueryComponent, state: Dict[str, Any]
+) -> List[BaseStatefulComponent]:
+    """Get and update stateful components.
+
+    Assign all stateful components in the query component with the state.
+
+    """
+    stateful_components = get_stateful_components(query_component)
+    update_stateful_components(stateful_components, state)
+    return stateful_components
+
+
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
 
 
@@ -163,6 +222,9 @@ class QueryPipeline(QueryComponent):
     num_workers: int = Field(
         default=4, description="Number of workers to use (currently async only)."
     )
+    state: Dict[str, Any] = Field(
+        default_factory=dict, description="State of the pipeline."
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -173,14 +235,33 @@ class QueryPipeline(QueryComponent):
         chain: Optional[Sequence[CHAIN_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
         links: Optional[List[Link]] = None,
+        state: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
+            state=state or {},
             **kwargs,
         )
 
         self._init_graph(chain=chain, modules=modules, links=links)
+        # Pydantic validator isn't called for __init__ so we need to call it manually
+        get_and_update_stateful_components(self, state)
+
+    def set_state(self, state: Dict[str, Any]) -> None:
+        """Set state."""
+        self.state = state
+        get_and_update_stateful_components(self, state)
+
+    def update_state(self, state: Dict[str, Any]) -> None:
+        """Update state."""
+        self.state.update(state)
+        get_and_update_stateful_components(self, state)
+
+    def reset_state(self) -> None:
+        """Reset state."""
+        # use pydantic validator to update state
+        self.set_state({})
 
     def _init_graph(
         self,
@@ -222,6 +303,11 @@ class QueryPipeline(QueryComponent):
         for i in range(len(chain) - 1):
             self.add_link(src=module_keys[i], dest=module_keys[i + 1])
 
+    @property
+    def stateful_components(self) -> List[BaseStatefulComponent]:
+        """Get stateful component."""
+        return get_stateful_components(self)
+
     def add_links(
         self,
         links: List[Link],
@@ -251,6 +337,9 @@ class QueryPipeline(QueryComponent):
 
         self.module_dict[module_key] = cast(QueryComponent, module)
         self.dag.add_node(module_key)
+        # propagate state to new modules added
+        # TODO: there's more efficient ways to do this
+        get_and_update_stateful_components(self, self.state)
 
     def add_link(
         self,
@@ -595,7 +684,19 @@ class QueryPipeline(QueryComponent):
                 raise ValueError("Only one free input key is allowed.")
             # set kwargs
             kwargs[next(iter(root_module.free_req_input_keys))] = args[0]
+
+        # if one kwarg and module only needs one kwarg, align them
+        if len(root_module.free_req_input_keys) == 1 and len(kwargs) == 1:
+            module_input_key = next(iter(root_module.free_req_input_keys))
+            kwarg = next(iter(kwargs.values()))
+            kwargs = {module_input_key: kwarg}
+
         return root_key, kwargs
+
+    def get_input_dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Get input dict."""
+        root_key, kwargs = self._get_root_key_and_kwargs(*args, **kwargs)
+        return {root_key: kwargs}
 
     def _get_single_result_output(
         self,
@@ -744,148 +845,107 @@ class QueryPipeline(QueryComponent):
                 f"Input keys: {module_input_dict.keys()}\n"
             )
 
-    def _process_component_output(
+    def process_component_output(
         self,
-        queue: List[str],
         output_dict: Dict[str, Any],
         module_key: str,
-        all_module_inputs: Dict[str, Dict[str, Any]],
-        result_outputs: Dict[str, Any],
-    ) -> List[str]:
+        run_state: RunState,
+    ):
         """Process component output."""
-        new_queue = queue.copy()
-
-        nodes_to_keep = set()
-        nodes_to_remove = set()
-
-        # if there's no more edges, clear queue
         if module_key in self._get_leaf_keys():
-            new_queue = []
+            run_state.result_outputs[module_key] = output_dict
         else:
             edge_list = list(self.dag.edges(module_key, data=True))
 
-            # everything not in conditional_edge_list is regular
             for _, dest, attr in edge_list:
+                if dest in run_state.executed_modules:
+                    continue  # Skip already executed modules
+
                 output = get_output(attr.get("src_key"), output_dict)
 
-                # if input_fn is not None, use it to modify the input
                 if attr["input_fn"] is not None:
                     dest_output = attr["input_fn"](output)
                 else:
                     dest_output = output
 
-                add_edge = True
-                if attr["condition_fn"] is not None:
-                    conditional_val = attr["condition_fn"](output)
-                    if not conditional_val:
-                        add_edge = False
-
-                if add_edge:
+                if attr["condition_fn"] is None or attr["condition_fn"](output):
                     add_output_to_module_inputs(
                         attr.get("dest_key"),
                         dest_output,
                         self.module_dict[dest],
-                        all_module_inputs[dest],
-                    )
-                    nodes_to_keep.add(dest)
-                else:
-                    nodes_to_remove.add(dest)
-
-        # remove nodes from the queue, as well as any nodes that depend on dest
-        # be sure to not remove any remaining dependencies of the current path
-        available_paths = []
-        for node in nodes_to_keep:
-            for leaf_node in self._get_leaf_keys():
-                if leaf_node == node:
-                    available_paths.append([node])
-                else:
-                    available_paths.extend(
-                        list(
-                            networkx.all_simple_paths(
-                                self.dag, source=node, target=leaf_node
-                            )
-                        )
+                        run_state.all_module_inputs[dest],
                     )
 
-        # this is a list of all nodes between the current node(s) and the leaf nodes
-        nodes_to_never_remove = set(x for path in available_paths for x in path)  # noqa
+        run_state.executed_modules.add(module_key)
 
-        removal_paths = []
-        for node in nodes_to_remove:
-            for leaf_node in self._get_leaf_keys():
-                if leaf_node == node:
-                    removal_paths.append([node])
-                else:
-                    removal_paths.extend(
-                        list(
-                            networkx.all_simple_paths(
-                                self.dag, source=node, target=leaf_node
-                            )
-                        )
-                    )
+    def get_next_module_keys(self, run_state: RunState) -> List[str]:
+        """Determine the next module keys to run based on the current state."""
+        next_module_keys = []
 
-        # this is a list of all nodes between the current node(s) to remove and the leaf nodes
-        nodes_to_probably_remove = set(  # noqa
-            x for path in removal_paths for x in path
-        )
+        for module_key, module_input in run_state.all_module_inputs.items():
+            if module_key in run_state.executed_modules:
+                continue  # Module already executed
 
-        # remove nodes that are not in the current path
-        for node in nodes_to_probably_remove:
-            if node not in nodes_to_never_remove:
-                new_queue.remove(node)
+            if all(
+                key in module_input
+                for key in self.module_dict[module_key].free_req_input_keys
+            ):
+                next_module_keys.append(module_key)
 
-        # did we remove all remaining edges? then we have our result
-        if len(new_queue) == 0:
-            result_outputs[module_key] = output_dict
+        return next_module_keys
 
-        return new_queue
+    def get_run_state(
+        self, module_input_dict: Optional[Dict[str, Any]] = None, **pipeline_inputs: Any
+    ) -> RunState:
+        """Get run state."""
+        if module_input_dict is not None:
+            return RunState(self.module_dict, module_input_dict)
+        else:
+            root_key, kwargs = self._get_root_key_and_kwargs(**pipeline_inputs)
+            return RunState(self.module_dict, {root_key: kwargs})
 
     def _run_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates=False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
-        """Run the pipeline for multiple roots.
-
-        kwargs is in the form of module_dict -> input_dict
-        input_dict is in the form of input_key -> input
-
-        """
+        """Run the pipeline for multiple roots."""
         self._validate_inputs(module_input_dict)
-        queue = list(networkx.topological_sort(self.dag))
 
-        # module_deps_inputs is a dict to collect inputs for a module
-        # mapping of module_key -> dict of input_key -> input
-        # initialize with blank dict for every module key
-        # the input dict of each module key will be populated as the upstream modules are run
-        all_module_inputs: Dict[str, Dict[str, Any]] = {
-            module_key: {} for module_key in self.module_dict
-        }
-        result_outputs: Dict[str, Any] = {}
-        intermediate_outputs: Dict[str, ComponentIntermediates] = {}
+        run_state = self.get_run_state(module_input_dict)
 
-        # add root inputs to all_module_inputs
-        for module_key, module_input in module_input_dict.items():
-            all_module_inputs[module_key] = module_input
+        # Add root inputs to all_module_inputs
+        next_module_keys = self.get_next_module_keys(run_state)
 
-        while len(queue) > 0:
-            module_key = queue.pop(0)
-            module = self.module_dict[module_key]
-            module_input = all_module_inputs[module_key]
+        while True:
+            for module_key in next_module_keys:
+                module = run_state.module_dict[module_key]
+                module_input = run_state.all_module_inputs[module_key]
 
-            if self.verbose:
-                print_debug_input(module_key, module_input)
-            output_dict = module.run_component(**module_input)
+                if self.verbose:
+                    print_debug_input(module_key, module_input)
+                output_dict = module.run_component(**module_input)
 
-            if show_intermediates and module_key not in intermediate_outputs:
-                intermediate_outputs[module_key] = ComponentIntermediates(
-                    inputs=module_input, outputs=output_dict
+                if (
+                    show_intermediates
+                    and module_key not in run_state.intermediate_outputs
+                ):
+                    run_state.intermediate_outputs[module_key] = ComponentIntermediates(
+                        inputs=module_input, outputs=output_dict
+                    )
+
+                self.process_component_output(
+                    output_dict,
+                    module_key,
+                    run_state,
                 )
 
-            # get new nodes and is_leaf
-            queue = self._process_component_output(
-                queue, output_dict, module_key, all_module_inputs, result_outputs
+            next_module_keys = self.get_next_module_keys(
+                run_state,
             )
+            if not next_module_keys:
+                run_state.result_outputs[module_key] = output_dict
+                break
 
-        return result_outputs, intermediate_outputs
+        return run_state.result_outputs, run_state.intermediate_outputs
 
     async def _arun_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
@@ -897,70 +957,47 @@ class QueryPipeline(QueryComponent):
 
         """
         self._validate_inputs(module_input_dict)
-        queue = list(networkx.topological_sort(self.dag))
 
-        # module_deps_inputs is a dict to collect inputs for a module
-        # mapping of module_key -> dict of input_key -> input
-        # initialize with blank dict for every module key
-        # the input dict of each module key will be populated as the upstream modules are run
-        all_module_inputs: Dict[str, Dict[str, Any]] = {
-            module_key: {} for module_key in self.module_dict
-        }
-        result_outputs: Dict[str, Any] = {}
-        intermediate_outputs: Dict[str, ComponentIntermediates] = {}
+        run_state = self.get_run_state(module_input_dict)
 
-        # add root inputs to all_module_inputs
-        for module_key, module_input in module_input_dict.items():
-            all_module_inputs[module_key] = module_input
+        # Add root inputs to all_module_inputs
+        next_module_keys = self.get_next_module_keys(run_state)
 
-        while len(queue) > 0:
-            popped_indices = set()
-            popped_nodes = []
-            # get subset of nodes who don't have ancestors also in the queue
-            # these are tasks that are parallelizable
-            for i, module_key in enumerate(queue):
-                module_ancestors = networkx.ancestors(self.dag, module_key)
-                if len(set(module_ancestors).intersection(queue)) == 0:
-                    popped_indices.add(i)
-                    popped_nodes.append(module_key)
+        while True:
+            jobs = []
+            for module_key in next_module_keys:
+                module = run_state.module_dict[module_key]
+                module_input = run_state.all_module_inputs[module_key]
 
-            # update queue
-            queue = [
-                module_key
-                for i, module_key in enumerate(queue)
-                if i not in popped_indices
-            ]
+                if self.verbose:
+                    print_debug_input(module_key, module_input)
 
-            if self.verbose:
-                print_debug_input_multi(
-                    popped_nodes,
-                    [all_module_inputs[module_key] for module_key in popped_nodes],
-                )
+                jobs.append(module.arun_component(**module_input))
 
-            # create tasks from popped nodes
-            tasks = []
-            for module_key in popped_nodes:
-                module = self.module_dict[module_key]
-                module_input = all_module_inputs[module_key]
-                tasks.append(module.arun_component(**module_input))
-
-            # run tasks
-            output_dicts = await run_jobs(
-                tasks, show_progress=self.show_progress, workers=self.num_workers
-            )
-
-            for output_dict, module_key in zip(output_dicts, popped_nodes):
-                # get new nodes and is_leaf
-                queue = self._process_component_output(
-                    queue, output_dict, module_key, all_module_inputs, result_outputs
-                )
-
-                if show_intermediates and module_key not in intermediate_outputs:
-                    intermediate_outputs[module_key] = ComponentIntermediates(
-                        inputs=all_module_inputs[module_key], outputs=output_dict
+            output_dicts = await run_jobs(jobs, show_progress=self.show_progress)
+            for module_key, output_dict in zip(next_module_keys, output_dicts):
+                if (
+                    show_intermediates
+                    and module_key not in run_state.intermediate_outputs
+                ):
+                    run_state.intermediate_outputs[module_key] = ComponentIntermediates(
+                        inputs=module_input, outputs=output_dict
                     )
 
-        return result_outputs, intermediate_outputs
+                self.process_component_output(
+                    output_dict,
+                    module_key,
+                    run_state,
+                )
+
+            next_module_keys = self.get_next_module_keys(
+                run_state,
+            )
+            if not next_module_keys:
+                run_state.result_outputs[module_key] = output_dicts[-1]
+                break
+
+        return run_state.result_outputs, run_state.intermediate_outputs
 
     def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs during run_component."""
