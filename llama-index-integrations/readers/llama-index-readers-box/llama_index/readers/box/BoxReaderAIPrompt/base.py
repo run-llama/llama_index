@@ -1,29 +1,23 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from llama_index.core.readers.base import (
     BaseReader,
 )
 from llama_index.core.schema import Document
+from llama_index.readers.box.BoxAPI.box_api import (
+    get_box_files_payload,
+    get_box_folder_payload,
+    get_files_ai_prompt,
+)
 
 from box_sdk_gen import (
     BoxAPIError,
     BoxClient,
-    File,
 )
 
-from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiAskItems
 
 logger = logging.getLogger(__name__)
-
-
-class _BoxResourcePayload:
-    resource_info: File
-    ai_prompt: str
-    ai_response: str
-
-    def __init__(self, resource_info: File) -> None:
-        self.resource_info = resource_info
 
 
 class BoxReaderAIPrompt(BaseReader):
@@ -39,9 +33,11 @@ class BoxReaderAIPrompt(BaseReader):
     # def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
     def load_data(
         self,
-        file_ids: List[str],
         ai_prompt: str,
-        individual_document_prompt: bool = False,
+        file_ids: Optional[List[str]] = None,
+        folder_id: Optional[str] = None,
+        is_recursive: bool = False,
+        individual_document_prompt: bool = True,
     ) -> List[Document]:
         # check if the box client is authenticated
         try:
@@ -58,9 +54,18 @@ class BoxReaderAIPrompt(BaseReader):
 
         # get payload information
         if file_ids is not None:
-            payloads = self._get_files_payload(file_ids=file_ids)
+            payloads = get_box_files_payload(
+                box_client=self._box_client, file_ids=file_ids
+            )
+        elif folder_id is not None:
+            payloads = get_box_folder_payload(
+                box_client=self._box_client,
+                folder_id=folder_id,
+                is_recursive=is_recursive,
+            )
 
-        payloads = self._get_files_ai_prompt(
+        payloads = get_files_ai_prompt(
+            box_client=self._box_client,
             payloads=payloads,
             ai_prompt=ai_prompt,
             individual_document_prompt=individual_document_prompt,
@@ -79,49 +84,3 @@ class BoxReaderAIPrompt(BaseReader):
             )
             docs.append(doc)
         return docs
-
-    def _get_files_payload(self, file_ids: List[str]) -> List[_BoxResourcePayload]:
-        payloads = []
-        for file_id in file_ids:
-            file = self._box_client.files.get_file_by_id(file_id)
-            logger.info(f"Getting file: {file.id} {file.name} {file.type}")
-            payloads.append(
-                _BoxResourcePayload(
-                    resource_info=file,
-                )
-            )
-        return payloads
-
-    def _get_files_ai_prompt(
-        self,
-        payloads: List[_BoxResourcePayload],
-        ai_prompt: str,
-        individual_document_prompt: bool = True,
-    ) -> List[_BoxResourcePayload]:
-        if individual_document_prompt:
-            mode = CreateAiAskMode.SINGLE_ITEM_QA
-            for payload in payloads:
-                file = payload.resource_info
-                logger.info(f"Getting AI prompt for file: {file.id} {file.name}")
-
-                # get the AI prompt for the file
-                ai_response = self._box_client.ai.create_ai_ask(
-                    mode=mode, prompt=ai_prompt, items=[file]
-                )
-                payload.ai_prompt = ai_prompt
-                payload.ai_response = ai_response.answer
-        else:
-            mode = CreateAiAskMode.MULTIPLE_ITEM_QA
-            file_ids = [
-                CreateAiAskItems(payload.resource_info.id) for payload in payloads
-            ]
-
-            # get the AI prompt for the file
-            ai_response = self._box_client.ai.create_ai_ask(
-                mode=mode, prompt=ai_prompt, items=file_ids
-            )
-            for payload in payloads:
-                payload.ai_prompt = ai_prompt
-                payload.ai_response = ai_response.answer
-
-        return payloads

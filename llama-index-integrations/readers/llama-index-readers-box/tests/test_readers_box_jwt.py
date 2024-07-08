@@ -36,7 +36,7 @@ def test_box_reader_csv(box_client_jwt_integration_testing: BoxClient):
 def test_box_reader_folder(box_client_jwt_integration_testing: BoxClient):
     # Very slow test
     test_data = get_testing_data()
-    if test_data["disable_slow_tests"]:
+    if test_data["disable_folder_tests"]:
         raise pytest.skip(f"Slow integration tests are disabled.")
 
     reader = BoxReader(box_client=box_client_jwt_integration_testing)

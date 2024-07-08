@@ -49,8 +49,8 @@ def test_box_reader_csv(box_client_ccg_integration_testing: BoxClient):
 def test_box_reader_folder(box_client_ccg_integration_testing):
     # Very slow test
     test_data = get_testing_data()
-    if test_data["disable_slow_tests"]:
-        raise pytest.skip(f"Slow integration tests are disabled.")
+    if test_data["disable_folder_tests"]:
+        raise pytest.skip(f"Slow folder integration tests are disabled.")
     reader = BoxReader(box_client=box_client_ccg_integration_testing)
 
     docs = reader.load_data(folder_id=test_data["test_folder_id"])

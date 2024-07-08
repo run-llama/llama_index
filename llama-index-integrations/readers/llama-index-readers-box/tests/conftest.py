@@ -120,7 +120,7 @@ def box_client_jwt_integration_testing(box_environment_jwt):
 
 def get_testing_data() -> dict:
     return {
-        "disable_slow_tests": True,
+        "disable_folder_tests": True,
         "test_folder_id": "273980493541",
         "test_doc_id": "1584054722303",
         "test_ppt_id": "1584056661506",

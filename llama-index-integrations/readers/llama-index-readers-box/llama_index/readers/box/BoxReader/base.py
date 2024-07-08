@@ -1,6 +1,4 @@
 import logging
-import os
-import shutil
 import tempfile
 from typing import List, Optional, Dict, Any, Union
 
@@ -9,21 +7,21 @@ from llama_index.core.readers.base import (
     BaseReader,
 )
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import Field
+
+from llama_index.readers.box.BoxAPI.box_api import (
+    _BoxResourcePayload,
+    get_box_files_payload,
+    get_box_folder_payload,
+    download_file_by_id,
+)
 
 from box_sdk_gen import (
     BoxAPIError,
     BoxClient,
-    ByteStream,
-    File,
 )
 
 logger = logging.getLogger(__name__)
-
-
-class _BoxResourcePayload(BaseModel):
-    resource_info: Dict[str, Any]
-    downloaded_file_path: Optional[str]
 
 
 # TODO: Implement , ResourcesReaderMixin, FileSystemReaderMixin
@@ -49,6 +47,7 @@ class BoxReader(BaseReader):
         self,
         folder_id: Optional[str] = None,
         file_ids: Optional[List[str]] = None,
+        is_recursive: bool = False,
     ) -> List[Document]:
         # Connect to Box
         try:
@@ -60,20 +59,26 @@ class BoxReader(BaseReader):
             )
             raise
 
-        # Get the files
-        with tempfile.TemporaryDirectory() as temp_dir:
-            if file_ids is not None:
-                payloads = self._get_files(file_ids, temp_dir)
-            elif folder_id is not None:
-                payloads = self._get_folder(folder_id, temp_dir)
-            else:
-                payloads = self._get_folder(
-                    self._box_client,
-                    "0",
-                    temp_dir,
+        # Get the file resources
+        payloads = []
+        if file_ids is not None:
+            payloads.extend(
+                get_box_files_payload(box_client=self._box_client, file_ids=file_ids)
+            )
+        elif folder_id is not None:
+            payloads.extend(
+                get_box_folder_payload(
+                    box_client=self._box_client,
+                    folder_id=folder_id,
+                    is_recursive=is_recursive,
                 )
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            payloads = self._download_files(payloads, temp_dir)
+
             file_name_to_metadata = {
-                payload.downloaded_file_path: payload.resource_info
+                payload.downloaded_file_path: payload.resource_info.to_dict()
                 for payload in payloads
             }
 
@@ -87,47 +92,13 @@ class BoxReader(BaseReader):
             )
             return simple_loader.load_data()
 
-    def _get_files(
-        self, file_ids: List[str], temp_dir: str
+    def _download_files(
+        self, payloads: List[_BoxResourcePayload], temp_dir: str
     ) -> List[_BoxResourcePayload]:
-        payloads = []
-        for file_id in file_ids:
-            file = self._box_client.files.get_file_by_id(file_id)
-            logger.info(f"Getting file: {file.id} {file.name} {file.type}")
-            local_path = self._download_file_by_id(file, temp_dir)
-            resource_info = file.to_dict()
-            payloads.append(
-                _BoxResourcePayload(
-                    resource_info=resource_info,
-                    downloaded_file_path=local_path,
-                )
+        for payload in payloads:
+            file = payload.resource_info
+            local_path = download_file_by_id(
+                box_client=self._box_client, box_file=file, temp_dir=temp_dir
             )
-        return payloads
-
-    def _download_file_by_id(self, box_file: File, temp_dir: str) -> str:
-        # Save the downloaded file to the specified local directory.
-        file_path = os.path.join(temp_dir, box_file.name)
-        file_stream: ByteStream = self._box_client.downloads.download_file(box_file.id)
-        with open(file_path, "wb") as file:
-            shutil.copyfileobj(file_stream, file)
-
-        return file_path
-
-    def _get_folder(self, folder_id: str, temp_dir: str) -> List[_BoxResourcePayload]:
-        # Make sure folder exists
-        folder = self._box_client.folders.get_folder_by_id(folder_id)
-        logger.info(f"Getting files from folder: {folder.id} {folder.name}")
-
-        # Get the items
-        items = self._box_client.folders.get_folder_items(
-            folder_id, limit=10000
-        ).entries
-        payloads = []
-        for item in items:
-            logger.info(f"Item: {item.id} {item.name} {item.type}")
-            if item.type == "file":
-                payloads.extend(self._get_files([item.id], temp_dir))
-            if item.type == "folder":
-                logger.info(f"Skipping folder: {item.id} {item.name}")
-                # TODO: Implement Box recursive folder download
+            payload.downloaded_file_path = local_path
         return payloads

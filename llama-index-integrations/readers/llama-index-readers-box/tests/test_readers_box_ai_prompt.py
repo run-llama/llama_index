@@ -1,3 +1,4 @@
+import pytest
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.box import BoxReaderAIPrompt
 
@@ -54,3 +55,17 @@ def test_box_reader_ai_prompt_multi_doc_group_prompt(
         individual_document_prompt=False,
     )
     assert len(docs) == 2
+
+
+def test_box_reader_ai_prompt_folder(
+    box_client_ccg_integration_testing: BoxClient,
+):
+    reader = BoxReaderAIPrompt(box_client=box_client_ccg_integration_testing)
+    data = get_testing_data()
+    if data["disable_folder_tests"]:
+        raise pytest.skip(f"Slow folder integration tests are disabled.")
+    docs = reader.load_data(
+        folder_id=data["test_folder_id"],
+        ai_prompt="summarize this document",
+    )
+    assert len(docs) > 2
