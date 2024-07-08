@@ -27,10 +27,10 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index instrumentation agentops integration"
 license = "MIT"
-name = "llama-index-instrumentation-agentops"
+name = "llama-index-callbacks-agentops"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
