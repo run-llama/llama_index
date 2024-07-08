@@ -81,6 +81,7 @@ def box_client_jwt_unit_testing(box_environment_jwt):
             jwt_key_id="YOUR_BOX_JWT_KEY_ID",
             private_key="YOUR_BOX_PRIVATE_KEY",
             private_key_passphrase="YOUR_BOX_PRIVATE_KEY_PASSPHRASE",
+            enterprise_id="YOUR_BOX_ENTERPRISE_ID",
         )
     else:
         config = JWTConfig.from_config_file(jwt_config_path)

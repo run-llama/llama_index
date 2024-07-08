@@ -1,5 +1,14 @@
 # LlamaIndex Readers Integration: Box
 
+Effortlessly incorporate Box data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities, including:
+
+- [Box Reader](llama_index/readers/box/BoxReader/README.md)
+- [Box Text Extraction](llama_index/readers/box/BoxReaderAIPrompt/README.md)
+- Box AI Prompt
+- Box AI Extraction
+
+## Installation
+
 ```bash
 pip install llama-index-readers-box
 ```
@@ -47,63 +56,59 @@ If you want to use a different user, you can specify the user ID in the .env fil
 
 Checkout this guide for more information on how to setup the JWT: [Box JWT Guide](https://developer.box.com/guides/authentication/jwt/jwt-setup/)
 
-## Usage
+## Box Client
 
-### Box Reader
-
-This is a simple reader that can be used to load files from Box.
-It uses the LLamaIndex simple reader, and does not take advantage of any Box specific features.
+To work with the box readers, you will need to provide a Box Client.
+The Box Client can be created using either the Client Credential Grant (CCG) or JSON Web Tokens (JWT).
 
 #### Using CCG authentication
 
 ```python
-from box_sdk_gen import CCGConfig
+from box_sdk_gen import CCGConfig, BoxCCGAuth, BoxClient
 
-ccg_conf = CCGConfig(
+config = CCGConfig(
     client_id="your_client_id",
     client_secret="your_client_secret",
     enterprise_id="your_enterprise_id",
-    user_id="your_ccg_user_id",  # optional
+    user_id="your_ccg_user_id",  # Optional
 )
+auth = BoxCCGAuth(config)
+if config.user_id:
+    auth.with_user_subject(config.user_id)
+client = BoxClient(auth)
 
-reader = BoxReader(box_config=ccg_conf)
-docs = reader.load_data(file_ids=["file_id1", "file_id2"])
+reader = BoxReader(box_client=client)
 ```
 
 #### Using JWT authentication
 
 ```python
-from box_sdk_gen import JWTConfig
+from box_sdk_gen import JWTConfig, BoxJWTAuth, BoxClient
 
-jwt_conf = JWTConfig.from_config_file(jwt_config_path)
-user_id = "your_user_id"  # optional
+# Using manual configuration
+config = JWTConfig(
+    client_id="YOUR_BOX_CLIENT_ID",
+    client_secret="YOUR_BOX_CLIENT_SECRET",
+    jwt_key_id="YOUR_BOX_JWT_KEY_ID",
+    private_key="YOUR_BOX_PRIVATE_KEY",
+    private_key_passphrase="YOUR_BOX_PRIVATE_KEY_PASSPHRASE",
+    enterprise_id="YOUR_BOX_ENTERPRISE_ID",
+    user_id="YOUR_BOX_USER_ID",
+)
+
+# Using configuration file
+config = JWTConfig.from_config_file("path/to/your/.config.json")
+
+
+user_id = "1234"
 if user_id:
-    jwt.user_id = user_id
-    jwt.enterprise_id = None
+    config.user_id = user_id
+    config.enterprise_id = None
+auth = BoxJWTAuth(config)
+client = BoxClient(auth)
 
-reader = BoxReader(box_config=jwt_conf)
-docs = reader.load_data(file_ids=["file_id1", "file_id2"])
+reader = BoxReader(box_client=client)
 ```
-
-#### file_ids
-
-List of file ids to load, should be a list of strings.
-
-#### folder_id
-
-Folder id to load, should be a string.
-
-### Box Reader Text Extraction
-
-> Future implementation
-
-### Box Reader AI Prompt
-
-> Future implementation
-
-### Box Reader AI Extraction
-
-> Future implementation
 
 #### Author
 
