@@ -5,13 +5,13 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Optional, Sequence, Union
 
-from llama_index.core import ServiceContext
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.indices import SummaryIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import Document
+from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
@@ -58,9 +58,47 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
     "Otherwise answer NO.\n"
 )
 
+LLAMA3_8B_EVAL_TEMPLATE = PromptTemplate(
+    """Please tell if a given piece of information is supported by the context.
+You need to answer with either YES or NO.
+Answer YES if **any part** of the context supports the information, even if most of the context is unrelated.
+Answer NO if the context does not support the information at all.
+Be sure to read all provided context segments carefully before making your decision.
+
+Some examples are provided below:
+
+Example 1:
+Information: The Eiffel Tower is located in Paris.
+Context: The Eiffel Tower, a symbol of French culture, stands prominently in the city of Paris.
+Answer: YES
+
+Example 2:
+Information: Bananas are a type of berry.
+Context: Bananas are a popular fruit enjoyed worldwide and are rich in potassium.
+Answer: NO
+
+Example 3:
+Information: Cats are reptiles.
+Context: Cats are domesticated felines known for their agility and companionship.
+Answer: NO
+
+Example 4:
+Information: Amazon started as an online bookstore.
+Context: Amazon initially launched as an online store for books but has since expanded into a global e-commerce giant
+offering various products and services.
+Answer: YES
+
+Information: {query}
+Context: {reference_contexts}
+Answer:"""
+)
+
+TEMPLATES_CATALOG = {"llama3:8b": LLAMA3_8B_EVAL_TEMPLATE}
+
 
 class FaithfulnessEvaluator(BaseEvaluator):
-    """Faithfulness evaluator.
+    """
+    Faithfulness evaluator.
 
     Evaluates whether a response is faithful to the contexts
     (i.e. whether the response is supported by the contexts or hallucinated.)
@@ -95,7 +133,10 @@ class FaithfulnessEvaluator(BaseEvaluator):
         if isinstance(eval_template, str):
             self._eval_template = PromptTemplate(eval_template)
         else:
-            self._eval_template = eval_template or DEFAULT_EVAL_TEMPLATE
+            model_name = self._llm.metadata.model_name
+            self._eval_template = eval_template or TEMPLATES_CATALOG.get(
+                model_name, DEFAULT_EVAL_TEMPLATE
+            )
 
         self._refine_template: BasePromptTemplate
         if isinstance(refine_template, str):

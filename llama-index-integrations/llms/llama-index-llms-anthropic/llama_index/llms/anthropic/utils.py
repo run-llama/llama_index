@@ -3,7 +3,8 @@ from typing import Dict, Sequence, Tuple
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 from anthropic.types import MessageParam, TextBlockParam
-from anthropic.types.beta.tools import ToolResultBlockParam, ToolUseBlockParam
+from anthropic.types.tool_result_block_param import ToolResultBlockParam
+from anthropic.types.tool_use_block_param import ToolUseBlockParam
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -17,6 +18,7 @@ CLAUDE_MODELS: Dict[str, int] = {
     "claude-3-opus-20240229": 180000,
     "claude-3-sonnet-20240229": 180000,
     "claude-3-haiku-20240307": 180000,
+    "claude-3-5-sonnet-20240620": 180000,
 }
 
 

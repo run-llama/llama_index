@@ -7,8 +7,6 @@ An index that is built on top of multiple vector stores for different modalities
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
-from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
@@ -22,9 +20,13 @@ from llama_index.core.indices.utils import (
     embed_image_nodes,
     embed_nodes,
 )
+from llama_index.core.indices.multi_modal.retriever import (
+    MultiModalVectorIndexRetriever,
+)
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms import MultiModalLLM
+from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode, ImageNode
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
@@ -127,12 +129,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     def is_text_vector_store_empty(self) -> bool:
         return self._is_text_vector_store_empty
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        # NOTE: lazy import
-        from llama_index.core.indices.multi_modal.retriever import (
-            MultiModalVectorIndexRetriever,
-        )
-
+    def as_retriever(self, **kwargs: Any) -> MultiModalVectorIndexRetriever:
         return MultiModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
@@ -140,16 +137,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     def as_query_engine(
-        self, llm: Optional[LLMType] = None, **kwargs: Any
-    ) -> BaseQueryEngine:
-        """As query engine."""
-        from llama_index.core.indices.multi_modal.retriever import (
-            MultiModalVectorIndexRetriever,
-        )
-        from llama_index.core.query_engine.multi_modal import (
-            SimpleMultiModalQueryEngine,
-        )
-
+        self,
+        llm: Optional[LLMType] = None,
+        **kwargs: Any,
+    ) -> SimpleMultiModalQueryEngine:
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         llm = llm or llm_from_settings_or_context(Settings, self._service_context)
@@ -172,7 +163,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
         **kwargs: Any,
-    ) -> "VectorStoreIndex":
+    ) -> "MultiModalVectorStoreIndex":
         if not vector_store.stores_text:
             raise ValueError(
                 "Cannot initialize from a vector store that does not store text."

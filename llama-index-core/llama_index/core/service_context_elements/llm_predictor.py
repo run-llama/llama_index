@@ -13,6 +13,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.llms.llm import (
     LLM,
     astream_chat_response_to_tokens,
@@ -29,7 +30,7 @@ from typing_extensions import Self
 logger = logging.getLogger(__name__)
 
 
-class BaseLLMPredictor(BaseComponent, ABC):
+class BaseLLMPredictor(BaseComponent, DispatcherSpanMixin, ABC):
     """Base LLM Predictor."""
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:

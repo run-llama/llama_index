@@ -46,6 +46,7 @@ from llama_index.core.settings import (
     llm_from_settings_or_context,
 )
 from llama_index.core.types import RESPONSE_TEXT_TYPE
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.synthesis import (
     SynthesizeStartEvent,
     SynthesizeEndEvent,
@@ -67,7 +68,7 @@ async def empty_response_agenerator() -> AsyncGenerator[str, None]:
     yield "Empty Response"
 
 
-class BaseSynthesizer(ChainableMixin, PromptMixin):
+class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Response builder class."""
 
     def __init__(

@@ -58,6 +58,7 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
             MarkdownReader,
             MboxReader,
             PandasCSVReader,
+            PandasExcelReader,
             PDFReader,
             PptxReader,
             VideoAudioReader,
@@ -72,9 +73,11 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".pptx": PptxReader,
         ".ppt": PptxReader,
         ".pptm": PptxReader,
+        ".gif": ImageReader,
         ".jpg": ImageReader,
         ".png": ImageReader,
         ".jpeg": ImageReader,
+        ".webp": ImageReader,
         ".mp3": VideoAudioReader,
         ".mp4": VideoAudioReader,
         ".csv": PandasCSVReader,
@@ -82,6 +85,8 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".md": MarkdownReader,
         ".mbox": MboxReader,
         ".ipynb": IPYNBReader,
+        ".xls": PandasExcelReader,
+        ".xlsx": PandasExcelReader,
     }
     return default_file_reader_cls
 
@@ -423,8 +428,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
         fs = kwargs.get("fs", self.fs)
 
+        path_func = Path if is_default_fs(fs) else PurePosixPath
+
         return SimpleDirectoryReader.load_file(
-            input_file=Path(resource_id),
+            input_file=path_func(resource_id),
             file_metadata=file_metadata,
             file_extractor=file_extractor,
             filename_as_id=filename_as_id,
