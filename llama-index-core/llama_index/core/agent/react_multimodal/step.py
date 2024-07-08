@@ -136,11 +136,11 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
                 add_user_step_to_reasoning,
                 generate_chat_message_fn=generate_openai_multi_modal_chat_message,
             )
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "`llama-index-multi-modal-llms-openai` package cannot be found. "
                 "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
-            )
+            ) from exc
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -180,15 +180,14 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
                 from llama_index.multi_modal_llms.openai import (
                     OpenAIMultiModal,
                 )  # pants: no-infer-dep
-
                 multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
                     model="gpt-4-vision-preview", max_new_tokens=1000
                 )
-            except ImportError:
+            except ImportError as exc:
                 raise ImportError(
                     "`llama-index-multi-modal-llms-openai` package cannot be found. "
                     "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
-                )
+                ) from exc
         return cls(
             tools=tools or [],
             tool_retriever=tool_retriever,

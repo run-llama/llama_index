@@ -75,12 +75,11 @@ def default_rag_cli() -> RagCLI:
         from llama_index.vector_stores.chroma import (
             ChromaVectorStore,
         )  # pants: no-infer-dep
-    except ImportError:
+    except ImportError as exc:
         raise ImportError(
-            "Default RAG pipeline uses chromadb. "
-            "Install with `pip install llama-index-vector-stores-chroma "
-            "or customize to use a different vector store."
-        )
+            "Default RAG pipeline uses chromadb."
+            " Install with `pip install llama-index-vector-stores-chroma "
+            "or customize to use a different vector store.") from exc
 
     persist_dir = default_ragcli_persist_dir()
     chroma_client = chromadb.PersistentClient(path=persist_dir)
