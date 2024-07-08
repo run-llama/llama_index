@@ -451,7 +451,9 @@ class ReActAgentWorker(BaseAgentWorker):
             next_steps=new_steps,
         )
 
-    def _infer_stream_chunk_is_final(self, chunk: ChatResponse, missed_chunks_storage: list) -> bool:
+    def _infer_stream_chunk_is_final(
+        self, chunk: ChatResponse, missed_chunks_storage: list
+    ) -> bool:
         """Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
@@ -477,7 +479,9 @@ class ReActAgentWorker(BaseAgentWorker):
         return False
 
     def _add_back_chunk_to_stream(
-        self, chunks: List[ChatResponse], chat_stream: Generator[ChatResponse, None, None]
+        self,
+        chunks: List[ChatResponse],
+        chat_stream: Generator[ChatResponse, None, None],
     ) -> Generator[ChatResponse, None, None]:
         """Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
@@ -497,7 +501,9 @@ class ReActAgentWorker(BaseAgentWorker):
         return gen()
 
     async def _async_add_back_chunk_to_stream(
-        self, chunks: List[ChatResponse], chat_stream: AsyncGenerator[ChatResponse, None]
+        self,
+        chunks: List[ChatResponse],
+        chat_stream: AsyncGenerator[ChatResponse, None],
     ) -> AsyncGenerator[ChatResponse, None]:
         """Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
@@ -513,7 +519,7 @@ class ReActAgentWorker(BaseAgentWorker):
         """
         for chunk in chunks:
             yield chunk
-        
+
         async for item in chat_stream:
             yield item
 
@@ -628,7 +634,9 @@ class ReActAgentWorker(BaseAgentWorker):
         is_done = False
         for latest_chunk in chat_stream:
             full_response = latest_chunk
-            is_done = self._infer_stream_chunk_is_final(latest_chunk, missed_chunks_storage)
+            is_done = self._infer_stream_chunk_is_final(
+                latest_chunk, missed_chunks_storage
+            )
             if is_done:
                 break
 
@@ -701,7 +709,9 @@ class ReActAgentWorker(BaseAgentWorker):
         is_done = False
         async for latest_chunk in chat_stream:
             full_response = latest_chunk
-            is_done = self._infer_stream_chunk_is_final(latest_chunk, missed_chunks_storage)
+            is_done = self._infer_stream_chunk_is_final(
+                latest_chunk, missed_chunks_storage
+            )
             if is_done:
                 break
 
