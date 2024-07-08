@@ -11,7 +11,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.instrumentation.agentops"
+import_path = "llama_index.callbacks.agentops.agentops"
 
 [tool.llamahub.class_authors]
 AgentOpsEventHandler = "joelrorseth"

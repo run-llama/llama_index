@@ -8,7 +8,7 @@ to this client using the same keyword arguments in
 `init()`.
 
 ```
-from llama_index.instrumentation.agentops import AgentOpsHandler
+from llama_index.callbacks.agentops.agentops import AgentOpsHandler
 
 AgentOpsHandler.init()
 ```
