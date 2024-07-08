@@ -1,63 +1,8 @@
-import pytest
-import os
-import dotenv
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.box import BoxReaderAIPrompt
 
-from box_sdk_gen import CCGConfig, BoxCCGAuth, BoxClient
-from tests.config import get_testing_data
-
-
-@pytest.fixture(scope="module")
-def box_environment_ccg():
-    dotenv.load_dotenv()
-
-    # Common configurations
-    client_id = os.getenv("BOX_CLIENT_ID", "YOUR_BOX_CLIENT_ID")
-    client_secret = os.getenv("BOX_CLIENT_SECRET", "YOUR_BOX_CLIENT_SECRET")
-
-    # CCG configurations
-    enterprise_id = os.getenv("BOX_ENTERPRISE_ID", "YOUR_BOX_ENTERPRISE_ID")
-    ccg_user_id = os.getenv("BOX_USER_ID")
-
-    return {
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "enterprise_id": enterprise_id,
-        "ccg_user_id": ccg_user_id,
-    }
-
-
-@pytest.fixture(scope="module")
-def box_client_ccg_unit_testing(box_environment_ccg):
-    config = CCGConfig(
-        client_id=box_environment_ccg["client_id"],
-        client_secret=box_environment_ccg["client_secret"],
-        enterprise_id=box_environment_ccg["enterprise_id"],
-        user_id=box_environment_ccg["ccg_user_id"],
-    )
-    auth = BoxCCGAuth(config)
-    if config.user_id:
-        auth.with_user_subject(config.user_id)
-    return BoxClient(auth)
-
-
-@pytest.fixture(scope="module")
-def box_client_ccg_integration_testing(box_environment_ccg):
-    config = CCGConfig(
-        client_id=box_environment_ccg["client_id"],
-        client_secret=box_environment_ccg["client_secret"],
-        enterprise_id=box_environment_ccg["enterprise_id"],
-        user_id=box_environment_ccg["ccg_user_id"],
-    )
-    if config.client_id == "YOUR_BOX_CLIENT_ID":
-        raise pytest.skip(
-            f"Create a .env file with the Box credentials to run integration tests."
-        )
-    auth = BoxCCGAuth(config)
-    if config.user_id:
-        auth.with_user_subject(config.user_id)
-    return BoxClient(auth)
+from box_sdk_gen import BoxClient
+from tests.conftest import get_testing_data
 
 
 def test_class_name():
@@ -74,7 +19,12 @@ def test_reader_init(box_client_ccg_unit_testing: BoxClient):
 ####################################################################################################
 
 
-def test_load_data_single_doc(box_client_ccg_integration_testing: BoxClient):
+def test_box_reader_ai_prompt_whoami(box_client_ccg_integration_testing: BoxClient):
+    me = box_client_ccg_integration_testing.users.get_user_me()
+    assert me is not None
+
+
+def test_box_reader_ai_prompt_single_doc(box_client_ccg_integration_testing: BoxClient):
     reader = BoxReaderAIPrompt(box_client=box_client_ccg_integration_testing)
     data = get_testing_data()
     docs = reader.load_data(
@@ -83,7 +33,7 @@ def test_load_data_single_doc(box_client_ccg_integration_testing: BoxClient):
     assert len(docs) == 1
 
 
-def test_load_data_multi_doc(box_client_ccg_integration_testing: BoxClient):
+def test_box_reader_ai_prompt_multi_doc(box_client_ccg_integration_testing: BoxClient):
     reader = BoxReaderAIPrompt(box_client=box_client_ccg_integration_testing)
     data = get_testing_data()
     docs = reader.load_data(
@@ -93,7 +43,7 @@ def test_load_data_multi_doc(box_client_ccg_integration_testing: BoxClient):
     assert len(docs) == 2
 
 
-def test_load_data_multi_doc_group_prompt(
+def test_box_reader_ai_prompt_multi_doc_group_prompt(
     box_client_ccg_integration_testing: BoxClient,
 ):
     reader = BoxReaderAIPrompt(box_client=box_client_ccg_integration_testing)
