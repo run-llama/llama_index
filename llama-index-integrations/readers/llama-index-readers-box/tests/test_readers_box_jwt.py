@@ -6,6 +6,8 @@ from llama_index.readers.box import BoxReader
 
 from box_sdk_gen import JWTConfig
 
+from tests.config import get_testing_data
+
 
 @pytest.fixture(scope="module")
 def box_environment_jwt():
@@ -54,19 +56,6 @@ def jwt_integration_testing(jwt_unit_testing: JWTConfig):
 @pytest.fixture(scope="module")
 def box_reader_jwt(jwt_integration_testing: JWTConfig):
     return BoxReader(box_config=jwt_integration_testing)
-
-
-def get_testing_data() -> dict:
-    return {
-        "disable_slow_tests": True,
-        "test_folder_id": "273257908044",
-        "test_doc_id": "1579334243393",
-        "test_ppt_id": "994852771390",
-        "test_xls_id": "994854421385",
-        "test_pdf_id": "994851508870",
-        "test_json_id": "1579338585099",
-        "test_csv_id": "1579338385706",
-    }
 
 
 def test_class():
