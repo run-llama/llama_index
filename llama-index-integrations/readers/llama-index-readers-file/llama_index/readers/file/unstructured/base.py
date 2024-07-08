@@ -11,7 +11,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from unstructured.documents.elements import Element
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -45,6 +48,11 @@ class UnstructuredReader(BaseReader):
             excluded_metadata_keys (Set): Set of metadata keys to exclude from the final document.
         """
         super().__init__(*args)  # not passing kwargs to parent bc it cannot accept it
+
+        if Element is None:
+            raise ImportError(
+                "Unstructured is not installed. Please install it using 'pip install -U unstructured'."
+            )
 
         self.api_key = api_key
         self.use_api = bool(api_key)
