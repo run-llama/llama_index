@@ -333,7 +333,12 @@ class OpenAIAgentWorker(BaseAgentWorker):
         tool = get_function_by_name(tools, function_name)
 
         dispatcher.event(
-            AgentToolCallEvent(arguments=function_args_str, tool=tool.metadata)
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=tool.metadata
+                if tool
+                else ToolMetadata(description="unknown", name=function_name),
+            )
         )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
@@ -432,7 +437,12 @@ class OpenAIAgentWorker(BaseAgentWorker):
         tool = get_function_by_name(tools, function_name)
 
         dispatcher.event(
-            AgentToolCallEvent(arguments=function_args_str, tool=tool.metadata)
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=tool.metadata
+                if tool
+                else ToolMetadata(description="unknown", name=function_name),
+            )
         )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
