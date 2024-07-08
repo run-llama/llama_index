@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Ramachandra Vikas Chamarthi dev@monsterapi.ai"]
+authors = ["Ramachandra Vikas Chamarthi <dev@monsterapi.ai>"]
 description = "llama-index llms monsterapi integration"
 exclude = ["**/BUILD"]
 license = "MIT"
