@@ -40,7 +40,6 @@ python_tests(
         "!!llama-index-integrations/llms/llama-index-llms-llama-cpp/pyproject.toml:poetry",
         "!!llama-index-integrations/llms/llama-index-llms-llama-cpp:poetry#llama-cpp-python",
         "!!llama-index-integrations/llms/llama-index-llms-monsterapi/pyproject.toml:poetry",
-        "!!llama-index-integrations/llms/llama-index-llms-monsterapi:poetry#monsterapi",
         "!!llama-index-integrations/llms/llama-index-llms-nvidia-triton/pyproject.toml:poetry",
         "!!llama-index-integrations/llms/llama-index-llms-nvidia-triton:poetry#tritonclient",
         "!!llama-index-integrations/llms/llama-index-llms-openllm/pyproject.toml:poetry",
