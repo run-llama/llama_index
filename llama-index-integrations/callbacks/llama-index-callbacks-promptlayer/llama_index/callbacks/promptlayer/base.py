@@ -119,18 +119,19 @@ class PromptLayerHandler(BaseCallbackHandler):
         if completion:
             function_name = PROMPT_LAYER_COMPLETION_FUNCTION_NAME
             resp = str(completion)
-        _pl_request_id = self._promptlayer_api_request(
-            function_name,
-            "openai",
-            [prompt],
-            {
-                **extra_args,
-                **event_data["kwargs"],
-            },
-            self.pl_tags,
-            [resp],
-            event_data["request_start_time"],
-            request_end_time,
-            self._promptlayer_api_key,
-            return_pl_id=self.return_pl_id,
-        )
+        if resp:
+            _pl_request_id = self._promptlayer_api_request(
+                function_name,
+                "openai",
+                [prompt],
+                {
+                    **extra_args,
+                    **event_data["kwargs"],
+                },
+                self.pl_tags,
+                [resp],
+                event_data["request_start_time"],
+                request_end_time,
+                self._promptlayer_api_key,
+                return_pl_id=self.return_pl_id,
+            )
