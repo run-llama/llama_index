@@ -85,6 +85,7 @@ class PromptLayerHandler(BaseCallbackHandler):
         event_data = self.get_event(event_id=event_id)
         resp: Union[str, Dict]
         extra_args = {}
+        resp = None
         if response:
             messages = cast(List[ChatMessage], payload.get(EventPayload.MESSAGES, []))
             resp = response.message.dict()
