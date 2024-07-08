@@ -69,7 +69,6 @@ class UnstructuredReader(BaseReader):
         document_kwargs: Optional[Dict] = None,
         extra_info: Optional[Dict] = None,
         split_documents: Optional[bool] = False,
-        deterministic_ids: Optional[bool] = False,
         excluded_metadata_keys: Optional[List[str]] = None,
     ) -> List[Document]:
         """Load data using Unstructured.io.
@@ -84,7 +83,6 @@ class UnstructuredReader(BaseReader):
             document_kwargs (Optional[Dict]): Additional arguments for document creation.
             extra_info (Optional[Dict]): Extra information to add to the document metadata.
             split_documents (Optional[bool]): Whether to split the documents.
-            deterministic_ids (Optional[bool]): Whether to generate deterministic IDs.
             excluded_metadata_keys (Optional[List[str]]): Keys to exclude from the metadata.
 
         Returns:
@@ -99,7 +97,6 @@ class UnstructuredReader(BaseReader):
             document_kwargs,
             extra_info,
             split_documents,
-            deterministic_ids,
             excluded_metadata_keys,
         )
 
@@ -133,11 +130,10 @@ class UnstructuredReader(BaseReader):
 
     def _create_documents(
         self,
-        elements: List,
+        elements: List[Element],
         document_kwargs: Optional[Dict],
         extra_info: Optional[Dict],
         split_documents: Optional[bool],
-        deterministic_ids: Optional[bool],
         excluded_metadata_keys: Optional[List[str]],
     ) -> List[Document]:
         """Create documents from partitioned elements.
@@ -147,7 +143,6 @@ class UnstructuredReader(BaseReader):
             document_kwargs (Optional[Dict]): Additional arguments for document creation.
             extra_info (Optional[Dict]): Extra information to add to the document metadata.
             split_documents (Optional[bool]): Whether to split the documents.
-            deterministic_ids (Optional[bool]): Whether to generate deterministic IDs.
             excluded_metadata_keys (Optional[List[str]]): Keys to exclude from the metadata.
 
         Returns:
@@ -174,9 +169,7 @@ class UnstructuredReader(BaseReader):
                         )
 
                 kwargs["extra_info"] = metadata
-
-                if deterministic_ids:
-                    kwargs["doc_id"] = element.id_to_hash(sequence_number)
+                kwargs["doc_id"] = element.id_to_hash(sequence_number)
 
                 docs.append(Document(**kwargs))
         else:
@@ -190,13 +183,9 @@ class UnstructuredReader(BaseReader):
 
             if len(elements) > 0:
                 filename = elements[0].metadata.filename
+                elements[0].id
                 metadata["filename"] = filename
-
-                if deterministic_ids:
-                    from hashlib import sha256
-
-                    data = f"{filename}{text}"
-                    kwargs["doc_id"] = sha256(data.encode()).hexdigest()[:32]
+                kwargs["doc_id"] = f"{filename}"
 
             kwargs["extra_info"] = metadata
 
