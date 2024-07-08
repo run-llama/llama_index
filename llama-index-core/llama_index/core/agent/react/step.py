@@ -1,6 +1,7 @@
 """ReAct agent worker."""
 
 import asyncio
+import json
 import uuid
 from functools import partial
 from typing import (
@@ -43,6 +44,8 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
@@ -54,6 +57,8 @@ from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.types import Thread
 from llama_index.core.utils import print_text
+
+dispatcher = get_dispatcher(__name__)
 
 
 def add_user_step_to_reasoning(
@@ -96,6 +101,7 @@ def tell_llm_about_failure_in_extract_reasoning_step(
         },
     ) as event:
         event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(dummy_tool_output)})
+
     return dummy_tool_output
 
 
@@ -284,6 +290,12 @@ class ReActAgentWorker(BaseAgentWorker):
                     },
                 ) as event:
                     try:
+                        dispatcher.event(
+                            AgentToolCallEvent(
+                                arguments=json.dumps({**reasoning_step.action_input}),
+                                tool=tool.metadata,
+                            )
+                        )
                         tool_output = tool.call(**reasoning_step.action_input)
                     except Exception as e:
                         tool_output = ToolOutput(
@@ -350,6 +362,12 @@ class ReActAgentWorker(BaseAgentWorker):
                     },
                 ) as event:
                     try:
+                        dispatcher.event(
+                            AgentToolCallEvent(
+                                arguments=json.dumps({**reasoning_step.action_input}),
+                                tool=tool.metadata,
+                            )
+                        )
                         tool_output = await tool.acall(**reasoning_step.action_input)
                     except Exception as e:
                         tool_output = ToolOutput(

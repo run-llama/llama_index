@@ -1,8 +1,11 @@
-import llama_index.core.instrumentation as instrument
+import json
 from inspect import BoundArguments
 from typing import Any, Dict, List, Optional, Set
+
 from agentops import Client as AOClient
 from agentops import LLMEvent, ToolEvent, ErrorEvent
+
+import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation.base_handler import BaseInstrumentationHandler
 from llama_index.core.instrumentation.event_handlers.base import BaseEventHandler
 from llama_index.core.instrumentation.events.agent import (
@@ -16,7 +19,6 @@ from llama_index.core.instrumentation.events.llm import (
 )
 from llama_index.core.instrumentation.span.simple import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHandler
-from llama_index.core.llms.chatml_utils import completion_to_prompt, messages_to_prompt
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 
 
@@ -169,16 +171,37 @@ class AgentOpsEventHandler(BaseEventHandler):
 
         if isinstance(event, LLMChatStartEvent) and is_agent_chat_event:
             self._shared_handler_state.agent_chat_start_event[event.span_id] = event
-            model = event.model_dict["model"] if "model" in event.model_dict else None
-            prompt = messages_to_prompt(event.messages)
-            self._ao_client.record(LLMEvent(model=model, prompt=prompt))
-
         elif isinstance(event, LLMChatEndEvent) and is_agent_chat_event:
+            message_dicts = []
+            for message in event.messages:
+                message_dicts.append(
+                    {
+                        "content": message.content,
+                        "role": message.role,
+                    }
+                )
+
+            result_dict = None
+            usage = {
+                "prompt_tokens": None,
+                "completion_tokens": None,
+            }
+            if event.response:
+                result_dict = {
+                    "content": event.response.message.content,
+                    "role": event.response.message.role,
+                }
+                if event.response.raw:
+                    usage = dict(event.response.raw.get("usage", {}))
+                    completion_tokens = usage.get("completion_tokens", None)
+                    prompt_tokens = usage.get("prompt_tokens", None)
+                    usage["prompt_tokens"] = prompt_tokens
+                    usage["completion_tokens"] = completion_tokens
+
             event_params: Dict[str, Any] = {
-                "prompt": messages_to_prompt(event.messages),
-                "completion": completion_to_prompt(
-                    event.response.message.content if event.response else None
-                ),
+                "prompt": message_dicts,
+                "completion": result_dict,
+                **usage,
             }
 
             # Get model info from chat start event corresponding to this chat end event
@@ -193,7 +216,8 @@ class AgentOpsEventHandler(BaseEventHandler):
             self._ao_client.record(LLMEvent(**event_params))
 
         elif isinstance(event, AgentToolCallEvent):
-            self._ao_client.record(ToolEvent(name=event.tool.name))
+            params = json.loads(event.arguments) if event.arguments else None
+            self._ao_client.record(ToolEvent(name=event.tool.name, params=params))
 
 
 class AgentOpsHandler(BaseInstrumentationHandler):
