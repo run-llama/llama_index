@@ -1,4 +1,4 @@
-from llama_index.callbacks.agentops.agentops.base import AgentOpsHandler
+from llama_index.callbacks.agentops.base import AgentOpsHandler
 
 
 __all__ = ["AgentOpsHandler"]

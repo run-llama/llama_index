@@ -39,7 +39,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.types import BaseTool, ToolMetadata
-from llama_index.callbacks.agentops.agentops import AgentOpsHandler
+from llama_index.callbacks.agentops import AgentOpsHandler
 from unittest.mock import patch, MagicMock
 
 
@@ -267,7 +267,7 @@ def test_class():
 @pytest.mark.parametrize(
     "agent_runner_fixture", ["mock_agent", "mock_basic_function_calling_agent"]
 )
-@patch("llama_index.callbacks.agentops.agentops.base.AOClient")
+@patch("llama_index.callbacks.agentops.base.AOClient")
 async def test_agentops_event_handler_emits_llmevents(
     mock_ao_client: MagicMock, method: str, agent_runner_fixture: str, request
 ):
@@ -313,7 +313,7 @@ async def test_agentops_event_handler_emits_llmevents(
 
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("method", ["chat", "achat"])
-@patch("llama_index.callbacks.agentops.agentops.base.AOClient")
+@patch("llama_index.callbacks.agentops.base.AOClient")
 async def test_agentops_event_handler_emits_toolevents(
     mock_ao_client: MagicMock, method: str, mock_function_calling_agent: AgentRunner
 ):
@@ -350,7 +350,7 @@ async def test_agentops_event_handler_emits_toolevents(
 
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("method", ["chat", "achat", "stream_chat", "astream_chat"])
-@patch("llama_index.callbacks.agentops.agentops.base.AOClient")
+@patch("llama_index.callbacks.agentops.base.AOClient")
 async def test_agentops_event_handler_emits_errorevents(
     mock_ao_client: MagicMock, method: str, mock_error_throwing_agent: AgentRunner
 ):

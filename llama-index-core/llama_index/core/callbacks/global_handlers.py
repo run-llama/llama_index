@@ -112,7 +112,7 @@ def create_global_handler(
         handler = langfuse_callback_handler(**eval_params)
     elif eval_mode == "agentops":
         try:
-            from llama_index.callbacks.agentops.agentops import (
+            from llama_index.callbacks.agentops import (
                 AgentOpsHandler,
             )  # pants: no-infer-dep
         except ImportError:
