@@ -142,6 +142,24 @@ def build_conifurable_data_sink_enum():
     except (ImportError, ValidationError):
         pass
 
+    try:
+        from llama_index.vector_stores.azureaisearch import (
+            AzureAISearchVectorStore,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "AZUREAISEARCH",
+                DataSink(
+                    name="Azure AI Search",
+                    component_type=AzureAISearchVectorStore,
+                ),
+            )
+        )
+
+    except (ImportError, ValidationError):
+        pass
+
     return ConfigurableComponent("ConfigurableDataSinks", enum_members)
 
 
