@@ -6,6 +6,7 @@ from llama_index.core.readers.base import (
 )
 from llama_index.core.schema import Document
 from llama_index.readers.box.BoxAPI.box_api import (
+    _BoxResourcePayload,
     get_box_files_payload,
     get_box_folder_payload,
     get_files_ai_prompt,
@@ -51,17 +52,20 @@ class BoxReaderAIPrompt(BaseReader):
         # return super().load_data(*args, **load_kwargs)
 
         docs = []
+        payloads: List[_BoxResourcePayload] = []
 
         # get payload information
         if file_ids is not None:
-            payloads = get_box_files_payload(
-                box_client=self._box_client, file_ids=file_ids
+            payloads.extend(
+                get_box_files_payload(box_client=self._box_client, file_ids=file_ids)
             )
         elif folder_id is not None:
-            payloads = get_box_folder_payload(
-                box_client=self._box_client,
-                folder_id=folder_id,
-                is_recursive=is_recursive,
+            payloads.extend(
+                get_box_folder_payload(
+                    box_client=self._box_client,
+                    folder_id=folder_id,
+                    is_recursive=is_recursive,
+                )
             )
 
         payloads = get_files_ai_prompt(

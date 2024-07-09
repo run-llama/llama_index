@@ -60,7 +60,7 @@ class BoxReader(BaseReader):
             raise
 
         # Get the file resources
-        payloads = []
+        payloads: List[_BoxResourcePayload] = []
         if file_ids is not None:
             payloads.extend(
                 get_box_files_payload(box_client=self._box_client, file_ids=file_ids)

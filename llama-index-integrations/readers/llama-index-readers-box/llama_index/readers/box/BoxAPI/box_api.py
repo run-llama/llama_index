@@ -28,7 +28,7 @@ class _BoxResourcePayload:
 def get_box_files_payload(
     box_client: BoxClient, file_ids: List[str]
 ) -> List[_BoxResourcePayload]:
-    payloads = []
+    payloads: List[_BoxResourcePayload] = []
     for file_id in file_ids:
         try:
             file = box_client.files.get_file_by_id(file_id)
@@ -53,7 +53,7 @@ def get_box_files_payload(
 def get_box_folder_payload(
     box_client: BoxClient, folder_id: str, is_recursive: bool = False
 ) -> List[_BoxResourcePayload]:
-    payloads = []
+    payloads: List[_BoxResourcePayload] = []
     try:
         folder = box_client.folders.get_folder_by_id(folder_id)
     except BoxAPIError as e:
