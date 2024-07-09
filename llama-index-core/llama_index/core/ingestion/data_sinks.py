@@ -149,7 +149,7 @@ def build_conifurable_data_sink_enum():
 
         enum_members.append(
             (
-                "AZUREAISEARCH",
+                "AZUREAI_SEARCH",
                 DataSink(
                     name="Azure AI Search",
                     component_type=AzureAISearchVectorStore,
