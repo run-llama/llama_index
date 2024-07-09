@@ -179,7 +179,7 @@ class TextGenerationInference(FunctionCallingLLM):
             timeout=timeout,
             max_retries=max_retries,
             seed=seed,
-            model=model_name,
+            model_name=model_name,
             is_function_calling_model=is_function_calling_model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,

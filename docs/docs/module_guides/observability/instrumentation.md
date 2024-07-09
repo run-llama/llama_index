@@ -20,6 +20,14 @@ Listed below are the core classes as well as their brief description of the
 - `SpanHandler` — is responsible for the entering, exiting, and dropping (i.e., early exiting due to error) of `Span`'s.
 - `Dispatcher` — emits `Event`'s as well as signals to enter/exit/drop a `Span` to the appropriate handlers.
 
+
+## Using the Instrumentation Module for Observability
+
+A core use case for instrumentation is observability. Our native instrumentation integrations with third-party partners allow you to get detailed traces across the entire call stack.
+
+Check out our [observability guide](index.md) for more details on supported partners.
+
+
 ## Usage
 
 Using the new `instrumentation` module involves 3 high-level steps.

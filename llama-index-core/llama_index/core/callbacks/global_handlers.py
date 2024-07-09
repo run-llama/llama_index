@@ -1,5 +1,4 @@
-from typing import Any
-
+from typing import Any, Optional
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.simple_llm_handler import SimpleLLMHandler
 
@@ -8,11 +7,16 @@ def set_global_handler(eval_mode: str, **eval_params: Any) -> None:
     """Set global eval handlers."""
     import llama_index.core
 
-    llama_index.core.global_handler = create_global_handler(eval_mode, **eval_params)
+    handler = create_global_handler(eval_mode, **eval_params)
+    if handler:
+        llama_index.core.global_handler = handler
 
 
-def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHandler:
+def create_global_handler(
+    eval_mode: str, **eval_params: Any
+) -> Optional[BaseCallbackHandler]:
     """Get global eval handler."""
+    handler: Optional[BaseCallbackHandler] = None
     if eval_mode == "wandb":
         try:
             from llama_index.callbacks.wandb import (
@@ -106,6 +110,17 @@ def create_global_handler(eval_mode: str, **eval_params: Any) -> BaseCallbackHan
                 "Please install it using `pip install llama-index-callbacks-langfuse`"
             )
         handler = langfuse_callback_handler(**eval_params)
+    elif eval_mode == "agentops":
+        try:
+            from llama_index.callbacks.agentops import (
+                AgentOpsHandler,
+            )  # pants: no-infer-dep
+        except ImportError:
+            raise ImportError(
+                "AgentOpsHandler is not installed. "
+                "Please install it using `pip install llama-index-instrumentation-agentops`"
+            )
+        AgentOpsHandler.init(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 

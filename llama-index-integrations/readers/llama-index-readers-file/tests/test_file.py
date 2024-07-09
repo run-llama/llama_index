@@ -1,6 +1,7 @@
 """Test file reader."""
 
 from multiprocessing import cpu_count
+import os
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List
 import hashlib
@@ -389,11 +390,11 @@ def test_filename_as_doc_id() -> None:
         documents = reader.load_data()
 
         doc_paths = [
-            f"{tmp_dir}/test1.txt",
-            f"{tmp_dir}/test2.txt",
-            f"{tmp_dir}/test3.txt",
-            f"{tmp_dir}/test4.md",
-            f"{tmp_dir}/test5.json",
+            f"{tmp_dir}{os.sep}test1.txt",
+            f"{tmp_dir}{os.sep}test2.txt",
+            f"{tmp_dir}{os.sep}test3.txt",
+            f"{tmp_dir}{os.sep}test4.md",
+            f"{tmp_dir}{os.sep}test5.json",
         ]
 
         # check paths. Split handles path_part_X doc_ids from md and json files
@@ -422,10 +423,10 @@ def test_specifying_encoding() -> None:
         documents = reader.load_data()
 
         doc_paths = [
-            f"{tmp_dir}/test1.txt",
-            f"{tmp_dir}/test2.txt",
-            f"{tmp_dir}/test3.txt",
-            f"{tmp_dir}/test4.json",
+            f"{tmp_dir}{os.sep}test1.txt",
+            f"{tmp_dir}{os.sep}test2.txt",
+            f"{tmp_dir}{os.sep}test3.txt",
+            f"{tmp_dir}{os.sep}test4.json",
         ]
 
         # check paths. Split handles path_part_X doc_ids from md and json files
@@ -464,11 +465,11 @@ def test_parallel_load() -> None:
         documents = reader.load_data(num_workers=num_workers)
 
         doc_paths = [
-            f"{tmp_dir}/test1.txt",
-            f"{tmp_dir}/test2.md",
-            f"{tmp_dir}/test3.tmp",
-            f"{tmp_dir}/test4.json",
-            f"{tmp_dir}/test5.json",
+            f"{tmp_dir}{os.sep}test1.txt",
+            f"{tmp_dir}{os.sep}test2.md",
+            f"{tmp_dir}{os.sep}test3.tmp",
+            f"{tmp_dir}{os.sep}test4.json",
+            f"{tmp_dir}{os.sep}test5.json",
         ]
 
         # check paths. Split handles path_part_X doc_ids from md and json files
