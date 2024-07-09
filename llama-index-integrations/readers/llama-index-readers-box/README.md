@@ -3,7 +3,7 @@
 Effortlessly incorporate Box data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities, including:
 
 - [Box Reader](llama_index/readers/box/BoxReader/README.md)
-- Box Text Extraction
+- [Box Text Extraction](llama_index/readers/box/BoxReaderTextExtraction/README.md)
 - [Box AI Prompt](llama_index/readers/box/BoxReaderAIPrompt/README.md)
 - Box AI Extraction
 
