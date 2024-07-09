@@ -17,24 +17,40 @@ from azure.ai.inference import EmbeddingsClient
 from azure.ai.inference.aio import EmbeddingsClient as EmbeddingsClientAsync
 from azure.core.credentials import AzureKeyCredential
 
-DEFAULT_AZUREAI_ENDPOINT = "https://inference.ai.azure.com"
+DEFAULT_AZURE_INFERENCE_ENDPOINT = "https://models.inference.ai.azure.com"
 
 
-class AzureAIModelInference(BaseEmbedding):
+class AzureAIEmbeddingsModel(BaseEmbedding):
     """Azure AI model inference for embeddings.
 
-    Args:
-        model_name (str): Model for embedding.
-            Defaults to "mistral-embed".
+    Examples:
+        ```python
+        from llama_index.core import Settings
+        from llama_index.embeddings.azure_inference import AzureAIEmbeddingsModel
 
-        api_key (Optional[str]): API key to access the model. Defaults to None.
+        llm = AzureAIEmbeddingsModel(
+            endpoint="https://[your-endpoint].inference.ai.azure.com",
+            credential="your-api-key",
+        )
+
+        # If using Microsoft Entra ID authentication, you can create the
+        # client as follows
+        #
+        # from azure.identity import DefaultAzureCredential
+        #
+        # embed_model = AzureAIEmbeddingsModel(
+        #     endpoint="https://[your-endpoint].inference.ai.azure.com",
+        #     credential=DefaultAzureCredential()
+        # )
+
+        # Once the client is instantiated, you can set the context to use the model
+        Settings.embed_model = embed_model
+
+        documents = SimpleDirectoryReader("./data").load_data()
+        index = VectorStoreIndex.from_documents(documents)
+        ```
     """
 
-    model: Optional[str] = Field(default=None, description="The model id to use.")
-    max_retries: int = Field(
-        default=5, description="The maximum number of API retries.", gte=0
-    )
-    seed: str = Field(default=None, description="The random seed to use for sampling.")
     model_extras: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs model parameters."
     )
@@ -46,17 +62,23 @@ class AzureAIModelInference(BaseEmbedding):
         self,
         endpoint: str = None,
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
-        model: str = None,
+        model_name: str = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
+        num_workers: Optional[int] = None,
         client_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ):
+        client_kwargs = client_kwargs or {}
+
         endpoint = get_from_param_or_env(
-            "endpoint", endpoint, "AZUREAI_ENDPOINT_URL", DEFAULT_AZUREAI_ENDPOINT
+            "endpoint",
+            endpoint,
+            "AZURE_INFERENCE_ENDPOINT_URL",
+            DEFAULT_AZURE_INFERENCE_ENDPOINT,
         )
         credential = get_from_param_or_env(
-            "credential", credential, "AZUREAI_ENDPOINT_CREDENTIAL", None
+            "credential", credential, "AZURE_INFERENCE_ENDPOINT_CREDENTIAL", None
         )
         credential = (
             AzureKeyCredential(credential)
@@ -81,21 +103,22 @@ class AzureAIModelInference(BaseEmbedding):
         )
 
         super().__init__(
-            model_name=model or "unknown",
+            model_name=model_name or "unknown",
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            num_workers=num_workers,
             **kwargs,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        return "AzureAIModelInferenceEmbeddings"
+        return "AzureAIEmbeddingsModel"
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         additional_kwargs = {}
-        if self.model:
-            additional_kwargs["model"] = self.model
+        if self.model_name:
+            additional_kwargs["model"] = self.model_name
         if self.model_extras:
             # pass any extra model parameter as model extra
             additional_kwargs["model_extras"] = self.model_extras

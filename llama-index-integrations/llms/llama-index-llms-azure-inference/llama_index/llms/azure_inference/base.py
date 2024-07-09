@@ -43,13 +43,22 @@ if TYPE_CHECKING:
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.inference.models import ChatCompletionsToolCall, ChatRequestMessage
 
-DEFAULT_AZUREAI_ENDPOINT = "https://inference.ai.azure.com"
-DEFAULT_AZUREAI_MAX_TOKENS = 2048
+DEFAULT_AZURE_INFERENCE_ENDPOINT = "https://models.inference.ai.azure.com"
+DEFAULT_AZURE_INFERENCE_MAX_TOKENS = 2048
 
 
 def to_inference_message(
     messages: Sequence[ChatMessage],
 ) -> List[ChatRequestMessage]:
+    """Converts a sequence of `ChatMessage` to a list of `ChatRequestMessage`
+    which can be used for Azure AI model inference.
+
+    Args:
+        messages (Sequence[ChatMessage]): The messages to convert.
+
+    Returns:
+        List[ChatRequestMessage]: The converted messages.
+    """
     new_messages = []
     for m in messages:
         tool_calls = m.additional_kwargs.get("tool_calls")
@@ -63,35 +72,55 @@ def to_inference_message(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
+    """Forces the response to have only one tool call.
+
+    Args:
+        response (ChatResponse): The response to modify.
+    """
     tool_calls = response.message.additional_kwargs.get("tool_calls", [])
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
 
-class AzureAIModelInference(FunctionCallingLLM):
+class AzureAICompletionsModel(FunctionCallingLLM):
     """Azure AI model inference for LLM.
 
     Examples:
-        `pip install llama-index-llms-azureai`
-
         ```python
-        from llama_index.llms.azure.ai.inference import AzureAIModelInference
+        from llama_index.core import Settings
+        from llama_index.core.llms import ChatMessage
+        from llama_index.llms.azure_inference import AzureAICompletionsModel
 
-        # To customize your API key, do this
-        # otherwise it will lookup MISTRAL_API_KEY from your env variable
-        # llm = AzureAIModelInference(credentials="<token>")
+        llm = AzureAICompletionsModel(
+            endpoint="https://[your-endpoint].inference.ai.azure.com",
+            credential="your-api-key",
+            temperature=0
+        )
 
-        llm = AzureAIModelInferenceLLM()
+        # If using Microsoft Entra ID authentication, you can create the
+        # client as follows
+        #
+        # from azure.identity import DefaultAzureCredential
+        #
+        # llm = AzureAICompletionsModel(
+        #     endpoint="https://[your-endpoint].inference.ai.azure.com",
+        #     credential=DefaultAzureCredential()
+        # )
 
-        resp = llm.complete("Paul Graham is ")
+        resp = llm.chat(
+            messages=ChatMessage(role="user", content="Who is Paul Graham?")
+        )
 
         print(resp)
+
+        # Once the client is instantiated, you can set the context to use the model
+        Settings.llm = llm
         ```
     """
 
-    model: Optional[str] = Field(
+    model_name: Optional[str] = Field(
         default=None,
-        description="The model id to use. For endpoints running a single model, this parameter is optional",
+        description="The model id to use. Optional for endpoints running a single model.",
     )
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
@@ -100,7 +129,7 @@ class AzureAIModelInference(FunctionCallingLLM):
         lte=1.0,
     )
     max_tokens: int = Field(
-        default=DEFAULT_AZUREAI_MAX_TOKENS,
+        default=DEFAULT_AZURE_INFERENCE_MAX_TOKENS,
         description="The maximum number of tokens to generate.",
         gt=0,
     )
@@ -120,8 +149,8 @@ class AzureAIModelInference(FunctionCallingLLM):
         endpoint: str = None,
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: int = DEFAULT_AZUREAI_MAX_TOKENS,
-        model: Optional[str] = None,
+        max_tokens: int = DEFAULT_AZURE_INFERENCE_MAX_TOKENS,
+        model_name: Optional[str] = None,
         model_extras: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
@@ -129,16 +158,21 @@ class AzureAIModelInference(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        client_kwargs: Dict[str, Any] = None,
         **kwargs: Dict[str, Any],
     ) -> None:
         model_extras = model_extras or {}
+        client_kwargs = client_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
         endpoint = get_from_param_or_env(
-            "endpoint", endpoint, "AZUREAI_ENDPOINT_URL", DEFAULT_AZUREAI_ENDPOINT
+            "endpoint",
+            endpoint,
+            "AZURE_INFERENCE_ENDPOINT_URL",
+            DEFAULT_AZURE_INFERENCE_ENDPOINT,
         )
         credential = get_from_param_or_env(
-            "credential", credential, "AZUREAI_ENDPOINT_CREDENTIAL", None
+            "credential", credential, "AZURE_INFERENCE_ENDPOINT_CREDENTIAL", None
         )
         credential = (
             AzureKeyCredential(credential)
@@ -152,14 +186,15 @@ class AzureAIModelInference(FunctionCallingLLM):
             )
 
         self._client = ChatCompletionsClient(
-            endpoint=endpoint, credential=credential, **kwargs
+            endpoint=endpoint, credential=credential, **client_kwargs
         )
 
         self._async_client = ChatCompletionsClientAsync(
-            endpoint=endpoint, credential=credential, **kwargs
+            endpoint=endpoint, credential=credential, **client_kwargs
         )
 
         super().__init__(
+            model_name=model_name,
             temperature=temperature,
             max_tokens=max_tokens,
             callback_manager=callback_manager,
@@ -168,11 +203,12 @@ class AzureAIModelInference(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            **kwargs,
         )
 
     @classmethod
     def class_name(cls) -> str:
-        return "AzureAIModelInferenceLLM"
+        return "AzureAICompletionsModel"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -196,8 +232,8 @@ class AzureAIModelInference(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        if self.model:
-            base_kwargs["model"] = self.model
+        if self.model_name:
+            base_kwargs["model"] = self.model_name
 
         return {
             **base_kwargs,
