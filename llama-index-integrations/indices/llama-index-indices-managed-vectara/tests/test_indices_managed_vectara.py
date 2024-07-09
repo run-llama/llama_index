@@ -121,12 +121,14 @@ def vectara2():
         pytest.skip("Missing Vectara credentials, skipping test")
 
     file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
-    id = vectara2.insert_file(file_path)
+    id = vectara2.insert_file(
+        file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
+    )
 
     yield vectara2
 
     # Tear down code
-    print(vectara2._delete_doc(id))
+    vectara2._delete_doc(id)
 
 
 def test_file_upload(vectara2) -> None:
@@ -134,8 +136,33 @@ def test_file_upload(vectara2) -> None:
     query_engine = vectara2.as_query_engine(similarity_top_k=3)
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
+    assert "fcs" in res.metadata
+    assert res.metadata["fcs"] >= 0
+
+    # test query with Vectara summarization (streaming)
+    query_engine = vectara2.as_query_engine(similarity_top_k=3, streaming=True)
+    res = query_engine.query("What software did Paul Graham write?")
+    summary = ""
+    for chunk in res.response_gen:
+        if chunk.delta:
+            summary += chunk.delta
+        if (
+            chunk.additional_kwargs
+            and "fcs" in chunk.additional_kwargs
+            and chunk.additional_kwargs["fcs"] is not None
+        ):
+            assert chunk.additional_kwargs["fcs"] >= 0
+    assert "paul graham" in summary.lower() and "software" in summary.lower()
 
     # test query with VectorStoreQuery (using OpenAI for summarization)
     query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
+
+    # test query with Vectara summarization (default)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=3, citations_url_pattern="{doc.url}"
+    )
+    res = query_engine.query("How is Paul related to Reddit?")
+    assert "paul graham" in str(res).lower() and "reddit" in str(res).lower()
+    assert "https://www.paulgraham.com/worked.html" in str(res).lower()

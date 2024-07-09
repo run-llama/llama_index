@@ -333,6 +333,40 @@ DEFAULT_KG_TRIPLET_EXTRACT_PROMPT = PromptTemplate(
     prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT,
 )
 
+DEFAULT_DYNAMIC_EXTRACT_TMPL = (
+    "Extract up to {max_knowledge_triplets} knowledge triplets from the given text. "
+    "Each triplet should be in the form of (head, relation, tail) with their respective types.\n"
+    "---------------------\n"
+    "INITIAL ONTOLOGY:\n"
+    "Entity Types: {allowed_entity_types}\n"
+    "Relation Types: {allowed_relation_types}\n"
+    "\n"
+    "Use these types as a starting point, but introduce new types if necessary based on the context.\n"
+    "\n"
+    "GUIDELINES:\n"
+    "- Output in JSON format: [{{'head': '', 'head_type': '', 'relation': '', 'tail': '', 'tail_type': ''}}]\n"
+    "- Use the most complete form for entities (e.g., 'United States of America' instead of 'USA')\n"
+    "- Keep entities concise (3-5 words max)\n"
+    "- Break down complex phrases into multiple triplets\n"
+    "- Ensure the knowledge graph is coherent and easily understandable\n"
+    "---------------------\n"
+    "EXAMPLE:\n"
+    "Text: Tim Cook, CEO of Apple Inc., announced the new Apple Watch that monitors heart health. "
+    "UC Berkeley researchers studied the benefits of apples.\n"
+    "Output:\n"
+    "[{{'head': 'Tim Cook', 'head_type': 'PERSON', 'relation': 'CEO_OF', 'tail': 'Apple Inc.', 'tail_type': 'COMPANY'}},\n"
+    " {{'head': 'Apple Inc.', 'head_type': 'COMPANY', 'relation': 'PRODUCES', 'tail': 'Apple Watch', 'tail_type': 'PRODUCT'}},\n"
+    " {{'head': 'Apple Watch', 'head_type': 'PRODUCT', 'relation': 'MONITORS', 'tail': 'heart health', 'tail_type': 'HEALTH_METRIC'}},\n"
+    " {{'head': 'UC Berkeley', 'head_type': 'UNIVERSITY', 'relation': 'STUDIES', 'tail': 'benefits of apples', 'tail_type': 'RESEARCH_TOPIC'}}]\n"
+    "---------------------\n"
+    "Text: {text}\n"
+    "Output:\n"
+)
+
+DEFAULT_DYNAMIC_EXTRACT_PROMPT = PromptTemplate(
+    DEFAULT_DYNAMIC_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
+)
+
 ############################################
 # HYDE
 ##############################################

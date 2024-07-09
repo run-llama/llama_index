@@ -1,10 +1,5 @@
 # Observability
 
-**NOTE:**
-
-The tooling and integrations mentioned in this page is considered legacy. Observability
-is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
-
 LlamaIndex provides **one-click observability** 🔭 to allow you to build principled LLM applications in a production setting.
 
 A key requirement for principled development of LLM applications over your data (RAG systems, agents) is being able to observe, debug, and evaluate
@@ -18,6 +13,13 @@ Configure a variable once, and you'll be able to do things like the following:
 - View call traces for both indexing and querying
 
 Each provider has similarities and differences. Take a look below for the full set of guides for each one!
+
+**NOTE:**
+
+Observability is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
+
+A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
+
 
 ## Usage Pattern
 
@@ -37,23 +39,51 @@ Note that all `kwargs` to `set_global_handler` are passed to the underlying call
 
 And that's it! Executions will get seamlessly piped to downstream service (e.g. W&B Prompts) and you'll be able to access features such as viewing execution traces of your application.
 
-**NOTE**: TruLens (by TruEra) uses a different "one-click" experience. See below for details.
-
-## Simple (LLM Inputs/Outputs)
-
-This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
-
-#### Usage Pattern
-
-```python
-import llama_index.core
-
-llama_index.core.set_global_handler("simple")
-```
 
 ## Partner `One-Click` Integrations
 
-We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
+### Arize Phoenix
+
+Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
+
+- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
+- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+
+#### Usage Pattern
+
+To install the integration package, do `pip install -U llama-index-callbacks-arize-phoenix`.
+
+Then run the following code:
+
+```python
+# Phoenix can display in real time the traces automatically
+# collected from your LlamaIndex application.
+import phoenix as px
+
+# Look for a URL in the output to open the App in a browser.
+px.launch_app()
+# The App is initially empty, but as you proceed with the steps below,
+# traces will appear automatically as your LlamaIndex application runs.
+
+import llama_index.core
+
+llama_index.core.set_global_handler("arize_phoenix")
+
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+...
+```
+
+![](../../_static/integrations/arize_phoenix.png)
+
+#### Guides
+
+- [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
+
+
+## Other Partner `One-Click` Integrations (Legacy Modules)
+
+These partner integrations use our legacy `CallbackManager` or third-party calls.
 
 ### Langfuse
 
@@ -151,40 +181,6 @@ Traceloop.init()
 - [OpenLLMetry](../../examples/callbacks/OpenLLMetry.ipynb)
 
 ![](../../_static/integrations/openllmetry.png)
-
-### Arize Phoenix
-
-Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
-
-- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
-- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
-
-#### Usage Pattern
-
-```python
-# Phoenix can display in real time the traces automatically
-# collected from your LlamaIndex application.
-import phoenix as px
-
-# Look for a URL in the output to open the App in a browser.
-px.launch_app()
-# The App is initially empty, but as you proceed with the steps below,
-# traces will appear automatically as your LlamaIndex application runs.
-
-import llama_index.core
-
-llama_index.core.set_global_handler("arize_phoenix")
-
-# Run all of your LlamaIndex applications as usual and traces
-# will be collected and displayed in Phoenix.
-...
-```
-
-![](../../_static/integrations/arize_phoenix.png)
-
-#### Guides
-
-- [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
 
 ### OpenInference
 
@@ -355,6 +351,43 @@ openlit.init()
 #### Guides
 
 - [OpenLIT's Official Documentation](https://docs.openlit.io/latest/integrations/llama-index)
+
+### AgentOps
+
+[AgentOps](https://github.com/AgentOps-AI/agentops) helps developers build, evaluate,
+and monitor AI agents. AgentOps will help build agents from prototype to production,
+enabling agent monitoring, LLM cost tracking, benchmarking, and more.
+
+#### Install
+
+```shell
+pip install llama-index-instrumentation-agentops
+```
+
+#### Usage Pattern
+
+```python
+from llama_index.core import set_global_handler
+
+# NOTE: Feel free to set your AgentOps environment variables (e.g., 'AGENTOPS_API_KEY')
+# as outlined in the AgentOps documentation, or pass the equivalent keyword arguments
+# anticipated by AgentOps' AOClient as **eval_params in set_global_handler.
+
+set_global_handler("agentops")
+```
+
+### Simple (LLM Inputs/Outputs)
+
+This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
+
+#### Usage Pattern
+
+```python
+import llama_index.core
+
+llama_index.core.set_global_handler("simple")
+```
+
 
 ## More observability
 
