@@ -5,7 +5,7 @@ Effortlessly incorporate Box data loaders into your Python workflow using LlamaI
 - [Box Reader](llama_index/readers/box/BoxReader/README.md)
 - [Box Text Extraction](llama_index/readers/box/BoxReaderTextExtraction/README.md)
 - [Box AI Prompt](llama_index/readers/box/BoxReaderAIPrompt/README.md)
-- Box AI Extraction
+- [Box AI Extraction](llama_index/readers/box/BoxReaderAIExtraction/README.md)
 
 ## Installation
 

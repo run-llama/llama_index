@@ -6,6 +6,11 @@ import requests
 from box_sdk_gen import BoxAPIError, BoxClient, File, ByteStream, BoxSDKError
 from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiAskItems
 
+from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
+    AiExtractManager,
+    CreateAiExtractItems,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -194,5 +199,34 @@ def get_text_representation(
         # Download and truncate the raw content
         raw_content = _do_request(box_client, url)
         payload.text_representation = raw_content[:token_limit] if raw_content else None
+
+    return payloads
+
+
+def get_files_ai_extract_data(
+    box_client: BoxClient, payloads: List[_BoxResourcePayload], ai_prompt: str
+) -> List[_BoxResourcePayload]:
+    ai_extract_manager = AiExtractManager(
+        auth=box_client.auth, network_session=box_client.network_session
+    )
+
+    for payload in payloads:
+        file = payload.resource_info
+        ask_item = CreateAiExtractItems(file.id)
+        logger.info(f"Getting AI extracted data for file: {file.id} {file.name}")
+
+        # get the AI extracted data for the file
+        try:
+            ai_response = ai_extract_manager.create_ai_extract(
+                prompt=ai_prompt, items=[ask_item]
+            )
+        except BoxAPIError as e:
+            logger.error(
+                f"An error occurred while getting AI extracted data for file: {e}",
+                exc_info=True,
+            )
+            # payload.ai_response = e.message
+            continue
+        payload.ai_response = ai_response.answer
 
     return payloads
