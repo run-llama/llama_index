@@ -2,7 +2,8 @@ import os
 import shutil
 from typing import List, Optional
 import logging
-from box_sdk_gen import BoxAPIError, BoxClient, File, ByteStream
+import requests
+from box_sdk_gen import BoxAPIError, BoxClient, File, ByteStream, BoxSDKError
 from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiAskItems
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ class _BoxResourcePayload:
     ai_prompt: Optional[str]
     ai_response: Optional[str]
     downloaded_file_path: Optional[str]
+    text_representation: Optional[str]
 
     def __init__(self, resource_info: File) -> None:
         self.resource_info = resource_info
@@ -126,5 +128,71 @@ def get_files_ai_prompt(
         for payload in payloads:
             payload.ai_prompt = ai_prompt
             payload.ai_response = ai_response.answer
+
+    return payloads
+
+
+def _do_request(box_client: BoxClient, url: str):
+    try:
+        access_token = box_client.auth.retrieve_token().access_token
+    except BoxSDKError as e:
+        logger.error(f"Unable to retrieve access token: {e.message}", exc_info=True)
+        raise
+
+    resp = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    resp.raise_for_status()
+    return resp.content
+
+
+def get_text_representation(
+    box_client: BoxClient, payloads: List[_BoxResourcePayload], token_limit: int = 10000
+) -> List[_BoxResourcePayload]:
+    for payload in payloads:
+        box_file = payload.resource_info
+
+        try:
+            # Request the file with the "extracted_text" representation hint
+            box_file = box_client.files.get_file_by_id(
+                box_file.id,
+                x_rep_hints="[extracted_text]",
+                fields=["name", "representations"],
+            )
+        except BoxAPIError as e:
+            logger.error(
+                f"Error getting file representation {box_file.id}: {e.message}",
+                exc_info=True,
+            )
+            payload.text_representation = None
+            continue
+
+        # Check if any representations exist
+        if not box_file.representations.entries:
+            logger.error(f"No representation for file {box_file.id}")
+            payload.text_representation = None
+            continue
+
+        # Find the "extracted_text" representation
+        extracted_text_entry = next(
+            (
+                entry
+                for entry in box_file.representations.entries
+                if entry.representation == "extracted_text"
+            ),
+            None,
+        )
+        if not extracted_text_entry:
+            payload.text_representation = None
+            continue
+
+        # Handle cases where the extracted text needs generation
+        if extracted_text_entry.status.state == "none":
+            _do_request(extracted_text_entry.info.url)  # Trigger text generation
+
+        # Construct the download URL and sanitize filename
+        url = extracted_text_entry.content.url_template.replace("{+asset_path}", "")
+
+        # Download and truncate the raw content
+        raw_content = _do_request(box_client, url)
+        payload.text_representation = raw_content[:token_limit] if raw_content else None
 
     return payloads
