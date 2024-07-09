@@ -33,7 +33,7 @@ A JSON string:
             "key": "vendor",
             "displayName": "Vendor",
             "type": "string",
-            "description": "Vendorname",
+            "description": "Vendor name",
         },
         {
             "key": "documentType",

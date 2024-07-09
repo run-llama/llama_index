@@ -71,13 +71,17 @@ ccg_conf = CCGConfig(
 )
 auth = BoxCCGAuth(ccg_conf)
 client = BoxClient(auth)
-reader = BoxReader(box_client=client)
+reader = BoxReaderAIPrompt(box_client=client)
 
 #### Using folder id
-documents = loader.load_data(folder_id="folder_id")
+documents = loader.load_data(
+    folder_id="folder_id", ai_prompt="summarize this document"
+)
 
 #### Using file ids
-documents = loader.load_data(file_ids=["file_id1", "file_id2"])
+documents = loader.load_data(
+    file_ids=["file_id1", "file_id2"], ai_prompt="summarize this document"
+)
 ```
 
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index).
