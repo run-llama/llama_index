@@ -8,6 +8,9 @@ To use this loader, you need to pass a Box Client, a list of file id's or folder
 > [!IMPORTANT]
 > Box AI features are only available to E+ customers.
 
+> [!WARNING]
+> Box AI Extraction is currently in beta, and the implementation may change.
+
 ### ai_prompt
 
 The `ai_prompt` defines the structure of the data that will be extracted from the documents.
