@@ -117,7 +117,7 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         additional_kwargs = {}
-        if self.model_name:
+        if self.model_name and self.model_name != "unknown":
             additional_kwargs["model"] = self.model_name
         if self.model_extras:
             # pass any extra model parameter as model extra

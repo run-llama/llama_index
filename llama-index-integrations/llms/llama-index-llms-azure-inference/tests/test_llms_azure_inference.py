@@ -11,6 +11,7 @@ from llama_index.core.llms import ChatMessage, MessageRole
     reason="Azure AI endpoint and/or credential are not set.",
 )
 def test_chat_completion():
+    """Tests the basic chat completion functionality."""
     llm = AzureAICompletionsModel()
 
     response = llm.chat(
