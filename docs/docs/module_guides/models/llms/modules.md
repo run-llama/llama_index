@@ -55,4 +55,4 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [Vertex](../../../examples/llm/vertex.ipynb)
 - [vLLM](../../../examples/llm/vllm.ipynb)
 - [Xorbits Inference](../../../examples/llm/xinference_local_deployment.ipynb)
-- [Yi(../../../examples/llm/yi.ipynb)
+- [Yi](../../../examples/llm/yi.ipynb)
