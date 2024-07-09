@@ -1,4 +1,4 @@
-"""Lindorm Search vector store."""
+"""Lindorm Vector Store."""
 
 import asyncio
 import uuid
@@ -53,10 +53,10 @@ class LindormSearchVectorClient:
         index (str): Name of the index
         dimension (int): Dimension of the vector
     
-    how to obtain an lindorm search instance:
+    how to obtain an lindorm instance:
     https://alibabacloud.com/help/en/lindorm/latest/create-an-instance?spm=a2c63.l28256.0.0.4cc0f53cUfKOxI 
     
-    how to access your lindorm search instance:
+    how to access your lindorm instance:
     https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints?spm=a2c63.p38356.0.0.37121bcdxsDvbN
 
     run curl commands to connect to and use LindormSearch:

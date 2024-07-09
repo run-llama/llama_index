@@ -6,7 +6,7 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     NodeRelationship,
 )
-from llama_index.vector_stores.lindormsearch import (
+from llama_index.vector_stores.lindorm import (
     LindormSearchVectorStore,
     LindormSearchVectorClient,
 )
@@ -22,18 +22,18 @@ from llama_index.core.vector_stores.types import (
 @pytest.fixture(scope="module")
 def vector_store():
     # Lindorm instance info
-    # how to obtain an lindorm search instance:
+    # how to obtain an lindorm instance:
     # https://alibabacloud.com/help/en/lindorm/latest/create-an-instance?spm=a2c63.l28256.0.0.4cc0f53cUfKOxI 
 
-    # how to access your lindorm search instance:
+    # how to access your lindorm instance:
     # https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints?spm=a2c63.p38356.0.0.37121bcdxsDvbN
 
     # run curl commands to connect to and use LindormSearch:
     # https://www.alibabacloud.com/help/en/lindorm/latest/connect-and-use-the-search-engine-with-the-curl-command
     host = "ld-bp******jm*******-proxy-search-pub.lindorm.aliyuncs.com"
     port = 30070
-    username = 'your_username'
-    password = 'your_password'
+    username = 'your username'
+    password = 'your password'
     index_name = "lindorm_pytest_index"
     
     # Create a client and vector store instance
@@ -43,7 +43,7 @@ def vector_store():
         username=username,
         password=password,
         index=index_name,
-        dimension=1536,
+        dimension=5,
     )
     vector_store = LindormSearchVectorStore(client)
     

@@ -1,5 +1,3 @@
-# TODO:convert to lindormsearch
-
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
@@ -11,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.lindormsearch"
+import_path = "llama_index.vector_stores.lindorm"
 
 [tool.llamahub.class_authors]
 LindormSearchVectorStore = "aliyun"
@@ -23,11 +21,11 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["guoruini.grn@alibaba-inc.com"]
-description = "llama-index vector_stores lindormsearch integration"
+authors = ["Your Name <you@example.com>"]
+description = "llama-index vector_stores lindorm integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-lindormsearch"
+name = "llama-index-vector-stores-lindorm"
 readme = "README.md"
 version = "0.1.0"
 

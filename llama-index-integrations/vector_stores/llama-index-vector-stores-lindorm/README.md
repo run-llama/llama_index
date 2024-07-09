@@ -1,25 +1,25 @@
-# LlamaIndex Vector_Stores Integration: LindromSearch
-Please refer to the [notebook](../../../docs/docs/examples/vector_stores/LindormSearchDemo.ipynb) for usage of LinodormSearch as vector store in LlamaIndex.
+# LlamaIndex Vector_Stores Integration: Lindrom
+Please refer to the [notebook](../../../docs/docs/examples/vector_stores/LindormSearchDemo.ipynb) for usage of Lindorm as vector store in LlamaIndex.
 
 # Example Usage
 
 ```sh
 pip install llama-index
 pip install opensearch-py
-pip install llama-index-vector-stores-lindormsearch
+pip install llama-index-vector-stores-lindorm
 ```
 
 ```python
-from llama_index.vector_stores.lindormsearch import (
+from llama_index.vector_stores.lindorm import (
       LindormSearchVectorStore,
       LindormSearchVectorClient,
 )
 
 # lindorm instance info
-# how to obtain an lindorm search instance:
+# how to obtain an lindorm instance:
 # https://alibabacloud.com/help/en/lindorm/latest/create-an-instance?spm=a2c63.l28256.0.0.4cc0f53cUfKOxI 
 
-# how to access your lindorm search instance:
+# how to access your lindorm instance:
 # https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints?spm=a2c63.p38356.0.0.37121bcdxsDvbN
 
 # run curl commands to connect to and use LindormSearch:
@@ -43,7 +43,7 @@ client = LindormSearchClient(
     username=username,
     password=password,
     index=index_name,
-    dimension=1536,
+    dimension=5,
 )
 
 # initialize vector store

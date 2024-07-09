@@ -1,4 +1,4 @@
-from llama_index.vector_stores.lindormsearch.base import (
+from llama_index.vector_stores.lindorm.base import (
     LindormSearchVectorStore,
     LindormSearchVectorClient,
 )

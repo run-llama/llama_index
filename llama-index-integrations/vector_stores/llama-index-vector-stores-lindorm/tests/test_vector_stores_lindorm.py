@@ -1,5 +1,5 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.lindormsearch import LindormSearchVectorStore
+from llama_index.vector_stores.lindorm import LindormSearchVectorStore
 
 
 def test_class():
