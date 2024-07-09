@@ -20,7 +20,7 @@ python_version = "3.8"
 authors = ["Azure AI model inference group <azureml-inference@microsoft.com>"]
 description = "Integration for model supporting Azure AI model inference API in llama-index"
 license = "MIT"
-name = "llama-index-llms-azureai"
+name = "llama-index-llms-azure-inference"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
