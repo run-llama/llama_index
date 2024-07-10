@@ -7,6 +7,10 @@
 - fix: update operator logic for simple vector store filter (#14674)
 - Add AgentOps integration (#13935)
 
+### `llama-index-embeddings-fastembed` [0.1.5]
+
+- chore: update required python version in Qdrant fastembed package (#14677)
+
 ### `llama-index-embeddings-huggingface-optimum-intel` [0.1.6]
 
 - Bump version llama-index-embeddings-huggingface-optimum-intel (#14670)
