@@ -1,5 +1,32 @@
 # ChangeLog
 
+## [2024-07-10]
+
+### `llama-index-core` [0.10.54]
+
+- fix: update operator logic for simple vector store filter (#14674)
+- Add AgentOps integration (#13935)
+
+### `llama-index-embeddings-huggingface-optimum-intel` [0.1.6]
+
+- Bump version llama-index-embeddings-huggingface-optimum-intel (#14670)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.2]
+
+- Added support for custom index settings (#14655)
+
+### `llama-index-callbacks-agentops` [0.1.0]
+
+- Initial release
+
+### `llama-index-indices-managed-vertexai` [0.0.2]
+
+- Fix #14637 Llamaindex managed Vertex AI index needs to be updated. (#14641)
+
+### `llama-index-readers-file` [0.1.29]
+
+- fix unstructured import in simple file reader (#14642)
+
 ## [2024-07-08]
 
 ### `llama-index-core` [0.10.53]
