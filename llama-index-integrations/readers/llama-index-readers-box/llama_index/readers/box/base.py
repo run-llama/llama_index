@@ -13,7 +13,7 @@ from llama_index.core.readers.base import (
 )
 from llama_index.core.bridge.pydantic import PrivateAttr
 
-from box_sdk_gen import BoxClient, BoxOAuth, OAuthConfig, BoxDeveloperTokenAuth
+from box_sdk_gen import BoxClient, BoxDeveloperTokenAuth
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     is_remote: bool = True
 
-    auth_method: Literal["oauth2", "developer_token"]
+    auth_method: Literal["developer_token"]
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
     authorization_code: Optional[str] = None
@@ -41,7 +41,7 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
     def __init__(
         self,
-        auth_method: Literal["oauth2", "developer_token"],
+        auth_method: Literal["developer_token"],
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         authorization_code: Optional[str] = None,
@@ -74,25 +74,7 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
 
     def _get_client(self) -> BoxClient:
         try:
-            if self.auth_method == "oauth2":
-                if not self.client_id:
-                    raise ValueError("client_id is required for OAuth2 authentication.")
-                if not self.client_secret:
-                    raise ValueError(
-                        "client_secret is required for OAuth2 authentication."
-                    )
-                if not self.authorization_code:
-                    raise ValueError(
-                        "authorization_code is required for OAuth2 authentication."
-                    )
-                auth_config = OAuthConfig(
-                    client_id=self.client_id, client_secret=self.client_secret
-                )
-                auth = BoxOAuth(config=auth_config)
-                auth.get_tokens_authorization_code_grant(
-                    authorization_code=self.authorization_code
-                )
-            elif self.auth_method == "developer_token":
+            if self.auth_method == "developer_token":
                 if not self.developer_token:
                     raise ValueError(
                         "developer_token is required for DeveloperToken authentication."
@@ -335,5 +317,26 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             return []
 
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
-        logger.warning("read_file_content method is not implemented for BoxReader")
-        return b""
+        """
+        Reads the content of a file from Box.
+
+        Args:
+            input_file (Path): Path object containing the file ID as a string.
+
+        Returns:
+            bytes: Content of the file as bytes.
+        """
+        try:
+            file_id = input_file.name  # Extract the file ID from the Path object
+            logger.info(f"Reading file content for file ID: {file_id}")
+
+            file_stream: io.BufferedIOBase = self._client.downloads.download_file(
+                file_id=file_id
+            )
+            content = file_stream.read()
+            logger.info(f"Successfully read content for file ID: {file_id}")
+            return content
+
+        except Exception as e:
+            logger.error(f"Error reading file content for file ID {file_id}: {e!s}")
+            return b""

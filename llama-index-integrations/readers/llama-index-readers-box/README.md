@@ -115,4 +115,81 @@ documents = loader.load_data()
 
 By understanding and utilizing these extra parameters, you can tailor the `BoxReader` to better fit your specific needs and use cases.
 
+## Usage of `load_resource`, `get_resource_info`, `list_resources`, and `read_file_content` methods from the `BoxReader` class:
+
+### `load_resource`
+
+This method loads a specific resource (file) from Box by its resource ID and processes it to generate `Document` objects.
+
+```python
+from llama_index.core.schema import Document
+
+# Example usage of load_resource method
+resource_id = "123456789"  # Replace with actual resource ID
+documents = reader.load_resource(resource_id)
+
+if documents:
+    print(f"Loaded {len(documents)} documents from resource ID {resource_id}:")
+    for doc in documents:
+        print(f"Document ID: {doc.doc_id}, Extra Info: {doc.extra_info}")
+else:
+    print(f"No documents loaded from resource ID {resource_id}")
+```
+
+### `get_resource_info`
+
+This method retrieves metadata information about a specific resource (file) from Box.
+
+```python
+# Example usage of get_resource_info method
+resource_id = "123456789"  # Replace with actual resource ID
+resource_info = reader.get_resource_info(resource_id)
+
+if resource_info:
+    print(f"Resource Info for resource ID {resource_id}:")
+    for key, value in resource_info.items():
+        print(f"{key}: {value}")
+else:
+    print(f"Failed to retrieve resource info for resource ID {resource_id}")
+```
+
+### `list_resources`
+
+This method lists all resources (files) available in the specified Box folder.
+
+```python
+# Example usage of list_resources method
+file_ids = reader.list_resources()
+
+if file_ids:
+    print(f"List of File IDs in Box:")
+    for file_id in file_ids:
+        print(file_id)
+else:
+    print(f"No files found in the specified Box folder")
+```
+
+### `read_file_content`
+
+This method reads the content of a specific file from Box and returns it as bytes.
+
+```python
+from pathlib import Path
+
+# Example usage of read_file_content method
+file_id = "123456789"  # Replace with actual file ID
+file_path = Path(file_id)
+file_content = reader.read_file_content(file_path)
+
+if file_content:
+    print(f"Read content of file ID {file_id}:")
+    print(
+        file_content.decode()
+    )  # Assuming content is a text file and decoding to str
+else:
+    print(f"Failed to read content of file ID {file_id}")
+```
+
+These examples demonstrate how to utilize different methods of `BoxReader` to interact with files and resources stored in Box, including loading documents, retrieving metadata, listing available resources, and reading file contents. Adjust the resource IDs and paths as per your actual Box setup and file IDs.
+
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
