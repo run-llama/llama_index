@@ -436,15 +436,16 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             bytes: Content of the file as bytes.
         """
         try:
-            file_id = input_file.name  # Extract the file ID from the Path object
+            try:
+                file_id = input_file.name  # Extract the file ID from the Path object
+            except Exception:
+                file_id = str(input_file)
             logger.info(f"Reading file content for file ID: {file_id}")
 
-            file_stream: io.BufferedIOBase = self._client.downloads.download_file(
-                file_id=file_id
-            )
-            content = file_stream.read()
+            file_details = self._client.files.get_file_by_id(file_id=file_id)
+            doc = self._process_item(file_details)
             logger.info(f"Successfully read content for file ID: {file_id}")
-            return content
+            return doc.text.encode("utf-8")
 
         except Exception as e:
             logger.error(f"Error reading file content for file ID {file_id}: {e!s}")
