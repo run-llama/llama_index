@@ -41,7 +41,11 @@ if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
 
 from azure.core.credentials import AzureKeyCredential
-from azure.ai.inference.models import ChatCompletionsToolCall, ChatRequestMessage
+from azure.ai.inference.models import (
+    ChatCompletionsToolCall,
+    ChatRequestMessage,
+    ChatResponseMessage,
+)
 
 DEFAULT_AZURE_INFERENCE_ENDPOINT = "https://models.inference.ai.azure.com"
 DEFAULT_AZURE_INFERENCE_MAX_TOKENS = 2048
@@ -61,14 +65,31 @@ def to_inference_message(
     """
     new_messages = []
     for m in messages:
-        tool_calls = m.additional_kwargs.get("tool_calls")
-        new_messages.append(
-            ChatRequestMessage(
-                {"role": m.role, "content": m.content, "tool_calls": tool_calls}
-            )
-        )
+        message_dict = {
+            "role": m.role.value,
+            "content": m.content,
+        }
 
+        message_dict.update(
+            {k: v for k, v in m.additional_kwargs.items() if v is not None}
+        )
+        new_messages.append(ChatRequestMessage(message_dict))
     return new_messages
+
+
+def from_inference_message(message: ChatResponseMessage) -> ChatMessage:
+    """Convert an inference message dict to generic message."""
+    role = message.role
+    content = message.as_dict().get("content", "")
+
+    # function_call = None  # deprecated in OpenAI v 1.1.0
+
+    additional_kwargs: Dict[str, Any] = {}
+    if message.tool_calls is not None:
+        tool_calls: List[ChatCompletionsToolCall] = message.tool_calls
+        additional_kwargs.update(tool_calls=tool_calls)
+
+    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -248,21 +269,16 @@ class AzureAICompletionsModel(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        print("Request")
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.complete(messages=messages, **all_kwargs)
 
-        tool_calls = response.choices[0].message.tool_calls
+        response_message = from_inference_message(response.choices[0].message)
 
         return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=response.choices[0].message.content,
-                additional_kwargs=(
-                    {"tool_calls": tool_calls} if tool_calls is not None else {}
-                ),
-            ),
-            raw=dict(response),
+            message=response_message,
+            raw=response.as_dict(),
         )
 
     @llm_completion_callback()
@@ -311,16 +327,12 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = await self._async_client.complete(messages=messages, **all_kwargs)
-        tool_calls = response.choices[0].message.tool_calls
+
+        response_message = from_inference_message(response.choices[0].message)
+
         return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=response.choices[0].message.content,
-                additional_kwargs=(
-                    {"tool_calls": tool_calls} if tool_calls is not None else {}
-                ),
-            ),
-            raw=dict(response),
+            message=response_message,
+            raw=response.as_dict(),
         )
 
     @llm_completion_callback()
