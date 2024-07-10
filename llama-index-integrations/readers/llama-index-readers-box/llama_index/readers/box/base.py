@@ -14,6 +14,7 @@ from llama_index.core.readers.base import (
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from box_sdk_gen import BoxClient, BoxDeveloperTokenAuth
+from box_sdk_gen.box.errors import BoxAPIError
 
 
 logger = logging.getLogger(__name__)
@@ -91,7 +92,7 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
     def _list_folder_contents(self, folder_id: str) -> List[Any]:
         items = []
         offset = 0
-        limit = 1000  # Box API limit
+        # limit = 1000  # Box API limit
         max_retries = 3
         retry_delay = 5  # seconds
 
@@ -102,40 +103,45 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                         f"Fetching items from folder {folder_id}, offset: {offset}"
                     )
                     folder_items = self._client.folders.get_folder_items(
-                        folder_id=folder_id, limit=limit, offset=offset
+                        folder_id=folder_id, offset=offset
                     )
                     new_items = folder_items.entries
                     items.extend(new_items)
 
-                    if len(new_items) < limit:
-                        logger.info(f"Finished fetching items from folder {folder_id}")
-                        return items
+                    # if len(new_items) < limit:
+                    #     logger.info(f"Finished fetching items from folder {folder_id}")
+                    #     return items
 
-                    offset += limit
+                    offset += len(new_items)
 
                     if self.num_files_limit and len(items) >= self.num_files_limit:
                         logger.info(f"Reached file limit of {self.num_files_limit}")
                         return items[: self.num_files_limit]
-
-                    time.sleep(1)  # Rate limiting: wait 1 second between requests
                     break
+                except BoxAPIError as e:
+                    if "token has expired" in e.message:
+                        logger.error(e.message)
+                        raise
+                    if "rate limit exceeded" in e.message:
+                        retry_after = e.response_info.headers.get("retry-after")
+                        if retry_after:
+                            retry_after = int(retry_after)
+                        else:
+                            retry_after = retry_delay
+                        logger.warning(
+                            f"Rate limit exceeded. Retrying after {retry_after} seconds."
+                        )
+                        if attempt < max_retries - 1:
+                            time.sleep(retry_after)
+                        else:
+                            logger.error(
+                                f"Failed to fetch folder contents after {max_retries} attempts"
+                            )
+                            raise
                 except Exception as e:
-                    logger.warning(
-                        f"Error fetching folder contents (attempt {attempt + 1}): {e!s}"
-                    )
-                    if "token has expired" in str(e):
-                        logger.error(
-                            "Authentication failed, provided token is expired, please provide a new one."
-                        )
-                        raise
-
-                    if attempt < max_retries - 1:
-                        time.sleep(retry_delay)
-                    else:
-                        logger.error(
-                            f"Failed to fetch folder contents after {max_retries} attempts"
-                        )
-                        raise
+                    logger.error(f"Unknown Error occurred: {e!s}")
+                    raise
+            return items
 
     def _process_item(self, item: Any) -> Optional[Document]:
         try:
