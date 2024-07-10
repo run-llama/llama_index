@@ -12,39 +12,78 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.callbacks import llm_completion_callback, CallbackManager
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 from cleanlab_studio import Studio
 
+DEFAULT_CONTEXT_WINDOW = 16385
+DEFAULT_MAX_TOKENS = 512
+DEFAULT_MODEL = "gpt-3.5-turbo-16k"
+
 
 class CleanlabTLM(CustomLLM):
-    # TODO: figure context_window from the underlying model (GPT-3.5 has 16k, GPT-4 has 128k)
-    context_window: int = 16000
-    max_tokens: int = 512
-    model: str = "TLM"
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
+    )
+    max_tokens: int = Field(
+        default=DEFAULT_MAX_TOKENS,
+        description="The maximum number of tokens to generate in TLM response.",
+    )
+    model: str = Field(
+        default="gpt-3.5-turbo-16k", description="The base model to use."
+    )
+    quality_preset: str = Field(
+        default="medium", description="Pre-defined configuration to use for TLM."
+    )
 
-    _client = PrivateAttr()
+    _client: Any = PrivateAttr()
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         quality_preset: Optional[str] = "medium",
-        model: Optional[str] = "TLM",
-        max_tokens: Optional[int] = 512,
+        options: Optional[Dict] = None,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Initialize params."""
         super().__init__(
-            model=model,
-            max_tokens=max_tokens,
             additional_kwargs=additional_kwargs or {},
             callback_manager=callback_manager,
         )
+
+        self.quality_preset = quality_preset
+        use_options = options is not None
+        # Check for user overrides in options dict
+        if use_options:
+            if options.get("model") is not None:
+                self.model = options.get("model")
+                if self.model == "gpt-4":
+                    self.context_window = 8192
+                elif self.model == "gpt-3.5-turbo-16k":
+                    self.context_window = 16385
+                else:
+                    # ValueError is raised by Studio object for non-supported models
+                    # Set context_window to dummy (default) value
+                    self.context_window = DEFAULT_CONTEXT_WINDOW
+            else:
+                self.context_window = DEFAULT_CONTEXT_WINDOW
+
+            if options.get("max_tokens") is not None:
+                self.max_tokens = options.get("max_tokens")
+            else:
+                self.max_tokens = DEFAULT_MAX_TOKENS
+        else:
+            self.model = DEFAULT_MODEL
+            self.context_window = DEFAULT_CONTEXT_WINDOW
+            self.max_tokens = DEFAULT_MAX_TOKENS
+
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
         studio = Studio(api_key=api_key)
-        self._client = studio.TLM(quality_preset=quality_preset)
+        self._client = studio.TLM(
+            quality_preset=self.quality_preset, options=options if use_options else None
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -54,16 +93,16 @@ class CleanlabTLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=context_window,
-            num_output=max_tokens,
-            model_name=model,
+            context_window=self.context_window,
+            num_output=self.max_tokens,
+            model_name=self.model,
         )
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # Prompt TLM for a response and trustworthiness score
         response: Dict[str, str] = self._client.prompt(prompt)
-        # output = json.dumps(response)
+
         return CompletionResponse(
             text=response["response"],
             additional_kwargs={

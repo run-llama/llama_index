@@ -2009,13 +2009,13 @@ tornado = "*"
 
 [[package]]
 name = "llama-cloud"
-version = "0.0.6"
+version = "0.0.8"
 description = ""
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "llama_cloud-0.0.6-py3-none-any.whl", hash = "sha256:0f07c8a865be632b543dec2bcad350a68a61f13413a7421b4b03de32c36f0194"},
-    {file = "llama_cloud-0.0.6.tar.gz", hash = "sha256:33b94cd119133dcb2899c9b69e8e1c36aec7bc7e80062c55c65f15618722e091"},
+    {file = "llama_cloud-0.0.8-py3-none-any.whl", hash = "sha256:0c695552cc9d4108aa075dd1144d6d1021850d39416549e34090fc1f14331ce9"},
+    {file = "llama_cloud-0.0.8.tar.gz", hash = "sha256:569b6911e12e937d2bd7c057c19626074ae8dee91c938c1fdcf68d57ee5eb24f"},
 ]
 
 [package.dependencies]
@@ -5379,4 +5379,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "c69741af36c9ca9e989d832821fcc72afd08e596de74772210a7c1c0e4fc558d"
+content-hash = "ab8ff5482ef01b87dcaaefa499a947dbf034ceb1b55f11ab9ac08a138a9d2a03"
