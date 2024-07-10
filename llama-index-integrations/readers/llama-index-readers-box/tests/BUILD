@@ -1,1 +1,1 @@
-python_sources()
+python_tests()
