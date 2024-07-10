@@ -19,6 +19,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Azure AI model inference group <azureml-inference@microsoft.com>"]
 description = "Integration for model supporting Azure AI model inference API in llama-index"
+exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-azure-inference"
 packages = [{include = "llama_index/"}]
