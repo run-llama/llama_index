@@ -1,5 +1,36 @@
 # ChangeLog
 
+## [2024-07-10]
+
+### `llama-index-core` [0.10.54]
+
+- fix: update operator logic for simple vector store filter (#14674)
+- Add AgentOps integration (#13935)
+
+### `llama-index-embeddings-fastembed` [0.1.5]
+
+- chore: update required python version in Qdrant fastembed package (#14677)
+
+### `llama-index-embeddings-huggingface-optimum-intel` [0.1.6]
+
+- Bump version llama-index-embeddings-huggingface-optimum-intel (#14670)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.2]
+
+- Added support for custom index settings (#14655)
+
+### `llama-index-callbacks-agentops` [0.1.0]
+
+- Initial release
+
+### `llama-index-indices-managed-vertexai` [0.0.2]
+
+- Fix #14637 Llamaindex managed Vertex AI index needs to be updated. (#14641)
+
+### `llama-index-readers-file` [0.1.29]
+
+- fix unstructured import in simple file reader (#14642)
+
 ## [2024-07-08]
 
 ### `llama-index-core` [0.10.53]
@@ -13,10 +44,15 @@
 - add cloud document converter (#14608)
 - fix KnowledgeGraphIndex arg 'kg_triple_extract_template' typo error (#14619)
 - Fix: Update `UnstructuredElementNodeParser` due to change in unstructured (#14606)
+- Update ReAct Step to solve issue with incomplete generation (#14587)
 
 ### `llama-index-callbacks-promptlayer` [0.1.3]
 
 - Conditions logging to promptlayer on successful request (#14632)
+
+### `llama-index-embeddings-databricks` [0.1.0]
+
+- Add integration embeddings databricks (#14590)
 
 ### `llama-index-llms-ai21` [0.3.1]
 
@@ -29,7 +65,7 @@
 
 ### `llama-index-llms-bedrock-converse` [0.1.4]
 
--  Fix Bedrock Converse's tool use blocks, when there are multiple consecutive function calls (#14386)
+- Fix Bedrock Converse's tool use blocks, when there are multiple consecutive function calls (#14386)
 
 ### `llama-index-llms-optimum-intel` [0.1.0]
 
