@@ -68,7 +68,6 @@ dirtyjson = "^1.0.8"
 tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
-llama-cloud = "^0.0.6"
 wrapt = "*"
 
 [tool.poetry.group.dev.dependencies]
@@ -79,6 +78,7 @@ codespell = {extras = ["toml"], version = ">=v2.2.6"}
 docker = "^7.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
+llama-cloud = "^0.0.8"
 motor = "^3.3.2"
 mypy = "0.991"
 pre-commit = "3.2.0"
