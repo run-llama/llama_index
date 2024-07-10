@@ -1,1 +1,1 @@
-python_test_utils()
+python_test()
