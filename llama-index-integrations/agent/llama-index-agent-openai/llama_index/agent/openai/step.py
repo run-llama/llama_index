@@ -35,6 +35,8 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
@@ -47,6 +49,7 @@ from llama_index.llms.openai.utils import OpenAIToolCall
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+dispatcher = get_dispatcher(__name__)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
@@ -329,6 +332,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         tool = get_function_by_name(tools, function_name)
 
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=tool.metadata
+                if tool
+                else ToolMetadata(description="unknown", name=function_name),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
@@ -425,6 +436,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         tool = get_function_by_name(tools, function_name)
 
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=tool.metadata
+                if tool
+                else ToolMetadata(description="unknown", name=function_name),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
