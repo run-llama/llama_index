@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.cleanlab"
 
 [tool.llamahub.class_authors]
-Cleanlab = "ashishsardana"
+CleanlabTLM = "ashishsardana"
 
 [tool.mypy]
 disallow_untyped_defs = true
