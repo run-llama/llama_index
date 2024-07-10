@@ -9,6 +9,16 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.box"
+
+[tool.llamahub.class_authors]
+BoxReader = "barduinor"
+BoxReaderAIExtract = "barduinor"
+BoxReaderAIPrompt = "barduinor"
+BoxReaderTextExtraction = "barduinor"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -17,9 +27,13 @@ ignore_missing_imports = true
 python_version = "3.12"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Box Developer Relations <dx@box.com>"]
 description = "llama-index readers box integration"
 license = "MIT"
+mainteners = [
+    "barduinor",
+    "shurrey",
+]
 name = "llama-index-readers-box"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
@@ -28,9 +42,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
-# box dependencies
 box-sdk-gen = "^1.0.0"
-python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
@@ -42,6 +54,7 @@ pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
+python-dotenv = "^1.0.0"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
