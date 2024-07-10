@@ -11,7 +11,8 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest-unit-tester
+    # runs-on: ubuntu-latest-unit-tester
+    runs-on: self-hosted
     strategy:
       # You can use PyPy versions in python-version.
       # For example, pypy-2.7 and pypy-3.8
