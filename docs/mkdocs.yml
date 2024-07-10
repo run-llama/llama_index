@@ -748,6 +748,7 @@ nav:
           - ./api_reference/agent/openai_legacy.md
           - ./api_reference/agent/react.md
       - Callbacks:
+          - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
           - ./api_reference/callbacks/argilla.md
           - ./api_reference/callbacks/arize_phoenix.md
@@ -2044,6 +2045,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-databricks
             - ../llama-index-integrations/llms/llama-index-llms-optimum-intel
             - ../llama-index-integrations/llms/llama-index-llms-qianfan
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-agentops
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
