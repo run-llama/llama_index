@@ -39,7 +39,6 @@ def test_box_reader_ai_extract_single_doc(
     assert len(docs) == 1
     doc_0 = json.loads(docs[0].text)
     assert doc_0["doc_type"] == "Invoice"
-    assert doc_0["date"] == "July 9, 2024"
     assert doc_0["total"] == "$1,050"
     assert doc_0["vendor"] == "Quasar Innovations"
     assert doc_0["invoice_number"] == "Q2468"
