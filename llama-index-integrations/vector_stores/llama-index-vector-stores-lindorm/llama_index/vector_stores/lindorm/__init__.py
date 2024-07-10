@@ -1,6 +1,6 @@
 from llama_index.vector_stores.lindorm.base import (
-    LindormSearchVectorStore,
-    LindormSearchVectorClient,
+    LindormVectorStore,
+    LindormVectorClient,
 )
 
-__all__ = ["LindormSearchVectorStore", "LindormSearchVectorClient"]
+__all__ = ["LindormVectorStore", "LindormVectorClient"]

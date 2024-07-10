@@ -7,8 +7,8 @@ from llama_index.core.schema import (
     NodeRelationship,
 )
 from llama_index.vector_stores.lindorm import (
-    LindormSearchVectorStore,
-    LindormSearchVectorClient,
+    LindormVectorStore,
+    LindormVectorClient,
 )
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
@@ -22,30 +22,26 @@ from llama_index.core.vector_stores.types import (
 @pytest.fixture(scope="module")
 def vector_store():
     # Lindorm instance info
-    # how to obtain an lindorm instance:
-    # https://alibabacloud.com/help/en/lindorm/latest/create-an-instance?spm=a2c63.l28256.0.0.4cc0f53cUfKOxI 
-
-    # how to access your lindorm instance:
-    # https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints?spm=a2c63.p38356.0.0.37121bcdxsDvbN
-
-    # run curl commands to connect to and use LindormSearch:
-    # https://www.alibabacloud.com/help/en/lindorm/latest/connect-and-use-the-search-engine-with-the-curl-command
     host = "ld-bp******jm*******-proxy-search-pub.lindorm.aliyuncs.com"
     port = 30070
     username = 'your username'
     password = 'your password'
     index_name = "lindorm_pytest_index"
-    
+    nprobe = "2" 
+    reorder_factor = "10"
+
     # Create a client and vector store instance
-    client = LindormSearchVectorClient(
+    client = LindormVectorClient(
         host=host,
         port=port,
         username=username,
         password=password,
         index=index_name,
         dimension=5,
+        nprobe=nprobe,
+        reorder_factor=reorder_factor
     )
-    vector_store = LindormSearchVectorStore(client)
+    vector_store = LindormVectorStore(client)
     
     yield vector_store
     
@@ -85,8 +81,8 @@ def test_simple_query(vector_store):
 
 def test_query_with_metadata_filter(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
-    filter1 = MetadataFilter(key="metadata.mark_id", value=0, operator=FilterOperator.GTE)
-    filter2 = MetadataFilter(key="metadata.mark_id", value=500, operator=FilterOperator.LTE)
+    filter1 = MetadataFilter(key="mark_id", value=0, operator=FilterOperator.GTE)
+    filter2 = MetadataFilter(key="mark_id", value=500, operator=FilterOperator.LTE)
     filters = MetadataFilters(filters=[filter1, filter2], condition=FilterCondition.AND)
     filter_query = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=5, filters=filters)
     result = vector_store.query(filter_query)

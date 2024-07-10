@@ -24,7 +24,7 @@ from llama_index.core.vector_stores.utils import (
 from opensearchpy.client import Client as OSClient
 
 IMPORT_OPENSEARCH_PY_ERROR = (
-    "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
+    "Could not import OpenSearch Python SDK. Please install it with `pip install opensearch-py`."
 )
 INVALID_HYBRID_QUERY_ERROR = (
     "Please specify the lexical_query for hybrid search."
@@ -32,9 +32,9 @@ INVALID_HYBRID_QUERY_ERROR = (
 MATCH_ALL_QUERY = {"match_all": {}}  # type: Dict
 
 
-class LindormSearchVectorClient:
+class LindormVectorClient:
     """
-    Object encapsulating an LindormSearch index that has vector search enabled.
+    Object encapsulating an Lindorm index that has vector search enabled.
 
     If the index does not yet exist, it is created during init.
     Therefore, the underlying index is assumed to either:
@@ -43,7 +43,7 @@ class LindormSearchVectorClient:
     Two index types are available: IVFPQ & HNSW. Default: IVFPQ
 
     Detailed info for these arguments can be found here:
-    https://help.aliyun.com/document_detail/2773371.html?spm=a2c4g.2787419.0.i8#f7fc79dc73pld
+    https://help.aliyun.com/document_detail/2773371.html
 
     Args:
         host (str): Elasticsearch compatible host of the lindorm search engine
@@ -54,10 +54,10 @@ class LindormSearchVectorClient:
         dimension (int): Dimension of the vector
     
     how to obtain an lindorm instance:
-    https://alibabacloud.com/help/en/lindorm/latest/create-an-instance?spm=a2c63.l28256.0.0.4cc0f53cUfKOxI 
+    https://alibabacloud.com/help/en/lindorm/latest/create-an-instance 
     
     how to access your lindorm instance:
-    https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints?spm=a2c63.p38356.0.0.37121bcdxsDvbN
+    https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints
 
     run curl commands to connect to and use LindormSearch:
     https://www.alibabacloud.com/help/en/lindorm/latest/connect-and-use-the-search-engine-with-the-curl-command
@@ -72,6 +72,12 @@ class LindormSearchVectorClient:
         engine(str): "lvector"; default: "lvector"
         space_type(str): "l2", "cosinesimil", "innerproduct"; default: "l2"
         vector_field(str): Document field embeddings are stored in. default: "vector_field".
+    
+    Optional Keyword Args for lindorm search extention setting:
+        filter_type (str): filter type for lindorm search, pre_filter or post_filter; default: post_filter        
+        nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
+            No defualt value.
+        reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
 
     Optional Keyword Args for IVFPQ:
         m(int): Number of subspaces. Between 2 and 32768; default: 16
@@ -107,10 +113,16 @@ class LindormSearchVectorClient:
         engine = kwargs.get("engine", "lvector")
         space_type = kwargs.get("space_type", "l2")
         vector_field = kwargs.get("vector_field", "vector_field")
+        filter_type = kwargs.get("filter_type", "post_filter")
+        nprobe = kwargs.get("nprobe", "1")
+        reorder_factor = kwargs.get("reorder_factor", "10")
+
+        if filter_type not in ["post_filter", "pre_filter"]:
+            raise ValueError(f"Unsupported filter type: {filter_type}, only post_filter and pre_filter are suopported now.") 
         
         # initialize parameters
         if method_name == "ivfpq":    
-            m = kwargs.get("m", 16)
+            m = kwargs.get("m", dimension)
             nlist = kwargs.get("nlist", 10000)
             centroids_use_hnsw = kwargs.get("centroids_use_hnsw", True)
             centroids_hnsw_m = kwargs.get("centroids_hnsw_m", 16)
@@ -135,6 +147,9 @@ class LindormSearchVectorClient:
             raise RuntimeError(f"unexpected method_name: {method_name}")  
               
         self._vector_field = vector_field
+        self._filter_type = filter_type
+        self._nprobe = nprobe
+        self._reorder_factor = reorder_factor
 
         self._host = host
         self._port = port
@@ -191,7 +206,7 @@ class LindormSearchVectorClient:
             )
     
     def _import_async_opensearch(self) -> Any:
-        """Import OpenSearch if available, otherwise raise error."""
+        """Import OpenSearch Python SDK if available, otherwise raise error."""
         try:
             from opensearchpy import AsyncOpenSearch
         except ImportError:
@@ -238,7 +253,15 @@ class LindormSearchVectorClient:
                 f"Got error: {e} "
             )
         return client
-    
+
+    def _flatten_request(self,request)->Dict:
+        """Flatten metadata in request."""
+        if "metadata" in request:
+            for key, value in request["metadata"].items():
+                request[key] = value
+            del request["metadata"]
+        return request
+
     async def _bulk_ingest_embeddings(
         self,
         client: Any,
@@ -278,6 +301,8 @@ class LindormSearchVectorClient:
                 "metadata": metadata,
                 "_id": _id
             }
+            # Flatten metadata in request
+            request = self._flatten_request(request)
             requests.append(request)
             return_ids.append(_id)
         await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
@@ -294,14 +319,17 @@ class LindormSearchVectorClient:
     ) -> Dict:
         """
         For Approximate k-NN Search, this is the default query.
+
         Args:
             query_vector(List[float]): Vector embedding to query.
             k(int): Maximum number of results. default: 4.
             nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
                 No defualt value.
             reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
+
         Optional Args:
             vector_field(str): Document field embeddings are stored in. default: "vector_field".
+
         Return:
             search_query: A dictionary representing the query.
         
@@ -324,105 +352,94 @@ class LindormSearchVectorClient:
             }
         }
     
-    def _search_query_with_post_filter(
+    def _search_query_with_filter(
         self,
         query_vector: List[float],
         k: int,
+        filter_type: str,
         nprobe: str,
         reorder_factor: str,
         vector_field: str = "vector_field",
-        post_filter:Union[Dict, List, None] = None
+        filter:Union[Dict, List, None] = None,
     ) -> Dict:
         """
-        achieve post-filtering with a post_filter parameter.
+        construct search query with pre-filter or post-filter
         
         Args:
             query_vector(List[float]): Vector embedding to query.
             k(int): Maximum number of results. default: 4.
+            filter_type(str): filter_type for lindorm search, pre_filter and post_filter are supported; 
+                default: "post_filter".
             nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
                 No defualt value.
             reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
             vector_field(str): Document field embeddings are stored in. default: "vector_field".
-            post_filter(Union[Dict, List, None]): post_filter for lindorm search. default: None.
+            filter(Union[Dict, List, None]): filter for lindorm search. default: None.
 
         Returns:
             search_query: A dictionary representing the query.
+
         """
-        if not post_filter:
-            post_filter = MATCH_ALL_QUERY        
+        if not filter:
+            filter = MATCH_ALL_QUERY    
         return {
             "size": k,
             "query": {
                 "knn": {
                     vector_field: {
                         "vector": query_vector, 
+                        "filter": filter,
                         "k": k
                     }
                 }
             },
-            "post_filter": post_filter,
             "ext":{
                 "lvector": {
-                    "filter_type": "post_filter",
+                    "filter_type": filter_type,
                     "nprobe": nprobe,
                     "reorder_factor": reorder_factor
                 }
             }
         }
     
-    def _metadatafilter_to_dict(self, filter: MetadataFilter)->Dict:
+    def _metadatafilter_to_dict(self, filter: MetadataFilter) -> Dict:
         """
         Parse MetadataFilter into a dictionary
-        
+
         Args:
             filter (MetadataFilter): A MetadataFilter object.
+
         Returns:
             dict: A dictionary representing the filter.
+
         """
         operator = filter.operator
-        filter_dict = {}
-        if operator == FilterOperator.GTE:
+
+        range_operators = {
+            FilterOperator.GTE: "gte",
+            FilterOperator.LTE: "lte",
+            FilterOperator.GT: "gt",
+            FilterOperator.LT: "lt"
+        }
+
+        if operator in range_operators:
             filter_dict = {
-                "range":{
+                "range": {
                     filter.key: {
-                        "gte": filter.value
-                    }
-                }
-            }
-        elif operator == FilterOperator.LTE:
-            filter_dict = {
-                "range":{
-                    filter.key: {
-                        "lte": filter.value
-                    }
-                }
-            }
-        elif operator == FilterOperator.GT:
-            filter_dict = {
-                "range":{
-                    filter.key: {
-                        "gt": filter.value
-                    }
-                }
-            }
-        elif operator == FilterOperator.LT:
-            filter_dict = {
-                "range":{
-                    filter.key: {
-                        "lt": filter.value
+                        range_operators[operator]: filter.value
                     }
                 }
             }
         elif operator == FilterOperator.EQ:
             filter_dict = {
-                "term":{
+                "term": {
                     filter.key: filter.value
                 }
             }
         else:
             raise ValueError(f"Unsupported filter operator: {operator}")
+
         return filter_dict
-        
     
     def _parse_filters(
             self, 
@@ -430,11 +447,13 @@ class LindormSearchVectorClient:
     ) -> Any:
         """
         Parse MetadataFilters into a list of dictionaries
+
         Args:
             filters (Optional[MetadataFilters]): An optional MetadataFilters object.
 
         Returns:
             list: A list of dictionaries. If no filters are provided, an empty list is returned.
+
         """
         filter_list = []
         if filters is not None:
@@ -447,6 +466,7 @@ class LindormSearchVectorClient:
         vector_field: str,
         query_embedding: List[float],
         k: int,
+        filter_type: str,
         nprobe: str,
         reorder_factor: str,
         filters: Optional[MetadataFilters] = None,
@@ -455,13 +475,15 @@ class LindormSearchVectorClient:
         Do knn search.
 
         If there are no filters do approx-knn search.
-        If there are (post)-filters, do an exhaustive exact knn search using post-filters
+        If there are filters, do an exhaustive exact knn search using filters
 
-        Note that approximate knn search does not support post-filtering.
+        Note that approximate knn search does not support metadata filting.
 
         Args:
             query_embedding(List[float]): Vector embedding to query.
             k(int): Maximum number of results.
+            filter_type(str): filter_type for lindorm search, pre_filter and post_filter are supported; 
+                default: "post_filter".
             nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
                 No defualt value.
             reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
@@ -473,6 +495,7 @@ class LindormSearchVectorClient:
 
         Returns:
             Up to k targets closest to query_embedding
+
         """
         filter_list = self._parse_filters(filters)
         if not filters:
@@ -481,23 +504,25 @@ class LindormSearchVectorClient:
             )
         else:
             if filters.condition == FilterCondition.AND:
-                post_filter = {"bool": {"must": filter_list}}
+                filter = {"bool": {"must": filter_list}}
             elif filters.condition == FilterCondition.OR:
-                post_filter = {"bool": {"should": filter_list}}
+                filter = {"bool": {"should": filter_list}}
             else:
                 # TODO: FilterCondition can also be 'NOT', but llama_index does not support it yet.
                 # https://opensearch.org/docs/latest/query-dsl/compound/bool/
                 # post_filter = {"bool": {"must_not": filter_list}}
                 raise ValueError(f"Unsupported filter condition: {filters.condition}")
 
-            search_query = self._search_query_with_post_filter(
+            search_query = self._search_query_with_filter(
                 query_vector=query_embedding,
                 vector_field=vector_field, 
                 k=k, 
+                filter=filter,
                 nprobe=nprobe, 
                 reorder_factor=reorder_factor,
-                post_filter=post_filter
+                filter_type=filter_type
             )
+
         return search_query
     
     def _hybrid_search_query(
@@ -507,18 +532,22 @@ class LindormSearchVectorClient:
         vector_field: str,
         query_embedding: List[float],
         k: int,
+        filter_type: str,
         nprobe: str,
         reorder_factor: str,
         filters: Optional[MetadataFilters] = None,
     ) -> Dict:
         """
         Do hybrid search.
+
         Args:
             text_field(str): Document field to query.
             query_str(str): Query string.
             vector_field(str): Document field embeddings are stored in.
             query_embedding(List[float]): Vector embedding to query.
             k(int): Maximum number of results.
+            filter_type(str): filter_type for lindorm search, pre_filter and post_filter are supported; 
+                default: "post_filter".
             nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
                 No Defualt value.
             reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
@@ -530,16 +559,44 @@ class LindormSearchVectorClient:
 
         Returns:
             Up to k targets closest to query_embedding
+
         """
-        knn_query = self._knn_search_query(vector_field=vector_field, nprobe=nprobe, reorder_factor=reorder_factor, query_embedding=query_embedding, k=k, filters=filters)
+        knn_query = self._knn_search_query(
+            vector_field=vector_field, 
+            filter_type=filter_type,
+            nprobe=nprobe, 
+            reorder_factor=reorder_factor, 
+            query_embedding=query_embedding, 
+            k=k, 
+            filters=filters
+        )
         lexical_query = self._lexical_search_query(text_field, query_str, k, filters)
+
+        # Combine knn and lexical search query
+        knn_field_query = knn_query["query"]["knn"][vector_field]
+        if "filter" not in knn_field_query:
+            knn_field_query["filter"] = {"bool": {"must": []}}
+        elif "bool" not in knn_field_query["filter"]:
+            knn_field_query["filter"]["bool"] = {"must": []}
+        elif "must" not in knn_field_query["filter"]["bool"]:
+            knn_field_query["filter"]["bool"]["must"] = []
+
+        knn_query["query"]["knn"][vector_field]["filter"]["bool"]["must"].append(
+            lexical_query["query"]["bool"]["must"]
+        )
 
         search_query = {
             "size": k,
-            "query":knn_query["query"],
-            "post_filter":lexical_query["query"],
-            "ext":knn_query["ext"]
+            "query": knn_query["query"],
+            "ext": {
+                "lvector": {
+                    "filter_type": filter_type,
+                    "nprobe": nprobe,
+                    "reorder_factor": reorder_factor
+                }
+            }
         }
+
         return search_query
     
     def _lexical_search_query(
@@ -564,6 +621,7 @@ class LindormSearchVectorClient:
 
         Returns:
             Up to k targets closest to query_embedding
+
         """
         lexical_query = {
             "bool": {"must": {"match": {text_field: {"query": query_str}}}}
@@ -573,18 +631,23 @@ class LindormSearchVectorClient:
         if len(parsed_filters) > 0:
             lexical_query["bool"]["filter"] = parsed_filters
 
-        return {
+        search_query = {
             "size": k,
             "query": lexical_query,
         }
+
+        return search_query
     
     async def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """
         Store results in the index.
+
         Args:
             nodes (List[BaseNode]): A list of BaseNode objects.
+
         Returns:
             List[str]: A list of node_ids
+
         """
         embeddings: List[List[float]] = []
         texts: List[str] = []
@@ -616,11 +679,12 @@ class LindormSearchVectorClient:
 
         Args:
             doc_id (str): a LlamaIndex `Document` id
+
         """
         search_query = {
             "query": {
                 "term": {
-                    "metadata.doc_id.keyword": {
+                    "doc_id.keyword": {
                         "value": doc_id
                     }
                 }
@@ -634,27 +698,25 @@ class LindormSearchVectorClient:
         query_str: Optional[str],
         query_embedding: List[float],
         k: int,
-        nprobe: str,
-        reorder_factor: str,
         filters: Optional[MetadataFilters] = None,
     ) -> VectorStoreQueryResult:
         """
         Do vector search.
+
         Args:
             query_mode (VectorStoreQueryMode): Query mode.
             query_str (Optional[str]): Query string.
             query_embedding (List[float]): Query embedding.
             k (int): Maximum number of results.
-            nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
-                No defualt value.
-            reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
         
         Optional Args:
             filters(Optional[MetadataFilters]): Optional filters to apply before the search.
                 Supports filter-context queries documented at
                 https://opensearch.org/docs/latest/query-dsl/query-filter-context/
+
         Returns:
             VectorStoreQueryResult
+
         """
         if query_mode == VectorStoreQueryMode.HYBRID:
             if query_str is None:
@@ -666,8 +728,9 @@ class LindormSearchVectorClient:
                 query_embedding= query_embedding,
                 k=k,
                 filters=filters,
-                nprobe=nprobe,
-                reorder_factor=reorder_factor
+                filter_type=self._filter_type,
+                nprobe=self._nprobe,
+                reorder_factor=self._reorder_factor
             )
             params = None
         elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
@@ -677,7 +740,12 @@ class LindormSearchVectorClient:
             params = None
         else:
             search_query = self._knn_search_query(
-                vector_field=self._vector_field, query_embedding=query_embedding, k=k, filters=filters, nprobe=nprobe, reorder_factor=reorder_factor
+                vector_field=self._vector_field, 
+                query_embedding=query_embedding, 
+                k=k, filters=filters, 
+                filter_type=self._filter_type, 
+                nprobe=self._nprobe, 
+                reorder_factor=self._reorder_factor
             )
             params = None
 
@@ -736,32 +804,32 @@ class LindormSearchVectorClient:
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
 
-class LindormSearchVectorStore(BasePydanticVectorStore):
+class LindormVectorStore(BasePydanticVectorStore):
     """
-    LindormSearch vector store.
+    Lindorm vector store.
 
     Args:
-        client (LindormSearchVectorClient): Vector index client to use
+        client (LindormVectorClient): Vector index client to use
             for data insertion/querying.
 
     Examples:
         `pip install llama-index`
         `pip install opensearch-py`
-        `pip install llama-index-vector-stores-lindormsearch`
+        `pip install llama-index-vector-stores-lindorm`
         
 
         ```python
-        from llama_index.vector_stores.lindormsearch import (
-            LindormSearchVectorStore,
-            LindormSearchVectorClient,
+        from llama_index.vector_stores.lindorm import (
+            LindormVectorStore,
+            LindormVectorClient,
         )
 
         # lindorm instance info
         # how to obtain an lindorm search instance:
-        # https://alibabacloud.com/help/en/lindorm/latest/create-an-instance?spm=a2c63.l28256.0.0.4cc0f53cUfKOxI 
+        # https://alibabacloud.com/help/en/lindorm/latest/create-an-instance
         
         # how to access your lindorm search instance:
-        # https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints?spm=a2c63.p38356.0.0.37121bcdxsDvbN
+        # https://www.alibabacloud.com/help/en/lindorm/latest/view-endpoints
 
         # run curl commands to connect to and use LindormSearch:
         # https://www.alibabacloud.com/help/en/lindorm/latest/connect-and-use-the-search-engine-with-the-curl-command
@@ -773,27 +841,37 @@ class LindormSearchVectorStore(BasePydanticVectorStore):
         # index to demonstrate the VectorStore impl
         index_name = "lindorm_test_index"
 
-        # LindormSearchVectorClient encapsulates logic for a single index with vector search enabled
-        client = LindormSearchVectorClient(
+        # extenion param of lindorm search, number of cluster units to query; between 1 and method.parameters.nlist.
+        nprobe = "a number(string type)" 
+
+        # extenion param of lindorm search, usually used to improve recall accuracy, but it increases performance overhead; 
+        #   between 1 and 200; default: 10.
+        reorder_factor = "a number(string type)"
+
+        # LindormVectorClient encapsulates logic for a single index with vector search enabled
+        client = LindormVectorClient(
             host=host, 
             port=port,
             username=username, 
             password=password,
             index=index_name, 
-            dimension=1536, 
+            dimension=1536, # match with your embedding model
+            nprobe=nprobe,
+            reorder_factor=reorder_factor,
+            # filter_type="pre_filter/post_filter(default)"
         )
 
         # initialize vector store
-        vector_store = LindormSearchVectorStore(client)
+        vector_store = LindormVectorStore(client)
         ```
     """
 
     stores_text: bool = True
-    _client: LindormSearchVectorClient = PrivateAttr(default=None)
+    _client: LindormVectorClient = PrivateAttr(default=None)
 
     def __init__(
         self,
-        client: LindormSearchVectorClient,
+        client: LindormVectorClient,
     ) -> None:
         """Initialize params."""
         super().__init__()
@@ -868,8 +946,6 @@ class LindormSearchVectorStore(BasePydanticVectorStore):
     def query(
         self, 
         query: VectorStoreQuery,
-        nprobe: Optional[str] = "1", 
-        reorder_factor:Optional[str]="10", 
         **kwargs: Any
     ) -> VectorStoreQueryResult:
         """
@@ -879,23 +955,14 @@ class LindormSearchVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): Store query object.
         
-        Optional Args:
-            nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
-                No defualt value.
-            reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
-
-        More details about optional args:
-            https://help.aliyun.com/document_detail/2773371.html?spm=a2c4g.2787419.0.i31#c14f40f95dkku
         """
         return asyncio.get_event_loop().run_until_complete(
-            self.aquery(query, nprobe=nprobe, reorder_factor=reorder_factor, **kwargs)
+            self.aquery(query, **kwargs)
         )
     
     async def aquery(
         self, 
         query: VectorStoreQuery, 
-        nprobe: Optional[str] = "1", 
-        reorder_factor:Optional[str]="10", 
         **kwargs: Any
     ) -> VectorStoreQueryResult:
         """
@@ -903,15 +970,8 @@ class LindormSearchVectorStore(BasePydanticVectorStore):
 
         Args:
             query (VectorStoreQuery): Store query object.
-        
-        Optional Args:
-            nprobe (str): number of cluster units to query; between 1 and method.parameters.nlist.
-                No Defualt value.
-            reorder_factor (str): reorder_factor for lindorm search; between 1 and 200; default: 10.
 
-        More details about optional args:
-            https://help.aliyun.com/document_detail/2773371.html?spm=a2c4g.2787419.0.i31#c14f40f95dkku            
-        """
+        """           
         query_embedding = cast(List[float], query.query_embedding)
         return await self._client.aquery(
             query.mode,
@@ -919,6 +979,4 @@ class LindormSearchVectorStore(BasePydanticVectorStore):
             query_embedding,
             query.similarity_top_k,
             filters=query.filters,
-            nprobe=nprobe,
-            reorder_factor=reorder_factor
         )

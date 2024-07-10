@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.lindorm"
 
 [tool.llamahub.class_authors]
-LindormSearchVectorStore = "aliyun"
+LindormVectorStore = "aliyun"
 
 [tool.mypy]
 disallow_untyped_defs = true
