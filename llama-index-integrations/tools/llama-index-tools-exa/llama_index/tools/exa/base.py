@@ -1,4 +1,4 @@
-"""Exa (formerly Metaphor) tool spec."""
+"""Exa tool spec."""
 
 import datetime
 from typing import List, Optional
