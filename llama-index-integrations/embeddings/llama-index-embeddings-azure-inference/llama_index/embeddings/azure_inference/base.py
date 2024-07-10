@@ -93,12 +93,14 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         self._client = EmbeddingsClient(
             endpoint=endpoint,
             credential=credential,
+            user_agent="llamaindex",
             **client_kwargs,
         )
 
         self._async_client = EmbeddingsClientAsync(
             endpoint=endpoint,
             credential=credential,
+            user_agent="llamaindex",
             **client_kwargs,
         )
 

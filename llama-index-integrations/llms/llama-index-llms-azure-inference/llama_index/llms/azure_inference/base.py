@@ -207,11 +207,17 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             )
 
         self._client = ChatCompletionsClient(
-            endpoint=endpoint, credential=credential, **client_kwargs
+            endpoint=endpoint,
+            credential=credential,
+            user_agent="llamaindex",
+            **client_kwargs,
         )
 
         self._async_client = ChatCompletionsClientAsync(
-            endpoint=endpoint, credential=credential, **client_kwargs
+            endpoint=endpoint,
+            credential=credential,
+            user_agent="llamaindex",
+            **client_kwargs,
         )
 
         super().__init__(
