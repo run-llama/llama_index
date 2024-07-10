@@ -1,7 +1,5 @@
 # Box AI Extraction reader
 
-`pip install llama-index-readers-box`
-
 This loader reads files from Box using Box AI, to extract a user defined structure.
 To use this loader, you need to pass a Box Client, a list of file id's or folder id.
 
@@ -10,6 +8,14 @@ To use this loader, you need to pass a Box Client, a list of file id's or folder
 
 > [!WARNING]
 > Box AI Extraction is currently in beta, and the implementation may change.
+
+## Installation
+
+```bash
+pip install llama-index-readers-box
+```
+
+## Parameters
 
 ### ai_prompt
 
@@ -90,7 +96,7 @@ It gives more flexibility to filter the documents. More info: https://developers
 
 ## Usage
 
-#### Using CCG authentication
+#### With CCG authentication
 
 ```python
 from box_sdk_gen import CCGConfig

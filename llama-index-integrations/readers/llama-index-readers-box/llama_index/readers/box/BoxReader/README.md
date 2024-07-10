@@ -1,9 +1,15 @@
 # Box simple reader
 
-`pip install llama-index-readers-box`
-
 This loader reads files from Box using the LLama Index Simple Reader, and does not take advantage of any Box specific features.
 To use this loader, you need to pass a Box Client, a list of file id's or folder id.
+
+## Installation
+
+```bash
+pip install llama-index-readers-box
+```
+
+## Parameters
 
 ### box_client
 
@@ -41,7 +47,7 @@ It gives more flexibility to filter the documents. More info: https://developers
 
 ## Usage
 
-#### Using CCG authentication
+#### With CCG authentication
 
 ```python
 from box_sdk_gen import CCGConfig

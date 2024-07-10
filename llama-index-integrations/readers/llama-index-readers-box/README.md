@@ -1,11 +1,18 @@
 # LlamaIndex Readers Integration: Box
 
-Effortlessly incorporate Box data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities, including:
+This open-source integration brings the capabilities of Box.com to the LLama-Index, empowering developers building Retrieval Augmented Generation (RAG) and other LLM applications.
 
-- [Box Reader](llama_index/readers/box/BoxReader/README.md)
-- [Box Text Extraction](llama_index/readers/box/BoxReaderTextExtraction/README.md)
-- [Box AI Prompt](llama_index/readers/box/BoxReaderAIPrompt/README.md)
-- [Box AI Extraction](llama_index/readers/box/BoxReaderAIExtraction/README.md)
+We provide multiple readers, including:
+
+- [Box Reader](llama_index/readers/box/BoxReader/README.md) - Implementation of the SimpleReader interface to read files from Box.
+- [Box Text Extraction](llama_index/readers/box/BoxReaderTextExtraction/README.md) - Uses Box text representation to extract text from document.
+- [Box AI Prompt](llama_index/readers/box/BoxReaderAIPrompt/README.md) - Uses Box AI to extract context from documents
+- [Box AI Extraction](llama_index/readers/box/BoxReaderAIExtraction/README.md) - Uses Box AI to extract structured data from documents
+
+> [!IMPORTANT]
+> Box AI features are only available to E+ customers.
+
+This README will guide you through installation, usage, and explore the functionalities of each reader.
 
 ## Installation
 
@@ -55,6 +62,13 @@ By default the JWT client will use a service account associated with the applica
 If you want to use a different user, you can specify the user ID in the .env file. In this case make sure your application can impersonate and/or generate user tokens in the scope.
 
 Checkout this guide for more information on how to setup the JWT: [Box JWT Guide](https://developer.box.com/guides/authentication/jwt/jwt-setup/)
+
+> [!WARNING]
+> The JWT authentication requires extra dependencies in the SDK. You can install them by running:
+
+```bash
+pip install "box-sdk-gen[jwt]"
+```
 
 ## Box Client
 

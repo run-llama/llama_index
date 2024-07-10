@@ -1,10 +1,16 @@
 # Box Text Extraction reader
 
-`pip install llama-index-readers-box`
-
 This reader uses the Box text representation API to extract text from documents stored in Box.
 
 For more information check the [Box Get Text Representation documentation](https://developer.box.com/guides/representations/text/).
+
+## Installation
+
+```bash
+pip install llama-index-readers-box
+```
+
+## Parameters
 
 ### box_client
 
@@ -42,7 +48,7 @@ It gives more flexibility to filter the documents. More info: https://developers
 
 ## Usage
 
-#### Using CCG authentication
+#### With CCG authentication
 
 ```python
 from box_sdk_gen import CCGConfig
