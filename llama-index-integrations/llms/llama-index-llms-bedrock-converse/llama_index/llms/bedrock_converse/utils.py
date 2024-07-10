@@ -211,9 +211,7 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
     )
 
 
-def _create_retry_decorator_async(
-    client: Any, max_retries: int
-) -> Callable[[Any], Any]:
+def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
     min_seconds = 4
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
@@ -276,7 +274,8 @@ def converse_with_retry(
 
 
 async def converse_with_retry_async(
-    client: Any,
+    session: Any,
+    config: Any,
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
@@ -287,9 +286,7 @@ async def converse_with_retry_async(
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
-    retry_decorator = _create_retry_decorator_async(
-        client=client, max_retries=max_retries
-    )
+    retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
     converse_kwargs = {
         "modelId": model,
         "messages": messages,
@@ -308,9 +305,11 @@ async def converse_with_retry_async(
 
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
-        if stream:
-            return await client.converse_stream(**kwargs)
-        return await client.converse(**kwargs)
+        # the async boto3 client needs to be defined inside this async with, otherwise it will raise an error
+        async with session.client("bedrock-runtime", config=config) as client:
+            if stream:
+                return await client.converse_stream(**kwargs)
+            return await client.converse(**kwargs)
 
     return await _conversion_with_retry(**converse_kwargs)
 

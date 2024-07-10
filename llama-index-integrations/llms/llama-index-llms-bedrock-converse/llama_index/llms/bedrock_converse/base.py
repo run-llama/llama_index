@@ -120,8 +120,9 @@ class BedrockConverse(FunctionCallingLLM):
         description="Additional kwargs for the bedrock invokeModel request.",
     )
 
+    _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _asession: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -135,7 +136,6 @@ class BedrockConverse(FunctionCallingLLM):
         region_name: Optional[str] = None,
         botocore_session: Optional[Any] = None,
         client: Optional[Any] = None,
-        aclient: Optional[Any] = None,
         timeout: Optional[float] = 60.0,
         max_retries: Optional[int] = 10,
         botocore_config: Optional[Any] = None,
@@ -158,13 +158,13 @@ class BedrockConverse(FunctionCallingLLM):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
-        config = None
+        self._config = None
         try:
             import boto3
             import aioboto3
             from botocore.config import Config
 
-            config = (
+            self._config = (
                 Config(
                     retries={"max_attempts": max_retries, "mode": "standard"},
                     connect_timeout=timeout,
@@ -174,7 +174,7 @@ class BedrockConverse(FunctionCallingLLM):
                 else botocore_config
             )
             session = boto3.Session(**session_kwargs)
-            asession = aioboto3.Session(**session_kwargs)
+            self._asession = aioboto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
                 "boto3 and/or aioboto3 package not found, install with"
@@ -185,17 +185,12 @@ class BedrockConverse(FunctionCallingLLM):
         # distributed that used the bedrock service to invokeModel.
         # This check prevents any services still using those wheel files
         # from breaking
-        if (client is not None) or (aclient is not None):
-            if client is not None:
-                self._client = client
-            if aclient is not None:
-                self._aclient = aclient
+        if client is not None:
+            self._client = client
         elif "bedrock-runtime" in session.get_available_services():
-            self._client = session.client("bedrock-runtime", config=config)
-            self._aclient = asession.client("bedrock-runtime", config=config)
+            self._client = session.client("bedrock-runtime", config=self._config)
         else:
-            self._client = session.client("bedrock", config=config)
-            self._aclient = asession.client("bedrock", config=config)
+            self._client = session.client("bedrock", config=self._config)
 
         super().__init__(
             temperature=temperature,
@@ -408,7 +403,8 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
-            client=self._aclient,
+            session=self._asession,
+            config=self._config,
             messages=converse_messages,
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
@@ -452,7 +448,8 @@ class BedrockConverse(FunctionCallingLLM):
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
-            client=self._aclient,
+            session=self._asession,
+            config=self._config,
             messages=converse_messages,
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
