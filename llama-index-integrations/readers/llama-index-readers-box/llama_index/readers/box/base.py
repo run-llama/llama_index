@@ -21,12 +21,16 @@ logger = logging.getLogger(__name__)
 
 
 class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
+    """
+    A reader class for interacting with Box, a cloud content management and file sharing service.
+
+    This class provides functionality to authenticate with Box, list folder contents,
+    and read files from Box, supporting both small and large files.
+    """
+
     is_remote: bool = True
 
     auth_method: Literal["developer_token"]
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
-    authorization_code: Optional[str] = None
 
     developer_token: Optional[str] = None
 
@@ -34,7 +38,6 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
     recursive: bool = True
     file_extractor: Optional[Dict[str, Any]] = None
     num_files_limit: Optional[int] = None
-
     chunk_size: int = 5 * 1024 * 1024  # 5 MB chunk size for streaming
     large_file_threshold: int = 10 * 1024 * 1024  # 10 MB threshold for large files
 
@@ -43,9 +46,6 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
     def __init__(
         self,
         auth_method: Literal["developer_token"],
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
-        authorization_code: Optional[str] = None,
         developer_token: Optional[str] = None,
         folder_id: Optional[str] = None,
         recursive: bool = True,
@@ -54,11 +54,21 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         chunk_size: int = 1024 * 1024,
         large_file_threshold: int = 10 * 1024 * 1024,
     ) -> None:
+        """
+        Initialize the BoxReader with the given parameters.
+
+        Args:
+            auth_method (Literal["developer_token"]): The authentication method to use.
+            developer_token (Optional[str]): The developer token for authentication.
+            folder_id (Optional[str]): The ID of the folder to read from.
+            recursive (bool): Whether to recursively read subfolders.
+            file_extractor (Optional[Dict[str, Any]]): A dictionary of file extractors.
+            num_files_limit (Optional[int]): The maximum number of files to read.
+            chunk_size (int): The size of chunks when streaming large files.
+            large_file_threshold (int): The threshold size for considering a file as large.
+        """
         super().__init__(
             auth_method=auth_method,
-            client_id=client_id,
-            client_secret=client_secret,
-            authorization_code=authorization_code,
             developer_token=developer_token,
             folder_id=folder_id,
             recursive=recursive,
@@ -74,6 +84,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         return "BoxReader"
 
     def _get_client(self) -> BoxClient:
+        """
+        Get an authenticated Box client.
+
+        Returns:
+            BoxClient: An authenticated Box client.
+
+        Raises:
+            ValueError: If the authentication method is unsupported or required parameters are missing.
+        """
         try:
             if self.auth_method == "developer_token":
                 if not self.developer_token:
@@ -90,6 +109,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             raise
 
     def _list_folder_contents(self, folder_id: str) -> List[Any]:
+        """
+        List the contents of a Box folder.
+
+        Args:
+            folder_id (str): The ID of the folder to list.
+
+        Returns:
+            List[Any]: A list of items in the folder.
+        """
         items = []
         offset = 0
         # limit = 1000  # Box API limit
@@ -144,6 +172,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             return items
 
     def _process_item(self, item: Any) -> Optional[Document]:
+        """
+        Process a single item from Box.
+
+        Args:
+            item (Any): The item to process.
+
+        Returns:
+            Optional[Document]: A Document object if the item is successfully processed, None otherwise.
+        """
         try:
             if item.type == "file":
                 logger.info(f"Processing file: {item.name} (ID: {item.id})")
@@ -161,6 +198,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             return None
 
     def _process_small_file(self, item: Any) -> Optional[Document]:
+        """
+        Process a small file from Box.
+
+        Args:
+            item (Any): The file item to process.
+
+        Returns:
+            Optional[Document]: A Document object if the file is successfully processed, None otherwise.
+        """
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             file_content = self._client.downloads.download_file(file_id=item.id)
             content = file_content.read()
@@ -184,6 +230,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         return None
 
     def _process_large_file(self, item: Any) -> Optional[Document]:
+        """
+        Process a large file from Box using streaming.
+
+        Args:
+            item (Any): The file item to process.
+
+        Returns:
+            Optional[Document]: A Document object if the file is successfully processed, None otherwise.
+        """
         buffer = io.BytesIO()
         for chunk in self._stream_file(item.id):
             buffer.write(chunk)
@@ -210,6 +265,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         return None
 
     def _stream_file(self, file_id: str):
+        """
+        Stream a file from Box in chunks.
+
+        Args:
+            file_id (str): The ID of the file to stream.
+
+        Yields:
+            bytes: Chunks of the file content.
+        """
         logger.info(f"Starting to stream file with ID: {file_id}")
         total_bytes = 0
 
@@ -239,6 +303,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             )
 
     def _get_item_metadata(self, item: Any) -> Dict[str, Any]:
+        """
+        Get metadata for a Box item.
+
+        Args:
+            item (Any): The Box item.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the item's metadata.
+        """
         return {
             "file_id": item.id,
             "file_name": item.name,
@@ -248,6 +321,12 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         }
 
     def load_data(self) -> List[Document]:
+        """
+        Load data from Box.
+
+        Returns:
+            List[Document]: A list of Document objects representing the loaded files.
+        """
         documents = []
         folders_to_process = (
             [self.folder_id] if self.folder_id else ["0"]
@@ -281,6 +360,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         return documents
 
     def load_resource(self, resource_id: str) -> List[Document]:
+        """
+        Load a specific resource from Box.
+
+        Args:
+            resource_id (str): The ID of the resource to load.
+
+        Returns:
+            List[Document]: A list containing the Document object for the loaded resource.
+        """
         try:
             logger.info(f"Loading resource: {resource_id}")
             item = self._client.files.get_file_by_id(file_id=resource_id)
@@ -291,6 +379,15 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             return []
 
     def get_resource_info(self, resource_id: str) -> Dict:
+        """
+        Get information about a specific resource from Box.
+
+        Args:
+            resource_id (str): The ID of the resource.
+
+        Returns:
+            Dict: A dictionary containing information about the resource.
+        """
         try:
             logger.info(f"Getting resource info: {resource_id}")
             item = self._client.files.get_file_by_id(file_id=resource_id)
@@ -314,6 +411,12 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             return {}
 
     def list_resources(self) -> List[str]:
+        """
+        List all resources (files) in the specified Box folder.
+
+        Returns:
+            List[str]: A list of resource IDs.
+        """
         try:
             logger.info("Listing resources")
             items = self._list_folder_contents(self.folder_id or "0")
