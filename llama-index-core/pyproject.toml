@@ -78,7 +78,7 @@ codespell = {extras = ["toml"], version = ">=v2.2.6"}
 docker = "^7.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
-llama-cloud = ">=0.0.8"
+llama-cloud = ">=0.0.6"
 motor = "^3.3.2"
 mypy = "0.991"
 pre-commit = "3.2.0"
