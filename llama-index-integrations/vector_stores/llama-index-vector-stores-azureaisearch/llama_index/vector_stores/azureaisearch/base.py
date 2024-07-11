@@ -827,20 +827,26 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         """
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
-        results = self._search_client.search(search_text="*", filter=filter)
+        batch_size = 1000
 
-        logger.debug(f"Searching with filter {filter}")
+        while True:
+            results = self._search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
 
-        docs_to_delete = []
-        for result in results:
-            doc = {}
-            doc["id"] = result[self._field_mapping["id"]]
-            logger.debug(f"Found document to delete: {doc}")
-            docs_to_delete.append(doc)
+            logger.debug(f"Searching with filter {filter}")
 
-        if len(docs_to_delete) > 0:
-            logger.debug(f"Deleting {len(docs_to_delete)} documents")
-            self._search_client.delete_documents(docs_to_delete)
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                self._search_client.delete_documents(docs_to_delete)
+            else:
+                break
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -849,22 +855,26 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         """
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
+        batch_size = 1000
 
-        results = await self._async_search_client.search(search_text="*", filter=filter)
+        while True:
+            results = await self._async_search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
 
-        logger.debug(f"Searching with filter {filter}")
+            logger.debug(f"Searching with filter {filter}")
 
-        docs_to_delete = []
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} async for result in results
+            ]
 
-        for result in results:
-            doc = {}
-            doc["id"] = result[self._field_mapping["id"]]
-            logger.debug(f"Found document to delete: {doc}")
-            docs_to_delete.append(doc)
-
-        if len(docs_to_delete) > 0:
-            logger.debug(f"Deleting {len(docs_to_delete)} documents")
-            await self._search_client.delete_documents(docs_to_delete)
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                await self._async_search_client.delete_documents(docs_to_delete)
+            else:
+                break
 
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters."""
