@@ -45,14 +45,14 @@ license = "MIT"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.1.22"
+version = "0.1.23"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 selenium = "^4.17.2"
 chromedriver-autoinstaller = "^0.6.3"
-html2text = "^2020.1.16"
+html2text = "^2024.2.26"
 aiohttp = "^3.9.1"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.31.0"
