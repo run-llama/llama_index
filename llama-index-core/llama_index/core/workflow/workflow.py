@@ -65,11 +65,16 @@ class Workflow:
                         kwargs = {**config.kwargs}
 
                         # pop off and consume the latest event of each type
+                        current_events = []
                         for param_name in all_events:
                             if event_buffer[param_name]:
                                 kwargs[param_name] = event_buffer[param_name].pop()
+                                current_events.append(type(kwargs[param_name]).__name__)
                             elif param_name in config.optional_events:
                                 kwargs[param_name] = None
+
+                        # record the events that were consumed
+                        self._events.append((name, current_events))
 
                         if self._verbose:
                             print(f"Running step {name} with kwargs: {kwargs}")
@@ -104,7 +109,6 @@ class Workflow:
         event_type = type(message)
         for step_name in self._event_subscriptions[event_type]:
             self._queues[step_name].put_nowait(message)
-            self._events.append((step_name, type(message).__name__))
 
     def _validate(self) -> None:
         produced_events = {StartEvent}
@@ -258,23 +262,20 @@ class Workflow:
         net = Network(directed=True, height="750px", width="100%")
 
         # Add nodes and edges based on execution history
-        import pdb
+        for i, (step, events) in enumerate(self._events):
+            for event in events:
+                event_node = f"{event}_{i}"
+                step_node = f"{step}_{i}"
+                net.add_node(
+                    event_node, label=event, color="#90EE90", shape="ellipse"
+                )  # Light green for events
+                net.add_node(
+                    step_node, label=step, color="#ADD8E6", shape="box"
+                )  # Light blue for steps
+                net.add_edge(event_node, step_node)
 
-        pdb.set_trace()
-
-        for i, (step, event) in enumerate(self._events):
-            event_node = f"{event}_{i}"
-            step_node = f"{step}_{i}"
-            net.add_node(
-                event_node, label=event, color="#90EE90", shape="ellipse"
-            )  # Light green for events
-            net.add_node(
-                step_node, label=step, color="#ADD8E6", shape="box"
-            )  # Light blue for steps
-            net.add_edge(event_node, step_node)
-
-            if i > 0:
-                prev_step_node = f"{self._events[i-1][0]}_{i-1}"
-                net.add_edge(prev_step_node, event_node)
+                if i > 0:
+                    prev_step_node = f"{self._events[i-1][0]}_{i-1}"
+                    net.add_edge(prev_step_node, event_node)
 
         net.show(filename, notebook=notebook)
