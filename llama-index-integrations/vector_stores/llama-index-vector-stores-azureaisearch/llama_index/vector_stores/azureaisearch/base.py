@@ -967,12 +967,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 (f for f in filters.filters if f.key == "doc_id"), None
             )
             if doc_ids_filter and doc_ids_filter.operator == FilterOperator.IN:
-                return " or ".join(
-                    [
-                        f'{self._field_mapping["doc_id"]} eq \'{doc_id}\''
-                        for doc_id in doc_ids_filter.value
-                    ]
+                # use search.in to filter on multiple values
+                doc_ids_str = ",".join(doc_ids_filter.value)
+                return (
+                    f"search.in({self._field_mapping['doc_id']}, '{doc_ids_str}', ',')"
                 )
+
             return self._create_odata_filter(filters)
 
         raise ValueError("Invalid filter configuration")
