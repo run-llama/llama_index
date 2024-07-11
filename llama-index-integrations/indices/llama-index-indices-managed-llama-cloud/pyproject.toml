@@ -34,7 +34,7 @@ version = "0.2.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.48.post1"
+llama-index-core = ">=0.10.55"
 llama-cloud = ">=0.0.9"
 
 [tool.poetry.group.dev.dependencies]
