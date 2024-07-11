@@ -12,9 +12,6 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from llama_cloud import ProjectCreate
-from llama_cloud.types.eval_question_create import EvalQuestionCreate
-
 from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
@@ -104,6 +101,9 @@ def upload_eval_dataset(
     append: bool = False,
 ) -> str:
     """Upload questions to platform dataset."""
+    from llama_cloud import ProjectCreate
+    from llama_cloud.types.eval_question_create import EvalQuestionCreate
+
     if questions is None and llama_dataset_id is None:
         raise ValueError(
             "Must supply either a list of `questions`, or a `llama_dataset_id` to import from llama-hub."
@@ -185,6 +185,8 @@ def upload_eval_results(
         )
         ```
     """
+    from llama_cloud import ProjectCreate
+
     client = get_client()
 
     project = client.projects.upsert_project(request=ProjectCreate(name=project_name))
