@@ -57,9 +57,10 @@ The `BoxReader` class includes several parameters that provide additional custom
    - **Default value**: `None` (no limit)
 
 7. **`chunk_size`**: The chunk size for streaming large files. This controls how much data is read in each chunk during the streaming of large files.
+
    - **Default value**: `5 * 1024 * 1024` (5 MB)
 
-8 **`large_file_threshold`**: The file size threshold for treating a file as large. Files exceeding this size will be streamed in chunks instead of being read all at once. - **Default value**: `10 * 1024 * 1024` (10 MB)
+8. **`large_file_threshold`**: The file size threshold for treating a file as large. Files exceeding this size will be streamed in chunks instead of being read all at once. - **Default value**: `10 * 1024 * 1024` (10 MB)
 
 ### Usage Examples
 
