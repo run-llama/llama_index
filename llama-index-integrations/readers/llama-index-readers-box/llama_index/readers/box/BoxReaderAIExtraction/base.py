@@ -22,6 +22,19 @@ logger = logging.getLogger(__name__)
 
 
 class BoxReaderAIExtract(BaseReader):
+    """
+    A reader class for loading data from Box files using Box AI Extract.
+
+    This class inherits from the `BaseReader` class and specializes in
+    processing data from Box files using Box AI Extract. It utilizes the
+    provided BoxClient object to interact with the Box API and extracts
+    data based on a specified AI prompt.
+
+    Attributes:
+        _box_client (BoxClient): An authenticated Box client object used
+            for interacting with the Box API.
+    """
+
     _box_client: BoxClient
 
     @classmethod
@@ -39,6 +52,31 @@ class BoxReaderAIExtract(BaseReader):
         folder_id: Optional[str] = None,
         is_recursive: bool = False,
     ) -> List[Document]:
+        """
+        Extracts data from Box files using Box AI and creates Document objects.
+
+        This method utilizes the Box AI Extract functionality to extract data
+        based on the provided AI prompt from the specified Box files. It then
+        creates Document objects containing the extracted data along with
+        file metadata.
+
+        Args:
+            ai_prompt (str): The AI prompt that specifies what data to extract
+                from the files.
+            file_ids (Optional[List[str]], optional): A list of Box file IDs
+                to extract data from. If provided, folder_id is ignored.
+                Defaults to None.
+            folder_id (Optional[str], optional): The ID of the Box folder to
+                extract data from. If provided, along with is_recursive set to
+                True, retrieves data from sub-folders as well. Defaults to None.
+            is_recursive (bool, optional): If True and folder_id is provided,
+                extracts data from sub-folders within the specified folder.
+                Defaults to False.
+
+        Returns:
+            List[Document]: A list of Document objects containing the extracted
+                data and file metadata.
+        """
         # check if the box client is authenticated
         try:
             me = self._box_client.users.get_user_me()
