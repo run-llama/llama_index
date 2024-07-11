@@ -344,10 +344,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             node_ids (List[str]): A list of node_ids from the nodes to delete
 
         """
-        raise NotImplementedError(
-            "Vector indices currently only support delete_ref_doc, which "
-            "deletes nodes using the ref_doc_id of ingested documents."
-        )
+        self._vector_store.delete_nodes(node_ids)
+        # raise NotImplementedError(
+        #     "Vector indices currently only support delete_ref_doc, which "
+        #     "deletes nodes using the ref_doc_id of ingested documents."
+        # )
 
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any

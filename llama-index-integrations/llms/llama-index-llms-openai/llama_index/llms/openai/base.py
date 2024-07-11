@@ -78,6 +78,7 @@ llm_retry_decorator = create_retry_decorator(
 
 import redis
 import os
+import basejump
 
 redis_client = redis.Redis(  # type: ignore[call-overload]
     # username=os.getenv("REDIS_USERNAME"),

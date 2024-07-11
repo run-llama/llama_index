@@ -186,10 +186,15 @@ class RedisVectorStore(BasePydanticVectorStore):
 
             ids.append(node.node_id)
             key = "_".join([self._prefix, str(node.node_id)])
+            mapping.pop('sub_dicts', None) # Remove if present from VectorMemory to avoid serialization issues
             self._redis_client.hset(key, mapping=mapping)  # type: ignore
 
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
+
+    def delete_nodes(self, node_ids: list):
+        for node_id in node_ids:
+            self._redis_client.delete( "_".join([self._prefix, str(node_id)]))
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
