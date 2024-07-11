@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 
 from llama_index.core.readers.base import (
     BaseReader,
+    ResourcesReaderMixin,
 )
 from llama_index.core.schema import Document
 from llama_index.readers.box.BoxAPI.box_api import (
@@ -25,7 +26,7 @@ from box_sdk_gen import (
 logger = logging.getLogger(__name__)
 
 
-class BoxReaderAIPrompt(BaseReader):
+class BoxReaderAIPrompt(BaseReader, ResourcesReaderMixin):
     """
     A reader class for loading data from Box files using a custom AI prompt.
 
