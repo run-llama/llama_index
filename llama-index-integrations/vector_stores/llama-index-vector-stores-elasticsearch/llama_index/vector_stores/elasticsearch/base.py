@@ -215,7 +215,8 @@ class ElasticsearchStore(BasePydanticVectorStore):
         batch_size: int = 200,
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
         retrieval_strategy: Optional[AsyncRetrievalStrategy] = None,
-        metadata_mappings: Optional[Dict[str, Dict[str, str]]] = None,
+        metadata_mappings: Optional[Dict[str, Any]] = None,
+        custom_index_settings: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         nest_asyncio.apply()
@@ -251,6 +252,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             text_field=text_field,
             vector_field=vector_field,
             metadata_mappings=metadata_mappings,
+            custom_index_settings=custom_index_settings,
         )
 
         super().__init__(
