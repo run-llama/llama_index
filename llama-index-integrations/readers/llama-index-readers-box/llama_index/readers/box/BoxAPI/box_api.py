@@ -28,6 +28,23 @@ class _BoxResourcePayload:
 def get_box_files_payload(
     box_client: BoxClient, file_ids: List[str]
 ) -> List[_BoxResourcePayload]:
+    """
+    This function retrieves payloads for a list of Box files.
+
+    Args:
+        box_client (BoxClient): A Box client object.
+        file_ids (List[str]): A list of Box file IDs.
+
+    Returns:
+        List[_BoxResourcePayload]: A list of _BoxResourcePayload objects.
+            - If a file is retrieved successfully, the resource_info attribute
+              will contain the corresponding Box file object.
+            - If an error occurs while retrieving a file, the resource_info
+              attribute will contain the error message.
+
+    Raises:
+        BoxAPIError: If an error occurs while interacting with the Box API.
+    """
     payloads: List[_BoxResourcePayload] = []
     for file_id in file_ids:
         try:
@@ -53,6 +70,28 @@ def get_box_files_payload(
 def get_box_folder_payload(
     box_client: BoxClient, folder_id: str, is_recursive: bool = False
 ) -> List[_BoxResourcePayload]:
+    """
+    This function retrieves payloads for all files within a Box folder,
+    optionally including files from sub-folders.
+
+    Args:
+        box_client (BoxClient): A Box client object.
+        folder_id (str): The ID of the Box folder.
+        is_recursive (bool, optional): If True, retrieves payloads for
+            files within sub-folders as well. Defaults to False.
+
+    Returns:
+        List[_BoxResourcePayload]: A list of _BoxResourcePayload objects
+            containing information about files within the folder
+            (and sub-folders if is_recursive is True).
+            - If a file is retrieved successfully, the resource_info attribute
+              will contain the corresponding Box file object.
+            - If an error occurs while retrieving a file or folder,
+              the resource_info attribute will contain the error message.
+
+    Raises:
+        BoxAPIError: If an error occurs while interacting with the Box API.
+    """
     payloads: List[_BoxResourcePayload] = []
     try:
         folder = box_client.folders.get_folder_by_id(folder_id)
@@ -74,6 +113,22 @@ def get_box_folder_payload(
 
 
 def download_file_by_id(box_client: BoxClient, box_file: File, temp_dir: str) -> str:
+    """
+    Downloads a Box file to the specified temporary directory.
+
+    Args:
+        box_client (BoxClient): An authenticated Box client object.
+        box_file (BoxFile): The Box file object to download.
+        temp_dir (str): The path to the temporary directory where the file
+            will be downloaded.
+
+    Returns:
+        str: The path to the downloaded file on success.
+        If an error occurs during download, returns the error message.
+
+    Raises:
+        BoxAPIError: If an error occurs while interacting with the Box API.
+    """
     # Save the downloaded file to the specified local directory.
     file_path = os.path.join(temp_dir, box_file.name)
 
@@ -96,6 +151,29 @@ def get_files_ai_prompt(
     ai_prompt: str,
     individual_document_prompt: bool = True,
 ) -> List[_BoxResourcePayload]:
+    """
+    Gets AI prompts and responses for a list of Box files.
+
+    Args:
+        box_client (BoxClient): An authenticated Box client object.
+        payloads (List[_BoxResourcePayload]): A list of _BoxResourcePayload objects
+            containing information about Box files.
+        ai_prompt (str): The AI prompt to use for generating responses.
+        individual_document_prompt (bool, optional): If True, generates an
+            individual AI prompt and response for each file in payloads.
+            If False, generates a single prompt and response for all files
+            combined. Defaults to True.
+
+    Returns:
+        List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
+            with the following attributes added:
+            - ai_prompt (str): The AI prompt used for the file.
+            - ai_response (str): The AI response generated for the file
+              (may be an error message).
+
+    Raises:
+        BoxAPIError: If an error occurs while interacting with the Box API.
+    """
     if individual_document_prompt:
         mode = CreateAiAskMode.SINGLE_ITEM_QA
         for payload in payloads:
@@ -138,6 +216,23 @@ def get_files_ai_prompt(
 
 
 def _do_request(box_client: BoxClient, url: str):
+    """
+    Performs a GET request to a Box API endpoint using the provided Box client.
+
+    This is an internal helper function and should not be called directly.
+
+    Args:
+        box_client (BoxClient): An authenticated Box client object.
+        url (str): The URL of the Box API endpoint to make the request to.
+
+    Returns:
+        bytes: The content of the response from the Box API.
+
+    Raises:
+        BoxSDKError: If an error occurs while retrieving the access token.
+        requests.exceptions.RequestException: If the request fails (e.g., network error,
+                                             4XX or 5XX status code).
+    """
     try:
         access_token = box_client.auth.retrieve_token().access_token
     except BoxSDKError as e:
@@ -152,6 +247,29 @@ def _do_request(box_client: BoxClient, url: str):
 def get_text_representation(
     box_client: BoxClient, payloads: List[_BoxResourcePayload], token_limit: int = 10000
 ) -> List[_BoxResourcePayload]:
+    """
+    Retrieves and stores the text representation for a list of Box files.
+
+    This function attempts to retrieve the pre-generated extracted text for each
+    file in the payloads list. If the extracted text is not available or needs
+    generation, it initiates the generation process and stores a placeholder
+    until the text is ready.
+
+    Args:
+        box_client (BoxClient): An authenticated Box client object.
+        payloads (List[_BoxResourcePayload]): A list of _BoxResourcePayload objects
+            containing information about Box files.
+        token_limit (int, optional): The maximum number of tokens (words or
+            characters) to store in the text_representation attribute.
+            Defaults to 10000.
+
+    Returns:
+        List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
+            with the following attribute added or updated:
+            - text_representation (str, optional): The extracted text content
+              of the file, truncated to token_limit if applicable. None if
+              the text cannot be retrieved or is still being generated.
+    """
     for payload in payloads:
         box_file = payload.resource_info
 
@@ -206,6 +324,26 @@ def get_text_representation(
 def get_files_ai_extract_data(
     box_client: BoxClient, payloads: List[_BoxResourcePayload], ai_prompt: str
 ) -> List[_BoxResourcePayload]:
+    """
+    Extracts data from Box files using Box AI.
+
+    This function utilizes the Box AI Extract functionality to process each file
+    in the payloads list according to the provided prompt. The extracted data
+    is then stored in the ai_response attribute of each payload object.
+
+    Args:
+        box_client (BoxClient): An authenticated Box client object.
+        payloads (List[_BoxResourcePayload]): A list of _BoxResourcePayload objects
+            containing information about Box files.
+        ai_prompt (str): The AI prompt that specifies what data to extract
+            from the files.
+
+    Returns:
+        List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
+            with the following attribute added or updated:
+            - ai_response (str, optional): The extracted data from the file
+              based on the AI prompt. May be empty if the extraction fails.
+    """
     ai_extract_manager = AiExtractManager(
         auth=box_client.auth, network_session=box_client.network_session
     )
