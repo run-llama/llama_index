@@ -37,6 +37,24 @@ class _BoxResourcePayload:
         self.resource_info = resource_info
 
 
+def box_check_connection(box_client: BoxClient) -> None:
+    """
+    Checks if the Box client is connected to the Box API.
+
+    Args:
+        box_client (BoxClient): A Box client object.
+
+    Returns:
+        bool: True if the Box client is connected to the Box API, False otherwise.
+    """
+    try:
+        box_client.users.get_user_me()
+    except BoxAPIError as e:
+        logger.error(f"An error occurred while checking connection: {e.message}")
+        raise
+    return True
+
+
 def get_box_files_payload(
     box_client: BoxClient, file_ids: List[str]
 ) -> List[_BoxResourcePayload]:

@@ -12,6 +12,7 @@ from llama_index.core.bridge.pydantic import Field
 
 from llama_index.readers.box.BoxAPI.box_api import (
     _BoxResourcePayload,
+    box_check_connection,
     get_box_files_payload,
     get_box_folder_payload,
     download_file_by_id,
@@ -20,7 +21,6 @@ from llama_index.readers.box.BoxAPI.box_api import (
 )
 
 from box_sdk_gen import (
-    BoxAPIError,
     BoxClient,
     SearchForContentScope,
     SearchForContentContentTypes,
@@ -95,14 +95,7 @@ class BoxReader(BaseReader, ResourcesReaderMixin):
             BoxAPIError: If an error occurs while interacting with the Box API.
         """
         # Connect to Box
-        try:
-            me = self._box_client.users.get_user_me()
-            logger.info(f"Connected to Box as user: {me.id} {me.name}({me.login})")
-        except BoxAPIError as e:
-            logger.error(
-                f"An error occurred while connecting to Box: {e}", exc_info=True
-            )
-            raise
+        box_check_connection(self._box_client)
 
         # Get the file resources
         payloads: List[_BoxResourcePayload] = []
@@ -173,6 +166,27 @@ class BoxReader(BaseReader, ResourcesReaderMixin):
         file_ids: Optional[List[str]] = None,
         is_recursive: bool = False,
     ) -> List[str]:
+        """
+        Lists the IDs of Box files based on the specified folder or file IDs.
+
+        This method retrieves a list of Box file identifiers based on the provided
+        parameters. You can either specify a list of file IDs or a folder ID with an
+        optional `is_recursive` flag to include files from sub-folders as well.
+
+        Args:
+            folder_id (Optional[str], optional): The ID of the Box folder to list files
+                from. If provided, along with `is_recursive` set to True, retrieves data
+                from sub-folders as well. Defaults to None.
+            file_ids (Optional[List[str]], optional): A list of Box file IDs to retrieve.
+                If provided, this takes precedence over `folder_id`. Defaults to None.
+            is_recursive (bool, optional): If True and `folder_id` is provided, retrieves
+                resource IDs from sub-folders within the specified folder. Defaults to False.
+
+        Returns:
+            List[str]: A list containing the IDs of the retrieved Box files.
+        """
+        # Connect to Box
+        box_check_connection(self._box_client)
         # Get the file resources
         payloads: List[_BoxResourcePayload] = []
         if file_ids is not None:
@@ -199,9 +213,14 @@ class BoxReader(BaseReader, ResourcesReaderMixin):
         Returns:
             Dict: A dictionary of information about the resource.
         """
-        return get_box_files_payload(
+        # Connect to Box
+        box_check_connection(self._box_client)
+
+        resource = get_box_files_payload(
             box_client=self._box_client, file_ids=[box_file_id]
-        )[0].resource_info.to_dict()
+        )
+
+        return resource[0].resource_info.to_dict()
 
     def load_resource(self, box_file_id: str) -> List[Document]:
         """
@@ -265,6 +284,9 @@ class BoxReader(BaseReader, ResourcesReaderMixin):
         Returns:
             List[str]: A list of Box resource IDs matching the search criteria.
         """
+        # Connect to Box
+        box_check_connection(self._box_client)
+
         box_files = search_files(
             box_client=self._box_client,
             query=query,
@@ -314,6 +336,9 @@ class BoxReader(BaseReader, ResourcesReaderMixin):
         Returns:
             List[str]: A list of Box resource IDs matching the search criteria.
         """
+        # Connect to Box
+        box_check_connection(self._box_client)
+
         box_files = search_files_by_metadata(
             box_client=self._box_client,
             from_=from_,
