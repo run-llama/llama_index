@@ -69,8 +69,7 @@ import os
 PHOENIX_API_KEY = "<PHOENIX_API_KEY>"
 os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"api_key={PHOENIX_API_KEY}"
 llama_index.core.set_global_handler(
-    "arize_phoenix",
-    endpoint="https://llamatrace.com/v1/traces"
+    "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
 )
 
 ...
@@ -110,7 +109,6 @@ import llama_index.core
 
 llama_index.core.set_global_handler("arize_phoenix")
 ...
-
 ```
 
 #### Example Guides
