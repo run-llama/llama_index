@@ -41,6 +41,9 @@ class ExaToolSpec(BaseToolSpec):
         exclude_domains: Optional[List[str]] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: bool = True,
+        type: str = "magic",
+
     ) -> List:
         """Exa allows you to use a natural language query to search the internet.
 
@@ -59,7 +62,8 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains=exclude_domains,
             start_published_date=start_published_date,
             end_published_date=end_published_date,
-            use_autoprompt=True,
+            use_autoprompt=use_autoprompt,
+            type=type,
         )
         if self._verbose:
             print(f"[Exa Tool] Autoprompt: {response.autoprompt_string}")
@@ -111,6 +115,8 @@ class ExaToolSpec(BaseToolSpec):
         exclude_domains: Optional[List[str]] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: bool = True,
+        type: str = "magic",
     ) -> List[Document]:
         """Combines the functionality of `search` and `retrieve_documents`.
 
@@ -129,8 +135,9 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains=exclude_domains,
             start_published_date=start_published_date,
             end_published_date=end_published_date,
-            use_autoprompt=True,
+            use_autoprompt=use_autoprompt,
             text={"max_characters": self._max_characters},
+            type=type,
         )
         if self._verbose:
             print(f"[Exa Tool] Autoprompt: {response.autoprompt_string}")
@@ -144,6 +151,8 @@ class ExaToolSpec(BaseToolSpec):
         exclude_domains: Optional[List[str]] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: bool = True,
+        type: str = "magic",
     ) -> List[Document]:
         """Searches and retrieves highlights (intelligent snippets from the document).
 
@@ -162,8 +171,9 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains=exclude_domains,
             start_published_date=start_published_date,
             end_published_date=end_published_date,
-            use_autoprompt=True,
+            use_autoprompt=use_autoprompt,
             highlights=True,
+            type=type,
         )
         if self._verbose:
             print(f"[Exa Tool] Autoprompt: {response.autoprompt_string}")
