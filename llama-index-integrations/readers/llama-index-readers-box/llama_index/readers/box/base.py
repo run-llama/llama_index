@@ -14,7 +14,7 @@ from llama_index.core.readers.base import (
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from box_sdk_gen import BoxClient, BoxDeveloperTokenAuth
-from box_sdk_gen.box.errors import BoxAPIError
+from box_sdk_gen.box.errors import BoxAPIError, BoxSDKError
 
 
 logger = logging.getLogger(__name__)
@@ -108,6 +108,14 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             logger.error(f"Failed to initialize Box client: {e!s}")
             raise
 
+    def _get_current_user(self):
+        try:
+            me = self._client.users.get_user_me()
+            logger.info(f"Connected to Box as user: {me.id} {me.name}({me.login})")
+        except BoxSDKError as e:
+            logger.error(f"An error occurred while connecting to Box: {e.message}")
+            raise
+
     def _list_folder_contents(self, folder_id: str) -> List[Any]:
         """
         List the contents of a Box folder.
@@ -146,10 +154,8 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                         logger.info(f"Reached file limit of {self.num_files_limit}")
                         return items[: self.num_files_limit]
                     break
-                except BoxAPIError as e:
-                    if "token has expired" in e.message:
-                        logger.error(e.message)
-                        raise
+                except (BoxAPIError, BoxSDKError) as e:
+                    logger.error(f"Error while connecting to Box: {e.message}")
                     if "rate limit exceeded" in e.message:
                         retry_after = e.response_info.headers.get("retry-after")
                         if retry_after:
@@ -171,7 +177,7 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                     raise
             return items
 
-    def _process_item(self, item: Any) -> Optional[Document]:
+    def _process_item(self, item: Any) -> Optional[List[Document]]:
         """
         Process a single item from Box.
 
@@ -192,12 +198,12 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                     return self._process_large_file(item)
                 else:
                     return self._process_small_file(item)
-            return None
+            return []
         except Exception as e:
             logger.error(f"Error processing item {item.id}: {e!s}")
-            return None
+            return []
 
-    def _process_small_file(self, item: Any) -> Optional[Document]:
+    def _process_small_file(self, item: Any) -> Optional[List[Document]]:
         """
         Process a small file from Box.
 
@@ -207,29 +213,39 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Returns:
             Optional[Document]: A Document object if the file is successfully processed, None otherwise.
         """
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            file_content = self._client.downloads.download_file(file_id=item.id)
+        file_extension = item.name.split(".")[-1]
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=f".{file_extension}"
+        ) as temp_file:
+            try:
+                file_content = self._client.downloads.download_file(file_id=item.id)
+            except (BoxAPIError, BoxSDKError) as e:
+                logger.error(
+                    f"Error while connecting to Box for {item.id}: {e.message}"
+                )
+                raise
             content = file_content.read()
             try:
                 temp_file.write(content)
                 temp_file.flush()
-
                 reader = SimpleDirectoryReader(
                     input_files=[temp_file.name], file_extractor=self.file_extractor
                 )
                 docs = reader.load_data()
+            except Exception as e:
+                logger.error(f"Error reading file content: {e!s}")
             finally:
                 Path(
                     temp_file.name
                 ).unlink()  # Ensure file is deleted even if an error occurs
 
             if docs:
-                doc = docs[0]
-                doc.extra_info = self._get_item_metadata(item)
-                return doc
-        return None
+                for doc in docs:
+                    doc.extra_info = self._get_item_metadata(item)
+                return docs
+        return []
 
-    def _process_large_file(self, item: Any) -> Optional[Document]:
+    def _process_large_file(self, item: Any) -> Optional[List[Document]]:
         """
         Process a large file from Box using streaming.
 
@@ -244,7 +260,10 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             buffer.write(chunk)
 
         buffer.seek(0)
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        file_extension = item.name.split(".")[-1]
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=f".{file_extension}"
+        ) as temp_file:
             try:
                 temp_file.write(buffer.getvalue())
                 temp_file.flush()
@@ -259,10 +278,10 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                 ).unlink()  # Ensure file is deleted even if an error occurs
 
             if docs:
-                doc = docs[0]
-                doc.extra_info = self._get_item_metadata(item)
-                return doc
-        return None
+                for doc in docs:
+                    doc.extra_info = self._get_item_metadata(item)
+                return docs
+        return []
 
     def _stream_file(self, file_id: str):
         """
@@ -293,7 +312,9 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                 logger.debug(f"Read chunk: size={chunk_size}")
 
                 yield chunk
-
+        except (BoxAPIError, BoxSDKError) as e:
+            logger.error(f"Error while connecting to Box for {file_id}: {e.message}")
+            raise
         except Exception as e:
             logger.exception(f"Unexpected error while streaming file {file_id}: {e}")
             raise
@@ -327,6 +348,9 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Returns:
             List[Document]: A list of Document objects representing the loaded files.
         """
+        # Check if token is valid
+        self._get_current_user()
+
         documents = []
         folders_to_process = (
             [self.folder_id] if self.folder_id else ["0"]
@@ -345,14 +369,17 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                         file_details = self._client.files.get_file_by_id(
                             file_id=item.id
                         )
-                        doc = self._process_item(file_details)
-                        if doc:
-                            documents.append(doc)
+                        docs = self._process_item(file_details)
+                        if docs:
+                            documents.extend(docs)
 
                     if self.num_files_limit and len(documents) >= self.num_files_limit:
                         logger.info(f"Reached file limit of {self.num_files_limit}")
                         return documents
-
+            except (BoxAPIError, BoxSDKError) as e:
+                logger.error(
+                    f"Error while connecting to Box for {current_folder}: {e.message}"
+                )
             except Exception as e:
                 logger.error(f"Error processing folder {current_folder}: {e!s}")
 
@@ -369,11 +396,17 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Returns:
             List[Document]: A list containing the Document object for the loaded resource.
         """
+        # Check if token is valid
+        self._get_current_user()
         try:
             logger.info(f"Loading resource: {resource_id}")
             item = self._client.files.get_file_by_id(file_id=resource_id)
-            doc = self._process_item(item)
-            return [doc] if doc else []
+            return self._process_item(item)
+        except (BoxAPIError, BoxSDKError) as e:
+            logger.error(
+                f"Error while connecting to Box for {resource_id}: {e.message}"
+            )
+            raise
         except Exception as e:
             logger.error(f"Error loading resource {resource_id}: {e!s}")
             return []
@@ -388,6 +421,8 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Returns:
             Dict: A dictionary containing information about the resource.
         """
+        # Check if token is valid
+        self._get_current_user()
         try:
             logger.info(f"Getting resource info: {resource_id}")
             item = self._client.files.get_file_by_id(file_id=resource_id)
@@ -406,6 +441,11 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
                 for meta_key, meta_value in info_dict.items()
                 if meta_value is not None
             }
+        except (BoxAPIError, BoxSDKError) as e:
+            logger.error(
+                f"Error while connecting to Box for {resource_id}: {e.message}"
+            )
+            raise
         except Exception as e:
             logger.error(f"Error getting resource info for {resource_id}: {e!s}")
             return {}
@@ -417,13 +457,24 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Returns:
             List[str]: A list of resource IDs.
         """
+        # Check if token is valid
+        self._get_current_user()
         try:
             logger.info("Listing resources")
             items = self._list_folder_contents(self.folder_id or "0")
             return [item.id for item in items if item.type == "file"]
+        except (BoxAPIError, BoxSDKError) as e:
+            logger.error(f"Error while connecting to Box: {e.message}")
+            raise
         except Exception as e:
             logger.error(f"Error listing resources: {e!s}")
             return []
+
+    def _handle_multiple_docs(self, docs: List[Document]) -> bytes:
+        content = ""
+        content_li = [doc.text for doc in docs if doc.text]
+        content = "\n".join(content_li)
+        return content.encode("utf-8")
 
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         """
@@ -435,6 +486,8 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         Returns:
             bytes: Content of the file as bytes.
         """
+        # Check if token is valid
+        self._get_current_user()
         try:
             try:
                 file_id = input_file.name  # Extract the file ID from the Path object
@@ -443,10 +496,20 @@ class BoxReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
             logger.info(f"Reading file content for file ID: {file_id}")
 
             file_details = self._client.files.get_file_by_id(file_id=file_id)
-            doc = self._process_item(file_details)
-            logger.info(f"Successfully read content for file ID: {file_id}")
-            return doc.text.encode("utf-8")
+            docs = self._process_item(file_details)
+            if not docs:
+                logger.error(f"Failed to read content for file ID: {file_id}")
+                return b""
+            else:
+                logger.info(f"Successfully read content for file ID: {file_id}")
 
+            if len(docs) > 1:
+                return self._handle_multiple_docs(docs=docs)
+            return docs[0].text.encode("utf-8")
+
+        except (BoxAPIError, BoxSDKError) as e:
+            logger.error(f"Error while connecting to Box for {file_id}: {e.message}")
+            raise
         except Exception as e:
             logger.error(f"Error reading file content for file ID {file_id}: {e!s}")
-            return b""
+            raise
