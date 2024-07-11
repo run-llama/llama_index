@@ -35,10 +35,9 @@ class RAGWorkflow(Workflow):
         super().__init__(*args, **kwargs)
         # Shared state: to be refactored into a better workflow context manager
         self.index = None
-        self.query: str | None = None
 
-    @step(StartEvent)
-    async def ingest(self, ev: StartEvent):
+    @step()
+    async def ingest(self, ev: StartEvent) -> StopEvent:
         dsname = ev.get("dataset")
         if not dsname:
             return None
@@ -47,14 +46,13 @@ class RAGWorkflow(Workflow):
         self.index = VectorStoreIndex.from_documents(documents=documents)
         return StopEvent(msg=f"Indexed {len(documents)} documents.")
 
-    @step(StartEvent)
-    async def retrieve(self, ev: StartEvent):
+    @step()
+    async def retrieve(self, ev: StartEvent) -> RetrieverEvent:
         query = ev.get("query")
         if not query:
             return None
 
-        self.query = query
-        print(f"Query the database with: {self.query}")
+        print(f"Query the database with: {query}")
         if self.index is None:
             print("Index is empty, load some documents before querying!")
             return None
@@ -67,17 +65,19 @@ class RAGWorkflow(Workflow):
         print(f"Retrieved {len(nodes)} nodes.")
         return RetrieverEvent(nodes=nodes)
 
-    @step(RetrieverEvent)
-    async def rerank(self, ev: RetrieverEvent):
+    @step()
+    async def rerank(self, ev: RetrieverEvent, start_ev: StartEvent) -> QueryResult:
+        query = start_ev.get("query")
+
         ranker = LLMRerank(choice_batch_size=5, top_n=3)
-        new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=self.query)
+        new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=query)
         print(f"Reranked nodes to {len(new_nodes)}")
         return QueryResult(nodes=new_nodes)
 
-    @step(QueryResult)
-    async def synthesize(self, ev: QueryResult):
+    @step()
+    async def synthesize(self, ev: QueryResult, start_ev: StartEvent) -> StopEvent:
         # Should never fallback, it'll get better once we have a proper context storage
-        query = self.query or ""
+        query = start_ev.get("query")
 
         llm = OpenAI(model="gpt-3.5-turbo")
         summarizer = Refine(llm=llm, verbose=True)
@@ -86,7 +86,7 @@ class RAGWorkflow(Workflow):
 
 
 async def main():
-    w = RAGWorkflow(timeout=10)
+    w = RAGWorkflow(timeout=10, verbose=False)
 
     print("Ingesting data...")
     ret = await w.run(dataset="PaulGrahamEssayDataset")
@@ -95,6 +95,9 @@ async def main():
     print("Querying...")
     ret = await w.run(query="Who is Paul Graham?")
     print(ret)
+
+    w.draw_all_possible_flows()
+    w.draw_most_recent_execution()
 
 
 if __name__ == "__main__":

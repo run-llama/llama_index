@@ -11,11 +11,15 @@ def valid_step_signature(fn) -> bool:
         - *args, for free functions
     """
     sig = inspect.signature(fn)
+
+    # try to bind as many events as the function accepts
     try:
-        sig.bind(Event)
+        number_of_events = len(sig.parameters)
+        sig.bind(*[Event() for _ in range(number_of_events)])
     except TypeError:
         try:
-            sig.bind(object(), Event)
+            number_of_events = len(sig.parameters) - 1
+            sig.bind(object(), *[Event() for _ in range(number_of_events)])
         except TypeError:
             return False
 
@@ -28,7 +32,7 @@ def get_steps_from_class(_class: object) -> dict:
     all_methods = inspect.getmembers(_class, predicate=inspect.ismethod)
 
     for name, method in all_methods:
-        if hasattr(method, "__target_events"):
+        if hasattr(method, "__step_config"):
             step_methods[name] = method
 
     return step_methods
