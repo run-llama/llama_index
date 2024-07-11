@@ -22,6 +22,19 @@ logger = logging.getLogger(__name__)
 
 
 class BoxReaderTextExtraction(BaseReader):
+    """
+    A reader class for loading text content from Box files.
+
+    This class inherits from the `BaseReader` class and specializes in
+    extracting plain text content from Box files. It utilizes the provided
+    BoxClient object to interact with the Box API and retrieves the text
+    representation of the files.
+
+    Attributes:
+        _box_client (BoxClient): An authenticated Box client object used
+            for interacting with the Box API.
+    """
+
     _box_client: BoxClient
 
     @classmethod
@@ -38,6 +51,28 @@ class BoxReaderTextExtraction(BaseReader):
         folder_id: Optional[str] = None,
         is_recursive: bool = False,
     ) -> List[Document]:
+        """
+        Extracts text content from Box files and creates Document objects.
+
+        This method utilizes the Box API to retrieve the text representation
+        (if available) of the specified Box files. It then creates Document
+        objects containing the extracted text and file metadata.
+
+        Args:
+            file_ids (Optional[List[str]], optional): A list of Box file IDs
+                to extract text from. If provided, folder_id is ignored.
+                Defaults to None.
+            folder_id (Optional[str], optional): The ID of the Box folder to
+                extract text from. If provided, along with is_recursive set to
+                True, retrieves data from sub-folders as well. Defaults to None.
+            is_recursive (bool, optional): If True and folder_id is provided,
+                extracts text from sub-folders within the specified folder.
+                Defaults to False.
+
+        Returns:
+            List[Document]: A list of Document objects containing the extracted
+                text content and file metadata.
+        """
         # check if the box client is authenticated
         try:
             me = self._box_client.users.get_user_me()
