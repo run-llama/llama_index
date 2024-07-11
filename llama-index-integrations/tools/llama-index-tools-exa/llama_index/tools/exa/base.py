@@ -43,7 +43,6 @@ class ExaToolSpec(BaseToolSpec):
         end_published_date: Optional[str] = None,
         use_autoprompt: bool = True,
         type: str = "magic",
-
     ) -> List:
         """Exa allows you to use a natural language query to search the internet.
 

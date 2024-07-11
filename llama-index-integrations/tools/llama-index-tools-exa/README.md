@@ -12,7 +12,7 @@ This tool has more a extensive example usage documented in a Jupyter notebook [h
 Here's an example usage of the ExaToolSpec.
 
 ```python
-#%pip install llama-index llama-index-core llama-index-tools-exa
+# %pip install llama-index llama-index-core llama-index-tools-exa
 
 from llama_index.tools.exa import ExaToolSpec
 from llama_index.agent.openai import OpenAIAgent
