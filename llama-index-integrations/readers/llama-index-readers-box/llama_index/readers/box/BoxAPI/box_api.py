@@ -1,9 +1,21 @@
 import os
 import shutil
-from typing import List, Optional
+from typing import List, Optional, Dict
 import logging
 import requests
-from box_sdk_gen import BoxAPIError, BoxClient, File, ByteStream, BoxSDKError
+from box_sdk_gen import (
+    BoxAPIError,
+    BoxClient,
+    File,
+    ByteStream,
+    BoxSDKError,
+)
+from box_sdk_gen.managers.search import (
+    SearchForContentScope,
+    SearchForContentContentTypes,
+    SearchForContentType,
+    SearchResults,
+)
 from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiAskItems
 
 from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
@@ -368,3 +380,110 @@ def get_files_ai_extract_data(
         payload.ai_response = ai_response.answer
 
     return payloads
+
+
+def search_files(
+    box_client: BoxClient,
+    query: Optional[str] = None,
+    scope: Optional[SearchForContentScope] = None,
+    file_extensions: Optional[List[str]] = None,
+    created_at_range: Optional[List[str]] = None,
+    updated_at_range: Optional[List[str]] = None,
+    size_range: Optional[List[int]] = None,
+    owner_user_ids: Optional[List[str]] = None,
+    recent_updater_user_ids: Optional[List[str]] = None,
+    ancestor_folder_ids: Optional[List[str]] = None,
+    content_types: Optional[List[SearchForContentContentTypes]] = None,
+    # type: Optional[SearchForContentType] = None,
+    # trash_content: Optional[SearchForContentTrashContent] = None,
+    # mdfilters: Optional[List[MetadataFilter]] = None,
+    # sort: Optional[SearchForContentSort] = None,
+    # direction: Optional[SearchForContentDirection] = None,
+    limit: Optional[int] = None,
+    # include_recent_shared_links: Optional[bool] = None,
+    # fields: Optional[List[str]] = None,
+    offset: Optional[int] = None,
+    # deleted_user_ids: Optional[List[str]] = None,
+    # deleted_at_range: Optional[List[str]] = None,
+    # extra_headers: Optional[Dict[str, Optional[str]]] = None,
+) -> List[File]:
+    """
+    Searches for files in Box based on a query string.
+
+    Args:
+        box_client (BoxClient): A Box client object.
+        query (str): The search query string.
+
+    Returns:
+        List[File]: A list of Box file objects that match the search query.
+    """
+    # force to return only object type "file"
+    type = SearchForContentType.FILE
+    # return only the file id
+    fields = ["id"]
+    try:
+        search_results: SearchResults = box_client.search.search_for_content(
+            query=query,
+            scope=scope,
+            file_extensions=file_extensions,
+            created_at_range=created_at_range,
+            updated_at_range=updated_at_range,
+            size_range=size_range,
+            owner_user_ids=owner_user_ids,
+            recent_updater_user_ids=recent_updater_user_ids,
+            ancestor_folder_ids=ancestor_folder_ids,
+            content_types=content_types,
+            type=type,
+            limit=limit,
+            fields=fields,
+            offset=offset,
+        )
+    except BoxAPIError as e:
+        logger.error(f"An error occurred while searching for files: {e}", exc_info=True)
+        return []
+
+    return search_results.entries
+
+
+def search_files_by_metadata(
+    box_client: BoxClient,
+    from_: str,
+    ancestor_folder_id: str,
+    query: Optional[str] = None,
+    query_params: Optional[Dict[str, str]] = None,
+    # order_by: Optional[List[SearchByMetadataQueryOrderBy]] = None,
+    limit: Optional[int] = None,
+    marker: Optional[str] = None,
+    # fields: Optional[List[str]] = None,
+    # extra_headers: Optional[Dict[str, Optional[str]]] = None,
+) -> List[File]:
+    """
+    Searches for files in Box based on metadata filters.
+
+    Args:
+        box_client (BoxClient): A Box client object.
+        metadata_filters (List[MetadataFilter]): A list of metadata filters to apply to the search.
+        limit (int, optional): The maximum number of items to return. Defaults to None.
+        offset (int, optional): The offset of the item at which to start the response. Defaults to None.
+
+    Returns:
+        List[File]: A list of Box file objects that match the search query.
+    """
+    # return only the file id
+    fields = ["id"]
+    try:
+        search_results: SearchResults = box_client.search.search_by_metadata_query(
+            from_=from_,
+            ancestor_folder_id=ancestor_folder_id,
+            query=query,
+            query_params=query_params,
+            limit=limit,
+            marker=marker,
+            fields=fields,
+        )
+    except BoxAPIError as e:
+        logger.error(f"An error occurred while searching for files: {e}", exc_info=True)
+        return []
+
+    # return only files from the entries
+    return [file for file in search_results.entries if file.type == "file"]
