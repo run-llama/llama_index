@@ -4,16 +4,9 @@ An index that is built on top of an existing vector store.
 
 """
 import logging
-import os
-import requests
 from typing import Any, Optional, Dict, cast, List
 
-from azure.cosmos import CosmosClient, PartitionKey
-from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
-#from openai.lib.azure import AzureOpenAI
-from llama_index.llms.azure_openai import AzureOpenAI
-from openai.resources import Embeddings
+from azure.cosmos import CosmosClient
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -22,17 +15,9 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
-#for test:
-from llama_index.core import VectorStoreIndex
-from llama_index.core import StorageContext
-from llama_index.core import SimpleDirectoryReader
-from llama_index.core import Settings
-import textwrap
 
 logger = logging.getLogger(__name__)
 
@@ -90,8 +75,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             cosmos_database_properties: Database Properties for the container.
         """
         super().__init__()
-
-        #self._container_name = container_name
 
         if cosmos_client is not None:
             self._cosmos_client = cast(CosmosClient, cosmos_client)
@@ -178,10 +161,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         if not nodes:
             raise Exception("Texts can not be null or empty")
 
-        #gets metadata from nodes
         for node in nodes:
-            # print("This is node")
-            # print(node)
             metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=self.flat_metadata
             )
@@ -192,15 +172,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
             }
-            # print("Entry is")
-            # print(entry)
             data_to_insert.append(entry)
             ids.append(node.node_id)
 
-        #inserts nodes into cosmos db
-        # print("Adding items to cosmos db")
         for item in data_to_insert:
-            # print(item)
             self._container.upsert_item(item)
 
         return ids
@@ -213,7 +188,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        # delete by filtering on the doc_id metadata
+
         if ref_doc_id is None:
             raise ValueError("No id provided to delete.")
 
@@ -235,21 +210,16 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         top_k_ids = []
         top_k_scores = []
 
-        # print(params)
         params["k"] = 1
 
         for item in self._container.query_items(
                 query='SELECT TOP @k c.id, c.embedding, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)',
                 parameters=[{"name": "@k", "value": params['k']},
-                            # {"name": "@embedding_key", "value": params["path"]},
                             {"name": "@embedding", "value": params["vector"]}],
                 enable_cross_partition_query=True):
 
-            # print(item)
-
             node = metadata_dict_to_node(item[self._metadata_key])
             node.set_content(item[self._text_key])
-            # print(node)
 
             node_id = item[self._id_key]
             node_score = item['SimilarityScore']

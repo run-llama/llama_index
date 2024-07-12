@@ -88,7 +88,6 @@ def node_embeddings() -> list[TextNode]:
 
 
 @pytest.mark.skipif(not cosmosnosql_available, reason="cosmos client is not available")
-# @pytest.mark.skip(reason="Need to manually provide a valid Azure CosmosDB NoSql URL and KEY")
 class TestAzureCosmosNoSqlVectorSearch:
     @classmethod
     def setup_class(cls) -> None:
