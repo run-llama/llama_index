@@ -66,7 +66,7 @@ class SimpleSummarize(BaseSynthesizer):
                 **response_kwargs,
             )
         else:
-            response = self._llm.stream(
+            response =await self._llm.astream(
                 text_qa_template,
                 context_str=truncated_chunks,
                 **response_kwargs,
