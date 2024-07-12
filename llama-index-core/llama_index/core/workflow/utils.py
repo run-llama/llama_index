@@ -41,7 +41,9 @@ def get_steps_from_class(_class: object) -> dict:
 def get_services_from_class(_class: object) -> dict:
     """Given a class, return the list of its methods that were defined as services."""
     services = {}
-    for method in _class.__dict__.values():
+    all_methods = inspect.getmembers(_class, predicate=inspect.ismethod)
+
+    for name, method in all_methods:
         if hasattr(method, "__is_service__"):
             services[method.__service_name__] = method
     return services
