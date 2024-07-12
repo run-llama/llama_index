@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.box import BoxReader
 
@@ -83,6 +84,15 @@ def test_box_reader_load_resource(box_client_ccg_integration_testing: BoxClient)
     assert doc is not None
     assert len(doc) == 1
     assert doc[0].extra_info["id"] == resource_id
+
+
+def test_box_reader_file_content(box_client_ccg_integration_testing):
+    test_data = get_testing_data()
+    reader = BoxReader(box_client=box_client_ccg_integration_testing)
+    input_file: Path = Path(test_data["test_csv_id"])
+    content = reader.read_file_content(input_file)
+    assert content is not None
+    assert len(content) > 0
 
 
 def test_box_reader_search(box_client_ccg_integration_testing: BoxClient):

@@ -1,8 +1,9 @@
 import logging
 import tempfile
 from typing import List, Optional, Dict, Any, Union
+from pathlib import Path
 
-from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
 from llama_index.core.readers.base import (
     BaseReader,
     ResourcesReaderMixin,
@@ -16,6 +17,7 @@ from llama_index.readers.box.BoxAPI.box_api import (
     get_box_files_payload,
     get_box_folder_payload,
     download_file_by_id,
+    get_file_content_by_id,
     search_files,
     search_files_by_metadata,
 )
@@ -29,8 +31,7 @@ from box_sdk_gen import (
 logger = logging.getLogger(__name__)
 
 
-# TODO: Implement , ResourcesReaderMixin, FileSystemReaderMixin
-class BoxReader(BaseReader, ResourcesReaderMixin):
+class BoxReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
     """
     A reader class for loading data from Box files.
 
@@ -233,6 +234,10 @@ class BoxReader(BaseReader, ResourcesReaderMixin):
             List[Document]: A list of documents loaded from the resource.
         """
         return self.load_data(file_ids=[box_file_id])
+
+    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+        file_id = input_file.name
+        return get_file_content_by_id(box_client=self._box_client, box_file_id=file_id)
 
     def search_resources(
         self,

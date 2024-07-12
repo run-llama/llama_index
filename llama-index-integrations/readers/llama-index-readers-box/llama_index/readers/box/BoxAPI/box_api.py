@@ -175,6 +175,15 @@ def download_file_by_id(box_client: BoxClient, box_file: File, temp_dir: str) ->
     return file_path
 
 
+def get_file_content_by_id(box_client: BoxClient, box_file_id: str) -> bytes:
+    try:
+        file_stream: ByteStream = box_client.downloads.download_file(box_file_id)
+        return file_stream.read()
+    except BoxAPIError as e:
+        logger.error(f"An error occurred while downloading file: {e}", exc_info=True)
+        raise
+
+
 def get_files_ai_prompt(
     box_client: BoxClient,
     payloads: List[_BoxResourcePayload],
