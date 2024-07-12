@@ -1,8 +1,16 @@
-# LlamaIndex Readers Integration: Box
+# LlamaIndex: Box Readers
 
 This open-source integration brings the capabilities of Box.com to the LLama-Index, empowering developers building Retrieval Augmented Generation (RAG) and other LLM applications.
 
 This README will guide you through installation, usage, and explore the functionalities of each reader.
+
+## Installation
+
+```bash
+pip install llama-index-readers-box
+```
+
+## Available readers
 
 We provide multiple readers, including:
 
@@ -14,15 +22,9 @@ We provide multiple readers, including:
 > [!IMPORTANT]
 > Box AI features are only available to E+ customers.
 
-## Installation
+## Authentication
 
-```bash
-pip install llama-index-readers-box
-```
-
-### Authentication
-
-#### Client credential gran (CCG)
+### Client credential gran (CCG)
 
 Create a new application in the Box Developer Console and generate a new client ID and client secret.
 Create a .env file with the following content:
@@ -43,7 +45,7 @@ If you want to use a different user, you can specify the user ID in the .env fil
 
 Checkout this guide for more information on how to setup the CCG: [Box CCG Guide](https://developer.box.com/guides/authentication/client-credentials/)
 
-#### JSON web tokens (JWT)
+### JSON web tokens (JWT)
 
 Create a new application in the Box Developer Console and generate a new `.config.json` file.
 Create a .env file with the following content:
@@ -73,9 +75,9 @@ pip install "box-sdk-gen[jwt]"
 ## Box Client
 
 To work with the box readers, you will need to provide a Box Client.
-The Box Client can be created using either the Client Credential Grant (CCG) or JSON Web Tokens (JWT).
+The Box Client can be created using either the Client Credential Grant (CCG), JSON Web Tokens (JWT), OAuth 2.0, and developer token.
 
-#### Using CCG authentication
+### Using CCG authentication
 
 ```python
 from box_sdk_gen import CCGConfig, BoxCCGAuth, BoxClient
@@ -94,7 +96,7 @@ client = BoxClient(auth)
 reader = BoxReader(box_client=client)
 ```
 
-#### Using JWT authentication
+### Using JWT authentication
 
 ```python
 from box_sdk_gen import JWTConfig, BoxJWTAuth, BoxClient
@@ -124,7 +126,7 @@ client = BoxClient(auth)
 reader = BoxReader(box_client=client)
 ```
 
-#### Author
+## Author
 
 [Box-Community](https://github.com/box-community)
 This is an open source reader, contributions are welcome.
