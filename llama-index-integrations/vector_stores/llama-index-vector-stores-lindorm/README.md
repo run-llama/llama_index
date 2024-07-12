@@ -1,5 +1,6 @@
 # LlamaIndex Vector_Stores Integration: Lindorm
-- LindormVectorStore support pure vector search, search with metadata filtering, hybrid search, aysnc, etc. 
+
+- LindormVectorStore support pure vector search, search with metadata filtering, hybrid search, async, etc.
 - Please refer to the [notebook](../../../docs/docs/examples/vector_stores/LindormDemo.ipynb) for usage of Lindorm as vector store in LlamaIndex.
 
 # Example Usage
@@ -28,27 +29,27 @@ from llama_index.vector_stores.lindorm import (
 # lindorm instance info
 host = "ld-bp******jm*******-proxy-search-pub.lindorm.aliyuncs.com"
 port = 30070
-username = 'your_username'
-password = 'your_password'
+username = "your_username"
+password = "your_password"
 
 # index to demonstrate the VectorStore impl
 index_name = "lindorm_test_index"
 
-# extenion param of lindorm search, number of cluster units to query; between 1 and method.parameters.nlist.
-nprobe = "a number(string type)" 
+# extension param of lindorm search, number of cluster units to query; between 1 and method.parameters.nlist.
+nprobe = "a number(string type)"
 
-# extenion param of lindorm search, usually used to improve recall accuracy, but it increases performance overhead; 
+# extension param of lindorm search, usually used to improve recall accuracy, but it increases performance overhead;
 #   between 1 and 200; default: 10.
 reorder_factor = "a number(string type)"
 
 # LindormVectorClient encapsulates logic for a single index with vector search enabled
 client = LindormVectorClient(
-    host=host, 
+    host=host,
     port=port,
-    username=username, 
+    username=username,
     password=password,
-    index=index_name, 
-    dimension=1536, # match with your embedding model
+    index=index_name,
+    dimension=1536,  # match with your embedding model
     nprobe=nprobe,
     reorder_factor=reorder_factor,
     # filter_type="pre_filter/post_filter(default)"

@@ -19,15 +19,16 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
 )
 
+
 @pytest.fixture(scope="module")
 def vector_store():
     # Lindorm instance info
     host = "ld-bp******jm*******-proxy-search-pub.lindorm.aliyuncs.com"
     port = 30070
-    username = 'your username'
-    password = 'your password'
+    username = "your username"
+    password = "your password"
     index_name = "lindorm_pytest_index"
-    nprobe = "2" 
+    nprobe = "2"
     reorder_factor = "10"
 
     # Create a client and vector store instance
@@ -39,39 +40,44 @@ def vector_store():
         index=index_name,
         dimension=5,
         nprobe=nprobe,
-        reorder_factor=reorder_factor
+        reorder_factor=reorder_factor,
     )
     vector_store = LindormVectorStore(client)
-    
+
     yield vector_store
-    
+
     # Teardown: delete index and close client
     client._os_client.indices.delete(index=index_name)
     client._os_client.close()
 
+
 @pytest.fixture(scope="session")
 def nodes():
     nodes = []
-    for i in range(0, 1000):
+    for i in range(1000):
         vector = [random.random() for _ in range(5)]
         characters = string.ascii_letters + string.digits
-        random_string = ''.join(random.choices(characters, k=5))
+        random_string = "".join(random.choices(characters, k=5))
         new_node = TextNode(
             embedding=vector,
             text=random_string + " " + str(i),
-            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-" + str(i))},
+            relationships={
+                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-" + str(i))
+            },
             metadata={
                 "author": "test " + random_string,
                 "mark_id": i,
-            }
+            },
         )
         nodes.append(new_node)
     return nodes
+
 
 def test_add_nodes(vector_store, nodes):
     added_ids = vector_store.add(nodes)
     assert len(added_ids) == len(nodes)
     assert all(id_ for id_ in added_ids)
+
 
 def test_simple_query(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
@@ -79,14 +85,18 @@ def test_simple_query(vector_store):
     result = vector_store.query(simple_query)
     assert len(result.nodes) > 0
 
+
 def test_query_with_metadata_filter(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
     filter1 = MetadataFilter(key="mark_id", value=0, operator=FilterOperator.GTE)
     filter2 = MetadataFilter(key="mark_id", value=500, operator=FilterOperator.LTE)
     filters = MetadataFilters(filters=[filter1, filter2], condition=FilterCondition.AND)
-    filter_query = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=5, filters=filters)
+    filter_query = VectorStoreQuery(
+        query_embedding=query_embedding, similarity_top_k=5, filters=filters
+    )
     result = vector_store.query(filter_query)
     assert len(result.nodes) > 0
+
 
 def test_lexical_query(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
@@ -96,10 +106,11 @@ def test_lexical_query(vector_store):
         similarity_top_k=5,
         # your query str match the field "content"(text you stored in),
         # and note the the minimum search granularity of query str is one token.
-        query_str="your query str"
+        query_str="your query str",
     )
     result = vector_store.query(lexical_query)
     assert len(result.nodes) > 0
+
 
 def test_hybrid_query(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
@@ -109,10 +120,11 @@ def test_hybrid_query(vector_store):
         similarity_top_k=5,
         # your query str match the field "content"(text you stored in),
         # and note the the minimum search granularity of query str is one token.
-        query_str="your query str"
+        query_str="your query str",
     )
     result = vector_store.query(hybrid_query)
     assert len(result.nodes) > 0
+
 
 def test_delete_node(vector_store):
     vector_store.delete(ref_doc_id="test-0")
@@ -121,9 +133,15 @@ def test_delete_node(vector_store):
         query_embedding=query_embedding,
         similarity_top_k=5,
         filters=MetadataFilters(
-            filters=[MetadataFilter(key="relationships.SOURCE.node_id", value="test-0", operator=FilterOperator.EQ)],
-            condition=FilterCondition.AND 
-        )
+            filters=[
+                MetadataFilter(
+                    key="relationships.SOURCE.node_id",
+                    value="test-0",
+                    operator=FilterOperator.EQ,
+                )
+            ],
+            condition=FilterCondition.AND,
+        ),
     )
     result = vector_store.query(filter_query)
     assert len(result.nodes) == 0
