@@ -109,7 +109,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     _index_client: SearchIndexClient = PrivateAttr()
     _index_name: Optional[str] = PrivateAttr()
@@ -819,7 +819,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         node_metadata = node_to_metadata_dict(
             node,
             remove_text=True,
-            flat_metadata=False,
+            flat_metadata=self.flat_metadata,
         )
 
         doc["metadata"] = json.dumps(node_metadata)
@@ -947,8 +947,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         odata_filter = None
-        if query.filters is not None:
-            odata_filter = self._create_odata_filter(query.filters)
+
+        # NOTE: users can provide odata_filters directly to the query
+        odata_filters = kwargs.get("odata_filters")
+        if odata_filters is not None:
+            odata_filter = odata_filter
+        else:
+            if query.filters is not None:
+                odata_filter = self._create_odata_filter(query.filters)
+
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
                 query, self._field_mapping, odata_filter, self._async_search_client
