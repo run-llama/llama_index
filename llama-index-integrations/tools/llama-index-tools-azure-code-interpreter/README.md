@@ -22,7 +22,13 @@ Here's an example usage of the `AzureCodeInterpreterToolSpec`.
 pip install llama-index-tools-azure-code-interpreter
 ```
 
-2. Next, set up the Dynamic Sessions tool and a LLM agent:
+2. Create a file named `.env` in the same directory as your script with the following content:
+
+```
+POOL_MANAGEMENT_ENDPOINT=<poolManagementEndpoint>
+```
+
+3. Next, set up the Dynamic Sessions tool and a LLM agent:
 
 ```python
 from llama_index.tools.azure_code_interpreter import (
@@ -48,7 +54,7 @@ agent = ReActAgent.from_tools(
 )
 ```
 
-3. Use the tool as you need:
+4. Use the tool as you need:
 
 ```python
 print(agent.chat("Tell me the current time in Seattle."))
