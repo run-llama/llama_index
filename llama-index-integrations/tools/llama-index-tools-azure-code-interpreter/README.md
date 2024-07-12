@@ -25,7 +25,7 @@ pip install llama-index-tools-azure-code-interpreter
 2. Create a file named `.env` in the same directory as your script with the following content:
 
 ```
-POOL_MANAGEMENT_ENDPOINT=<poolManagementEndpoint>
+AZURE_POOL_MANAGEMENT_ENDPOINT=<poolManagementEndpoint>
 ```
 
 3. Next, set up the Dynamic Sessions tool and a LLM agent:
@@ -46,7 +46,7 @@ llm = AzureOpenAI(
 )
 
 code_interpreter_spec = AzureCodeInterpreterToolSpec(
-    pool_managment_endpoint=os.getenv("POOL_MANAGEMENT_ENDPOINT")
+    pool_managment_endpoint=os.getenv("AZURE_POOL_MANAGEMENT_ENDPOINT")
 )
 
 agent = ReActAgent.from_tools(
