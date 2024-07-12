@@ -39,11 +39,12 @@ class MetadataIndexFieldType(int, enum.Enum):
     metadata dictionary.
     """
 
-    STRING = auto()  # "Edm.String"
-    BOOLEAN = auto()  # "Edm.Boolean"
-    INT32 = auto()  # "Edm.Int32"
-    INT64 = auto()  # "Edm.Int64"
-    DOUBLE = auto()  # "Edm.Double"
+    STRING = auto()
+    BOOLEAN = auto()
+    INT32 = auto()
+    INT64 = auto()
+    DOUBLE = auto()
+    COLLECTION = auto()
 
 
 class IndexManagement(int, enum.Enum):
@@ -144,12 +145,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 # Use String as the default index field type
                 index_field_spec[field] = (field, MetadataIndexFieldType.STRING)
 
-        elif isinstance(filterable_metadata_field_keys, Dict):
+        elif isinstance(filterable_metadata_field_keys, dict):
             for k, v in filterable_metadata_field_keys.items():
                 if isinstance(v, tuple):
                     # Index field name and metadata field name may differ
                     # The index field type used is as supplied
                     index_field_spec[k] = v
+                elif isinstance(v, list):
+                    # Handle list types as COLLECTION
+                    index_field_spec[k] = (k, MetadataIndexFieldType.COLLECTION)
                 else:
                     # Index field name and metadata field name may differ
                     # Use String as the default index field type
@@ -196,6 +200,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 index_field_type = "Edm.Double"
             elif field_type == MetadataIndexFieldType.BOOLEAN:
                 index_field_type = "Edm.Boolean"
+            elif field_type == MetadataIndexFieldType.COLLECTION:
+                index_field_type = "Collection(Edm.String)"
 
             field = SimpleField(name=field_name, type=index_field_type, filterable=True)
             index_fields.append(field)
@@ -813,7 +819,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         node_metadata = node_to_metadata_dict(
             node,
             remove_text=True,
-            flat_metadata=self.flat_metadata,
+            flat_metadata=False,
         )
 
         doc["metadata"] = json.dumps(node_metadata)
@@ -869,6 +875,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters."""
         odata_filter: List[str] = []
+
+        for f in metadata_filters.filters:
+            # Join values with ' or ' to create an OR condition inside the any function
+            value_str = " or ".join(
+                [
+                    f"t eq '{value}'" if isinstance(value, str) else f"t eq {value}"
+                    for value in f.value
+                ]
+            )
+            # Construct the filter query using the any function
+            return f"allowed_users_ids/any(t: {value_str})"
+
         for f in metadata_filters.legacy_filters():
             if not isinstance(f, ExactMatchFilter):
                 raise NotImplementedError(
