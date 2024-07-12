@@ -1,5 +1,21 @@
 # ChangeLog
 
+### `llama-index-core` [0.10.55]
+
+- Various docs updates
+
+### `llama-index-llms-cleanlab` [0.1.1]
+
+- Add user configurations for Cleanlab LLM integration (#14676)
+
+### `llama-index-readers-file` [0.1.30]
+
+- race between concurrent pptx readers over a single temp filename (#14686)
+
+### `llama-index-tools-exa` [0.1.4]
+
+- changes to Exa search tool getting started and example notebook (#14690)
+
 ## [2024-07-10]
 
 ### `llama-index-core` [0.10.54]
