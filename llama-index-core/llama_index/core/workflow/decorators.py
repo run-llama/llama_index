@@ -1,6 +1,4 @@
 import inspect
-import asyncio
-from functools import wraps
 from typing import (
     get_args,
     get_origin,
@@ -92,34 +90,5 @@ def step(consume_all: bool = False, **kwargs: Any):
         )
 
         return func
-
-    return decorator
-
-
-def service(name: str = None):
-    """Decorator used to mark methods as services."""
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(self, *args: Any, **kwargs: Any) -> Any:
-            # Measure execution time
-            start_time = asyncio.get_event_loop().time()
-            result = await func(self, *args, **kwargs)
-            end_time = asyncio.get_event_loop().time()
-
-            # cumulate average execution time
-            if wrapper.avg_time is None:
-                wrapper.avg_time = end_time - start_time
-            else:
-                wrapper.avg_time = (wrapper.avg_time + end_time - start_time) / 2.0
-
-            return result
-
-        # Mark as a service
-        wrapper.__is_service__ = True
-        wrapper.__service_name__ = name or func.__name__
-        wrapper.avg_time = None
-
-        return wrapper
 
     return decorator
