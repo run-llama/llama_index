@@ -17,11 +17,11 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    ExactMatchFilter,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -876,43 +876,39 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         """Generate an OData filter string using supplied metadata filters."""
         odata_filter: List[str] = []
 
-        for f in metadata_filters.filters:
+        for subfilter in metadata_filters.filters:
             # Join values with ' or ' to create an OR condition inside the any function
-            value_str = " or ".join(
-                [
-                    f"t eq '{value}'" if isinstance(value, str) else f"t eq {value}"
-                    for value in f.value
-                ]
-            )
-            # Construct the filter query using the any function
-            return f"allowed_users_ids/any(t: {value_str})"
+            metadata_mapping = self._metadata_to_index_field_map.get(subfilter.key)
 
-        for f in metadata_filters.legacy_filters():
-            if not isinstance(f, ExactMatchFilter):
-                raise NotImplementedError(
-                    "Only `ExactMatchFilter` filters are supported"
-                )
-
-            # Raise error if filtering on a metadata field that lacks a mapping to
-            # an index field
-            metadata_mapping = self._metadata_to_index_field_map.get(f.key)
+            index_field = metadata_mapping[0]
 
             if not metadata_mapping:
                 raise ValueError(
-                    f"Metadata field '{f.key}' is missing a mapping to an index field, "
+                    f"Metadata field '{subfilter.key}' is missing a mapping to an index field, "
                     "provide entry in 'filterable_metadata_field_keys' for this "
                     "vector store"
                 )
 
-            index_field = metadata_mapping[0]
+            if subfilter.operator == FilterOperator.IN:
+                value_str = " or ".join(
+                    [
+                        f"t eq '{value}'" if isinstance(value, str) else f"t eq {value}"
+                        for value in subfilter.value
+                    ]
+                )
+                odata_filter.append(f"{index_field}/any(t: {value_str})")
 
-            if len(odata_filter) > 0:
-                odata_filter.append(f" {metadata_filters.condition.value} ")
-            if isinstance(f.value, str):
-                escaped_value = "".join([("''" if s == "'" else s) for s in f.value])
-                odata_filter.append(f"{index_field} eq '{escaped_value}'")
+            elif subfilter.operator == FilterOperator.EQ:
+                if isinstance(subfilter.value, str):
+                    escaped_value = "".join(
+                        [("''" if s == "'" else s) for s in subfilter.value]
+                    )
+                    odata_filter.append(f"{index_field} eq '{escaped_value}'")
+                else:
+                    odata_filter.append(f"{index_field} eq {subfilter.value}")
+
             else:
-                odata_filter.append(f"{index_field} eq {f.value}")
+                raise ValueError(f"Unsupported filter operator {subfilter.operator}")
 
         odata_expr = "".join(odata_filter)
 
