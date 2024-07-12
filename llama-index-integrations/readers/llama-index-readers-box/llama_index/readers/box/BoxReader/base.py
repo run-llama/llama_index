@@ -53,13 +53,17 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
     ) -> List[Document]:
         pass
 
-    @abstractmethod
-    def list_resources(
-        self,
-        *args,
-        **kwargs,
-    ) -> List[Document]:
-        pass
+    def load_resource(self, box_file_id: str) -> List[Document]:
+        """
+        Load data from a specific resource.
+
+        Args:
+            resource (str): The resource identifier.
+
+        Returns:
+            List[Document]: A list of documents loaded from the resource.
+        """
+        return self.load_data(file_ids=[box_file_id])
 
     def get_resource_info(self, box_file_id: str) -> Dict:
         """
@@ -122,18 +126,6 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
                 )
             )
         return [payload.resource_info.id for payload in payloads]
-
-    def load_resource(self, box_file_id: str) -> List[Document]:
-        """
-        Load data from a specific resource.
-
-        Args:
-            resource (str): The resource identifier.
-
-        Returns:
-            List[Document]: A list of documents loaded from the resource.
-        """
-        return self.load_data(file_ids=[box_file_id])
 
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         file_id = input_file.name
