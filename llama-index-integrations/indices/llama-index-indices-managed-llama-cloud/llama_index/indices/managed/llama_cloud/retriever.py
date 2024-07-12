@@ -25,6 +25,8 @@ class LlamaCloudRetriever(BaseRetriever):
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
         timeout: int = 60,
+        retrieval_mode: Optional[str] = None,
+        files_top_k: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
@@ -49,6 +51,8 @@ class LlamaCloudRetriever(BaseRetriever):
         self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
         self._alpha = alpha if alpha is not None else OMIT
         self._filters = filters if filters is not None else OMIT
+        self._retrieval_mode = retrieval_mode if retrieval_mode is not None else OMIT
+        self._files_top_k = files_top_k if files_top_k is not None else OMIT
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager", None),
@@ -97,6 +101,8 @@ class LlamaCloudRetriever(BaseRetriever):
             rerank_top_n=self._rerank_top_n,
             alpha=self._alpha,
             search_filters=self._filters,
+            files_top_k=self._files_top_k,
+            retrieval_mode=self._retrieval_mode,
         )
 
         result_nodes = results.retrieval_nodes
@@ -135,6 +141,8 @@ class LlamaCloudRetriever(BaseRetriever):
             rerank_top_n=self._rerank_top_n,
             alpha=self._alpha,
             search_filters=self._filters,
+            files_top_k=self._files_top_k,
+            retrieval_mode=self._retrieval_mode,
         )
 
         result_nodes = results.retrieval_nodes

@@ -30,24 +30,61 @@ from llama_index.core import set_global_handler
 
 # general usage
 set_global_handler("<handler_name>", **kwargs)
-
-# W&B example
-# set_global_handler("wandb", run_args={"project": "llamaindex"})
 ```
 
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
-And that's it! Executions will get seamlessly piped to downstream service (e.g. W&B Prompts) and you'll be able to access features such as viewing execution traces of your application.
+And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
 
 
 ## Partner `One-Click` Integrations
 
-### Arize Phoenix
+### LlamaTrace (Hosted Arize Phoenix)
 
-Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
+We've partnered with Arize on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaCloud.
+
+This is built upon the open-source Arize [Phoenix](https://github.com/Arize-ai/phoenix) project. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
 
 - LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
 - LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+
+#### Usage Pattern
+
+To install the integration package, do `pip install -U llama-index-callbacks-arize-phoenix`.
+
+Then create an account on LlamaTrace: https://llamatrace.com/login. Create an API key and put it in the `PHOENIX_API_KEY` variable below.
+
+Then run the following code:
+
+```python
+# Phoenix can display in real time the traces automatically
+# collected from your LlamaIndex application.
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+
+# setup Arize Phoenix for logging/observability
+import llama_index.core
+import os
+
+PHOENIX_API_KEY = "<PHOENIX_API_KEY>"
+os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"api_key={PHOENIX_API_KEY}"
+llama_index.core.set_global_handler(
+    "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
+)
+
+...
+```
+#### Guides
+
+- [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
+
+![](../../_static/integrations/arize_phoenix.png)
+
+### Arize Phoenix (local)
+
+You can also choose to use a **local** instance of Phoenix through the open-source project.
+
+In this case you don't need to create an account on LlamaTrace or set an API key for Phoenix. The phoenix server will launch locally.
 
 #### Usage Pattern
 
@@ -58,6 +95,9 @@ Then run the following code:
 ```python
 # Phoenix can display in real time the traces automatically
 # collected from your LlamaIndex application.
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+
 import phoenix as px
 
 # Look for a URL in the output to open the App in a browser.
@@ -68,16 +108,12 @@ px.launch_app()
 import llama_index.core
 
 llama_index.core.set_global_handler("arize_phoenix")
-
-# Run all of your LlamaIndex applications as usual and traces
-# will be collected and displayed in Phoenix.
 ...
 ```
 
-![](../../_static/integrations/arize_phoenix.png)
+#### Example Guides
 
-#### Guides
-
+- [Auto-Retrieval Guide with Pinecone and Arize Phoenix](https://docs.llamaindex.ai/en/latest/examples/vector_stores/pinecone_auto_retriever/?h=phoenix)
 - [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
 
 
