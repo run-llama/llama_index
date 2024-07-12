@@ -40,7 +40,7 @@ llm = AzureOpenAI(
 )
 
 code_interpreter_spec = AzureCodeInterpreterToolSpec(
-    pool_managment_endpoint="your-pool-management-endpoint"
+    pool_managment_endpoint=os.getenv("POOL_MANAGEMENT_ENDPOINT")
 )
 
 agent = ReActAgent.from_tools(

@@ -1,6 +1,7 @@
 """Azure Dynamic Sessions tool spec."""
 
 import base64
+import dotenv
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import importlib.metadata
@@ -17,6 +18,7 @@ import requests
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
+dotenv.load_dotenv()
 
 @dataclass
 class RemoteFileMetadata:
@@ -81,7 +83,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         sanitize_input: bool = True,
     ) -> None:
         """Initialize with parameters."""
-        self.pool_management_endpoint: str = pool_managment_endpoint
+        self.pool_management_endpoint: str = pool_managment_endpoint or os.getenv("POOL_MANAGEMENT_ENDPOINT")
         self.access_token: Optional[AccessToken] = None
 
         def _access_token_provider_factory() -> Callable[[], Optional[str]]:
