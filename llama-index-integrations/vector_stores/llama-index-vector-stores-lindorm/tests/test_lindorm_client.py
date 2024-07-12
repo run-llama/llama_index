@@ -1,6 +1,7 @@
 import pytest
 import random
 import string
+import logging
 from llama_index.core.schema import (
     TextNode,
     RelatedNodeInfo,
@@ -19,17 +20,21 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
 )
 
+logger = logging.getLogger(__name__)
 
-@pytest.fixture(scope="module")
-def vector_store():
-    # Lindorm instance info
-    host = "ld-bp******jm*******-proxy-search-pub.lindorm.aliyuncs.com"
+def _get_lindorm_vector_store():
+    # Lindorm instance info, please replace with your own
+    host = "<ld-bp******jm*******-proxy-search-pub.lindorm.aliyuncs.com>"
     port = 30070
-    username = "your username"
-    password = "your password"
-    index_name = "lindorm_pytest_index"
+    username = "<your username>"
+    password = "<your password>"
+    index_name = "<lindorm_pytest_index>"
     nprobe = "2"
     reorder_factor = "10"
+
+    # Check if placeholder values exist, skip if they do
+    if "<" in host or "<" in username or "<" in password or "<" in index_name:
+        return None
 
     # Create a client and vector store instance
     client = LindormVectorClient(
@@ -42,14 +47,14 @@ def vector_store():
         nprobe=nprobe,
         reorder_factor=reorder_factor,
     )
-    vector_store = LindormVectorStore(client)
+    return LindormVectorStore(client)
 
-    yield vector_store
-
-    # Teardown: delete index and close client
-    client._os_client.indices.delete(index=index_name)
-    client._os_client.close()
-
+@pytest.fixture(scope="module")
+def vector_store():
+    store = _get_lindorm_vector_store()
+    if not store:
+        pytest.skip("No Lindorm config, skipping test case!")
+    return store
 
 @pytest.fixture(scope="session")
 def nodes():
@@ -72,19 +77,16 @@ def nodes():
         nodes.append(new_node)
     return nodes
 
-
 def test_add_nodes(vector_store, nodes):
     added_ids = vector_store.add(nodes)
     assert len(added_ids) == len(nodes)
     assert all(id_ for id_ in added_ids)
-
 
 def test_simple_query(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
     simple_query = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=5)
     result = vector_store.query(simple_query)
     assert len(result.nodes) > 0
-
 
 def test_query_with_metadata_filter(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
@@ -96,7 +98,6 @@ def test_query_with_metadata_filter(vector_store):
     )
     result = vector_store.query(filter_query)
     assert len(result.nodes) > 0
-
 
 def test_lexical_query(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
@@ -111,7 +112,6 @@ def test_lexical_query(vector_store):
     result = vector_store.query(lexical_query)
     assert len(result.nodes) > 0
 
-
 def test_hybrid_query(vector_store):
     query_embedding = [1.0, 1.0, 1.0, 1.0, 1.0]
     hybrid_query = VectorStoreQuery(
@@ -124,7 +124,6 @@ def test_hybrid_query(vector_store):
     )
     result = vector_store.query(hybrid_query)
     assert len(result.nodes) > 0
-
 
 def test_delete_node(vector_store):
     vector_store.delete(ref_doc_id="test-0")
