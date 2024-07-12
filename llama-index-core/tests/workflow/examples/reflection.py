@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.decorators import step, service
 from llama_index.core.prompts import PromptTemplate
 
 # pip install llama-index-llms-ollama
@@ -67,6 +67,12 @@ Do not repeat the schema.
 
 
 class ReflectionWorkflow(Workflow):
+    @service()
+    async def run_ollama(self, prompt: str) -> str:
+        llm = Ollama(model="llama3", request_timeout=30.0)
+        output = await llm.acomplete(prompt)
+        return str(output)
+
     @step()
     async def extract(
         self, ev: Union[StartEvent, ValidationErrorEvent]
@@ -82,14 +88,13 @@ class ReflectionWorkflow(Workflow):
                 wrong_answer=ev.wrong_output, error=ev.error
             )
 
-        llm = Ollama(model="llama3", request_timeout=30)
         prompt = EXTRACTION_PROMPT.format(
             passage=passage, schema=CarCollection.schema_json()
         )
         if reflection_prompt:
             prompt += reflection_prompt
 
-        output = llm.complete(prompt)
+        output = await self.run_ollama(prompt)
 
         return ExtractionDone(output=str(output), passage=passage)
 
@@ -115,6 +120,7 @@ async def main():
         passage="I own two cars: a Fiat Panda with 45Hp and a Honda Civic with 330Hp."
     )
     print(ret)
+    print(f"Average time to run Ollama: {w.run_ollama.avg_time:.2f}s")
 
     w.draw_all_possible_flows()
     w.draw_most_recent_execution()

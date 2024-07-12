@@ -1,7 +1,8 @@
 import asyncio
 from dataclasses import dataclass
+from typing import List
 
-from llama_index.core import VectorStoreIndex
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.llama_dataset import download_llama_dataset
@@ -9,7 +10,7 @@ from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.response_synthesizers import Refine
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.decorators import step, service
 
 # pip install llama-index-llms-openai
 from llama_index.llms.openai import OpenAI
@@ -36,13 +37,18 @@ class RAGWorkflow(Workflow):
         # Shared state: to be refactored into a better workflow context manager
         self.index = None
 
+    @service()
+    async def download_documents(self, dataset_name: str, path: str) -> List[Document]:
+        _, documents = download_llama_dataset(dataset_name, path)
+        return documents
+
     @step()
     async def ingest(self, ev: StartEvent) -> StopEvent:
         dsname = ev.get("dataset")
         if not dsname:
             return None
 
-        _, documents = download_llama_dataset(dsname, "./data")
+        documents = await self.download_documents(dataset_name=dsname, path=".")
         self.index = VectorStoreIndex.from_documents(documents=documents)
         return StopEvent(msg=f"Indexed {len(documents)} documents.")
 
@@ -91,6 +97,7 @@ async def main():
     print("Ingesting data...")
     ret = await w.run(dataset="PaulGrahamEssayDataset")
     print(ret)
+    print(f"Average download time: {w.download_documents.avg_time:.2f}s")
 
     print("Querying...")
     ret = await w.run(query="Who is Paul Graham?")
