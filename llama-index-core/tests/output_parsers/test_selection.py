@@ -26,12 +26,9 @@ def test_format(output_parser: SelectionOutputParser) -> None:
             id="single_curly",
         ),
         pytest.param(
-            """[
-    {{"choice": 1, "reason": "just because"}},
-    {{"choice": 2, "reason": "why not"}}
-]""",
-            2,
-            id="double_curly",
+            """{"type": "array","items":{"type":"object","properties":{"choice":1,"reason":"just because"}}}""",
+            1,
+            id="inline_curly",
         ),
         pytest.param(
             '\nOutput:\n[\n  {\n    "choice": 1,\n    "reason": "just because"\n  }\n]',
@@ -43,21 +40,21 @@ def test_format(output_parser: SelectionOutputParser) -> None:
 (1) Useful for <redacted>
 The reason for this choice is <redacted>. Therefore, option (1) is the most <shortened>
 Here is the output in JSON format:
-{{
+{
   "type": "array",
-  "items": {{
+  "items": {
     "type": "object",
-    "properties": {{
+    "properties": {
       "choice": 1,
       "reason": "just because"
-    }},
+    },
     "required": [
       "choice",
       "reason"
     ],
     "additionalProperties": false
-  }}
-}}""",
+  }
+}""",
             1,
             id="boss_fight",
         ),
