@@ -25,7 +25,7 @@ DEFAULT_YI_MODEL = "yi-large"
 DEFAULT_YI_ENDPOINT = "https://api.01.ai/v1"
 
 YI_MODELS: Dict[str, int] = {
-    "yi-large": 16000,
+    "yi-large": 32000,
 }
 
 
@@ -51,7 +51,7 @@ class Yi(OpenAI):
         # get api key from: https://platform.01.ai/
         llm = Yi(model="yi-large", api_key="YOUR_API_KEY")
 
-        response = llm.chat("Hi, who are you?")
+        response = llm.complete("Hi, who are you?")
         print(response)
         ```
     """

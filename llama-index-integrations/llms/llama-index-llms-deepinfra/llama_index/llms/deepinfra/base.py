@@ -406,7 +406,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         response = self.chat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=TOOL_CHOICE,
             **kwargs,
         )
@@ -436,7 +436,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         response = await self.achat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             tool_choice=TOOL_CHOICE,
             **kwargs,
         )

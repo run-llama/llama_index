@@ -5,10 +5,10 @@ from llama_index.core.storage.kvstore.postgres_kvstore import PostgresKVStore
 
 
 class PostgresIndexStore(KVIndexStore):
-    """Mongo Index store.
+    """Postgres Index store.
 
     Args:
-        mongo_kvstore (MongoDBKVStore): MongoDB key-value store
+        postgres_kvstore (PostgresKVStore): Postgres key-value store
         namespace (str): namespace for the index store
 
     """
@@ -18,7 +18,7 @@ class PostgresIndexStore(KVIndexStore):
         postgres_kvstore: PostgresKVStore,
         namespace: Optional[str] = None,
     ) -> None:
-        """Init a MongoIndexStore."""
+        """Init a PostgresIndexStore."""
         super().__init__(postgres_kvstore, namespace=namespace)
 
     @classmethod

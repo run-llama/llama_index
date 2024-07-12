@@ -113,7 +113,10 @@ class PredibaseLLM(CustomLLM):
             if predibase_api_key
             else os.environ.get("PREDIBASE_API_TOKEN")
         )
-        assert predibase_api_key is not None
+        if not predibase_api_key:
+            raise ValueError(
+                'Your "PREDIBASE_API_TOKEN" is empty.  Please generate a valid "PREDIBASE_API_TOKEN" in your Predibase account.'
+            )
 
         super().__init__(
             model_name=model_name,
@@ -155,7 +158,9 @@ class PredibaseLLM(CustomLLM):
             os.environ["PREDIBASE_GATEWAY"] = "https://api.app.predibase.com"
             return Predibase(api_token=self.predibase_api_key)
         except ValueError as e:
-            raise ValueError("Your API key is not correct. Please try again") from e
+            raise ValueError(
+                'Your "PREDIBASE_API_TOKEN" is not correct.  Please try again.'
+            ) from e
 
     @classmethod
     def class_name(cls) -> str:

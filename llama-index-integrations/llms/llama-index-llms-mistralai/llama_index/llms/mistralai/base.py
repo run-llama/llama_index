@@ -374,7 +374,7 @@ class MistralAI(FunctionCallingLLM):
 
         response = self.chat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -405,7 +405,7 @@ class MistralAI(FunctionCallingLLM):
 
         response = await self.achat(
             messages,
-            tools=tool_specs,
+            tools=tool_specs or None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:

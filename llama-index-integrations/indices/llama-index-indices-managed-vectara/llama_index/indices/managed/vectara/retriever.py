@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Any, List, Optional, Tuple, Dict
 from enum import Enum
+import urllib.parse
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -70,6 +71,12 @@ class VectaraRetriever(BaseRetriever):
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
         summary_prompt_name: name of the prompt to use for summary generation.
+        citations_url_pattern: URL pattern for citations. If non-empty, specifies
+            the URL pattern to use for citations; for example "{doc.url}".
+            see (https://docs.vectara.com/docs/api-reference/search-apis/search
+                 #citation-format-in-summary) for more details.
+            If unspecified, citations are generated in numeric form [1],[2], etc
+            This is a Vectara Scale only feature. Defaults to None.
     """
 
     def __init__(
@@ -87,6 +94,7 @@ class VectaraRetriever(BaseRetriever):
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
         summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        citations_url_pattern: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -97,6 +105,7 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
+        self._citations_url_pattern = citations_url_pattern
 
         if reranker == VectaraReranker.MMR:
             self._rerank = True
@@ -211,6 +220,11 @@ class VectaraRetriever(BaseRetriever):
                     "store": True,
                     "conversationId": chat_conv_id,
                 }
+            if self._citations_url_pattern:
+                data["query"][0]["summary"][0]["citationParams"] = {
+                    "style": "MARKDOWN",
+                    "url_pattern": self._citations_url_pattern,
+                }
 
         return data
 
@@ -288,7 +302,7 @@ class VectaraRetriever(BaseRetriever):
                         continue
 
                     # Yield the summary chunk
-                    chunk = summary["text"]
+                    chunk = urllib.parse.unquote(summary["text"])
                     stream_response.text += chunk
                     stream_response.delta = chunk
                     yield stream_response
@@ -375,7 +389,11 @@ class VectaraRetriever(BaseRetriever):
                 return [], {"text": ""}, ""
 
             summary = {
-                "text": (summaryJson["text"] if self._summary_enabled else None),
+                "text": (
+                    urllib.parse.unquote(summaryJson["text"])
+                    if self._summary_enabled
+                    else None
+                ),
                 "fcs": summaryJson["factualConsistency"]["score"],
             }
             if summaryJson.get("chat", None):
