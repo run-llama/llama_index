@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 import json
 from llama_index.core.readers.base import BaseReader
@@ -101,6 +102,15 @@ def test_box_reader_load_resource(box_client_ccg_integration_testing: BoxClient)
     assert doc_0["vendor"] == "Quasar Innovations"
     assert doc_0["invoice_number"] == "Q2468"
     assert doc_0["purchase_order_number"] == "003"
+
+
+def test_box_reader_file_content(box_client_ccg_integration_testing):
+    test_data = get_testing_data()
+    reader = BoxReaderAIExtract(box_client=box_client_ccg_integration_testing)
+    input_file: Path = Path(test_data["test_csv_id"])
+    content = reader.read_file_content(input_file)
+    assert content is not None
+    assert len(content) > 0
 
 
 def test_box_reader_search(box_client_ccg_integration_testing: BoxClient):
