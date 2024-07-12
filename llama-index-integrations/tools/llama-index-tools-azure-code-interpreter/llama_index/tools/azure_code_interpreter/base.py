@@ -20,6 +20,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 dotenv.load_dotenv()
 
+
 @dataclass
 class RemoteFileMetadata:
     """Metadata for a file in the session."""
@@ -83,7 +84,9 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         sanitize_input: bool = True,
     ) -> None:
         """Initialize with parameters."""
-        self.pool_management_endpoint: str = pool_managment_endpoint or os.getenv("AZURE_POOL_MANAGEMENT_ENDPOINT")
+        self.pool_management_endpoint: str = pool_managment_endpoint or os.getenv(
+            "AZURE_POOL_MANAGEMENT_ENDPOINT"
+        )
         self.access_token: Optional[AccessToken] = None
 
         def _access_token_provider_factory() -> Callable[[], Optional[str]]:
