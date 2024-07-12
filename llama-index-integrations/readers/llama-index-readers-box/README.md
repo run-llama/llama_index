@@ -2,6 +2,8 @@
 
 This open-source integration brings the capabilities of Box.com to the LLama-Index, empowering developers building Retrieval Augmented Generation (RAG) and other LLM applications.
 
+This README will guide you through installation, usage, and explore the functionalities of each reader.
+
 We provide multiple readers, including:
 
 - [Box Reader](llama_index/readers/box/BoxReader/README.md) - Implementation of the SimpleReader interface to read files from Box.
@@ -11,8 +13,6 @@ We provide multiple readers, including:
 
 > [!IMPORTANT]
 > Box AI features are only available to E+ customers.
-
-This README will guide you through installation, usage, and explore the functionalities of each reader.
 
 ## Installation
 

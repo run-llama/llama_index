@@ -1,7 +1,6 @@
-# Box simple reader
+# Box Reader
 
 This loader reads files from Box using the LLama Index Simple Reader, and does not take advantage of any Box specific features.
-To use this loader, you need to pass a Box Client, a list of file id's or folder id.
 
 ## Installation
 
