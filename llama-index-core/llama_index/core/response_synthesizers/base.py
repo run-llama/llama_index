@@ -51,6 +51,7 @@ from llama_index.core.instrumentation.events.synthesis import (
     SynthesizeStartEvent,
     SynthesizeEndEvent,
 )
+from llama_index.core.llms.structured_llm import StructuredLLM
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -167,6 +168,15 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
             [node_with_score.node for node_with_score in source_nodes]
         )
 
+        if isinstance(self._llm, StructuredLLM):
+            # convert string to output_cls
+            output = self._llm.output_cls.parse_raw(response_str)
+            return PydanticResponse(
+                output,
+                source_nodes=source_nodes,
+                metadata=response_metadata,
+            )
+
         if isinstance(response_str, str):
             return Response(
                 response_str,
@@ -190,6 +200,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
             return PydanticResponse(
                 response_str, source_nodes=source_nodes, metadata=response_metadata
             )
+
 
         raise ValueError(
             f"Response must be a string or a generator. Found {type(response_str)}"

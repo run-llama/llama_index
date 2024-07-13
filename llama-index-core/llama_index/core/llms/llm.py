@@ -66,6 +66,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
+    from llama_index.core.llms.structured_llm import StructuredLLM
 
 
 class ToolSelection(BaseModel):
@@ -699,6 +700,20 @@ class LLM(BaseLLM):
             )
 
         return output
+
+    def as_structured_llm(
+        self,
+        output_cls: BaseModel,
+        **kwargs: Any,
+    ) -> "StructuredLLM":
+        """Return a structured LLM around a given object."""
+        from llama_index.core.llms.structured_llm import StructuredLLM
+
+        return StructuredLLM(
+            llm=self,
+            output_cls=output_cls,
+            **kwargs
+        )
 
 
 class BaseLLMComponent(QueryComponent):
