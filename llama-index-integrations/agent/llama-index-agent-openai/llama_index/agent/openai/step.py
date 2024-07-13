@@ -234,7 +234,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
         llm_chat_kwargs: dict = {"messages": self.get_all_messages(task)}
         if openai_tools:
             llm_chat_kwargs.update(
-                tools=openai_tools, tool_choice=resolve_tool_choice(tool_choice), **kwargs
+                tools=openai_tools,
+                tool_choice=resolve_tool_choice(tool_choice),
+                **kwargs,
             )
         return llm_chat_kwargs
 

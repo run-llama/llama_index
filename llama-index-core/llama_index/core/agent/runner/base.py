@@ -645,7 +645,7 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
-                **kwargs
+                **kwargs,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -672,7 +672,7 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
-                **kwargs
+                **kwargs,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -695,7 +695,11 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = self._chat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM, **kwargs
+                message,
+                chat_history,
+                tool_choice,
+                mode=ChatResponseMode.STREAM,
+                **kwargs,
             )
             assert isinstance(chat_response, StreamingAgentChatResponse) or (
                 isinstance(chat_response, AgentChatResponse)
@@ -721,7 +725,11 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = await self._achat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM, **kwargs
+                message,
+                chat_history,
+                tool_choice,
+                mode=ChatResponseMode.STREAM,
+                **kwargs,
             )
             assert isinstance(chat_response, StreamingAgentChatResponse) or (
                 isinstance(chat_response, AgentChatResponse)
