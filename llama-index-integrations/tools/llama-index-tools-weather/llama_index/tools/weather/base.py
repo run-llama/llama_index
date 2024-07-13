@@ -34,7 +34,9 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             f"  - Feels like: {temperature['feels_like']}{temp_unit}"
         )
 
-    def _format_weather(self, place: str, temp_str: str, w: Any, time_str: str = "now") -> str:
+    def _format_weather(
+        self, place: str, temp_str: str, w: Any, time_str: str = "now"
+    ) -> str:
         """Format weather response from OpenWeatherMap.
 
         Function thanks to
