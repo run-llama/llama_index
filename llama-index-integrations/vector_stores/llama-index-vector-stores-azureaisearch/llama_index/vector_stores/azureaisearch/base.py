@@ -22,6 +22,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -827,20 +828,26 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         """
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
-        results = self._search_client.search(search_text="*", filter=filter)
+        batch_size = 1000
 
-        logger.debug(f"Searching with filter {filter}")
+        while True:
+            results = self._search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
 
-        docs_to_delete = []
-        for result in results:
-            doc = {}
-            doc["id"] = result[self._field_mapping["id"]]
-            logger.debug(f"Found document to delete: {doc}")
-            docs_to_delete.append(doc)
+            logger.debug(f"Searching with filter {filter}")
 
-        if len(docs_to_delete) > 0:
-            logger.debug(f"Deleting {len(docs_to_delete)} documents")
-            self._search_client.delete_documents(docs_to_delete)
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                self._search_client.delete_documents(docs_to_delete)
+            else:
+                break
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -849,22 +856,126 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         """
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
+        batch_size = 1000
 
-        results = await self._async_search_client.search(search_text="*", filter=filter)
+        while True:
+            results = await self._async_search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
 
-        logger.debug(f"Searching with filter {filter}")
+            logger.debug(f"Searching with filter {filter}")
 
-        docs_to_delete = []
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} async for result in results
+            ]
 
-        for result in results:
-            doc = {}
-            doc["id"] = result[self._field_mapping["id"]]
-            logger.debug(f"Found document to delete: {doc}")
-            docs_to_delete.append(doc)
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                await self._async_search_client.delete_documents(docs_to_delete)
+            else:
+                break
 
-        if len(docs_to_delete) > 0:
-            logger.debug(f"Deleting {len(docs_to_delete)} documents")
-            await self._search_client.delete_documents(docs_to_delete)
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete documents from the AI Search Index.
+        """
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided")
+
+        filter = self._build_filter_delete_query(node_ids, filters)
+
+        batch_size = 1000
+
+        while True:
+            results = self._search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
+
+            logger.debug(f"Searching with filter {filter}")
+
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                self._search_client.delete_documents(docs_to_delete)
+            else:
+                break
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete documents from the AI Search Index.
+        """
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided")
+
+        filter = self._build_filter_delete_query(node_ids, filters)
+
+        batch_size = 1000
+
+        while True:
+            results = await self._async_search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
+
+            logger.debug(f"Searching with filter {filter}")
+
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} async for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                await self._async_search_client.delete_documents(docs_to_delete)
+            else:
+                break
+
+    def _build_filter_delete_query(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> str:
+        """Build the OData filter query for the deletion process."""
+        if node_ids:
+            return " or ".join(
+                [
+                    f'{self._field_mapping["id"]} eq \'{node_id}\''
+                    for node_id in node_ids
+                ]
+            )
+
+        if filters and filters.filters:
+            # Find the filter with key doc_ids
+            doc_ids_filter = next(
+                (f for f in filters.filters if f.key == "doc_id"), None
+            )
+            if doc_ids_filter and doc_ids_filter.operator == FilterOperator.IN:
+                # use search.in to filter on multiple values
+                doc_ids_str = ",".join(doc_ids_filter.value)
+                return (
+                    f"search.in({self._field_mapping['doc_id']}, '{doc_ids_str}', ',')"
+                )
+
+            return self._create_odata_filter(filters)
+
+        raise ValueError("Invalid filter configuration")
 
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters."""
