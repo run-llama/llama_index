@@ -229,11 +229,12 @@ class OpenAIAgentWorker(BaseAgentWorker):
         task: Task,
         openai_tools: List[dict],
         tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         llm_chat_kwargs: dict = {"messages": self.get_all_messages(task)}
         if openai_tools:
             llm_chat_kwargs.update(
-                tools=openai_tools, tool_choice=resolve_tool_choice(tool_choice)
+                tools=openai_tools, tool_choice=resolve_tool_choice(tool_choice), **kwargs
             )
         return llm_chat_kwargs
 
@@ -558,6 +559,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         task: Task,
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
     ) -> TaskStepOutput:
         """Run step."""
         if step.input is not None:
@@ -570,7 +572,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = self._get_agent_response(
-            task, mode=mode, **llm_chat_kwargs
+            task, mode=mode, **llm_chat_kwargs, **kwargs
         )
 
         # TODO: implement _should_continue
@@ -726,9 +728,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step."""
-        tool_choice = kwargs.get("tool_choice", "auto")
+        tool_choice = kwargs.pop("tool_choice", "auto")
         return self._run_step(
-            step, task, mode=ChatResponseMode.WAIT, tool_choice=tool_choice
+            step, task, mode=ChatResponseMode.WAIT, tool_choice=tool_choice, **kwargs
         )
 
     @trace_method("run_step")

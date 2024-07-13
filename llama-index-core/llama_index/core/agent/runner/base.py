@@ -559,6 +559,7 @@ class AgentRunner(BaseAgentRunner):
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
@@ -570,7 +571,7 @@ class AgentRunner(BaseAgentRunner):
         while True:
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = self._run_step(
-                task.task_id, mode=mode, tool_choice=tool_choice
+                task.task_id, mode=mode, tool_choice=tool_choice, **kwargs
             )
 
             if cur_step_output.is_last:
@@ -594,6 +595,7 @@ class AgentRunner(BaseAgentRunner):
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
@@ -629,6 +631,7 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
+        **kwargs: Any,
     ) -> AgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -642,6 +645,7 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
+                **kwargs
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -654,6 +658,7 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
+        **kwargs: Any,
     ) -> AgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -667,6 +672,7 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
+                **kwargs
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
@@ -679,6 +685,7 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
+        **kwargs: Any,
     ) -> StreamingAgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -688,7 +695,7 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = self._chat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
+                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM, **kwargs
             )
             assert isinstance(chat_response, StreamingAgentChatResponse) or (
                 isinstance(chat_response, AgentChatResponse)
@@ -704,6 +711,7 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
+        **kwargs: Any,
     ) -> StreamingAgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -713,7 +721,7 @@ class AgentRunner(BaseAgentRunner):
             payload={EventPayload.MESSAGES: [message]},
         ) as e:
             chat_response = await self._achat(
-                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
+                message, chat_history, tool_choice, mode=ChatResponseMode.STREAM, **kwargs
             )
             assert isinstance(chat_response, StreamingAgentChatResponse) or (
                 isinstance(chat_response, AgentChatResponse)
