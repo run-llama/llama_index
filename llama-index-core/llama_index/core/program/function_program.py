@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Type, cast, Union, List, Generator, Asyn
 
 from llama_index.core.bridge.pydantic import BaseModel, create_model, Field, ValidationError
 from llama_index.core.llms.llm import LLM
-from llama_index.core.base.llms.types import ChatResponseGen
+from llama_index.core.base.llms.types import ChatResponseGen, ChatResponse
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
@@ -262,46 +262,42 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
         )
 
-    def _process_stream(self, chat_response_gen: ChatResponseGen) -> Generator[Union[Model, List[Model]], None, None]:
+    def _process_objects(
+        self, 
+        chat_response: ChatResponse,
+        output_cls: Type[BaseModel],
+        cur_objects: Optional[List[BaseModel]] = None
+    ) -> Union[Model, List[Model]]:
         """Process stream."""
-        # NOTE: create a new class that treats all its fields as optional
-        # inspired by instructor
-        # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
-        partial_output_cls = create_flexible_model(self._output_cls)
+        tool_calls = self._llm.get_tool_calls_from_response(
+            chat_response, error_on_no_tool_call=True
+        )
+        tool_fn_args = [call.tool_kwargs for call in tool_calls]
+        objects = [output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
 
-        print(partial_output_cls.schema())
+        if cur_objects is None or num_valid_fields(objects) > num_valid_fields(cur_objects):
+            cur_objects = objects
 
-        cur_objects = None
-        for partial_resp in chat_response_gen:
-            tool_calls = self._llm.get_tool_calls_from_response(
-                partial_resp, error_on_no_tool_call=True
-            )
-            tool_fn_args = [call.tool_kwargs for call in tool_calls]
-            objects = [partial_output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
+        # right now the objects are typed according to a flexible schema
+        # try to do a pass to convert the objects to the output_cls
+        new_cur_objects = []
+        for obj in cur_objects:
+            try:
+                new_obj = self._output_cls.parse_obj(obj.dict())
+            except ValidationError as e:
+                _logger.warning(f"Failed to parse object: {e}")
+                new_obj = obj
+            new_cur_objects.append(new_obj)
 
-            if cur_objects is None or num_valid_fields(objects) > num_valid_fields(cur_objects):
-                cur_objects = objects
-
-            # right now the objects are typed according to a flexible schema
-            # try to do a pass to convert the objects to the output_cls
-            new_cur_objects = []
-            for obj in cur_objects:
-                try:
-                    new_obj = self._output_cls.parse_obj(obj.dict())
-                except ValidationError as e:
-                    _logger.warning(f"Failed to parse object: {e}")
-                    new_obj = obj
-                new_cur_objects.append(new_obj)
-
-            if self._allow_parallel_tool_calls:
-                yield new_cur_objects
-            else:
-                if len(new_cur_objects) > 1:
-                    _logger.warning(
-                        "Multiple outputs found, returning first one. "
-                        "If you want to return all outputs, set output_multiple=True."
-                    )
-                yield new_cur_objects[0]
+        if self._allow_parallel_tool_calls:
+            return new_cur_objects
+        else:
+            if len(new_cur_objects) > 1:
+                _logger.warning(
+                    "Multiple outputs found, returning first one. "
+                    "If you want to return all outputs, set output_multiple=True."
+                )
+            return new_cur_objects[0]
 
     def stream_call(
         self, 
@@ -309,7 +305,12 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any
     ) -> Generator[Union[Model, List[Model]], None, None]:
-        """Stream objects."""
+        """Stream object.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+        
+        """
 
         # TODO: we can extend this to non-function calling LLMs as well, coming soon
         if not isinstance(self._llm, FunctionCallingLLM):
@@ -328,12 +329,60 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
             **llm_kwargs,
         )
-        return self._process_stream(chat_response_gen)
+        # NOTE: create a new class that treats all its fields as optional
+        # inspired by instructor
+        # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
+        partial_output_cls = create_flexible_model(self._output_cls)
+        cur_objects = None
+        for partial_resp in chat_response_gen:
+            objects = self._process_objects(
+                partial_resp, 
+                partial_output_cls,
+                cur_objects=cur_objects
+            )
+            cur_objects = objects if isinstance(objects, list) else [objects]
+            yield objects
 
-            
-        # raise NotImplementedError("stream_call is not supported by default.")
+    async def astream_call(
+        self, 
+        *args: Any, 
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+        """Stream objects.
 
-    # async def astream_call(
-    #     self, *args: Any, **kwargs: Any
-    # ) -> AsyncGenerator[Model, None]:
-    #     raise NotImplementedError("astream_call is not supported by default.")
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+        
+        """
+
+        # TODO: we can extend this to non-function calling LLMs as well, coming soon
+        if not isinstance(self._llm, FunctionCallingLLM):
+            raise ValueError("stream_call is only supported for LLMs.")
+        
+        llm_kwargs = llm_kwargs or {}
+        tool = _get_function_tool(self._output_cls)
+
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+        messages = self._llm._extend_messages(messages)
+
+        chat_response_gen = await self._llm.astream_chat_with_tools(
+            [tool],
+            chat_history=messages,
+            verbose=self._verbose,
+            allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+            **llm_kwargs,
+        )
+        # NOTE: create a new class that treats all its fields as optional
+        # inspired by instructor
+        # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
+        partial_output_cls = create_flexible_model(self._output_cls)
+        cur_objects = None
+        async for partial_resp in chat_response_gen:
+            objects = self._process_objects(
+                partial_resp, 
+                partial_output_cls,
+                cur_objects=cur_objects
+            )
+            cur_objects = objects if isinstance(objects, list) else [objects]
+            yield objects
