@@ -201,7 +201,6 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
                 response_str, source_nodes=source_nodes, metadata=response_metadata
             )
 
-
         raise ValueError(
             f"Response must be a string or a generator. Found {type(response_str)}"
         )
