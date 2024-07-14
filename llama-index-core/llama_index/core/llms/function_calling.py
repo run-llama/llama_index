@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Dict
 )
+from abc import abstractmethod
 import asyncio
 
 from llama_index.core.base.llms.types import (
@@ -17,6 +18,8 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ChatResponseGen,
+    ChatResponseAsyncGen
 )
 from llama_index.core.llms.llm import ToolSelection
 
@@ -41,8 +44,7 @@ class FunctionCallingLLM(LLM):
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Predict and call the tool."""
-
+        """Chat with function calling."""
         chat_kwargs = self._prepare_chat_with_tools(
             tools,
             user_msg=user_msg,
@@ -66,7 +68,7 @@ class FunctionCallingLLM(LLM):
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Predict and call the tool."""
+        """Async chat with function calling."""
         chat_kwargs = self._prepare_chat_with_tools(
             tools,
             user_msg=user_msg,
@@ -81,8 +83,52 @@ class FunctionCallingLLM(LLM):
         )
         return response
 
+    def stream_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponseGen:
+        """Stream chat with function calling."""
+        chat_kwargs = self._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
+        )
+        # TODO: no validation for streaming outputs
+        return self.stream_chat(**chat_kwargs)
+        
+
+    async def astream_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponseGen:
+        """Async stream chat with function calling."""
+        chat_kwargs = self._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
+        )
+        # TODO: no validation for streaming outputs
+        return await self.astream_chat(**chat_kwargs)
+
     @abstractmethod
     def _prepare_chat_with_tools(
+        self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
@@ -95,6 +141,7 @@ class FunctionCallingLLM(LLM):
     def _validate_chat_with_tools_response(
         self,
         response: ChatResponse,
+        tools: List["BaseTool"],
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
@@ -140,7 +187,7 @@ class FunctionCallingLLM(LLM):
 
         response = self.chat_with_tools(
             tools,
-            user_msg,
+            user_msg=user_msg,
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
@@ -197,7 +244,7 @@ class FunctionCallingLLM(LLM):
 
         response = await self.achat_with_tools(
             tools,
-            user_msg,
+            user_msg=user_msg,
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,

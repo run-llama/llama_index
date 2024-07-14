@@ -63,6 +63,7 @@ from llama_index.llms.openai.utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
+from llama_index.core.bridge.pydantic import ValidationError
 
 from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -71,6 +72,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
+from llama_index.core.llms.utils import parse_partial_json
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -827,6 +829,7 @@ class OpenAI(FunctionCallingLLM):
 
 
     def _prepare_chat_with_tools(
+        self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
@@ -854,16 +857,17 @@ class OpenAI(FunctionCallingLLM):
             "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None, **kwargs
         }
 
-        response = self.chat(
-            messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
-            **kwargs,
-        )
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
-        return response 
-
+        return response
 
     # def chat_with_tools(
     #     self,
@@ -954,7 +958,14 @@ class OpenAI(FunctionCallingLLM):
                 raise ValueError("Invalid tool_call object")
             if tool_call.type != "function":
                 raise ValueError("Invalid tool type. Unsupported by OpenAI")
-            argument_dict = json.loads(tool_call.function.arguments)
+
+            # this should handle both complete and partial jsons
+            try:
+                argument_dict = parse_partial_json(tool_call.function.arguments)
+            except ValueError:
+                argument_dict = {}
+            
+            # argument_dict = json.loads(tool_call.function.arguments)
 
             tool_selections.append(
                 ToolSelection(
