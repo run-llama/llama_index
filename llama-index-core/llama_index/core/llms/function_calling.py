@@ -4,12 +4,14 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
+    Dict
 )
 import asyncio
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
 )
+from llama_index.core.base.query_pipeline.query import QueryComponent
 from llama_index.core.llms.llm import LLM
 
 from llama_index.core.base.llms.types import (
@@ -40,7 +42,20 @@ class FunctionCallingLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
-        raise NotImplementedError("chat_with_tools is not supported by default.")
+
+        chat_kwargs = self._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
+        )
+        response = self.chat(**chat_kwargs)
+        response = self._validate_chat_with_tools_response(
+            response, tools, allow_parallel_tool_calls=allow_parallel_tool_calls, **kwargs
+        )
+        return response
 
     async def achat_with_tools(
         self,
@@ -52,7 +67,40 @@ class FunctionCallingLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
-        raise NotImplementedError("achat_with_tools is not supported by default.")
+        chat_kwargs = self._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
+        )
+        response = await self.achat(**chat_kwargs)
+        response = self._validate_chat_with_tools_response(
+            response, tools, allow_parallel_tool_calls=allow_parallel_tool_calls, **kwargs
+        )
+        return response
+
+    @abstractmethod
+    def _prepare_chat_with_tools(
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        return response
+
 
     def get_tool_calls_from_response(
         self,

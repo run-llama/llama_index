@@ -1,7 +1,7 @@
 """Pydantic program through function calling."""
 
 import logging
-from typing import Any, Dict, Optional, Type, cast, Union, List
+from typing import Any, Dict, Optional, Type, cast, Union, List, Generator, AsyncGenerator
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.llm import LLM
@@ -167,3 +167,19 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             agent_response,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
         )
+
+    # def stream_call(self, *args: Any, **kwargs: Any) -> Generator[Model, None, None]:
+    #     llm_kwargs = llm_kwargs or {}
+    #     tool = _get_function_tool(self._output_cls)
+
+    #     messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+    #     messages = self._llm._extend_messages(messages)
+
+    #     asdf
+
+    #     raise NotImplementedError("stream_call is not supported by default.")
+
+    # async def astream_call(
+    #     self, *args: Any, **kwargs: Any
+    # ) -> AsyncGenerator[Model, None]:
+    #     raise NotImplementedError("astream_call is not supported by default.")

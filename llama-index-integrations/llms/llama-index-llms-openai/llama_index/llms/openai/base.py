@@ -825,8 +825,8 @@ class OpenAI(FunctionCallingLLM):
 
         return gen()
 
-    def chat_with_tools(
-        self,
+
+    def _prepare_chat_with_tools(
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
@@ -834,7 +834,7 @@ class OpenAI(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
-    ) -> ChatResponse:
+    ) -> Dict[str, Any]:
         """Predict and call the tool."""
         from llama_index.agent.openai.utils import resolve_tool_choice
 
@@ -847,6 +847,12 @@ class OpenAI(FunctionCallingLLM):
         messages = chat_history or []
         if user_msg:
             messages.append(user_msg)
+
+        return {
+            "messages": messages, 
+            "tools": tool_specs or None, 
+            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None, **kwargs
+        }
 
         response = self.chat(
             messages,
@@ -856,40 +862,74 @@ class OpenAI(FunctionCallingLLM):
         )
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
-        return response
+        return response 
 
-    async def achat_with_tools(
-        self,
-        tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
-        **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
 
-        # misralai uses the same openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+    # def chat_with_tools(
+    #     self,
+    #     tools: List["BaseTool"],
+    #     user_msg: Optional[Union[str, ChatMessage]] = None,
+    #     chat_history: Optional[List[ChatMessage]] = None,
+    #     verbose: bool = False,
+    #     allow_parallel_tool_calls: bool = False,
+    #     tool_choice: Union[str, dict] = "auto",
+    #     **kwargs: Any,
+    # ) -> ChatResponse:
+    #     """Predict and call the tool."""
+    #     from llama_index.agent.openai.utils import resolve_tool_choice
 
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+    #     # misralai uses the same openai tool format
+    #     tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
+    #     if isinstance(user_msg, str):
+    #         user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
 
-        response = await self.achat(
-            messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
-            **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+    #     messages = chat_history or []
+    #     if user_msg:
+    #         messages.append(user_msg)
+
+    #     response = self.chat(
+    #         messages,
+    #         tools=tool_specs or None,
+    #         tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
+    #         **kwargs,
+    #     )
+    #     if not allow_parallel_tool_calls:
+    #         force_single_tool_call(response)
+    #     return response
+
+    # async def achat_with_tools(
+    #     self,
+    #     tools: List["BaseTool"],
+    #     user_msg: Optional[Union[str, ChatMessage]] = None,
+    #     chat_history: Optional[List[ChatMessage]] = None,
+    #     verbose: bool = False,
+    #     allow_parallel_tool_calls: bool = False,
+    #     tool_choice: Union[str, dict] = "auto",
+    #     **kwargs: Any,
+    # ) -> ChatResponse:
+    #     """Predict and call the tool."""
+    #     from llama_index.agent.openai.utils import resolve_tool_choice
+
+    #     # misralai uses the same openai tool format
+    #     tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+    #     if isinstance(user_msg, str):
+    #         user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+    #     messages = chat_history or []
+    #     if user_msg:
+    #         messages.append(user_msg)
+
+    #     response = await self.achat(
+    #         messages,
+    #         tools=tool_specs or None,
+    #         tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
+    #         **kwargs,
+    #     )
+    #     if not allow_parallel_tool_calls:
+    #         force_single_tool_call(response)
+    #     return response
 
     def get_tool_calls_from_response(
         self,

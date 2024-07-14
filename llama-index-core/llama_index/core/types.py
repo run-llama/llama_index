@@ -75,6 +75,15 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     async def acall(self, *args: Any, **kwds: Any) -> Model:
         return self(*args, **kwds)
 
+    def stream_call(self, *args: Any, **kwds: Any) -> Generator[Model, None, None]:
+        raise NotImplementedError("stream_call is not supported by default.")
+
+    async def astream_call(
+        self, *args: Any, **kwds: Any
+    ) -> AsyncGenerator[Model, None]:
+        raise NotImplementedError("astream_call is not supported by default.")
+
+
 
 class PydanticProgramMode(str, Enum):
     """Pydantic program mode."""
