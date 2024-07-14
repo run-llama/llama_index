@@ -113,7 +113,7 @@ class FunctionCallingLLM(LLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         """Async stream chat with function calling."""
         chat_kwargs = self._prepare_chat_with_tools(
             tools,
@@ -151,7 +151,7 @@ class FunctionCallingLLM(LLM):
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: ChatResponse,
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:
