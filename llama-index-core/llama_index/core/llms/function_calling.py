@@ -1,25 +1,17 @@
-from typing import (
-    Any,
-    List,
-    Optional,
-    Union,
-    TYPE_CHECKING,
-    Dict
-)
+from typing import Any, List, Optional, Union, TYPE_CHECKING, Dict
 from abc import abstractmethod
 import asyncio
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
 )
-from llama_index.core.base.query_pipeline.query import QueryComponent
 from llama_index.core.llms.llm import LLM
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
-    ChatResponseAsyncGen
+    ChatResponseAsyncGen,
 )
 from llama_index.core.llms.llm import ToolSelection
 
@@ -55,7 +47,10 @@ class FunctionCallingLLM(LLM):
         )
         response = self.chat(**chat_kwargs)
         response = self._validate_chat_with_tools_response(
-            response, tools, allow_parallel_tool_calls=allow_parallel_tool_calls, **kwargs
+            response,
+            tools,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
         )
         return response
 
@@ -79,7 +74,10 @@ class FunctionCallingLLM(LLM):
         )
         response = await self.achat(**chat_kwargs)
         response = self._validate_chat_with_tools_response(
-            response, tools, allow_parallel_tool_calls=allow_parallel_tool_calls, **kwargs
+            response,
+            tools,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
         )
         return response
 
@@ -103,7 +101,6 @@ class FunctionCallingLLM(LLM):
         )
         # TODO: no validation for streaming outputs
         return self.stream_chat(**chat_kwargs)
-        
 
     async def astream_chat_with_tools(
         self,
@@ -147,7 +144,6 @@ class FunctionCallingLLM(LLM):
     ) -> ChatResponse:
         """Validate the response from chat_with_tools."""
         return response
-
 
     def get_tool_calls_from_response(
         self,

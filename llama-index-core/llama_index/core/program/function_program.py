@@ -1,11 +1,25 @@
 """Pydantic program through function calling."""
 
 import logging
-from typing import Any, Dict, Optional, Type, cast, Union, List, Generator, AsyncGenerator, get_args, get_origin
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Type,
+    cast,
+    Union,
+    List,
+    Generator,
+    AsyncGenerator,
+)
 
-from llama_index.core.bridge.pydantic import BaseModel, create_model, Field, ValidationError
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    create_model,
+    ValidationError,
+)
 from llama_index.core.llms.llm import LLM
-from llama_index.core.base.llms.types import ChatResponseGen, ChatResponse
+from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
@@ -60,14 +74,14 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 #     """
 #     if processed_models is None:
 #         processed_models = {}
-    
+
 #     if model.__name__ in processed_models:
 #         return processed_models[model.__name__]
-    
+
 #     fields = {}
 #     for name, field in model.__fields__.items():
 #         field_type = field.outer_type_
-        
+
 #         if get_origin(field_type) is Union and type(None) in get_args(field_type):
 #             # Already Optional, keep as is
 #             new_type = field_type
@@ -83,13 +97,13 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 #             new_type = Optional[nested_partial]
 #         else:
 #             new_type = Optional[field_type]
-        
+
 #         # Use Field with default=None to make it optional
 #         fields[name] = (new_type, Field(default=None))
-    
+
 #     partial_model = create_model(f"Partial{model.__name__}", **fields)
 #     processed_models[model.__name__] = partial_model
-    
+
 #     # Update the model's schema to remove 'required' fields
 #     def custom_model_json_schema(*args, **kwargs):
 #         schema = partial_model.model_json_schema(*args, **kwargs)
@@ -100,20 +114,23 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 #         return schema
 
 #     partial_model.model_json_schema = custom_model_json_schema
-    
+
 #     return partial_model
+
 
 class FlexibleModel(BaseModel):
     class Config:
         extra = "allow"
+
 
 def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
     """Create a flexible version of the model that allows any fields."""
     return create_model(
         f"Flexible{model.__name__}",
         __base__=FlexibleModel,
-        **{field: (Optional[Any], None) for field in model.__fields__}
+        **{field: (Optional[Any], None) for field in model.__fields__},
     )
+
 
 def num_valid_fields(obj: BaseModel) -> int:
     """
@@ -263,10 +280,10 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         )
 
     def _process_objects(
-        self, 
+        self,
         chat_response: ChatResponse,
         output_cls: Type[BaseModel],
-        cur_objects: Optional[List[BaseModel]] = None
+        cur_objects: Optional[List[BaseModel]] = None,
     ) -> Union[Model, List[Model]]:
         """Process stream."""
         tool_calls = self._llm.get_tool_calls_from_response(
@@ -275,7 +292,9 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         tool_fn_args = [call.tool_kwargs for call in tool_calls]
         objects = [output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
 
-        if cur_objects is None or num_valid_fields(objects) > num_valid_fields(cur_objects):
+        if cur_objects is None or num_valid_fields(objects) > num_valid_fields(
+            cur_objects
+        ):
             cur_objects = objects
 
         # right now the objects are typed according to a flexible schema
@@ -300,22 +319,18 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             return new_cur_objects[0]
 
     def stream_call(
-        self, 
-        *args: Any, 
-        llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream object.
 
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
-        
-        """
 
+        """
         # TODO: we can extend this to non-function calling LLMs as well, coming soon
         if not isinstance(self._llm, FunctionCallingLLM):
             raise ValueError("stream_call is only supported for LLMs.")
-        
+
         llm_kwargs = llm_kwargs or {}
         tool = _get_function_tool(self._output_cls)
 
@@ -336,30 +351,24 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         cur_objects = None
         for partial_resp in chat_response_gen:
             objects = self._process_objects(
-                partial_resp, 
-                partial_output_cls,
-                cur_objects=cur_objects
+                partial_resp, partial_output_cls, cur_objects=cur_objects
             )
             cur_objects = objects if isinstance(objects, list) else [objects]
             yield objects
 
     async def astream_call(
-        self, 
-        *args: Any, 
-        llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> AsyncGenerator[Union[Model, List[Model]], None]:
         """Stream objects.
 
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
-        
-        """
 
+        """
         # TODO: we can extend this to non-function calling LLMs as well, coming soon
         if not isinstance(self._llm, FunctionCallingLLM):
             raise ValueError("stream_call is only supported for LLMs.")
-        
+
         llm_kwargs = llm_kwargs or {}
         tool = _get_function_tool(self._output_cls)
 
@@ -380,9 +389,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         cur_objects = None
         async for partial_resp in chat_response_gen:
             objects = self._process_objects(
-                partial_resp, 
-                partial_output_cls,
-                cur_objects=cur_objects
+                partial_resp, partial_output_cls, cur_objects=cur_objects
             )
             cur_objects = objects if isinstance(objects, list) else [objects]
             yield objects

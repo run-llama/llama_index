@@ -1,20 +1,12 @@
-from typing import (
-    Any,
-    List,
-    Optional,
-    Union,
-    TYPE_CHECKING,
-    Type,
-    Sequence, 
-    Dict
-)
-import asyncio
+from typing import Any, TYPE_CHECKING, Type, Sequence, Dict
 
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms.llm import (
+    LLM,
+    BaseLLMComponent,
+    LLMChatComponent,
+    LLMCompleteComponent,
 )
-from llama_index.core.llms.llm import LLM, BaseLLMComponent, LLMChatComponent, LLMCompleteComponent
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -22,13 +14,10 @@ from llama_index.core.base.llms.types import (
     ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
-    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
@@ -38,22 +27,16 @@ from llama_index.core.llms.callbacks import (
 from llama_index.core.prompts.base import ChatPromptTemplate
 from llama_index.core.base.llms.generic_utils import (
     achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.query_pipeline.query import (
     InputKeys,
     OutputKeys,
     QueryComponent,
-    StringableInput,
-    validate_and_convert_stringable,
 )
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
-    from llama_index.core.tools.types import BaseTool
-    from llama_index.core.types import BasePydanticProgram
 
 
 class StructuredLLM(LLM):
@@ -62,13 +45,15 @@ class StructuredLLM(LLM):
     and all methods will return outputs in that structure.
 
     """
+
     llm: LLM
-    output_cls: Type[BaseModel] = Field(..., description="Output class for the structured LLM.", exclude=True)
+    output_cls: Type[BaseModel] = Field(
+        ..., description="Output class for the structured LLM.", exclude=True
+    )
 
     @classmethod
     def class_name(cls) -> str:
         return "structured_llm"
-
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -77,20 +62,16 @@ class StructuredLLM(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM."""
-
-        # TODO: 
-        from llama_index.core.program.utils import get_program_for_llm
+        # TODO:
 
         # NOTE: we are wrapping existing messages in a ChatPromptTemplate to
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
 
         chat_prompt = ChatPromptTemplate(message_templates=messages)
-        
+
         output = self.llm.structured_predict(
-            output_cls=self.output_cls,
-            prompt=chat_prompt,
-            **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
         )
         return ChatResponse(
             message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
@@ -129,11 +110,9 @@ class StructuredLLM(LLM):
         # the messages don't technically have any variables (they are already formatted)
 
         chat_prompt = ChatPromptTemplate(message_templates=messages)
-        
+
         output = await self.llm.astructured_predict(
-            output_cls=self.output_cls,
-            prompt=chat_prompt,
-            **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
         )
         return ChatResponse(
             message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
@@ -177,7 +156,7 @@ class StructuredLLMComponent(QueryComponent):
     """Structured LLM component.
 
     Wraps an existing LLM component, directly returns structured output.
-    
+
     """
 
     llm_component: BaseLLMComponent
@@ -226,5 +205,3 @@ class StructuredLLMComponent(QueryComponent):
     def output_keys(self) -> OutputKeys:
         """Output keys."""
         return OutputKeys.from_keys({"output"})
-
-        

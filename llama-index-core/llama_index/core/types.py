@@ -84,7 +84,6 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
         raise NotImplementedError("astream_call is not supported by default.")
 
 
-
 class PydanticProgramMode(str, Enum):
     """Pydantic program mode."""
 

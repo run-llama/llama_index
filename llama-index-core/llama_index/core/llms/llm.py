@@ -709,11 +709,7 @@ class LLM(BaseLLM):
         """Return a structured LLM around a given object."""
         from llama_index.core.llms.structured_llm import StructuredLLM
 
-        return StructuredLLM(
-            llm=self,
-            output_cls=output_cls,
-            **kwargs
-        )
+        return StructuredLLM(llm=self, output_cls=output_cls, **kwargs)
 
 
 class BaseLLMComponent(QueryComponent):

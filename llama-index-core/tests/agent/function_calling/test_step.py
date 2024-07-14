@@ -99,10 +99,7 @@ class MockBadFunctionCallingLLM(FunctionCallingLLM):
         return ChatResponse(message=ChatMessage(role="user", content=""))
 
     def get_tool_calls_from_response(
-        self,
-        response: ChatResponse,
-        error_on_no_tool_call: bool = True,
-        **kwargs: Any
+        self, response: ChatResponse, error_on_no_tool_call: bool = True, **kwargs: Any
     ) -> List[ToolSelection]:
         return [NONEXISTENT_TOOL_SELECTION]
 
