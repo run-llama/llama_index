@@ -65,4 +65,4 @@ See the [custom LLM's How-To](../../module_guides/models/llms/usage_custom.md) f
 
 ## Prompts
 
-By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](../../module_guides/models/prompts/index.md)
+By default LlamaIndex comes with a great set of built-in, battle-tested prompts that handle the tricky work of getting a specific LLM to correctly handle and format data. This is one of the biggest benefits of using LlamaIndex. If you want to, you can [customize the prompts](../../module_guides/models/prompts/index.md).
