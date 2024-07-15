@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = true
-import_path = "llama_index.packs.voyage_query_engine"
+import_path = "llama_index.packs.mixture_of_agents"
 
 [tool.llamahub.class_authors]
 MixtureOfAgentsPack = "ravi03071991"
@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Ravi Theja <ravi03071991@gmail.com>"]
 description = "llama-index packs mixture_of_agents paper implementation"
 exclude = ["**/BUILD"]
 keywords = ["agents", "llms", "query", "togetherai"]
@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["ravi03071991"]
 name = "llama-index-packs-mixture-of-agents"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

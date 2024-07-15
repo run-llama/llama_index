@@ -73,9 +73,9 @@ def _build_metadata_filter_fn(
             if operator == FilterOperator.LTE:
                 return metadata_value <= value
             if operator == FilterOperator.IN:
-                return value in metadata_value
+                return metadata_value in value
             if operator == FilterOperator.NIN:
-                return value not in metadata_value
+                return metadata_value not in value
             if operator == FilterOperator.CONTAINS:
                 return value in metadata_value
             if operator == FilterOperator.TEXT_MATCH:

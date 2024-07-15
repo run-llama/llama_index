@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from haystack.schema import Document as HaystackDocument
     from llama_index.core.bridge.langchain import Document as LCDocument
     from semantic_kernel.memory.memory_record import MemoryRecord
+    from llama_cloud.types.cloud_document import CloudDocument
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -357,6 +358,9 @@ class BaseNode(BaseComponent):
 
 class TextNode(BaseNode):
     text: str = Field(default="", description="Text content of the node.")
+    mimetype: str = Field(
+        default="text/plain", description="MIME type of the node content."
+    )
     start_char_idx: Optional[int] = Field(
         default=None, description="Start char index of the node."
     )
@@ -758,6 +762,32 @@ class Document(TextNode):
     @classmethod
     def class_name(cls) -> str:
         return "Document"
+
+    def to_cloud_document(self) -> "CloudDocument":
+        """Convert to LlamaCloud document type."""
+        from llama_cloud.types.cloud_document import CloudDocument
+
+        return CloudDocument(
+            text=self.text,
+            metadata=self.metadata,
+            excluded_embed_metadata_keys=self.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=self.excluded_llm_metadata_keys,
+            id=self.id_,
+        )
+
+    @classmethod
+    def from_cloud_document(
+        cls,
+        doc: "CloudDocument",
+    ) -> "Document":
+        """Convert from LlamaCloud document type."""
+        return Document(
+            text=doc.text,
+            metadata=doc.metadata,
+            excluded_embed_metadata_keys=doc.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=doc.excluded_llm_metadata_keys,
+            id_=doc.id,
+        )
 
 
 class ImageDocument(Document, ImageNode):

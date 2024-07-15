@@ -13,6 +13,9 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
+    FilterCondition,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -136,6 +139,84 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             Any: DeepLake vectorstore dataset.
         """
         return self._vectorstore.dataset
+
+    def summary(self):
+        self._vectorstore.summary()
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        if not node_ids:
+            data = self._vectorstore.search(filter=lambda x: True)
+        else:
+            data = self._vectorstore.search(filter=lambda x: x.id.text() in node_ids)
+
+        nodes = []
+        for metadata in data["metadata"]:
+            nodes.append(metadata_dict_to_node(metadata))
+
+        def filter_func(doc):
+            if not filters:
+                return True
+
+            found_one = False
+            for f in filters.filters:
+                value = doc.metadata[f.key]
+                if f.operator == FilterOperator.EQ:
+                    result = value == f.value
+                elif f.operator == FilterOperator.GT:
+                    result = value > f.value
+                elif f.operator == FilterOperator.GTE:
+                    result = value >= f.value
+                elif f.operator == FilterOperator.LT:
+                    result = value < f.value
+                elif f.operator == FilterOperator.LTE:
+                    result = value <= f.value
+                elif f.operator == FilterOperator.NE:
+                    result = value != f.value
+                elif f.operator == FilterOperator.IN:
+                    result = value in f.value
+                elif f.operator == FilterOperator.NOT_IN:
+                    result = value not in f.value
+                elif f.operator == FilterOperator.TEXT_MATCH:
+                    result = f.value in value
+                else:
+                    raise ValueError(f"Unsupported filter operator: {f.operator}")
+
+                if result:
+                    found_one = True
+                    if filters.condition == FilterCondition.OR:
+                        return True
+                else:
+                    if filters.condition == FilterCondition.AND:
+                        return False
+
+            return found_one
+
+        return [x for x in nodes if filter_func(x)]
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        if filters:
+            self._vectorstore.delete(
+                ids=[
+                    x.node_id
+                    for x in self.get_nodes(node_ids=node_ids, filters=filters)
+                ]
+            )
+        else:
+            self._vectorstore.delete(ids=node_ids)
+
+    def clear(self) -> None:
+        """Clear the vector store."""
+        self._vectorstore.delete(filter=lambda x: True)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.

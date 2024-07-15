@@ -7,7 +7,7 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.utils import infer_torch_device
-from llama_index.embeddings.huggingface.utils import format_query, format_text
+from llama_index.utils.huggingface import format_query, format_text
 from transformers import AutoTokenizer
 
 

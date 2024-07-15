@@ -4,7 +4,7 @@ attrs==23.2.0
 Babel==2.14.0
 beautifulsoup4==4.12.3
 bleach==6.1.0
-certifi==2024.2.2
+certifi==2024.7.4
 charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
@@ -76,7 +76,7 @@ tinycss2==1.2.1
 toml==0.10.2
 tornado==6.4.1
 traitlets==5.14.2
-urllib3==2.2.1
+urllib3==2.2.2
 watchdog==4.0.0
 wcwidth==0.2.13
 webencodings==0.5.1

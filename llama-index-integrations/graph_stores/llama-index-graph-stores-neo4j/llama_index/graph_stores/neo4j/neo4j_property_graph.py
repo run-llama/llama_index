@@ -136,7 +136,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self.enhcnaced_schema = enhanced_schema
+        self.enhanced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password), **neo4j_kwargs
         )
@@ -310,7 +310,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             """
             UNWIND $data AS row
             MERGE (source {id: row.source_id})
+            ON CREATE SET source:Chunk
             MERGE (target {id: row.target_id})
+            ON CREATE SET target:Chunk
             WITH source, target, row
             CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
             RETURN count(*)
@@ -464,20 +466,26 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Needs some optimization
         response = self.structured_query(
             f"""
+            WITH $ids AS id_list
+            UNWIND range(0, size(id_list) - 1) AS idx
             MATCH (e:`__Entity__`)
-            WHERE e.id in $ids
+            WHERE e.id = id_list[idx]
             MATCH p=(e)-[r*1..{depth}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel
-            WITH distinct rel
+            WITH distinct rel, idx
             WITH startNode(rel) AS source,
                 type(rel) AS type,
-                endNode(rel) AS endNode
+                endNode(rel) AS endNode,
+                idx
+            LIMIT toInteger($limit)
             RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
-                    source{{.* , embedding: Null, id: Null}} AS source_properties,
-                    type,
-                    endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
-                    endNode{{.* , embedding: Null, id: Null}} AS target_properties
+                source{{.* , embedding: Null, id: Null}} AS source_properties,
+                type,
+                endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                endNode{{.* , embedding: Null, id: Null}} AS target_properties,
+                idx
+            ORDER BY idx
             LIMIT toInteger($limit)
             """,
             param_map={"ids": ids, "limit": limit},
@@ -526,14 +534,26 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
+        conditions = None
+        if query.filters:
+            conditions = [
+                f"e.{filter.key} {filter.operator.value} {filter.value}"
+                for filter in query.filters.filters
+            ]
+        filters = (
+            f" {query.filters.condition.value} ".join(conditions).replace("==", "=")
+            if conditions is not None
+            else "1 = 1"
+        )
+
         data = self.structured_query(
-            """MATCH (e:`__Entity__`)
-            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension
+            f"""MATCH (e:`__Entity__`)
+            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
             WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
             ORDER BY score DESC LIMIT toInteger($limit)
             RETURN e.id AS name,
                [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
-               e{.* , embedding: Null, name: Null, id: Null} AS properties,
+               e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
                score""",
             param_map={
                 "embedding": query.query_embedding,
@@ -747,7 +767,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         formatted_node_props = []
         formatted_rel_props = []
 
-        if self.enhcnaced_schema:
+        if self.enhanced_schema:
             # Enhanced formatting for nodes
             for node_type, properties in schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")
