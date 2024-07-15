@@ -1,7 +1,6 @@
 """Azure Dynamic Sessions tool spec."""
 
 import base64
-import dotenv
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import importlib.metadata
@@ -17,8 +16,6 @@ from azure.core.credentials import AccessToken
 import requests
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-
-dotenv.load_dotenv()
 
 
 @dataclass
