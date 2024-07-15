@@ -17,11 +17,11 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -154,6 +154,14 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 elif isinstance(v, list):
                     # Handle list types as COLLECTION
                     index_field_spec[k] = (k, MetadataIndexFieldType.COLLECTION)
+                elif isinstance(v, bool):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.BOOLEAN)
+                elif isinstance(v, int):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.INT32)
+                elif isinstance(v, float):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.DOUBLE)
+                elif isinstance(v, str):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.STRING)
                 else:
                     # Index field name and metadata field name may differ
                     # Use String as the default index field type
