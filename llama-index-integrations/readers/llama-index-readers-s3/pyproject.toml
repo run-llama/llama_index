@@ -29,12 +29,12 @@ license = "MIT"
 maintainers = ["thejessezhang"]
 name = "llama-index-readers-s3"
 readme = "README.md"
-version = "0.1.8"
+version = "0.1.10"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.37.post1"
-llama-index-readers-file = "^0.1.12"
+llama-index-core = "^0.10.50.post1"
+llama-index-readers-file = "^0.1.25"
 s3fs = ">=2024.3.1"
 
 [tool.poetry.group.dev.dependencies]

@@ -120,7 +120,7 @@ class OpenAI(FunctionCallingLLM):
         model: name of the OpenAI model to use.
         temperature: a float from 0 to 1 controlling randomness in generation; higher will lead to more creative, less deterministic responses.
         max_tokens: the maximum number of tokens to generate.
-        additional_kwargs: Optional[Dict[str, Any]] = None,
+        additional_kwargs: Add additional parameters to OpenAI request body.
         max_retries: How many times to retry the API call if it fails.
         timeout: How long to wait, in seconds, for an API call before failing.
         reuse_client: Reuse the OpenAI client between requests. When doing anything with large volumes of async API calls, setting this to false can improve stability.
@@ -568,6 +568,8 @@ class OpenAI(FunctionCallingLLM):
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -809,6 +811,8 @@ class OpenAI(FunctionCallingLLM):
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -846,8 +850,8 @@ class OpenAI(FunctionCallingLLM):
 
         response = self.chat(
             messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice),
+            tools=tool_specs or None,
+            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -879,8 +883,8 @@ class OpenAI(FunctionCallingLLM):
 
         response = await self.achat(
             messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice),
+            tools=tool_specs or None,
+            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
             **kwargs,
         )
         if not allow_parallel_tool_calls:

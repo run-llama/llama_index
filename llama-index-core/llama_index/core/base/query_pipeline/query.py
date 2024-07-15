@@ -16,6 +16,7 @@ from typing import (
 
 from llama_index.core.base.llms.types import (
     ChatResponse,
+    ChatMessage,
     CompletionResponse,
 )
 from llama_index.core.base.response.schema import Response
@@ -27,6 +28,7 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 StringableInput = Union[
     CompletionResponse,
     ChatResponse,
+    ChatMessage,
     str,
     QueryBundle,
     Response,
