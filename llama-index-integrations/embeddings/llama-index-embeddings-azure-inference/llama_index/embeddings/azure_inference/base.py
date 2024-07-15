@@ -17,8 +17,6 @@ from azure.ai.inference import EmbeddingsClient
 from azure.ai.inference.aio import EmbeddingsClient as EmbeddingsClientAsync
 from azure.core.credentials import AzureKeyCredential
 
-DEFAULT_AZURE_INFERENCE_ENDPOINT = "https://models.inference.ai.azure.com"
-
 
 class AzureAIEmbeddingsModel(BaseEmbedding):
     """Azure AI model inference for embeddings.
@@ -72,10 +70,7 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         client_kwargs = client_kwargs or {}
 
         endpoint = get_from_param_or_env(
-            "endpoint",
-            endpoint,
-            "AZURE_INFERENCE_ENDPOINT_URL",
-            DEFAULT_AZURE_INFERENCE_ENDPOINT,
+            "endpoint", endpoint, "AZURE_INFERENCE_ENDPOINT_URL", None
         )
         credential = get_from_param_or_env(
             "credential", credential, "AZURE_INFERENCE_ENDPOINT_CREDENTIAL", None
@@ -86,10 +81,19 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
             else credential
         )
 
+        if not endpoint:
+            raise ValueError(
+                "You must provide an endpoint to use the Azure AI model inference LLM."
+                "Pass the endpoint as a parameter or set the AZURE_INFERENCE_ENDPOINT_URL"
+                "environment variable."
+            )
+
         if not credential:
             raise ValueError(
                 "You must provide an credential to use the Azure AI model inference LLM."
+                "Pass the credential as a parameter or set the AZURE_INFERENCE_ENDPOINT_CREDENTIAL"
             )
+
         self._client = EmbeddingsClient(
             endpoint=endpoint,
             credential=credential,

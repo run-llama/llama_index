@@ -47,9 +47,6 @@ from azure.ai.inference.models import (
     ChatResponseMessage,
 )
 
-DEFAULT_AZURE_INFERENCE_ENDPOINT = "https://models.inference.ai.azure.com"
-DEFAULT_AZURE_INFERENCE_MAX_TOKENS = 2048
-
 
 def to_inference_message(
     messages: Sequence[ChatMessage],
@@ -149,8 +146,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         gte=0.0,
         lte=1.0,
     )
-    max_tokens: int = Field(
-        default=DEFAULT_AZURE_INFERENCE_MAX_TOKENS,
+    max_tokens: Optional[int] = Field(
+        default=None,
         description="The maximum number of tokens to generate.",
         gt=0,
     )
@@ -170,7 +167,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         endpoint: str = None,
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: int = DEFAULT_AZURE_INFERENCE_MAX_TOKENS,
+        max_tokens: Optional[int] = None,
         model_name: Optional[str] = None,
         model_extras: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -187,10 +184,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         callback_manager = callback_manager or CallbackManager([])
 
         endpoint = get_from_param_or_env(
-            "endpoint",
-            endpoint,
-            "AZURE_INFERENCE_ENDPOINT_URL",
-            DEFAULT_AZURE_INFERENCE_ENDPOINT,
+            "endpoint", endpoint, "AZURE_INFERENCE_ENDPOINT_URL", None
         )
         credential = get_from_param_or_env(
             "credential", credential, "AZURE_INFERENCE_ENDPOINT_CREDENTIAL", None
@@ -201,9 +195,17 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             else credential
         )
 
+        if not endpoint:
+            raise ValueError(
+                "You must provide an endpoint to use the Azure AI model inference LLM."
+                "Pass the endpoint as a parameter or set the AZURE_INFERENCE_ENDPOINT_URL"
+                "environment variable."
+            )
+
         if not credential:
             raise ValueError(
                 "You must provide an credential to use the Azure AI model inference LLM."
+                "Pass the credential as a parameter or set the AZURE_INFERENCE_ENDPOINT_CREDENTIAL"
             )
 
         self._client = ChatCompletionsClient(
@@ -307,7 +309,9 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             content = ""
             role = MessageRole.ASSISTANT
             for chunk in response:
-                content_delta = chunk.choices[0].delta.content
+                content_delta = (
+                    chunk.choices[0].delta.content if len(chunk.choices) > 0 else None
+                )
                 if content_delta is None:
                     continue
                 content += content_delta
@@ -363,7 +367,9 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             content = ""
             role = MessageRole.ASSISTANT
             async for chunk in response:
-                content_delta = chunk.choices[0].delta.content
+                content_delta = (
+                    chunk.choices[0].delta.content if chunk.choices else None
+                )
                 if content_delta is None:
                     continue
                 content += content_delta
