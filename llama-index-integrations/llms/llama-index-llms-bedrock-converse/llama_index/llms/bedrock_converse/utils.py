@@ -27,6 +27,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -47,6 +48,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
@@ -118,28 +120,39 @@ def messages_to_converse_messages(
             status = message.additional_kwargs.get("status")
             if status:
                 content["toolResult"]["status"] = status
-            converse_message = {
-                "role": "user",
-                "content": [content],
-            }
-            converse_messages.append(converse_message)
+            converse_messages.append(
+                {
+                    "role": "user",
+                    "content": [content],
+                }
+            )
         else:
-            content = []
             if message.content:
                 # get the text of the message
-                content.append({"text": message.content})
-            # convert tool calls to the AWS Bedrock Converse format
-            tool_calls = message.additional_kwargs.get("tool_calls", [])
-            for tool_call in tool_calls:
-                assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
-                assert "input" in tool_call, f"`input` not found in {tool_call}"
-                assert "name" in tool_call, f"`name` not found in {tool_call}"
-                content.append({"toolUse": tool_call})
-            converse_message = {
-                "role": message.role.value,
-                "content": content,
-            }
-            converse_messages.append(converse_message)
+                converse_messages.append(
+                    {
+                        "role": message.role.value,
+                        "content": [{"text": message.content}],
+                    }
+                )
+        # convert tool calls to the AWS Bedrock Converse format
+        # NOTE tool calls might show up within any message,
+        # e.g. within assistant message or in consecutive tool calls,
+        # thus this tool call check is done for all messages
+        tool_calls = message.additional_kwargs.get("tool_calls", [])
+        content = []
+        for tool_call in tool_calls:
+            assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
+            assert "input" in tool_call, f"`input` not found in {tool_call}"
+            assert "name" in tool_call, f"`name` not found in {tool_call}"
+            content.append({"toolUse": tool_call})
+        if len(content) > 0:
+            converse_messages.append(
+                {
+                    "role": "assistant",  # tool calls are always from the assistant
+                    "content": content,
+                }
+            )
 
     return __merge_common_role_msgs(converse_messages), system_prompt.strip()
 
@@ -262,7 +275,7 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
     for key, value in dict2.items():
         if key not in new_dict:
             new_dict[key] = value
-        if key in new_dict:
+        else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
             else:

@@ -121,14 +121,17 @@ class VectaraQueryEngine(BaseQueryEngine):
 
         if self._streaming:
             nodes = self.retrieve(query_bundle)
-
             query_response = StreamingResponse(
                 response_gen=self._retriever._vectara_stream(query_bundle, chat=False),
                 source_nodes=nodes,
             )
         else:
             nodes, response, _ = self._retriever._vectara_query(query_bundle, **kwargs)
-            query_response = Response(response=response["text"], source_nodes=nodes)
+            query_response = Response(
+                response=response["text"],
+                source_nodes=nodes,
+                metadata={"fcs": response.get("fcs", None)},
+            )
 
         return query_response
 
@@ -221,6 +224,7 @@ class VectaraChatEngine(BaseChatEngine):
             return AgentChatResponse(
                 response=summary["text"],
                 source_nodes=nodes,
+                metadata={"fcs": summary.get("fcs", None)},
             )
 
     async def achat(self, message: str) -> AgentChatResponse:

@@ -87,7 +87,9 @@ def test_introspective_agent_with_stopping_callable(mock_critique_agent_worker) 
             print(str(msg))
             print()
     assert response.response == "This is a mock correction."
-    assert len(agent.chat_history) == 7  # (system, user, asst, ref, cor, ref, asst)
+    assert (
+        len(agent.chat_history) == 8
+    )  # (system, user, asst, user, ref, cor, ref, asst)
 
 
 @patch("llama_index.core.agent.function_calling.step.FunctionCallingAgentWorker")
@@ -127,4 +129,4 @@ def test_introspective_agent_with_max_iterations(mock_critique_agent_worker) -> 
             print(str(msg))
             print()
     assert response.response == "This is a mock correction."
-    assert len(agent.chat_history) == 5  # (system, user, asst, ref, cor/asst)
+    assert len(agent.chat_history) == 6  # (system, user, asst, user, ref, cor/asst)

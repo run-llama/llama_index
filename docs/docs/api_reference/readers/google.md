@@ -3,6 +3,7 @@
       members:
         - GmailReader
         - GoogleCalendarReader
+        - GoogleChatReader
         - GoogleDocsReader
         - GoogleDriveReader
         - GoogleKeepReader

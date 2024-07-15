@@ -79,6 +79,6 @@ class PremAIEmbeddings(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         embeddings = self._premai_client.embeddings.create(
-            self, model=self.model_name, project_id=self.project_id, input=texts
+            model=self.model_name, project_id=self.project_id, input=texts
         ).data
         return [embedding.embedding for embedding in embeddings]

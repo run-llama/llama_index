@@ -18,13 +18,13 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     ChatResponseAsyncGen,
     CompletionResponseAsyncGen,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index_client import MessageRole
 
 from llama_index.llms.ai21.utils import (
     ai21_model_to_context_size,

@@ -123,6 +123,22 @@ from llama_index.core.indices.property_graph import ImplicitPathExtractor
 kg_extractor = ImplicitPathExtractor()
 ```
 
+### `DynamicLLMPathExtractor`
+
+Will extract paths (including entity types!) according to optional list of allowed entity types and relation types. If none are provided, then the LLM will assign types as it sees fit. If they are provided, it will help guide the LLM, but will not enforce exactly those types.
+
+```python
+from llama_index.core.indices.property_graph import DynamicLLMPathExtractor
+
+kg_extractor = DynamicLLMPathExtractor(
+    llm=llm,
+    max_triplets_per_chunk=20,
+    num_workers=4,
+    allowed_entity_types=["POLITICIAN", "POLITICAL_PARTY"],
+    allowed_relation_types=["PRESIDENT_OF", "MEMBER_OF"],
+)
+```
+
 #### `SchemaLLMPathExtractor`
 
 Extract paths following a strict schema of allowed entities, relationships, and which entities can be connected to which relationships.
@@ -214,7 +230,7 @@ Explicitly declaring the retriever allows you to customize several options. Here
 ```python
 from llama_index.core.indices.property_graph import LLMSynonymRetriever
 
-DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
+prompt = (
     "Given some initial query, generate synonyms or related keywords up to {max_keywords} in total, "
     "considering possible cases of capitalization, pluralization, common expressions, etc.\n"
     "Provide all synonyms/keywords separated by '^' symbols: 'keyword1^keyword2^...'\n"
@@ -358,6 +374,7 @@ Currently, supported graph stores for property graphs include:
 | SimplePropertyGraphStore | ✅         | ❌                        | ❌     | Disk                  |
 | Neo4jPropertyGraphStore  | ❌         | ✅                        | ❌     | Server                |
 | NebulaPropertyGraphStore | ❌         | ❌                        | ❌     | Server                |
+| TiDBPropertyGraphStore   | ❌         | ✅                        | ❌     | Server                |
 
 ### Saving to/from disk
 
@@ -610,3 +627,4 @@ Below, you can find some example notebooks showcasing the `PropertyGraphIndex`
 - [Advanced Usage with Neo4j and local models](../../examples/property_graph/property_graph_advanced.ipynb)
 - [Using a Property Graph Store](../../examples/property_graph/graph_store.ipynb)
 - [Creating a Custom Graph Retriever](../../examples/property_graph/property_graph_custom_retriever.ipynb)
+- [Comparing KG Extractors](../../examples/property_graph/Dynamic_KG_Extraction.ipynb)
