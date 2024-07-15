@@ -287,8 +287,15 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
     ) -> Union[Model, List[Model]]:
         """Process stream."""
         tool_calls = self._llm.get_tool_calls_from_response(
-            chat_response, error_on_no_tool_call=True
+            chat_response, 
+            # error_on_no_tool_call=True
+            error_on_no_tool_call=False
         )
+        # TODO: change
+        if len(tool_calls) == 0:
+            # if no tool calls, return single blank output_class
+            return output_cls()
+
         tool_fn_args = [call.tool_kwargs for call in tool_calls]
         objects = [output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
 
