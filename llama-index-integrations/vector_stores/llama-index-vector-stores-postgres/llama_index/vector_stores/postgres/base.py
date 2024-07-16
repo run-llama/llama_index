@@ -772,6 +772,49 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(stmt)
             session.commit()
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        from sqlalchemy import delete
+
+        self._initialize()
+        with self._session() as session, session.begin():
+            stmt = delete(self._table_class)
+
+            if node_ids:
+                stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+            if filters:
+                stmt = stmt.where(self._recursively_apply_filters(filters))
+
+            print("STMT: ", stmt)
+
+            session.execute(stmt)
+            session.commit()
+
+    def clear(self) -> None:
+        """Clears table."""
+        from sqlalchemy import delete
+
+        self._initialize()
+        with self._session() as session, session.begin():
+            stmt = delete(self._table_class)
+
+            session.execute(stmt)
+            session.commit()
+
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:
     seen_ids = set()

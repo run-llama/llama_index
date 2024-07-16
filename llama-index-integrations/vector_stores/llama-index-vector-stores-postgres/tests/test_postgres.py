@@ -116,6 +116,7 @@ def node_embeddings() -> List[TextNode]:
             text="lorem ipsum",
             id_="aaa",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+            extra_info={"test_num": 1},
             embedding=_get_sample_vector(1.0),
         ),
         TextNode(
@@ -130,6 +131,13 @@ def node_embeddings() -> List[TextNode]:
             id_="ccc",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
             extra_info={"test_key_list": ["test_value"]},
+            embedding=_get_sample_vector(0.1),
+        ),
+        TextNode(
+            text="sed do eiusmod tempor",
+            id_="ddd",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+            extra_info={"test_key_2": "test_val_2"},
             embedding=_get_sample_vector(0.1),
         ),
     ]
@@ -556,3 +564,166 @@ async def test_add_to_db_and_query_index_nodes(
     assert hasattr(res.nodes[0], "index_id")
     assert res.nodes[1].node_id == "bbb"
     assert isinstance(res.nodes[1], TextNode)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_delete_nodes(
+    pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+
+    assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    # test deleting nothing
+    pg.delete_nodes()
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
+
+    # test deleting element that doesn't exist
+    pg.delete_nodes(["asdf"])
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
+
+    # test deleting list
+    pg.delete_nodes(["aaa", "bbb"])
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i not in res.ids for i in ["aaa", "bbb"])
+    assert "ccc" in res.ids
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_delete_nodes_metadata(
+    pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+
+    assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    # test deleting multiple IDs but only one satisfies filter
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key",
+                value=["test_value", "another_value"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+    pg.delete_nodes(["aaa", "bbb"], filters=filters)
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i in res.ids for i in ["aaa", "ccc", "ddd"])
+    assert "bbb" not in res.ids
+
+    # test deleting one ID which satisfies the filter
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_num",
+                value=1,
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    pg.delete_nodes(["aaa"], filters=filters)
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa"])
+    assert all(i in res.ids for i in ["ccc", "ddd"])
+
+    # test deleting one ID which doesn't satisfy the filter
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_num",
+                value=1,
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    pg.delete_nodes(["ccc"], filters=filters)
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa"])
+    assert all(i in res.ids for i in ["ccc", "ddd"])
+
+    # test deleting purely based on filters
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key_2",
+                value="test_val_2",
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    pg.delete_nodes(filters=filters)
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa", "ddd"])
+    assert "ccc" in res.ids
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_clear(
+    pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg.async_add(node_embeddings)
+    else:
+        pg.add(node_embeddings)
+
+    assert isinstance(pg, PGVectorStore)
+    assert hasattr(pg, "_engine")
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
+
+    pg.clear()
+
+    if use_async:
+        res = await pg.aquery(q)
+    else:
+        res = pg.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
+    assert len(res.ids) == 0
