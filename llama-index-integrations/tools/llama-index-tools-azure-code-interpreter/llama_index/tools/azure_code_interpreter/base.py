@@ -75,13 +75,13 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
     def __init__(
         self,
-        pool_managment_endpoint: str,
+        pool_management_endpoint: str,
         session_id: Optional[str] = None,
         local_save_path: Optional[str] = None,
         sanitize_input: bool = True,
     ) -> None:
         """Initialize with parameters."""
-        self.pool_management_endpoint: str = pool_managment_endpoint or os.getenv(
+        self.pool_management_endpoint: str = pool_management_endpoint or os.getenv(
             "AZURE_POOL_MANAGEMENT_ENDPOINT"
         )
         self.access_token: Optional[AccessToken] = None
