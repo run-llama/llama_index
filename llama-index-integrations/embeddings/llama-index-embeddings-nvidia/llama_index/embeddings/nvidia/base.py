@@ -13,6 +13,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
+from urllib.parse import urljoin, urlparse
 
 # integrate.api.nvidia.com is the default url for most models, any
 # bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
@@ -130,6 +131,9 @@ class NVIDIAEmbedding(BaseEmbedding):
                 "An API key is required for hosted NIM. This will become an error in 0.2.0."
             )
 
+        if not self._is_hosted:
+            base_url = self._validate_url(base_url)
+
         self._client = OpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -145,6 +149,19 @@ class NVIDIAEmbedding(BaseEmbedding):
             max_retries=max_retries,
         )
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
+
+    def _validate_url(self, base_url):
+        result = urlparse(base_url)
+        if not (result.scheme and result.netloc):
+            raise ValueError(
+                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
+            )
+        if result.path and result.path not in ["/v1", "/"]:
+            raise ValueError(
+                f"Endpoint {base_url} ends with {result.path.rsplit('/', 1)[-1]}. \
+                    \n Expected format is 'http://host:port'"
+            )
+        return urljoin(base_url, "v1")
 
     @property
     def available_models(self) -> List[Model]:
