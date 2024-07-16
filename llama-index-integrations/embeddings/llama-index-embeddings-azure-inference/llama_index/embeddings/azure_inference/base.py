@@ -31,14 +31,24 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
             credential="your-api-key",
         )
 
-        # If using Microsoft Entra ID authentication, you can create the
-        # client as follows
+        # # If using Microsoft Entra ID authentication, you can create the
+        # # client as follows
         #
         # from azure.identity import DefaultAzureCredential
         #
         # embed_model = AzureAIEmbeddingsModel(
         #     endpoint="https://[your-endpoint].inference.ai.azure.com",
         #     credential=DefaultAzureCredential()
+        # )
+        #
+        # # If you plan to use asynchronous calling, make sure to use the async
+        # # credentials as follows
+        #
+        # from azure.identity.aio import DefaultAzureCredential as DefaultAzureCredentialAsync
+        #
+        # embed_model = AzureAIEmbeddingsModel(
+        #     endpoint="https://[your-endpoint].inference.ai.azure.com",
+        #     credential=DefaultAzureCredentialAsync()
         # )
 
         # Once the client is instantiated, you can set the context to use the model

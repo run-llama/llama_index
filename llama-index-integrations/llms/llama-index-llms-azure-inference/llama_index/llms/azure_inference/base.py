@@ -116,13 +116,23 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         )
 
         # If using Microsoft Entra ID authentication, you can create the
-        # client as follows
+        # client as follows:
         #
         # from azure.identity import DefaultAzureCredential
         #
         # llm = AzureAICompletionsModel(
         #     endpoint="https://[your-endpoint].inference.ai.azure.com",
         #     credential=DefaultAzureCredential()
+        # )
+        #
+        # # If you plan to use asynchronous calling, make sure to use the async
+        # # credentials as follows:
+        #
+        # from azure.identity.aio import DefaultAzureCredential as DefaultAzureCredentialAsync
+        #
+        # llm = AzureAICompletionsModel(
+        #     endpoint="https://[your-endpoint].inference.ai.azure.com",
+        #     credential=DefaultAzureCredentialAsync()
         # )
 
         resp = llm.chat(
