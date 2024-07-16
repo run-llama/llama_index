@@ -17,7 +17,7 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    ExactMatchFilter,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -40,11 +40,12 @@ class MetadataIndexFieldType(int, enum.Enum):
     metadata dictionary.
     """
 
-    STRING = auto()  # "Edm.String"
-    BOOLEAN = auto()  # "Edm.Boolean"
-    INT32 = auto()  # "Edm.Int32"
-    INT64 = auto()  # "Edm.Int64"
-    DOUBLE = auto()  # "Edm.Double"
+    STRING = auto()
+    BOOLEAN = auto()
+    INT32 = auto()
+    INT64 = auto()
+    DOUBLE = auto()
+    COLLECTION = auto()
 
 
 class IndexManagement(int, enum.Enum):
@@ -109,7 +110,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     _index_client: SearchIndexClient = PrivateAttr()
     _index_name: Optional[str] = PrivateAttr()
@@ -145,12 +146,23 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 # Use String as the default index field type
                 index_field_spec[field] = (field, MetadataIndexFieldType.STRING)
 
-        elif isinstance(filterable_metadata_field_keys, Dict):
+        elif isinstance(filterable_metadata_field_keys, dict):
             for k, v in filterable_metadata_field_keys.items():
                 if isinstance(v, tuple):
                     # Index field name and metadata field name may differ
                     # The index field type used is as supplied
                     index_field_spec[k] = v
+                elif isinstance(v, list):
+                    # Handle list types as COLLECTION
+                    index_field_spec[k] = (k, MetadataIndexFieldType.COLLECTION)
+                elif isinstance(v, bool):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.BOOLEAN)
+                elif isinstance(v, int):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.INT32)
+                elif isinstance(v, float):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.DOUBLE)
+                elif isinstance(v, str):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.STRING)
                 else:
                     # Index field name and metadata field name may differ
                     # Use String as the default index field type
@@ -197,6 +209,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 index_field_type = "Edm.Double"
             elif field_type == MetadataIndexFieldType.BOOLEAN:
                 index_field_type = "Edm.Boolean"
+            elif field_type == MetadataIndexFieldType.COLLECTION:
+                index_field_type = "Collection(Edm.String)"
 
             field = SimpleField(name=field_name, type=index_field_type, filterable=True)
             index_fields.append(field)
@@ -980,32 +994,40 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters."""
         odata_filter: List[str] = []
-        for f in metadata_filters.legacy_filters():
-            if not isinstance(f, ExactMatchFilter):
-                raise NotImplementedError(
-                    "Only `ExactMatchFilter` filters are supported"
-                )
 
-            # Raise error if filtering on a metadata field that lacks a mapping to
-            # an index field
-            metadata_mapping = self._metadata_to_index_field_map.get(f.key)
+        for subfilter in metadata_filters.filters:
+            # Join values with ' or ' to create an OR condition inside the any function
+            metadata_mapping = self._metadata_to_index_field_map.get(subfilter.key)
+
+            index_field = metadata_mapping[0]
 
             if not metadata_mapping:
                 raise ValueError(
-                    f"Metadata field '{f.key}' is missing a mapping to an index field, "
+                    f"Metadata field '{subfilter.key}' is missing a mapping to an index field, "
                     "provide entry in 'filterable_metadata_field_keys' for this "
                     "vector store"
                 )
 
-            index_field = metadata_mapping[0]
+            if subfilter.operator == FilterOperator.IN:
+                value_str = " or ".join(
+                    [
+                        f"t eq '{value}'" if isinstance(value, str) else f"t eq {value}"
+                        for value in subfilter.value
+                    ]
+                )
+                odata_filter.append(f"{index_field}/any(t: {value_str})")
 
-            if len(odata_filter) > 0:
-                odata_filter.append(f" {metadata_filters.condition.value} ")
-            if isinstance(f.value, str):
-                escaped_value = "".join([("''" if s == "'" else s) for s in f.value])
-                odata_filter.append(f"{index_field} eq '{escaped_value}'")
+            elif subfilter.operator == FilterOperator.EQ:
+                if isinstance(subfilter.value, str):
+                    escaped_value = "".join(
+                        [("''" if s == "'" else s) for s in subfilter.value]
+                    )
+                    odata_filter.append(f"{index_field} eq '{escaped_value}'")
+                else:
+                    odata_filter.append(f"{index_field} eq {subfilter.value}")
+
             else:
-                odata_filter.append(f"{index_field} eq {f.value}")
+                raise ValueError(f"Unsupported filter operator {subfilter.operator}")
 
         odata_expr = "".join(odata_filter)
 
@@ -1040,8 +1062,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         odata_filter = None
-        if query.filters is not None:
-            odata_filter = self._create_odata_filter(query.filters)
+
+        # NOTE: users can provide odata_filters directly to the query
+        odata_filters = kwargs.get("odata_filters")
+        if odata_filters is not None:
+            odata_filter = odata_filter
+        else:
+            if query.filters is not None:
+                odata_filter = self._create_odata_filter(query.filters)
+
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
                 query, self._field_mapping, odata_filter, self._async_search_client
