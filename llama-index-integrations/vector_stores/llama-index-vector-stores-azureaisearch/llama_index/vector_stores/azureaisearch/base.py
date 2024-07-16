@@ -23,6 +23,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
     VectorStoreQueryResult,
     FilterOperator,
+    FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -1029,7 +1030,14 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             else:
                 raise ValueError(f"Unsupported filter operator {subfilter.operator}")
 
-        odata_expr = "".join(odata_filter)
+        if metadata_filters.condition == FilterCondition.AND:
+            odata_expr = " and ".join(odata_filter)
+        elif metadata_filters.condition == FilterCondition.OR:
+            odata_expr = " or ".join(odata_filter)
+        else:
+            raise ValueError(
+                f"Unsupported filter condition {metadata_filters.condition}"
+            )
 
         logger.info(f"Odata filter: {odata_expr}")
 
