@@ -75,7 +75,7 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
     def __init__(
         self,
-        pool_management_endpoint: str,
+        pool_management_endpoint: Optional[str] = None,
         session_id: Optional[str] = None,
         local_save_path: Optional[str] = None,
         sanitize_input: bool = True,
