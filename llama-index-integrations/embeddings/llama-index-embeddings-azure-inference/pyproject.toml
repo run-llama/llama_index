@@ -26,6 +26,7 @@ description = "Integration for model supporting Azure AI model inference API in 
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-azure-inference"
+packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
 
