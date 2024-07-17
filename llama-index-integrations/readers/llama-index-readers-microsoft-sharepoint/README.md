@@ -41,7 +41,6 @@ loader = SharePointReader(
 )
 
 documents = loader.load_data(
-    
     sharepoint_folder_path="<Folder Path>",
     recursive=True,
 )
