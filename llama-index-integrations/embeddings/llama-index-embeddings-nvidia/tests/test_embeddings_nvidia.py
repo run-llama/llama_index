@@ -13,8 +13,6 @@ from pytest_httpx import HTTPXMock
 @pytest.fixture()
 def mock_integration_api(httpx_mock: HTTPXMock):
     BASE_URL = "https://integrate.api.nvidia.com/v1"
-    NVIDIA_API_KEY = "dummy"  # Replace with your actual API key
-
     mock_response = {"object": "list", "data": [{"index": 0, "embedding": ""}]}
 
     httpx_mock.add_response(
@@ -24,8 +22,6 @@ def mock_integration_api(httpx_mock: HTTPXMock):
         headers={"Content-Type": "application/json"},
         status_code=200,
     )
-
-    return BASE_URL, NVIDIA_API_KEY
 
 
 def test_embedding_class():
