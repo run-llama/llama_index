@@ -997,6 +997,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         odata_filter: List[str] = []
 
         for subfilter in metadata_filters.filters:
+            if isinstance(subfilter, MetadataFilters):
+                nested_filter = self._create_odata_filter(subfilter)
+                odata_filter.append(f"({nested_filter})")
+                continue
+
             # Join values with ' or ' to create an OR condition inside the any function
             metadata_mapping = self._metadata_to_index_field_map.get(subfilter.key)
 
