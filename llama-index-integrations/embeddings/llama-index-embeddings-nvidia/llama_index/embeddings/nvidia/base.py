@@ -145,10 +145,9 @@ class NVIDIAEmbedding(BaseEmbedding):
         )
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
-        if not model:
-            self.__set_default_model()
+        self.__set_default_model()
 
-    def __set_default_model(self):
+    def __set_default_model(self) -> None:
         """Set default model."""
         if not self._is_hosted:
             valid_models = [
@@ -167,7 +166,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             else:
                 raise ValueError("No locally hosted model was found.")
         else:
-            self.model = DEFAULT_MODEL
+            self.model = self.model or DEFAULT_MODEL
 
     @property
     def available_models(self) -> List[Model]:
