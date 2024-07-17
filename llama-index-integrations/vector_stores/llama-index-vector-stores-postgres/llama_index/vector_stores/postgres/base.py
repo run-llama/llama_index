@@ -799,8 +799,6 @@ class PGVectorStore(BasePydanticVectorStore):
             if filters:
                 stmt = stmt.where(self._recursively_apply_filters(filters))
 
-            print("STMT: ", stmt)
-
             session.execute(stmt)
             session.commit()
 
