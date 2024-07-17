@@ -6,7 +6,7 @@ from llama_index.core.llms import ChatMessage, MessageRole
 
 @pytest.mark.skipif(
     not set(
-        "AZURE_INFERENCE_ENDPOINT_URL", "AZURE_INFERENCE_ENDPOINT_CREDENTIAL"
+        ["AZURE_INFERENCE_ENDPOINT_URL", "AZURE_INFERENCE_ENDPOINT_CREDENTIAL"]
     ).issubset(set(os.environ)),
     reason="Azure AI endpoint and/or credential are not set.",
 )
