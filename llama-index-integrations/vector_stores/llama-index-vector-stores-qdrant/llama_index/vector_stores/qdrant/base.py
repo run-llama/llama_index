@@ -1072,6 +1072,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         match=MatchAny(any=values),
                     )
                 )
+            elif subfilter.operator == FilterOperator.NIN:
+                # match none of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-except
+                if isinstance(subfilter.value, List):
+                    values = [str(val) for val in subfilter.value]
+                else:
+                    values = str(subfilter.value).split(",")
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": values}),
+                    )
+                )
 
         filter = Filter()
         if filters.condition == FilterCondition.AND:
