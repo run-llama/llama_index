@@ -372,31 +372,34 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         or a list of objects until it returns.
 
         """
-        # TODO: we can extend this to non-function calling LLMs as well, coming soon
-        if not isinstance(self._llm, FunctionCallingLLM):
-            raise ValueError("stream_call is only supported for LLMs.")
-
         llm_kwargs = llm_kwargs or {}
-        tool = _get_function_tool(self._output_cls)
+        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
+            # TODO: we can extend this to non-function calling LLMs as well, coming soon
+            if not isinstance(self._llm, FunctionCallingLLM):
+                raise ValueError("stream_call is only supported for LLMs.")
 
-        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
-        messages = self._llm._extend_messages(messages)
+            tool = _get_function_tool(self._output_cls)
 
-        chat_response_gen = await self._llm.astream_chat_with_tools(
-            [tool],
-            chat_history=messages,
-            verbose=self._verbose,
-            allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-            **llm_kwargs,
-        )
-        # NOTE: create a new class that treats all its fields as optional
-        # inspired by instructor
-        # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
-        partial_output_cls = create_flexible_model(self._output_cls)
-        cur_objects = None
-        async for partial_resp in chat_response_gen:
-            objects = self._process_objects(
-                partial_resp, partial_output_cls, cur_objects=cur_objects
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+            messages = self._llm._extend_messages(messages)
+
+            chat_response_gen = await self._llm.astream_chat_with_tools(
+                [tool],
+                chat_history=messages,
+                verbose=self._verbose,
+                allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+                **llm_kwargs,
             )
-            cur_objects = objects if isinstance(objects, list) else [objects]
-            yield objects
+            # NOTE: create a new class that treats all its fields as optional
+            # inspired by instructor
+            # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
+            partial_output_cls = create_flexible_model(self._output_cls)
+            cur_objects = None
+            async for partial_resp in chat_response_gen:
+                objects = self._process_objects(
+                    partial_resp, partial_output_cls, cur_objects=cur_objects
+                )
+                cur_objects = objects if isinstance(objects, list) else [objects]
+                yield objects
+
+        return gen()

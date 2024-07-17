@@ -82,7 +82,16 @@ class StructuredLLM(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        raise NotImplementedError("stream_chat is not supported by default.")
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
+
+        stream_output = self.llm.stream_structured_predict(
+            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+        )
+        for partial_output in stream_output:
+            yield ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content=partial_output.json()),
+                raw=partial_output,
+            )
 
     @llm_completion_callback()
     def complete(
@@ -126,7 +135,19 @@ class StructuredLLM(LLM):
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         """Async stream chat endpoint for LLM."""
-        raise NotImplementedError("astream_chat is not supported by default.")
+
+        async def gen() -> ChatResponseAsyncGen:
+            chat_prompt = ChatPromptTemplate(message_templates=messages)
+
+            stream_output = await self.llm.astream_structured_predict(
+                output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+            )
+            async for partial_output in stream_output:
+                yield ChatResponse(
+                    message=ChatMessage(role=MessageRole.ASSISTANT, content=partial_output.json()),
+                    raw=partial_output,
+                )
+        return gen()
 
     @llm_completion_callback()
     async def acomplete(
