@@ -1237,45 +1237,69 @@ class TextToTextEmbedding(OmniModalEmbedding[Literal["text"], Literal["text"]]):
     def query_modalities(self) -> ModalityBundle[Literal["text"]]:
         return ModalityBundle.of(Modalities.TEXT)
 
-    def _get_query_embedding(self, modality: TextModality, data: object) -> Embedding:
+    def _get_embedding(
+        self, modality: TextModality, data: object, *, prefix: str
+    ) -> Embedding:
         if modality.key == "text":
-            data = validate_text_data(data, prefix="query")
+            data = validate_text_data(data, prefix=prefix)
             return self.embed_model._get_text_embedding(data)
 
         assert_never(modality)
 
-    async def _aget_query_embedding(
-        self, modality: TextModality, data: object
+    async def _aget_embedding(
+        self, modality: TextModality, data: object, *, prefix: str
     ) -> Embedding:
         if modality.key == "text":
-            data = validate_text_data(data, prefix="query")
+            data = validate_text_data(data, prefix=prefix)
             return await self.embed_model._aget_text_embedding(data)
 
         assert_never(modality)
 
+    def _get_embeddings(
+        self, modality: TextModality, data_items: List[object], *, prefix: str
+    ) -> List[Embedding]:
+        if modality.key == "text":
+            data_items_ = validate_text_data_items(data_items, prefix=prefix)
+            return self.embed_model._get_text_embeddings(data_items_)
+
+        assert_never(modality)
+
+    async def _aget_embeddings(
+        self, modality: TextModality, data_items: List[object], *, prefix: str
+    ) -> List[Embedding]:
+        if modality.key == "text":
+            data_items_ = validate_text_data_items(data_items, prefix=prefix)
+            return await self.embed_model._aget_text_embeddings(data_items_)
+
+        assert_never(modality)
+
+    def _get_query_embedding(self, modality: TextModality, data: object) -> Embedding:
+        return self._get_embedding(modality, data, prefix="query")
+
+    async def _aget_query_embedding(
+        self, modality: TextModality, data: object
+    ) -> Embedding:
+        return await self._aget_embedding(modality, data, prefix="query")
+
     def _get_document_embedding(
         self, modality: TextModality, data: object
     ) -> Embedding:
-        data = validate_text_data(data, prefix="document")
-        return self.embed_model._get_text_embedding(data)
+        return self._get_embedding(modality, data, prefix="document")
 
     async def _aget_document_embedding(
         self, modality: TextModality, data: object
     ) -> Embedding:
-        data = validate_text_data(data, prefix="document")
-        return await self.embed_model._aget_text_embedding(data)
+        return await self._aget_embedding(modality, data, prefix="document")
 
     def _get_document_embeddings(
         self, modality: TextModality, data_items: List[object]
     ) -> List[Embedding]:
-        data_items_ = validate_text_data_items(data_items, prefix="document")
-        return self.embed_model._get_text_embeddings(data_items_)
+        return self._get_embeddings(modality, data_items, prefix="document")
 
     async def _aget_document_embeddings(
         self, modality: TextModality, data_items: List[object]
     ) -> List[Embedding]:
-        data_items_ = validate_text_data_items(data_items, prefix="document")
-        return await self.embed_model._aget_text_embeddings(data_items_)
+        return await self._aget_embeddings(modality, data_items, prefix="document")
 
 
 def _mm_default_embed_model():
