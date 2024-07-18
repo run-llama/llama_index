@@ -320,26 +320,24 @@ def test_agent_dispatches_events() -> None:
 
     # Check all AgentRunStepEndEvent
     for i in range(num_steps):
-        run_step_start_idx = 2 * i + 2
-        assert isinstance(
-            event_handler.events[run_step_start_idx], AgentRunStepEndEvent
-        )
+        run_step_end_idx = 2 * i + 2
+        assert isinstance(event_handler.events[run_step_end_idx], AgentRunStepEndEvent)
         assert (
-            event_handler.events[run_step_start_idx].step_output.output.response
+            event_handler.events[run_step_end_idx].step_output.output.response
             == f"counter: {i+1}"
         )
         assert (
-            event_handler.events[run_step_start_idx].step_output.task_step
-            == event_handler.events[run_step_start_idx - 1].step
+            event_handler.events[run_step_end_idx].step_output.task_step
+            == event_handler.events[run_step_end_idx - 1].step
         )
-        assert len(event_handler.events[run_step_start_idx].step_output.next_steps) == 1
+        assert len(event_handler.events[run_step_end_idx].step_output.next_steps) == 1
 
         # NOTE: MockAgentWorker generates a next step for the last step, so don't test this
         is_last_step = i == (num_steps - 1)
         if not is_last_step:
             assert (
-                event_handler.events[run_step_start_idx].step_output.next_steps[0]
-                == event_handler.events[run_step_start_idx + 1].step
+                event_handler.events[run_step_end_idx].step_output.next_steps[0]
+                == event_handler.events[run_step_end_idx + 1].step
             )
 
     # Check AgentChatWithStepEndEvent
