@@ -36,6 +36,13 @@ def test_chat_completion():
     assert response.message.content.strip() == "Yes, this is a test."
 
 
+@pytest.mark.skipif(
+    not {
+        "AZURE_INFERENCE_ENDPOINT",
+        "AZURE_INFERENCE_CREDENTIAL",
+    }.issubset(set(os.environ)),
+    reason="Azure AI endpoint and/or credential are not set.",
+)
 def test_chat_completion_kwargs():
     """Tests chat completions using extra parameters."""
     # In case the endpoint being tested serves more than one model
