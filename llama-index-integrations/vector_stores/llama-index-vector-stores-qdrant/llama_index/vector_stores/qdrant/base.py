@@ -34,8 +34,8 @@ from llama_index.vector_stores.qdrant.utils import (
     relative_score_fusion,
     fastembed_sparse_encoder,
 )
+from qdrant_client.conversions.common_types import QuantizationConfig
 from qdrant_client.http import models as rest
-from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
     FieldCondition,
     Filter,
@@ -80,6 +80,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         max_retries (int): maximum number of retries in case of a failure. Defaults to 3
         client_kwargs (Optional[dict]): additional kwargs for QdrantClient and AsyncQdrantClient
         enable_hybrid (bool): whether to enable hybrid search using dense and sparse vectors
+        fastembed_sparse_model (Optional[str]): name of the FastEmbed sparse model to use, if any
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
@@ -112,6 +113,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
     index_doc_id: bool
+    fastembed_sparse_model: Optional[str]
 
     _client: qdrant_client.QdrantClient = PrivateAttr()
     _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
@@ -119,6 +121,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
+    _dense_config: Optional[rest.VectorParams] = PrivateAttr()
+    _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
+    _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
 
     def __init__(
         self,
@@ -131,7 +136,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
         parallel: int = 1,
         max_retries: int = 3,
         client_kwargs: Optional[dict] = None,
+        dense_config: Optional[rest.VectorParams] = None,
+        sparse_config: Optional[rest.SparseVectorParams] = None,
+        quantization_config: Optional[QuantizationConfig] = None,
         enable_hybrid: bool = False,
+        fastembed_sparse_model: Optional[str] = None,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
@@ -173,17 +182,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._collection_initialized = False
 
         # setup hybrid search if enabled
-        if enable_hybrid:
+        if enable_hybrid or fastembed_sparse_model is not None:
+            enable_hybrid = True
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
-                collection_name
+                collection_name, fastembed_sparse_model=fastembed_sparse_model
             )
             self._sparse_query_fn = (
                 sparse_query_fn
-                or self.get_default_sparse_query_encoder(collection_name)
+                or self.get_default_sparse_query_encoder(
+                    collection_name, fastembed_sparse_model=fastembed_sparse_model
+                )
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
             )
+
+        self._sparse_config = sparse_config
+        self._dense_config = dense_config
+        self._quantization_config = quantization_config
 
         super().__init__(
             collection_name=collection_name,
@@ -195,6 +211,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             client_kwargs=client_kwargs or {},
             enable_hybrid=enable_hybrid,
             index_doc_id=index_doc_id,
+            fastembed_sparse_model=fastembed_sparse_model,
         )
 
     @classmethod
@@ -561,30 +578,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or rest.SparseVectorParams(
+            index=rest.SparseIndexParams(),
+            modifier=(
+                rest.Modifier.IDF
+                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
+                else rest.Modifier.NONE
+            ),
+        )
+
         try:
             if self.enable_hybrid:
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        DENSE_VECTOR_NAME: rest.VectorParams(
-                            size=vector_size,
-                            distance=rest.Distance.COSINE,
-                        )
+                        DENSE_VECTOR_NAME: dense_config,
                     },
                     # Newly created collection will have the new sparse vector name
-                    sparse_vectors_config={
-                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams()
-                        )
-                    },
+                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    quantization_config=self._quantization_config,
                 )
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
-                    vectors_config=rest.VectorParams(
-                        size=vector_size,
-                        distance=rest.Distance.COSINE,
-                    ),
+                    vectors_config=dense_config,
+                    quantization_config=self._quantization_config,
                 )
 
             # To improve search performance Qdrant recommends setting up
@@ -610,29 +633,33 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or rest.SparseVectorParams(
+            index=rest.SparseIndexParams(),
+            modifier=(
+                rest.Modifier.IDF
+                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
+                else rest.Modifier.NONE
+            ),
+        )
+
         try:
             if self.enable_hybrid:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config={
-                        DENSE_VECTOR_NAME: rest.VectorParams(
-                            size=vector_size,
-                            distance=rest.Distance.COSINE,
-                        )
-                    },
-                    sparse_vectors_config={
-                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams()
-                        )
-                    },
+                    vectors_config={DENSE_VECTOR_NAME: dense_config},
+                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    quantization_config=self._quantization_config,
                 )
             else:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config=rest.VectorParams(
-                        size=vector_size,
-                        distance=rest.Distance.COSINE,
-                    ),
+                    vectors_config=dense_config,
+                    quantization_config=self._quantization_config,
                 )
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
@@ -654,17 +681,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
-        try:
-            return self._client.collection_exists(collection_name)
-        except (RpcError, UnexpectedResponse, ValueError):
-            return False
+        return self._client.collection_exists(collection_name)
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
-        try:
-            return await self._aclient.collection_exists(collection_name)
-        except (RpcError, UnexpectedResponse, ValueError):
-            return False
+        return await self._aclient.collection_exists(collection_name)
 
     def query(
         self,
@@ -1051,6 +1072,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         match=MatchAny(any=values),
                     )
                 )
+            elif subfilter.operator == FilterOperator.NIN:
+                # match none of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-except
+                if isinstance(subfilter.value, List):
+                    values = [str(val) for val in subfilter.value]
+                else:
+                    values = str(subfilter.value).split(",")
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": values}),
+                    )
+                )
 
         filter = Filter()
         if filters.condition == FilterCondition.AND:
@@ -1124,17 +1158,23 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
     def get_default_sparse_doc_encoder(
-        self, collection_name: str
+        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
-        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+        if fastembed_sparse_model is not None:
+            return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
+
+        return fastembed_sparse_encoder()
 
     def get_default_sparse_query_encoder(
-        self, collection_name: str
+        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
 
-        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+        if fastembed_sparse_model is not None:
+            return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
+
+        return fastembed_sparse_encoder()

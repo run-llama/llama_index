@@ -35,7 +35,6 @@ for full tracing integrations.
 ## Storage and Managed Indexes
 
 - [Vector Stores](integrations/vector_stores.md)
-- [Graph Stores](integrations/graph_stores.md)
 - [Managed Indices](integrations/managed_indices.md)
 
 ## Application Frameworks

@@ -263,7 +263,18 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         prompt = '"Transcript so far: '
         for msg in chat_history_to_be_summarized:
             prompt += msg.role + ": "
-            prompt += msg.content + "\n\n"
+            if msg.content:
+                prompt += msg.content + "\n\n"
+            else:
+                prompt += (
+                    "\n".join(
+                        [
+                            f"Calling a function: {call!s}"
+                            for call in msg.additional_kwargs.get("tool_calls", [])
+                        ]
+                    )
+                    + "\n\n"
+                )
         prompt += '"\n\n'
         prompt += self.summarize_prompt
         return prompt
@@ -280,9 +291,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         Therefore, we switch messages to summarized list until the first message is
         not an ASSISTANT or TOOL message.
         """
-        if len(chat_history_full_text) > 0:
-            while chat_history_full_text[0].role in (
-                MessageRole.ASSISTANT,
-                MessageRole.TOOL,
-            ):
-                chat_history_to_be_summarized.append(chat_history_full_text.pop(0))
+        while chat_history_full_text and chat_history_full_text[0].role in (
+            MessageRole.ASSISTANT,
+            MessageRole.TOOL,
+        ):
+            chat_history_to_be_summarized.append(chat_history_full_text.pop(0))

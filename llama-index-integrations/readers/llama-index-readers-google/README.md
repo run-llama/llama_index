@@ -1,6 +1,37 @@
 # LlamaIndex Integration: Google Readers
 
-Effortlessly incorporate Google-based data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities. Below are examples of integrating Google Docs and Google Sheets readers:
+Effortlessly incorporate Google-based data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities, including:
+
+- Google Calendar
+- Google Chat
+- Google Docs
+- Google Drive
+- Gmail
+- Google Keep
+- Google Maps
+- Google Sheets
+
+## Installation
+
+```bash
+pip install llama-index-readers-google
+```
+
+## Authentication
+
+You will need a `credentials.json` file from Google Cloud to interact with Google Services. To get this file, follow these steps:
+
+- Create a new project in the [Google Cloud Console](https://console.cloud.google.com/)
+- Go to APIs & Services -> Library and search for the API you want, e.g. Gmail
+- Go to APIs & Services -> Credentials and create a new OAuth client ID
+  - Application type: Web application
+  - Authorized redirect URIs: http://localhost:8080/ (the last slash seems important)
+- Go to APIs & Services -> OAuth consent screen and make the app external, which allows you to connect your personal Google data once you explicitly add yourself as an allowed test user
+- Download the credentials JSON file from this screen and save it as `credentials.json` in the root of your project
+
+See [this example](https://github.com/run-llama/gmail-extractor/blob/main/gmail.py) for a sample of code that successfully authenticates with Gmail once you have the `credentials.json` file.
+
+## Examples
 
 ### Google Docs Reader
 
@@ -49,6 +80,16 @@ index = VectorStoreIndex.from_documents(documents)
 index.query("Which Turkish restaurant has the best reviews?")
 ```
 
-### Note
+### Google Chat Reader
 
-Make sure you have a "token.json" or a "credentials.json" file in your environment to authenticate the Google Cloud Platform
+```py
+from llama_index.readers.google import GoogleChatReader
+from llama_index.core import VectorStoreIndex
+
+space_names = ["<CHAT_ID>"]
+chatReader = GoogleChatReader()
+docs = chatReader.load_data(space_names=space_names)
+index = VectorStoreIndex.from_documents(docs)
+query_eng = index.as_query_engine()
+print(query_eng.query("What was this conversation about?"))
+```

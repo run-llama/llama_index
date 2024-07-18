@@ -1,13 +1,29 @@
-# High-Level Concepts (RAG)
+# High-Level Concepts
 
 This is a quick guide to the high-level concepts you'll encounter frequently when building LLM applications.
+
+## Use cases
+
+There are endless use cases for data-backed LLM applications but they can be roughly grouped into four categories:
+
+[**Structured Data Extraction**](../use_cases/extraction/)
+Pydantic extractors allow you to specify a precise data structure to extract from your data and use LLMs to fill in the missing pieces in a type-safe way. This is useful for extracting structured data from unstructured sources like PDFs, websites, and more, and is key to automating workflows.
+
+[**Query Engines**](../module_guides/deploying/query_engine/index.md):
+A query engine is an end-to-end pipeline that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
+
+[**Chat Engines**](../module_guides/deploying/chat_engines/index.md):
+A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
+
+[**Agents**](../module_guides/deploying/agents/index.md):
+An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
+
+## Retrieval Augmented Generation (RAG)
 
 !!! tip
     If you haven't, [install LlamaIndex](./installation.md) and complete the [starter tutorial](./starter_example.md) before you read this. It will help ground these steps in your experience.
 
-## Retrieval Augmented Generation (RAG)
-
-LLMs are trained on enormous bodies of data but they aren't trained on **your** data. Retrieval-Augmented Generation (RAG) solves this problem by adding your data to the data LLMs already have access to. You will see references to RAG frequently in this documentation.
+LLMs are trained on enormous bodies of data but they aren't trained on **your** data. Retrieval-Augmented Generation (RAG) solves this problem by adding your data to the data LLMs already have access to. You will see references to RAG frequently in this documentation. Query engines, chat engines and agents often use RAG to complete their tasks.
 
 In RAG, your data is loaded and prepared for queries or "indexed". User queries act on the index, which filters your data down to the most relevant context. This context and your query then go to the LLM along with a prompt, and the LLM provides a response.
 
@@ -15,9 +31,9 @@ Even if what you're building is a chatbot or an agent, you'll want to know RAG t
 
 ![](../_static/getting_started/basic_rag.png)
 
-## Stages within RAG
+### Stages within RAG
 
-There are five key stages within RAG, which in turn will be a part of any larger application you build. These are:
+There are five key stages within RAG, which in turn will be a part of most larger applications you build. These are:
 
 - **Loading**: this refers to getting your data from where it lives -- whether it's text files, PDFs, another website, a database, or an API -- into your pipeline. [LlamaHub](https://llamahub.ai/) provides hundreds of connectors to choose from.
 
@@ -31,25 +47,25 @@ There are five key stages within RAG, which in turn will be a part of any larger
 
 ![](../_static/getting_started/stages.png)
 
-## Important concepts within each step
+### Important concepts within RAG
 
 There are also some terms you'll encounter that refer to steps within each of these stages.
 
-### Loading stage
+#### Loading stage
 
 [**Nodes and Documents**](../module_guides/loading/documents_and_nodes/index.md): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
 
 [**Connectors**](../module_guides/loading/connector/index.md):
 A data connector (often called a `Reader`) ingests data from different data sources and data formats into `Documents` and `Nodes`.
 
-### Indexing Stage
+#### Indexing Stage
 
 [**Indexes**](../module_guides/indexing/index.md):
 Once you've ingested your data, LlamaIndex will help you index the data into a structure that's easy to retrieve. This usually involves generating `vector embeddings` which are stored in a specialized database called a `vector store`. Indexes can also store a variety of metadata about your data.
 
-[**Embeddings**](../module_guides/models/embeddings.md) LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data that is numerically similar to the embedding of your query.
+[**Embeddings**](../module_guides/models/embeddings.md): LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data that is numerically similar to the embedding of your query.
 
-### Querying Stage
+#### Querying Stage
 
 [**Retrievers**](../module_guides/querying/retriever/index.md):
 A retriever defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
@@ -62,19 +78,6 @@ A node postprocessor takes in a set of retrieved nodes and applies transformatio
 
 [**Response Synthesizers**](../module_guides/querying/response_synthesizers/index.md):
 A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.
-
-### Putting it all together
-
-There are endless use cases for data-backed LLM applications but they can be roughly grouped into three categories:
-
-[**Query Engines**](../module_guides/deploying/query_engine/index.md):
-A query engine is an end-to-end pipeline that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
-
-[**Chat Engines**](../module_guides/deploying/chat_engines/index.md):
-A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
-
-[**Agents**](../module_guides/deploying/agents/index.md):
-An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
 
 !!! tip
     * Tell me how to [customize things](./customization.md)

@@ -184,6 +184,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         messages = task.memory.get()
         for message in messages:
             new_memory.put(message)
+        # inject new input into memory
+        new_memory.put(ChatMessage(content=task.input, role=MessageRole.USER))
 
         # initialize task state
         task_state = {

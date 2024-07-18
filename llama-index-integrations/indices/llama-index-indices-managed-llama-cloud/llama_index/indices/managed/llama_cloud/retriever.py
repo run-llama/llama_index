@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
-from llama_index_client import TextNodeWithScore
-from llama_index_client.resources.pipeline.client import OMIT, PipelineType
+from llama_cloud import TextNodeWithScore
+from llama_cloud.resources.pipelines.client import OMIT, PipelineType
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
@@ -25,6 +25,8 @@ class LlamaCloudRetriever(BaseRetriever):
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
         timeout: int = 60,
+        retrieval_mode: Optional[str] = None,
+        files_top_k: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
@@ -33,7 +35,7 @@ class LlamaCloudRetriever(BaseRetriever):
         self._client = get_client(api_key, base_url, app_url, timeout)
         self._aclient = get_aclient(api_key, base_url, app_url, timeout)
 
-        projects = self._client.project.list_projects(project_name=project_name)
+        projects = self._client.projects.list_projects(project_name=project_name)
         if len(projects) == 0:
             raise ValueError(f"No project found with name {project_name}")
 
@@ -49,6 +51,8 @@ class LlamaCloudRetriever(BaseRetriever):
         self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
         self._alpha = alpha if alpha is not None else OMIT
         self._filters = filters if filters is not None else OMIT
+        self._retrieval_mode = retrieval_mode if retrieval_mode is not None else OMIT
+        self._files_top_k = files_top_k if files_top_k is not None else OMIT
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager", None),
@@ -67,7 +71,7 @@ class LlamaCloudRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
-        pipelines = self._client.pipeline.search_pipelines(
+        pipelines = self._client.pipelines.search_pipelines(
             project_name=self.project_name,
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED.value,
@@ -88,7 +92,7 @@ class LlamaCloudRetriever(BaseRetriever):
                 f"No pipeline found with name {self.name} in project {self.project_name}"
             )
 
-        results = self._client.pipeline.run_search(
+        results = self._client.pipelines.run_search(
             query=query_bundle.query_str,
             pipeline_id=pipeline.id,
             dense_similarity_top_k=self._dense_similarity_top_k,
@@ -97,6 +101,8 @@ class LlamaCloudRetriever(BaseRetriever):
             rerank_top_n=self._rerank_top_n,
             alpha=self._alpha,
             search_filters=self._filters,
+            files_top_k=self._files_top_k,
+            retrieval_mode=self._retrieval_mode,
         )
 
         result_nodes = results.retrieval_nodes
@@ -105,7 +111,7 @@ class LlamaCloudRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
-        pipelines = await self._aclient.pipeline.search_pipelines(
+        pipelines = await self._aclient.pipelines.search_pipelines(
             project_name=self.project_name,
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED.value,
@@ -126,7 +132,7 @@ class LlamaCloudRetriever(BaseRetriever):
                 f"No pipeline found with name {self.name} in project {self.project_name}"
             )
 
-        results = await self._aclient.pipeline.run_search(
+        results = await self._aclient.pipelines.run_search(
             query=query_bundle.query_str,
             pipeline_id=pipeline.id,
             dense_similarity_top_k=self._dense_similarity_top_k,
@@ -135,6 +141,8 @@ class LlamaCloudRetriever(BaseRetriever):
             rerank_top_n=self._rerank_top_n,
             alpha=self._alpha,
             search_filters=self._filters,
+            files_top_k=self._files_top_k,
+            retrieval_mode=self._retrieval_mode,
         )
 
         result_nodes = results.retrieval_nodes
