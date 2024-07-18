@@ -162,6 +162,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             oversampling_factor: This times n_results is 'ef' in the HNSW algorithm.
                 'ef' determines the number of nearest neighbor candidates to consider during the search phase.
                 A higher value leads to more accuracy, but is slower. Default = 10
+            add_pipeline_id_top_level: add pipeline_id as a top-level field in documents, if True
+            pipeline_id_key: A MongoDB field that will contain pipeline id.
             index_name: DEPRECATED: Please use vector_index_name.
 
         """
