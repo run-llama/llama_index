@@ -123,6 +123,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     _insert_kwargs: Dict = PrivateAttr()
     _index_name: str = PrivateAttr()  # DEPRECATED
     _oversampling_factor: int = PrivateAttr()
+    _add_pipeline_id_top_level: bool = PrivateAttr()
+    _pipeline_id_key: str = PrivateAttr()
 
     def __init__(
         self,
@@ -138,6 +140,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         index_name: str = None,
         insert_kwargs: Optional[Dict] = None,
         oversampling_factor: int = 10,
+        add_pipeline_id_top_level: bool = False,
+        pipeline_id_key: str = "pipeline_id",
         **kwargs: Any,
     ) -> None:
         """Initialize the vector store.
@@ -192,6 +196,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._fulltext_index_name = fulltext_index_name
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
+        self._add_pipeline_id_top_level = add_pipeline_id_top_level
+        self._pipeline_id_key = pipeline_id_key
         super().__init__()
 
     def add(
@@ -221,6 +227,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
             }
+            # Add pipeline_id at the top level if the feature is enabled and the field exists in metadata
+            if self._add_pipeline_id_top_level and self._pipeline_id_key in metadata:
+                entry[self._pipeline_id_key] = metadata[self._pipeline_id_key]
+
             data_to_insert.append(entry)
             ids.append(node.node_id)
         logger.debug("Inserting data into MongoDB: %s", data_to_insert)
