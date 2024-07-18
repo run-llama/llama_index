@@ -24,7 +24,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 from typing_extensions import LiteralString, Self, assert_never
@@ -1198,6 +1197,32 @@ class OmniModalEmbeddingBundle(
 
 
 # Adapters
+def validate_text_data(data: object, *, prefix: str) -> str:
+    if not isinstance(data, str):
+        msg = f"The {prefix} data is not a string. Found: {type(data)}"
+        raise TypeError(msg)
+
+    return data
+
+
+def validate_text_data_items(data_items: List[object], *, prefix: str) -> List[str]:
+    return [validate_text_data(data, prefix=prefix) for data in data_items]
+
+
+def validate_image_data(data: object, *, prefix: str) -> ImageType:
+    if not isinstance(data, (str, BytesIO)):
+        msg = f"The {prefix} data is not a string or buffer. Found: {type(data)}"
+        raise TypeError(msg)
+
+    return data
+
+
+def validate_image_data_items(
+    data_items: List[object], *, prefix: str
+) -> List[ImageType]:
+    return [validate_image_data(data, prefix=prefix) for data in data_items]
+
+
 @dataclass
 class TextToTextEmbedding(OmniModalEmbedding[Literal["text"], Literal["text"]]):
     embed_model: BaseEmbedding = field(
@@ -1214,10 +1239,7 @@ class TextToTextEmbedding(OmniModalEmbedding[Literal["text"], Literal["text"]]):
 
     def _get_query_embedding(self, modality: TextModality, data: object) -> Embedding:
         if modality.key == "text":
-            if not isinstance(data, str):
-                msg = f"The query data is not a string. Found: {type(data)}"
-                raise TypeError(msg)
-
+            data = validate_text_data(data, prefix="query")
             return self.embed_model._get_text_embedding(data)
 
         assert_never(modality)
@@ -1226,10 +1248,7 @@ class TextToTextEmbedding(OmniModalEmbedding[Literal["text"], Literal["text"]]):
         self, modality: TextModality, data: object
     ) -> Embedding:
         if modality.key == "text":
-            if not isinstance(data, str):
-                msg = f"The query data is not a string. Found: {type(data)}"
-                raise TypeError(msg)
-
+            data = validate_text_data(data, prefix="query")
             return await self.embed_model._aget_text_embedding(data)
 
         assert_never(modality)
@@ -1237,41 +1256,25 @@ class TextToTextEmbedding(OmniModalEmbedding[Literal["text"], Literal["text"]]):
     def _get_document_embedding(
         self, modality: TextModality, data: object
     ) -> Embedding:
-        if not isinstance(data, str):
-            msg = f"The document data is not a string. Found: {type(data)}"
-            raise TypeError(msg)
-
+        data = validate_text_data(data, prefix="document")
         return self.embed_model._get_text_embedding(data)
 
     async def _aget_document_embedding(
         self, modality: TextModality, data: object
     ) -> Embedding:
-        if not isinstance(data, str):
-            msg = f"The document data is not a string. Found: {type(data)}"
-            raise TypeError(msg)
-
+        data = validate_text_data(data, prefix="document")
         return await self.embed_model._aget_text_embedding(data)
 
     def _get_document_embeddings(
         self, modality: TextModality, data_items: List[object]
     ) -> List[Embedding]:
-        for data in data_items:
-            if not isinstance(data, str):
-                msg = f"The document data is not a string. Found: {type(data)}"
-                raise TypeError(msg)
-
-        data_items_ = cast(List[str], data_items)
+        data_items_ = validate_text_data_items(data_items, prefix="document")
         return self.embed_model._get_text_embeddings(data_items_)
 
     async def _aget_document_embeddings(
         self, modality: TextModality, data_items: List[object]
     ) -> List[Embedding]:
-        for data in data_items:
-            if not isinstance(data, str):
-                msg = f"The document data is not a string. Found: {type(data)}"
-                raise TypeError(msg)
-
-        data_items_ = cast(List[str], data_items)
+        data_items_ = validate_text_data_items(data_items, prefix="document")
         return await self.embed_model._aget_text_embeddings(data_items_)
 
 
@@ -1300,80 +1303,50 @@ class TextImageToImageEmbedding(OmniModalEmbedding[KD, Literal["text", "image"]]
     def query_modalities(self) -> ModalityBundle[Literal["text", "image"]]:
         return ModalityBundle.of(Modalities.TEXT, Modalities.IMAGE)
 
-    def _get_embedding(self, modality: TextOrImageModality, data: object) -> Embedding:
+    def _get_embedding(
+        self, modality: TextOrImageModality, data: object, *, prefix: str
+    ) -> Embedding:
         if modality.key == "text":
-            if not isinstance(data, str):
-                msg = f"The data is not a string. Found: {type(data)}"
-                raise TypeError(msg)
-
+            data = validate_text_data(data, prefix=prefix)
             return self.embed_model._get_text_embedding(data)
         elif modality.key == "image":
-            if not isinstance(data, (str, BytesIO)):
-                msg = f"The data is not a string or buffer. Found: {type(data)}"
-                raise TypeError(msg)
-
+            data = validate_image_data(data, prefix=prefix)
             return self.embed_model._get_image_embedding(data)
 
         assert_never(modality)
 
     async def _aget_embedding(
-        self, modality: TextOrImageModality, data: object
+        self, modality: TextOrImageModality, data: object, *, prefix: str
     ) -> Embedding:
         if modality.key == "text":
-            if not isinstance(data, str):
-                msg = f"The data is not a string. Found: {type(data)}"
-                raise TypeError(msg)
-
+            data = validate_text_data(data, prefix=prefix)
             return await self.embed_model._aget_text_embedding(data)
         elif modality.key == "image":
-            if not isinstance(data, (str, BytesIO)):
-                msg = f"The data is not a string or buffer. Found: {type(data)}"
-                raise TypeError(msg)
-
+            data = validate_image_data(data, prefix=prefix)
             return await self.embed_model._aget_image_embedding(data)
 
         assert_never(modality)
 
     def _get_embeddings(
-        self, modality: TextOrImageModality, data_items: List[object]
+        self, modality: TextOrImageModality, data_items: List[object], *, prefix: str
     ) -> List[Embedding]:
         if modality.key == "text":
-            for data in data_items:
-                if not isinstance(data, str):
-                    msg = f"The data is not a string. Found: {type(data)}"
-                    raise TypeError(msg)
-
-            data_items_ = cast(List[str], data_items)
+            data_items_ = validate_text_data_items(data_items, prefix=prefix)
             return self.embed_model._get_text_embeddings(data_items_)
         elif modality.key == "image":
-            for data in data_items:
-                if not isinstance(data, (str, BytesIO)):
-                    msg = f"The data is not a string or buffer. Found: {type(data)}"
-                    raise TypeError(msg)
-
-            data_items_ = cast(List[ImageType], data_items)
+            data_items_ = validate_image_data_items(data_items, prefix=prefix)
             return self.embed_model._get_image_embeddings(data_items_)
 
         assert_never(modality)
 
     async def _aget_embeddings(
-        self, modality: TextOrImageModality, data_items: List[object]
+        self, modality: TextOrImageModality, data_items: List[object], *, prefix: str
     ) -> List[Embedding]:
         if modality.key == "text":
-            for data in data_items:
-                if not isinstance(data, str):
-                    msg = f"The data is not a string. Found: {type(data)}"
-                    raise TypeError(msg)
-
-            data_items_ = cast(List[str], data_items)
+            data_items_ = validate_text_data_items(data_items, prefix=prefix)
             return await self.embed_model._aget_text_embeddings(data_items_)
         elif modality.key == "image":
-            for data in data_items:
-                if not isinstance(data, (str, BytesIO)):
-                    msg = f"The data is not a string or buffer. Found: {type(data)}"
-                    raise TypeError(msg)
-
-            data_items_ = cast(List[ImageType], data_items)
+            data_items_ = validate_image_data_items(data_items, prefix=prefix)
             return await self.embed_model._aget_image_embeddings(data_items_)
 
         assert_never(modality)
@@ -1381,29 +1354,29 @@ class TextImageToImageEmbedding(OmniModalEmbedding[KD, Literal["text", "image"]]
     def _get_query_embedding(
         self, modality: TextOrImageModality, data: object
     ) -> Embedding:
-        return self._get_embedding(modality, data)
+        return self._get_embedding(modality, data, prefix="query")
 
     async def _aget_query_embedding(
         self, modality: TextOrImageModality, data: object
     ) -> Embedding:
-        return await self._aget_embedding(modality, data)
+        return await self._aget_embedding(modality, data, prefix="query")
 
     def _get_document_embedding(
         self, modality: TextOrImageModality, data: object
     ) -> Embedding:
-        return self._get_embedding(modality, data)
+        return self._get_embedding(modality, data, prefix="document")
 
     async def _aget_document_embedding(
         self, modality: TextOrImageModality, data: object
     ) -> Embedding:
-        return await self._aget_embedding(modality, data)
+        return await self._aget_embedding(modality, data, prefix="document")
 
     def _get_document_embeddings(
         self, modality: TextOrImageModality, data_items: List[object]
     ) -> List[Embedding]:
-        return self._get_embeddings(modality, data_items)
+        return self._get_embeddings(modality, data_items, prefix="document")
 
     async def _aget_document_embeddings(
         self, modality: TextOrImageModality, data_items: List[object]
     ) -> List[Embedding]:
-        return await self._aget_embeddings(modality, data_items)
+        return await self._aget_embeddings(modality, data_items, prefix="document")
