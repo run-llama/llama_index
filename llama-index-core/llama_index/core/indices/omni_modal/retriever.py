@@ -349,12 +349,12 @@ class OmniModalVectorIndexRetriever(BaseRetriever, Generic[KD, KQ]):
             else:
                 retrieved_nodes.append(n)
 
-        # remove any duplicates based on hash
+        # remove any duplicates based on hash and ref_doc_id
         seen = set()
         return [
             n
             for n in retrieved_nodes
-            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+            if not ((n.node.hash, n.node.ref_doc_id) in seen or seen.add((n.node.hash, n.node.ref_doc_id)))  # type: ignore[func-returns-value]
         ]
 
     def _retrieve(
