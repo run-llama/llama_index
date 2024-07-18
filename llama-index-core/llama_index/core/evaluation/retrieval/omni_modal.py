@@ -1,6 +1,6 @@
 import asyncio
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any, Callable, Collection, Dict, Generic, List, Optional, Tuple
 
 from llama_index.core.async_utils import asyncio_run
@@ -41,7 +41,9 @@ class OmniModalEmbeddingQAFinetuneDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         data = {
-            "queries": {k: asdict(v) for k, v in self.queries.items()},
+            "queries": {
+                k: v.to_dict(encode_json=True) for k, v in self.queries.items()
+            },
             "corpus": {k: v.to_dict() for k, v in self.corpus.items()},
             "relevant_docs": self.relevant_docs,
         }
