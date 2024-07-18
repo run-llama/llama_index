@@ -59,7 +59,7 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         ```
     """
 
-    model_extras: Dict[str, Any] = Field(
+    model_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs model parameters."
     )
 
@@ -80,10 +80,10 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         client_kwargs = client_kwargs or {}
 
         endpoint = get_from_param_or_env(
-            "endpoint", endpoint, "AZURE_INFERENCE_ENDPOINT_URL", None
+            "endpoint", endpoint, "AZURE_INFERENCE_ENDPOINT", None
         )
         credential = get_from_param_or_env(
-            "credential", credential, "AZURE_INFERENCE_ENDPOINT_CREDENTIAL", None
+            "credential", credential, "AZURE_INFERENCE_CREDENTIAL", None
         )
         credential = (
             AzureKeyCredential(credential)
@@ -94,14 +94,14 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         if not endpoint:
             raise ValueError(
                 "You must provide an endpoint to use the Azure AI model inference LLM."
-                "Pass the endpoint as a parameter or set the AZURE_INFERENCE_ENDPOINT_URL"
+                "Pass the endpoint as a parameter or set the AZURE_INFERENCE_ENDPOINT"
                 "environment variable."
             )
 
         if not credential:
             raise ValueError(
                 "You must provide an credential to use the Azure AI model inference LLM."
-                "Pass the credential as a parameter or set the AZURE_INFERENCE_ENDPOINT_CREDENTIAL"
+                "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
 
         self._client = EmbeddingsClient(
@@ -135,9 +135,9 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         additional_kwargs = {}
         if self.model_name and self.model_name != "unknown":
             additional_kwargs["model"] = self.model_name
-        if self.model_extras:
-            # pass any extra model parameter as model extra
-            additional_kwargs["model_extras"] = self.model_extras
+        if self.model_kwargs:
+            # pass any extra model parameters
+            additional_kwargs.update(self.model_kwargs)
 
         return additional_kwargs
 

@@ -162,7 +162,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         gt=0,
     )
     seed: str = Field(default=None, description="The random seed to use for sampling.")
-    model_extras: Dict[str, Any] = Field(
+    model_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs model parameters."
     )
 
@@ -179,7 +179,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         model_name: Optional[str] = None,
-        model_extras: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -189,15 +188,14 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         client_kwargs: Dict[str, Any] = None,
         **kwargs: Dict[str, Any],
     ) -> None:
-        model_extras = model_extras or {}
         client_kwargs = client_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
         endpoint = get_from_param_or_env(
-            "endpoint", endpoint, "AZURE_INFERENCE_ENDPOINT_URL", None
+            "endpoint", endpoint, "AZURE_INFERENCE_ENDPOINT", None
         )
         credential = get_from_param_or_env(
-            "credential", credential, "AZURE_INFERENCE_ENDPOINT_CREDENTIAL", None
+            "credential", credential, "AZURE_INFERENCE_CREDENTIAL", None
         )
         credential = (
             AzureKeyCredential(credential)
@@ -208,14 +206,14 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         if not endpoint:
             raise ValueError(
                 "You must provide an endpoint to use the Azure AI model inference LLM."
-                "Pass the endpoint as a parameter or set the AZURE_INFERENCE_ENDPOINT_URL"
+                "Pass the endpoint as a parameter or set the AZURE_INFERENCE_ENDPOINT"
                 "environment variable."
             )
 
         if not credential:
             raise ValueError(
                 "You must provide an credential to use the Azure AI model inference LLM."
-                "Pass the credential as a parameter or set the AZURE_INFERENCE_ENDPOINT_CREDENTIAL"
+                "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
 
         self._client = ChatCompletionsClient(
@@ -276,7 +274,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
 
         return {
             **base_kwargs,
-            **self.model_extras,
+            **self.model_kwargs,
         }
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
@@ -287,7 +285,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        print("Request")
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.complete(messages=messages, **all_kwargs)
