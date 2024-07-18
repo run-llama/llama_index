@@ -180,11 +180,6 @@ class Ollama(CustomLLM):
                 for line in response.iter_lines():
                     if line:
                         chunk = json.loads(line)
-                        if "done" in chunk and chunk["done"]:
-                            break
-                        message = chunk["message"]
-                        delta = message.get("content")
-                        text += delta
                         yield ChatResponse(
                             message=ChatMessage(
                                 content=text,
@@ -199,6 +194,11 @@ class Ollama(CustomLLM):
                                 chunk, ("message",)
                             ),
                         )
+                        if "done" in chunk and chunk["done"]:
+                            break
+                        message = chunk["message"]
+                        delta = message.get("content")
+                        text += delta
 
     @llm_chat_callback()
     async def achat(
