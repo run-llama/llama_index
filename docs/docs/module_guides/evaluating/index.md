@@ -53,6 +53,7 @@ We also integrate with community evaluation tools.
 - [Tonic Validate](../../community/integrations/tonicvalidate.md)(Includes Web UI for visualizing results)
 - [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
+- [RAGChecker](https://github.com/amazon-science/RAGChecker)
 
 ## Usage Pattern
 
