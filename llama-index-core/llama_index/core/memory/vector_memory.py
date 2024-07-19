@@ -164,7 +164,23 @@ class VectorMemory(BaseMemory):
 
         self.vector_index.insert_nodes([self.cur_batch_textnode])
 
-    def put(self, message: ChatMessage) -> None:
+    async def _async_commit_node(self, override_last: bool = False) -> None:
+        """Commit new node to vector store."""
+        if self.cur_batch_textnode.text == "":
+            return
+
+        if override_last:
+            # delete the last node
+            # This is needed since we're updating the last node in the vector
+            # index as its being updated. When a new user-message batch starts
+            # we already will have the last user message group committed to the
+            # vector store index and so we don't need to override_last (i.e. see
+            # logic in self.put().)
+            self.vector_index.delete_nodes([self.cur_batch_textnode.id_])
+
+        await self.vector_index.async_insert_nodes([self.cur_batch_textnode])
+
+    def _put(self, message: ChatMessage) -> None:
         """Put chat history."""
         
         if not self.batch_by_user_message or message.role in [
@@ -181,8 +197,16 @@ class VectorMemory(BaseMemory):
         else:
             self.cur_batch_textnode.text += " " + (sub_dict["content"] or "")
         self.cur_batch_textnode.metadata["sub_dicts"].append(sub_dict)
-        self._commit_node(override_last=True)
+        
+    async def async_put(self, message: ChatMessage) -> None:
+        self._put(message)
+        await self._async_commit_node(override_last=True)
+        
 
+    def put(self, message: ChatMessage) -> None:
+        self._put(message)
+        self._commit_node(override_last=True)
+        
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
         self.reset()

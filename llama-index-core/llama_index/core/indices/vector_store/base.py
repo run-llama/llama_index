@@ -311,6 +311,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes, **insert_kwargs)
 
+    async def _async_insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        await self._async_add_nodes_to_index(self._index_struct, nodes, **insert_kwargs)
+        
+
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert nodes.
 
@@ -328,6 +333,24 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         self._insert(nodes, **insert_kwargs)
         self._storage_context.index_store.add_index_struct(self._index_struct)
+    
+    async def async_insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Insert nodes.
+
+        NOTE: overrides BaseIndex.insert_nodes.
+            VectorStoreIndex only stores nodes in document store
+            if vector store does not store text
+        """
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                try:
+                    node.dict()
+                except ValueError:
+                    self._object_map[node.index_id] = node.obj
+                    node.obj = None
+
+        await self._async_insert(nodes, **insert_kwargs)
+        self._storage_context.index_store.add_index_struct(self._index_struct)    
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         pass
