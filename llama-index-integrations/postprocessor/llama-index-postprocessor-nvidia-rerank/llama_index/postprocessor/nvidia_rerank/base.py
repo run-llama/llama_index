@@ -21,6 +21,7 @@ BASE_URL = "https://ai.api.nvidia.com/v1"
 
 MODEL_ENDPOINT_MAP = {
     DEFAULT_MODEL: BASE_URL,
+    "nvidia/nv-rerankqa-mistral-4b-v3": "https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-rerankqa-mistral-4b-v3/reranking",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
@@ -225,7 +226,8 @@ class NVIDIARerank(BaseNodePostprocessor):
                 # the hosted NIM path is different from the local NIM path
                 url = self._base_url
                 if self._is_hosted:
-                    url += "/retrieval/nvidia/reranking"
+                    if url.endswith("/v1"):
+                        url += "/retrieval/nvidia/reranking"
                 else:
                     url += "/ranking"
                 response = session.post(url, headers=_headers, json=payloads)
