@@ -12,10 +12,6 @@ from pathlib import Path
 from typing import Any, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
-from llama_cloud import (
-    ConfigurableDataSourceNames,
-    ConfigurableTransformationNames,
-)
 
 from llama_index.core.constants import (
     DEFAULT_PIPELINE_NAME,
@@ -23,17 +19,10 @@ from llama_index.core.constants import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
-from llama_index.core.ingestion.data_sources import (
-    ConfigurableDataSources,
-)
-from llama_index.core.ingestion.transformations import (
-    ConfigurableTransformations,
-)
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.schema import (
-    BaseComponent,
     BaseNode,
     Document,
     MetadataMode,
@@ -49,20 +38,6 @@ from llama_index.core.utils import concat_dirs
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 dispatcher = get_dispatcher(__name__)
-
-
-def deserialize_transformation_component(
-    component_dict: dict, component_type: ConfigurableTransformationNames
-) -> BaseComponent:
-    component_cls = ConfigurableTransformations[component_type].value.component_type
-    return component_cls.from_dict(component_dict)
-
-
-def deserialize_source_component(
-    component_dict: dict, component_type: ConfigurableDataSourceNames
-) -> BaseComponent:
-    component_cls = ConfigurableDataSources[component_type].value.component_type
-    return component_cls.from_dict(component_dict)
 
 
 def remove_unstable_values(s: str) -> str:

@@ -1,5 +1,6 @@
 """ Knowledge Graph Query Engine."""
 
+import deprecated
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -47,6 +48,13 @@ DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(
 )
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KnowledgeGraphQueryEngine is deprecated. It is recommended to use "
+        "the PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KnowledgeGraphQueryEngine(BaseQueryEngine):
     """Knowledge graph query engine.
 

@@ -42,3 +42,12 @@ We support `Amazon Neptune` integrations for both [Neptune Database](https://doc
 See the associated guides below:
 
 - [Amazon Neptune Graph Store](../../examples/index_structs/knowledge_graph/NeptuneDatabaseKGIndexDemo).
+
+
+## `TiDB Graph Store`
+
+We support a `TiDBGraphStore` integration, for persisting graphs directly in [TiDB](https://docs.pingcap.com/tidb/stable/overview)!
+
+See the associated guides below:
+
+- [TiDB Graph Store](../../examples/index_structs/knowledge_graph/TiDBKGIndexDemo.ipynb)

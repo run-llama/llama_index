@@ -8,6 +8,7 @@ interfaces a managed service.
 import os
 import time
 from typing import Any, List, Optional, Sequence, Type
+from urllib.parse import quote_plus
 
 from llama_cloud import (
     PipelineType,
@@ -135,8 +136,9 @@ class LlamaCloudIndex(BaseManagedIndex):
         while pending_docs:
             docs_to_remove = set()
             for doc in pending_docs:
+                # we have to quote the doc id twice because it is used as a path parameter
                 status = client.pipelines.get_pipeline_document_status(
-                    pipeline_id=pipeline_id, document_id=doc
+                    pipeline_id=pipeline_id, document_id=quote_plus(quote_plus(doc))
                 )
                 if status in [
                     ManagedIngestionStatus.NOT_STARTED,
@@ -402,8 +404,9 @@ class LlamaCloudIndex(BaseManagedIndex):
         """Delete a document and its nodes by using ref_doc_id."""
         pipeline_id = self._get_pipeline_id()
         try:
+            # we have to quote the ref_doc_id twice because it is used as a path parameter
             self._client.pipelines.delete_pipeline_document(
-                pipeline_id=pipeline_id, document_id=ref_doc_id
+                pipeline_id=pipeline_id, document_id=quote_plus(quote_plus(ref_doc_id))
             )
         except ApiError as e:
             if e.status_code == 404 and not raise_if_not_found:
