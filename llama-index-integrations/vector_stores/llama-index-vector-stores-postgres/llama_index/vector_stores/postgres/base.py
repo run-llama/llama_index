@@ -802,6 +802,36 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(stmt)
             session.commit()
 
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes asynchronously.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        from sqlalchemy import delete
+
+        self._initialize()
+        async with self._async_session() as async_session, async_session.begin():
+            stmt = delete(self._table_class)
+
+            if node_ids:
+                stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+            if filters:
+                stmt = stmt.where(self._recursively_apply_filters(filters))
+
+            await async_session.execute(stmt)
+            await async_session.commit()
+
     def clear(self) -> None:
         """Clears table."""
         from sqlalchemy import delete
@@ -812,6 +842,17 @@ class PGVectorStore(BasePydanticVectorStore):
 
             session.execute(stmt)
             session.commit()
+
+    async def aclear(self) -> None:
+        """Asynchronously clears table."""
+        from sqlalchemy import delete
+
+        self._initialize()
+        async with self._async_session() as async_session, async_session.begin():
+            stmt = delete(self._table_class)
+
+            await async_session.execute(stmt)
+            await async_session.commit()
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

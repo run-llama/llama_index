@@ -583,7 +583,10 @@ async def test_delete_nodes(
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
 
     # test deleting nothing
-    pg.delete_nodes()
+    if use_async:
+        await pg.adelete_nodes()
+    else:
+        pg.delete_nodes()
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -591,7 +594,10 @@ async def test_delete_nodes(
     assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
 
     # test deleting element that doesn't exist
-    pg.delete_nodes(["asdf"])
+    if use_async:
+        await pg.adelete_nodes(["asdf"])
+    else:
+        pg.delete_nodes(["asdf"])
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -599,7 +605,10 @@ async def test_delete_nodes(
     assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
 
     # test deleting list
-    pg.delete_nodes(["aaa", "bbb"])
+    if use_async:
+        await pg.adelete_nodes(["aaa", "bbb"])
+    else:
+        pg.delete_nodes(["aaa", "bbb"])
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -634,7 +643,10 @@ async def test_delete_nodes_metadata(
             )
         ]
     )
-    pg.delete_nodes(["aaa", "bbb"], filters=filters)
+    if use_async:
+        await pg.adelete_nodes(["aaa", "bbb"], filters=filters)
+    else:
+        pg.delete_nodes(["aaa", "bbb"], filters=filters)
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -652,7 +664,10 @@ async def test_delete_nodes_metadata(
             )
         ]
     )
-    pg.delete_nodes(["aaa"], filters=filters)
+    if use_async:
+        await pg.adelete_nodes(["aaa"], filters=filters)
+    else:
+        pg.delete_nodes(["aaa"], filters=filters)
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -670,7 +685,10 @@ async def test_delete_nodes_metadata(
             )
         ]
     )
-    pg.delete_nodes(["ccc"], filters=filters)
+    if use_async:
+        await pg.adelete_nodes(["ccc"], filters=filters)
+    else:
+        pg.delete_nodes(["ccc"], filters=filters)
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -688,7 +706,10 @@ async def test_delete_nodes_metadata(
             )
         ]
     )
-    pg.delete_nodes(filters=filters)
+    if use_async:
+        await pg.adelete_nodes(filters=filters)
+    else:
+        pg.delete_nodes(filters=filters)
     if use_async:
         res = await pg.aquery(q)
     else:
@@ -719,7 +740,10 @@ async def test_clear(
         res = pg.query(q)
     assert all(i in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
 
-    pg.clear()
+    if use_async:
+        await pg.aclear()
+    else:
+        pg.clear()
 
     if use_async:
         res = await pg.aquery(q)
