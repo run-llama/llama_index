@@ -2,7 +2,7 @@
 
 import uuid
 from typing import Any, cast
-
+import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.agent.runner.parallel import ParallelAgentRunner
 from llama_index.core.agent.types import (
@@ -13,6 +13,27 @@ from llama_index.core.agent.types import (
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.chat_engine.types import AgentChatResponse
+from llama_index.core.instrumentation.event_handlers.base import BaseEventHandler
+from llama_index.core.instrumentation.events.agent import (
+    AgentChatWithStepEndEvent,
+    AgentChatWithStepStartEvent,
+    AgentRunStepEndEvent,
+    AgentRunStepStartEvent,
+)
+from llama_index.core.instrumentation.events.base import BaseEvent
+
+dispatcher = instrument.get_dispatcher()
+
+
+class _TestEventHandler(BaseEventHandler):
+    events = []
+
+    @classmethod
+    def class_name(cls):
+        return "_TestEventHandler"
+
+    def handle(self, e: BaseEvent):
+        self.events.append(e)
 
 
 # define mock agent worker
@@ -266,3 +287,59 @@ def test_agent_from_llm() -> None:
     llm = MockLLM()
     agent_runner = AgentRunner.from_llm(llm=llm)
     assert isinstance(agent_runner, ReActAgent)
+
+
+def test_agent_dispatches_events() -> None:
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    num_steps = 3
+    chat_message_input = "hello world"
+    agent_runner = AgentRunner(agent_worker=MockAgentWorker(limit=num_steps))
+    response = agent_runner.chat(chat_message_input)
+
+    # Expect start / end event pair for agent chat, then a pair for each step run
+    assert len(event_handler.events) == (2 + (2 * num_steps))
+
+    # Check AgentChatWithStepStartEvent
+    assert isinstance(event_handler.events[0], AgentChatWithStepStartEvent)
+    assert event_handler.events[0].user_msg == chat_message_input
+
+    # Check all AgentRunStepStartEvent
+    for i in range(num_steps):
+        run_step_start_idx = 2 * i + 1
+        assert isinstance(
+            event_handler.events[run_step_start_idx], AgentRunStepStartEvent
+        )
+        assert event_handler.events[run_step_start_idx].step is not None
+        assert (
+            event_handler.events[run_step_start_idx].step.task_id
+            == event_handler.events[run_step_start_idx].task_id
+        )
+        assert event_handler.events[run_step_start_idx].input is None
+
+    # Check all AgentRunStepEndEvent
+    for i in range(num_steps):
+        run_step_end_idx = 2 * i + 2
+        assert isinstance(event_handler.events[run_step_end_idx], AgentRunStepEndEvent)
+        assert (
+            event_handler.events[run_step_end_idx].step_output.output.response
+            == f"counter: {i+1}"
+        )
+        assert (
+            event_handler.events[run_step_end_idx].step_output.task_step
+            == event_handler.events[run_step_end_idx - 1].step
+        )
+        assert len(event_handler.events[run_step_end_idx].step_output.next_steps) == 1
+
+        # NOTE: MockAgentWorker generates a next step for the last step, so don't test this
+        is_last_step = i == (num_steps - 1)
+        if not is_last_step:
+            assert (
+                event_handler.events[run_step_end_idx].step_output.next_steps[0]
+                == event_handler.events[run_step_end_idx + 1].step
+            )
+
+    # Check AgentChatWithStepEndEvent
+    assert isinstance(event_handler.events[-1], AgentChatWithStepEndEvent)
+    assert event_handler.events[-1].response == response
