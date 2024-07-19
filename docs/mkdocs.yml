@@ -129,6 +129,7 @@ nav:
           - ./examples/chat_engine/chat_engine_react.ipynb
           - ./examples/chat_engine/chat_engine_repl.ipynb
       - Cookbooks:
+          - ./examples/cookbooks/GraphRAG_v1.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
@@ -1161,6 +1162,7 @@ nav:
           - ./api_reference/readers/bilibili.md
           - ./api_reference/readers/bitbucket.md
           - ./api_reference/readers/boarddocs.md
+          - ./api_reference/readers/box.md
           - ./api_reference/readers/chatgpt_plugin.md
           - ./api_reference/readers/chroma.md
           - ./api_reference/readers/clickhouse.md
@@ -2048,6 +2050,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-optimum-intel
             - ../llama-index-integrations/llms/llama-index-llms-qianfan
             - ../llama-index-integrations/callbacks/llama-index-callbacks-agentops
+            - ../llama-index-integrations/readers/llama-index-readers-box
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
