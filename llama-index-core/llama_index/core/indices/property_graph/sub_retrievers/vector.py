@@ -35,6 +35,8 @@ class VectorContextRetriever(BasePGRetriever):
             The number of top similar kg nodes to retrieve. Defaults to 4.
         path_depth (int, optional):
             The depth of the path to retrieve for each node. Defaults to 1 (i.e. a triple).
+        similarity_score (int, optional):
+            The minimum similarity score to retrieve the nodes. Defaults to None.
     """
 
     def __init__(
@@ -45,6 +47,7 @@ class VectorContextRetriever(BasePGRetriever):
         vector_store: Optional[VectorStore] = None,
         similarity_top_k: int = 4,
         path_depth: int = 1,
+        similarity_score: Optional[int] = None,
         filters: Optional[MetadataFilters] = None,
         **kwargs: Any
     ) -> None:
@@ -53,6 +56,7 @@ class VectorContextRetriever(BasePGRetriever):
         self._similarity_top_k = similarity_top_k
         self._vector_store = vector_store
         self._path_depth = path_depth
+        self._similarity_score = similarity_score
         self._filters = filters
 
         super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
@@ -137,8 +141,16 @@ class VectorContextRetriever(BasePGRetriever):
 
         assert len(triplets) == len(new_scores)
 
-        # sort by score
-        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
+        # filter by similarity score
+        if self._similarity_score:
+            filtered_data = [(triplet, score) for triplet, score in zip(triplets, scores) if score >= self._similarity_score]
+            # sort by score
+            top_k = sorted(filtered_data, key=lambda x: x[1], reverse=True)
+        else:
+            # sort by score
+            top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
+        
+        print("Retrieved nodes:", top_k)
 
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
 
@@ -190,7 +202,14 @@ class VectorContextRetriever(BasePGRetriever):
 
         assert len(triplets) == len(new_scores)
 
-        # sort by score
-        top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
+        # filter by similarity score
+        if self._similarity_score:
+            filtered_data = [(triplet, score) for triplet, score in zip(triplets, scores) if score >= self._similarity_score]
+            # sort by score
+            top_k = sorted(filtered_data, key=lambda x: x[1], reverse=True)
+        else:
+            # sort by score
+            top_k = sorted(zip(triplets, new_scores), key=lambda x: x[1], reverse=True)
 
+        print(top_k)
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
