@@ -4,7 +4,7 @@ import requests
 import os
 import json
 
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
@@ -35,9 +35,10 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         default="cn",
         description="language of tokenizor, accept cn, en, any. Notice that <any> mode will be slow.",
     )
+    _dashscope_api_key: str = PrivateAttr()
 
     def __init__(self, dashscope_api_key: Optional[str] = None):
-        self.dashscope_api_key = dashscope_api_key or os.environ.get("DASHSCOPE_API_KEY")
+        self._dashscope_api_key = dashscope_api_key or os.environ.get("DASHSCOPE_API_KEY")
 
     @classmethod
     def class_name(cls) -> str:
@@ -76,14 +77,13 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         return self.parse_result(response_text, node)
 
     def post_service(self, my_input: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        DASHSCOPE_API_KEY = self.dashscope_api_key
-        if DASHSCOPE_API_KEY is None:
+        if self._dashscope_api_key is None:
             logging.error("DASHSCOPE_API_KEY is not set")
             raise ValueError("DASHSCOPE_API_KEY is not set")
         headers = {
             "Content-Type": "application/json",
             "Accept-Encoding": "utf-8",
-            "Authorization": "Bearer " + DASHSCOPE_API_KEY,
+            "Authorization": "Bearer " + self._dashscope_api_key,
         }
         service_url = (
             os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com")
