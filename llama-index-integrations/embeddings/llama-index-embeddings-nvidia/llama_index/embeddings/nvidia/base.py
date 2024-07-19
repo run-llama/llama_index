@@ -13,7 +13,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlunparse, urlparse
 
 # integrate.api.nvidia.com is the default url for most models, any
 # bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
@@ -110,12 +110,14 @@ class NVIDIAEmbedding(BaseEmbedding):
         if embed_batch_size > 259:
             raise ValueError("The batch size should not be larger than 259.")
 
-        if base_url is None:
+        if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
             # TODO: we should not assume unknown models are at the base url, but
             #       we cannot error out here because
             #          NVIDIAEmbedding(model="special").mode("nim", base_url=...)
             #       is valid usage
             base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        else:
+            base_url = self._validate_url(base_url)
 
         api_key = get_from_param_or_env(
             "api_key",
@@ -130,8 +132,6 @@ class NVIDIAEmbedding(BaseEmbedding):
             warnings.warn(
                 "An API key is required for hosted NIM. This will become an error in 0.2.0."
             )
-
-        base_url = self._validate_url(base_url)
 
         self._client = OpenAI(
             api_key=api_key,
@@ -150,6 +150,12 @@ class NVIDIAEmbedding(BaseEmbedding):
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
     def _validate_url(self, base_url):
+        """
+        Base URL Validation.
+        ValueError : url which do not have valid scheme and netloc.
+        Warning : v1/embeddings routes.
+        ValueError : Any other routes other than above.
+        """
         expected_format = "Expected format is 'http://host:port'."
         result = urlparse(base_url)
         if not (result.scheme and result.netloc):
@@ -157,19 +163,13 @@ class NVIDIAEmbedding(BaseEmbedding):
                 f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
             )
         if result.path:
-                normalized_path = result.path.strip("/")
-                if normalized_path == "v1":
-                    pass
-                elif normalized_path in [
-                    "v1/embeddings",
-                    "v1/completions",
-                    "v1/rankings",
-                ]:
-                    warnings.warn(f"{expected_format} Rest is ingnored.")
-                else:
-                    raise ValueError(
-                        f"Base URL path is not recognized. {expected_format}"
-                    )
+            normalized_path = result.path.strip("/")
+            if normalized_path == "v1":
+                pass
+            elif normalized_path == "v1/embeddings":
+                warnings.warn(f"{expected_format} Rest is Ignored.")
+            else:
+                raise ValueError(f"Base URL path is not recognized. {expected_format}")
         return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
 
     @property
