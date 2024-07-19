@@ -179,7 +179,7 @@ class Ollama(CustomLLM):
                 text = ""
                 for line in response.iter_lines():
                     if line:
-                        chunk = json.loads(line)                        
+                        chunk = json.loads(line)
                         message = chunk["message"]
                         delta = message.get("content")
                         text += delta
@@ -199,6 +199,64 @@ class Ollama(CustomLLM):
                         )
                         if "done" in chunk and chunk["done"]:
                             break
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": message.role.value,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+                for message in messages
+            ],
+            "options": self._model_kwargs,
+            "stream": True,
+            **kwargs,
+        }
+
+        if self.json_mode:
+            payload["format"] = "json"
+
+        async def gen() -> CompletionResponseAsyncGen:
+            text = ""
+
+            async with httpx.AsyncClient(
+                timeout=Timeout(self.request_timeout)
+            ) as client:
+                async with client.stream(
+                    method="POST",
+                    url=f"{self.base_url}/api/chat",
+                    json=payload,
+                ) as response:
+                    async for line in response.aiter_lines():
+                        if line:
+                            chunk = json.loads(line)
+                            message = chunk["message"]
+                            delta = message.get("content")
+                            text += delta
+                            yield ChatResponse(
+                                message=ChatMessage(
+                                    content=text,
+                                    role=MessageRole(message.get("role")),
+                                    additional_kwargs=get_additional_kwargs(
+                                        message, ("content", "role")
+                                    ),
+                                ),
+                                delta=delta,
+                                raw=chunk,
+                                additional_kwargs=get_additional_kwargs(
+                                    chunk, ("message",)
+                                ),
+                            )
+                            if "done" in chunk and chunk["done"]:
+                                break
+
+        return gen()
 
     @llm_chat_callback()
     async def achat(
