@@ -62,6 +62,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         num_workers: Optional[int] = None,
         # custom httpx client
         http_client: Optional[httpx.Client] = None,
+        async_http_client: Optional[httpx.AsyncClient] = None,
         **kwargs: Any,
     ):
         azure_endpoint = get_from_param_or_env(
@@ -88,6 +89,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             reuse_client=reuse_client,
             callback_manager=callback_manager,
             http_client=http_client,
+            async_http_client=async_http_client,
             num_workers=num_workers,
             **kwargs,
         )
@@ -118,13 +120,15 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
     def _get_aclient(self) -> AsyncAzureOpenAI:
         if not self.reuse_client:
-            return AsyncAzureOpenAI(**self._get_credential_kwargs())
+            return AsyncAzureOpenAI(**self._get_credential_kwargs(is_async=True))
 
         if self._aclient is None:
-            self._aclient = AsyncAzureOpenAI(**self._get_credential_kwargs())
+            self._aclient = AsyncAzureOpenAI(
+                **self._get_credential_kwargs(is_async=True)
+            )
         return self._aclient
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         if self.use_azure_ad:
             self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
             self.api_key = self._azure_ad_token.token
@@ -139,7 +143,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_deployment": self.azure_deployment,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
         }
 
     @classmethod
