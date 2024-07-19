@@ -1,5 +1,116 @@
 # ChangeLog
 
+## [2024-07-19]
+
+### `llama-index-core` [0.10.56]
+
+- Fixing the issue where the \_apply_node_postprocessors function needs QueryBundle (#14839)
+- Add Context-Only Response Synthesizer (#14439)
+- Fix AgentRunner AgentRunStepStartEvent dispatch (#14828)
+- Improve output format system prompt in ReAct agent (#14814)
+- Remove double curly replacing from output parser utils (#14735)
+- Update simple_summarize.py (#14714)
+
+### `llama-index-tools-azure-code-interpreter` [0.2.0]
+
+- chore: read AZURE_POOL_MANAGEMENT_ENDPOINT from env vars (#14732)
+
+### `llama-index-llms-azure-inference` [0.1.0]
+
+- Azure AI Inference integration (#14672)
+
+### `llama-index-embeddings-azure-inference` [0.1.0]
+
+- Azure AI Inference integration (#14672)
+
+### `llama-index-llms-bedrock-converse` [0.1.5]
+
+- feat: ✨ Implement async functionality in BedrockConverse (#14326)
+
+### `llama-index-embeddings-yandexgpt` [0.1.5]
+
+- Add new integration for YandexGPT Embedding Model (#14313)
+
+### `llama-index-tools-google` [0.1.6]
+
+- Update docstring for gmailtoolspec's search_messages tool (#14840)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.1.5]
+
+- add support for nvidia/nv-rerankqa-mistral-4b-v3 (#14844)
+
+### `llama-index-embeddings-openai` [0.1.11]
+
+- Fix OpenAI Embedding async client bug (#14835)
+
+### `llama-index-embeddings-azure-openai` [0.1.11]
+
+- Fix Azure OpenAI LLM and Embedding async client bug (#14833)
+
+### `llama-index-llms-azure-openai` [0.1.9]
+
+- Fix Azure OpenAI LLM and Embedding async client bug (#14833)
+
+### `llama-index-multi-modal-llms-openai` [0.1.8]
+
+- Add support for gpt-4o-mini (#14820)
+
+### `llama-index-llms-openai` [0.1.26]
+
+- Add support for gpt-4o-mini (#14820)
+
+### `llama-index-llms-mistralai` [0.1.18]
+
+- Add support for mistralai nemo model (#14819)
+
+### `llama-index-graph-stores-neo4j` [0.2.8]
+
+- Fix bug when sanitize is used in neo4j property graph (#14812)
+- Add filter to get_triples in neo4j (#14811)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.12]
+
+- feat: add nested filters for azureaisearch (#14795)
+
+### `llama-index-vector-stores-qdrant` [0.2.13]
+
+- feat: Add NOT IN filter for Qdrant vector store (#14791)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.11]
+
+- feat: add azureaisearch supported conditions (#14787)
+- feat: azureaisearch support collection string (#14712)
+
+### `llama-index-tools-weather` [0.1.4]
+
+- Fix OpenWeatherMapToolSpec.forecast_tommorrow_at_location (#14745)
+
+### `llama-index-readers-microsoft-sharepoint` [0.2.6]
+
+- follow odata.nextLink (#14708)
+
+### `llama-index-vector-stores-qdrant` [0.2.12]
+
+- Adds Quantization option to QdrantVectorStore (#14740)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.10]
+
+- feat: improve azureai search deleting (#14693)
+
+### `llama-index-agent-openai` [0.2.9]
+
+- fix: tools are required for attachments in openai api (#14609)
+
+### `llama-index-readers-box` [0.1.0]
+
+- new integration
+
+### `llama-index-embeddings-fastembed` [0.1.6]
+
+- fix fastembed python version (#14710)
+
+## [2024-07-11]
+
 ### `llama-index-core` [0.10.55]
 
 - Various docs updates
