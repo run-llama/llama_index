@@ -3,11 +3,18 @@ import logging
 import pytest
 import uuid
 from typing import List, Generator
+import time
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.opensearch import (
     OpensearchVectorClient,
     OpensearchVectorStore,
+)
+from llama_index.core.vector_stores.types import (
+    FilterOperator,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
@@ -32,6 +39,16 @@ except (ImportError, Exception):
     opensearch_not_available = True
 finally:
     evt_loop.run_until_complete(os_client.close())
+
+TEST_EMBED_DIM = 3
+
+
+def _get_sample_vector(num: float) -> List[float]:
+    """
+    Get sample embedding vector of the form [num, 1, 1, ..., 1]
+    where the length of the vector is TEST_EMBED_DIM.
+    """
+    return [num] + [1.0] * (TEST_EMBED_DIM - 1)
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
@@ -130,6 +147,40 @@ def node_embeddings() -> List[TextNode]:
     ]
 
 
+@pytest.fixture(scope="session")
+def node_embeddings_2() -> List[TextNode]:
+    return [
+        TextNode(
+            text="lorem ipsum",
+            id_="aaa",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="aaa")},
+            extra_info={"test_num": "1"},
+            embedding=_get_sample_vector(1.0),
+        ),
+        TextNode(
+            text="dolor sit amet",
+            id_="bbb",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="bbb")},
+            extra_info={"test_key": "test_value"},
+            embedding=_get_sample_vector(0.1),
+        ),
+        TextNode(
+            text="consectetur adipiscing elit",
+            id_="ccc",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+            extra_info={"test_key_list": ["test_value"]},
+            embedding=_get_sample_vector(0.1),
+        ),
+        TextNode(
+            text="sed do eiusmod tempor",
+            id_="ddd",
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
+            extra_info={"test_key_2": "test_val_2"},
+            embedding=_get_sample_vector(0.1),
+        ),
+    ]
+
+
 def count_docs_in_index(os_store: OpensearchVectorStore) -> int:
     """Refresh indices and return the count of documents in the index."""
     evt_loop.run_until_complete(
@@ -156,3 +207,123 @@ def test_functionality(
     # delete one node using its associated doc_id
     os_store.delete("test-1")
     assert count_docs_in_index(os_store) == len(node_embeddings) - 1
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_delete_nodes(
+    os_store: OpensearchVectorStore, node_embeddings_2: List[TextNode]
+):
+    os_store.add(node_embeddings_2)
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    # test deleting nothing
+    os_store.delete_nodes()
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
+
+    # test deleting element that doesn't exist
+    os_store.delete_nodes(["asdf"])
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
+
+    # test deleting list
+    os_store.delete_nodes(["aaa", "bbb"])
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i not in res.ids for i in ["aaa", "bbb"])
+    assert "ccc" in res.ids
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_delete_nodes_metadata(
+    os_store: OpensearchVectorStore, node_embeddings_2: List[TextNode]
+) -> None:
+    os_store.add(node_embeddings_2)
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    # test deleting multiple IDs but only one satisfies filter
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key",
+                value="test_value",
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    os_store.delete_nodes(["aaa", "bbb"], filters=filters)
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i in res.ids for i in ["aaa", "ccc", "ddd"])
+    assert "bbb" not in res.ids
+
+    # test deleting one ID which satisfies the filter
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_num",
+                value=1,
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    os_store.delete_nodes(["aaa"], filters=filters)
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa"])
+    assert all(i in res.ids for i in ["ccc", "ddd"])
+
+    # test deleting one ID which doesn't satisfy the filter
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_num",
+                value="1",
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    os_store.delete_nodes(["ccc"], filters=filters)
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa"])
+    assert all(i in res.ids for i in ["ccc", "ddd"])
+
+    # test deleting purely based on filters
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key_2",
+                value="test_val_2",
+                operator=FilterOperator.EQ,
+            )
+        ]
+    )
+    os_store.delete_nodes(filters=filters)
+    time.sleep(1)
+    res = os_store.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa", "ddd"])
+    assert "ccc" in res.ids
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_clear(
+    os_store: OpensearchVectorStore, node_embeddings_2: List[TextNode]
+) -> None:
+    os_store.add(node_embeddings_2)
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+    res = os_store.query(q)
+    assert all(i in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
+
+    os_store.clear()
+
+    time.sleep(1)
+
+    res = os_store.query(q)
+    assert all(i not in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
+    assert len(res.ids) == 0
