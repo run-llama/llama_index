@@ -36,6 +36,9 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         description="language of tokenizor, accept cn, en, any. Notice that <any> mode will be slow.",
     )
 
+    def __init__(self, dashscope_api_key: Optional[str] = None):
+        self.dashscope_api_key = dashscope_api_key or os.environ.get("DASHSCOPE_API_KEY")
+
     @classmethod
     def class_name(cls) -> str:
         return "DashScopeJsonNodeParser"
@@ -73,7 +76,7 @@ class DashScopeJsonNodeParser(BaseElementNodeParser):
         return self.parse_result(response_text, node)
 
     def post_service(self, my_input: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY", None)
+        DASHSCOPE_API_KEY = self.dashscope_api_key
         if DASHSCOPE_API_KEY is None:
             logging.error("DASHSCOPE_API_KEY is not set")
             raise ValueError("DASHSCOPE_API_KEY is not set")
