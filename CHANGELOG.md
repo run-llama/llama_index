@@ -11,6 +11,10 @@
 - Remove double curly replacing from output parser utils (#14735)
 - Update simple_summarize.py (#14714)
 
+### `llama-index-tools-azure-code-interpreter` [0.2.0]
+
+- chore: read AZURE_POOL_MANAGEMENT_ENDPOINT from env vars (#14732)
+
 ### `llama-index-llms-azure-inference` [0.1.0]
 
 - Azure AI Inference integration (#14672)
