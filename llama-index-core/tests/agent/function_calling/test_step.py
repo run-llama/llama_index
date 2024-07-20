@@ -1,5 +1,5 @@
 import pytest
-from typing import Any, AsyncGenerator, Coroutine, List, Optional, Sequence, Union
+from typing import Any, AsyncGenerator, Coroutine, List, Optional, Sequence, Union, Dict
 from llama_index.core.agent.function_calling.step import (
     FunctionCallingAgentWorker,
     build_missing_tool_message,
@@ -75,6 +75,18 @@ class MockBadFunctionCallingLLM(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(is_function_calling_model=True)
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare chat with tools."""
+        return {}
 
     def chat_with_tools(
         self,
