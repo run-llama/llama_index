@@ -71,7 +71,7 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = self.llm.structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt
         )
         return ChatResponse(
             message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
@@ -121,7 +121,7 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = await self.llm.astructured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt
         )
         return ChatResponse(
             message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
