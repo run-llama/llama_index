@@ -44,7 +44,6 @@ from llama_index.llms.bedrock_converse.utils import (
 )
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 
@@ -410,7 +409,7 @@ class BedrockConverse(FunctionCallingLLM):
         # TODO convert to async; do synchronous completion for now
         return self.stream_complete(prompt, formatted=formatted, **kwargs)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -418,8 +417,8 @@ class BedrockConverse(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
         chat_history = chat_history or []
 
         if isinstance(user_msg, str):
@@ -429,35 +428,27 @@ class BedrockConverse(FunctionCallingLLM):
         # convert Llama Index tools to AWS Bedrock Converse tools
         tool_dicts = tools_to_converse_tools(tools)
 
-        response = self.chat(chat_history, tools=tool_dicts or None, **kwargs)
+        return {
+            "messages": chat_history,
+            "tools": tool_dicts or None,
+            **kwargs,
+        }
 
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-
-        return response
-
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
-        # TODO convert to async; do synchronous chat for now
-        return self.chat_with_tools(
-            tools=tools,
-            user_msg=user_msg,
-            chat_history=chat_history,
-            verbose=verbose,
-            allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:

@@ -4,6 +4,8 @@ from typing import (
     Callable,
     Dict,
     List,
+    Generator,
+    AsyncGenerator,
     Optional,
     Protocol,
     Sequence,
@@ -48,10 +50,12 @@ from llama_index.core.types import (
     PydanticProgramMode,
     TokenAsyncGen,
     TokenGen,
+    Model,
 )
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
+    LLMStructuredPredictInProgressEvent,
     LLMStructuredPredictEndEvent,
     LLMStructuredPredictStartEvent,
 )
@@ -396,6 +400,122 @@ class LLM(BaseLLM):
         result = await program.acall(**prompt_args)
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        r"""Stream Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            Generator: A generator returning partial copies of the model or list of models.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            stream_output = llm.stream_structured_predict(Test, prompt, topic="cats")
+            for partial_output in stream_output:
+                # stream partial outputs until completion
+                print(partial_output.name)
+            ```
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = program.stream_call(**prompt_args)
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+    @dispatcher.span
+    async def astream_structured_predict(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+        r"""Async Stream Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            Generator: A generator returning partial copies of the model or list of models.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            stream_output = await llm.astream_structured_predict(Test, prompt, topic="cats")
+            async for partial_output in stream_output:
+                # stream partial outputs until completion
+                print(partial_output.name)
+            ```
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = await program.astream_call(**prompt_args)
+        async for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
 
     # -- Prompt Chaining --
 
