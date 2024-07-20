@@ -550,12 +550,13 @@ class IngestionPipeline(BaseModel):
             )
 
         if self.vector_store is not None:
-            self.vector_store.add([n for n in nodes if n.embedding is not None])
+            nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
+            if nodes_with_embeddings:
+                self.vector_store.add(nodes_with_embeddings)
 
         return nodes
 
     # ------ async methods ------
-
     async def _ahandle_duplicates(
         self,
         nodes: List[BaseNode],
@@ -733,8 +734,8 @@ class IngestionPipeline(BaseModel):
             )
 
         if self.vector_store is not None:
-            await self.vector_store.async_add(
-                [n for n in nodes if n.embedding is not None]
-            )
+            nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
+            if nodes_with_embeddings:
+                await self.vector_store.async_add(nodes_with_embeddings)
 
         return nodes
