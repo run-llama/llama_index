@@ -50,7 +50,7 @@ from llama_index.core.types import (
     PydanticProgramMode,
     TokenAsyncGen,
     TokenGen,
-    Model
+    Model,
 )
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
@@ -399,7 +399,6 @@ class LLM(BaseLLM):
         result = await program.acall(**prompt_args)
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
-        
 
     @dispatcher.span
     def stream_structured_predict(

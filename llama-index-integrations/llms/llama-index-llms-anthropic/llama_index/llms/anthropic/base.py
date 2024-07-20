@@ -1,6 +1,12 @@
 import anthropic
 import json
-from anthropic.types import ContentBlockDeltaEvent, TextBlock, TextDelta, ContentBlockStartEvent, ContentBlockStopEvent
+from anthropic.types import (
+    ContentBlockDeltaEvent,
+    TextBlock,
+    TextDelta,
+    ContentBlockStartEvent,
+    ContentBlockStopEvent,
+)
 from anthropic.types.tool_use_block import ToolUseBlock
 from typing import (
     Any,
@@ -50,7 +56,6 @@ from llama_index.core.utils import Tokenizer
 from llama_index.core.llms.utils import parse_partial_json
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 
@@ -273,9 +278,11 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = cur_tool_calls
                     yield ChatResponse(
                         message=ChatMessage(
-                            role=role, 
+                            role=role,
                             content=content,
-                            additional_kwargs={"tool_calls": [t.dict() for t in tool_calls_to_send]}
+                            additional_kwargs={
+                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                            },
                         ),
                         delta=content_delta,
                         raw=r,
@@ -287,7 +294,6 @@ class Anthropic(FunctionCallingLLM):
                 elif isinstance(r, ContentBlockStopEvent):
                     if isinstance(cur_tool_call, ToolUseBlock):
                         cur_tool_calls.append(cur_tool_call)
-                    
 
         return gen()
 
@@ -369,9 +375,11 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = cur_tool_calls
                     yield ChatResponse(
                         message=ChatMessage(
-                            role=role, 
+                            role=role,
                             content=content,
-                            additional_kwargs={"tool_calls": [t.dict() for t in tool_calls_to_send]}
+                            additional_kwargs={
+                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                            },
                         ),
                         delta=content_delta,
                         raw=r,
@@ -418,9 +426,7 @@ class Anthropic(FunctionCallingLLM):
                     "input_schema": tool.metadata.get_parameters_dict(),
                 }
             )
-        return {
-            "messages": chat_history, "tools": tool_dicts or None, **kwargs
-        }
+        return {"messages": chat_history, "tools": tool_dicts or None, **kwargs}
 
     def _validate_chat_with_tools_response(
         self,

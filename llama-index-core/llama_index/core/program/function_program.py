@@ -236,9 +236,9 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
     ) -> Union[Model, List[Model]]:
         """Process stream."""
         tool_calls = self._llm.get_tool_calls_from_response(
-            chat_response, 
+            chat_response,
             # error_on_no_tool_call=True
-            error_on_no_tool_call=False
+            error_on_no_tool_call=False,
         )
         # TODO: change
         if len(tool_calls) == 0:
@@ -322,6 +322,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
 
         """
         llm_kwargs = llm_kwargs or {}
+
         async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
             # TODO: we can extend this to non-function calling LLMs as well, coming soon
             if not isinstance(self._llm, FunctionCallingLLM):

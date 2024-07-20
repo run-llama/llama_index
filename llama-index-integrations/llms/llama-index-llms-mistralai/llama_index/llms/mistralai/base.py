@@ -41,7 +41,6 @@ from mistralai.models.chat_completion import ToolCall
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.chat_engine.types import AgentChatResponse
 
 DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
@@ -283,7 +282,7 @@ class MistralAI(FunctionCallingLLM):
                     content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(
-                        role=role, 
+                        role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
                     ),
@@ -357,27 +356,13 @@ class MistralAI(FunctionCallingLLM):
                     content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(
-                        role=role, 
+                        role=role,
                         content=content,
                         additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,
                     raw=chunk,
-                ) 
-
-        # async def gen() -> ChatResponseAsyncGen:
-        #     content = ""
-        #     role = MessageRole.ASSISTANT
-        #     async for chunk in response:
-        #         content_delta = chunk.choices[0].delta.content
-        #         if content_delta is None:
-        #             continue
-        #         content += content_delta
-        #         yield ChatResponse(
-        #             message=ChatMessage(role=role, content=content),
-        #             delta=content_delta,
-        #             raw=chunk,
-        #         )
+                )
 
         return gen()
 
@@ -427,68 +412,6 @@ class MistralAI(FunctionCallingLLM):
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
-
-    # def chat_with_tools(
-    #     self,
-    #     tools: List["BaseTool"],
-    #     user_msg: Optional[Union[str, ChatMessage]] = None,
-    #     chat_history: Optional[List[ChatMessage]] = None,
-    #     verbose: bool = False,
-    #     allow_parallel_tool_calls: bool = False,
-    #     **kwargs: Any,
-    # ) -> ChatResponse:
-    #     """Predict and call the tool."""
-    #     # misralai uses the same openai tool format
-    #     tool_specs = [
-    #         tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
-    #     ]
-
-    #     if isinstance(user_msg, str):
-    #         user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-    #     messages = chat_history or []
-    #     if user_msg:
-    #         messages.append(user_msg)
-
-    #     response = self.chat(
-    #         messages,
-    #         tools=tool_specs or None,
-    #         **kwargs,
-    #     )
-    #     if not allow_parallel_tool_calls:
-    #         force_single_tool_call(response)
-    #     return response
-
-    # async def achat_with_tools(
-    #     self,
-    #     tools: List["BaseTool"],
-    #     user_msg: Optional[Union[str, ChatMessage]] = None,
-    #     chat_history: Optional[List[ChatMessage]] = None,
-    #     verbose: bool = False,
-    #     allow_parallel_tool_calls: bool = False,
-    #     **kwargs: Any,
-    # ) -> ChatResponse:
-    #     """Predict and call the tool."""
-    #     # misralai uses the same openai tool format
-    #     tool_specs = [
-    #         tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
-    #     ]
-
-    #     if isinstance(user_msg, str):
-    #         user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-    #     messages = chat_history or []
-    #     if user_msg:
-    #         messages.append(user_msg)
-
-    #     response = await self.achat(
-    #         messages,
-    #         tools=tool_specs or None,
-    #         **kwargs,
-    #     )
-    #     if not allow_parallel_tool_calls:
-    #         force_single_tool_call(response)
-    #     return response
 
     def get_tool_calls_from_response(
         self,

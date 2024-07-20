@@ -1,5 +1,4 @@
 import functools
-import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -63,7 +62,6 @@ from llama_index.llms.openai.utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
-from llama_index.core.bridge.pydantic import ValidationError
 
 from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -75,7 +73,6 @@ from openai.types.chat.chat_completion_chunk import (
 from llama_index.core.llms.utils import parse_partial_json
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
@@ -827,7 +824,6 @@ class OpenAI(FunctionCallingLLM):
 
         return gen()
 
-
     def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
@@ -852,9 +848,10 @@ class OpenAI(FunctionCallingLLM):
             messages.append(user_msg)
 
         return {
-            "messages": messages, 
-            "tools": tool_specs or None, 
-            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None, **kwargs
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
+            **kwargs,
         }
 
     def _validate_chat_with_tools_response(

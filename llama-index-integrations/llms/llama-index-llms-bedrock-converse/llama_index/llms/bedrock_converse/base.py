@@ -44,7 +44,6 @@ from llama_index.llms.bedrock_converse.utils import (
 )
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 

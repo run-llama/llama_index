@@ -33,7 +33,6 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools.types import BaseTool
 from llama_index.llms.text_generation_inference.utils import (
     to_tgi_messages,

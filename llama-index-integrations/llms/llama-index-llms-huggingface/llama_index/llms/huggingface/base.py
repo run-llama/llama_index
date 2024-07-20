@@ -43,7 +43,6 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
-from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools.types import BaseTool
 from llama_index.llms.huggingface.utils import (
     to_tgi_messages,
