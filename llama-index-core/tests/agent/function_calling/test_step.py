@@ -95,7 +95,7 @@ class MockBadFunctionCallingLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResponse:
         return ChatResponse(message=ChatMessage(role="user", content=""))
 
@@ -106,7 +106,7 @@ class MockBadFunctionCallingLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResponse:
         return ChatResponse(message=ChatMessage(role="user", content=""))
 
