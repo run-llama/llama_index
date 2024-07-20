@@ -526,8 +526,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             full_result = [d.data() for d in result]
 
         if self.sanitize_query_output:
-            return value_sanitize(full_result)
-
+            return [value_sanitize(el) for el in full_result]
         return full_result
 
     def vector_query(

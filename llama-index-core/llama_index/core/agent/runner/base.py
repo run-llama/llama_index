@@ -392,14 +392,15 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        dispatcher.event(
-            AgentRunStepStartEvent(task_id=task_id, step=step, input=input)
-        )
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
         if input is not None:
             step.input = input
+
+        dispatcher.event(
+            AgentRunStepStartEvent(task_id=task_id, step=step, input=input)
+        )
 
         if self.verbose:
             print(f"> Running step {step.step_id}. Step input: {step.input}")
