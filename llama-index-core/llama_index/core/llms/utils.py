@@ -159,7 +159,6 @@ def parse_partial_json(s: str) -> Dict:
     for closing_char in reversed(stack):
         new_s += closing_char
 
-    # print(f"NEW JSON: {new_s}")
     # Attempt to parse the modified string as JSON.
     try:
         return json.loads(new_s)

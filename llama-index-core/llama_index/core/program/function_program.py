@@ -67,57 +67,6 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
     )
 
 
-# def create_partial_model(model: Type[BaseModel], processed_models=None) -> Type[BaseModel]:
-#     """
-#     Dynamically create a new Pydantic model with all fields as Optional,
-#     including nested models.
-#     """
-#     if processed_models is None:
-#         processed_models = {}
-
-#     if model.__name__ in processed_models:
-#         return processed_models[model.__name__]
-
-#     fields = {}
-#     for name, field in model.__fields__.items():
-#         field_type = field.outer_type_
-
-#         if get_origin(field_type) is Union and type(None) in get_args(field_type):
-#             # Already Optional, keep as is
-#             new_type = field_type
-#         elif get_origin(field_type) is List:
-#             item_type = get_args(field_type)[0]
-#             if isinstance(item_type, type) and issubclass(item_type, BaseModel):
-#                 nested_partial = create_partial_model(item_type, processed_models)
-#                 new_type = Optional[List[nested_partial]]
-#             else:
-#                 new_type = Optional[List[Optional[item_type]]]
-#         elif isinstance(field_type, type) and issubclass(field_type, BaseModel):
-#             nested_partial = create_partial_model(field_type, processed_models)
-#             new_type = Optional[nested_partial]
-#         else:
-#             new_type = Optional[field_type]
-
-#         # Use Field with default=None to make it optional
-#         fields[name] = (new_type, Field(default=None))
-
-#     partial_model = create_model(f"Partial{model.__name__}", **fields)
-#     processed_models[model.__name__] = partial_model
-
-#     # Update the model's schema to remove 'required' fields
-#     def custom_model_json_schema(*args, **kwargs):
-#         schema = partial_model.model_json_schema(*args, **kwargs)
-#         schema.pop('required', None)
-#         for prop in schema.get('properties', {}).values():
-#             if isinstance(prop, dict):
-#                 prop.pop('required', None)
-#         return schema
-
-#     partial_model.model_json_schema = custom_model_json_schema
-
-#     return partial_model
-
-
 class FlexibleModel(BaseModel):
     class Config:
         extra = "allow"
