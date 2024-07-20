@@ -33,7 +33,7 @@ version = "0.1.26"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.55"
+llama-index-core = "^0.10.24"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
