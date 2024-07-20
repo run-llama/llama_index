@@ -401,7 +401,6 @@ class IngestionPipeline(BaseModel):
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
-        existing_doc_ids_before = set(self.docstore.get_all_document_hashes().values())
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = {}
         for node in nodes:
@@ -410,7 +409,6 @@ class IngestionPipeline(BaseModel):
             existing_hash = self.docstore.get_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                self.docstore.set_document_hash(ref_doc_id, node.hash)
                 deduped_nodes_to_run[ref_doc_id] = node
             elif existing_hash and existing_hash != node.hash:
                 self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
@@ -418,14 +416,15 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-                self.docstore.set_document_hash(ref_doc_id, node.hash)
-
                 deduped_nodes_to_run[ref_doc_id] = node
             else:
                 continue  # document exists and is unchanged, so skip it
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
+            existing_doc_ids_before = set(
+                self.docstore.get_all_document_hashes().values()
+            )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 self.docstore.delete_document(ref_doc_id)
@@ -434,6 +433,7 @@ class IngestionPipeline(BaseModel):
                     self.vector_store.delete(ref_doc_id)
 
         nodes_to_run = list(deduped_nodes_to_run.values())
+        self.docstore.set_document_hashes({n.id_: n.hash for n in nodes_to_run})
         self.docstore.add_documents(nodes_to_run, store_text=store_doc_text)
 
         return nodes_to_run
@@ -585,9 +585,6 @@ class IngestionPipeline(BaseModel):
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
-        existing_doc_ids_before = set(
-            (await self.docstore.aget_all_document_hashes()).values()
-        )
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = {}
         for node in nodes:
@@ -596,7 +593,6 @@ class IngestionPipeline(BaseModel):
             existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                await self.docstore.aset_document_hash(ref_doc_id, node.hash)
                 deduped_nodes_to_run[ref_doc_id] = node
             elif existing_hash and existing_hash != node.hash:
                 await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
@@ -604,14 +600,15 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     await self.vector_store.adelete(ref_doc_id)
 
-                await self.docstore.aset_document_hash(ref_doc_id, node.hash)
-
                 deduped_nodes_to_run[ref_doc_id] = node
             else:
                 continue  # document exists and is unchanged, so skip it
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
+            existing_doc_ids_before = set(
+                (await self.docstore.aget_all_document_hashes()).values()
+            )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 await self.docstore.adelete_document(ref_doc_id)
@@ -621,6 +618,7 @@ class IngestionPipeline(BaseModel):
 
         nodes_to_run = list(deduped_nodes_to_run.values())
         await self.docstore.async_add_documents(nodes_to_run, store_text=store_doc_text)
+        await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes_to_run})
 
         return nodes_to_run
 
