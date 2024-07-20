@@ -341,7 +341,7 @@ class TextGenerationInference(FunctionCallingLLM):
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -350,8 +350,8 @@ class TextGenerationInference(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         tool_choice: str = "auto",
         **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
         # use openai tool format
         tool_specs = [
             tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
@@ -364,44 +364,21 @@ class TextGenerationInference(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages=messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+        }
 
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: str = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        # use openai tool format
-        tool_specs = [
-            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
-        ]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = self.achat(
-            messages=messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response

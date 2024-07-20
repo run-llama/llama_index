@@ -1,13 +1,5 @@
 import json
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    List,
-    Union,
-)
+from typing import Any, Callable, Dict, Optional, Sequence, List, Union, TYPE_CHECKING
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 
@@ -50,6 +42,9 @@ from llama_index.llms.deepinfra.constants import (
 from llama_index.llms.deepinfra.client import DeepInfraClient
 from llama_index.llms.deepinfra.types import ToolCallMessage
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 class DeepInfraLLM(FunctionCallingLLM):
@@ -395,7 +390,7 @@ class DeepInfraLLM(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
-    ) -> ChatResponse:
+    ) -> Dict[str, Any]:
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
