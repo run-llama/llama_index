@@ -46,13 +46,12 @@ class FunctionCallingLLM(LLM):
             **kwargs,
         )
         response = self.chat(**chat_kwargs)
-        response = self._validate_chat_with_tools_response(
+        return self._validate_chat_with_tools_response(
             response,
             tools,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-        return response
 
     async def achat_with_tools(
         self,
@@ -73,13 +72,12 @@ class FunctionCallingLLM(LLM):
             **kwargs,
         )
         response = await self.achat(**chat_kwargs)
-        response = self._validate_chat_with_tools_response(
+        return self._validate_chat_with_tools_response(
             response,
             tools,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
-        return response
 
     def stream_chat_with_tools(
         self,

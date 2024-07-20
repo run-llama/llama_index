@@ -273,7 +273,7 @@ class Anthropic(FunctionCallingLLM):
                             pass
 
                     if cur_tool_call is not None:
-                        tool_calls_to_send = cur_tool_calls + [cur_tool_call]
+                        tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
                     else:
                         tool_calls_to_send = cur_tool_calls
                     yield ChatResponse(
@@ -370,7 +370,7 @@ class Anthropic(FunctionCallingLLM):
                             pass
 
                     if cur_tool_call is not None:
-                        tool_calls_to_send = cur_tool_calls + [cur_tool_call]
+                        tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
                     else:
                         tool_calls_to_send = cur_tool_calls
                     yield ChatResponse(
