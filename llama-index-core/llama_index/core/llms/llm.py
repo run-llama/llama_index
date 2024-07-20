@@ -55,6 +55,7 @@ from llama_index.core.types import (
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
+    LLMStructuredPredictInProgressEvent,
     LLMStructuredPredictEndEvent,
     LLMStructuredPredictStartEvent,
 )
@@ -439,11 +440,11 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
-        # dispatcher.event(
-        #     LLMStructuredPredictStartEvent(
-        #         output_cls=output_cls, template=prompt, template_args=prompt_args
-        #     )
-        # )
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -452,8 +453,11 @@ class LLM(BaseLLM):
         )
 
         result = program.stream_call(**prompt_args)
-        # dispatcher.event(LLMStructuredPredictEndEvent(output=result))
-        return result
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=result))
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -494,11 +498,11 @@ class LLM(BaseLLM):
         """
         from llama_index.core.program.utils import get_program_for_llm
 
-        # dispatcher.event(
-        #     LLMStructuredPredictStartEvent(
-        #         output_cls=output_cls, template=prompt, template_args=prompt_args
-        #     )
-        # )
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -507,8 +511,11 @@ class LLM(BaseLLM):
         )
 
         result = await program.astream_call(**prompt_args)
-        # dispatcher.event(LLMStructuredPredictEndEvent(output=result))
-        return result
+        async for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=result))
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
 
     # -- Prompt Chaining --
 
