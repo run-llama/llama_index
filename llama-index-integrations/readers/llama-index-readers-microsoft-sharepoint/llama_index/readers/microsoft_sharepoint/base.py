@@ -142,33 +142,38 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         self._authorization_headers = {"Authorization": f"Bearer {access_token}"}
 
-        response = requests.get(
-            url=site_information_endpoint,
-            headers=self._authorization_headers,
-        )
+        while site_information_endpoint:
+            response = requests.get(
+                url=site_information_endpoint,
+                headers=self._authorization_headers,
+            )
 
-        if response.status_code == 200 and "value" in response.json():
-            if (
-                len(response.json()["value"]) > 0
-                and "id" in response.json()["value"][0]
-            ):
-                # find the site with the specified name
-                for site in response.json()["value"]:
-                    if site["name"].lower() == sharepoint_site_name.lower():
-                        return site["id"]
-
-                raise ValueError(
-                    f"The specified sharepoint site {sharepoint_site_name} is not found."
-                )
+            json_response = response.json()
+            if response.status_code == 200 and "value" in json_response:
+                if (
+                    len(json_response["value"]) > 0
+                    and "id" in json_response["value"][0]
+                ):
+                    # find the site with the specified name
+                    for site in json_response["value"]:
+                        if site["name"].lower() == sharepoint_site_name.lower():
+                            return site["id"]
+                    site_information_endpoint = json_response.get(
+                        "@odata.nextLink", None
+                    )
+                else:
+                    raise ValueError(
+                        f"The specified sharepoint site {sharepoint_site_name} is not found."
+                    )
             else:
-                raise ValueError(
-                    f"The specified sharepoint site {sharepoint_site_name} is not found."
-                )
-        else:
-            if "error_description" in response.json():
-                logger.error(response.json()["error"])
-                raise ValueError(response.json()["error_description"])
-            raise ValueError(response.json()["error"])
+                if "error_description" in json_response:
+                    logger.error(json_response["error"])
+                    raise ValueError(json_response["error_description"])
+                raise ValueError(json_response["error"])
+
+        raise ValueError(
+            f"The specified sharepoint site {sharepoint_site_name} is not found."
+        )
 
     def _get_drive_id(self) -> str:
         """

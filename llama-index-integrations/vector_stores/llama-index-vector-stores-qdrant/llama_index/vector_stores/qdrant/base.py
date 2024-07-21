@@ -34,6 +34,7 @@ from llama_index.vector_stores.qdrant.utils import (
     relative_score_fusion,
     fastembed_sparse_encoder,
 )
+from qdrant_client.conversions.common_types import QuantizationConfig
 from qdrant_client.http import models as rest
 from qdrant_client.http.models import (
     FieldCondition,
@@ -122,6 +123,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
     _dense_config: Optional[rest.VectorParams] = PrivateAttr()
     _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
+    _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
 
     def __init__(
         self,
@@ -136,6 +138,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         client_kwargs: Optional[dict] = None,
         dense_config: Optional[rest.VectorParams] = None,
         sparse_config: Optional[rest.SparseVectorParams] = None,
+        quantization_config: Optional[QuantizationConfig] = None,
         enable_hybrid: bool = False,
         fastembed_sparse_model: Optional[str] = None,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
@@ -196,6 +199,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         self._sparse_config = sparse_config
         self._dense_config = dense_config
+        self._quantization_config = quantization_config
 
         super().__init__(
             collection_name=collection_name,
@@ -581,9 +585,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
-            modifier=rest.Modifier.IDF
-            if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-            else rest.Modifier.NONE,
+            modifier=(
+                rest.Modifier.IDF
+                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
+                else rest.Modifier.NONE
+            ),
         )
 
         try:
@@ -595,11 +601,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     },
                     # Newly created collection will have the new sparse vector name
                     sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    quantization_config=self._quantization_config,
                 )
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config=dense_config,
+                    quantization_config=self._quantization_config,
                 )
 
             # To improve search performance Qdrant recommends setting up
@@ -632,9 +640,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
-            modifier=rest.Modifier.IDF
-            if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-            else rest.Modifier.NONE,
+            modifier=(
+                rest.Modifier.IDF
+                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
+                else rest.Modifier.NONE
+            ),
         )
 
         try:
@@ -643,11 +653,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     collection_name=collection_name,
                     vectors_config={DENSE_VECTOR_NAME: dense_config},
                     sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    quantization_config=self._quantization_config,
                 )
             else:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
                     vectors_config=dense_config,
+                    quantization_config=self._quantization_config,
                 )
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
@@ -1058,6 +1070,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     FieldCondition(
                         key=subfilter.key,
                         match=MatchAny(any=values),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.NIN:
+                # match none of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-except
+                if isinstance(subfilter.value, List):
+                    values = [str(val) for val in subfilter.value]
+                else:
+                    values = str(subfilter.value).split(",")
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": values}),
                     )
                 )
 

@@ -1,6 +1,8 @@
 """Base schema for data structures."""
 
 import json
+import logging
+import pickle
 import textwrap
 import uuid
 from abc import abstractmethod
@@ -30,6 +32,8 @@ TRUNCATE_LENGTH = 350
 WRAP_WIDTH = 70
 
 ImageType = Union[str, BytesIO]
+
+logger = logging.getLogger(__name__)
 
 
 class BaseComponent(BaseModel):
@@ -66,32 +70,40 @@ class BaseComponent(BaseModel):
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
 
-        # tiktoken is not pickleable
-        # state["__dict__"] = self.dict()
-        state["__dict__"].pop("tokenizer", None)
-
-        # remove local functions
+        # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []
         for key, val in state["__dict__"].items():
-            if key.endswith("_fn"):
+            try:
+                pickle.dumps(val)
+            except Exception:
                 keys_to_remove.append(key)
-            if "<lambda>" in str(val):
-                keys_to_remove.append(key)
-        for key in keys_to_remove:
-            state["__dict__"].pop(key, None)
 
-        # remove private attributes -- kind of dangerous
-        state["__private_attribute_values__"] = {}
+        for key in keys_to_remove:
+            logging.warning(f"Removing unpickleable attribute {key}")
+            del state["__dict__"][key]
+
+        # remove private attributes if they aren't pickleable -- kind of dangerous
+        keys_to_remove = []
+        for key, val in state["__private_attribute_values__"].items():
+            try:
+                pickle.dumps(val)
+            except Exception:
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            logging.warning(f"Removing unpickleable private attribute {key}")
+            del state["__private_attribute_values__"][key]
 
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
         # Use the __dict__ and __init__ method to set state
-        # so that all variable initialize
+        # so that all variables initialize
         try:
             self.__init__(**state["__dict__"])  # type: ignore
         except Exception:
             # Fall back to the default __setstate__ method
+            # This may not work if the class had unpickleable attributes
             super().__setstate__(state)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
