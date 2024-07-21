@@ -15,6 +15,9 @@ def valid_step_signature(fn) -> bool:
     # try to bind as many events as the function accepts
     try:
         number_of_events = len(sig.parameters)
+        if number_of_events == 0:
+            return False
+
         sig.bind(*[Event() for _ in range(number_of_events)])
     except TypeError:
         try:

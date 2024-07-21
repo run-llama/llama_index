@@ -34,6 +34,19 @@ def get_param_types(param: inspect.Parameter) -> List[Type]:
     return [typ]
 
 
+def get_return_types(return_hint: Any) -> List[Type]:
+    """Extract the types of a return hint. Handles Union, Optional, and List types."""
+    if get_origin(return_hint) == Union:
+        return [t for t in get_args(return_hint) if t is not type(None)]
+    if get_origin(return_hint) == Optional:
+        return [get_args(return_hint)[0]]
+    if get_origin(return_hint) == list:
+        return get_args(return_hint)
+    if not isinstance(return_hint, list):
+        return [return_hint]
+    return return_hint
+
+
 def step(consume_all: bool = False, **kwargs: Any):
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -71,14 +84,7 @@ def step(consume_all: bool = False, **kwargs: Any):
 
         # Extract return type
         return_hint = type_hints.get("return", [Any])
-
-        if get_origin(return_hint) == Union:
-            return_types = list(get_args(return_hint))
-            return_types = [t for t in return_types if t != type(None)]
-        elif not isinstance(return_hint, list):
-            return_types = [return_hint]
-        else:
-            return_types = return_hint
+        return_types = get_return_types(return_hint)
 
         # store the configuration in the function object
         func.__step_config = StepConfig(

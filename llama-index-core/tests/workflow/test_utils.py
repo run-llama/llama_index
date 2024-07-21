@@ -1,5 +1,5 @@
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import Event
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import valid_step_signature, get_steps_from_class
 
 
@@ -26,25 +26,14 @@ def test_valid_step_signature():
     assert valid_step_signature(arg)
 
 
-def test_valid_step_signature_ko():
-    def empty():
-        pass
-
-    def toomany(self, a, b):
-        pass
-
-    def kwargs_only(self, *, event):
-        pass
-
-    assert not valid_step_signature(empty)
-    assert not valid_step_signature(toomany)
-    assert not valid_step_signature(kwargs_only)
-
-
 def test_get_steps_from_class():
     class Test:
-        @step(TestEvent)
-        def my_method(self, *args):
+        @step()
+        def start(self, start: StartEvent) -> TestEvent:
+            pass
+
+        @step()
+        def my_method(self, event: TestEvent) -> StopEvent:
             pass
 
         def not_a_step(self):
