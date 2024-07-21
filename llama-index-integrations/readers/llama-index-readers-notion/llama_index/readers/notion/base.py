@@ -190,10 +190,10 @@ class NotionPageReader(BasePydanticReader):
         return page_ids
 
     def load_data(
-        self, 
-        page_ids: List[str] = [], 
+        self,
+        page_ids: List[str] = [],
         database_ids: Optional[List[str]] = None,
-        load_all_if_empty: bool = False
+        load_all_if_empty: bool = False,
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -215,7 +215,7 @@ class NotionPageReader(BasePydanticReader):
             else:
                 database_ids = self.list_databases()
                 page_ids = self.list_pages()
-                
+
         docs = []
         all_page_ids = set(page_ids) if page_ids is not None else set()
         # TODO: in the future add special logic for database_ids
@@ -225,13 +225,10 @@ class NotionPageReader(BasePydanticReader):
                 db_page_ids = self.query_database(database_id)
                 all_page_ids.update(db_page_ids)
 
-        all_page_ids_list = list(all_page_ids)
-        for page_id in all_page_ids_list:
+        for page_id in all_page_ids:
             page_text = self.read_page(page_id)
             docs.append(
-                Document(
-                    text=page_text, id_=page_id, extra_info={"page_id": page_id}
-                )
+                Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
             )
 
         return docs
