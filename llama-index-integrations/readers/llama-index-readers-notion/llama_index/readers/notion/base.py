@@ -190,40 +190,49 @@ class NotionPageReader(BasePydanticReader):
         return page_ids
 
     def load_data(
-        self, page_ids: List[str] = [], database_ids: Optional[List[str]] = None
+        self, 
+        page_ids: List[str] = [], 
+        database_ids: Optional[List[str]] = None,
+        load_all_if_empty: bool = False
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             page_ids (List[str]): List of page ids to load.
             database_ids Optional (List[str]): List database ids from which to load page ids.
+            load_all_if_empty (bool): If True, load all pages and dbs if no page_ids or database_ids are provided.
 
         Returns:
             List[Document]: List of documents.
 
         """
         if not page_ids and not database_ids:
-            raise ValueError("Must specify either `page_ids` or `database_ids`.")
+            if not load_all_if_empty:
+                raise ValueError(
+                    "Must specify either `page_ids` or `database_ids` if "
+                    "`load_all_if_empty` is False."
+                )
+            else:
+                database_ids = self.list_databases()
+                page_ids = self.list_pages()
+                
         docs = []
+        all_page_ids = set(page_ids) if page_ids is not None else set()
+        # TODO: in the future add special logic for database_ids
         if database_ids is not None:
             for database_id in database_ids:
                 # get all the pages in the database
-                page_ids = self.query_database(database_id)
-                for page_id in page_ids:
-                    page_text = self.read_page(page_id)
-                    docs.append(
-                        Document(
-                            text=page_text, id_=page_id, extra_info={"page_id": page_id}
-                        )
-                    )
-        else:
-            for page_id in page_ids:
-                page_text = self.read_page(page_id)
-                docs.append(
-                    Document(
-                        text=page_text, id_=page_id, extra_info={"page_id": page_id}
-                    )
+                db_page_ids = self.query_database(database_id)
+                all_page_ids.update(db_page_ids)
+
+        all_page_ids_list = list(all_page_ids)
+        for page_id in all_page_ids_list:
+            page_text = self.read_page(page_id)
+            docs.append(
+                Document(
+                    text=page_text, id_=page_id, extra_info={"page_id": page_id}
                 )
+            )
 
         return docs
 
@@ -236,6 +245,16 @@ class NotionPageReader(BasePydanticReader):
         res.raise_for_status()
         data = res.json()
         return [db["id"] for db in data["results"]]
+
+    def list_pages(self) -> List[str]:
+        """List all pages in the Notion workspace."""
+        query_dict = {"filter": {"property": "object", "value": "page"}}
+        res = self._request_with_retry(
+            "POST", SEARCH_URL, headers=self.headers, json=query_dict
+        )
+        res.raise_for_status()
+        data = res.json()
+        return [page["id"] for page in data["results"]]
 
 
 if __name__ == "__main__":
