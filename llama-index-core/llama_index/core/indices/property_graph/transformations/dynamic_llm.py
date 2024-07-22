@@ -146,9 +146,11 @@ class DynamicLLMPathExtractor(TransformComponent):
         max_triplets_per_chunk: int = 10,
         num_workers: int = 4,
         allowed_entity_types: Optional[List[str]] = None,
-        allowed_entity_props: Optional[List[str]] = None,
+        allowed_entity_props: Optional[Union[List[str], List[Tuple[str, str]]]] = None,
         allowed_relation_types: Optional[List[str]] = None,
-        allowed_relation_props: Optional[List[str]] = None,
+        allowed_relation_props: Optional[
+            Union[List[str], List[Tuple[str, str]]]
+        ] = None,
     ) -> None:
         """
         Initialize the DynamicLLMPathExtractor.
@@ -178,6 +180,13 @@ class DynamicLLMPathExtractor(TransformComponent):
                 parse_fn = default_parse_dynamic_triplets_with_props
             else:
                 parse_fn = default_parse_dynamic_triplets
+
+        # convert props to name -> description format if needed
+        if allowed_entity_props and isinstance(allowed_entity_props[0], tuple):
+            allowed_entity_props = [f"{k} ({v})" for k, v in allowed_entity_props]
+
+        if allowed_relation_props and isinstance(allowed_relation_props[0], tuple):
+            allowed_relation_props = [f"{k} ({v})" for k, v in allowed_relation_props]
 
         super().__init__(
             llm=llm or Settings.llm,

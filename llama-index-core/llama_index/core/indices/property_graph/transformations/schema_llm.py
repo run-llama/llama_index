@@ -131,9 +131,11 @@ class SchemaLLMPathExtractor(TransformComponent):
         llm: LLM,
         extract_prompt: Union[PromptTemplate, str] = None,
         possible_entities: Optional[TypeAlias] = None,
-        possible_entity_props: Optional[List[str]] = None,
+        possible_entity_props: Optional[Union[List[str], List[Tuple[str, str]]]] = None,
         possible_relations: Optional[TypeAlias] = None,
-        possible_relation_props: Optional[List[str]] = None,
+        possible_relation_props: Optional[
+            Union[List[str], List[Tuple[str, str]]]
+        ] = None,
         strict: bool = True,
         kg_schema_cls: Any = None,
         kg_validation_schema: Union[Dict[str, str], List[Triple]] = None,
@@ -147,11 +149,19 @@ class SchemaLLMPathExtractor(TransformComponent):
         # Build a pydantic model on the fly
         if kg_schema_cls is None:
             possible_entities = possible_entities or DEFAULT_ENTITIES
+            if possible_entity_props and isinstance(possible_entity_props[0], tuple):
+                possible_entity_props = [f"{k} ({v})" for k, v in possible_entity_props]
             entity_cls = get_entity_class(
                 possible_entities, possible_entity_props, strict
             )
 
             possible_relations = possible_relations or DEFAULT_RELATIONS
+            if possible_relation_props and isinstance(
+                possible_relation_props[0], tuple
+            ):
+                possible_relation_props = [
+                    f"{k} ({v})" for k, v in possible_relation_props
+                ]
             relation_cls = get_relation_class(
                 possible_relations, possible_relation_props, strict
             )
