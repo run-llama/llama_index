@@ -211,8 +211,11 @@ class AzureOpenAI(OpenAI):
         self, is_async: bool = False, **kwargs: Any
     ) -> Dict[str, Any]:
         if self.use_azure_ad:
-            self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
-            self.api_key = self._azure_ad_token.token
+            if self.azure_ad_token_provider:
+                self.api_key = self.azure_ad_token_provider()
+            else:
+                self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
+                self.api_key = self._azure_ad_token.token
         else:
             import os
 
