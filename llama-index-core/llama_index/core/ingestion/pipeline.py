@@ -67,13 +67,13 @@ def get_transformation_hash(
 
 
 def run_transformations(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Run a series of transformations on a set of nodes.
 
@@ -103,13 +103,13 @@ def run_transformations(
 
 
 async def arun_transformations(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Run a series of transformations on a set of nodes.
 

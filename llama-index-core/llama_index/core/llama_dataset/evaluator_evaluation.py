@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional
+from typing import Dict, List, Sequence, Optional
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.evaluation import (
@@ -117,12 +117,17 @@ class EvaluatorPredictionDataset(BaseLlamaPredictionDataset):
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
-        data = {}
-        if self.predictions:
-            data = {
-                "feedback": [t.feedback for t in self.predictions],
-                "score": [t.score for t in self.predictions],
-            }
+        data: Dict[str, List] = {
+            "feedback": [],
+            "score": [],
+        }
+        for pred in self.predictions:
+            if not isinstance(pred, EvaluatorExamplePrediction):
+                raise ValueError(
+                    "EvaluatorPredictionDataset can only contain EvaluatorExamplePrediction instances."
+                )
+            data["feedback"].append(pred.feedback)
+            data["score"].append(pred.score)
 
         return PandasDataFrame(data)
 
@@ -139,29 +144,40 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
-        data = {
-            "query": [t.query for t in self.examples],
-            "answer": [t.answer for t in self.examples],
-            "contexts": [t.contexts for t in self.examples],
-            "ground_truth_answer": [t.ground_truth_answer for t in self.examples],
-            "query_by": [str(t.query_by) for t in self.examples],
-            "answer_by": [str(t.answer_by) for t in self.examples],
-            "ground_truth_answer_by": [
-                str(t.ground_truth_answer_by) for t in self.examples
-            ],
-            "reference_feedback": [t.reference_feedback for t in self.examples],
-            "reference_score": [t.reference_score for t in self.examples],
-            "reference_evaluation_by": [
-                t.reference_evaluation_by for t in self.examples
-            ],
+        data: Dict[str, List] = {
+            "query": [],
+            "answer": [],
+            "contexts": [],
+            "ground_truth_answer": [],
+            "query_by": [],
+            "answer_by": [],
+            "ground_truth_answer_by": [],
+            "reference_feedback": [],
+            "reference_score": [],
+            "reference_evaluation_by": [],
         }
+        for example in self.examples:
+            if not isinstance(example, LabelledEvaluatorDataExample):
+                raise ValueError(
+                    "LabelledEvaluatorDataset can only contain LabelledEvaluatorDataExample instances."
+                )
+            data["query"].append(example.query)
+            data["answer"].append(example.answer)
+            data["contexts"].append(example.contexts)
+            data["ground_truth_answer"].append(example.ground_truth_answer)
+            data["query_by"].append(str(example.query_by))
+            data["answer_by"].append(str(example.answer_by))
+            data["ground_truth_answer_by"].append(str(example.ground_truth_answer_by))
+            data["reference_feedback"].append(example.reference_feedback)
+            data["reference_score"].append(example.reference_score)
+            data["reference_evaluation_by"].append(str(example.reference_evaluation_by))
 
         return PandasDataFrame(data)
 
     async def _apredict_example(
         self,
         predictor: BaseEvaluator,
-        example: LabelledEvaluatorDataExample,
+        example: LabelledEvaluatorDataExample,  # type: ignore
         sleep_time_in_seconds: int,
     ) -> EvaluatorExamplePrediction:
         """Async predict RAG example with a query engine."""
@@ -182,7 +198,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
         if not eval_result.invalid_result:
             return EvaluatorExamplePrediction(
-                feedback=eval_result.feedback, score=eval_result.score
+                feedback=eval_result.feedback or "", score=eval_result.score
             )
         else:
             return EvaluatorExamplePrediction(
@@ -192,7 +208,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
     def _predict_example(
         self,
         predictor: BaseEvaluator,
-        example: LabelledEvaluatorDataExample,
+        example: LabelledEvaluatorDataExample,  # type: ignore
         sleep_time_in_seconds: int = 0,
     ) -> EvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
@@ -213,7 +229,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
         if not eval_result.invalid_result:
             return EvaluatorExamplePrediction(
-                feedback=eval_result.feedback, score=eval_result.score
+                feedback=eval_result.feedback or "", score=eval_result.score
             )
         else:
             return EvaluatorExamplePrediction(
@@ -221,7 +237,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
             )
 
     def _construct_prediction_dataset(
-        self, predictions: List[EvaluatorExamplePrediction]
+        self, predictions: Sequence[EvaluatorExamplePrediction]  # type: ignore
     ) -> EvaluatorPredictionDataset:
         """Construct prediction dataset."""
         return EvaluatorPredictionDataset(predictions=predictions)
@@ -275,13 +291,19 @@ class PairwiseEvaluatorPredictionDataset(BaseLlamaPredictionDataset):
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
-        data = {}
-        if self.predictions:
-            data = {
-                "feedback": [t.feedback for t in self.predictions],
-                "score": [t.score for t in self.predictions],
-                "ordering": [t.evaluation_source.value for t in self.predictions],
-            }
+        data: Dict[str, List] = {
+            "feedback": [],
+            "score": [],
+            "ordering": [],
+        }
+        for prediction in self.predictions:
+            if not isinstance(prediction, PairwiseEvaluatorExamplePrediction):
+                raise ValueError(
+                    "PairwiseEvaluatorPredictionDataset can only contain PairwiseEvaluatorExamplePrediction instances."
+                )
+            data["feedback"].append(prediction.feedback)
+            data["score"].append(prediction.score)
+            data["ordering"].append(str(prediction.evaluation_source))
 
         return PandasDataFrame(data)
 
@@ -320,31 +342,44 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
     def to_pandas(self) -> PandasDataFrame:
         """Create pandas dataframe."""
-        data = {
-            "query": [t.query for t in self.examples],
-            "answer": [t.answer for t in self.examples],
-            "second_answer": [t.second_answer for t in self.examples],
-            "contexts": [t.contexts for t in self.examples],
-            "ground_truth_answer": [t.ground_truth_answer for t in self.examples],
-            "query_by": [str(t.query_by) for t in self.examples],
-            "answer_by": [str(t.answer_by) for t in self.examples],
-            "second_answer_by": [str(t.second_answer_by) for t in self.examples],
-            "ground_truth_answer_by": [
-                str(t.ground_truth_answer_by) for t in self.examples
-            ],
-            "reference_feedback": [t.reference_feedback for t in self.examples],
-            "reference_score": [t.reference_score for t in self.examples],
-            "reference_evaluation_by": [
-                t.reference_evaluation_by for t in self.examples
-            ],
+        data: Dict[str, List] = {
+            "query": [],
+            "answer": [],
+            "second_answer": [],
+            "contexts": [],
+            "ground_truth_answer": [],
+            "query_by": [],
+            "answer_by": [],
+            "second_answer_by": [],
+            "ground_truth_answer_by": [],
+            "reference_feedback": [],
+            "reference_score": [],
+            "reference_evaluation_by": [],
         }
+        for example in self.examples:
+            if not isinstance(example, LabelledPairwiseEvaluatorDataExample):
+                raise ValueError(
+                    "LabelledPairwiseEvaluatorDataset can only contain LabelledPairwiseEvaluatorDataExample instances."
+                )
+            data["query"].append(example.query)
+            data["answer"].append(example.answer)
+            data["second_answer"].append(example.second_answer)
+            data["contexts"].append(example.contexts)
+            data["ground_truth_answer"].append(example.ground_truth_answer)
+            data["query_by"].append(str(example.query_by))
+            data["answer_by"].append(str(example.answer_by))
+            data["second_answer_by"].append(str(example.second_answer_by))
+            data["ground_truth_answer_by"].append(str(example.ground_truth_answer_by))
+            data["reference_feedback"].append(example.reference_feedback)
+            data["reference_score"].append(example.reference_score)
+            data["reference_evaluation_by"].append(str(example.reference_evaluation_by))
 
         return PandasDataFrame(data)
 
     async def _apredict_example(
         self,
         predictor: BaseEvaluator,
-        example: LabelledPairwiseEvaluatorDataExample,
+        example: LabelledPairwiseEvaluatorDataExample,  # type: ignore
         sleep_time_in_seconds: int,
     ) -> PairwiseEvaluatorExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
@@ -366,9 +401,9 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
         if not eval_result.invalid_result:
             return PairwiseEvaluatorExamplePrediction(
-                feedback=eval_result.feedback,
+                feedback=eval_result.feedback or "",
                 score=eval_result.score,
-                evaluation_source=eval_result.pairwise_source,
+                evaluation_source=EvaluationSource(eval_result.pairwise_source),
             )
         else:
             return PairwiseEvaluatorExamplePrediction(
@@ -378,7 +413,7 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
     def _predict_example(
         self,
         predictor: BaseEvaluator,
-        example: LabelledPairwiseEvaluatorDataExample,
+        example: LabelledPairwiseEvaluatorDataExample,  # type: ignore
         sleep_time_in_seconds: int = 0,
     ) -> PairwiseEvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
@@ -400,9 +435,9 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
         if not eval_result.invalid_result:
             return PairwiseEvaluatorExamplePrediction(
-                feedback=eval_result.feedback,
+                feedback=eval_result.feedback or "",
                 score=eval_result.score,
-                evaluation_source=eval_result.pairwise_source,
+                evaluation_source=EvaluationSource(eval_result.pairwise_source),
             )
         else:
             return PairwiseEvaluatorExamplePrediction(
@@ -410,7 +445,7 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
             )
 
     def _construct_prediction_dataset(
-        self, predictions: List[PairwiseEvaluatorExamplePrediction]
+        self, predictions: Sequence[PairwiseEvaluatorExamplePrediction]  # type: ignore
     ) -> PairwiseEvaluatorPredictionDataset:
         """Construct prediction dataset."""
         return PairwiseEvaluatorPredictionDataset(predictions=predictions)

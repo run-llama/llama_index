@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List, Optional, Sequence, Any
+from typing import Callable, Generator, List, Optional, Sequence, Any
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -10,6 +10,7 @@ from llama_index.core.base.response.schema import (
     PydanticResponse,
     Response,
     StreamingResponse,
+    AsyncStreamingResponse,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
@@ -47,6 +48,8 @@ def combine_responses(
     for response in responses:
         if isinstance(response, (StreamingResponse, PydanticResponse)):
             response_obj = response.get_response()
+        elif isinstance(response, AsyncStreamingResponse):
+            raise ValueError("AsyncStreamingResponse not supported in sync code.")
         else:
             response_obj = response
         source_nodes.extend(response_obj.source_nodes)
@@ -58,8 +61,10 @@ def combine_responses(
         return Response(response=summary, source_nodes=source_nodes)
     elif isinstance(summary, BaseModel):
         return PydanticResponse(response=summary, source_nodes=source_nodes)
-    else:
+    elif isinstance(summary, Generator):
         return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
+    else:
+        return AsyncStreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
 
 async def acombine_responses(
@@ -73,6 +78,8 @@ async def acombine_responses(
     for response in responses:
         if isinstance(response, (StreamingResponse, PydanticResponse)):
             response_obj = response.get_response()
+        elif isinstance(response, AsyncStreamingResponse):
+            response_obj = await response.get_response()
         else:
             response_obj = response
         source_nodes.extend(response_obj.source_nodes)
@@ -84,8 +91,10 @@ async def acombine_responses(
         return Response(response=summary, source_nodes=source_nodes)
     elif isinstance(summary, BaseModel):
         return PydanticResponse(response=summary, source_nodes=source_nodes)
-    else:
+    elif isinstance(summary, Generator):
         return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
+    else:
+        return AsyncStreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
 
 class RouterQueryEngine(BaseQueryEngine):
@@ -114,7 +123,7 @@ class RouterQueryEngine(BaseQueryEngine):
         # deprecated
         service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, llm)
+        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
@@ -148,7 +157,7 @@ class RouterQueryEngine(BaseQueryEngine):
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "RouterQueryEngine":
-        llm = llm or llm_from_settings_or_context(Settings, llm)
+        llm = llm or llm_from_settings_or_context(Settings, service_context)
 
         selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
 
