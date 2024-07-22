@@ -55,8 +55,10 @@ def test_custom_azure_ad_token_provider(sync_azure_openai_mock: MagicMock):
     """
     Verify that a custom azure ad token provider set for AzureOpenAI.
     """
+
     def custom_azure_ad_token_provider() -> str:
         return "mock_api_key"
+
     mock_instance = sync_azure_openai_mock.return_value
     # Valid mocked result required to not run into another error
     mock_instance.chat.completions.create.return_value = mock_chat_completion_v1()
