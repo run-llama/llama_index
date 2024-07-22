@@ -88,9 +88,9 @@ class NVIDIA(OpenAILike):
             )
 
         if not model:
-            self.__set_default_model()
+            self.__get_default_model()
 
-    def __set_default_model(self):
+    def __get_default_model(self):
         """Set default model."""
         if not self._is_hosted:
             valid_models = [
