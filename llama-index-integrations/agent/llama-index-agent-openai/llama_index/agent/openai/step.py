@@ -335,9 +335,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
         dispatcher.event(
             AgentToolCallEvent(
                 arguments=function_args_str,
-                tool=tool.metadata
-                if tool
-                else ToolMetadata(description="unknown", name=function_name),
+                tool=(
+                    tool.metadata
+                    if tool
+                    else ToolMetadata(description="unknown", name=function_name)
+                ),
             )
         )
         with self.callback_manager.event(
@@ -439,9 +441,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
         dispatcher.event(
             AgentToolCallEvent(
                 arguments=function_args_str,
-                tool=tool.metadata
-                if tool
-                else ToolMetadata(description="unknown", name=function_name),
+                tool=(
+                    tool.metadata
+                    if tool
+                    else ToolMetadata(description="unknown", name=function_name)
+                ),
             )
         )
         with self.callback_manager.event(
@@ -569,12 +573,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
-        agent_chat_response = self._get_agent_response(
+        response: str = self._get_agent_response(
             task, mode=mode, **llm_chat_kwargs
-        )
+        ).response
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
+        latest_tool_outputs: List[ToolOutput] = []
+
         if not self._should_continue(
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
@@ -590,13 +596,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
                 # TODO: maybe execute this with multi-threading
                 return_direct = self._call_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    latest_tool_outputs,
                 )
+                task.extra_state["sources"].append(latest_tool_outputs[-1])
+
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
@@ -605,16 +614,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = task.extra_state["sources"][-1].content
-                    chat_response = ChatResponse(
-                        message=ChatMessage(
-                            role=MessageRole.ASSISTANT, content=response_str
-                        )
-                    )
-                    agent_chat_response = self._process_message(task, chat_response)
-                    agent_chat_response.is_dummy_stream = (
-                        mode == ChatResponseMode.STREAM
-                    )
+                    response = latest_tool_outputs[-1].content
                     break
 
             new_steps = (
@@ -629,10 +629,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 else []
             )
 
-        # attach next step to task
+        agent_response = AgentChatResponse(
+            response=response,
+            sources=latest_tool_outputs,
+            is_dummy_stream=(mode == ChatResponseMode.STREAM),
+        )
 
         return TaskStepOutput(
-            output=agent_chat_response,
+            output=agent_response,
             task_step=step,
             is_last=is_done,
             next_steps=new_steps,
@@ -656,12 +660,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
-        agent_chat_response = await self._get_async_agent_response(
-            task, mode=mode, **llm_chat_kwargs
-        )
+        response: str = (
+            await self._get_async_agent_response(task, mode=mode, **llm_chat_kwargs)
+        ).response
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
+        latest_tool_outputs: List[ToolOutput] = []
+
         if not self._should_continue(
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
@@ -676,13 +682,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
                 # TODO: maybe execute this with multi-threading
                 return_direct = await self._acall_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    latest_tool_outputs,
                 )
+                task.extra_state["sources"].append(latest_tool_outputs[-1])
+
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
@@ -691,16 +700,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = task.extra_state["sources"][-1].content
-                    chat_response = ChatResponse(
-                        message=ChatMessage(
-                            role=MessageRole.ASSISTANT, content=response_str
-                        )
-                    )
-                    agent_chat_response = self._process_message(task, chat_response)
-                    agent_chat_response.is_dummy_stream = (
-                        mode == ChatResponseMode.STREAM
-                    )
+                    response = latest_tool_outputs[-1].content
                     break
 
         # generate next step, append to task queue
@@ -716,8 +716,14 @@ class OpenAIAgentWorker(BaseAgentWorker):
             else []
         )
 
+        agent_response = AgentChatResponse(
+            response=response,
+            sources=latest_tool_outputs,
+            is_dummy_stream=(mode == ChatResponseMode.STREAM),
+        )
+
         return TaskStepOutput(
-            output=agent_chat_response,
+            output=agent_response,
             task_step=step,
             is_last=is_done,
             next_steps=new_steps,
