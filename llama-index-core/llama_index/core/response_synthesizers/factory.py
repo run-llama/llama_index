@@ -19,6 +19,7 @@ from llama_index.core.response_synthesizers.compact_and_accumulate import (
 from llama_index.core.response_synthesizers.compact_and_refine import (
     CompactAndRefine,
 )
+from llama_index.core.response_synthesizers.context_only import ContextOnly
 from llama_index.core.response_synthesizers.generation import Generation
 from llama_index.core.response_synthesizers.no_text import NoText
 from llama_index.core.response_synthesizers.refine import Refine
@@ -163,10 +164,15 @@ def get_response_synthesizer(
         )
     elif response_mode == ResponseMode.NO_TEXT:
         return NoText(
-            llm=llm,
-            streaming=streaming,
             callback_manager=callback_manager,
-            prompt_helper=prompt_helper,
+            streaming=streaming,
+            # deprecated
+            service_context=service_context,
+        )
+    elif response_mode == ResponseMode.CONTEXT_ONLY:
+        return ContextOnly(
+            callback_manager=callback_manager,
+            streaming=streaming,
             # deprecated
             service_context=service_context,
         )
