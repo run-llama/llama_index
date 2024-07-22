@@ -45,12 +45,12 @@ def test_base_url_invalid_not_hosted(
         Interface(base_url=base_url)
 
 
-@pytest.mark.parametrize("base_url", "http://localhost:8080/v1/chat/completions")
+@pytest.mark.parametrize("base_url", ["http://localhost:8080/v1/chat/completions"])
 def test_base_url_valid_not_hosted(base_url: str, mock_v1_local_models2: None) -> None:
     with pytest.warns(UserWarning):
         Interface(base_url=base_url)
 
 
-@pytest.mark.parametrize("base_url", "https://integrate.api.nvidia.com/v1/")
+@pytest.mark.parametrize("base_url", ["https://integrate.api.nvidia.com/v1/"])
 def test_base_url_valid_hosted(base_url: str, mock_v1_local_models2: None) -> None:
     Interface(base_url=base_url)
