@@ -125,7 +125,13 @@ class DynamicLLMPathExtractor(TransformComponent):
         num_workers (int): Number of workers for parallel processing.
         max_triplets_per_chunk (int): Maximum number of triplets to extract per text chunk.
         allowed_entity_types (List[str]): List of initial entity types for the ontology.
+        allowed_entity_props (Optional[Union[List[str], List[Tuple[str, str]]]]):
+            List of initial entity properties for the ontology.
+            Can be either property names or tuples of (name, description).
         allowed_relation_types (List[str]): List of initial relation types for the ontology.
+        allowed_relation_props (Optional[Union[List[str], List[Tuple[str, str]]]]):
+            List of initial relation properties for the ontology.
+            Can be either property names or tuples of (name, description).
     """
 
     llm: LLM
@@ -183,10 +189,16 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         # convert props to name -> description format if needed
         if allowed_entity_props and isinstance(allowed_entity_props[0], tuple):
-            allowed_entity_props = [f"{k} ({v})" for k, v in allowed_entity_props]
+            allowed_entity_props = [
+                f"Property `{k}` with description ({v})"
+                for k, v in allowed_entity_props
+            ]
 
         if allowed_relation_props and isinstance(allowed_relation_props[0], tuple):
-            allowed_relation_props = [f"{k} ({v})" for k, v in allowed_relation_props]
+            allowed_relation_props = [
+                f"Property `{k}` with description ({v})"
+                for k, v in allowed_relation_props
+            ]
 
         super().__init__(
             llm=llm or Settings.llm,
