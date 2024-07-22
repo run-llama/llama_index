@@ -1505,13 +1505,13 @@ files = [
 
 [[package]]
 name = "llama-cloud"
-version = "0.0.6"
+version = "0.0.9"
 description = ""
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "llama_cloud-0.0.6-py3-none-any.whl", hash = "sha256:0f07c8a865be632b543dec2bcad350a68a61f13413a7421b4b03de32c36f0194"},
-    {file = "llama_cloud-0.0.6.tar.gz", hash = "sha256:33b94cd119133dcb2899c9b69e8e1c36aec7bc7e80062c55c65f15618722e091"},
+    {file = "llama_cloud-0.0.9-py3-none-any.whl", hash = "sha256:3d6e6b051d63f466bee49bc8bbd03fdec658902ff20a52342d38b7824fc90759"},
+    {file = "llama_cloud-0.0.9.tar.gz", hash = "sha256:c876ac3f37b6ddf395d29c5fbc93ffc6e2d1165107cb236ec15b279e67937328"},
 ]
 
 [package.dependencies]
@@ -1552,13 +1552,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.54"
+version = "0.10.56"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.54-py3-none-any.whl", hash = "sha256:c454d4799ffaf477cab3481faa7366dd35c0b9e6e02b09b1706a0066975ca5d0"},
-    {file = "llama_index_core-0.10.54.tar.gz", hash = "sha256:02308b25a40945815d11fd080e1bb6a7899e9a211db62d6251a48d9978841cf4"},
+    {file = "llama_index_core-0.10.56-py3-none-any.whl", hash = "sha256:9f9e217731c94c60c4dc2163c2c3e0c17f9b2445d6d2ba008bb624545d75d924"},
+    {file = "llama_index_core-0.10.56.tar.gz", hash = "sha256:a646ba3f42329c3160fa3535adb6b9a99bb34fc60e027dfd861fa248a93d90c6"},
 ]
 
 [package.dependencies]
@@ -1568,7 +1568,6 @@ deprecated = ">=1.2.9.3"
 dirtyjson = ">=1.0.8,<2.0.0"
 fsspec = ">=2023.5.0"
 httpx = "*"
-llama-cloud = ">=0.0.6,<0.0.7"
 nest-asyncio = ">=1.5.8,<2.0.0"
 networkx = ">=3.0"
 nltk = ">=3.8.1,<4.0.0"
@@ -1602,17 +1601,17 @@ llama-index-core = ">=0.10.1,<0.11.0"
 
 [[package]]
 name = "llama-index-indices-managed-llama-cloud"
-version = "0.2.4"
+version = "0.2.5"
 description = "llama-index indices llama-cloud integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_indices_managed_llama_cloud-0.2.4-py3-none-any.whl", hash = "sha256:35ecc8c4d6098588e911b4bf990f8786765dab94fcd311729de2c2c7b3237bf3"},
-    {file = "llama_index_indices_managed_llama_cloud-0.2.4.tar.gz", hash = "sha256:8ee6b11e47f2c5e7302a749b6e2baf893ab602967d86b13c84455b8ee1fb1404"},
+    {file = "llama_index_indices_managed_llama_cloud-0.2.5-py3-none-any.whl", hash = "sha256:13329cc64289bc2d485bea8353b7205f01b21bbb7373bb8081a77008ee0bdf58"},
+    {file = "llama_index_indices_managed_llama_cloud-0.2.5.tar.gz", hash = "sha256:af1242239b8e7870a2191c97a5248ea9e09f369e2c6dd02285315a496ae151a6"},
 ]
 
 [package.dependencies]
-llama-cloud = ">=0.0.6"
+llama-cloud = ">=0.0.9"
 llama-index-core = ">=0.10.48.post1,<0.11.0"
 
 [[package]]
@@ -4468,4 +4467,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6c844bf6a81b82da9963f2e05aac7469443487a644a156c40a1ca662ec0fc1ca"
+content-hash = "87ac97ea55fed13ac84a7600dd9336e36f7f7921197ad7b281f5ece495ca8aa9"

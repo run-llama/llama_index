@@ -411,7 +411,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL {{
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t)
+            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:__Entity__)
             RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -419,7 +419,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t)
+            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:__Entity__)
             RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -526,8 +526,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             full_result = [d.data() for d in result]
 
         if self.sanitize_query_output:
-            return value_sanitize(full_result)
-
+            return [value_sanitize(el) for el in full_result]
         return full_result
 
     def vector_query(
