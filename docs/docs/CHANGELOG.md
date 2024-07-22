@@ -1,5 +1,19 @@
 # ChangeLog
 
+## Unreleased
+
+### `llama-index-core` [Unreleased]
+
+- Add an optional parameter similarity_score to VectorContextRetrieve… (#14831)
+
+### `llama-index-llms-ollama` [0.1.6]
+
+- Bugfix: ollama streaming response (#14830)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.5]
+
+- align deps (#14850)
+
 ## [2024-07-19]
 
 ### `llama-index-core` [0.10.56]
