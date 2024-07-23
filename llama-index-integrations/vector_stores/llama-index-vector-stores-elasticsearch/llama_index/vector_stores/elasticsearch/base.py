@@ -350,6 +350,9 @@ class ElasticsearchStore(BasePydanticVectorStore):
         if not self._store.num_dimensions:
             self._store.num_dimensions = len(embeddings[0])
 
+        if not any(embeddings):
+            embeddings = None
+
         return await self._store.add_texts(
             texts=texts,
             metadatas=metadatas,
