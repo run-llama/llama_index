@@ -201,13 +201,12 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             )
             summary_response = cast(Response, summary_response)
             docid_first_node = doc_id_to_nodes.get(doc_id, [TextNode()])[0]
-            metadata = docid_first_node.metadata
             summary_node_dict[doc_id] = TextNode(
                 text=summary_response.response,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
                 },
-                metadata=metadata,
+                metadata=docid_first_node.metadata,
                 excluded_embed_metadata_keys=docid_first_node.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=docid_first_node.excluded_llm_metadata_keys,
             )
