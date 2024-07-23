@@ -61,25 +61,34 @@ class ConfluenceReader(BaseReader):
         if oauth2:
             self.confluence = Confluence(url=base_url, oauth2=oauth2, cloud=cloud)
         else:
-            api_token = api_token or os.getenv(CONFLUENCE_API_TOKEN)
             if api_token is not None:
                 self.confluence = Confluence(url=base_url, token=api_token, cloud=cloud)
-            else:
-                user_name = user_name or os.getenv(CONFLUENCE_USERNAME)
-                if user_name is None:
-                    raise ValueError(
-                        "Must set environment variable `CONFLUENCE_USERNAME` if oauth,"
-                        " oauth2, or `CONFLUENCE_API_TOKEN` are not provided."
-                    )
-                password = password or os.getenv(CONFLUENCE_PASSWORD)
-                if password is None:
-                    raise ValueError(
-                        "Must set environment variable `CONFLUENCE_PASSWORD` if oauth,"
-                        " oauth2, or `CONFLUENCE_API_TOKEN` are not provided."
-                    )
+            elif user_name is not None and password is not None:
                 self.confluence = Confluence(
                     url=base_url, username=user_name, password=password, cloud=cloud
                 )
+            else:
+                api_token = os.getenv(CONFLUENCE_API_TOKEN)
+                if api_token is not None:
+                    self.confluence = Confluence(
+                        url=base_url, token=api_token, cloud=cloud
+                    )
+                else:
+                    user_name = os.getenv(CONFLUENCE_USERNAME)
+                    password = os.getenv(CONFLUENCE_PASSWORD)
+                    if user_name is not None and password is not None:
+                        self.confluence = Confluence(
+                            url=base_url,
+                            username=user_name,
+                            password=password,
+                            cloud=cloud,
+                        )
+                    else:
+                        raise ValueError(
+                            "Must set one of environment variables `CONFLUENCE_API_KEY`, or"
+                            " `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`, if oauth2, or"
+                            " api_token, or user_name and password parameters are not provided"
+                        )
 
         self._next_cursor = None
 
