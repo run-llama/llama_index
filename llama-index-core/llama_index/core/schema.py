@@ -121,6 +121,7 @@ class BaseComponent(BaseModel):
         if isinstance(kwargs, dict):
             data.update(kwargs)
 
+        data.pop("relationships", None)
         data.pop("class_name", None)
         return cls(**data)
 
