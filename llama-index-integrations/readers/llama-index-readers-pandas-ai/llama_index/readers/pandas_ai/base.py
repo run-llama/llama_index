@@ -47,13 +47,13 @@ class PandasAIReader(BaseReader):
     ) -> None:
         """Init params."""
         try:
-            from pandasai import PandasAI
+            from pandasai import SmartDataframe
             from pandasai.llm.openai import OpenAI
         except ImportError:
             raise ImportError("Please install pandasai to use this reader.")
 
         self._llm = llm or OpenAI()
-        self._pandas_ai = PandasAI(llm)
+        self._pandasai_config = {"llm": self._llm}
 
         self._concat_rows = concat_rows
         self._col_joiner = col_joiner
@@ -67,9 +67,9 @@ class PandasAIReader(BaseReader):
         is_conversational_answer: bool = False,
     ) -> Any:
         """Load dataframe."""
-        return self._pandas_ai.run(
-            initial_df, prompt=query, is_conversational_answer=is_conversational_answer
-        )
+        from pandasai import SmartDataframe
+        smart_df = SmartDataframe(initial_df, config = self._pandasai_config)
+        return smart_df.chat(query=query)
 
     def load_data(
         self,
