@@ -367,6 +367,42 @@ DEFAULT_DYNAMIC_EXTRACT_PROMPT = PromptTemplate(
     DEFAULT_DYNAMIC_EXTRACT_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
 )
 
+DEFAULT_DYNAMIC_EXTRACT_PROPS_TMPL = (
+    "Extract up to {max_knowledge_triplets} knowledge triplets from the given text. "
+    "Each triplet should be in the form of (head, relation, tail) with their respective types and properties.\n"
+    "---------------------\n"
+    "INITIAL ONTOLOGY:\n"
+    "Entity Types: {allowed_entity_types}\n"
+    "Entity Properties: {allowed_entity_properties}\n"
+    "Relation Types: {allowed_relation_types}\n"
+    "Relation Properties: {allowed_relation_properties}\n"
+    "\n"
+    "Use these types as a starting point, but introduce new types if necessary based on the context.\n"
+    "\n"
+    "GUIDELINES:\n"
+    "- Output in JSON format: [{{'head': '', 'head_type': '', 'head_props': {{...}}, 'relation': '', 'relation_props': {{...}}, 'tail': '', 'tail_type': '', 'tail_props': {{...}}}}]\n"
+    "- Use the most complete form for entities (e.g., 'United States of America' instead of 'USA')\n"
+    "- Keep entities concise (3-5 words max)\n"
+    "- Break down complex phrases into multiple triplets\n"
+    "- Ensure the knowledge graph is coherent and easily understandable\n"
+    "---------------------\n"
+    "EXAMPLE:\n"
+    "Text: Tim Cook, CEO of Apple Inc., announced the new Apple Watch that monitors heart health. "
+    "UC Berkeley researchers studied the benefits of apples.\n"
+    "Output:\n"
+    "[{{'head': 'Tim Cook', 'head_type': 'PERSON', 'head_props': {{'prop1': 'val', ...}}, 'relation': 'CEO_OF', 'relation_props': {{'prop1': 'val', ...}}, 'tail': 'Apple Inc.', 'tail_type': 'COMPANY', 'tail_props': {{'prop1': 'val', ...}}}},\n"
+    " {{'head': 'Apple Inc.', 'head_type': 'COMPANY', 'head_props': {{'prop1': 'val', ...}}, 'relation': 'PRODUCES', 'relation_props': {{'prop1': 'val', ...}}, 'tail': 'Apple Watch', 'tail_type': 'PRODUCT', 'tail_props': {{'prop1': 'val', ...}}}},\n"
+    " {{'head': 'Apple Watch', 'head_type': 'PRODUCT', 'head_props': {{'prop1': 'val', ...}}, 'relation': 'MONITORS', 'relation_props': {{'prop1': 'val', ...}}, 'tail': 'heart health', 'tail_type': 'HEALTH_METRIC', 'tail_props': {{'prop1': 'val', ...}}}},\n"
+    " {{'head': 'UC Berkeley', 'head_type': 'UNIVERSITY', 'head_props': {{'prop1': 'val', ...}}, 'relation': 'STUDIES', 'relation_props': {{'prop1': 'val', ...}}, 'tail': 'benefits of apples', 'tail_type': 'RESEARCH_TOPIC', 'tail_props': {{'prop1': 'val', ...}}}}]\n"
+    "---------------------\n"
+    "Text: {text}\n"
+    "Output:\n"
+)
+
+DEFAULT_DYNAMIC_EXTRACT_PROPS_PROMPT = PromptTemplate(
+    DEFAULT_DYNAMIC_EXTRACT_PROPS_TMPL, prompt_type=PromptType.KNOWLEDGE_TRIPLET_EXTRACT
+)
+
 ############################################
 # HYDE
 ##############################################
