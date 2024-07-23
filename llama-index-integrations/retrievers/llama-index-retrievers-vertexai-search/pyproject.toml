@@ -1,0 +1,81 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.retrievers.vertexai_search"
+
+[tool.llamahub.class_authors]
+VertexAISearchRetriever = "wangdave"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"
+
+[tool.poetry]
+authors = ["Dave Wang <wangdave@google.com>"]
+description = "llama-index retrievers vertex ai search integration"
+license = "MIT"
+name = "llama-index-retrievers-vertexai-search"
+packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.0.1"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.10.0"
+google-api-core = "^2.17.1"
+google-api-python-client = "^2.122.0"
+grpcio = "^1.62.0"
+tenacity = "~8.3.0"
+google-cloud-bigquery = {optional = true, version = "^3.21.0"}
+google-cloud-documentai = {optional = true, version = "^2.26.0"}
+google-cloud-contentwarehouse = {optional = true, version = "^0.7.7"}
+google-cloud-documentai-toolbox = {optional = true, version = "^0.13.3a0"}
+gapic-google-longrunning = {optional = true, version = "^0.11.2"}
+google-auth-httplib2 = {optional = true, version = "^0.2.0"}
+google-auth-oauthlib = {optional = true, version = "^1.2.0"}
+google-cloud-storage = {optional = true, version = "^2.16.0"}
+google-cloud-speech = {optional = true, version = "^2.26.0"}
+googlemaps = {optional = true, version = "^4.10.0"}
+google-cloud-texttospeech = {optional = true, version = "^2.16.3"}
+google-cloud-translate = {optional = true, version = "^3.15.3"}
+google-cloud-discoveryengine = {optional = true, version = "^0.11.13"}
+google-cloud-vision = {optional = true, version = "^3.7.2"}
+beautifulsoup4 = {optional = true, version = "^4.12.3"}
+pandas = [
+    {optional = true, python = ">=3.12,<4.0", version = ">=2.0.0,<3.0"},
+    {optional = true, python = ">=3.8.1,<3.12", version = ">=1.0.0"},
+]
+google-cloud-bigquery-storage = {optional = true, version = ">=2.6.0,<3"}
+pyarrow = {optional = true, version = ">= 6.0.1"}
+db-dtypes = {optional = true, version = "^1.2.0"}
+google-cloud-aiplatform = {optional = true, version = "^1.56.0"}
+pydantic = {optional = true, version = "^2.7.4"}
+
+[tool.poetry.group.dev.dependencies]
+black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
+codespell = {extras = ["toml"], version = ">=v2.2.6"}
+ipython = "8.10.0"
+jupyter = "^1.0.0"
+mypy = "0.991"
+pre-commit = "3.2.0"
+pylint = "2.15.10"
+pytest = "7.2.1"
+pytest-mock = "3.11.1"
+ruff = "0.0.292"
+tree-sitter-languages = "^1.8.0"
+types-Deprecated = ">=0.1.0"
+types-PyYAML = "^6.0.12.12"
+types-protobuf = "^4.24.0.4"
+types-redis = "4.5.5.0"
+types-requests = "2.28.11.8"
+types-setuptools = "67.1.0.0"
