@@ -201,12 +201,20 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             )
             summary_response = cast(Response, summary_response)
             metadata = doc_id_to_nodes.get(doc_id, [TextNode()])[0].metadata
+            excluded_embed_metadata_keys = doc_id_to_nodes.get(doc_id, [TextNode()])[
+                0
+            ].excluded_embed_metadata_keys
+            excluded_llm_metadata_keys = doc_id_to_nodes.get(doc_id, [TextNode()])[
+                0
+            ].excluded_llm_metadata_keys
             summary_node_dict[doc_id] = TextNode(
                 text=summary_response.response,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
                 },
                 metadata=metadata,
+                excluded_embed_metadata_keys=excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=excluded_llm_metadata_keys,
             )
             self.docstore.add_documents([summary_node_dict[doc_id]])
             logger.info(
@@ -226,8 +234,10 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             for node in summary_nodes:
                 node_with_embedding = node.copy()
                 node_with_embedding.embedding = id_to_embed_map[node.node_id]
+                for k in node_with_embedding.excluded_embed_metadata_keys:
+                    if node_with_embedding.metadata.get(k):
+                        node_with_embedding.metadata.pop(k)
                 summary_nodes_with_embedding.append(node_with_embedding)
-
             self._vector_store.add(summary_nodes_with_embedding)
 
     def _build_index_from_nodes(
