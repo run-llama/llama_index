@@ -573,9 +573,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
-        response: str = self._get_agent_response(
+        agent_chat_response = self._get_agent_response(
             task, mode=mode, **llm_chat_kwargs
-        ).response
+        )
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
@@ -614,7 +614,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response = latest_tool_outputs[-1].content
+                    response_str = latest_tool_outputs[-1].content
+                    chat_response = ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=response_str
+                        )
+                    )
+                    agent_chat_response = self._process_message(task, chat_response)
+                    agent_chat_response.is_dummy_stream = (
+                        mode == ChatResponseMode.STREAM
+                    )
                     break
 
             new_steps = (
@@ -629,14 +638,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 else []
             )
 
-        agent_response = AgentChatResponse(
-            response=response,
-            sources=latest_tool_outputs,
-            is_dummy_stream=(mode == ChatResponseMode.STREAM),
-        )
+        # Attach all tool outputs from this step as sources
+        agent_chat_response.sources = latest_tool_outputs
 
         return TaskStepOutput(
-            output=agent_response,
+            output=agent_chat_response,
             task_step=step,
             is_last=is_done,
             next_steps=new_steps,
@@ -660,9 +666,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
-        response: str = (
-            await self._get_async_agent_response(task, mode=mode, **llm_chat_kwargs)
-        ).response
+        agent_chat_response = await self._get_async_agent_response(
+            task, mode=mode, **llm_chat_kwargs
+        )
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
@@ -700,7 +706,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response = latest_tool_outputs[-1].content
+                    response_str = latest_tool_outputs[-1].content
+                    chat_response = ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=response_str
+                        )
+                    )
+                    agent_chat_response = self._process_message(task, chat_response)
+                    agent_chat_response.is_dummy_stream = (
+                        mode == ChatResponseMode.STREAM
+                    )
                     break
 
         # generate next step, append to task queue
@@ -716,14 +731,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
             else []
         )
 
-        agent_response = AgentChatResponse(
-            response=response,
-            sources=latest_tool_outputs,
-            is_dummy_stream=(mode == ChatResponseMode.STREAM),
-        )
+        # Attach all tool outputs from this step as sources
+        agent_chat_response.sources = latest_tool_outputs
 
         return TaskStepOutput(
-            output=agent_response,
+            output=agent_chat_response,
             task_step=step,
             is_last=is_done,
             next_steps=new_steps,
