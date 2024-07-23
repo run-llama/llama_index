@@ -551,6 +551,11 @@ class AgentRunner(BaseAgentRunner):
         if self.delete_task_on_finish:
             self.delete_task(task_id)
 
+        # Attach all sources generated across all steps
+        step_output.output.sources = self.get_task(task_id).extra_state.get(
+            "sources", []
+        )
+
         return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
 
     @dispatcher.span

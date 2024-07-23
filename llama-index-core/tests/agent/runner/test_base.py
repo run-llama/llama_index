@@ -21,6 +21,7 @@ from llama_index.core.instrumentation.events.agent import (
     AgentRunStepStartEvent,
 )
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.tools.types import ToolOutput
 
 dispatcher = instrument.get_dispatcher()
 
@@ -38,7 +39,7 @@ class _TestEventHandler(BaseEventHandler):
 
 # define mock agent worker
 class MockAgentWorker(BaseAgentWorker):
-    """Mock agent agent worker."""
+    """Mock agent worker."""
 
     def __init__(self, limit: int = 2):
         """Initialize."""
@@ -202,6 +203,28 @@ class MockForkStepEngine(BaseAgentWorker):
         """Finalize task, after all the steps are completed."""
 
 
+class MockFunctionCallingAgentWorker(MockAgentWorker):
+    """Mock function calling agent worker."""
+
+    counter = 0
+
+    def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
+        task.extra_state["sources"] = []
+        return super().initialize_step(task, **kwargs)
+
+    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        self.counter += 1
+        task.extra_state["sources"].append(
+            ToolOutput(
+                tool_name=f"My Tool",
+                content=f"This is the output of tool call {self.counter}",
+                raw_input={},
+                raw_output=f"This is the raw output of tool call {self.counter}",
+            )
+        )
+        return super().run_step(step, task, **kwargs)
+
+
 def test_agent() -> None:
     """Test executor."""
     agent_runner = AgentRunner(agent_worker=MockAgentWorker(limit=2))
@@ -343,3 +366,28 @@ def test_agent_dispatches_events() -> None:
     # Check AgentChatWithStepEndEvent
     assert isinstance(event_handler.events[-1], AgentChatWithStepEndEvent)
     assert event_handler.events[-1].response == response
+
+
+def test_agent_response_contains_full_source_history() -> None:
+    # Test with a mock agent worker that records one source in each step
+    num_steps = 4
+    agent_runner = AgentRunner(
+        agent_worker=MockFunctionCallingAgentWorker(limit=num_steps)
+    )
+
+    response = agent_runner.chat("hello world")
+    assert len(response.sources) == num_steps
+
+    # Expect that agent will collect all sources generated across all steps
+    for step_idx in range(num_steps):
+        assert (
+            response.sources[step_idx].content
+            == f"This is the output of tool call {step_idx + 1}"
+        )
+
+
+def test_agent_handles_nonexistent_source_history() -> None:
+    num_steps = 4
+    agent_runner = AgentRunner(agent_worker=MockAgentWorker(limit=num_steps))
+    response = agent_runner.chat("hello world")
+    assert len(response.sources) == 0
