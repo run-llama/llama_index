@@ -12,8 +12,6 @@ from typing import Any, Dict, List, Optional, cast
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
-    MetadataFilters,
-    MetadataFilter,
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
@@ -39,25 +37,6 @@ from pymongo.collection import Collection
 
 
 logger = logging.getLogger(__name__)
-
-
-def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
-    """Convert from standard dataclass to filter dict."""
-    filters = []
-
-    for filter in standard_filters.legacy_filters():
-        if isinstance(filter, MetadataFilters):
-            filters.append(_to_mongodb_filter(filter))
-        elif isinstance(filter, MetadataFilter):
-            if isinstance(filter.value, list):
-                filters.append({filter.key: {"$in": filter.value}})
-            else:
-                filters.append({filter.key: filter.value})
-
-    if standard_filters.condition == "or":
-        return {"$or": filters}
-    else:
-        return {"$and": filters}
 
 
 class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
@@ -254,7 +233,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
             # Atlas Vector Search, potentially with filter
             logger.debug(f"Running {query.mode} mode query pipeline")
-            filter = filters_to_mql(query.filters)
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = [
                 vector_search_stage(
                     query_vector=query.query_embedding,
@@ -272,7 +251,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             if not query.query_str:
                 raise ValueError("query_str in VectorStoreQueryMode.TEXT_SEARCH ")
             logger.debug(f"Running {query.mode} mode query pipeline")
-            filter = filters_to_mql(query.filters)
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = fulltext_search_stage(
                 query=query.query_str,
                 search_field=self._text_key,
@@ -291,7 +270,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             logger.debug(f"Running {query.mode} mode query pipeline")
             scores_fields = ["vector_score", "fulltext_score"]
-            filter = filters_to_mql(query.filters)
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
             pipeline = []
             # Vector Search pipeline
             if query.query_embedding:
