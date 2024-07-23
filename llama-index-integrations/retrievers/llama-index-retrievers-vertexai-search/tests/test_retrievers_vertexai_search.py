@@ -1,5 +1,5 @@
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.retrievers.vertexai_search import VertexAISearchRetriever
+from llama_index.retrievers.vertexai_search.base import VertexAISearchRetriever
 
 
 def test_class():
