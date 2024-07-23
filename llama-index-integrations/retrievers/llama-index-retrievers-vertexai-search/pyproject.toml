@@ -46,6 +46,7 @@ pyarrow = {optional = true, version = ">= 6.0.1"}
 db-dtypes = {optional = true, version = "^1.2.0"}
 google-cloud-aiplatform = "^1.56.0"
 pydantic = "^2.7.4"
+google-generativeai = "<0.6.0,>=0.5.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
