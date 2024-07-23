@@ -1,10 +1,30 @@
 # ChangeLog
 
-## Unreleased
+## [2024-07-22]
 
-### `llama-index-core` [Unreleased]
+### `llama-index-core` [v0.10.57]
 
 - Add an optional parameter similarity_score to VectorContextRetrieve… (#14831)
+- add property extraction (using property names and optional descriptions) for KGs (#14707)
+- able to attach output classes to LLMs (#14747)
+- Add streaming for tool calling / structured extraction (#14759)
+- fix from removing private variables when copying/pickling (#14860)
+- Fix empty array being send to vector store in ingestion pipeline (#14859)
+- optimize ingestion pipeline deduping (#14858)
+- Add an optional parameter similarity_score to VectorContextRetriever (#14831)
+
+### `llama-index-llms-azure-openai` [0.1.10]
+
+- Bugfix: AzureOpenAI may fail with custom azure_ad_token_provider (#14869)
+
+### `llama-index-llms-bedrock-converse` [0.1.5]
+
+- feat: ✨ Implement async functionality in BedrockConverse (#14326)
+
+### `llama-index-llms-langchain` [0.3.0]
+
+- make some dependencies optional
+- bump langchain version in integration (#14879)
 
 ### `llama-index-llms-ollama` [0.1.6]
 
@@ -13,6 +33,34 @@
 ### `llama-index-multi-modal-llms-anthropic` [0.1.5]
 
 - align deps (#14850)
+
+### `llama-index-readers-notion` [0.1.10]
+
+- update notion reader to handle duplicate pages, database+page ids (#14861)
+
+### `llama-index-vector-stores-milvus` [0.1.21]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-mongodb` [0.1.8]
+
+- MongoDB Atlas Vector Search: Enhanced Metadata Filtering (#14856)
+
+### `llama-index-vector-stores-opensearch` [0.1.13]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-pinecone` [0.1.8]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-postgres` [0.1.12]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-weaviate` [1.0.2]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
 
 ## [2024-07-19]
 

@@ -108,17 +108,6 @@ nav:
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
-      - Callbacks:
-          - ./examples/callbacks/AimCallback.ipynb
-          - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
-          - ./examples/callbacks/LangfuseCallbackHandler.ipynb
-          - ./examples/callbacks/LlamaDebugHandler.ipynb
-          - ./examples/callbacks/OpenInferenceCallback.ipynb
-          - ./examples/callbacks/OpenLLMetry.ipynb
-          - ./examples/callbacks/PromptLayerHandler.ipynb
-          - ./examples/callbacks/TokenCountingHandler.ipynb
-          - ./examples/callbacks/UpTrainCallback.ipynb
-          - ./examples/callbacks/WandbCallbackHandler.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -438,6 +427,17 @@ nav:
           - ./examples/node_postprocessor/rankLLM.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
+      - Observability:
+          - ./examples/observability/AimCallback.ipynb
+          - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
+          - ./examples/observability/LangfuseCallbackHandler.ipynb
+          - ./examples/observability/LlamaDebugHandler.ipynb
+          - ./examples/observability/OpenInferenceCallback.ipynb
+          - ./examples/observability/OpenLLMetry.ipynb
+          - ./examples/observability/PromptLayerHandler.ipynb
+          - ./examples/observability/TokenCountingHandler.ipynb
+          - ./examples/observability/UpTrainCallback.ipynb
+          - ./examples/observability/WandbCallbackHandler.ipynb
       - Output Parsers:
           - ./examples/output_parsing/GuardrailsDemo.ipynb
           - ./examples/output_parsing/LangchainOutputParserDemo.ipynb
@@ -2139,15 +2139,25 @@ plugins:
         ./examples/agent/react_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/react_agent/
         ./examples/agent/react_agent_with_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/agent/react_agent_with_query_engine/
         ./examples/callbacks/AimCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/AimCallback/
+        ./examples/callbacks/AimCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/AimCallback/
         ./examples/callbacks/HoneyHiveLlamaIndexTracer.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/HoneyHiveLlamaIndexTracer/
+        ./examples/callbacks/HoneyHiveLlamaIndexTracer.md: https://docs.llamaindex.ai/en/stable/examples/observability/HoneyHiveLlamaIndexTracer/
         ./examples/callbacks/LangfuseCallbackHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/LangfuseCallbackHandler/
+        ./examples/callbacks/LangfuseCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/LangfuseCallbackHandler/
         ./examples/callbacks/LlamaDebugHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/LlamaDebugHandler/
+        ./examples/callbacks/LlamaDebugHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/LlamaDebugHandler/
         ./examples/callbacks/OpenInferenceCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/OpenInferenceCallback/
+        ./examples/callbacks/OpenInferenceCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenInferenceCallback/
         ./examples/callbacks/OpenLLMetry.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/OpenLLMetry/
+        ./examples/callbacks/OpenLLMetry.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenLLMetry/
         ./examples/callbacks/PromptLayerHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/PromptLayerHandler/
+        ./examples/callbacks/PromptLayerHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/PromptLayerHandler/
         ./examples/callbacks/TokenCountingHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/TokenCountingHandler/
+        ./examples/callbacks/TokenCountingHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/TokenCountingHandler/
         ./examples/callbacks/UpTrainCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/UpTrainCallback/
+        ./examples/callbacks/UpTrainCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/UpTrainCallback/
         ./examples/callbacks/WandbCallbackHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/WandbCallbackHandler/
+        ./examples/callbacks/WandbCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/WandbCallbackHandler/
         ./examples/chat_engine/chat_engine_best.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_best/
         ./examples/chat_engine/chat_engine_condense_plus_context.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_plus_context/
         ./examples/chat_engine/chat_engine_condense_question.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_question/
