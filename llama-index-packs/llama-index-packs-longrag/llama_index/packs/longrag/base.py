@@ -237,7 +237,6 @@ class LongRAGRetriever(BaseRetriever):
                 if len(top_parents_set) >= self._similarity_top_k:
                     break
 
-        print(len(top_parents))
         assert len(top_parents) == min(self._similarity_top_k, len(self._grouped_nodes))
 
         return top_parents
@@ -308,6 +307,6 @@ class LongRAGPack(BaseLlamaPack):
             "retriever": self._retriever,
         }
 
-    def run(self, query: str) -> t.Any:
+    def run(self, query: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Runs pipeline."""
         return self._query_eng.query(query)
