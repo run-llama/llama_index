@@ -31,7 +31,8 @@ version = "0.0.1"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
-google-cloud-aiplatform = "^1.56.0"
+google-cloud-aiplatform = "1.56.0"
+google-cloud-discoveryengine = "^0.11.13"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
