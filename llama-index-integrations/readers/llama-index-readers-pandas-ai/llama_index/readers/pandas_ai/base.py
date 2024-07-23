@@ -47,7 +47,6 @@ class PandasAIReader(BaseReader):
     ) -> None:
         """Init params."""
         try:
-            from pandasai import SmartDataframe
             from pandasai.llm.openai import OpenAI
         except ImportError:
             raise ImportError("Please install pandasai to use this reader.")
