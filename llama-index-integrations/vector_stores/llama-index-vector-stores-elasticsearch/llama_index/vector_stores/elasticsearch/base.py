@@ -350,6 +350,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         if not self._store.num_dimensions:
             self._store.num_dimensions = len(embeddings[0])
 
+        # Omit the vectors argument entirely if embeddings aren't generated.
         if not any(embeddings):
             embeddings = None
 
