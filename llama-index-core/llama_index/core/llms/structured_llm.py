@@ -115,7 +115,7 @@ class StructuredLLM(LLM):
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> "AgentChatResponse":
+    ) -> ChatResponse:
         # NOTE: we are wrapping existing messages in a ChatPromptTemplate to
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
