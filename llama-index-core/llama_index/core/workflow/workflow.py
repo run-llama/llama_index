@@ -29,6 +29,7 @@ class Workflow:
         self._queues: Dict[str, asyncio.Queue] = {}
         self._tasks: Set[asyncio.Task] = set()
         self._events: List[Any] = []
+        self._event_log: List[Event] = []
         self._retval = None
         self._event_subscriptions: Dict[type, Set[str]] = defaultdict(set)
 
@@ -78,6 +79,9 @@ class Workflow:
                     if new_ev is None:
                         continue
 
+                    # Store the accepted event for the drawing operations
+                    self._events.append((name, type(ev).__name__))
+
                     if not isinstance(new_ev, Event):
                         warnings.warn(
                             f"Step function {name} returned {new_ev} instead of an Event instance."
@@ -100,7 +104,7 @@ class Workflow:
         """
         for queue in self._queues.values():
             queue.put_nowait(message)
-        self._events.append(message)
+        self._event_log.append(message)
 
     async def run(self, **kwargs: Any) -> str:
         """Runs the workflow until completion.
@@ -111,10 +115,11 @@ class Workflow:
         3. sending a StartEvent to kick things off
         4. waiting for all tasks to finish or be cancelled
         """
+        self._events = []
+
         if not self._disable_validation:
             self._validate()
 
-        self._events = []
         if not self._tasks:
             self._start()
 
@@ -135,12 +140,13 @@ class Workflow:
         4. Waiting for the next step(s) to finish
         5. Returning the result if the workflow is done
         """
+        self._events = []
+
         # Check if we need to start
         if not self._tasks:
             if not self._disable_validation:
                 self._validate()
 
-            self._events = []
             if not self._tasks:
                 self._start(stepwise=True)
 
@@ -249,12 +255,7 @@ class Workflow:
                 step_name, label=step_name, color="#ADD8E6", shape="box"
             )  # Light blue for steps
 
-            all_event_types = {
-                event_type
-                for event_types in step_config.accepted_events.values()
-                for event_type in event_types
-            }
-            for event_type in all_event_types:
+            for event_type in step_config.accepted_events:
                 net.add_node(
                     event_type.__name__,
                     label=event_type.__name__,
@@ -275,9 +276,8 @@ class Workflow:
                 if return_type != type(None):
                     net.add_edge(step_name, return_type.__name__)
 
-            for event_types in step_config.accepted_events.values():
-                for event_type in event_types:
-                    net.add_edge(event_type.__name__, step_name)
+            for event_type in step_config.accepted_events:
+                net.add_edge(event_type.__name__, step_name)
 
         net.show(filename, notebook=notebook)
 
@@ -292,20 +292,19 @@ class Workflow:
         net = Network(directed=True, height="750px", width="100%")
 
         # Add nodes and edges based on execution history
-        for i, (step, events) in enumerate(self._events):
-            for event in events:
-                event_node = f"{event}_{i}"
-                step_node = f"{step}_{i}"
-                net.add_node(
-                    event_node, label=event, color="#90EE90", shape="ellipse"
-                )  # Light green for events
-                net.add_node(
-                    step_node, label=step, color="#ADD8E6", shape="box"
-                )  # Light blue for steps
-                net.add_edge(event_node, step_node)
+        for i, (step, event) in enumerate(self._events):
+            event_node = f"{event}_{i}"
+            step_node = f"{step}_{i}"
+            net.add_node(
+                event_node, label=event, color="#90EE90", shape="ellipse"
+            )  # Light green for events
+            net.add_node(
+                step_node, label=step, color="#ADD8E6", shape="box"
+            )  # Light blue for steps
+            net.add_edge(event_node, step_node)
 
-                if i > 0:
-                    prev_step_node = f"{self._events[i - 1][0]}_{i - 1}"
-                    net.add_edge(prev_step_node, event_node)
+            if i > 0:
+                prev_step_node = f"{self._events[i - 1][0]}_{i - 1}"
+                net.add_edge(prev_step_node, event_node)
 
         net.show(filename, notebook=notebook)
