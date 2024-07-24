@@ -109,7 +109,7 @@ class ReflectionWorkflow(Workflow):
 
 
 async def main():
-    w = ReflectionWorkflow(timeout=120, verbose=False)
+    w = ReflectionWorkflow(timeout=5, verbose=True)
 
     ret = await w.run(
         passage="I own two cars: a Fiat Panda with 45Hp and a Honda Civic with 330Hp."

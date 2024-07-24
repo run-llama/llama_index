@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Set
 
@@ -45,62 +46,43 @@ class Workflow:
             if not step_config:
                 raise ValueError(f"Step {name} is missing `@step()` decorator.")
 
-            for event_types in step_config.accepted_events.values():
-                for event_type in event_types:
-                    self._event_subscriptions[event_type].add(name)
-
             async def _task(
                 name: str,
                 queue: asyncio.Queue,
                 step: Callable,
                 config: StepConfig,
             ) -> None:
-                event_buffer = {name: [] for name in config.accepted_events}
                 while True:
                     ev = await queue.get()
-                    for param_name, event_types in config.accepted_events.items():
-                        for event_type in event_types:
-                            if isinstance(ev, event_type):
-                                event_buffer[param_name].append(ev)
-                                break
+                    if type(ev) not in config.accepted_events:
+                        continue
 
                     # do we need to wait for the step flag?
                     if stepwise:
                         await self._step_flags[name].wait()
 
                         # clear all flags so that we only run one step
-                        for flag_name in self._step_flags:
-                            self._step_flags[flag_name].clear()
-
-                    kwargs = {**config.kwargs}
-
-                    # pop off and consume the latest event of each type
-                    current_events = []
-                    for param_name in config.accepted_events:
-                        if event_buffer[param_name]:
-                            kwargs[param_name] = event_buffer[param_name].pop()
-                            current_events.append(type(kwargs[param_name]).__name__)
-
-                    # record the events that were consumed
-                    self._events.append((name, current_events))
+                        for flag in self._step_flags.values():
+                            flag.clear()
 
                     if self._verbose:
-                        print(f"Running step {name} with kwargs: {kwargs}")
+                        print(f"Running step {name}")
 
                     # run step
-                    print(f"Running step {name} with kwargs: {kwargs}")
-                    new_evs = await step(**kwargs)
-                    print(f"Step {name} produced event {new_evs}")
+                    new_ev = await step(ev)
+
+                    if self._verbose:
+                        print(f"Step {name} produced event {new_ev}")
 
                     # handle the return value
-                    if isinstance(new_evs, Event):
-                        new_evs = [new_evs]
-                    elif new_evs is None:
-                        new_evs = []
+                    if new_ev is None:
+                        continue
 
-                    for new_ev in new_evs:
-                        if self._verbose:
-                            print(f"Step {name} produced event {new_ev}")
+                    if not isinstance(new_ev, Event):
+                        warnings.warn(
+                            f"Step function {name} returned {new_ev} instead of an Event instance."
+                        )
+                    else:
                         self.send_event(new_ev)
 
             self._tasks.add(
@@ -110,10 +92,15 @@ class Workflow:
             )
 
     def send_event(self, message: Event) -> None:
-        """Sends an event to a specific step in the workflow."""
-        event_type = type(message)
-        for step_name in self._event_subscriptions[event_type]:
-            self._queues[step_name].put_nowait(message)
+        """Sends an event to a specific step in the workflow.
+
+        Currently we send all the events to all the receivers and we let
+        them discard events they don't want. This should be optimized so
+        that we efficiently send events where we know won't be discarded.
+        """
+        for queue in self._queues.values():
+            queue.put_nowait(message)
+        self._events.append(message)
 
     async def run(self, **kwargs: Any) -> str:
         """Runs the workflow until completion.
@@ -131,18 +118,9 @@ class Workflow:
         if not self._tasks:
             self._start()
 
-        async with asyncio.timeout(self._timeout):
-            self.send_event(StartEvent(kwargs))
-            try:
-                await asyncio.gather(*list(self._tasks))
-            except asyncio.exceptions.CancelledError as e:
-                if not asyncio.current_task().cancelling():
-                    pass
-                else:
-                    # This CancelledError was due to a timeout
-                    raise asyncio.TimeoutError(
-                        f"Operation timed out after {self._timeout} seconds"
-                    ) from e
+        _, unfinished = await asyncio.wait(self._tasks, timeout=self._timeout)
+        if unfinished:
+            return f"Operation timed out after {self._timeout} seconds"
 
         return self._retval
 
@@ -206,9 +184,8 @@ class Workflow:
             if not step_config:
                 raise ValueError(f"Step {name} is missing `@step()` decorator.")
 
-            for event_types in step_config.accepted_events.values():
-                for event_type in event_types:
-                    consumed_events.add(event_type)
+            for event_type in step_config.accepted_events:
+                consumed_events.add(event_type)
 
             for event_type in step_config.return_types:
                 if event_type == type(None):

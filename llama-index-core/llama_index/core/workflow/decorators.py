@@ -16,7 +16,8 @@ from llama_index.core.workflow.utils import valid_step_signature
 
 
 class StepConfig(BaseModel):
-    accepted_events: Dict[str, List[Any]]
+    accepted_events: List[Any]
+    event_name: str
     return_types: List[Any]
     kwargs: Dict[str, Any]
 
@@ -55,7 +56,7 @@ def step(**kwargs: Any):
 
     def decorator(func: Callable) -> Callable:
         if not valid_step_signature(func):
-            msg = "Wrong signature for step function: must be either (self, *args) or (*args)"
+            msg = "Wrong signature for step function: must be either (self, event: Event) or (event: Event)"
             raise ValueError(msg)
 
         # Get type hints for the function
@@ -64,14 +65,12 @@ def step(**kwargs: Any):
         # Get the function signature
         sig = inspect.signature(func)
 
-        # Extract parameter types and separate required and optional
-        params = {}
-
         for name, param in sig.parameters.items():
             if name in ("self", "cls"):
                 continue
 
-            params[name] = get_param_types(param)
+            event_types = get_param_types(param)
+            event_name = name
 
         # Extract return type
         return_hint = type_hints.get("return", [Any])
@@ -79,7 +78,8 @@ def step(**kwargs: Any):
 
         # store the configuration in the function object
         func.__step_config = StepConfig(
-            accepted_events=params,
+            accepted_events=event_types,
+            event_name=event_name,
             return_types=return_types,
             kwargs=kwargs,
         )
