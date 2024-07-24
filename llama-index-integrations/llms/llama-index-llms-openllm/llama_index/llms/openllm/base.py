@@ -1,8 +1,8 @@
-from llama_index.llms.openai.base import OpenAI
+from llama_index.llms.openai_like.base import OpenAILike
 
 
-class OpenLLM(OpenAI):
-    """
+class OpenLLM(OpenAILike):
+    r"""
     OpenLLM LLM.
 
     A thin wrapper around OpenAI interface to help users interact with OpenLLM's running server.
@@ -14,12 +14,12 @@ class OpenLLM(OpenAI):
         ```python
         from llama_index.llms.openllm import OpenLLM
 
-        llm = OpenLLM(model="my-model", api_base="https://hostname.com/v1", api_key="na")
+        llm = OpenLLM(api_base="https://hostname.com/v1", api_key="na", model="meta-llama/Meta-Llama-3-8B-Instruct")
 
-        stream = llm.stream("Hi, write a short story")
+        result = llm.complete("Hi, write a short story\n")
 
-        for r in stream:
-            print(r.delta, end="")
+        print(result)
+
         ```
     """
 
