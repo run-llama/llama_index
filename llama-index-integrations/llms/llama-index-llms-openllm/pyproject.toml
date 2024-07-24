@@ -13,7 +13,6 @@ import_path = "llama_index.llms.openllm"
 
 [tool.llamahub.class_authors]
 OpenLLM = "aarnphm"
-OpenLLMAPI = "aarnphm"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -28,13 +27,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openllm"
 readme = "README.md"
-version = "0.1.5"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-openllm-client = "^0.5.3"
-openllm = "^0.5.3"
+llama-index-llms-openai = "^0.1.1"
+openllm = ">=0.6.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
