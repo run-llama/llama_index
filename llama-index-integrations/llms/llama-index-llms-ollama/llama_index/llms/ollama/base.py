@@ -1,7 +1,6 @@
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from ollama import Client, AsyncClient
-from ollama import ChatResponse as OllamaChatResponse
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -11,11 +10,12 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     achat_to_completion_decorator,
@@ -23,6 +23,9 @@ from llama_index.core.base.llms.generic_utils import (
     astream_chat_to_completion_decorator,
 )
 from llama_index.core.tools import ToolSelection
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 DEFAULT_REQUEST_TIMEOUT = 30.0
 
@@ -33,7 +36,13 @@ def get_additional_kwargs(
     return {k: v for k, v in response.items() if k not in exclude}
 
 
-class Ollama(CustomLLM):
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
+class Ollama(FunctionCallingLLM):
     """Ollama LLM.
 
     Visit https://ollama.com/ to download and install Ollama.
@@ -129,6 +138,8 @@ class Ollama(CustomLLM):
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
             is_chat_model=True,  # Ollama supports chat API for all models
+            # TODO: Detect if selected model is a function calling model?
+            is_function_calling_model=True,
         )
 
     @property
@@ -165,10 +176,73 @@ class Ollama(CustomLLM):
             for message in messages
         ]
 
-    def _parse_tool_calls_from_response(
-        response: OllamaChatResponse,
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+        }
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
-        return None
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            argument_dict = tool_call["function"]["arguments"]
+
+            tool_selections.append(
+                ToolSelection(
+                    # tool ids not provided by Ollama
+                    tool_id=tool_call["function"]["name"],
+                    tool_name=tool_call["function"]["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -185,10 +259,13 @@ class Ollama(CustomLLM):
             options=self._model_kwargs,
         )
 
+        tool_calls = response["message"].get("tool_calls", [])
+
         return ChatResponse(
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=response["message"]["role"],
+                additional_kwargs={"tool_calls": tool_calls},
             ),
             raw=response,
         )
@@ -218,10 +295,14 @@ class Ollama(CustomLLM):
                     continue
 
                 response_txt += r["message"]["content"]
+
+                tool_calls = r["message"].get("tool_calls", [])
+
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
+                        additional_kwargs={"tool_calls": tool_calls},
                     ),
                     delta=r["message"]["content"],
                     raw=r,
@@ -254,10 +335,14 @@ class Ollama(CustomLLM):
                     continue
 
                 response_txt += r["message"]["content"]
+
+                tool_calls = r["message"].get("tool_calls", [])
+
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
+                        additional_kwargs={"tool_calls": tool_calls},
                     ),
                     delta=r["message"]["content"],
                     raw=r,
@@ -282,10 +367,13 @@ class Ollama(CustomLLM):
             options=self._model_kwargs,
         )
 
+        tool_calls = response["message"].get("tool_calls", [])
+
         return ChatResponse(
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=response["message"]["role"],
+                additional_kwargs={"tool_calls": tool_calls},
             ),
             raw=response,
         )
