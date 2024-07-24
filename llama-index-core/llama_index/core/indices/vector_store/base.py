@@ -1,4 +1,5 @@
-"""Base vector store index.
+"""
+Base vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -32,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 class VectorStoreIndex(BaseIndex[IndexDict]):
-    """Vector Store Index.
+    """
+    Vector Store Index.
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
@@ -132,7 +134,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
     ) -> List[BaseNode]:
-        """Get tuples of id, node, and embedding.
+        """
+        Get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
@@ -155,7 +158,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
     ) -> List[BaseNode]:
-        """Asynchronously get tuples of id, node, and embedding.
+        """
+        Asynchronously get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
@@ -290,7 +294,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         nodes: Sequence[BaseNode],
         **insert_kwargs: Any,
     ) -> IndexDict:
-        """Build the index from nodes.
+        """
+        Build the index from nodes.
 
         NOTE: Overrides BaseIndex.build_index_from_nodes.
             VectorStoreIndex only stores nodes in document store
@@ -312,7 +317,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self._add_nodes_to_index(self._index_struct, nodes, **insert_kwargs)
 
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
-        """Insert nodes.
+        """
+        Insert nodes.
 
         NOTE: overrides BaseIndex.insert_nodes.
             VectorStoreIndex only stores nodes in document store
@@ -339,7 +345,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
-        """Delete a list of nodes from the index.
+        """
+        Delete a list of nodes from the index.
 
         Args:
             node_ids (List[str]): A list of node_ids from the nodes to delete
@@ -374,6 +381,37 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             not self._vector_store.stores_text or self._store_nodes_override
         ) and delete_from_docstore:
             self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
+
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    async def adelete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document and it's nodes by using ref_doc_id."""
+
+        async def _delete_from_index_struct(ref_doc_info: RefDocInfo) -> None:
+            """Delete from index_struct only if needed."""
+            if not self._vector_store.stores_text or self._store_nodes_override:
+                ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
+                if ref_doc_info is not None:
+                    for node_id in ref_doc_info.node_ids:
+                        self._index_struct.delete(node_id)
+                        self._vector_store.delete(node_id)
+
+        async def _delete_from_docstore() -> None:
+            """Delete from docstore only if needed."""
+            if (
+                not self._vector_store.stores_text or self._store_nodes_override
+            ) and delete_from_docstore:
+                await self._docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
+
+        await run_async_tasks(
+            [
+                self._vector_store.adelete(ref_doc_id, **delete_kwargs),
+                _delete_from_index_struct(ref_doc_id),
+                _delete_from_docstore(),
+            ]
+        )
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
