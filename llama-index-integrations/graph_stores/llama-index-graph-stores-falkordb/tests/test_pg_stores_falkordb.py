@@ -5,7 +5,7 @@ from llama_index.graph_stores.falkordb import FalkorDBPropertyGraphStore
 from llama_index.core.graph_stores.types import Relation, EntityNode
 from llama_index.core.schema import TextNode
 
-falkordb_url = os.environ.get("FALKORDB_TEST_URL", "falkor://localhost")
+falkordb_url = os.environ.get("FALKORDB_TEST_URL")
 
 if not falkordb_url:
     falkordb_available = False
