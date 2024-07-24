@@ -271,24 +271,24 @@ class AzureDocumentStore(KVDocumentStore):
 
     async def aget_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
         """Get the RefDocInfo for a given ref_doc_id."""
-        ref_doc_infos, doc_metadata = await asyncio.gather(
-            self._kvstore.aquery(
-                f"PartitionKey eq '{self._kvstore.partition_key}' and ref_doc_id eq '{ref_doc_id}'",
-                self._metadata_collection,
-                select="RowKey",
-            ),
-            self._kvstore.aget(
-                ref_doc_id, collection=self._doc_metadata_collection, select="metadata"
-            ),
+        metadatas = await self._kvstore.aquery(
+            f"PartitionKey eq '{self._kvstore.partition_key}' and RowKey eq '{ref_doc_id}'",
+            self._metadata_collection,
+            select="RowKey",
         )
 
-        node_ids = [doc["RowKey"] async for doc in ref_doc_infos]
+        node_ids = [metadata["RowKey"] async for metadata in metadatas]
+
         if not node_ids:
             return None
 
+        doc_metadata = await self._kvstore.aget(
+            ref_doc_id, collection=self._ref_doc_collection, select="metadata"
+        )
+
         ref_doc_info_dict = {
             "node_ids": node_ids,
-            "metadata": doc_metadata.get("metadata"),
+            "metadata": doc_metadata.get("metadata") if doc_metadata else None,
         }
 
         # TODO: deprecated legacy support
