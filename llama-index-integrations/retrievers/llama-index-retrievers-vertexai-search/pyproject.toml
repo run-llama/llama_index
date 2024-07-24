@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.deeplake"
+import_path = "llama_index.retrievers.vertexai_search"
 
 [tool.llamahub.class_authors]
-DeepLakeVectorStore = "llama-index"
+VertexAISearchRetriever = "wangdave"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,18 +21,20 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Activeloop <support@activeloop.ai>"]
-description = "llama-index vector_stores deeplake integration"
-exclude = ["**/BUILD"]
+authors = ["Dave Wang <wangdave@google.com>"]
+description = "llama-index retrievers vertex ai search integration"
 license = "MIT"
-name = "llama-index-vector-stores-deeplake"
+name = "llama-index-retrievers-vertexai-search"
 readme = "README.md"
-version = "0.1.5"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-deeplake = ">=3.9.12"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.10.0"
+google-cloud-aiplatform = "^1.53.0"
+google-cloud-discoveryengine = "^0.11.13"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
