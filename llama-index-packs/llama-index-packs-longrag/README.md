@@ -18,14 +18,12 @@ llamaindex-cli download-llamapack LongRAGPack --download-dir ./longrag_pack
 
 ```py
 from llama_index.packs.longrag import LongRAGPack
-from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 
 Settings.llm = OpenAI("gpt-4o")
-embed_model = OpenAIEmbedding()
 
-pack = LongRAGPack(data_dir="./data", embed_model=embed_model)
+pack = LongRAGPack(data_dir="./data")
 
 query_str = "How can Pittsburgh become a startup hub, and what are the two types of moderates?"
 res = pack.run(query_str)
