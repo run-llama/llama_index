@@ -45,11 +45,7 @@ class Workflow:
             if not step_config:
                 raise ValueError(f"Step {name} is missing `@step()` decorator.")
 
-            for event_types in step_config.required_events.values():
-                for event_type in event_types:
-                    self._event_subscriptions[event_type].add(name)
-
-            for event_types in step_config.optional_events.values():
+            for event_types in step_config.accepted_events.values():
                 for event_type in event_types:
                     self._event_subscriptions[event_type].add(name)
 
@@ -59,60 +55,53 @@ class Workflow:
                 step: Callable,
                 config: StepConfig,
             ) -> None:
-                all_events = {**config.required_events, **config.optional_events}
-
-                event_buffer = {name: [] for name in all_events}
+                event_buffer = {name: [] for name in config.accepted_events}
                 while True:
                     ev = await queue.get()
-                    for param_name, event_types in all_events.items():
+                    for param_name, event_types in config.accepted_events.items():
                         for event_type in event_types:
                             if isinstance(ev, event_type):
                                 event_buffer[param_name].append(ev)
                                 break
 
-                    while all(
-                        len(event_buffer[name]) > 0 for name in config.required_events
-                    ):
-                        # do we need to wait for the step flag?
-                        if stepwise:
-                            await self._step_flags[name].wait()
+                    # do we need to wait for the step flag?
+                    if stepwise:
+                        await self._step_flags[name].wait()
 
-                            # clear all flags so that we only run one step
-                            for flag_name in self._step_flags:
-                                self._step_flags[flag_name].clear()
+                        # clear all flags so that we only run one step
+                        for flag_name in self._step_flags:
+                            self._step_flags[flag_name].clear()
 
-                        kwargs = {**config.kwargs}
+                    kwargs = {**config.kwargs}
 
-                        # pop off and consume the latest event of each type
-                        current_events = []
-                        for param_name in all_events:
-                            if event_buffer[param_name]:
-                                kwargs[param_name] = event_buffer[param_name].pop()
-                                current_events.append(type(kwargs[param_name]).__name__)
-                            elif param_name in config.optional_events:
-                                kwargs[param_name] = None
+                    # pop off and consume the latest event of each type
+                    current_events = []
+                    for param_name in config.accepted_events:
+                        if event_buffer[param_name]:
+                            kwargs[param_name] = event_buffer[param_name].pop()
+                            current_events.append(type(kwargs[param_name]).__name__)
 
-                        # record the events that were consumed
-                        self._events.append((name, current_events))
+                    # record the events that were consumed
+                    self._events.append((name, current_events))
 
-                        if self._verbose:
-                            print(f"Running step {name} with kwargs: {kwargs}")
-
-                        # run step
+                    if self._verbose:
                         print(f"Running step {name} with kwargs: {kwargs}")
-                        new_evs = await step(**kwargs)
-                        print(f"Step {name} produced event {new_evs}")
 
-                        # handle the return value
-                        if isinstance(new_evs, Event):
-                            new_evs = [new_evs]
-                        elif new_evs is None:
-                            new_evs = []
+                    # run step
+                    print(f"Running step {name} with kwargs: {kwargs}")
+                    new_evs = await step(**kwargs)
+                    print(f"Step {name} produced event {new_evs}")
 
-                        for new_ev in new_evs:
-                            if self._verbose:
-                                print(f"Step {name} produced event {new_ev}")
-                            self.send_event(new_ev)
+                    # handle the return value
+                    if isinstance(new_evs, Event):
+                        new_evs = [new_evs]
+                    elif new_evs is None:
+                        new_evs = []
+
+                    for new_ev in new_evs:
+                        if self._verbose:
+                            print(f"Step {name} produced event {new_ev}")
+                        self.send_event(new_ev)
 
             self._tasks.add(
                 asyncio.create_task(
@@ -217,11 +206,7 @@ class Workflow:
             if not step_config:
                 raise ValueError(f"Step {name} is missing `@step()` decorator.")
 
-            for event_types in step_config.required_events.values():
-                for event_type in event_types:
-                    consumed_events.add(event_type)
-
-            for event_types in step_config.optional_events.values():
+            for event_types in step_config.accepted_events.values():
                 for event_type in event_types:
                     consumed_events.add(event_type)
 
@@ -286,10 +271,9 @@ class Workflow:
                 step_name, label=step_name, color="#ADD8E6", shape="box"
             )  # Light blue for steps
 
-            all_events = {**step_config.required_events, **step_config.optional_events}
             all_event_types = {
                 event_type
-                for event_types in all_events.values()
+                for event_types in step_config.accepted_events.values()
                 for event_type in event_types
             }
             for event_type in all_event_types:
@@ -313,8 +297,7 @@ class Workflow:
                 if return_type != type(None):
                     net.add_edge(step_name, return_type.__name__)
 
-            all_events = {**step_config.required_events, **step_config.optional_events}
-            for event_types in all_events.values():
+            for event_types in step_config.accepted_events.values():
                 for event_type in event_types:
                     net.add_edge(event_type.__name__, step_name)
 
