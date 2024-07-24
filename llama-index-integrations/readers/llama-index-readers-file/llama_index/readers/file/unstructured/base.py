@@ -174,7 +174,7 @@ class UnstructuredReader(BaseReader):
         excluded_keys = set(excluded_metadata_keys or self.excluded_metadata_keys)
         docs: List[Document] = []
 
-        def _generate_metadata(element: Element, sequence_number: Optional[int] = None):
+        def _merge_metadata(element: Element, sequence_number: Optional[int] = None):
             candidate_metadata = {**element.metadata.to_dict(), **doc_extras}
             metadata = {
                 key: (
@@ -193,7 +193,7 @@ class UnstructuredReader(BaseReader):
             docs = [
                 Document(
                     text=element.text,
-                    extra_info=_generate_metadata(element, sequence_number),
+                    extra_info=_merge_metadata(element, sequence_number),
                     doc_id=element.metadata.filename,
                     **doc_kwargs,
                 )
@@ -204,7 +204,7 @@ class UnstructuredReader(BaseReader):
                 docs = []
             else:
                 text_chunks = [" ".join(str(el).split()) for el in elements]
-                metadata = _generate_metadata(elements[0])
+                metadata = _merge_metadata(elements[0])
                 docs = [
                     Document(
                         text="\n\n".join(text_chunks),
