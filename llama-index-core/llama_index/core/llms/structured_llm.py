@@ -1,4 +1,4 @@
-from typing import Any, TYPE_CHECKING, Type, Sequence, Dict
+from typing import Any, Type, Sequence, Dict
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.llm import (
@@ -34,9 +34,6 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
-
-if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
 
 
 class StructuredLLM(LLM):
