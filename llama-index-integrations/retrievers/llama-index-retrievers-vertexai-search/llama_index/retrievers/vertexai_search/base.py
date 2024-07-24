@@ -196,6 +196,7 @@ class VertexAISearchRetriever(BaseRetriever):
         elif self.engine_data_type == 2:
             content_search_spec = {
                 "extractive_content_spec": SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                    max_extractive_segment_count=self.max_extractive_segment_count,
                     max_extractive_answer_count=self.max_extractive_answer_count,
                     return_extractive_segment_score=self.return_extractive_segment_score,
                 ),
@@ -367,7 +368,9 @@ class VertexAISearchRetriever(BaseRetriever):
             )
         elif self.engine_data_type == 2:
             chunk_type = (
-                "extractive_answers" if self.get_extractive_answers else "snippets"
+                "extractive_answers"
+                if self.get_extractive_answers
+                else "extractive_segments"
             )
             note_with_score = self._convert_website_datastore_response(
                 response.results, chunk_type
