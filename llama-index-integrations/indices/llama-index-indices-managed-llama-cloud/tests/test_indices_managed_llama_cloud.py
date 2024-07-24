@@ -54,6 +54,7 @@ def test_documents_crud(organization_id: Optional[str]):
         api_key=api_key,
         base_url=base_url,
         organization_id=organization_id,
+        verbose=True,
     )
     docs = index.ref_doc_info
     assert len(docs) == 1
@@ -64,7 +65,8 @@ def test_documents_crud(organization_id: Optional[str]):
     assert all(n.node.metadata["source"] == "test" for n in nodes)
 
     index.insert(
-        Document(text="Hello world.", doc_id="2", metadata={"source": "inserted"})
+        Document(text="Hello world.", doc_id="2", metadata={"source": "inserted"}),
+        verbose=True,
     )
     docs = index.ref_doc_info
     assert len(docs) == 2
@@ -76,7 +78,8 @@ def test_documents_crud(organization_id: Optional[str]):
     assert any(n.node.ref_doc_id == "2" for n in nodes)
 
     index.update_ref_doc(
-        Document(text="Hello world.", doc_id="2", metadata={"source": "updated"})
+        Document(text="Hello world.", doc_id="2", metadata={"source": "updated"}),
+        verbose=True,
     )
     docs = index.ref_doc_info
     assert len(docs) == 2
@@ -93,7 +96,7 @@ def test_documents_crud(organization_id: Optional[str]):
     assert docs["3"].metadata["source"] == "refreshed"
     assert docs["1"].metadata["source"] == "refreshed"
 
-    index.delete_ref_doc("3")
+    index.delete_ref_doc("3", verbose=True)
     docs = index.ref_doc_info
     assert len(docs) == 2
     assert "3" not in docs
