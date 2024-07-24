@@ -12,18 +12,16 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.aio import (
     SearchIndexClient as AsyncSearchIndexClient,
 )
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    FilterCondition,
     FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    FilterOperator,
-    FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -171,20 +169,23 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         return index_field_spec
 
+    def _index_exists(self, index_name: str) -> bool:
+        return index_name in self._index_client.list_index_names()
+
+    async def _aindex_exists(self, index_name: str) -> bool:
+        return index_name in [
+            name async for name in self._async_index_client.list_index_names()
+        ]
+
     def _create_index_if_not_exists(self, index_name: str) -> None:
-        if index_name not in self._index_client.list_index_names():
+        if not self._index_exists(index_name):
             logger.info(
                 f"Index {index_name} does not exist in Azure AI Search, creating index"
             )
             self._create_index(index_name)
 
     async def _acreate_index_if_not_exists(self, index_name: str) -> None:
-        list_index_names = set()
-
-        async for index in self._async_index_client.list_index_names():
-            list_index_names.add(index)
-
-        if index_name not in list_index_names:
+        if not await self._aindex_exists(index_name):
             logger.info(
                 f"Index {index_name} does not exist in Azure AI Search, creating index"
             )
@@ -426,23 +427,16 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         await self._async_index_client.create_index(index)
 
     def _validate_index(self, index_name: Optional[str]) -> None:
-        if self._index_client and index_name:
-            if index_name not in self._index_client.list_index_names():
-                raise ValueError(
-                    f"Validation failed, index {index_name} does not exist."
-                )
+        if self._index_client and index_name and not self._index_exists(index_name):
+            raise ValueError(f"Validation failed, index {index_name} does not exist.")
 
     async def _avalidate_index(self, index_name: Optional[str]) -> None:
-        list_index_names = set()
-
-        async for index in self._async_index_client.list_index_names():
-            list_index_names.add(index)
-
-        if self._async_index_client and index_name:
-            if index_name not in list_index_names:
-                raise ValueError(
-                    f"Validation failed, index {index_name} does not exist."
-                )
+        if (
+            self._async_index_client
+            and index_name
+            and not await self._aindex_exists(index_name)
+        ):
+            raise ValueError(f"Validation failed, index {index_name} does not exist.")
 
     def __init__(
         self,
@@ -841,6 +835,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         Delete documents from the AI Search Index
         with doc_id_field_key field equal to ref_doc_id.
         """
+        if not self._index_exists(self._index_name):
+            return
+
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
         batch_size = 1000
@@ -869,6 +866,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         Delete documents from the AI Search Index
         with doc_id_field_key field equal to ref_doc_id.
         """
+        if not await self._aindex_exists(self._index_name):
+            return
+
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
         batch_size = 1000
