@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.openllm"
 
 [tool.llamahub.class_authors]
-OpenLLM = "aarnphm"
+OpenLLM = "bentoml"
 
 [tool.mypy]
 disallow_untyped_defs = true
