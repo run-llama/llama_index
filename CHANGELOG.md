@@ -1,8 +1,48 @@
 # ChangeLog
 
+## [2024-07-24]
+
+### `llama-index-core` [0.10.58]
+
+- Fix: Token counter expecting response.raw as dict, got ChatCompletionChunk (#14937)
+- Return proper tool outputs per agent step instead of all (#14885)
+- Minor bug fixes to async structured streaming (#14925)
+
+### `llama-index-llms-fireworks` [0.1.6]
+
+- fireworks ai llama3.1 support (#14914)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.6]
+
+- Add claude 3.5 sonnet to multi modal llms (#14932)
+
+### `llama-index-retrievers-bm25` [0.2.1]
+
+- 🐞 fix(integrations): BM25Retriever persist missing arg similarity_top_k (#14933)
+
+### `llama-index-retrievers-vertexai-search` [0.1.0]
+
+- Llamaindex retriever for Vertex AI Search (#14913)
+
+### `llama-index-vector-stores-deeplake` [0.1.5]
+
+- Improved `deeplake.get_nodes()` performance (#14920)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.3]
+
+- Bugfix: Don't pass empty list of embeddings to elasticsearch store when using sparse strategy (#14918)
+
+### `llama-index-vector-stores-lindorm` [0.1.0]
+
+- Add vector store integration of lindorm (#14623)
+
+### `llama-index-vector-stores-qdrant` [0.2.14]
+
+- feat: allow to limit how many elements retrieve (qdrant) (#14904)
+
 ## [2024-07-22]
 
-### `llama-index-core` [v0.10.57]
+### `llama-index-core` [0.10.57]
 
 - Add an optional parameter similarity_score to VectorContextRetrieve… (#14831)
 - add property extraction (using property names and optional descriptions) for KGs (#14707)
