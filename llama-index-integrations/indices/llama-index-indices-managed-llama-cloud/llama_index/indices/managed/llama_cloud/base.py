@@ -199,6 +199,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         name: str,
         transformations: Optional[List[TransformComponent]] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
+        organization_id: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
@@ -221,7 +222,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         )
 
         project = client.projects.upsert_project(
-            request=ProjectCreate(name=project_name)
+            organization_id=organization_id, request=ProjectCreate(name=project_name)
         )
         if project.id is None:
             raise ValueError(f"Failed to create/get project {project_name}")

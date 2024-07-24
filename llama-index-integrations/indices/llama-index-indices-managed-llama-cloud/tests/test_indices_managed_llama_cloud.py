@@ -1,3 +1,4 @@
+from typing import Optional
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
 from llama_index.core.schema import Document
@@ -36,12 +37,13 @@ def test_retrieve():
     assert response is not None and len(response.response) > 0
 
 
+@pytest.mark.parametrize("organization_id", [None, organization_id])
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api keyset"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.integration()
-def test_documents_crud():
+def test_documents_crud(organization_id: Optional[str]):
     os.environ["OPENAI_API_KEY"] = openai_api_key
     documents = [
         Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
@@ -51,6 +53,7 @@ def test_documents_crud():
         name=f"test pipeline {uuid4()}",
         api_key=api_key,
         base_url=base_url,
+        organization_id=organization_id,
     )
     docs = index.ref_doc_info
     assert len(docs) == 1
