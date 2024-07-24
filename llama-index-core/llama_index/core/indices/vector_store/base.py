@@ -5,6 +5,7 @@ An index that is built on top of an existing vector store.
 
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -362,12 +363,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             for node_id in node_ids:
                 self._docstore.delete_document(node_id, raise_error=False)
 
-    def delete_ref_doc(
-        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
-    ) -> None:
-        """Delete a document and it's nodes by using ref_doc_id."""
-        self._vector_store.delete(ref_doc_id, **delete_kwargs)
-
+    def _delete_from_index_struct(self, ref_doc_id: str) -> None:
         # delete from index_struct only if needed
         if not self._vector_store.stores_text or self._store_nodes_override:
             ref_doc_info = self._docstore.get_ref_doc_info(ref_doc_id)
@@ -376,42 +372,47 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                     self._index_struct.delete(node_id)
                     self._vector_store.delete(node_id)
 
+    def _delete_from_docstore(self, ref_doc_id: str) -> None:
         # delete from docstore only if needed
-        if (
-            not self._vector_store.stores_text or self._store_nodes_override
-        ) and delete_from_docstore:
+        if not self._vector_store.stores_text or self._store_nodes_override:
             self._docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
+    def delete_ref_doc(
+        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+    ) -> None:
+        """Delete a document and it's nodes by using ref_doc_id."""
+        self._vector_store.delete(ref_doc_id, **delete_kwargs)
+        self._delete_from_index_struct(ref_doc_id)
+        if delete_from_docstore:
+            self._delete_from_docstore(ref_doc_id)
         self._storage_context.index_store.add_index_struct(self._index_struct)
+
+    async def _delete_from_index_struct(self, ref_doc_id: str) -> None:
+        """Delete from index_struct only if needed."""
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
+            if ref_doc_info is not None:
+                for node_id in ref_doc_info.node_ids:
+                    self._index_struct.delete(node_id)
+                    self._vector_store.delete(node_id)
+
+    async def _delete_from_docstore(self, ref_doc_id: str) -> None:
+        """Delete from docstore only if needed."""
+        if not self._vector_store.stores_text or self._store_nodes_override:
+            await self._docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
 
     async def adelete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
         """Delete a document and it's nodes by using ref_doc_id."""
+        tasks = [
+            self._vector_store.adelete(ref_doc_id, **delete_kwargs),
+            self._delete_from_index_struct(ref_doc_id),
+        ]
+        if delete_from_docstore:
+            tasks.append(self._delete_from_docstore(ref_doc_id))
 
-        async def _delete_from_index_struct(ref_doc_info: RefDocInfo) -> None:
-            """Delete from index_struct only if needed."""
-            if not self._vector_store.stores_text or self._store_nodes_override:
-                ref_doc_info = await self._docstore.aget_ref_doc_info(ref_doc_id)
-                if ref_doc_info is not None:
-                    for node_id in ref_doc_info.node_ids:
-                        self._index_struct.delete(node_id)
-                        self._vector_store.delete(node_id)
-
-        async def _delete_from_docstore() -> None:
-            """Delete from docstore only if needed."""
-            if (
-                not self._vector_store.stores_text or self._store_nodes_override
-            ) and delete_from_docstore:
-                await self._docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
-
-        await run_async_tasks(
-            [
-                self._vector_store.adelete(ref_doc_id, **delete_kwargs),
-                _delete_from_index_struct(ref_doc_id),
-                _delete_from_docstore(),
-            ]
-        )
+        await asyncio.gather(*tasks)
 
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
