@@ -17,9 +17,7 @@ else:
 def pg_store() -> FalkorDBPropertyGraphStore:
     if not falkordb_available:
         pytest.skip("No falkordb credentials provided")
-    pg_store = FalkorDBPropertyGraphStore(
-        url=falkordb_url
-    )
+    pg_store = FalkorDBPropertyGraphStore(url=falkordb_url)
     pg_store.structured_query("MATCH (n) DETACH DELETE n")
     return pg_store
 

@@ -10,9 +10,7 @@ from llama_index.core.graph_stores.types import (
     ChunkNode,
 )
 from llama_index.core.graph_stores.utils import (
-    clean_string_values,
     value_sanitize,
-    LIST_LIMIT,
 )
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
@@ -57,12 +55,12 @@ RETURN {label:label, keys:keys} AS output
 rel_properties_query = """
 MATCH ()-[r]->()
 WITH keys(r) as keys, type(r) AS types
-WITH CASE WHEN keys = [] THEN [NULL] ELSE keys END AS keys, types 
+WITH CASE WHEN keys = [] THEN [NULL] ELSE keys END AS keys, types
 UNWIND types AS type
 WITH type, keys
 WHERE NOT type IN $EXCLUDED_LABELS
 UNWIND keys AS key WITH type,
-collect(DISTINCT key) AS keys 
+collect(DISTINCT key) AS keys
 RETURN {type:type, keys:keys} AS output
 """
 
@@ -73,6 +71,7 @@ UNWIND labels(m) as dst_label
 UNWIND type(r) as rel_type
 RETURN DISTINCT {start: src_label, type: rel_type, end: dst_label} AS output
 """
+
 
 class FalkorDBPropertyGraphStore(PropertyGraphStore):
     r"""
@@ -169,11 +168,10 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         try:
             constraint = self.structured_query("CALL db.constraints()")
             index = self.structured_query(
-                "CALL db.indexes() YIELD label, properties, entitytype "
-                "RETURN *"
+                "CALL db.indexes() YIELD label, properties, entitytype " "RETURN *"
             )
         except (
-            redis.exceptions.ResponseError,
+            redis.exceptions.ResponseError
         ):  # Read-only user might not have access to schema information
             constraint = []
             index = []
@@ -462,7 +460,9 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         param_map = param_map or {}
 
         result = self._driver.query(query, param_map)
-        full_result = [{h[1]: d[i] for i, h in enumerate(result.header)} for d in result.result_set]
+        full_result = [
+            {h[1]: d[i] for i, h in enumerate(result.header)} for d in result.result_set
+        ]
 
         if self.sanitize_query_output:
             return [value_sanitize(el) for el in full_result]
