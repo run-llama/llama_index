@@ -154,7 +154,10 @@ class ContextChatEngine(BaseChatEngine):
 
     @trace_method("chat")
     def chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None, prev_chunks = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        prev_chunks=None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -166,12 +169,16 @@ class ContextChatEngine(BaseChatEngine):
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
-                [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
+                [
+                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
+                    for n in nodes
+                ]
             )
 
             # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(context_str=context_str)
-
+            context_str_template = self._context_template.format(
+                context_str=context_str
+            )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         prefix_messages_token_count = len(
@@ -201,7 +208,10 @@ class ContextChatEngine(BaseChatEngine):
 
     @trace_method("chat")
     def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None,  prev_chunks = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        prev_chunks=None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -214,11 +224,16 @@ class ContextChatEngine(BaseChatEngine):
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
-                [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
+                [
+                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
+                    for n in nodes
+                ]
             )
 
             # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(context_str=context_str)
+            context_str_template = self._context_template.format(
+                context_str=context_str
+            )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         initial_token_count = len(
@@ -249,11 +264,12 @@ class ContextChatEngine(BaseChatEngine):
 
         return chat_response
 
-
-
     @trace_method("chat")
     async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None, prev_chunks = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        prev_chunks=None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -265,12 +281,16 @@ class ContextChatEngine(BaseChatEngine):
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
-                [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
+                [
+                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
+                    for n in nodes
+                ]
             )
 
             # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(context_str=context_str)
-
+            context_str_template = self._context_template.format(
+                context_str=context_str
+            )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         initial_token_count = len(
@@ -301,7 +321,10 @@ class ContextChatEngine(BaseChatEngine):
 
     @trace_method("chat")
     async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None, prev_chunks = None
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        prev_chunks=None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -313,11 +336,16 @@ class ContextChatEngine(BaseChatEngine):
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
-                [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
+                [
+                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
+                    for n in nodes
+                ]
             )
 
             # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(context_str=context_str)
+            context_str_template = self._context_template.format(
+                context_str=context_str
+            )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
         initial_token_count = len(
