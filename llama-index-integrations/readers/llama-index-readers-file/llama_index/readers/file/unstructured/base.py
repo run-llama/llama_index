@@ -12,13 +12,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-# except ImportError:
-#     Element = None
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
+
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-
-# try:
-from unstructured.documents.elements import Element
 
 
 class UnstructuredReader(BaseReader):
@@ -177,9 +177,11 @@ class UnstructuredReader(BaseReader):
         def _generate_metadata(element: Element, sequence_number: Optional[int] = None):
             candidate_metadata = {**element.metadata.to_dict(), **doc_extras}
             metadata = {
-                key: value
-                if isinstance(value, self.allowed_metadata_types)
-                else json.dumps(value)
+                key: (
+                    value
+                    if isinstance(value, self.allowed_metadata_types)
+                    else json.dumps(value)
+                )
                 for key, value in candidate_metadata.items()
                 if key not in excluded_keys
             }
