@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Union
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -36,6 +36,7 @@ class RAGWorkflow(Workflow):
         super().__init__(*args, **kwargs)
         # Shared state: to be refactored into a better workflow context manager
         self.index: Any = None
+        self.query: str = ""
 
     @step()
     async def ingest(self, ev: StartEvent) -> Optional[StopEvent]:
@@ -67,27 +68,39 @@ class RAGWorkflow(Workflow):
         return RetrieverEvent(nodes=nodes)
 
     @step()
-    async def rerank(self, ev: RetrieverEvent, start_ev: StartEvent) -> QueryResult:
-        query = start_ev.get("query")
-
-        ranker = LLMRerank(choice_batch_size=5, top_n=3)
-        new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=query)
-        print(f"Reranked nodes to {len(new_nodes)}")
-        return QueryResult(nodes=new_nodes)
+    async def rerank(
+        self, ev: Union[RetrieverEvent, StartEvent]
+    ) -> Optional[QueryResult]:
+        if isinstance(ev, StartEvent):
+            self.query = ev.get("query", "")
+            return None
+        elif isinstance(ev, RetrieverEvent):
+            ranker = LLMRerank(choice_batch_size=5, top_n=3)
+            new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=self.query)
+            print(f"Reranked nodes to {len(new_nodes)}")
+            return QueryResult(nodes=new_nodes)
+        else:
+            return None
 
     @step()
-    async def synthesize(self, ev: QueryResult, start_ev: StartEvent) -> StopEvent:
+    async def synthesize(
+        self, ev: Union[QueryResult, StartEvent]
+    ) -> Optional[StopEvent]:
         # Should never fallback, it'll get better once we have a proper context storage
-        query = start_ev.get("query")
-
-        llm = OpenAI(model="gpt-3.5-turbo")
-        summarizer = Refine(llm=llm, verbose=True)
-        response = await summarizer.asynthesize(query, nodes=ev.nodes)
-        return StopEvent(msg=str(response))
+        if isinstance(ev, StartEvent):
+            self.query = ev.get("query", "")
+            return None
+        elif isinstance(ev, QueryResult):
+            llm = OpenAI(model="gpt-3.5-turbo")
+            summarizer = Refine(llm=llm, verbose=True)
+            response = await summarizer.asynthesize(self.query, nodes=ev.nodes)
+            return StopEvent(msg=str(response))
+        else:
+            return None
 
 
 async def main() -> None:
-    w = RAGWorkflow(timeout=10, verbose=False)
+    w = RAGWorkflow(timeout=60, verbose=True)
 
     print("Ingesting data...")
     ret = await w.run(dataset="PaulGrahamEssayDataset")

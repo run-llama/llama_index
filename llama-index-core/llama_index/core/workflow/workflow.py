@@ -118,6 +118,7 @@ class Workflow:
         if not self._tasks:
             self._start()
 
+        self.send_event(StartEvent(kwargs))
         _, unfinished = await asyncio.wait(self._tasks, timeout=self._timeout)
         if unfinished:
             return f"Operation timed out after {self._timeout} seconds"
