@@ -114,8 +114,6 @@ class Workflow:
                                 print(f"Step {name} produced event {new_ev}")
                             self.send_event(new_ev)
 
-                    await asyncio.sleep(0.01)
-
             self._tasks.add(
                 asyncio.create_task(
                     _task(name, self._queues[name], step_func, step_config)
@@ -184,9 +182,6 @@ class Workflow:
         # let all steps start
         for name in self._queues:
             self._step_flags[name].set()
-
-        # wait for the first step to finish
-        await asyncio.sleep(0.01)
 
         # if we're done, return the result
         if self.is_done:
