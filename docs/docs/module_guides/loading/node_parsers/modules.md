@@ -113,7 +113,6 @@ This is most useful for generating embeddings that have a very specific scope. T
 An example of setting up the parser with default settings is below. In practice, you would usually only want to adjust the window size of sentences.
 
 ```python
-import nltk
 from llama_index.core.node_parser import SentenceWindowNodeParser
 
 node_parser = SentenceWindowNodeParser.from_defaults(
