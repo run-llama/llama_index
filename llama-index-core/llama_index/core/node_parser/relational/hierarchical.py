@@ -85,6 +85,7 @@ class HierarchicalNodeParser(NodeParser):
     per parent (e.g. with a smaller chunk size).
 
     For instance, this may return a list of nodes like:
+    
     - list of top-level nodes with chunk size 2048
     - list of second-level nodes, where each node is a child of a top-level node,
       chunk size 512
@@ -210,13 +211,7 @@ class HierarchicalNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
-
-        Args:
-            documents (Sequence[Document]): documents to parse
-            include_metadata (bool): whether to include metadata in nodes
-
-        """
+        """Parse document into nodes."""
         with self.callback_manager.event(
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         ) as event:
