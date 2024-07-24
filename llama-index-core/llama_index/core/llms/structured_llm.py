@@ -1,4 +1,4 @@
-from typing import Any, TYPE_CHECKING, Type, Sequence, Dict
+from typing import Any, Type, Sequence, Dict
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms.llm import (
@@ -34,9 +34,6 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
-
-if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
 
 
 class StructuredLLM(LLM):
@@ -115,7 +112,7 @@ class StructuredLLM(LLM):
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> "AgentChatResponse":
+    ) -> ChatResponse:
         # NOTE: we are wrapping existing messages in a ChatPromptTemplate to
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
