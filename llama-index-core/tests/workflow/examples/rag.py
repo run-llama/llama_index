@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+from typing import Optional, List, Any
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -22,22 +23,22 @@ class QueryEvent(Event):
 
 @dataclass
 class RetrieverEvent(Event):
-    nodes: list[NodeWithScore]
+    nodes: List[NodeWithScore]
 
 
 @dataclass
 class QueryResult(Event):
-    nodes: list[NodeWithScore]
+    nodes: List[NodeWithScore]
 
 
 class RAGWorkflow(Workflow):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # Shared state: to be refactored into a better workflow context manager
-        self.index = None
+        self.index: Any = None
 
     @step()
-    async def ingest(self, ev: StartEvent) -> StopEvent:
+    async def ingest(self, ev: StartEvent) -> Optional[StopEvent]:
         dsname = ev.get("dataset")
         if not dsname:
             return None
@@ -47,7 +48,7 @@ class RAGWorkflow(Workflow):
         return StopEvent(msg=f"Indexed {len(documents)} documents.")
 
     @step()
-    async def retrieve(self, ev: StartEvent) -> RetrieverEvent:
+    async def retrieve(self, ev: StartEvent) -> Optional[RetrieverEvent]:
         query = ev.get("query")
         if not query:
             return None
@@ -85,7 +86,7 @@ class RAGWorkflow(Workflow):
         return StopEvent(msg=str(response))
 
 
-async def main():
+async def main() -> None:
     w = RAGWorkflow(timeout=10, verbose=False)
 
     print("Ingesting data...")
