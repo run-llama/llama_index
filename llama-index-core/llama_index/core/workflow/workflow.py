@@ -114,10 +114,6 @@ class Workflow:
                                 print(f"Step {name} produced event {new_ev}")
                             self.send_event(new_ev)
 
-                        # consume all possible events for this step?
-                        if not config.consume_all:
-                            break
-
                     await asyncio.sleep(0.01)
 
             self._tasks.add(
@@ -353,7 +349,7 @@ class Workflow:
                 net.add_edge(event_node, step_node)
 
                 if i > 0:
-                    prev_step_node = f"{self._events[i-1][0]}_{i-1}"
+                    prev_step_node = f"{self._events[i - 1][0]}_{i - 1}"
                     net.add_edge(prev_step_node, event_node)
 
         net.show(filename, notebook=notebook)

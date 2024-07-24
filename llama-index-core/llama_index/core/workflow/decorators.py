@@ -20,7 +20,6 @@ class StepConfig(BaseModel):
     required_events: Dict[str, List[Any]]
     optional_events: Dict[str, List[Any]]
     return_types: List[Any]
-    consume_all: bool
     kwargs: Dict[str, Any]
 
 
@@ -47,7 +46,7 @@ def get_return_types(return_hint: Any) -> List[Type]:
     return return_hint
 
 
-def step(consume_all: bool = False, **kwargs: Any):
+def step(**kwargs: Any):
     """Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
@@ -91,7 +90,6 @@ def step(consume_all: bool = False, **kwargs: Any):
             required_events=required_params,
             optional_events=optional_params,
             return_types=return_types,
-            consume_all=consume_all,
             kwargs=kwargs,
         )
 
