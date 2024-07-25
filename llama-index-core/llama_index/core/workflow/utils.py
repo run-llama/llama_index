@@ -83,7 +83,6 @@ def get_return_types(func: Callable) -> List[object]:
     """
     type_hints = get_type_hints(func)
     return_hint = type_hints.get("return", [Any])
-    print(return_hint)
 
     origin = get_origin(return_hint)
 

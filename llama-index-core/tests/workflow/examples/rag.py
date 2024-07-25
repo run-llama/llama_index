@@ -11,6 +11,10 @@ from llama_index.core.response_synthesizers import Refine
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.drawing import (
+    draw_all_possible_flows,
+    draw_most_recent_execution,
+)
 
 # pip install llama-index-llms-openai
 from llama_index.llms.openai import OpenAI
@@ -110,8 +114,8 @@ async def main() -> None:
     ret = await w.run(query="Who is Paul Graham?")
     print(ret)
 
-    w.draw_all_possible_flows()
-    w.draw_most_recent_execution()
+    draw_all_possible_flows(w)
+    draw_most_recent_execution(w)
 
 
 if __name__ == "__main__":

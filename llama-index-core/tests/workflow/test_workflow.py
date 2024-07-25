@@ -1,6 +1,5 @@
 import pytest
 import asyncio
-from unittest.mock import patch
 
 from llama_index.core.workflow.workflow import (
     Workflow,
@@ -8,49 +7,28 @@ from llama_index.core.workflow.workflow import (
     WorkflowTimeoutError,
 )
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
+from llama_index.core.workflow.events import StartEvent, StopEvent
 
 
-class TestEvent(Event):
-    pass
-
-
-class LastEvent(Event):
-    pass
-
-
-class DummyWorkflow(Workflow):
-    @step()
-    async def start_step(self, ev: StartEvent) -> TestEvent:
-        return TestEvent()
-
-    @step()
-    async def middle_step(self, ev: TestEvent) -> LastEvent:
-        return LastEvent()
-
-    @step()
-    async def end_step(self, ev: LastEvent) -> StopEvent:
-        return StopEvent(msg="Workflow completed")
+from .conftest import TestEvent
 
 
 @pytest.mark.asyncio()
-async def test_workflow_initialization():
-    workflow = DummyWorkflow()
+async def test_workflow_initialization(workflow):
     assert workflow._timeout == 10
     assert not workflow._disable_validation
     assert not workflow._verbose
 
 
 @pytest.mark.asyncio()
-async def test_workflow_run():
-    workflow = DummyWorkflow()
+async def test_workflow_run(workflow):
     result = await workflow.run()
     assert result == "Workflow completed"
 
 
 @pytest.mark.asyncio()
-async def test_workflow_run_step():
-    workflow = DummyWorkflow(verbose=True)
+async def test_workflow_run_step(workflow):
+    workflow._verbose = True
 
     # First step
     result = await workflow.run_step()
@@ -116,22 +94,3 @@ async def test_workflow_event_propagation():
     workflow = EventTrackingWorkflow()
     await workflow.run()
     assert events == ["step1", "step2"]
-
-
-@pytest.mark.asyncio()
-async def test_workflow_draw_methods():
-    workflow = DummyWorkflow()
-    with patch("pyvis.network.Network") as mock_network:
-        workflow.draw_all_possible_flows(filename="test_all_flows.html")
-        mock_network.assert_called_once()
-        mock_network.return_value.show.assert_called_once_with(
-            "test_all_flows.html", notebook=False
-        )
-
-    await workflow.run()
-    with patch("pyvis.network.Network") as mock_network:
-        workflow.draw_most_recent_execution(filename="test_recent_execution.html")
-        mock_network.assert_called_once()
-        mock_network.return_value.show.assert_called_once_with(
-            "test_recent_execution.html", notebook=False
-        )
