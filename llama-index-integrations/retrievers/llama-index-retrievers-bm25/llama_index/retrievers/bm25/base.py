@@ -77,7 +77,7 @@ class BM25Retriever(BaseRetriever):
             corpus_tokens = bm25s.tokenize(
                 [node.get_content() for node in nodes],
                 stopwords=language,
-                stemmer=stemmer,
+                stemmer=self.stemmer,
                 show_progress=verbose,
             )
             self.bm25 = bm25s.BM25()
