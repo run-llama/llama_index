@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document, NodeRelationship
+from llama_index.core.schema import Document, NodeRelationship, TextNode
 
 try:
     from unstructured.documents.elements import Element
@@ -206,16 +206,16 @@ class UnstructuredReader(BaseReader):
         if split_documents:
             docs = []
             for sequence_number, element in enumerate(elements):
-                doc = Document(
+                node = TextNode(
                     text=element.text,
-                    extra_info=_merge_metadata(element, sequence_number),
-                    doc_id=element.id_to_hash(sequence_number),
+                    metadata=_merge_metadata(element, sequence_number),
+                    id_=element.id_to_hash(sequence_number),
                     **doc_kwargs,
                 )
-                doc.relationships[
+                node.relationships[
                     NodeRelationship.SOURCE
                 ] = source.as_related_node_info()
-                docs.append(doc)
+                docs.append(node)
         else:
             docs = [source]
 
