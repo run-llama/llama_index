@@ -111,6 +111,7 @@ class Ollama(FunctionCallingLLM):
         additional_kwargs: Dict[str, Any] = {},
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             model=model,
@@ -121,6 +122,7 @@ class Ollama(FunctionCallingLLM):
             prompt_key=prompt_key,
             json_mode=json_mode,
             additional_kwargs=additional_kwargs,
+            **kwargs,
         )
 
         self._client = client
