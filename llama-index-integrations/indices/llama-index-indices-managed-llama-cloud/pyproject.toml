@@ -30,12 +30,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-llama-cloud"
 readme = "README.md"
-version = "0.2.6"
+version = "0.2.7"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.48.post1"
-llama-cloud = ">=0.0.9"
+llama-cloud = ">=0.0.11"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
