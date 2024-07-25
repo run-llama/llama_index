@@ -156,7 +156,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
     @property
     def client(self):
         return self._driver
-    
+
     def close(self) -> None:
         self._driver.close()
 
