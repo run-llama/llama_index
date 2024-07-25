@@ -196,20 +196,24 @@ class UnstructuredReader(BaseReader):
 
         text_chunks = [" ".join(str(el).split()) for el in elements]
         metadata = _merge_metadata(elements[0])
+        filename = metadata["filename"]
         source = Document(
             text="\n\n".join(text_chunks),
             extra_info=metadata,
-            doc_id=metadata["filename"],
+            doc_id=filename,
+            id_=filename,
             **doc_kwargs,
         )
 
         if split_documents:
             docs = []
             for sequence_number, element in enumerate(elements):
+                hash_id = element.id_to_hash(sequence_number)
                 node = TextNode(
                     text=element.text,
                     metadata=_merge_metadata(element, sequence_number),
-                    id_=element.id_to_hash(sequence_number),
+                    doc_id=hash_id,
+                    id_=hash_id,
                     **doc_kwargs,
                 )
                 node.relationships[
