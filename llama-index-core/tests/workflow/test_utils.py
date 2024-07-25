@@ -1,11 +1,15 @@
-from typing import Union
+import inspect
+from typing import Union, Any
 
 import pytest
 
+from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowValidationError
-from llama_index.core.workflow.events import Event
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     validate_step_signature,
+    get_steps_from_class,
+    get_param_types,
 )
 
 
@@ -101,19 +105,49 @@ def test_validate_step_signature_too_many_params():
         validate_step_signature(f2)
 
 
-# def test_get_steps_from_class():
-#     class Test:
-#         @step()
-#         def start(self, start: StartEvent) -> TestEvent:
-#             pass
+def test_get_steps_from_class():
+    class Test:
+        @step()
+        def start(self, start: StartEvent) -> TestEvent:
+            return TestEvent()
 
-#         @step()
-#         def my_method(self, event: TestEvent) -> StopEvent:
-#             pass
+        @step()
+        def my_method(self, event: TestEvent) -> StopEvent:
+            return StopEvent()
 
-#         def not_a_step(self):
-#             pass
+        def not_a_step(self):
+            pass
 
-#     steps = get_steps_from_class(Test())
-#     assert len(steps)
-#     assert "my_method" in steps
+    steps = get_steps_from_class(Test())
+    assert len(steps)
+    assert "my_method" in steps
+
+
+def test_get_param_types():
+    def f(foo: str):
+        pass
+
+    sig = inspect.signature(f)
+    res = get_param_types(sig.parameters["foo"])
+    assert len(res) == 1
+    assert res[0] is str
+
+
+def test_get_param_types_no_annotations():
+    def f(foo):
+        pass
+
+    sig = inspect.signature(f)
+    res = get_param_types(sig.parameters["foo"])
+    assert len(res) == 1
+    assert res[0] is Any
+
+
+def test_get_param_types_union():
+    def f(foo: Union[str, int]):
+        pass
+
+    sig = inspect.signature(f)
+    res = get_param_types(sig.parameters["foo"])
+    assert len(res) == 2
+    assert res == [str, int]
