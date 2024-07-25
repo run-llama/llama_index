@@ -192,7 +192,7 @@ class UnstructuredReader(BaseReader):
             return metadata
 
         if len(elements) == 0:
-            docs = []
+            return []
 
         text_chunks = [" ".join(str(el).split()) for el in elements]
         metadata = _merge_metadata(elements[0])
