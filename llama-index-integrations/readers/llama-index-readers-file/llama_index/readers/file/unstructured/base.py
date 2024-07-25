@@ -12,13 +12,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document, NodeRelationship
+
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
-
-from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
 
 
 class UnstructuredReader(BaseReader):
@@ -174,7 +174,9 @@ class UnstructuredReader(BaseReader):
         excluded_keys = set(excluded_metadata_keys or self.excluded_metadata_keys)
         docs: List[Document] = []
 
-        def _merge_metadata(element: Element, sequence_number: Optional[int] = None):
+        def _merge_metadata(
+            element: Element, sequence_number: Optional[int] = None
+        ) -> Dict[str, Any]:
             candidate_metadata = {**element.metadata.to_dict(), **doc_extras}
             metadata = {
                 key: (
@@ -189,29 +191,32 @@ class UnstructuredReader(BaseReader):
                 metadata["sequence_number"] = sequence_number
             return metadata
 
+        if len(elements) == 0:
+            docs = []
+
+        text_chunks = [" ".join(str(el).split()) for el in elements]
+        metadata = _merge_metadata(elements[0])
+        source = Document(
+            text="\n\n".join(text_chunks),
+            extra_info=metadata,
+            doc_id=metadata["filename"],
+            **doc_kwargs,
+        )
+
         if split_documents:
-            docs = [
-                Document(
+            docs = []
+            for sequence_number, element in enumerate(elements):
+                doc = Document(
                     text=element.text,
                     extra_info=_merge_metadata(element, sequence_number),
-                    doc_id=element.metadata.filename,
+                    doc_id=element.id_to_hash(sequence_number),
                     **doc_kwargs,
                 )
-                for sequence_number, element in enumerate(elements)
-            ]
+                doc.relationships[
+                    NodeRelationship.SOURCE
+                ] = source.as_related_node_info()
+                docs.append(doc)
         else:
-            if len(elements) == 0:
-                docs = []
-            else:
-                text_chunks = [" ".join(str(el).split()) for el in elements]
-                metadata = _merge_metadata(elements[0])
-                docs = [
-                    Document(
-                        text="\n\n".join(text_chunks),
-                        extra_info=metadata,
-                        doc_id=metadata.filename,
-                        **doc_kwargs,
-                    )
-                ]
+            docs = [source]
 
         return docs
