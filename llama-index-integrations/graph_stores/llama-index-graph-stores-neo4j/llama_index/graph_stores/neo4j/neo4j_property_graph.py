@@ -117,6 +117,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             documents,
             property_graph_store=graph_store,
         )
+
+        # Close the neo4j connection explicitly.
+        graph_store.close()
         ```
     """
 
@@ -153,6 +156,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
     @property
     def client(self):
         return self._driver
+    
+    def close(self) -> None:
+        self._driver.close()
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
