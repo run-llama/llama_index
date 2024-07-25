@@ -314,6 +314,7 @@ class LlamaCloudIndex(BaseManagedIndex):
             base_url=self._base_url,
             app_url=self._app_url,
             timeout=self._timeout,
+            organization_id=self.organization_id,
             dense_similarity_top_k=dense_similarity_top_k,
             **kwargs,
         )
