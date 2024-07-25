@@ -85,7 +85,7 @@ class HierarchicalNodeParser(NodeParser):
     per parent (e.g. with a smaller chunk size).
 
     For instance, this may return a list of nodes like:
-    
+
     - list of top-level nodes with chunk size 2048
     - list of second-level nodes, where each node is a child of a top-level node,
       chunk size 512
