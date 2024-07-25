@@ -186,11 +186,13 @@ class Workflow:
         if self._disable_validation:
             return
 
-        produced_events = {StartEvent}
-        consumed_events = set()
+        produced_events: Set[type] = {StartEvent}
+        consumed_events: Set[type] = set()
 
         for name, step_func in get_steps_from_class(self).items():
-            step_config: StepConfig = getattr(step_func, "__step_config", None)
+            step_config: Optional[StepConfig] = getattr(
+                step_func, "__step_config", None
+            )
             if not step_config:
                 raise ValueError(f"Step {name} is missing `@step()` decorator.")
 
