@@ -12,6 +12,14 @@ class WorkflowValidationError(Exception):
     pass
 
 
+class WorkflowTimeoutError(Exception):
+    pass
+
+
+class WorkflowRuntimeError(Exception):
+    pass
+
+
 class Workflow:
     def __init__(
         self,
@@ -115,18 +123,23 @@ class Workflow:
         3. sending a StartEvent to kick things off
         4. waiting for all tasks to finish or be cancelled
         """
+        if self._tasks:
+            msg = "Workflow is already running, wait for it to finish before running again."
+            raise WorkflowRuntimeError(msg)
+
+        # Reset the events log
         self._events = []
-
-        if not self._disable_validation:
-            self._validate()
-
-        if not self._tasks:
-            self._start()
-
+        # Validate the workflow if needed
+        self._validate()
+        # Start the machinery
+        self._start()
+        # Send the first event
         self.send_event(StartEvent(kwargs))
+
         _, unfinished = await asyncio.wait(self._tasks, timeout=self._timeout)
         if unfinished:
-            return f"Operation timed out after {self._timeout} seconds"
+            msg = f"Operation timed out after {self._timeout} seconds"
+            raise WorkflowTimeoutError(msg)
 
         return self._retval
 
@@ -140,24 +153,23 @@ class Workflow:
         4. Waiting for the next step(s) to finish
         5. Returning the result if the workflow is done
         """
-        self._events = []
-
         # Check if we need to start
         if not self._tasks:
-            if not self._disable_validation:
-                self._validate()
-
-            if not self._tasks:
-                self._start(stepwise=True)
-
-            # run the first step
+            self._events = []
+            self._validate()
+            self._start(stepwise=True)
+            # Run the first step
             self.send_event(StartEvent(kwargs))
 
-        # let all steps start
-        for name in self._queues:
-            self._step_flags[name].set()
+        # Unblock all pending steps
+        for flag in self._step_flags.values():
+            flag.set()
 
-        # if we're done, return the result
+        # Yield back control to the event loop to give an unblocked step
+        # the chance to run (we won't actually sleep here).
+        await asyncio.sleep(0)
+
+        # If we're done, return the result
         if self.is_done:
             return self._retval
 
@@ -183,6 +195,9 @@ class Workflow:
 
     def _validate(self) -> None:
         """Validate the workflow to ensure it's well-formed."""
+        if self._disable_validation:
+            return
+
         produced_events = {StartEvent}
         consumed_events = set()
 

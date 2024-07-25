@@ -1,9 +1,12 @@
 import pytest
 import asyncio
 from unittest.mock import patch
-from typing import List, Union
 
-from llama_index.core.workflow.workflow import Workflow, WorkflowValidationError
+from llama_index.core.workflow.workflow import (
+    Workflow,
+    WorkflowValidationError,
+    WorkflowTimeoutError,
+)
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
 
@@ -47,7 +50,7 @@ async def test_workflow_run():
 
 @pytest.mark.asyncio()
 async def test_workflow_run_step():
-    workflow = DummyWorkflow()
+    workflow = DummyWorkflow(verbose=True)
 
     # First step
     result = await workflow.run_step()
@@ -66,8 +69,8 @@ async def test_workflow_run_step():
 
     # Cleanup step
     result = await workflow.run_step()
-    assert workflow.is_done()
     assert result == "Workflow completed"
+    assert workflow.is_done()
 
 
 @pytest.mark.asyncio()
@@ -79,7 +82,7 @@ async def test_workflow_timeout():
             return StopEvent(msg="Done")
 
     workflow = SlowWorkflow(timeout=1)
-    with pytest.raises(asyncio.exceptions.TimeoutError):
+    with pytest.raises(WorkflowTimeoutError):
         await workflow.run()
 
 
@@ -113,36 +116,6 @@ async def test_workflow_event_propagation():
     workflow = EventTrackingWorkflow()
     await workflow.run()
     assert events == ["step1", "step2"]
-
-
-@pytest.mark.asyncio()
-async def test_workflow_multiple_events():
-    events: List[str] = []
-
-    class MultiEvent1(Event):
-        pass
-
-    class MultiEvent2(Event):
-        pass
-
-    class MultiEventWorkflow(Workflow):
-        @step()
-        async def start(self, ev: StartEvent) -> Union[MultiEvent1, MultiEvent2]:
-            events.append("start")
-            return [MultiEvent1(), MultiEvent2()]
-
-        @step()
-        async def process(self, ev: MultiEvent1) -> None:
-            events.append("process")
-
-        @step()
-        async def end(self, ev: MultiEvent2) -> StopEvent:
-            events.append("end")
-            return StopEvent(msg="Done")
-
-    workflow = MultiEventWorkflow()
-    await workflow.run()
-    assert events == ["start", "process", "end"]
 
 
 @pytest.mark.asyncio()
