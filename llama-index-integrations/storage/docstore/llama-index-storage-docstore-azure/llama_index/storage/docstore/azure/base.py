@@ -175,7 +175,7 @@ class AzureDocumentStore(KVDocumentStore):
 
     def add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -184,7 +184,7 @@ class AzureDocumentStore(KVDocumentStore):
         batch_size = batch_size or self._batch_size
 
         node_kv_pairs, metadata_kv_pairs, ref_doc_kv_pairs = super()._prepare_kv_pairs(
-            nodes, allow_update, store_text
+            docs, allow_update, store_text
         )
 
         # Change ref_doc_kv_pairs
@@ -210,7 +210,7 @@ class AzureDocumentStore(KVDocumentStore):
 
     async def async_add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -222,7 +222,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_kv_pairs,
             metadata_kv_pairs,
             ref_doc_kv_pairs,
-        ) = await super()._async_prepare_kv_pairs(nodes, allow_update, store_text)
+        ) = await super()._async_prepare_kv_pairs(docs, allow_update, store_text)
 
         # Change ref_doc_kv_pairs
         ref_doc_kv_pairs = self._extract_doc_metadatas(ref_doc_kv_pairs)
