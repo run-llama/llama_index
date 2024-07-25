@@ -1,6 +1,5 @@
 import inspect
 from typing import (
-    get_type_hints,
     Any,
     Callable,
     Dict,
@@ -31,9 +30,6 @@ def step(**kwargs: Any):
         # This will raise providing a message with the specific validation failure
         validate_step_signature(func)
 
-        # Get type hints for the function
-        type_hints = get_type_hints(func)
-
         # Get the function signature
         sig = inspect.signature(func)
 
@@ -45,8 +41,7 @@ def step(**kwargs: Any):
             event_name = name
 
         # Extract return type
-        return_hint = type_hints.get("return", [Any])
-        return_types = get_return_types(return_hint)
+        return_types = get_return_types(func)
 
         # store the configuration in the function object
         func.__step_config = StepConfig(

@@ -2,6 +2,7 @@ import pytest
 
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event
+from llama_index.core.workflow.errors import WorkflowValidationError
 
 
 def test_decorated_config():
@@ -19,5 +20,5 @@ def test_decorate_wrong_signature():
     def f():
         pass
 
-    with pytest.raises(ValueError):
+    with pytest.raises(WorkflowValidationError):
         step()(f)

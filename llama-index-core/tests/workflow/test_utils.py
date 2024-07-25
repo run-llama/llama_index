@@ -1,5 +1,5 @@
 import inspect
-from typing import Union, Any
+from typing import Union, Any, Optional, List
 
 import pytest
 
@@ -10,6 +10,7 @@ from llama_index.core.workflow.utils import (
     validate_step_signature,
     get_steps_from_class,
     get_param_types,
+    get_return_types,
 )
 
 
@@ -151,3 +152,31 @@ def test_get_param_types_union():
     res = get_param_types(sig.parameters["foo"])
     assert len(res) == 2
     assert res == [str, int]
+
+
+def test_get_return_types():
+    def f(foo: int) -> str:
+        return ""
+
+    assert get_return_types(f) == [str]
+
+
+def test_get_return_types_union():
+    def f(foo: int) -> Union[str, int]:
+        return ""
+
+    assert get_return_types(f) == [str, int]
+
+
+def test_get_return_types_optional():
+    def f(foo: int) -> Optional[str]:
+        return ""
+
+    assert get_return_types(f) == [str]
+
+
+def test_get_return_types_list():
+    def f(foo: int) -> List[str]:
+        return [""]
+
+    assert get_return_types(f) == [List[str]]

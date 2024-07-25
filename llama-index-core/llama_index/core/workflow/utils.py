@@ -1,5 +1,14 @@
 import inspect
-from typing import get_args, get_origin, Any, List, Optional, Union, Callable
+from typing import (
+    get_args,
+    get_origin,
+    Any,
+    List,
+    Optional,
+    Union,
+    Callable,
+    get_type_hints,
+)
 
 from llama_index.core.workflow.events import Event
 
@@ -67,14 +76,19 @@ def get_param_types(param: inspect.Parameter) -> List[object]:
     return [typ]
 
 
-def get_return_types(return_hint: Any) -> List[object]:
-    """Extract the types of a return hint. Handles Union, Optional, and List types."""
-    if get_origin(return_hint) == Union:
+def get_return_types(func: Callable) -> List[object]:
+    """Extract the return type hints from a function.
+
+    Handles Union, Optional, and List types.
+    """
+    type_hints = get_type_hints(func)
+    return_hint = type_hints.get("return", [Any])
+    print(return_hint)
+
+    origin = get_origin(return_hint)
+
+    if origin == Union:
+        # Optional is Union[type, None] so it's covered here
         return [t for t in get_args(return_hint) if t is not type(None)]
-    if get_origin(return_hint) == Optional:
-        return [get_args(return_hint)[0]]
-    if get_origin(return_hint) == List:
-        return return_hint
-    if not isinstance(return_hint, list):
+    else:
         return [return_hint]
-    return return_hint
