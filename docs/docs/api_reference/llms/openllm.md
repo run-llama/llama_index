@@ -2,4 +2,3 @@
     options:
       members:
         - OpenLLM
-        - OpenLLMAPI
