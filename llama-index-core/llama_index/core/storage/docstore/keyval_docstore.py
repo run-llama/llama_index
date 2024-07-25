@@ -206,7 +206,7 @@ class KVDocumentStore(BaseDocumentStore):
 
     def add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -221,7 +221,7 @@ class KVDocumentStore(BaseDocumentStore):
         batch_size = batch_size or self._batch_size
 
         node_kv_pairs, metadata_kv_pairs, ref_doc_kv_pairs = self._prepare_kv_pairs(
-            nodes, allow_update, store_text
+            docs, allow_update, store_text
         )
 
         self._kvstore.put_all(
@@ -308,7 +308,7 @@ class KVDocumentStore(BaseDocumentStore):
 
     async def async_add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -326,7 +326,7 @@ class KVDocumentStore(BaseDocumentStore):
             node_kv_pairs,
             metadata_kv_pairs,
             ref_doc_kv_pairs,
-        ) = await self._async_prepare_kv_pairs(nodes, allow_update, store_text)
+        ) = await self._async_prepare_kv_pairs(docs, allow_update, store_text)
 
         await asyncio.gather(
             self._kvstore.aput_all(
