@@ -71,7 +71,7 @@ def draw_most_recent_execution(
     net = Network(directed=True, height="750px", width="100%")
 
     # Add nodes and edges based on execution history
-    for i, (step, event) in enumerate(workflow._events):
+    for i, (step, event) in enumerate(workflow._accepted_events):
         event_node = f"{event}_{i}"
         step_node = f"{step}_{i}"
         net.add_node(
@@ -83,7 +83,7 @@ def draw_most_recent_execution(
         net.add_edge(event_node, step_node)
 
         if i > 0:
-            prev_step_node = f"{workflow._events[i - 1][0]}_{i - 1}"
+            prev_step_node = f"{workflow._accepted_events[i - 1][0]}_{i - 1}"
             net.add_edge(prev_step_node, event_node)
 
     net.show(filename, notebook=notebook)

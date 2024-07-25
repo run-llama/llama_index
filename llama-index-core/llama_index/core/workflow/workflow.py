@@ -1,7 +1,6 @@
 import asyncio
 import warnings
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.workflow.decorators import step, StepConfig
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
@@ -18,19 +17,17 @@ class Workflow:
         disable_validation: bool = False,
         verbose: bool = False,
     ) -> None:
-        # configuration
+        # Configuration
         self._timeout = timeout
-        self._disable_validation = disable_validation
-        self._step_flags: Dict[str, asyncio.Event] = {}
         self._verbose = verbose
-
-        # state variables
+        self._disable_validation = disable_validation
+        # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}
         self._tasks: Set[asyncio.Task] = set()
-        self._events: List[Any] = []
-        self._event_log: List[Event] = []
-        self._retval = None
-        self._event_subscriptions: Dict[type, Set[str]] = defaultdict(set)
+        self._broker_log: List[Event] = []
+        self._step_flags: Dict[str, asyncio.Event] = {}
+        self._accepted_events: List[Tuple[str, str]] = []
+        self._retval: Any = None
 
     def _start(self, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.
@@ -79,7 +76,7 @@ class Workflow:
                         continue
 
                     # Store the accepted event for the drawing operations
-                    self._events.append((name, type(ev).__name__))
+                    self._accepted_events.append((name, type(ev).__name__))
 
                     if not isinstance(new_ev, Event):
                         warnings.warn(
@@ -103,7 +100,7 @@ class Workflow:
         """
         for queue in self._queues.values():
             queue.put_nowait(message)
-        self._event_log.append(message)
+        self._broker_log.append(message)
 
     async def run(self, **kwargs: Any) -> str:
         """Runs the workflow until completion.
@@ -119,7 +116,7 @@ class Workflow:
             raise WorkflowRuntimeError(msg)
 
         # Reset the events log
-        self._events = []
+        self._accepted_events = []
         # Validate the workflow if needed
         self._validate()
         # Start the machinery
@@ -146,7 +143,7 @@ class Workflow:
         """
         # Check if we need to start
         if not self._tasks:
-            self._events = []
+            self._accepted_events = []
             self._validate()
             self._start(stepwise=True)
             # Run the first step
