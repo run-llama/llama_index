@@ -525,6 +525,7 @@ nav:
           - ./examples/retrievers/router_retriever.ipynb
           - ./examples/retrievers/simple_fusion.ipynb
           - ./examples/retrievers/vectara_auto_retriever.ipynb
+          - ./examples/retrievers/vertex_ai_search_retriever.ipynb
           - ./examples/retrievers/videodb_retriever.ipynb
           - ./examples/retrievers/you_retriever.ipynb
       - Tools:
@@ -574,6 +575,7 @@ nav:
           - ./examples/vector_stores/LanceDBIndexDemo.ipynb
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
+          - ./examples/vector_stores/LindormDemo.ipynb
           - ./examples/vector_stores/MetalIndexDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
@@ -1320,6 +1322,7 @@ nav:
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
           - ./api_reference/retrievers/vector.md
+          - ./api_reference/retrievers/vertexai_search.md
           - ./api_reference/retrievers/videodb.md
           - ./api_reference/retrievers/you.md
       - Schema:
@@ -1404,6 +1407,7 @@ nav:
               - ./api_reference/storage/vector_store/kdbai.md
               - ./api_reference/storage/vector_store/lancedb.md
               - ./api_reference/storage/vector_store/lantern.md
+              - ./api_reference/storage/vector_store/lindorm.md
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
@@ -2060,6 +2064,8 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-yandexgpt
             - ../llama-index-integrations/readers/llama-index-readers-box
             - ../llama-index-integrations/llms/llama-index-llms-azure-inference
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-lindorm
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-vertexai-search
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

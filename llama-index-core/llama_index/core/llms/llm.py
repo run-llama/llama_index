@@ -496,26 +496,30 @@ class LLM(BaseLLM):
                 print(partial_output.name)
             ```
         """
-        from llama_index.core.program.utils import get_program_for_llm
 
-        dispatcher.event(
-            LLMStructuredPredictStartEvent(
-                output_cls=output_cls, template=prompt, template_args=prompt_args
+        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
+            from llama_index.core.program.utils import get_program_for_llm
+
+            dispatcher.event(
+                LLMStructuredPredictStartEvent(
+                    output_cls=output_cls, template=prompt, template_args=prompt_args
+                )
             )
-        )
-        program = get_program_for_llm(
-            output_cls,
-            prompt,
-            self,
-            pydantic_program_mode=self.pydantic_program_mode,
-        )
+            program = get_program_for_llm(
+                output_cls,
+                prompt,
+                self,
+                pydantic_program_mode=self.pydantic_program_mode,
+            )
 
-        result = await program.astream_call(**prompt_args)
-        async for r in result:
-            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
-            yield r
+            result = await program.astream_call(**prompt_args)
+            async for r in result:
+                dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+                yield r
 
-        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+            dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+        return gen()
 
     # -- Prompt Chaining --
 
