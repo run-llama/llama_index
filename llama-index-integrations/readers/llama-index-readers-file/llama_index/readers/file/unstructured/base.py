@@ -1,4 +1,5 @@
-"""Unstructured file reader.
+"""
+Unstructured file reader.
 
 A parser for unstructured text files using Unstructured.io.
 Supports .csv, .tsv, .doc, .docx, .odt, .epub, .org, .rst, .rtf,
@@ -11,13 +12,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document, NodeRelationship, TextNode
+
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
-
-from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
 
 
 class UnstructuredReader(BaseReader):
@@ -31,7 +32,8 @@ class UnstructuredReader(BaseReader):
         allowed_metadata_types: Optional[Tuple] = None,
         excluded_metadata_keys: Optional[Set] = None,
     ) -> None:
-        """Initialize UnstructuredReader.
+        """
+        Initialize UnstructuredReader.
 
         Args:
             *args (Any): Additional arguments passed to the BaseReader.
@@ -79,7 +81,8 @@ class UnstructuredReader(BaseReader):
         split_documents: Optional[bool] = False,
         excluded_metadata_keys: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data using Unstructured.io.
+        """
+        Load data using Unstructured.io.
 
         Depending on the configuration, if url is set or use_api is True,
         it'll parse the file using an API call, otherwise it parses it locally.
@@ -98,6 +101,14 @@ class UnstructuredReader(BaseReader):
         """
         unstructured_kwargs = unstructured_kwargs.copy() if unstructured_kwargs else {}
 
+        if (
+            unstructured_kwargs.get("file") is not None
+            and unstructured_kwargs.get("metadata_filename") is None
+        ):
+            raise ValueError(
+                "Please provide a 'metadata_filename' as part of the 'unstructured_kwargs' when loading a file stream."
+            )
+
         elements: List[Element] = self._partition_elements(unstructured_kwargs, file)
 
         return self._create_documents(
@@ -111,7 +122,8 @@ class UnstructuredReader(BaseReader):
     def _partition_elements(
         self, unstructured_kwargs: Dict, file: Optional[Path] = None
     ) -> List[Element]:
-        """Partition the elements from the file or via API.
+        """
+        Partition the elements from the file or via API.
 
         Args:
             file (Optional[Path]): Path to the file to be loaded.
@@ -144,7 +156,8 @@ class UnstructuredReader(BaseReader):
         split_documents: Optional[bool],
         excluded_metadata_keys: Optional[List[str]],
     ) -> List[Document]:
-        """Create documents from partitioned elements.
+        """
+        Create documents from partitioned elements.
 
         Args:
             elements (List): List of partitioned elements.
@@ -156,47 +169,58 @@ class UnstructuredReader(BaseReader):
         Returns:
             List[Document]: List of parsed documents.
         """
-        document_kwargs = document_kwargs.copy() if document_kwargs else {}
+        doc_kwargs = document_kwargs or {}
+        doc_extras = extra_info or {}
+        excluded_keys = set(excluded_metadata_keys or self.excluded_metadata_keys)
         docs: List[Document] = []
 
-        if split_documents:
-            for sequence_number, element in enumerate(elements):
-                kwargs = document_kwargs.copy()
-                kwargs["text"] = element.text
-
-                excluded_keys = set(
-                    excluded_metadata_keys or self.excluded_metadata_keys
+        def _merge_metadata(
+            element: Element, sequence_number: Optional[int] = None
+        ) -> Dict[str, Any]:
+            candidate_metadata = {**element.metadata.to_dict(), **doc_extras}
+            metadata = {
+                key: (
+                    value
+                    if isinstance(value, self.allowed_metadata_types)
+                    else json.dumps(value)
                 )
-                metadata = extra_info.copy() if extra_info else {}
-                for key, value in element.metadata.to_dict().items():
-                    if key not in excluded_keys:
-                        metadata[key] = (
-                            value
-                            if isinstance(value, self.allowed_metadata_types)
-                            else json.dumps(value)
-                        )
+                for key, value in candidate_metadata.items()
+                if key not in excluded_keys
+            }
+            if sequence_number is not None:
+                metadata["sequence_number"] = sequence_number
+            return metadata
 
-                kwargs["extra_info"] = metadata
-                kwargs["doc_id"] = element.id_to_hash(sequence_number)
+        if len(elements) == 0:
+            return []
 
-                docs.append(Document(**kwargs))
+        text_chunks = [" ".join(str(el).split()) for el in elements]
+        metadata = _merge_metadata(elements[0])
+        filename = metadata["filename"]
+        source = Document(
+            text="\n\n".join(text_chunks),
+            extra_info=metadata,
+            doc_id=filename,
+            id_=filename,
+            **doc_kwargs,
+        )
+
+        if split_documents:
+            docs = []
+            for sequence_number, element in enumerate(elements):
+                hash_id = element.id_to_hash(sequence_number)
+                node = TextNode(
+                    text=element.text,
+                    metadata=_merge_metadata(element, sequence_number),
+                    doc_id=hash_id,
+                    id_=hash_id,
+                    **doc_kwargs,
+                )
+                node.relationships[
+                    NodeRelationship.SOURCE
+                ] = source.as_related_node_info()
+                docs.append(node)
         else:
-            text_chunks = [" ".join(str(el).split()) for el in elements]
-            text = "\n\n".join(text_chunks)
-
-            kwargs = document_kwargs.copy()
-            kwargs["text"] = text
-
-            metadata = extra_info.copy() if extra_info else {}
-
-            if len(elements) > 0:
-                filename = elements[0].metadata.filename
-                elements[0].id
-                metadata["filename"] = filename
-                kwargs["doc_id"] = f"{filename}"
-
-            kwargs["extra_info"] = metadata
-
-            docs.append(Document(**kwargs))
+            docs = [source]
 
         return docs
