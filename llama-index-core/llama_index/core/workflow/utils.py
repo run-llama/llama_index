@@ -68,6 +68,19 @@ def get_steps_from_class(_class: object) -> Dict[str, Callable]:
     return step_methods
 
 
+def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
+    """Given a workflow instance, return the list of its methods that were defined as steps."""
+    step_methods = {}
+    all_methods = inspect.getmembers(workflow, predicate=inspect.ismethod)
+
+    for name, method in all_methods:
+        print(name, hasattr(method, "__step_config"))
+        if hasattr(method, "__step_config"):
+            step_methods[name] = method
+
+    return step_methods
+
+
 def get_param_types(param: inspect.Parameter) -> List[object]:
     """Extract the types of a parameter. Handles Union and Optional types."""
     typ = param.annotation

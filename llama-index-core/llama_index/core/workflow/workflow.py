@@ -4,7 +4,10 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.workflow.decorators import step, StepConfig
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.utils import get_steps_from_class
+from llama_index.core.workflow.utils import (
+    get_steps_from_class,
+    get_steps_from_instance,
+)
 
 
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
@@ -41,16 +44,15 @@ class Workflow(metaclass=_WorkflowMeta):
 
         It raises an exception if a step with the same name was already added to the workflow.
         """
-        if func.__name__ in cls._get_steps():
+        if func.__name__ in {**get_steps_from_class(cls), **cls._step_functions}:
             msg = f"A step {func.__name__} is already part of this workflow, please choose another name."
             raise WorkflowValidationError(msg)
 
         cls._step_functions[func.__name__] = func
 
-    @classmethod
-    def _get_steps(cls) -> Dict[str, Callable]:
+    def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
-        return {**get_steps_from_class(cls), **cls._step_functions}
+        return {**get_steps_from_instance(self), **self._step_functions}
 
     def _start(self, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.
@@ -212,7 +214,7 @@ class Workflow(metaclass=_WorkflowMeta):
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
 
-        for name, step_func in get_steps_from_class(self).items():
+        for name, step_func in self._get_steps().items():
             step_config: Optional[StepConfig] = getattr(
                 step_func, "__step_config", None
             )

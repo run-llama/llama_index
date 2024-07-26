@@ -9,6 +9,7 @@ from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     validate_step_signature,
     get_steps_from_class,
+    get_steps_from_instance,
     get_param_types,
     get_return_types,
     is_free_function,
@@ -107,7 +108,7 @@ def test_validate_step_signature_too_many_params():
         validate_step_signature(f2)
 
 
-def test_get_steps_from_class():
+def test_get_steps_from():
     class Test:
         @step()
         def start(self, start: StartEvent) -> TestEvent:
@@ -121,6 +122,10 @@ def test_get_steps_from_class():
             pass
 
     steps = get_steps_from_class(Test)
+    assert len(steps)
+    assert "my_method" in steps
+
+    steps = get_steps_from_instance(Test())
     assert len(steps)
     assert "my_method" in steps
 
