@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.embeddings.textembed"
 
 [tool.llamahub.class_authors]
-TextEmbed = "llama-index"
+TextEmbed = "kevaldekivadiya2415"
 
 [tool.mypy]
 disallow_untyped_defs = true

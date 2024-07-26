@@ -40,19 +40,22 @@ python -m textembed.server --models sentence-transformers/all-MiniLM-L12-v2 --wo
 
 Here's a simple example to get you started with llama-index:
 
-```bash
+```python
 from llama_index.embeddings.textembed import TextEmbedEmbedding
 
 # Initialize the TextEmbedEmbedding class
 embed = TextEmbedEmbedding(
     model_name="sentence-transformers/all-MiniLM-L12-v2",
     base_url="http://0.0.0.0:8000/v1",
-    auth_token="TextEmbed"
+    auth_token="TextEmbed",
 )
 
 # Get embeddings for a batch of texts
 embeddings = embed.get_text_embedding_batch(
-    ["It is raining cats and dogs here!", "India has a diverse cultural heritage."]
+    [
+        "It is raining cats and dogs here!",
+        "India has a diverse cultural heritage.",
+    ]
 )
 
 print(embeddings)
