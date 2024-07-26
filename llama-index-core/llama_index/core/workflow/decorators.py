@@ -2,7 +2,12 @@ import inspect
 from typing import Any, Callable, List, Optional, TYPE_CHECKING, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
-from .utils import validate_step_signature, get_param_types, get_return_types
+from .utils import (
+    validate_step_signature,
+    get_param_types,
+    get_return_types,
+    is_free_function,
+)
 from .errors import WorkflowValidationError
 
 
@@ -29,12 +34,8 @@ def step(workflow: Optional[Type["Workflow"]] = None):
         # This will raise providing a message with the specific validation failure
         validate_step_signature(func)
 
-        # Determine if this is a free function
-        name_toks = func.__qualname__.split(".")
-        is_free_func = len(name_toks) > 1 and name_toks[-2] == "<locals>"
-
-        # If this is a free function, add it to the workflow instance
-        if is_free_func:
+        # If this is a free function, call add_step() explicitly.
+        if is_free_function(func.__qualname__):
             if workflow is None:
                 msg = f"To decorate {func.__name__} please pass a workflow instance to the @step() decorator."
                 raise WorkflowValidationError(msg)

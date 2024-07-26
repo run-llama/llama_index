@@ -11,6 +11,7 @@ from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_param_types,
     get_return_types,
+    is_free_function,
 )
 
 
@@ -180,3 +181,10 @@ def test_get_return_types_list():
         return [""]
 
     assert get_return_types(f) == [List[str]]
+
+
+def test_is_free_function():
+    assert is_free_function("my_function") is True
+    assert is_free_function("MyClass.my_method") is False
+    assert is_free_function("some_function.<locals>.my_function") is True
+    assert is_free_function("some_function.<locals>.MyClass.my_function") is False
