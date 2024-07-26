@@ -58,9 +58,10 @@ def validate_step_signature(fn: Callable) -> None:
 def get_steps_from_class(_class: object) -> Dict[str, Callable]:
     """Given a class, return the list of its methods that were defined as steps."""
     step_methods = {}
-    all_methods = inspect.getmembers(_class, predicate=inspect.ismethod)
+    all_methods = inspect.getmembers(_class, predicate=inspect.isfunction)
 
     for name, method in all_methods:
+        print(name, hasattr(method, "__step_config"))
         if hasattr(method, "__step_config"):
             step_methods[name] = method
 

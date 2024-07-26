@@ -10,9 +10,13 @@ from llama_index.core.workflow.utils import get_steps_from_class
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
 
 
-class Workflow:
-    _step_functions: Dict[str, Callable] = {}
+class _WorkflowMeta(type):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._step_functions: Dict[str, Callable] = {}
 
+
+class Workflow(metaclass=_WorkflowMeta):
     def __init__(
         self,
         timeout: int = 10,
@@ -33,12 +37,20 @@ class Workflow:
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
-        """Adds a free function as step for this workflow instance."""
+        """Adds a free function as step for this workflow instance.
+
+        It raises an exception if a step with the same name was already added to the workflow.
+        """
+        if func.__name__ in cls._get_steps():
+            msg = f"A step {func.__name__} is already part of this workflow, please choose another name."
+            raise WorkflowValidationError(msg)
+
         cls._step_functions[func.__name__] = func
 
-    def _get_steps(self) -> Dict[str, Callable]:
+    @classmethod
+    def _get_steps(cls) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
-        return {**get_steps_from_class(self), **self._step_functions}
+        return {**get_steps_from_class(cls), **cls._step_functions}
 
     def _start(self, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.

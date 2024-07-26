@@ -120,7 +120,7 @@ def test_get_steps_from_class():
         def not_a_step(self):
             pass
 
-    steps = get_steps_from_class(Test())
+    steps = get_steps_from_class(Test)
     assert len(steps)
     assert "my_method" in steps
 

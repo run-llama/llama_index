@@ -12,7 +12,7 @@ def test_decorated_config(workflow):
     def f(self, ev: Event) -> Event:
         return Event()
 
-    res = step(workflow=workflow)(f)
+    res = step(workflow=workflow.__class__)(f)
     config = getattr(res, "__step_config")
     assert config.accepted_events == [Event]
     assert config.event_name == "ev"
