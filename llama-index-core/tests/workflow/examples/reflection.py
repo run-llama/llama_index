@@ -5,10 +5,14 @@ from typing import Union
 
 from pydantic import BaseModel
 
-from llama_index.core.workflow.events import Event, StartEvent, StopEvent
-from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.decorators import step
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.workflow import (
+    Event,
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+)
 
 # pip install llama-index-llms-ollama
 from llama_index.llms.ollama import Ollama
@@ -74,7 +78,7 @@ class ReflectionWorkflow(Workflow):
         if isinstance(ev, StartEvent):
             passage = ev.get("passage")
             if not passage:
-                return StopEvent(msg="Please provide some text in input")
+                return StopEvent(result="Please provide some text in input")
             reflection_prompt = ""
         elif isinstance(ev, ValidationErrorEvent):
             passage = ev.passage
@@ -105,7 +109,7 @@ class ReflectionWorkflow(Workflow):
                 error=str(e), wrong_output=ev.output, passage=ev.passage
             )
 
-        return StopEvent(msg=ev.output)
+        return StopEvent(result=ev.output)
 
 
 async def main():
@@ -115,9 +119,6 @@ async def main():
         passage="I own two cars: a Fiat Panda with 45Hp and a Honda Civic with 330Hp."
     )
     print(ret)
-
-    w.draw_all_possible_flows()
-    w.draw_most_recent_execution()
 
 
 if __name__ == "__main__":

@@ -69,7 +69,7 @@ class Workflow:
                     new_ev = await step(ev)
 
                     if self._verbose:
-                        print(f"Step {name} produced event {new_ev}")
+                        print(f"Step {name} produced event {type(new_ev).__name__}")
 
                     # handle the return value
                     if new_ev is None:
@@ -80,7 +80,7 @@ class Workflow:
 
                     if not isinstance(new_ev, Event):
                         warnings.warn(
-                            f"Step function {name} returned {new_ev} instead of an Event instance."
+                            f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
                         )
                     else:
                         self.send_event(new_ev)
@@ -167,7 +167,7 @@ class Workflow:
         """Checks if the workflow is done."""
         return len(self._tasks) == 0
 
-    def get_result(self) -> str:
+    def get_result(self) -> Any:
         """Returns the result of the workflow."""
         return self._retval
 
@@ -179,7 +179,7 @@ class Workflow:
             t.cancel()
         # Remove any reference to the tasks
         self._tasks = set()
-        self._retval = ev.msg or None
+        self._retval = ev.result or None
 
     def _validate(self) -> None:
         """Validate the workflow to ensure it's well-formed."""
