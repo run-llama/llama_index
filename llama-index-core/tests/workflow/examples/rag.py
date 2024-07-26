@@ -97,7 +97,7 @@ class RAGWorkflow(Workflow):
             self.query = ev.get("query", "")
             return None
         elif isinstance(ev, QueryResult):
-            llm = Ollama(model="llama3.1:latest", request_timeout=120)
+            llm = Ollama(model="llama3.1:8b", request_timeout=120)
             summarizer = Refine(llm=llm, streaming=True, verbose=True)
             response = await summarizer.asynthesize(self.query, nodes=ev.nodes)
             return StopEvent(result=response)
