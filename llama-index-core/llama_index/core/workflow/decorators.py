@@ -1,23 +1,22 @@
 import inspect
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-)
+from typing import Any, Callable, List, Optional, TYPE_CHECKING
 
 from llama_index.core.bridge.pydantic import BaseModel
 from .utils import validate_step_signature, get_param_types, get_return_types
+from .errors import WorkflowValidationError
+
+
+if TYPE_CHECKING:
+    from .workflow import Workflow
 
 
 class StepConfig(BaseModel):
     accepted_events: List[Any]
     event_name: str
     return_types: List[Any]
-    kwargs: Dict[str, Any]
 
 
-def step(**kwargs: Any):
+def step(workflow: Optional["Workflow"] = None):
     """Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
@@ -29,6 +28,17 @@ def step(**kwargs: Any):
     def decorator(func: Callable) -> Callable:
         # This will raise providing a message with the specific validation failure
         validate_step_signature(func)
+
+        # Determine if this is a free function
+        name_toks = func.__qualname__.split(".")
+        is_free_func = len(name_toks) > 1 and name_toks[-2] == "<locals>"
+
+        # If this is a free function, add it to the workflow instance
+        if is_free_func:
+            if workflow is None:
+                msg = f"To decorate {func.__name__} please pass a workflow instance to the @step() decorator."
+                raise WorkflowValidationError(msg)
+            workflow.add_step(func)
 
         # Get the function signature
         sig = inspect.signature(func)
@@ -48,7 +58,6 @@ def step(**kwargs: Any):
             accepted_events=event_types,
             event_name=event_name,
             return_types=return_types,
-            kwargs=kwargs,
         )
 
         return func

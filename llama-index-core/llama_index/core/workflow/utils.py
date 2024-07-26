@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Union,
     Callable,
+    Dict,
     get_type_hints,
 )
 
@@ -54,7 +55,7 @@ def validate_step_signature(fn: Callable) -> None:
         raise WorkflowValidationError(msg)
 
 
-def get_steps_from_class(_class: object) -> dict:
+def get_steps_from_class(_class: object) -> Dict[str, Callable]:
     """Given a class, return the list of its methods that were defined as steps."""
     step_methods = {}
     all_methods = inspect.getmembers(_class, predicate=inspect.ismethod)
