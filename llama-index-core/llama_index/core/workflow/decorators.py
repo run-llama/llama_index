@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, List, Optional, TYPE_CHECKING
+from typing import Any, Callable, List, Optional, TYPE_CHECKING, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 from .utils import validate_step_signature, get_param_types, get_return_types
@@ -16,7 +16,7 @@ class StepConfig(BaseModel):
     return_types: List[Any]
 
 
-def step(workflow: Optional["Workflow"] = None):
+def step(workflow: Optional[Type["Workflow"]] = None):
     """Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for

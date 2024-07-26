@@ -28,7 +28,7 @@ class DummyWorkflow(Workflow):
 
     @step()
     async def end_step(self, ev: LastEvent) -> StopEvent:
-        return StopEvent(msg="Workflow completed")
+        return StopEvent(result="Workflow completed")
 
 
 @pytest.fixture()
