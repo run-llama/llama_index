@@ -1,5 +1,218 @@
 # ChangeLog
 
+## [2024-07-24]
+
+### `llama-index-core` [0.10.58]
+
+- Fix: Token counter expecting response.raw as dict, got ChatCompletionChunk (#14937)
+- Return proper tool outputs per agent step instead of all (#14885)
+- Minor bug fixes to async structured streaming (#14925)
+
+### `llama-index-llms-fireworks` [0.1.6]
+
+- fireworks ai llama3.1 support (#14914)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.6]
+
+- Add claude 3.5 sonnet to multi modal llms (#14932)
+
+### `llama-index-retrievers-bm25` [0.2.1]
+
+- 🐞 fix(integrations): BM25Retriever persist missing arg similarity_top_k (#14933)
+
+### `llama-index-retrievers-vertexai-search` [0.1.0]
+
+- Llamaindex retriever for Vertex AI Search (#14913)
+
+### `llama-index-vector-stores-deeplake` [0.1.5]
+
+- Improved `deeplake.get_nodes()` performance (#14920)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.3]
+
+- Bugfix: Don't pass empty list of embeddings to elasticsearch store when using sparse strategy (#14918)
+
+### `llama-index-vector-stores-lindorm` [0.1.0]
+
+- Add vector store integration of lindorm (#14623)
+
+### `llama-index-vector-stores-qdrant` [0.2.14]
+
+- feat: allow to limit how many elements retrieve (qdrant) (#14904)
+
+## [2024-07-22]
+
+### `llama-index-core` [0.10.57]
+
+- Add an optional parameter similarity_score to VectorContextRetrieve… (#14831)
+- add property extraction (using property names and optional descriptions) for KGs (#14707)
+- able to attach output classes to LLMs (#14747)
+- Add streaming for tool calling / structured extraction (#14759)
+- fix from removing private variables when copying/pickling (#14860)
+- Fix empty array being send to vector store in ingestion pipeline (#14859)
+- optimize ingestion pipeline deduping (#14858)
+- Add an optional parameter similarity_score to VectorContextRetriever (#14831)
+
+### `llama-index-llms-azure-openai` [0.1.10]
+
+- Bugfix: AzureOpenAI may fail with custom azure_ad_token_provider (#14869)
+
+### `llama-index-llms-bedrock-converse` [0.1.5]
+
+- feat: ✨ Implement async functionality in BedrockConverse (#14326)
+
+### `llama-index-llms-langchain` [0.3.0]
+
+- make some dependencies optional
+- bump langchain version in integration (#14879)
+
+### `llama-index-llms-ollama` [0.1.6]
+
+- Bugfix: ollama streaming response (#14830)
+
+### `llama-index-multi-modal-llms-anthropic` [0.1.5]
+
+- align deps (#14850)
+
+### `llama-index-readers-notion` [0.1.10]
+
+- update notion reader to handle duplicate pages, database+page ids (#14861)
+
+### `llama-index-vector-stores-milvus` [0.1.21]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-mongodb` [0.1.8]
+
+- MongoDB Atlas Vector Search: Enhanced Metadata Filtering (#14856)
+
+### `llama-index-vector-stores-opensearch` [0.1.13]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-pinecone` [0.1.8]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-postgres` [0.1.12]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+### `llama-index-vector-stores-weaviate` [1.0.2]
+
+- Implements delete_nodes() and clear() for Weviate, Opensearch, Milvus, Postgres, and Pinecone Vector Stores (#14800)
+
+## [2024-07-19]
+
+### `llama-index-core` [0.10.56]
+
+- Fixing the issue where the \_apply_node_postprocessors function needs QueryBundle (#14839)
+- Add Context-Only Response Synthesizer (#14439)
+- Fix AgentRunner AgentRunStepStartEvent dispatch (#14828)
+- Improve output format system prompt in ReAct agent (#14814)
+- Remove double curly replacing from output parser utils (#14735)
+- Update simple_summarize.py (#14714)
+
+### `llama-index-tools-azure-code-interpreter` [0.2.0]
+
+- chore: read AZURE_POOL_MANAGEMENT_ENDPOINT from env vars (#14732)
+
+### `llama-index-llms-azure-inference` [0.1.0]
+
+- Azure AI Inference integration (#14672)
+
+### `llama-index-embeddings-azure-inference` [0.1.0]
+
+- Azure AI Inference integration (#14672)
+
+### `llama-index-llms-bedrock-converse` [0.1.5]
+
+- feat: ✨ Implement async functionality in BedrockConverse (#14326)
+
+### `llama-index-embeddings-yandexgpt` [0.1.5]
+
+- Add new integration for YandexGPT Embedding Model (#14313)
+
+### `llama-index-tools-google` [0.1.6]
+
+- Update docstring for gmailtoolspec's search_messages tool (#14840)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.1.5]
+
+- add support for nvidia/nv-rerankqa-mistral-4b-v3 (#14844)
+
+### `llama-index-embeddings-openai` [0.1.11]
+
+- Fix OpenAI Embedding async client bug (#14835)
+
+### `llama-index-embeddings-azure-openai` [0.1.11]
+
+- Fix Azure OpenAI LLM and Embedding async client bug (#14833)
+
+### `llama-index-llms-azure-openai` [0.1.9]
+
+- Fix Azure OpenAI LLM and Embedding async client bug (#14833)
+
+### `llama-index-multi-modal-llms-openai` [0.1.8]
+
+- Add support for gpt-4o-mini (#14820)
+
+### `llama-index-llms-openai` [0.1.26]
+
+- Add support for gpt-4o-mini (#14820)
+
+### `llama-index-llms-mistralai` [0.1.18]
+
+- Add support for mistralai nemo model (#14819)
+
+### `llama-index-graph-stores-neo4j` [0.2.8]
+
+- Fix bug when sanitize is used in neo4j property graph (#14812)
+- Add filter to get_triples in neo4j (#14811)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.12]
+
+- feat: add nested filters for azureaisearch (#14795)
+
+### `llama-index-vector-stores-qdrant` [0.2.13]
+
+- feat: Add NOT IN filter for Qdrant vector store (#14791)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.11]
+
+- feat: add azureaisearch supported conditions (#14787)
+- feat: azureaisearch support collection string (#14712)
+
+### `llama-index-tools-weather` [0.1.4]
+
+- Fix OpenWeatherMapToolSpec.forecast_tommorrow_at_location (#14745)
+
+### `llama-index-readers-microsoft-sharepoint` [0.2.6]
+
+- follow odata.nextLink (#14708)
+
+### `llama-index-vector-stores-qdrant` [0.2.12]
+
+- Adds Quantization option to QdrantVectorStore (#14740)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.10]
+
+- feat: improve azureai search deleting (#14693)
+
+### `llama-index-agent-openai` [0.2.9]
+
+- fix: tools are required for attachments in openai api (#14609)
+
+### `llama-index-readers-box` [0.1.0]
+
+- new integration
+
+### `llama-index-embeddings-fastembed` [0.1.6]
+
+- fix fastembed python version (#14710)
+
+## [2024-07-11]
+
 ### `llama-index-core` [0.10.55]
 
 - Various docs updates

@@ -5,10 +5,22 @@ pip install llama-index-readers-confluence
 ```
 
 This loader loads pages from a given Confluence cloud instance. The user needs to specify the base URL for a Confluence
-instance to initialize the ConfluenceReader - base URL needs to end with `/wiki`. The user can optionally specify
-OAuth 2.0 credentials to authenticate with the Confluence instance. If no credentials are specified, the loader will
-look for `CONFLUENCE_API_TOKEN` or `CONFLUENCE_USERNAME`/`CONFLUENCE_PASSWORD` environment variables to proceed with basic authentication.
-Keep in mind `CONFLUENCE_PASSWORD` is not your actual password, but an API Token obtained here: https://id.atlassian.com/manage-profile/security/api-tokens.
+instance to initialize the ConfluenceReader - base URL needs to end with `/wiki`.
+
+The user can optionally specify OAuth 2.0 credentials to authenticate with the Confluence instance. If no credentials are
+specified, the loader will look for `CONFLUENCE_API_TOKEN` or `CONFLUENCE_USERNAME`/`CONFLUENCE_PASSWORD` environment variables
+to proceed with basic authentication.
+
+> [!NOTE]
+> Keep in mind `CONFLUENCE_PASSWORD` is not your actual password, but an API Token obtained here: https://id.atlassian.com/manage-profile/security/api-tokens.
+
+The following order is used for checking authentication credentials:
+
+1. `oauth2`
+2. `api_token`
+3. `user_name` and `password`
+4. Environment variable `CONFLUENCE_API_TOKEN`
+5. Environment variable `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`
 
 For more on authenticating using OAuth 2.0, checkout:
 
@@ -98,7 +110,7 @@ documents.extend(
 ```
 
 ```python
-# Example that fetches the first 5 results froma cql query, the uses the cursor to pick up on the next element
+# Example that fetches the first 5 results from a cql query, the uses the cursor to pick up on the next element
 from llama_index.readers.confluence import ConfluenceReader
 
 token = {"access_token": "<access_token>", "token_type": "<token_type>"}

@@ -9,7 +9,7 @@ Congratulations! You've loaded your data, indexed it, stored your index, and que
 - We have a guide on [how to build a chatbot](chatbots/building_a_chatbot.md)
 - We talk about [building agents in LlamaIndex](agents.md)
 - We have a complete guide to using [property graphs for indexing and retrieval](../../module_guides/indexing/lpg_index_guide.md)
-- And last but not least we show you how to build [a full stack web application](apps.md) using LlamaIndex
+- And last but not least we show you how to build [a full stack web application](apps/index.md) using LlamaIndex
 
 LlamaIndex also provides some tools / project templates to help you build a full-stack template. For instance, [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama) spins up a full-stack scaffold for you.
 

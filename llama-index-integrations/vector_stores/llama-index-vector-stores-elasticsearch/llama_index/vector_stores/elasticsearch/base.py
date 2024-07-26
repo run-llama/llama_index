@@ -216,7 +216,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
         retrieval_strategy: Optional[AsyncRetrievalStrategy] = None,
         metadata_mappings: Optional[Dict[str, Any]] = None,
-        custom_index_settings: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         nest_asyncio.apply()
@@ -252,7 +251,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
             text_field=text_field,
             vector_field=vector_field,
             metadata_mappings=metadata_mappings,
-            custom_index_settings=custom_index_settings,
         )
 
         super().__init__(
@@ -349,6 +347,10 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         if not self._store.num_dimensions:
             self._store.num_dimensions = len(embeddings[0])
+
+        # Omit the vectors argument entirely if embeddings aren't generated.
+        if not any(embeddings):
+            embeddings = None
 
         return await self._store.add_texts(
             texts=texts,

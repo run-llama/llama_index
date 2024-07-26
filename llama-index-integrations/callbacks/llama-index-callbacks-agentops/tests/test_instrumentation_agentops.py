@@ -4,6 +4,7 @@ import llama_index.core.instrumentation as instrument
 from agentops import LLMEvent, ToolEvent, ErrorEvent
 from typing import (
     Any,
+    Dict,
     AsyncGenerator,
     Coroutine,
     Generator,
@@ -146,37 +147,21 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(is_function_calling_model=True)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
-        tools: List[BaseTool],
-        user_msg: Union[str, ChatMessage, None] = None,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        **kwargs: Any
-    ) -> ChatResponse:
-        if not chat_history:
-            raise ValueError
-        return self.chat(chat_history)
-
-    async def achat_with_tools(
-        self,
-        tools: List[BaseTool],
-        user_msg: Union[str, ChatMessage, None] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any
-    ) -> ChatResponse:
-        return self.chat_with_tools(
-            tools, user_msg, chat_history, verbose, allow_parallel_tool_calls, **kwargs
-        )
+        tool_choice: Union[str, dict] = "auto",
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare chat with tools."""
+        return {"messages": chat_history}
 
     def get_tool_calls_from_response(
-        self,
-        response: AgentChatResponse,
-        error_on_no_tool_call: bool = True,
-        **kwargs: Any
+        self, response: ChatResponse, error_on_no_tool_call: bool = True, **kwargs: Any
     ) -> List[ToolSelection]:
         return [MOCK_TOOL_SELECTION] if self.use_tools else []
 
