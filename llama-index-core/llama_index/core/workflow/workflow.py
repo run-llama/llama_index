@@ -203,7 +203,7 @@ class Workflow:
                 if event_type == type(None):
                     # some events may not trigger other events
                     continue
-                
+
                 produced_events.add(event_type)
 
         # Check if all consumed events are produced
