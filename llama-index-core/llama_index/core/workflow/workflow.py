@@ -28,13 +28,22 @@ class Workflow:
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
+        self._step_functions: Dict[str, Callable] = {}
+
+    def add_step(self, func: Callable) -> None:
+        """Adds a free function as step for this workflow instance."""
+        self._step_functions[func.__name__] = func
+
+    def _get_steps(self) -> Dict[str, Callable]:
+        """Returns all the steps, whether defined as methods or free functions."""
+        return {**get_steps_from_class(self), **self._step_functions}
 
     def _start(self, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        for name, step_func in get_steps_from_class(self).items():
+        for name, step_func in self._get_steps().items():
             self._queues[name] = asyncio.Queue()
             self._step_flags[name] = asyncio.Event()
             step_config: Optional[StepConfig] = getattr(
