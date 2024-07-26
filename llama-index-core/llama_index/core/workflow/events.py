@@ -1,5 +1,6 @@
 from collections import UserDict
 from dataclasses import dataclass, field
+from typing import Any
 
 
 class Event:
@@ -14,7 +15,7 @@ class StartEvent(UserDict, Event):
 class StopEvent(Event):
     """EndEvent signals the workflow to stop."""
 
-    msg: str = field(default="")
+    result: Any = field(default=None)
 
 
 EventType = type[Event]

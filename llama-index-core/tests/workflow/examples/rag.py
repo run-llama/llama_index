@@ -8,16 +8,18 @@ from llama_index.core.schema import NodeWithScore
 from llama_index.core.llama_dataset import download_llama_dataset
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.response_synthesizers import Refine
-from llama_index.core.workflow.events import Event, StartEvent, StopEvent
-from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.drawing import (
+from llama_index.core.workflow import (
+    Event,
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
     draw_all_possible_flows,
     draw_most_recent_execution,
 )
 
-# pip install llama-index-llms-openai
-from llama_index.llms.openai import OpenAI
+# pip install llama-index-llms-ollama
+from llama_index.llms.ollama import Ollama
 
 
 @dataclass
@@ -50,7 +52,7 @@ class RAGWorkflow(Workflow):
 
         _, documents = download_llama_dataset(dsname, "./data")
         self.index = VectorStoreIndex.from_documents(documents=documents)
-        return StopEvent(msg=f"Indexed {len(documents)} documents.")
+        return StopEvent(result=f"Indexed {len(documents)} documents.")
 
     @step()
     async def retrieve(self, ev: StartEvent) -> Optional[RetrieverEvent]:
@@ -95,10 +97,10 @@ class RAGWorkflow(Workflow):
             self.query = ev.get("query", "")
             return None
         elif isinstance(ev, QueryResult):
-            llm = OpenAI(model="gpt-3.5-turbo")
-            summarizer = Refine(llm=llm, verbose=True)
+            llm = Ollama(model="llama3.1:latest", request_timeout=120)
+            summarizer = Refine(llm=llm, streaming=True, verbose=True)
             response = await summarizer.asynthesize(self.query, nodes=ev.nodes)
-            return StopEvent(msg=str(response))
+            return StopEvent(result=response)
         else:
             return None
 
@@ -112,7 +114,8 @@ async def main() -> None:
 
     print("Querying...")
     ret = await w.run(query="Who is Paul Graham?")
-    print(ret)
+    async for chunk in ret.async_response_gen():
+        print(chunk, end="", flush=True)
 
     draw_all_possible_flows(w)
     draw_most_recent_execution(w)
