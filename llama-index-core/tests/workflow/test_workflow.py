@@ -89,7 +89,7 @@ async def test_workflow_event_propagation():
         @step()
         async def step2(self, ev: TestEvent) -> StopEvent:
             events.append("step2")
-            return StopEvent(msg="Done")
+            return StopEvent(result="Done")
 
     workflow = EventTrackingWorkflow()
     await workflow.run()

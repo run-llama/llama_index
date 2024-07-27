@@ -74,9 +74,7 @@ class RAGWorkflow(Workflow):
         return RetrieverEvent(nodes=nodes)
 
     @step()
-    async def rerank(
-        self, ev: Union[RetrieverEvent, StartEvent]
-    ) -> Optional[QueryResult]:
+    def rerank(self, ev: Union[RetrieverEvent, StartEvent]) -> Optional[QueryResult]:
         if isinstance(ev, StartEvent):
             self.query = ev.get("query", "")
             return None
