@@ -61,7 +61,6 @@ def get_steps_from_class(_class: object) -> Dict[str, Callable]:
     all_methods = inspect.getmembers(_class, predicate=inspect.isfunction)
 
     for name, method in all_methods:
-        print(name, hasattr(method, "__step_config"))
         if hasattr(method, "__step_config"):
             step_methods[name] = method
 
@@ -74,7 +73,6 @@ def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
     all_methods = inspect.getmembers(workflow, predicate=inspect.ismethod)
 
     for name, method in all_methods:
-        print(name, hasattr(method, "__step_config"))
         if hasattr(method, "__step_config"):
             step_methods[name] = method
 
