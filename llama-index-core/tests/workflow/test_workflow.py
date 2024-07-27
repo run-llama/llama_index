@@ -94,3 +94,19 @@ async def test_workflow_event_propagation():
     workflow = EventTrackingWorkflow()
     await workflow.run()
     assert events == ["step1", "step2"]
+
+
+@pytest.mark.asyncio()
+async def test_sync_async_steps():
+    class SyncAsyncWorkflow(Workflow):
+        @step()
+        async def async_step(self, ev: StartEvent) -> TestEvent:
+            return TestEvent()
+
+        @step()
+        def sync_step(self, ev: TestEvent) -> StopEvent:
+            return StopEvent(result="Done")
+
+    workflow = SyncAsyncWorkflow()
+    await workflow.run()
+    assert workflow.is_done()
