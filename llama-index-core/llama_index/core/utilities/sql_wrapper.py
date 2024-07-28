@@ -162,7 +162,7 @@ class SQLDatabase:
             # get_table_comment raises NotImplementedError for a dialect that does not support comments.
             pass
 
-        template += "and foreign keys: {foreign_keys}."
+        template += "{foreign_keys}."
         columns = []
         for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
@@ -182,7 +182,11 @@ class SQLDatabase:
                 f"{foreign_key['constrained_columns']} -> "
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
             )
-        foreign_key_str = ", ".join(foreign_keys)
+        foreign_key_str = (
+            foreign_keys
+            and " and foreign keys: {}".format(", ".join(foreign_keys))
+            or ""
+        )
         return template.format(
             table_name=table_name, columns=column_str, foreign_keys=foreign_key_str
         )
