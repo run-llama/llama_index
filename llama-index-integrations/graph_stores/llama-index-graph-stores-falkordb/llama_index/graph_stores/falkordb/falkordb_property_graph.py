@@ -86,7 +86,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
     docker run \
         -p 3000:3000 -p 6379:6379 \
         -v $PWD/data:/data \
-        falkordb:latest
+        falkordb/falkordb:latest
     ```
 
     Args:
@@ -373,19 +373,19 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         triples = []
         for record in data:
             source = EntityNode(
-                name=record["source_id"],
-                label=record["source_type"],
-                properties=remove_empty_values(record["source_properties"]),
+                name=record[b"source_id"],
+                label=record[b"source_type"],
+                properties=remove_empty_values(record[b"source_properties"]),
             )
             target = EntityNode(
-                name=record["target_id"],
-                label=record["target_type"],
-                properties=remove_empty_values(record["target_properties"]),
+                name=record[b"target_id"],
+                label=record[b"target_type"],
+                properties=remove_empty_values(record[b"target_properties"]),
             )
             rel = Relation(
-                source_id=record["source_id"],
-                target_id=record["target_id"],
-                label=record["type"],
+                source_id=record[b"source_id"],
+                target_id=record[b"target_id"],
+                label=record[b"type"],
             )
             triples.append([source, rel, target])
         return triples
@@ -486,9 +486,9 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
         data = self.structured_query(
             f"""MATCH (e:`__Entity__`)
-            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
-            WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
-            ORDER BY score DESC LIMIT toInteger($limit)
+            WHERE e.embedding IS NOT NULL AND ({filters})
+            WITH e, vec.euclideanDistance(e.embedding, vecf32($embedding)) AS score
+            ORDER BY score DESC LIMIT $limit
             RETURN e.id AS name,
                [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
@@ -505,12 +505,12 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         scores = []
         for record in data:
             node = EntityNode(
-                name=record["name"],
-                label=record["type"],
-                properties=remove_empty_values(record["properties"]),
+                name=record[b"name"],
+                label=record[b"type"],
+                properties=remove_empty_values(record[b"properties"]),
             )
             nodes.append(node)
-            scores.append(record["score"])
+            scores.append(record[b"score"])
 
         return (nodes, scores)
 
