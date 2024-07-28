@@ -52,6 +52,7 @@ class BaseIndex(Generic[IS], ABC):
         show_progress: bool = False,
         # deprecated
         service_context: Optional[ServiceContext] = None,
+        load_nodes_into_storage_context: Optional[bool] = True,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -76,6 +77,7 @@ class BaseIndex(Generic[IS], ABC):
 
         self._docstore = self._storage_context.docstore
         self._show_progress = show_progress
+        self._load_nodes_into_storage_context = load_nodes_into_storage_context
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
         self._callback_manager = (
@@ -212,7 +214,8 @@ class BaseIndex(Generic[IS], ABC):
         self, nodes: Sequence[BaseNode], **build_kwargs: Any
     ) -> IS:
         """Build the index from nodes."""
-        self._docstore.add_documents(nodes, allow_update=True)
+        if self._load_nodes_into_storage_context:
+            self._docstore.add_documents(nodes, allow_update=True)
         return self._build_index_from_nodes(nodes, **build_kwargs)
 
     @abstractmethod
