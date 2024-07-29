@@ -17,9 +17,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.kdbai.utils import (
-    default_sparse_encoder_v1,
+    default_sparse_encoder,
     convert_metadata_col_v1,
-    default_sparse_encoder_v2,
     convert_metadata_col_v2,
 )
 
@@ -84,10 +83,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
         if hybrid_search:
             if sparse_encoder is None:
-                if isinstance(self._table, kdbai.Table):
-                    self._sparse_encoder = default_sparse_encoder_v1
-                elif isinstance(self._table, kdbai.TablePyKx):
-                    self._sparse_encoder = default_sparse_encoder_v2
+                self._sparse_encoder = default_sparse_encoder
             else:
                 self._sparse_encoder = sparse_encoder
 
@@ -150,7 +146,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 }
 
                 if self.hybrid_search:
-                    doc["sparseVectors"] = self._sparse_encoder([node.get_content()])
+                    doc["sparseVectors"] = self._sparse_encoder(node.get_content())
 
                 # handle extra columns
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
@@ -216,10 +212,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         if self.hybrid_search:
             alpha = query.alpha if query.alpha is not None else 0.5
 
-            if isinstance(self._table, kdbai.Table):
-                sparse_vectors = self._sparse_encoder([query.query_str])
-            elif isinstance(self._table, kdbai.TablePyKx):
-                sparse_vectors = [self._sparse_encoder([query.query_str])]
+            sparse_vectors = [self._sparse_encoder(query.query_str)]
 
             results = self._table.hybrid_search(
                 dense_vectors=[query.query_embedding],
