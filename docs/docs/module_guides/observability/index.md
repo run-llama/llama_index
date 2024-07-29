@@ -20,7 +20,6 @@ Observability is now being handled via the [`instrumentation` module](./instrume
 
 A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
 
-
 ## Usage Pattern
 
 To toggle, you will generally just need to do the following:
@@ -35,7 +34,6 @@ set_global_handler("<handler_name>", **kwargs)
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
 And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
-
 
 ## Partner `One-Click` Integrations
 
@@ -74,6 +72,7 @@ llama_index.core.set_global_handler(
 
 ...
 ```
+
 #### Guides
 
 - [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
@@ -116,6 +115,39 @@ llama_index.core.set_global_handler("arize_phoenix")
 - [Auto-Retrieval Guide with Pinecone and Arize Phoenix](https://docs.llamaindex.ai/en/latest/examples/vector_stores/pinecone_auto_retriever/?h=phoenix)
 - [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
 
+### Literal AI
+
+[Literal AI](https://literalai.com/) is the go-to LLM evaluation and observability solution, enabling engineering and product teams to ship LLM applications reliably, faster and at scale. This is possible through a collaborative development cycle involving prompt engineering, LLM observability, LLM evaluation and LLM monitoring. Conversation Threads and Engine Runs can be automatically logged on Literal AI.
+
+#### Usage Pattern
+
+- Install the Literal AI Python SDK with `pip install literalai`
+- On your Literal AI project, go to **Settings** and grab your API key
+- If you are using a self-hosted instance of Literal AI, also make note of its base URL
+
+Then add the following lines to your applicative code :
+
+```python
+from literalai import LiteralClient
+from llama_index.core import Document, VectorStoreIndex
+
+# By default, the Literal AI client will initialize using the following environment variables :
+# LITERAL_API_KEY
+# LITERAL_API_URL
+literalai_client = LiteralClient()
+
+# You can also explicitly provide the configuration keys like so :
+# literalai_client = LiteralClient(api_key="lsk_xxxxx", url="http://localhost:3000")
+
+literalai_client.instrument_llamaindex()
+```
+
+#### Example Guides
+
+- [Literal AI integration with Llama Index](https://docs.getliteral.ai/integrations/llama-index)
+- [Build a Q&A application with LLamaIndex and monitor it with Literal AI](https://github.com/Chainlit/literal-cookbook/blob/main/python/llamaindex-integration)
+
+![](../../_static/integrations/literal_ai.gif)
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
@@ -423,7 +455,6 @@ import llama_index.core
 
 llama_index.core.set_global_handler("simple")
 ```
-
 
 ## More observability
 
