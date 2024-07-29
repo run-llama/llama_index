@@ -31,4 +31,4 @@ class RTFReader(BaseReader):
 
         with open(str(input_file)) as f:
             text = rtf_to_text(f.read())
-            return [Document(text=text.strip())]
+            return [Document(text=text.strip(), metadata=extra_info or {})]
