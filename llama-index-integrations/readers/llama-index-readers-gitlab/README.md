@@ -18,6 +18,14 @@ import gitlab
 from llama_index.readers.github import GitLabRepositoryReader
 
 gitlab_client = gitlab.Gitlab("https://gitlab.com")
+
+project_repo_reader = GitLabRepositoryReader(
+    gitlab_client=gitlab_client,
+    project_id=project_id,
+    verbose=True,
+)
+
+docs = project_repo_reader.load_data(file_path="README.rst", ref="develop")
 ```
 
 ## Issues Reader
