@@ -173,6 +173,24 @@ class PGVectorStore(BasePydanticVectorStore):
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """Constructor.
+
+        Args:
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db.
+            async_connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to async pg db.
+            table_name (str): Table name.
+            schema_name (str): Schema name.
+            hybrid_search (bool, optional): Enable hybrid search. Defaults to False.
+            text_search_config (str, optional): Text search configuration. Defaults to "english".
+            embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            cache_ok (bool, optional): Enable cache. Defaults to False.
+            perform_setup (bool, optional): If db should be set up. Defaults to True.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+            hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
+                contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
+                which turns off HNSW search.
+        """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
 
@@ -246,7 +264,32 @@ class PGVectorStore(BasePydanticVectorStore):
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PGVectorStore":
-        """Return connection string from database parameters."""
+        """Construct from params.
+
+        Args:
+            host (Optional[str], optional): Host of postgres connection. Defaults to None.
+            port (Optional[str], optional): Port of postgres connection. Defaults to None.
+            database (Optional[str], optional): Postgres DB name. Defaults to None.
+            user (Optional[str], optional): Postgres username. Defaults to None.
+            password (Optional[str], optional): Postgres password. Defaults to None.
+            table_name (str): Table name. Defaults to "llamaindex".
+            schema_name (str): Schema name. Defaults to "public".
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db
+            async_connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to async pg db
+            hybrid_search (bool, optional): Enable hybrid search. Defaults to False.
+            text_search_config (str, optional): Text search configuration. Defaults to "english".
+            embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            cache_ok (bool, optional): Enable cache. Defaults to False.
+            perform_setup (bool, optional): If db should be set up. Defaults to True.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+            hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
+                contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
+                which turns off HNSW search.
+
+        Returns:
+            PGVectorStore: Instance of PGVectorStore constructed from params.
+        """
         conn_str = (
             connection_string
             or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
