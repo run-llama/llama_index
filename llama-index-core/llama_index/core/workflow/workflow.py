@@ -110,8 +110,16 @@ class Workflow(metaclass=_WorkflowMeta):
                         args.append(self.get_context())
                     args.append(ev)
 
+                    # - check if its async or not
+                    # - if not async, run it in an executor
                     instrumented_step = dispatcher.span(step)
-                    new_ev = await instrumented_step(*args)
+
+                    if asyncio.iscoroutinefunction(step):
+                        new_ev = await instrumented_step(*args)
+                    else:
+                        new_ev = await asyncio.get_event_loop().run_in_executor(
+                            None, instrumented_step, *args
+                        )
 
                     if self._verbose:
                         print(f"Step {name} produced event {type(new_ev).__name__}")
@@ -170,7 +178,16 @@ class Workflow(metaclass=_WorkflowMeta):
         # Send the first event
         self.send_event(StartEvent(kwargs))
 
-        _, unfinished = await asyncio.wait(self._tasks, timeout=self._timeout)
+        done, unfinished = await asyncio.wait(
+            self._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
+        )
+
+        # Check for hidden exceptions
+        for task in done:
+            if not task.cancelled() and task.exception():
+                raise task.exception()  #  noqa: RSE102
+
+        # raise an error if the workflow timed out
         if unfinished:
             msg = f"Operation timed out after {self._timeout} seconds"
             raise WorkflowTimeoutError(msg)
