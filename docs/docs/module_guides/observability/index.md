@@ -20,6 +20,7 @@ Observability is now being handled via the [`instrumentation` module](./instrume
 
 A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
 
+
 ## Usage Pattern
 
 To toggle, you will generally just need to do the following:
@@ -34,6 +35,7 @@ set_global_handler("<handler_name>", **kwargs)
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
 And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
+
 
 ## Partner `One-Click` Integrations
 
@@ -455,6 +457,7 @@ import llama_index.core
 
 llama_index.core.set_global_handler("simple")
 ```
+
 
 ## More observability
 
