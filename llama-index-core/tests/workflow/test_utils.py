@@ -14,6 +14,7 @@ from llama_index.core.workflow.utils import (
     get_return_types,
     is_free_function,
 )
+from llama_index.core.workflow.context import Context
 
 
 class TestEvent(Event):
@@ -45,13 +46,20 @@ def test_validate_step_signature_union():
     validate_step_signature(f)
 
 
+def test_validate_step_signature_of_free_function_with_context():
+    def f(ctx: Context, ev: TestEvent):
+        pass
+
+    validate_step_signature(f)
+
+
 def test_validate_step_signature_union_invalid():
     def f(ev: Union[TestEvent, str]):
         pass
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Step signature parameters must be annotated with an Event type",
+        match="Events in step signature parameters must be of type Event",
     ):
         validate_step_signature(f)
 
@@ -72,7 +80,7 @@ def test_validate_step_signature_no_annotations():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Step signature parameters must be annotated with an Event type",
+        match="Step signature parameters must be annotated",
     ):
         validate_step_signature(f)
 
@@ -83,7 +91,18 @@ def test_validate_step_signature_wrong_annotations():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Step signature parameters must be annotated with an Event type",
+        match="Events in step signature parameters must be of type Event",
+    ):
+        validate_step_signature(f)
+
+
+def test_validate_step_signature_no_events():
+    def f(self, ctx: Context):
+        pass
+
+    with pytest.raises(
+        WorkflowValidationError,
+        match="Step signature must contain exactly one parameter of type Event but found 0.",
     ):
         validate_step_signature(f)
 
@@ -97,13 +116,13 @@ def test_validate_step_signature_too_many_params():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="must contain exactly one parameter of type Event and no other parameters",
+        match="Step signature must contain exactly one parameter of type Event but found 2.",
     ):
         validate_step_signature(f1)
 
     with pytest.raises(
         WorkflowValidationError,
-        match="must contain exactly one parameter of type Event and no other parameters",
+        match="Step signature must contain exactly one parameter of type Event but found 2.",
     ):
         validate_step_signature(f2)
 

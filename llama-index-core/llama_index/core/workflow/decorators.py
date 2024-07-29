@@ -19,9 +19,10 @@ class StepConfig(BaseModel):
     accepted_events: List[Any]
     event_name: str
     return_types: List[Any]
+    pass_context: bool
 
 
-def step(workflow: Optional[Type["Workflow"]] = None):
+def step(workflow: Optional[Type["Workflow"]] = None, pass_context: bool = False):
     """Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
@@ -31,15 +32,15 @@ def step(workflow: Optional[Type["Workflow"]] = None):
     """
 
     def decorator(func: Callable) -> Callable:
-        # This will raise providing a message with the specific validation failure
-        validate_step_signature(func)
-
         # If this is a free function, call add_step() explicitly.
         if is_free_function(func.__qualname__):
             if workflow is None:
                 msg = f"To decorate {func.__name__} please pass a workflow instance to the @step() decorator."
                 raise WorkflowValidationError(msg)
             workflow.add_step(func)
+
+        # This will raise providing a message with the specific validation failure
+        validate_step_signature(func)
 
         # Get the function signature
         sig = inspect.signature(func)
@@ -59,6 +60,7 @@ def step(workflow: Optional[Type["Workflow"]] = None):
             accepted_events=event_types,
             event_name=event_name,
             return_types=return_types,
+            pass_context=pass_context,
         )
 
         return func
