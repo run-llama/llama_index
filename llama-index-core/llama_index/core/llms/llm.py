@@ -4,6 +4,8 @@ from typing import (
     Callable,
     Dict,
     List,
+    Generator,
+    AsyncGenerator,
     Optional,
     Protocol,
     Sequence,
@@ -48,10 +50,12 @@ from llama_index.core.types import (
     PydanticProgramMode,
     TokenAsyncGen,
     TokenGen,
+    Model,
 )
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
+    LLMStructuredPredictInProgressEvent,
     LLMStructuredPredictEndEvent,
     LLMStructuredPredictStartEvent,
 )
@@ -66,6 +70,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
+    from llama_index.core.llms.structured_llm import StructuredLLM
 
 
 class ToolSelection(BaseModel):
@@ -396,6 +401,126 @@ class LLM(BaseLLM):
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
+    @dispatcher.span
+    def stream_structured_predict(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        r"""Stream Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            Generator: A generator returning partial copies of the model or list of models.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            stream_output = llm.stream_structured_predict(Test, prompt, topic="cats")
+            for partial_output in stream_output:
+                # stream partial outputs until completion
+                print(partial_output.name)
+            ```
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = program.stream_call(**prompt_args)
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+    @dispatcher.span
+    async def astream_structured_predict(
+        self,
+        output_cls: BaseModel,
+        prompt: PromptTemplate,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+        r"""Async Stream Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            Generator: A generator returning partial copies of the model or list of models.
+
+        Examples:
+            ```python
+            from pydantic.v1 import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            stream_output = await llm.astream_structured_predict(Test, prompt, topic="cats")
+            async for partial_output in stream_output:
+                # stream partial outputs until completion
+                print(partial_output.name)
+            ```
+        """
+
+        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
+            from llama_index.core.program.utils import get_program_for_llm
+
+            dispatcher.event(
+                LLMStructuredPredictStartEvent(
+                    output_cls=output_cls, template=prompt, template_args=prompt_args
+                )
+            )
+            program = get_program_for_llm(
+                output_cls,
+                prompt,
+                self,
+                pydantic_program_mode=self.pydantic_program_mode,
+            )
+
+            result = await program.astream_call(**prompt_args)
+            async for r in result:
+                dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+                yield r
+
+            dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+        return gen()
+
     # -- Prompt Chaining --
 
     @dispatcher.span
@@ -604,11 +729,21 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
         if isinstance(user_msg, ChatMessage):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -652,11 +787,21 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
         if isinstance(user_msg, ChatMessage):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -667,7 +812,7 @@ class LLM(BaseLLM):
         step = worker.initialize_step(task)
 
         try:
-            output = await worker.arun_step(step, task).output
+            output = (await worker.arun_step(step, task)).output
 
             # react agent worker inserts a "Observation: " prefix to the response
             if output.response and output.response.startswith("Observation: "):
@@ -679,6 +824,16 @@ class LLM(BaseLLM):
             )
 
         return output
+
+    def as_structured_llm(
+        self,
+        output_cls: BaseModel,
+        **kwargs: Any,
+    ) -> "StructuredLLM":
+        """Return a structured LLM around a given object."""
+        from llama_index.core.llms.structured_llm import StructuredLLM
+
+        return StructuredLLM(llm=self, output_cls=output_cls, **kwargs)
 
 
 class BaseLLMComponent(QueryComponent):

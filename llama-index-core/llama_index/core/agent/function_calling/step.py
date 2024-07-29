@@ -5,7 +5,7 @@ import logging
 import uuid
 from typing import Any, List, Optional, cast
 import asyncio
-
+import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -24,6 +24,7 @@ from llama_index.core.chat_engine.types import (
     AgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
@@ -38,6 +39,8 @@ from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
@@ -202,16 +205,21 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         verbose: bool = False,
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
+        tool_args_str = json.dumps(tool_call.tool_kwargs)
+        tool_metadata = (
+            tool.metadata
+            if tool is not None
+            else ToolMetadata(description="", name=tool_call.tool_name)
+        )
 
+        dispatcher.event(
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool_metadata)
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: (
-                    tool.metadata
-                    if tool is not None
-                    else ToolMetadata(description="", name=tool_call.tool_name)
-                ),
+                EventPayload.FUNCTION_CALL: tool_args_str,
+                EventPayload.TOOL: tool_metadata,
             },
         ) as event:
             tool_output = (
@@ -243,16 +251,21 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         verbose: bool = False,
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
+        tool_args_str = json.dumps(tool_call.tool_kwargs)
+        tool_metadata = (
+            tool.metadata
+            if tool is not None
+            else ToolMetadata(description="", name=tool_call.tool_name)
+        )
 
+        dispatcher.event(
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool_metadata)
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: (
-                    tool.metadata
-                    if tool is not None
-                    else ToolMetadata(description="", name=tool_call.tool_name)
-                ),
+                EventPayload.FUNCTION_CALL: tool_args_str,
+                EventPayload.TOOL: tool_metadata,
             },
         ) as event:
             tool_output = (
@@ -296,6 +309,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+        tool_outputs: List[ToolOutput] = []
 
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
@@ -323,10 +337,10 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    tool_outputs,
                     verbose=self._verbose,
                 )
-
+                task.extra_state["sources"].append(tool_outputs[-1])
                 task.extra_state["n_function_calls"] += 1
 
                 # check if any of the tools return directly -- only works if there is one tool call
@@ -355,9 +369,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(
-            response=response_str, sources=task.extra_state["sources"]
-        )
+        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
         return TaskStepOutput(
             output=agent_response,
@@ -389,6 +401,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+        tool_outputs: List[ToolOutput] = []
 
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
@@ -415,17 +428,18 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    tool_outputs,
                     verbose=self._verbose,
                 )
                 for tool_call in tool_calls
             ]
             return_directs = await asyncio.gather(*tasks)
+            task.extra_state["sources"].extend(tool_outputs)
 
             # check if any of the tools return directly -- only works if there is one tool call
             if len(return_directs) == 1 and return_directs[0]:
                 is_done = True
-                response = task.extra_state["sources"][-1].content
+                response = tool_outputs[-1].content
 
             task.extra_state["n_function_calls"] += len(tool_calls)
             # put tool output in sources and memory
@@ -448,9 +462,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(
-            response=response_str, sources=task.extra_state["sources"]
-        )
+        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
         return TaskStepOutput(
             output=agent_response,

@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-qdrant"
 readme = "README.md"
-version = "0.2.10"
+version = "0.2.14"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
 llama-index-core = "^0.10.1"
-qdrant-client = "^1.7.1"
+qdrant-client = ">=1.7.1"
 grpcio = "^1.60.0"
 
 [tool.poetry.extras]

@@ -81,7 +81,7 @@ class FireCrawlWebReader(BasePydanticReader):
             firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
             documents.append(
                 Document(
-                    page_content=firecrawl_docs.get("markdown", ""),
+                    text=firecrawl_docs.get("markdown", ""),
                     metadata=firecrawl_docs.get("metadata", {}),
                 )
             )
@@ -90,7 +90,7 @@ class FireCrawlWebReader(BasePydanticReader):
             for doc in firecrawl_docs:
                 documents.append(
                     Document(
-                        page_content=doc.get("markdown", ""),
+                        text=doc.get("markdown", ""),
                         metadata=doc.get("metadata", {}),
                     )
                 )
@@ -99,7 +99,7 @@ class FireCrawlWebReader(BasePydanticReader):
             for doc in firecrawl_docs:
                 documents.append(
                     Document(
-                        page_content=doc.get("markdown", ""),
+                        text=doc.get("markdown", ""),
                         metadata=doc.get("metadata", {}),
                     )
                 )

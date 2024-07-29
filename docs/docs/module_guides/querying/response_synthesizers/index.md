@@ -115,6 +115,7 @@ Several response synthesizers are implemented already in LlamaIndex:
   summarization purposes, but may lose detail due to truncation.
 - `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM,
   without actually sending them. Then can be inspected by checking `response.source_nodes`.
+- `context_only`: Returns a concatenated string of all text chunks.
 - `accumulate`: Given a set of text chunks and the query, apply the query to each text
   chunk while accumulating the responses into an array. Returns a concatenated string of all
   responses. Good for when you need to run the same query separately against each text

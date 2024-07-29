@@ -53,4 +53,4 @@ Take a look at our in-depth guides for more details on how to use Documents/Node
 
 - [Using Documents](usage_documents.md)
 - [Using Nodes](usage_nodes.md)
-- [Ingestion Pipeline](../ingestion_pipeline/transformations.md)
+- [Ingestion Pipeline](../ingestion_pipeline/index.md)
