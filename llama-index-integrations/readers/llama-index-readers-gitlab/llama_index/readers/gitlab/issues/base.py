@@ -102,15 +102,13 @@ class GitLabIssuesReader(BaseReader):
         document.extra_info = extra_info
         return document
 
-    def _get_project_issues(self, **kwargs: Any) -> List[Document]:
+    def _get_project_issues(self, **kwargs):
         project = self._gl.projects.get(self._project_id)
-        issues = project.issues.list(**kwargs)
-        return [self._build_document_from_issue(issue) for issue in issues]
+        return project.issues.list(**kwargs)
 
-    def _get_group_issues(self, **kwargs: Any) -> List[Document]:
+    def _get_group_issues(self, **kwargs):
         group = self._gl.groups.get(self._group_id)
-        issues = group.issues.list(**kwargs)
-        return [self._build_document_from_issue(issue) for issue in issues]
+        return group.issues.list(**kwargs)
 
     def _to_gitlab_datetime_format(self, dt: Optional[datetime]) -> str:
         return dt.strftime("%Y-%m-%dT%H:%M:%S") if dt else None
@@ -202,11 +200,14 @@ class GitLabIssuesReader(BaseReader):
 
         filtered_params.update(kwargs)
 
+        issues = []
+
         if self._project_id:
-            return self._get_project_issues(**filtered_params)
+            issues = self._get_project_issues(**filtered_params)
         if self._group_id:
-            return self._get_group_issues(**filtered_params)
-        return []
+            issues = self._get_group_issues(**filtered_params)
+
+        return [self._build_document_from_issue(issue) for issue in issues]
 
 
 if __name__ == "__main__":

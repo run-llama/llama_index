@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
-from llama_index.readers.gitlab import GitLabIssuesReader, gitlab
+from llama_index.readers.gitlab import GitLabIssuesReader
+import gitlab
 
 
 @pytest.fixture()
@@ -30,14 +31,15 @@ def test_load_data_project_issues(gitlab_issues_reader, mocker):
         "assignee": {"username": "assignee_user"},
         "author": {"username": "author_user"},
     }
-    mock_project = MagicMock()
-    mock_project.issues.list.return_value = [mock_issue]
-    gitlab_issues_reader._gl.projects.get.return_value = mock_project
+
+    mocker.patch.object(
+        gitlab_issues_reader, "_get_project_issues", return_value=[mock_issue]
+    )
 
     documents = gitlab_issues_reader.load_data()
 
     assert len(documents) == 1
-    assert documents[0].doc_id == 1
+    assert documents[0].doc_id == "1"
     assert documents[0].text == "Issue title\nIssue description"
     assert documents[0].extra_info["state"] == "opened"
     assert documents[0].extra_info["labels"] == ["bug"]
@@ -66,14 +68,15 @@ def test_load_data_group_issues(gitlab_issues_reader, mocker):
         "assignee": {"username": "group_assignee_user"},
         "author": {"username": "group_author_user"},
     }
-    mock_group = MagicMock()
-    mock_group.issues.list.return_value = [mock_issue]
-    gitlab_issues_reader._gl.groups.get.return_value = mock_group
+
+    mocker.patch.object(
+        gitlab_issues_reader, "_get_group_issues", return_value=[mock_issue]
+    )
 
     documents = gitlab_issues_reader.load_data()
 
     assert len(documents) == 1
-    assert documents[0].doc_id == 2
+    assert documents[0].doc_id == "2"
     assert documents[0].text == "Group issue title\nGroup issue description"
     assert documents[0].extra_info["state"] == "closed"
     assert documents[0].extra_info["labels"] == ["enhancement"]
