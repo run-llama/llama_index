@@ -12,7 +12,7 @@ class RTFReader(BaseReader):
     def load_data(
         self,
         input_file: Union[Path, str],
-        extra_info=Optional[Dict[str, Any]] = None,
+        extra_info: Optional[Dict[str, Any]] = None,
         **load_kwargs: Any
     ) -> List[Document]:
         """Load data from RTF file.
