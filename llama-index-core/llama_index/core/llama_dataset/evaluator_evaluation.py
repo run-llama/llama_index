@@ -174,10 +174,10 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
         return PandasDataFrame(data)
 
-    async def _apredict_example(
+    async def _apredict_example(  # type: ignore
         self,
         predictor: BaseEvaluator,
-        example: LabelledEvaluatorDataExample,  # type: ignore
+        example: LabelledEvaluatorDataExample,
         sleep_time_in_seconds: int,
     ) -> EvaluatorExamplePrediction:
         """Async predict RAG example with a query engine."""
@@ -205,10 +205,10 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
                 invalid_prediction=True, invalid_reason=eval_result.invalid_reason
             )
 
-    def _predict_example(
+    def _predict_example(  # type: ignore
         self,
         predictor: BaseEvaluator,
-        example: LabelledEvaluatorDataExample,  # type: ignore
+        example: LabelledEvaluatorDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> EvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
@@ -236,8 +236,8 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
                 invalid_prediction=True, invalid_reason=eval_result.invalid_reason
             )
 
-    def _construct_prediction_dataset(
-        self, predictions: Sequence[EvaluatorExamplePrediction]  # type: ignore
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[EvaluatorExamplePrediction]
     ) -> EvaluatorPredictionDataset:
         """Construct prediction dataset."""
         return EvaluatorPredictionDataset(predictions=predictions)
@@ -376,10 +376,10 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
         return PandasDataFrame(data)
 
-    async def _apredict_example(
+    async def _apredict_example(  # type: ignore
         self,
         predictor: BaseEvaluator,
-        example: LabelledPairwiseEvaluatorDataExample,  # type: ignore
+        example: LabelledPairwiseEvaluatorDataExample,
         sleep_time_in_seconds: int,
     ) -> PairwiseEvaluatorExamplePrediction:
         """Async predict evaluation example with an Evaluator."""
@@ -410,10 +410,10 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
                 invalid_prediction=True, invalid_reason=eval_result.invalid_reason
             )
 
-    def _predict_example(
+    def _predict_example(  # type: ignore
         self,
         predictor: BaseEvaluator,
-        example: LabelledPairwiseEvaluatorDataExample,  # type: ignore
+        example: LabelledPairwiseEvaluatorDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> PairwiseEvaluatorExamplePrediction:
         """Predict RAG example with a query engine."""
@@ -444,8 +444,8 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
                 invalid_prediction=True, invalid_reason=eval_result.invalid_reason
             )
 
-    def _construct_prediction_dataset(
-        self, predictions: Sequence[PairwiseEvaluatorExamplePrediction]  # type: ignore
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[PairwiseEvaluatorExamplePrediction]
     ) -> PairwiseEvaluatorPredictionDataset:
         """Construct prediction dataset."""
         return PairwiseEvaluatorPredictionDataset(predictions=predictions)

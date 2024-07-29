@@ -64,7 +64,7 @@ class BaseLlamaDataExample(BaseModel):
 class BaseLlamaPredictionDataset(BaseModel):
     _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction  # type: ignore
     predictions: Sequence[BaseLlamaExamplePrediction] = Field(
-        default=list, description="Predictions on train_examples."
+        default_factory=list, description="Predictions on train_examples."
     )
 
     def __getitem__(

@@ -69,8 +69,8 @@ class LabelledSimpleDataExample(BaseLlamaDataExample):
 class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
     _example_type = LabelledSimpleDataExample
 
-    def _construct_prediction_dataset(
-        self, predictions: Sequence[SimpleExamplePrediction]  # type: ignore
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[SimpleExamplePrediction]
     ) -> SimplePredictionDataset:
         """Construct the specific prediction dataset.
 

@@ -99,7 +99,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
+        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
         response = self._multi_modal_llm.complete(
             formatted_prompt,
@@ -121,7 +121,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
+        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
         response = await self._multi_modal_llm.acomplete(
             formatted_prompt,

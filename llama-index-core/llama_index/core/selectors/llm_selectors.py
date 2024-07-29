@@ -7,6 +7,7 @@ from llama_index.core.base.base_selector import (
 )
 from llama_index.core.output_parsers.base import StructuredOutput
 from llama_index.core.output_parsers.selection import Answer, SelectionOutputParser
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.schema import QueryBundle
@@ -64,7 +65,7 @@ class LLMSingleSelector(BaseSelector):
         prompt: SingleSelectPrompt,
     ) -> None:
         self._llm = llm
-        self._prompt = prompt
+        self._prompt: BasePromptTemplate = prompt
 
         if self._prompt.output_parser is None:
             raise ValueError("Prompt should have output parser.")
@@ -156,7 +157,7 @@ class LLMMultiSelector(BaseSelector):
         max_outputs: Optional[int] = None,
     ) -> None:
         self._llm = llm
-        self._prompt = prompt
+        self._prompt: BasePromptTemplate = prompt
         self._max_outputs = max_outputs
 
         if self._prompt.output_parser is None:

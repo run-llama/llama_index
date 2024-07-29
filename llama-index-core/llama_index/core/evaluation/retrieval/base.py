@@ -3,7 +3,7 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Sequence, Optional, Tuple
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -78,7 +78,7 @@ class RetrievalEvalResult(BaseModel):
 class BaseRetrievalEvaluator(BaseModel):
     """Base Retrieval Evaluator class."""
 
-    metrics: List[BaseRetrievalMetric] = Field(
+    metrics: Sequence[BaseRetrievalMetric] = Field(
         ..., description="List of metrics to evaluate"
     )
 

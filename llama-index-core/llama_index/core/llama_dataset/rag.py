@@ -132,10 +132,10 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
 
         return PandasDataFrame(data)
 
-    async def _apredict_example(
+    async def _apredict_example(  # type: ignore
         self,
         predictor: BaseQueryEngine,
-        example: LabelledRagDataExample,  # type: ignore
+        example: LabelledRagDataExample,
         sleep_time_in_seconds: int,
     ) -> RagExamplePrediction:
         """Async predict RAG example with a query engine."""
@@ -145,10 +145,10 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
-    def _predict_example(
+    def _predict_example(  # type: ignore
         self,
         predictor: BaseQueryEngine,
-        example: LabelledRagDataExample,  # type: ignore
+        example: LabelledRagDataExample,
         sleep_time_in_seconds: int = 0,
     ) -> RagExamplePrediction:
         """Predict RAG example with a query engine."""
@@ -158,8 +158,8 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
-    def _construct_prediction_dataset(
-        self, predictions: Sequence[RagExamplePrediction]  # type: ignore
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[RagExamplePrediction]
     ) -> RagPredictionDataset:
         """Construct prediction dataset."""
         return RagPredictionDataset(predictions=predictions)
