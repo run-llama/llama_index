@@ -268,6 +268,14 @@ class ElasticsearchStore(BasePydanticVectorStore):
             retrieval_strategy=retrieval_strategy,
         )
 
+        # Check if retrieval_strategy is AsyncSparseVectorStrategy
+        print(
+            "DISABLE is_embedding_query?",
+            isinstance(retrieval_strategy, AsyncSparseVectorStrategy),
+        )
+        if isinstance(retrieval_strategy, AsyncSparseVectorStrategy):
+            self.is_embedding_query = False
+
     @property
     def client(self) -> Any:
         """Get async elasticsearch client."""
