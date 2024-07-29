@@ -24,6 +24,9 @@ class GitLabRepositoryReader(BaseReader):
 
         self._project = gitlab_client.projects.get(project_id)
 
+    def _parse_file_content(self, file_properties: dict, file_content: str) -> Document:
+        raise NotImplementedError
+
     def _load_single_file(self, file_path: str, ref: Optional[str] = None) -> Document:
         file = self._project.files.get(file_path=file_path, ref=ref)
         file_properties = file.asdict()
