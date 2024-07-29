@@ -9,8 +9,10 @@ from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     validate_step_signature,
     get_steps_from_class,
+    get_steps_from_instance,
     get_param_types,
     get_return_types,
+    is_free_function,
 )
 
 
@@ -106,7 +108,7 @@ def test_validate_step_signature_too_many_params():
         validate_step_signature(f2)
 
 
-def test_get_steps_from_class():
+def test_get_steps_from():
     class Test:
         @step()
         def start(self, start: StartEvent) -> TestEvent:
@@ -119,7 +121,11 @@ def test_get_steps_from_class():
         def not_a_step(self):
             pass
 
-    steps = get_steps_from_class(Test())
+    steps = get_steps_from_class(Test)
+    assert len(steps)
+    assert "my_method" in steps
+
+    steps = get_steps_from_instance(Test())
     assert len(steps)
     assert "my_method" in steps
 
@@ -180,3 +186,10 @@ def test_get_return_types_list():
         return [""]
 
     assert get_return_types(f) == [List[str]]
+
+
+def test_is_free_function():
+    assert is_free_function("my_function") is True
+    assert is_free_function("MyClass.my_method") is False
+    assert is_free_function("some_function.<locals>.my_function") is True
+    assert is_free_function("some_function.<locals>.MyClass.my_function") is False
