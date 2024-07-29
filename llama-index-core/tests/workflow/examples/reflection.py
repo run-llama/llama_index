@@ -5,6 +5,14 @@ from typing import Union
 
 from pydantic import BaseModel
 
+from llama_index.core import set_global_handler
+
+set_global_handler("arize_phoenix")
+
+from llama_index.core.instrumentation import get_dispatcher
+
+dispatcher = get_dispatcher("my_app")
+
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import (
     Event,

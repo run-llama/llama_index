@@ -2,6 +2,7 @@ import asyncio
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import step, StepConfig
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
 from llama_index.core.workflow.utils import (
@@ -9,9 +10,10 @@ from llama_index.core.workflow.utils import (
     get_steps_from_instance,
 )
 
-
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
 from .context import Context
+
+dispatcher = get_dispatcher(__name__)
 
 
 class _WorkflowMeta(type):
@@ -110,11 +112,13 @@ class Workflow(metaclass=_WorkflowMeta):
 
                     # - check if its async or not
                     # - if not async, run it in an executor
+                    instrumented_step = dispatcher.span(step)
+
                     if asyncio.iscoroutinefunction(step):
-                        new_ev = await step(*args)
+                        new_ev = await instrumented_step(*args)
                     else:
                         new_ev = await asyncio.get_event_loop().run_in_executor(
-                            None, step, *args
+                            None, instrumented_step, *args
                         )
 
                     if self._verbose:
@@ -151,6 +155,7 @@ class Workflow(metaclass=_WorkflowMeta):
             queue.put_nowait(message)
         self._broker_log.append(message)
 
+    @dispatcher.span
     async def run(self, **kwargs: Any) -> str:
         """Runs the workflow until completion.
 
@@ -189,6 +194,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
         return self._retval
 
+    @dispatcher.span
     async def run_step(self, **kwargs: Any) -> Optional[str]:
         """Runs the workflow stepwise until completion.
 
