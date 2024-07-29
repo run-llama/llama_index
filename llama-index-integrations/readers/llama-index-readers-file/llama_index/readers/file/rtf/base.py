@@ -1,6 +1,6 @@
 """RTF (Rich Text Format) reader."""
 from pathlib import Path
-from typing import List, Union, Any, Dict
+from typing import List, Union, Any, Dict, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -12,7 +12,7 @@ class RTFReader(BaseReader):
     def load_data(
         self,
         input_file: Union[Path, str],
-        extra_info=Dict[str, Any] | None = None,
+        extra_info=Optional[Dict[str, Any]] = None,
         **load_kwargs: Any
     ) -> List[Document]:
         """Load data from RTF file.
