@@ -24,6 +24,7 @@ class DashScopeTextEmbeddingModels(str, Enum):
 
     TEXT_EMBEDDING_V1 = "text-embedding-v1"
     TEXT_EMBEDDING_V2 = "text-embedding-v2"
+    TEXT_EMBEDDING_V3 = "text-embedding-v3"
 
 
 class DashScopeBatchTextEmbeddingModels(str, Enum):
@@ -31,6 +32,7 @@ class DashScopeBatchTextEmbeddingModels(str, Enum):
 
     TEXT_EMBEDDING_ASYNC_V1 = "text-embedding-async-v1"
     TEXT_EMBEDDING_ASYNC_V2 = "text-embedding-async-v2"
+    TEXT_EMBEDDING_ASYNC_V3 = "text-embedding-async-v3"
 
 
 EMBED_MAX_INPUT_LENGTH = 2048
