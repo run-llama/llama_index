@@ -1,3 +1,4 @@
+from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.drawing import (
     draw_all_possible_flows,
@@ -12,6 +13,7 @@ from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
 
 __all__ = [
+    "Context",
     "Event",
     "StartEvent",
     "StopEvent",

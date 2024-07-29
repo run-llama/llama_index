@@ -38,7 +38,7 @@ class FinalizeStepEvent(Event):
     pass
 
 
-class Agent(Workflow):
+class FuncationCallingAgent(Workflow):
     def __init__(
         self,
         *args: Any,
@@ -73,7 +73,9 @@ class Agent(Workflow):
     async def handle_llm_input(self, ev: InputEvent) -> Union[ToolCallEvent, StopEvent]:
         chat_history = ev.input
 
-        response = self.llm.chat_with_tools(self.tools, chat_history=chat_history)
+        response = await self.llm.achat_with_tools(
+            self.tools, chat_history=chat_history
+        )
         self.memory.put(response.message)
 
         tool_calls = self.llm.get_tool_calls_from_response(
@@ -93,6 +95,8 @@ class Agent(Workflow):
         tools_by_name = {tool.metadata.get_name(): tool for tool in self.tools}
 
         tool_msgs = []
+
+        # call tools -- safely!
         for tool_call in tool_calls:
             tool = tools_by_name.get(tool_call.tool_name)
             additional_kwargs = {
@@ -149,13 +153,14 @@ async def main() -> None:
         FunctionTool.from_defaults(multiply),
     ]
 
-    agent = Agent(
+    agent = FuncationCallingAgent(
         llm=OpenAI(model="gpt-4o-mini"), tools=tools, timeout=120, verbose=False
     )
 
     print("Hello!")
     ret = await agent.run(input="Hello!")
     print(ret["response"])
+
     print("What is (2123 + 2321) * 312?")
     ret = await agent.run(input="What is (2123 + 2321) * 312?")
     print(ret["response"])
