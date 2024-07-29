@@ -15,6 +15,7 @@ import_path = "llama_index.readers.gitlab"
 
 [tool.llamahub.class_authors]
 GitLabIssuesReader = "jiachengzhang1"
+GitLabRepositoryReader = "jiachengzhang1"
 
 [tool.mypy]
 disallow_untyped_defs = true
