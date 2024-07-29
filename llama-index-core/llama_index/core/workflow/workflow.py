@@ -11,6 +11,7 @@ from llama_index.core.workflow.utils import (
 
 
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
+from .context import Context
 
 
 class _WorkflowMeta(type):
@@ -37,6 +38,8 @@ class Workflow(metaclass=_WorkflowMeta):
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
+        # Context management
+        self._context: Context = {}
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -49,6 +52,15 @@ class Workflow(metaclass=_WorkflowMeta):
             raise WorkflowValidationError(msg)
 
         cls._step_functions[func.__name__] = func
+
+    def get_context(self) -> Context:
+        """Get the global context for this workflow.
+
+        The Workflow instance is ultimately responsible for managing the lifecycle
+        of the global context object and for passing it to the steps functions that
+        require it.
+        """
+        return self._context
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
@@ -91,7 +103,11 @@ class Workflow(metaclass=_WorkflowMeta):
                         print(f"Running step {name}")
 
                     # run step
-                    new_ev = await step(ev)
+                    args = []
+                    if config.pass_context:
+                        args.append(self.get_context())
+                    args.append(ev)
+                    new_ev = await step(*args)
 
                     if self._verbose:
                         print(f"Step {name} produced event {type(new_ev).__name__}")

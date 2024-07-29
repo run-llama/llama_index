@@ -11,8 +11,8 @@ from typing import (
     get_type_hints,
 )
 
-from llama_index.core.workflow.events import Event
-
+from .context import Context
+from .events import Event
 from .errors import WorkflowValidationError
 
 
@@ -30,10 +30,17 @@ def validate_step_signature(fn: Callable) -> None:
         msg = "Step signature must have at least one parameter"
         raise WorkflowValidationError(msg)
 
-    # All parameters must be annotated
     num_of_possible_events = 0
     for name, t in sig.parameters.items():
         if name in ("self", "cls"):
+            continue
+
+        # All parameters must be annotated
+        if t.annotation == inspect._empty:
+            msg = "Step signature parameters must be annotated"
+            raise WorkflowValidationError(msg)
+
+        if t.annotation == Context:
             continue
 
         if get_origin(t.annotation) in (Union, Optional):
@@ -44,14 +51,14 @@ def validate_step_signature(fn: Callable) -> None:
         all_events = all(et == Event or issubclass(et, Event) for et in event_types)
 
         if not all_events:
-            msg = "Step signature parameters must be annotated with an Event type"
+            msg = "Events in step signature parameters must be of type Event"
             raise WorkflowValidationError(msg)
 
         num_of_possible_events += 1
 
     # Number of events in the signature must be exactly one
-    if num_of_possible_events > 1:
-        msg = "Step signature must contain exactly one parameter of type Event and no other parameters"
+    if num_of_possible_events != 1:
+        msg = f"Step signature must contain exactly one parameter of type Event but found {num_of_possible_events}."
         raise WorkflowValidationError(msg)
 
 
