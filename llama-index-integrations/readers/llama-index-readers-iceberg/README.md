@@ -1,7 +1,5 @@
 # LlamaIndex Readers Integration: Iceberg
 
-TODO
-
 ```bash
 pip install llama-index-readers-iceberg
 ```

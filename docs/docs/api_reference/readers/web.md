@@ -4,6 +4,7 @@
         - AsyncWebPageReader
         - BeautifulSoupWebReader
         - BrowserbaseWebReader
+        - FireCrawlWebReader
         - KnowledgeBaseWebReader
         - MainContentExtractorReader
         - NewsArticleReader

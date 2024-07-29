@@ -214,7 +214,10 @@ class OpensearchVectorClient:
         pre_filter = []
         if filters is not None:
             for f in filters.legacy_filters():
-                pre_filter.append({f.key: json.loads(str(f.value))})
+                if isinstance(f.value, str):
+                    pre_filter.append({f.key: f.value})
+                else:
+                    pre_filter.append({f.key: json.loads(str(f.value))})
 
         return pre_filter
 
@@ -388,6 +391,41 @@ class OpensearchVectorClient:
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
         await self._os_client.delete_by_query(index=self._index, body=search_query)
+
+    async def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        query = {"query": {"bool": {"filter": []}}}
+        if node_ids:
+            query["query"]["bool"]["filter"].append({"terms": {"_id": node_ids or []}})
+
+        if filters:
+            for filter in self._parse_filters(filters):
+                newfilter = {}
+
+                for key in filter:
+                    newfilter[f"metadata.{key}.keyword"] = filter[key]
+
+                query["query"]["bool"]["filter"].append({"term": newfilter})
+
+        await self._os_client.delete_by_query(index=self._index, body=query)
+
+    async def clear(self) -> None:
+        """Clears index."""
+        query = {"query": {"bool": {"filter": []}}}
+        await self._os_client.delete_by_query(index=self._index, body=query)
 
     async def aquery(
         self,
@@ -573,6 +611,44 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
         """
         await self._client.delete_by_doc_id(ref_doc_id)
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes async.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        await self._client.delete_nodes(node_ids, filters, **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        asyncio.get_event_loop().run_until_complete(
+            self.adelete_nodes(node_ids, filters, **delete_kwargs)
+        )
+
+    async def aclear(self) -> None:
+        """Clears index."""
+        await self._client.clear()
+
+    def clear(self) -> None:
+        """Clears index."""
+        asyncio.get_event_loop().run_until_complete(self.aclear())
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """

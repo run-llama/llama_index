@@ -11,18 +11,18 @@ This tutorial assumes you have Python3.9+ and the following packages installed:
 
 At the base level, our objective is to take text from a document, extract terms and definitions, and then provide a way for users to query that knowledge base of terms and definitions. The tutorial will go over features from both Llama Index and Streamlit, and hopefully provide some interesting solutions for common problems that come up.
 
-The final version of this tutorial can be found [here](https://github.com/logan-markewich/llama_index_starter_pack) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/llamaindex/llama_index_term_definition_demo).
+The final version of this tutorial can be found [here](https://github.com/abdulasiraj/A-Guide-to-Extracting-Terms-and-Definitions) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/Nobody4591/Llama_Index_Term_Extractor).
 
 ## Uploading Text
 
-Step one is giving users a way to upload documents. Let’s write some code using Streamlit to provide the interface for this! Use the following code and launch the app with `streamlit run app.py`.
+Step one is giving users a way to input text manually. Let’s write some code using Streamlit to provide the interface for this! Use the following code and launch the app with `streamlit run app.py`.
 
 ```python
 import streamlit as st
 
 st.title("🦙 Llama Index Term Extractor 🦙")
 
-document_text = st.text_area("Or enter raw text")
+document_text = st.text_area("Enter raw text")
 if st.button("Extract Terms and Definitions") and document_text:
     with st.spinner("Extracting..."):
         extracted_terms = document_text  # this is a placeholder!
@@ -53,9 +53,7 @@ setup_tab, upload_tab = st.tabs(["Setup", "Upload/Extract Terms"])
 with setup_tab:
     st.subheader("LLM Setup")
     api_key = st.text_input("Enter your OpenAI API key here", type="password")
-    llm_name = st.selectbox(
-        "Which LLM?", ["text-davinci-003", "gpt-3.5-turbo", "gpt-4"]
-    )
+    llm_name = st.selectbox("Which LLM?", ["gpt-3.5-turbo", "gpt-4"])
     model_temperature = st.slider(
         "LLM Temperature", min_value=0.0, max_value=1.0, step=0.1
     )
@@ -66,7 +64,7 @@ with setup_tab:
 
 with upload_tab:
     st.subheader("Extract and Query Definitions")
-    document_text = st.text_area("Or enter raw text")
+    document_text = st.text_area("Enter raw text")
     if st.button("Extract Terms and Definitions") and document_text:
         with st.spinner("Extracting..."):
             extracted_terms = document_text  # this is a placeholder!
@@ -79,7 +77,7 @@ Speaking of extracting terms, it's time to add some functions to do just that!
 
 ## Extracting and Storing Terms
 
-Now that we are able to define LLM settings and upload text, we can try using Llama Index to extract the terms from text for us!
+Now that we are able to define LLM settings and input text, we can try using Llama Index to extract the terms from text for us!
 
 We can add the following functions to both initialize our LLM, as well as use it to extract terms from the input text.
 
@@ -130,7 +128,7 @@ Now, using the new functions, we can finally extract our terms!
 ...
 with upload_tab:
     st.subheader("Extract and Query Definitions")
-    document_text = st.text_area("Or enter raw text")
+    document_text = st.text_area("Enter raw text")
     if st.button("Extract Terms and Definitions") and document_text:
         with st.spinner("Extracting..."):
             extracted_terms = extract_terms(
@@ -147,7 +145,7 @@ There's a lot going on now, let's take a moment to go over what is happening.
 
 `get_llm()` is instantiating the LLM based on the user configuration from the setup tab. Based on the model name, we need to use the appropriate class (`OpenAI` vs. `ChatOpenAI`).
 
-`extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `Settomgs` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
+`extract_terms()` is where all the good stuff happens. First, we call `get_llm()` with `max_tokens=1024`, since we don't want to limit the model too much when it is extracting our terms and definitions (the default is 256 if not set). Then, we define our `Settings` object, aligning `num_output` with our `max_tokens` value, as well as setting the chunk size to be no larger than the output. When documents are indexed by Llama Index, they are broken into chunks (also called nodes) if they are large, and `chunk_size` sets the size for these chunks.
 
 Next, we create a temporary summary index and pass in our llm. A summary index will read every single piece of text in our index, which is perfect for extracting terms. Finally, we use our pre-defined query text to extract terms, using `response_mode="tree_summarize`. This response mode will generate a tree of summaries from the bottom up, where each parent summarizes its children. Finally, the top of the tree is returned, which will contain all our extracted terms and definitions.
 
@@ -160,7 +158,7 @@ Now that we can extract terms, we need to put them somewhere so that we can quer
 First things first though, let's add a feature to initialize a global vector index and another function to insert the extracted terms.
 
 ```python
-from llama_index.core import Settings
+from llama_index.core import Settings, VectorStoreIndex
 
 ...
 if "all_terms" not in st.session_state:
@@ -267,8 +265,15 @@ with query_tab:
                 + "\nIf you can't find the answer, answer the query with the best of your knowledge."
             )
             with st.spinner("Generating answer..."):
-                response = st.session_state["llama_index"].query(
-                    query_text, similarity_top_k=5, response_mode="compact"
+                response = (
+                    st.session_state["llama_index"]
+                    .as_query_engine(
+                        similarity_top_k=5,
+                        response_mode="compact",
+                        text_qa_template=TEXT_QA_TEMPLATE,
+                        refine_template=DEFAULT_REFINE_PROMPT,
+                    )
+                    .query(query_text)
                 )
             st.markdown(str(response))
 ```
@@ -417,12 +422,15 @@ if "llama_index" in st.session_state:
     if query_text:
         query_text = query_text  # Notice we removed the old instructions
         with st.spinner("Generating answer..."):
-            response = st.session_state["llama_index"].query(
-                query_text,
-                similarity_top_k=5,
-                response_mode="compact",
-                text_qa_template=TEXT_QA_TEMPLATE,
-                refine_template=REFINE_TEMPLATE,
+            response = (
+                st.session_state["llama_index"]
+                .as_query_engine(
+                    similarity_top_k=5,
+                    response_mode="compact",
+                    text_qa_template=TEXT_QA_TEMPLATE,
+                    refine_template=DEFAULT_REFINE_PROMPT,
+                )
+                .query(query_text)
             )
         st.markdown(str(response))
 ...
@@ -438,24 +446,17 @@ If you get an import error about PIL, install it using `pip install Pillow` firs
 
 ```python
 from PIL import Image
-from llama_index.readers.file import (
-    DEFAULT_FILE_EXTRACTOR,
-    ImageParser,
-)
+from llama_index.readers.file import ImageReader
 
 
 @st.cache_resource
 def get_file_extractor():
-    image_parser = ImageParser(keep_image=True, parse_text=True)
-    file_extractor = DEFAULT_FILE_EXTRACTOR
-    file_extractor.update(
-        {
-            ".jpg": image_parser,
-            ".png": image_parser,
-            ".jpeg": image_parser,
-        }
-    )
-
+    image_parser = ImageReader(keep_image=True, parse_text=True)
+    file_extractor = {
+        ".jpg": image_parser,
+        ".png": image_parser,
+        ".jpeg": image_parser,
+    }
     return file_extractor
 
 
@@ -537,4 +538,4 @@ In this tutorial, we covered a ton of information, while solving some common iss
 - Customizing internal prompts with Llama Index
 - Reading text from images with Llama Index
 
-The final version of this tutorial can be found [here](https://github.com/logan-markewich/llama_index_starter_pack) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/llamaindex/llama_index_term_definition_demo).
+The final version of this tutorial can be found [here](https://github.com/abdulasiraj/A-Guide-to-Extracting-Terms-and-Definitions) and a live hosted demo is available on [Huggingface Spaces](https://huggingface.co/spaces/Nobody4591/Llama_Index_Term_Extractor).

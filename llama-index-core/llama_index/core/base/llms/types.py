@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional, Union, List
+from typing import Any, AsyncGenerator, Generator, Optional, Union, List, Any
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -87,7 +87,7 @@ class ChatResponse(BaseModel):
     """Chat response."""
 
     message: ChatMessage
-    raw: Optional[dict] = None
+    raw: Optional[Any] = None
     delta: Optional[str] = None
     logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
@@ -116,7 +116,7 @@ class CompletionResponse(BaseModel):
 
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
-    raw: Optional[dict] = None
+    raw: Optional[Any] = None
     logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 

@@ -1,7 +1,7 @@
 """Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search.
 
 """
-from typing import Any, Dict, List, TypeVar
+from typing import Any, Dict, List, TypeVar, Optional
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterOperator,
@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 def fulltext_search_stage(
     query: str,
-    search_field,
+    search_field: str,
     index_name: str,
     operator: str = "text",
-    filter: Dict[str, Any] = None,
+    filter: Optional[Dict[str, Any]] = None,
     limit: int = 10,
     **kwargs: Any,
 ) -> List[Dict[str, Any]]:
@@ -54,42 +54,61 @@ def fulltext_search_stage(
     return pipeline
 
 
-def filters_to_mql(filters: MetadataFilters) -> Dict[str, Any]:
-    """Converts Langchain's MetadatFilters into the MQL expected by $vectorSearch query.
+def filters_to_mql(
+    filters: MetadataFilters, metadata_key: str = "metadata"
+) -> Dict[str, Any]:
+    """Converts Llama-index's MetadataFilters into the MQL expected by $vectorSearch query.
 
     We are looking for something like
 
     "filter": {
             "$and": [
-                { "genres": { "$eq": "Comedy" } },
-                { "year": { "$gt": 2010 } }
+                { "metadata.genres": { "$eq": "Comedy" } },
+                { "metadata.year": { "$gt": 2010 } }
             ]
     },
 
     See: See https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/#atlas-vector-search-pre-filter
 
     Args:
-        filters:
+        filters: MetadataFilters object
+        metadata_key: The key under which metadata is stored in the document
 
     Returns:
         MQL version of the filter.
     """
     if filters is None:
         return {}
+
+    def prepare_key(key: str) -> str:
+        return (
+            f"{metadata_key}.{key}" if not key.startswith(f"{metadata_key}.") else key
+        )
+
     if len(filters.filters) == 1:
         mf = filters.filters[0]
-        mql = {mf.key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+        mql = {
+            prepare_key(mf.key): {map_lc_mql_filter_operators(mf.operator): mf.value}
+        }
     elif filters.condition == FilterCondition.AND:
         mql = {
             "$and": [
-                {mf.key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+                {
+                    prepare_key(mf.key): {
+                        map_lc_mql_filter_operators(mf.operator): mf.value
+                    }
+                }
                 for mf in filters.filters
             ]
         }
     elif filters.condition == FilterCondition.OR:
         mql = {
             "$or": [
-                {mf.key: {map_lc_mql_filter_operators(mf.operator): mf.value}}
+                {
+                    prepare_key(mf.key): {
+                        map_lc_mql_filter_operators(mf.operator): mf.value
+                    }
+                }
                 for mf in filters.filters
             ]
         }
@@ -105,8 +124,8 @@ def vector_search_stage(
     search_field: str,
     index_name: str,
     limit: int = 4,
-    filter: Dict[str, Any] = None,
-    oversampling_factor=10,
+    filter: Optional[Dict[str, Any]] = None,
+    oversampling_factor: int = 10,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Vector Search Stage without Scores.
@@ -151,9 +170,9 @@ def combine_pipelines(
     return pipeline
 
 
-def map_lc_mql_filter_operators(operator: str) -> str:
-    """Maps LangChain FilterOperators to MongoDB Query Language."""
-    map = {
+def map_lc_mql_filter_operators(operator: FilterOperator) -> str:
+    """Maps Llama-index FilterOperators to MongoDB Query Language."""
+    operator_map = {
         FilterOperator.EQ: "$eq",  # = "=="  # default operator (string, int, float)
         FilterOperator.GT: "$gt",  # ">"  greater than (int, float)
         FilterOperator.LT: "$lt",  # = # "<"  # less than (int, float)
@@ -165,12 +184,11 @@ def map_lc_mql_filter_operators(operator: str) -> str:
         # FilterOperator.TEXT_MATCH: "NA", #  not supported as filter. See $text
         # FilterOperator.CONTAINS: "NA", # not supported as filter. Try $in
     }
-    try:
-        return map[operator]
-    except KeyError:
-        if operator in [FilterOperator.TEXT_MATCH, FilterOperator.CONTAINS]:
-            logger.error(f"operator not supported as a filter. See $text")
-        raise
+    if operator not in operator_map:
+        error_msg = f"Unsupported filter operator: {operator}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    return operator_map[operator]
 
 
 def reciprocal_rank_stage(score_field: str, penalty: float = 0) -> List[Dict[str, Any]]:

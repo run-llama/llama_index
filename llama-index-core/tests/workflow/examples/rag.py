@@ -17,6 +17,7 @@ from llama_index.core.workflow import (
     draw_all_possible_flows,
     draw_most_recent_execution,
 )
+from llama_index.core.workflow.context import Context
 
 # pip install llama-index-llms-ollama
 from llama_index.llms.ollama import Ollama
@@ -38,71 +39,69 @@ class QueryResult(Event):
 
 
 class RAGWorkflow(Workflow):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        # Shared state: to be refactored into a better workflow context manager
-        self.index: Any = None
-        self.query: str = ""
-
-    @step()
-    async def ingest(self, ev: StartEvent) -> Optional[StopEvent]:
+    @step(pass_context=True)
+    async def ingest(self, ctx: Context, ev: StartEvent) -> Optional[StopEvent]:
         dsname = ev.get("dataset")
         if not dsname:
             return None
 
         _, documents = download_llama_dataset(dsname, "./data")
-        self.index = VectorStoreIndex.from_documents(documents=documents)
+        ctx["INDEX"] = VectorStoreIndex.from_documents(documents=documents)
         return StopEvent(result=f"Indexed {len(documents)} documents.")
 
-    @step()
-    async def retrieve(self, ev: StartEvent) -> Optional[RetrieverEvent]:
+    @step(pass_context=True)
+    async def retrieve(self, ctx: Context, ev: StartEvent) -> Optional[RetrieverEvent]:
         query = ev.get("query")
         if not query:
             return None
 
         print(f"Query the database with: {query}")
-        if self.index is None:
+
+        index: Any = ctx.get("INDEX")
+        if index is None:
             print("Index is empty, load some documents before querying!")
             return None
 
         retriever = VectorIndexRetriever(
-            index=self.index,
+            index=index,
             similarity_top_k=10,
         )
         nodes = retriever.retrieve(query)
         print(f"Retrieved {len(nodes)} nodes.")
         return RetrieverEvent(nodes=nodes)
 
-    @step()
-    async def rerank(
-        self, ev: Union[RetrieverEvent, StartEvent]
+    @step(pass_context=True)
+    def rerank(
+        self, ctx: Context, ev: Union[RetrieverEvent, StartEvent]
     ) -> Optional[QueryResult]:
         if isinstance(ev, StartEvent):
-            self.query = ev.get("query", "")
+            ctx["QUERY"] = ev.get("query", "")
             return None
         elif isinstance(ev, RetrieverEvent):
             ranker = LLMRerank(choice_batch_size=5, top_n=3)
-            new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=self.query)
+            new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=ctx.get("QUERY"))
             print(f"Reranked nodes to {len(new_nodes)}")
             return QueryResult(nodes=new_nodes)
         else:
             return None
 
-    @step()
-    async def synthesize(
-        self, ev: Union[QueryResult, StartEvent]
-    ) -> Optional[StopEvent]:
-        # Should never fallback, it'll get better once we have a proper context storage
-        if isinstance(ev, StartEvent):
-            self.query = ev.get("query", "")
-            return None
-        elif isinstance(ev, QueryResult):
-            llm = Ollama(model="llama3.1:8b", request_timeout=120)
-            summarizer = Refine(llm=llm, streaming=True, verbose=True)
-            response = await summarizer.asynthesize(self.query, nodes=ev.nodes)
-            return StopEvent(result=response)
-        else:
-            return None
+
+@step(workflow=RAGWorkflow, pass_context=True)
+async def synthesize(
+    ctx: Context, ev: Union[QueryResult, StartEvent]
+) -> Optional[StopEvent]:
+    # Should never fallback, it'll get better once we have a proper context storage
+    if isinstance(ev, StartEvent):
+        ctx["QUERY"] = ev.get("query", "")
+        return None
+    elif isinstance(ev, QueryResult):
+        llm = Ollama(model="llama3.1:8b", request_timeout=120)
+        summarizer = Refine(llm=llm, streaming=True, verbose=True)
+        query = ctx.get("QUERY", "")
+        response = await summarizer.asynthesize(query, nodes=ev.nodes)
+        return StopEvent(result=response)
+    else:
+        return None
 
 
 async def main() -> None:

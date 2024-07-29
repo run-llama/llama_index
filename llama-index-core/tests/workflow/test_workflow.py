@@ -57,7 +57,7 @@ async def test_workflow_timeout():
         @step()
         async def slow_step(self, ev: StartEvent) -> StopEvent:
             await asyncio.sleep(5.0)
-            return StopEvent(msg="Done")
+            return StopEvent(result="Done")
 
     workflow = SlowWorkflow(timeout=1)
     with pytest.raises(WorkflowTimeoutError):
@@ -89,8 +89,24 @@ async def test_workflow_event_propagation():
         @step()
         async def step2(self, ev: TestEvent) -> StopEvent:
             events.append("step2")
-            return StopEvent(msg="Done")
+            return StopEvent(result="Done")
 
     workflow = EventTrackingWorkflow()
     await workflow.run()
     assert events == ["step1", "step2"]
+
+
+@pytest.mark.asyncio()
+async def test_sync_async_steps():
+    class SyncAsyncWorkflow(Workflow):
+        @step()
+        async def async_step(self, ev: StartEvent) -> TestEvent:
+            return TestEvent()
+
+        @step()
+        def sync_step(self, ev: TestEvent) -> StopEvent:
+            return StopEvent(result="Done")
+
+    workflow = SyncAsyncWorkflow()
+    await workflow.run()
+    assert workflow.is_done()

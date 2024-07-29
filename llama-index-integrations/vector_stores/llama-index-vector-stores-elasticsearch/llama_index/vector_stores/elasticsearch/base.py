@@ -215,7 +215,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         batch_size: int = 200,
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
         retrieval_strategy: Optional[AsyncRetrievalStrategy] = None,
-        metadata_mappings: Optional[Dict[str, Dict[str, str]]] = None,
+        metadata_mappings: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         nest_asyncio.apply()
@@ -347,6 +347,10 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         if not self._store.num_dimensions:
             self._store.num_dimensions = len(embeddings[0])
+
+        # Omit the vectors argument entirely if embeddings aren't generated.
+        if not any(embeddings):
+            embeddings = None
 
         return await self._store.add_texts(
             texts=texts,

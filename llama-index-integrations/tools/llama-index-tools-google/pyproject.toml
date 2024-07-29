@@ -31,7 +31,7 @@ license = "MIT"
 maintainers = ["ajhofmann"]
 name = "llama-index-tools-google"
 readme = "README.md"
-version = "0.1.5"
+version = "0.1.6"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

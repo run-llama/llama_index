@@ -164,7 +164,10 @@ class PandasExcelReader(BaseReader):
         self._pandas_config = pandas_config
 
     def load_data(
-        self, file: Path, extra_info: Optional[Dict] = None
+        self,
+        file: Path,
+        extra_info: Optional[Dict] = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file."""
         openpyxl_spec = importlib.util.find_spec("openpyxl")
@@ -176,7 +179,11 @@ class PandasExcelReader(BaseReader):
             )
 
         # sheet_name of None is all sheets, otherwise indexing starts at 0
-        dfs = pd.read_excel(file, self._sheet_name, **self._pandas_config)
+        if fs:
+            with fs.open(file) as f:
+                dfs = pd.read_excel(f, self._sheet_name, **self._pandas_config)
+        else:
+            dfs = pd.read_excel(file, self._sheet_name, **self._pandas_config)
 
         documents = []
 
