@@ -2,6 +2,7 @@ import asyncio
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import step, StepConfig
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
 from llama_index.core.workflow.utils import (
@@ -9,9 +10,10 @@ from llama_index.core.workflow.utils import (
     get_steps_from_instance,
 )
 
-
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
 from .context import Context
+
+dispatcher = get_dispatcher(__name__)
 
 
 class _WorkflowMeta(type):
@@ -107,7 +109,9 @@ class Workflow(metaclass=_WorkflowMeta):
                     if config.pass_context:
                         args.append(self.get_context())
                     args.append(ev)
-                    new_ev = await step(*args)
+
+                    instrumented_step = dispatcher.span(step)
+                    new_ev = await instrumented_step(*args)
 
                     if self._verbose:
                         print(f"Step {name} produced event {type(new_ev).__name__}")
@@ -143,6 +147,7 @@ class Workflow(metaclass=_WorkflowMeta):
             queue.put_nowait(message)
         self._broker_log.append(message)
 
+    @dispatcher.span
     async def run(self, **kwargs: Any) -> str:
         """Runs the workflow until completion.
 
@@ -172,6 +177,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
         return self._retval
 
+    @dispatcher.span
     async def run_step(self, **kwargs: Any) -> Optional[str]:
         """Runs the workflow stepwise until completion.
 
