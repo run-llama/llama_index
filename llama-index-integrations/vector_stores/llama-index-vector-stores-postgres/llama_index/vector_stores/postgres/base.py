@@ -557,7 +557,7 @@ class PGVectorStore(BasePydanticVectorStore):
             from sqlalchemy import text
 
             if self.hnsw_kwargs:
-                hnsw_ef_search = str(
+                hnsw_ef_search = (
                     kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
                 )
                 await async_session.execute(
