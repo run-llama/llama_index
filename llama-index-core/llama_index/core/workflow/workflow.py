@@ -5,14 +5,24 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import step, StepConfig
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.utils import get_steps_from_class
+from llama_index.core.workflow.utils import (
+    get_steps_from_class,
+    get_steps_from_instance,
+)
 
 from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
+from .context import Context
 
 dispatcher = get_dispatcher(__name__)
 
 
-class Workflow:
+class _WorkflowMeta(type):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._step_functions: Dict[str, Callable] = {}
+
+
+class Workflow(metaclass=_WorkflowMeta):
     def __init__(
         self,
         timeout: int = 10,
@@ -30,13 +40,40 @@ class Workflow:
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
+        # Context management
+        self._context: Context = {}
+
+    @classmethod
+    def add_step(cls, func: Callable) -> None:
+        """Adds a free function as step for this workflow instance.
+
+        It raises an exception if a step with the same name was already added to the workflow.
+        """
+        if func.__name__ in {**get_steps_from_class(cls), **cls._step_functions}:
+            msg = f"A step {func.__name__} is already part of this workflow, please choose another name."
+            raise WorkflowValidationError(msg)
+
+        cls._step_functions[func.__name__] = func
+
+    def get_context(self) -> Context:
+        """Get the global context for this workflow.
+
+        The Workflow instance is ultimately responsible for managing the lifecycle
+        of the global context object and for passing it to the steps functions that
+        require it.
+        """
+        return self._context
+
+    def _get_steps(self) -> Dict[str, Callable]:
+        """Returns all the steps, whether defined as methods or free functions."""
+        return {**get_steps_from_instance(self), **self._step_functions}
 
     def _start(self, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        for name, step_func in get_steps_from_class(self).items():
+        for name, step_func in self._get_steps().items():
             self._queues[name] = asyncio.Queue()
             self._step_flags[name] = asyncio.Event()
             step_config: Optional[StepConfig] = getattr(
@@ -68,8 +105,13 @@ class Workflow:
                         print(f"Running step {name}")
 
                     # run step
+                    args = []
+                    if config.pass_context:
+                        args.append(self.get_context())
+                    args.append(ev)
+
                     instrumented_step = dispatcher.span(step)
-                    new_ev = await instrumented_step(ev)
+                    new_ev = await instrumented_step(*args)
 
                     if self._verbose:
                         print(f"Step {name} produced event {type(new_ev).__name__}")
@@ -194,7 +236,7 @@ class Workflow:
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
 
-        for name, step_func in get_steps_from_class(self).items():
+        for name, step_func in self._get_steps().items():
             step_config: Optional[StepConfig] = getattr(
                 step_func, "__step_config", None
             )
