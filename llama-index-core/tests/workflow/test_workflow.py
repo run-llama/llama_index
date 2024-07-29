@@ -57,7 +57,7 @@ async def test_workflow_timeout():
         @step()
         async def slow_step(self, ev: StartEvent) -> StopEvent:
             await asyncio.sleep(5.0)
-            return StopEvent(msg="Done")
+            return StopEvent(result="Done")
 
     workflow = SlowWorkflow(timeout=1)
     with pytest.raises(WorkflowTimeoutError):
