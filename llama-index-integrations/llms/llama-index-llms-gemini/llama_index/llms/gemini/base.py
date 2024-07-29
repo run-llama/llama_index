@@ -47,7 +47,6 @@ GEMINI_MODELS = (
     # "models/gemini-ultra-latest",
     "models/gemini-1.5-pro",
     "models/gemini-1.5-pro-latest",
-
     # for some reason, google lists this without the models prefix
     "gemini-1.5-flash",
     "gemini-1.5-flash-latest",
