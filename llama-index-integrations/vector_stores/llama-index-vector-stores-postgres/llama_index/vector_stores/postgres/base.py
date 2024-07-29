@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -148,6 +148,8 @@ class PGVectorStore(BasePydanticVectorStore):
     debug: bool
     use_jsonb: bool
 
+    hnsw_kwargs: Optional[Dict[str, Any]]
+
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
     _engine: Any = PrivateAttr()
@@ -169,6 +171,7 @@ class PGVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        hnsw_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         table_name = table_name.lower()
         schema_name = schema_name.lower()
@@ -206,6 +209,7 @@ class PGVectorStore(BasePydanticVectorStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
         )
 
     async def close(self) -> None:
@@ -240,6 +244,7 @@ class PGVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        hnsw_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PGVectorStore":
         """Return connection string from database parameters."""
         conn_str = (
@@ -261,6 +266,7 @@ class PGVectorStore(BasePydanticVectorStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
         )
 
     @property
@@ -313,6 +319,28 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(statement)
             session.commit()
 
+    def _create_hnsw_index(self) -> None:
+        import sqlalchemy
+
+        if (
+            "hnsw_ef_construction" not in self.hnsw_kwargs
+            or "hnsw_m" not in self.hnsw_kwargs
+        ):
+            raise ValueError(
+                "Make sure hnsw_ef_search, hnsw_ef_construction, and hnsw_m are in hnsw_kwargs."
+            )
+
+        hnsw_ef_construction = self.hnsw_kwargs.pop("hnsw_ef_construction")
+        hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
+        hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
+
+        with self._session() as session, session.begin():
+            statement = sqlalchemy.text(
+                f"CREATE INDEX ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+            )
+            session.execute(statement)
+            session.commit()
+
     def _initialize(self) -> None:
         if not self._is_initialized:
             self._connect()
@@ -320,6 +348,8 @@ class PGVectorStore(BasePydanticVectorStore):
                 self._create_extension()
                 self._create_schema_if_not_exists()
                 self._create_tables_if_not_exists()
+                if self.hnsw_kwargs is not None:
+                    self._create_hnsw_index()
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -493,8 +523,10 @@ class PGVectorStore(BasePydanticVectorStore):
                     text(f"SET ivfflat.probes = :ivfflat_probes"),
                     {"ivfflat_probes": ivfflat_probes},
                 )
-            if kwargs.get("hnsw_ef_search"):
-                hnsw_ef_search = kwargs.get("hnsw_ef_search")
+            if self.hnsw_kwargs:
+                hnsw_ef_search = (
+                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+                )
                 session.execute(
                     text(f"SET hnsw.ef_search = :hnsw_ef_search"),
                     {"hnsw_ef_search": hnsw_ef_search},
@@ -524,11 +556,12 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session, async_session.begin():
             from sqlalchemy import text
 
-            if kwargs.get("hnsw_ef_search"):
-                hnsw_ef_search = kwargs.get("hnsw_ef_search")
+            if self.hnsw_kwargs:
+                hnsw_ef_search = str(
+                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+                )
                 await async_session.execute(
-                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
-                    {"hnsw_ef_search": hnsw_ef_search},
+                    text(f"SET hnsw.ef_search = {hnsw_ef_search}"),
                 )
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
