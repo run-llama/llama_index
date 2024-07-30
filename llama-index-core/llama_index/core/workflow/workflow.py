@@ -140,7 +140,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
             self._tasks.add(
                 asyncio.create_task(
-                    _task(name, self._queues[name], step_func, step_config)
+                    _task(name, self._queues[name], step_func, step_config), name=name
                 )
             )
 
