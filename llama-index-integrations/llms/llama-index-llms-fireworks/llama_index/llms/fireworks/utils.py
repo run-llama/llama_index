@@ -14,6 +14,9 @@ LLAMA_MODELS = {
     "accounts/fireworks/models/llamaguard-7b": 4096,
     "accounts/fireworks/models/llama-v3-8b-instruct": 8192,
     "accounts/fireworks/models/llama-v3-70b-instruct": 8192,
+    "accounts/fireworks/models/llama-v3p1-8b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p1-405b-instruct": 131072,
 }
 
 MISTRAL_MODELS = {
