@@ -23,9 +23,15 @@ MISTRAL_MODELS = {
     "accounts/fireworks/models/mixtral-8x22b-instruct": 65536,
 }
 
+FUNCTION_CALLING_MODELS = {
+    "accounts/fireworks/models/firefunction-v2": 8192,
+}
+
+
 ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
     **MISTRAL_MODELS,
+    **FUNCTION_CALLING_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}
