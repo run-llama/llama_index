@@ -1,7 +1,7 @@
 from typing import List
 
-import manager_client as manager_client
-from manager_client import NodeRequest, VectorSearchQueryRequest
+import wordlift_client
+from wordlift_client import NodeRequest, VectorSearchQueryRequest
 
 
 class VectorSearchService:
@@ -11,12 +11,12 @@ class VectorSearchService:
         self.host = host
 
     async def update_nodes_collection(self, node_request: List[NodeRequest], key: str):
-        async with manager_client.ApiClient(
-            manager_client.Configuration(
+        async with wordlift_client.ApiClient(
+            wordlift_client.Configuration(
                 host=self.host,
             )
         ) as api_client:
-            api_instance = manager_client.VectorSearchNodesApi(api_client)
+            api_instance = wordlift_client.VectorSearchNodesApi(api_client)
 
             return await api_instance.update_nodes_collection(
                 node_request=node_request, _headers={"Authorization": "Key " + key}
@@ -25,12 +25,12 @@ class VectorSearchService:
     async def query_nodes_collection(
         self, vector_search_query_request: VectorSearchQueryRequest, key: str
     ):
-        async with manager_client.ApiClient(
-            manager_client.Configuration(
+        async with wordlift_client.ApiClient(
+            wordlift_client.Configuration(
                 host=self.host,
             )
         ) as api_client:
-            api_instance = manager_client.VectorSearchQueriesApi(api_client)
+            api_instance = wordlift_client.VectorSearchQueriesApi(api_client)
 
             return await api_instance.create_query(
                 vector_search_query_request=vector_search_query_request,
