@@ -10,7 +10,12 @@ from llama_index.core.workflow.utils import (
     get_steps_from_instance,
 )
 
-from .errors import WorkflowRuntimeError, WorkflowTimeoutError, WorkflowValidationError
+from .errors import (
+    WorkflowRuntimeError,
+    WorkflowTimeoutError,
+    WorkflowValidationError,
+    WorkflowDone,
+)
 from .context import Context
 
 dispatcher = get_dispatcher(__name__)
@@ -143,7 +148,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
             self._tasks.add(
                 asyncio.create_task(
-                    _task(name, self._queues[name], step_func, step_config)
+                    _task(name, self._queues[name], step_func, step_config), name=name
                 )
             )
 
@@ -185,13 +190,36 @@ class Workflow(metaclass=_WorkflowMeta):
             self._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
         )
 
-        # Check for hidden exceptions
+        we_done = False
+        exception_raised = None
+        # A task that raised an exception will be returned in the `done` set
         for task in done:
-            if not task.cancelled() and task.exception():
-                raise task.exception()  #  noqa: RSE102
+            # Check if any exception was raised from a step function
+            e = task.exception()
+            # If the error was of type WorkflowDone, the _done step run successfully
+            if type(e) == WorkflowDone:
+                we_done = True
+            # In any other case, we will re-raise after cleaning up.
+            # Since wait() is called with return_when=asyncio.FIRST_EXCEPTION,
+            # we can assume exception_raised will be only one.
+            elif e is not None:
+                exception_raised = e
+                break
 
-        # raise an error if the workflow timed out
-        if unfinished:
+        # Cancel any pending tasks
+        for t in unfinished:
+            t.cancel()
+            await asyncio.sleep(0)
+
+        # Remove any reference to the tasks
+        self._tasks = set()
+
+        # Bubble up the error if any step raised an exception
+        if exception_raised:
+            raise exception_raised
+
+        # Raise WorkflowTimeoutError if the workflow timed out
+        if not we_done:
             msg = f"Operation timed out after {self._timeout} seconds"
             raise WorkflowTimeoutError(msg)
 
@@ -224,11 +252,36 @@ class Workflow(metaclass=_WorkflowMeta):
         # the chance to run (we won't actually sleep here).
         await asyncio.sleep(0)
 
-        # If we're done, return the result
-        if self.is_done:
-            return self._retval
+        # See if we're done, or if a step raised any error
+        we_done = False
+        exception_raised = None
+        for t in self._tasks:
+            if not t.done():
+                continue
 
-        return None
+            e = t.exception()
+            if e is None:
+                continue
+
+            # Check if we're done
+            if type(e) == WorkflowDone:
+                we_done = True
+                continue
+
+            # In any other case, bubble up the exception
+            exception_raised = e
+
+        if we_done:
+            # Remove any reference to the tasks
+            for t in self._tasks:
+                t.cancel()
+                await asyncio.sleep(0)
+            self._tasks = set()
+
+        if exception_raised:
+            raise exception_raised
+
+        return self._retval
 
     def is_done(self) -> bool:
         """Checks if the workflow is done."""
@@ -241,12 +294,9 @@ class Workflow(metaclass=_WorkflowMeta):
     @step()
     async def _done(self, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
-        # Stop all the tasks
-        for t in self._tasks:
-            t.cancel()
-        # Remove any reference to the tasks
-        self._tasks = set()
         self._retval = ev.result or None
+        # Signal we want to stop the workflow
+        raise WorkflowDone
 
     def _validate(self) -> None:
         """Validate the workflow to ensure it's well-formed."""
