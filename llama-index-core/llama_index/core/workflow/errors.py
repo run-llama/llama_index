@@ -8,3 +8,7 @@ class WorkflowTimeoutError(Exception):
 
 class WorkflowRuntimeError(Exception):
     pass
+
+
+class WorkflowDone(Exception):
+    pass
