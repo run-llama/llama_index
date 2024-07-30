@@ -82,7 +82,7 @@ def test_chat_completion_kwargs():
     }.issubset(set(os.environ)),
     reason="Azure AI endpoint and/or credential are not set.",
 )
-def test_chat_completionwith_tools():
+def test_chat_completion_with_tools():
     """Tests the chat completion functionality with the help of tools."""
     # In case the endpoint being tested serves more than one model
     model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
