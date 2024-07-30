@@ -24,7 +24,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.vllm.utils import get_response, post_http_request
-
+import atexit
 
 class Vllm(LLM):
     r"""Vllm LLM.
@@ -247,12 +247,12 @@ class Vllm(LLM):
         }
         return {**base_kwargs}
 
-    def __del__(self) -> None:
+    @atexit.register
+    def close():    
         import torch
         import gc
-
         if torch.cuda.is_available():
-            del self._client
+            _client = None
             gc.collect()
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
