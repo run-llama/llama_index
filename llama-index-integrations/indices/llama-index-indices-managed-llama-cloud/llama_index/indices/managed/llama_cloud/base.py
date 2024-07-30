@@ -8,6 +8,7 @@ interfaces a managed service.
 import os
 import time
 from typing import Any, List, Optional, Sequence, Type
+from urllib.parse import quote_plus
 
 from llama_cloud import (
     PipelineType,
@@ -59,6 +60,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         transformations: Optional[List[TransformComponent]] = None,
         timeout: int = 60,
         project_name: str = DEFAULT_PROJECT_NAME,
+        organization_id: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
@@ -69,6 +71,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         """Initialize the Platform Index."""
         self.name = name
         self.project_name = project_name
+        self.organization_id = organization_id
         self.transformations = transformations or []
 
         if nodes is not None:
@@ -135,8 +138,9 @@ class LlamaCloudIndex(BaseManagedIndex):
         while pending_docs:
             docs_to_remove = set()
             for doc in pending_docs:
+                # we have to quote the doc id twice because it is used as a path parameter
                 status = client.pipelines.get_pipeline_document_status(
-                    pipeline_id=pipeline_id, document_id=doc
+                    pipeline_id=pipeline_id, document_id=quote_plus(quote_plus(doc))
                 )
                 if status in [
                     ManagedIngestionStatus.NOT_STARTED,
@@ -166,9 +170,31 @@ class LlamaCloudIndex(BaseManagedIndex):
         # the pipeline status is success
         self._wait_for_pipeline_ingestion(verbose, raise_on_error)
 
-    def _get_pipeline_id(self) -> str:
-        pipelines = self._client.pipelines.search_pipelines(
+    def _get_project_id(self) -> str:
+        projects = self._client.projects.list_projects(
+            organization_id=self.organization_id,
             project_name=self.project_name,
+        )
+        if len(projects) == 0:
+            raise ValueError(
+                f"Unknown project name {self.project_name}. Please confirm a "
+                "managed project with this name exists."
+            )
+        elif len(projects) > 1:
+            raise ValueError(
+                f"Multiple projects found with name {self.project_name}. Please specify organization_id."
+            )
+        project = projects[0]
+
+        if project.id is None:
+            raise ValueError(f"No project found with name {self.project_name}")
+
+        return project.id
+
+    def _get_pipeline_id(self) -> str:
+        project_id = self._get_project_id()
+        pipelines = self._client.pipelines.search_pipelines(
+            project_id=project_id,
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED.value,
         )
@@ -197,6 +223,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         name: str,
         transformations: Optional[List[TransformComponent]] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
+        organization_id: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
@@ -219,7 +246,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         )
 
         project = client.projects.upsert_project(
-            request=ProjectCreate(name=project_name)
+            organization_id=organization_id, request=ProjectCreate(name=project_name)
         )
         if project.id is None:
             raise ValueError(f"Failed to create/get project {project_name}")
@@ -238,6 +265,7 @@ class LlamaCloudIndex(BaseManagedIndex):
             name,
             transformations=transformations,
             project_name=project_name,
+            organization_id=project.organization_id,
             api_key=api_key,
             base_url=base_url,
             app_url=app_url,
@@ -286,6 +314,7 @@ class LlamaCloudIndex(BaseManagedIndex):
             base_url=self._base_url,
             app_url=self._app_url,
             timeout=self._timeout,
+            organization_id=self.organization_id,
             dense_similarity_top_k=dense_similarity_top_k,
             **kwargs,
         )
@@ -402,8 +431,9 @@ class LlamaCloudIndex(BaseManagedIndex):
         """Delete a document and its nodes by using ref_doc_id."""
         pipeline_id = self._get_pipeline_id()
         try:
+            # we have to quote the ref_doc_id twice because it is used as a path parameter
             self._client.pipelines.delete_pipeline_document(
-                pipeline_id=pipeline_id, document_id=ref_doc_id
+                pipeline_id=pipeline_id, document_id=quote_plus(quote_plus(ref_doc_id))
             )
         except ApiError as e:
             if e.status_code == 404 and not raise_if_not_found:

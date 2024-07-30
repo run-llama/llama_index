@@ -33,7 +33,6 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools.types import BaseTool
 from llama_index.llms.text_generation_inference.utils import (
     to_tgi_messages,
@@ -179,7 +178,7 @@ class TextGenerationInference(FunctionCallingLLM):
             timeout=timeout,
             max_retries=max_retries,
             seed=seed,
-            model=model_name,
+            model_name=model_name,
             is_function_calling_model=is_function_calling_model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -342,7 +341,7 @@ class TextGenerationInference(FunctionCallingLLM):
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -351,8 +350,8 @@ class TextGenerationInference(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         tool_choice: str = "auto",
         **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
         # use openai tool format
         tool_specs = [
             tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
@@ -365,51 +364,28 @@ class TextGenerationInference(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages=messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+        }
 
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: str = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        # use openai tool format
-        tool_specs = [
-            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
-        ]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = self.achat(
-            messages=messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""

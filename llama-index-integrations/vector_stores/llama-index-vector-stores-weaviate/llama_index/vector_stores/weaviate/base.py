@@ -276,6 +276,38 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             _logger.error(f"Failed to delete index '{self.index_name}': {e}")
             raise Exception(f"Failed to delete index '{self.index_name}': {e}")
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        collection = self._client.collections.get(self.index_name)
+
+        if node_ids:
+            filter = wvc.query.Filter.by_id().contains_any(node_ids or [])
+
+        if filters:
+            if node_ids:
+                filter = filter & _to_weaviate_filter(filters)
+            else:
+                filter = _to_weaviate_filter(filters)
+
+        collection.data.delete_many(where=filter, **delete_kwargs)
+
+    def clear(self) -> None:
+        """Clears index."""
+        self.delete_index()
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         all_properties = get_all_properties(self._client, self.index_name)

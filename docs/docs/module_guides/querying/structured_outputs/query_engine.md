@@ -1,4 +1,7 @@
-# Query Engines + Pydantic Outputs
+# (Deprecated) Query Engines + Pydantic Outputs
+
+!!! tip
+    This guide references a deprecated method of extracting structured outputs in a RAG pipeline. Check out our [structured output starter guide](../../../examples/structured_outputs/structured_outputs.ipynb) for more details.
 
 Using `index.as_query_engine()` and it's underlying `RetrieverQueryEngine`, we can support structured pydantic outputs without an additional LLM calls (in contrast to a typical output parser.)
 

@@ -458,7 +458,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         query_type = kwargs.pop("query_type", self.query_type)
 
-        _logger.info("query_type :", query_type)
+        _logger.info(f"query_type :, {query_type}")
 
         if query_type == "vector":
             _query = query.query_embedding

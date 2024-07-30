@@ -1,13 +1,5 @@
 import json
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    List,
-    Union,
-)
+from typing import Any, Callable, Dict, Optional, Sequence, List, Union, TYPE_CHECKING
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 
@@ -50,6 +42,9 @@ from llama_index.llms.deepinfra.constants import (
 from llama_index.llms.deepinfra.client import DeepInfraClient
 from llama_index.llms.deepinfra.types import ToolCallMessage
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 class DeepInfraLLM(FunctionCallingLLM):
@@ -386,7 +381,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         return gen()
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -395,7 +390,7 @@ class DeepInfraLLM(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
-    ) -> ChatResponse:
+    ) -> Dict[str, Any]:
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -404,50 +399,27 @@ class DeepInfraLLM(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages,
-            tools=tool_specs,
-            tool_choice=TOOL_CHOICE,
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": TOOL_CHOICE,
             **kwargs,
-        )
+        }
 
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
-
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: "ChatResponse",
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = await self.achat(
-            messages,
-            tools=tool_specs,
-            tool_choice=TOOL_CHOICE,
-            **kwargs,
-        )
-
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:

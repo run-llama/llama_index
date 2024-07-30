@@ -32,6 +32,10 @@ from llama_index.core.base.query_pipeline.query import (
     ComponentIntermediates,
 )
 from llama_index.core.utils import print_text
+from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 # TODO: Make this (safely) pydantic?
@@ -154,6 +158,43 @@ def clean_graph_attributes_copy(graph: networkx.MultiDiGraph) -> networkx.MultiD
     return graph_copy
 
 
+def get_stateful_components(
+    query_component: QueryComponent,
+) -> List[BaseStatefulComponent]:
+    """Get stateful components."""
+    stateful_components: List[BaseStatefulComponent] = []
+    for c in query_component.sub_query_components:
+        if isinstance(c, BaseStatefulComponent):
+            stateful_components.append(cast(BaseStatefulComponent, c))
+
+        if len(c.sub_query_components) > 0:
+            stateful_components.extend(get_stateful_components(c))
+
+    return stateful_components
+
+
+def update_stateful_components(
+    stateful_components: List[BaseStatefulComponent], state: Dict[str, Any]
+) -> None:
+    """Update stateful components."""
+    for stateful_component in stateful_components:
+        # stateful_component.partial(state=state)
+        stateful_component.state = state
+
+
+def get_and_update_stateful_components(
+    query_component: QueryComponent, state: Dict[str, Any]
+) -> List[BaseStatefulComponent]:
+    """Get and update stateful components.
+
+    Assign all stateful components in the query component with the state.
+
+    """
+    stateful_components = get_stateful_components(query_component)
+    update_stateful_components(stateful_components, state)
+    return stateful_components
+
+
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
 
 
@@ -184,6 +225,9 @@ class QueryPipeline(QueryComponent):
     num_workers: int = Field(
         default=4, description="Number of workers to use (currently async only)."
     )
+    state: Dict[str, Any] = Field(
+        default_factory=dict, description="State of the pipeline."
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -194,14 +238,33 @@ class QueryPipeline(QueryComponent):
         chain: Optional[Sequence[CHAIN_COMPONENT_TYPE]] = None,
         modules: Optional[Dict[str, QUERY_COMPONENT_TYPE]] = None,
         links: Optional[List[Link]] = None,
+        state: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
+            state=state or {},
             **kwargs,
         )
 
         self._init_graph(chain=chain, modules=modules, links=links)
+        # Pydantic validator isn't called for __init__ so we need to call it manually
+        get_and_update_stateful_components(self, state)
+
+    def set_state(self, state: Dict[str, Any]) -> None:
+        """Set state."""
+        self.state = state
+        get_and_update_stateful_components(self, state)
+
+    def update_state(self, state: Dict[str, Any]) -> None:
+        """Update state."""
+        self.state.update(state)
+        get_and_update_stateful_components(self, state)
+
+    def reset_state(self) -> None:
+        """Reset state."""
+        # use pydantic validator to update state
+        self.set_state({})
 
     def _init_graph(
         self,
@@ -243,6 +306,11 @@ class QueryPipeline(QueryComponent):
         for i in range(len(chain) - 1):
             self.add_link(src=module_keys[i], dest=module_keys[i + 1])
 
+    @property
+    def stateful_components(self) -> List[BaseStatefulComponent]:
+        """Get stateful component."""
+        return get_stateful_components(self)
+
     def add_links(
         self,
         links: List[Link],
@@ -272,6 +340,9 @@ class QueryPipeline(QueryComponent):
 
         self.module_dict[module_key] = cast(QueryComponent, module)
         self.dag.add_node(module_key)
+        # propagate state to new modules added
+        # TODO: there's more efficient ways to do this
+        get_and_update_stateful_components(self, self.state)
 
     def add_link(
         self,
@@ -318,6 +389,7 @@ class QueryPipeline(QueryComponent):
         for module in self.module_dict.values():
             module.set_callback_manager(callback_manager)
 
+    @dispatcher.span
     def run(
         self,
         *args: Any,
@@ -461,6 +533,7 @@ class QueryPipeline(QueryComponent):
             ) as query_event:
                 return self._run_multi(module_input_dict, show_intermediates=True)
 
+    @dispatcher.span
     async def arun(
         self,
         *args: Any,
@@ -657,6 +730,7 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
+    @dispatcher.span
     def _run(
         self,
         *args: Any,
@@ -712,6 +786,7 @@ class QueryPipeline(QueryComponent):
                 intermediates,
             )
 
+    @dispatcher.span
     async def _arun(
         self,
         *args: Any,
@@ -836,6 +911,7 @@ class QueryPipeline(QueryComponent):
             root_key, kwargs = self._get_root_key_and_kwargs(**pipeline_inputs)
             return RunState(self.module_dict, {root_key: kwargs})
 
+    @dispatcher.span
     def _run_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates=False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
@@ -879,6 +955,7 @@ class QueryPipeline(QueryComponent):
 
         return run_state.result_outputs, run_state.intermediate_outputs
 
+    @dispatcher.span
     async def _arun_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:

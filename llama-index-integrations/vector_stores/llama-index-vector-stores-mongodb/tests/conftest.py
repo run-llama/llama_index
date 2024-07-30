@@ -43,7 +43,7 @@ def nodes(documents) -> List[TextNode]:
 
 db_name = os.environ.get("MONGODB_DATABASE", "llama_index_test_db")
 collection_name = os.environ.get("MONGODB_COLLECTION", "llama_index_test_vectorstore")
-index_name = os.environ.get("MONGODB_INDEX", "vector_index")
+vector_index_name = os.environ.get("MONGODB_INDEX", "vector_index")
 MONGODB_URI = os.environ.get("MONGODB_URI")
 
 
@@ -58,7 +58,7 @@ def atlas_client() -> MongoClient:
     assert collection_name in client[db_name].list_collection_names()
 
     # TODO error: $listSearchIndexes is not allowed or the syntax is incorrect
-    # assert index_name in [
+    # assert vector_index_name in [
     #    idx["name"] for idx in client[db_name][collection_name].list_search_indexes()
     # ]
 
@@ -77,5 +77,6 @@ def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
         mongodb_client=atlas_client,
         db_name=db_name,
         collection_name=collection_name,
-        index_name=index_name,
+        vector_index_name=vector_index_name,
+        fulltext_index_name="fulltext_index",
     )
