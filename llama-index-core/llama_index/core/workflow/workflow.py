@@ -184,8 +184,9 @@ class Workflow(metaclass=_WorkflowMeta):
 
         # Check for hidden exceptions
         for task in done:
-            if not task.cancelled() and task.exception():
-                raise task.exception()  #  noqa: RSE102
+            e = task.exception()
+            if not task.cancelled() and e is not None:
+                raise e
 
         # raise an error if the workflow timed out
         if unfinished:
