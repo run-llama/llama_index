@@ -46,7 +46,8 @@ class Workflow(metaclass=_WorkflowMeta):
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
         # Context management
-        self._context: Context = {}
+        self._root_context: Context = Context()
+        self._step_to_context: Dict[str, Context] = {}
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -60,14 +61,16 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
-    def get_context(self) -> Context:
+    def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
 
         The Workflow instance is ultimately responsible for managing the lifecycle
         of the global context object and for passing it to the steps functions that
         require it.
         """
-        return self._context
+        if step_name not in self._step_to_context:
+            self._step_to_context[step_name] = Context(parent=self._root_context)
+        return self._step_to_context[step_name]
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
@@ -106,13 +109,13 @@ class Workflow(metaclass=_WorkflowMeta):
                         for flag in self._step_flags.values():
                             flag.clear()
 
-                    if self._verbose:
+                    if self._verbose and name != "_done":
                         print(f"Running step {name}")
 
                     # run step
                     args = []
                     if config.pass_context:
-                        args.append(self.get_context())
+                        args.append(self.get_context(name))
                     args.append(ev)
 
                     # - check if its async or not
@@ -126,8 +129,11 @@ class Workflow(metaclass=_WorkflowMeta):
                             None, instrumented_step, *args
                         )
 
-                    if self._verbose:
-                        print(f"Step {name} produced event {type(new_ev).__name__}")
+                    if self._verbose and name != "_done":
+                        if new_ev is not None:
+                            print(f"Step {name} produced event {type(new_ev).__name__}")
+                        else:
+                            print(f"Step {name} produced no event")
 
                     # handle the return value
                     if new_ev is None:
@@ -181,7 +187,7 @@ class Workflow(metaclass=_WorkflowMeta):
         # Start the machinery
         self._start()
         # Send the first event
-        self.send_event(StartEvent(kwargs))
+        self.send_event(StartEvent(**kwargs))
 
         done, unfinished = await asyncio.wait(
             self._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
@@ -239,7 +245,7 @@ class Workflow(metaclass=_WorkflowMeta):
             self._validate()
             self._start(stepwise=True)
             # Run the first step
-            self.send_event(StartEvent(kwargs))
+            self.send_event(StartEvent(**kwargs))
 
         # Unblock all pending steps
         for flag in self._step_flags.values():

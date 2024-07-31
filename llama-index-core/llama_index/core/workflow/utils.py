@@ -57,6 +57,7 @@ def validate_step_signature(fn: Callable) -> Tuple[str, List[object], List[objec
 
         # Number of events in the signature must be exactly one
         num_of_possible_events += 1
+        event_name = name
 
     if num_of_possible_events != 1:
         msg = f"Step signature must contain exactly one parameter of type Event but found {num_of_possible_events}."

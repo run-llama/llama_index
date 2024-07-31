@@ -5,7 +5,7 @@ import pytest
 
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowValidationError
-from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     validate_step_signature,
     get_steps_from_class,
@@ -16,45 +16,39 @@ from llama_index.core.workflow.utils import (
 )
 from llama_index.core.workflow.context import Context
 
-
-class TestEvent(Event):
-    pass
-
-
-class AnotherTestEvent(Event):
-    pass
+from .conftest import OneTestEvent, AnotherTestEvent
 
 
 def test_validate_step_signature_of_method():
-    def f(self, ev: TestEvent) -> TestEvent:
-        return TestEvent()
+    def f(self, ev: OneTestEvent) -> OneTestEvent:
+        return OneTestEvent()
 
     validate_step_signature(f)
 
 
 def test_validate_step_signature_of_free_function():
-    def f(ev: TestEvent) -> TestEvent:
-        return TestEvent()
+    def f(ev: OneTestEvent) -> OneTestEvent:
+        return OneTestEvent()
 
     validate_step_signature(f)
 
 
 def test_validate_step_signature_union():
-    def f(ev: Union[TestEvent, AnotherTestEvent]) -> TestEvent:
-        return TestEvent()
+    def f(ev: Union[OneTestEvent, AnotherTestEvent]) -> OneTestEvent:
+        return OneTestEvent()
 
     validate_step_signature(f)
 
 
 def test_validate_step_signature_of_free_function_with_context():
-    def f(ctx: Context, ev: TestEvent) -> TestEvent:
-        return TestEvent()
+    def f(ctx: Context, ev: OneTestEvent) -> OneTestEvent:
+        return OneTestEvent()
 
     validate_step_signature(f)
 
 
 def test_validate_step_signature_union_invalid():
-    def f(ev: Union[TestEvent, str]) -> None:
+    def f(ev: Union[OneTestEvent, str]) -> None:
         pass
 
     with pytest.raises(
@@ -97,7 +91,7 @@ def test_validate_step_signature_wrong_annotations():
 
 
 def test_validate_step_signature_no_return_annotations():
-    def f(self, ev: TestEvent):
+    def f(self, ev: OneTestEvent):
         pass
 
     with pytest.raises(
@@ -119,10 +113,10 @@ def test_validate_step_signature_no_events():
 
 
 def test_validate_step_signature_too_many_params():
-    def f1(self, ev: TestEvent, foo: TestEvent) -> None:
+    def f1(self, ev: OneTestEvent, foo: OneTestEvent) -> None:
         pass
 
-    def f2(ev: TestEvent, foo: TestEvent):
+    def f2(ev: OneTestEvent, foo: OneTestEvent):
         pass
 
     with pytest.raises(
@@ -141,11 +135,11 @@ def test_validate_step_signature_too_many_params():
 def test_get_steps_from():
     class Test:
         @step()
-        def start(self, start: StartEvent) -> TestEvent:
-            return TestEvent()
+        def start(self, start: StartEvent) -> OneTestEvent:
+            return OneTestEvent()
 
         @step()
-        def my_method(self, event: TestEvent) -> StopEvent:
+        def my_method(self, event: OneTestEvent) -> StopEvent:
             return StopEvent()
 
         def not_a_step(self):
