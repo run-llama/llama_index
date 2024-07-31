@@ -252,7 +252,6 @@ class Vllm(LLM):
         import torch
         import gc
         if torch.cuda.is_available():
-            _client = None
             gc.collect()
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
