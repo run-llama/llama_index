@@ -6,8 +6,7 @@ An index that is built within Milvus.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
-import enum
-from enum import auto
+from enum import Enum
 
 
 import pymilvus  # noqa
@@ -50,11 +49,11 @@ except Exception as e:
     RRFRanker = None
 
 
-class IndexManagement(enum.IntEnum):
+class IndexManagement(Enum):
     """Enumeration representing the supported index management operations."""
 
-    NO_VALIDATION = auto()
-    CREATE_IF_NOT_EXISTS = auto()
+    NO_VALIDATION = "no_validation"
+    CREATE_IF_NOT_EXISTS = "create_if_not_exists"
 
 
 def _to_milvus_filter(
@@ -143,6 +142,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                   These weights are used to adjust the importance of the dense and sparse components of the embeddings
                   in the hybrid retrieval process.
             Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
+        index_managemen (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
 
     Raises:
         ImportError: Unable to import `pymilvus`.
