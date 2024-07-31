@@ -46,7 +46,8 @@ class Workflow(metaclass=_WorkflowMeta):
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
         # Context management
-        self._context: Context = {}
+        self._root_context: Context = Context()
+        self._step_to_context: Dict[str, Context] = {}
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -60,14 +61,16 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
-    def get_context(self) -> Context:
+    def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
 
         The Workflow instance is ultimately responsible for managing the lifecycle
         of the global context object and for passing it to the steps functions that
         require it.
         """
-        return self._context
+        if step_name not in self._step_to_context:
+            self._step_to_context[step_name] = Context(parent=self._root_context)
+        return self._step_to_context[step_name]
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
@@ -112,7 +115,7 @@ class Workflow(metaclass=_WorkflowMeta):
                     # run step
                     args = []
                     if config.pass_context:
-                        args.append(self.get_context())
+                        args.append(self.get_context(name))
                     args.append(ev)
 
                     # - check if its async or not
