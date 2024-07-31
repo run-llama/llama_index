@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.postprocessor.sbert_rerank"
+import_path = "llama_index.postprocessor.tei_rerank_rerank"
 
 [tool.llamahub.class_authors]
-SentenceTransformerRerank = "llama-index"
+TextEmbeddingInference = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,17 +21,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index postprocessor sbert rerank integration"
+authors = ["Rohith Ramakrishnan <rrohith2001@gmail.com>"]
+description = "llama-index postprocessor text embedding inference rerank integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-postprocessor-sbert-rerank"
+name = "llama-index-postprocessor-tei-rerank"
 readme = "README.md"
 version = "0.1.6"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.41"
+llama-index-core = "^0.10.58"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
