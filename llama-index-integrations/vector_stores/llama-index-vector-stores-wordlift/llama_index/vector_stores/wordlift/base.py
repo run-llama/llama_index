@@ -68,7 +68,7 @@ class WordliftVectorStore(BasePydanticVectorStore):
     _configuration: Configuration = PrivateAttr()
 
     def __init__(
-        self, key: Optional[str], configuration: Optional[Configuration] = None
+        self, key: Optional[str] = None, configuration: Optional[Configuration] = None
     ):
         nest_asyncio.apply()
 

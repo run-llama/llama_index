@@ -75,7 +75,7 @@ black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
 boto3 = "1.33.6"  # needed for tests
 botocore = ">=1.33.13"
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
-docker = ">=6.0.1,<8"
+docker = "^7.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 llama-cloud = ">=0.0.6"

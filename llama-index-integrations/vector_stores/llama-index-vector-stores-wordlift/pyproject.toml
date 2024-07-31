@@ -59,5 +59,4 @@ types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
 types-setuptools = "67.1.0.0"
-wiremock = {extras = ["testing"], version = ">=2.6.1,<3"}
 wordlift-client = ">=1.30.0,<2"

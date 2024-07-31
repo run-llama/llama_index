@@ -1,14 +1,17 @@
 import os
-from typing import Generator, List
+from typing import List
 
 import pytest
+import random
+import requests
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.vector_stores.wordlift import WordliftVectorStore
 from wiremock.client import *
-from wiremock.constants import Config
-from wiremock.testing.testcontainer import wiremock_container, WireMockContainer
+from wiremock.testing.testcontainer import WireMockContainer
 from wordlift_client import Configuration
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 try:
     # Should be installed as pyvespa-dependency
@@ -20,6 +23,37 @@ except Exception:
     docker_available = False
 
 KEY = "key43245932904328493223"
+
+
+@pytest.fixture(scope="session")
+def random_port() -> int:
+    return random.randint(1025, 65535)
+
+
+@pytest.fixture(scope="session")
+def wiremock_server(random_port: int) -> WireMockContainer:
+    wiremock_dir = os.path.join(os.path.dirname(__file__), "wiremock")
+    container = client.containers.run(
+        image="wiremock/wiremock:3.9.1-1",
+        auto_remove=True,
+        detach=True,
+        ports={"8080/tcp": random_port},
+        remove=True,
+        volumes=[wiremock_dir + ":/home/wiremock/"],
+        command="--verbose",
+    )
+
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=1,
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    http = requests.Session()
+    http.mount("https://", adapter)
+    http.mount("http://", adapter)
+    response = http.get("http://localhost:" + str(random_port), timeout=10)
+
+    return container
 
 
 @pytest.fixture(scope="session")
@@ -862,108 +896,11 @@ def node_embeddings() -> List[TextNode]:
 
 
 @pytest.fixture(scope="session")
-def wiremock_server() -> Generator[WireMockContainer, None, None]:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    with wiremock_container(image="wiremock/wiremock:3.9.1-1", secure=False) as wm:
-        Config.base_url = wm.get_url("__admin")
-
-        with open(os.path.join(current_dir, "__files/account/me/response_1.json")) as f:
-            Mappings.create_mapping(
-                Mapping(
-                    request=MappingRequest(
-                        method=HttpMethods.GET,
-                        url="/accounts/me",
-                        headers={
-                            "Accept": {
-                                "equalTo": "application/vnd.wordlift.account-info.v2+json"
-                            },
-                            "Authorization": {"equalTo": "Key " + KEY},
-                        },
-                    ),
-                    response=MappingResponse(status=200, body=f.read()),
-                    persistent=False,
-                )
-            )
-
-        Mappings.create_mapping(
-            Mapping(
-                request=MappingRequest(
-                    method=HttpMethods.PUT,
-                    url="/vector-search/nodes-collection",
-                    headers={
-                        "Authorization": {"equalTo": "Key " + KEY},
-                        "Content-Type": {"equalTo": "application/json"},
-                    },
-                ),
-                response=MappingResponse(status=200),
-                persistent=False,
-            )
-        )
-
-        Mappings.create_mapping(
-            Mapping(
-                request=MappingRequest(
-                    method=HttpMethods.DELETE,
-                    url_path="/entities",
-                    headers={
-                        "Authorization": {"equalTo": "Key " + KEY},
-                    },
-                    query_parameters={
-                        "id": {
-                            "hasExactly": [
-                                {
-                                    "equalTo": "https://data.example.org/dataset/c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
-                                },
-                                {
-                                    "equalTo": "https://data.example.org/dataset/c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d"
-                                },
-                                {
-                                    "equalTo": "https://data.example.org/dataset/c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39f"
-                                },
-                                {
-                                    "equalTo": "https://data.example.org/dataset/0b31ae71-b797-4e88-8495-031371a7752e"
-                                },
-                                {
-                                    "equalTo": "https://data.example.org/dataset/bd2e080b-159a-4030-acc3-d98afd2ba49b"
-                                },
-                                {
-                                    "equalTo": "https://data.example.org/dataset/f658de3b-8cef-4d1c-8bed-9a263c907251"
-                                },
-                            ]
-                        }
-                    },
-                ),
-                response=MappingResponse(status=200),
-                persistent=False,
-            )
-        )
-
-        with open(
-            os.path.join(current_dir, "__files/vector-search/queries/response_1.json")
-        ) as f:
-            Mappings.create_mapping(
-                Mapping(
-                    request=MappingRequest(
-                        method=HttpMethods.POST,
-                        url="/vector-search/queries",
-                        headers={
-                            "Authorization": {"equalTo": "Key " + KEY},
-                            "Accept": {"equalTo": "application/json"},
-                            "Content-Type": {"equalTo": "application/json"},
-                        },
-                    ),
-                    response=MappingResponse(status=200, body=f.read()),
-                    persistent=False,
-                )
-            )
-
-        yield wm
-
-
-@pytest.fixture(scope="session")
-def configuration(wiremock_server) -> Configuration:
+def configuration(wiremock_server, random_port: int) -> Configuration:
     configuration = Configuration(
-        host=wiremock_server.get_url(""),
+        # host=wiremock_server.get_url(""),
+        host="http://localhost:"
+        + str(random_port)
     )
 
     configuration.api_key["ApiKey"] = KEY
