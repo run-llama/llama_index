@@ -42,7 +42,6 @@ wordlift-client = ">=1.30.0,<2"
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
-# docker = ">=7.1.0,<8"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
@@ -53,7 +52,7 @@ pytest-asyncio = "*"
 pytest-mock = "3.11.1"
 requests = ">=2.31.0,<2.32.0"
 ruff = "0.0.292"
-# testcontainers = ">=3.7.1,<5"
+testcontainers = ">=3.7.1,<5"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
@@ -61,4 +60,4 @@ types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
 types-setuptools = "67.1.0.0"
-wiremock = {extras = ["testing"], version = ">=2.6.1,<3"}
+wiremock = ">=2.6.1,<3"

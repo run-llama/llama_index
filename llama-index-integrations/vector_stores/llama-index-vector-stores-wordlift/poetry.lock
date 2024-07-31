@@ -900,24 +900,25 @@ files = [
 
 [[package]]
 name = "docker"
-version = "6.1.3"
+version = "7.1.0"
 description = "A Python library for the Docker Engine API."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "docker-6.1.3-py3-none-any.whl", hash = "sha256:aecd2277b8bf8e506e484f6ab7aec39abe0038e29fa4a6d3ba86c3fe01844ed9"},
-    {file = "docker-6.1.3.tar.gz", hash = "sha256:aa6d17830045ba5ef0168d5eaa34d37beeb113948c413affe1d5991fc11f9a20"},
+    {file = "docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0"},
+    {file = "docker-7.1.0.tar.gz", hash = "sha256:ad8c70e6e3f8926cb8a92619b832b4ea5299e2831c14284663184e200546fa6c"},
 ]
 
 [package.dependencies]
-packaging = ">=14.0"
 pywin32 = {version = ">=304", markers = "sys_platform == \"win32\""}
 requests = ">=2.26.0"
 urllib3 = ">=1.26.0"
-websocket-client = ">=0.32.0"
 
 [package.extras]
+dev = ["coverage (==7.2.7)", "pytest (==7.4.2)", "pytest-cov (==4.1.0)", "pytest-timeout (==2.1.0)", "ruff (==0.1.8)"]
+docs = ["myst-parser (==0.18.0)", "sphinx (==5.1.1)"]
 ssh = ["paramiko (>=2.4.3)"]
+websockets = ["websocket-client (>=1.3.0)"]
 
 [[package]]
 name = "exceptiongroup"
@@ -4429,10 +4430,8 @@ files = [
 ]
 
 [package.dependencies]
-docker = {version = ">=6.1.0,<7.0.0", optional = true, markers = "extra == \"testing\""}
 importlib-resources = ">=5.12.0,<6.0.0"
 requests = ">=2.20.0,<3.0.0"
-testcontainers = {version = ">=3.7.1,<4.0.0", optional = true, markers = "extra == \"testing\""}
 
 [package.extras]
 testing = ["docker (>=6.1.0,<7.0.0)", "testcontainers (>=3.7.1,<4.0.0)"]
@@ -4656,4 +4655,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "46dd3658bf85074b0c9f38fa5afb279f734def54ae74412cab07902fac8e68b7"
+content-hash = "7a2f058bdc1ea7d4942ca3cf4ddca0ac143ecdd3d6eb8b7d74089735ae1a465b"
