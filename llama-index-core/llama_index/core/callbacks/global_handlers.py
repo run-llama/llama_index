@@ -121,6 +121,17 @@ def create_global_handler(
                 "Please install it using `pip install llama-index-instrumentation-agentops`"
             )
         AgentOpsHandler.init(**eval_params)
+    elif eval_mode == "literalai":
+        try:
+            from llama_index.callbacks.literalai import (
+                literalai_callback_handler,
+            )  # pants: no-infer-dep
+        except ImportError:
+            raise ImportError(
+                "Literal AI Handler is not installed. "
+                "Please install it using `pip install llama-index-callbacks-literalai`"
+            )
+        handler = literalai_callback_handler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 
