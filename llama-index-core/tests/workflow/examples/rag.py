@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import dataclass
 from typing import Optional, List, Any, Union
 
 from llama_index.core import VectorStoreIndex
@@ -23,17 +22,14 @@ from llama_index.core.workflow.context import Context
 from llama_index.llms.ollama import Ollama
 
 
-@dataclass
 class QueryEvent(Event):
     query: str
 
 
-@dataclass
 class RetrieverEvent(Event):
     nodes: List[NodeWithScore]
 
 
-@dataclass
 class QueryResult(Event):
     nodes: List[NodeWithScore]
 

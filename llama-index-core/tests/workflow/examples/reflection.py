@@ -1,6 +1,5 @@
 import asyncio
 import json
-from dataclasses import dataclass
 from typing import Union
 
 from pydantic import BaseModel
@@ -36,13 +35,11 @@ class CarCollection(BaseModel):
     cars: list[Car]
 
 
-@dataclass
 class ExtractionDone(Event):
     output: str
     passage: str
 
 
-@dataclass
 class ValidationErrorEvent(Event):
     error: str
     wrong_output: str

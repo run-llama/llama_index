@@ -106,7 +106,7 @@ class Workflow(metaclass=_WorkflowMeta):
                         for flag in self._step_flags.values():
                             flag.clear()
 
-                    if self._verbose:
+                    if self._verbose and name != "_done":
                         print(f"Running step {name}")
 
                     # run step
@@ -126,8 +126,11 @@ class Workflow(metaclass=_WorkflowMeta):
                             None, instrumented_step, *args
                         )
 
-                    if self._verbose:
-                        print(f"Step {name} produced event {type(new_ev).__name__}")
+                    if self._verbose and name != "_done":
+                        if new_ev is not None:
+                            print(f"Step {name} produced event {type(new_ev).__name__}")
+                        else:
+                            print(f"Step {name} produced no event")
 
                     # handle the return value
                     if new_ev is None:
@@ -181,7 +184,7 @@ class Workflow(metaclass=_WorkflowMeta):
         # Start the machinery
         self._start()
         # Send the first event
-        self.send_event(StartEvent(kwargs))
+        self.send_event(StartEvent(**kwargs))
 
         done, unfinished = await asyncio.wait(
             self._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
@@ -239,7 +242,7 @@ class Workflow(metaclass=_WorkflowMeta):
             self._validate()
             self._start(stepwise=True)
             # Run the first step
-            self.send_event(StartEvent(kwargs))
+            self.send_event(StartEvent(**kwargs))
 
         # Unblock all pending steps
         for flag in self._step_flags.values():
