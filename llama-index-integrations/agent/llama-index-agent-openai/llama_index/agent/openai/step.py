@@ -35,6 +35,8 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
@@ -47,6 +49,7 @@ from llama_index.llms.openai.utils import OpenAIToolCall
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+dispatcher = get_dispatcher(__name__)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
@@ -329,6 +332,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         tool = get_function_by_name(tools, function_name)
 
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=(
+                    tool.metadata
+                    if tool
+                    else ToolMetadata(description="unknown", name=function_name)
+                ),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
@@ -425,6 +438,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         tool = get_function_by_name(tools, function_name)
 
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=(
+                    tool.metadata
+                    if tool
+                    else ToolMetadata(description="unknown", name=function_name)
+                ),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
@@ -556,6 +579,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
+        latest_tool_outputs: List[ToolOutput] = []
+
         if not self._should_continue(
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
@@ -571,13 +596,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
                 # TODO: maybe execute this with multi-threading
                 return_direct = self._call_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    latest_tool_outputs,
                 )
+                task.extra_state["sources"].append(latest_tool_outputs[-1])
+
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
@@ -586,7 +614,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = task.extra_state["sources"][-1].content
+                    response_str = latest_tool_outputs[-1].content
                     chat_response = ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=response_str
@@ -610,7 +638,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 else []
             )
 
-        # attach next step to task
+        # Attach all tool outputs from this step as sources
+        agent_chat_response.sources = latest_tool_outputs
 
         return TaskStepOutput(
             output=agent_chat_response,
@@ -643,6 +672,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
+        latest_tool_outputs: List[ToolOutput] = []
+
         if not self._should_continue(
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
@@ -657,13 +688,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
                 # TODO: maybe execute this with multi-threading
                 return_direct = await self._acall_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    latest_tool_outputs,
                 )
+                task.extra_state["sources"].append(latest_tool_outputs[-1])
+
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
@@ -672,7 +706,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = task.extra_state["sources"][-1].content
+                    response_str = latest_tool_outputs[-1].content
                     chat_response = ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=response_str
@@ -696,6 +730,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
             if not is_done
             else []
         )
+
+        # Attach all tool outputs from this step as sources
+        agent_chat_response.sources = latest_tool_outputs
 
         return TaskStepOutput(
             output=agent_chat_response,

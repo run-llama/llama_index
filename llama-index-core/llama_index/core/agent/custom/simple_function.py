@@ -127,8 +127,9 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
         """
         current_state, is_done = self.fn(state)
         # TODO: return auxiliary response
+        output = state[self.output_key] if self.output_key in state else ""
         return (
-            AgentChatResponse(response=state[self.output_key], metadata=current_state),
+            AgentChatResponse(response=output, metadata=current_state),
             is_done,
         )
 

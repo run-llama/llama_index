@@ -1,1 +1,1 @@
-# LlamaIndex Llms Integration: Openllm
+# LlamaIndex LLM Integration: OpenLLM

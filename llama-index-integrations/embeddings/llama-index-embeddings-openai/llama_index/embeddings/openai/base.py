@@ -280,6 +280,7 @@ class OpenAIEmbedding(BaseEmbedding):
     _client: Optional[OpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
+    _async_http_client: Optional[httpx.AsyncClient] = PrivateAttr()
 
     def __init__(
         self,
@@ -297,6 +298,7 @@ class OpenAIEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
+        async_http_client: Optional[httpx.AsyncClient] = None,
         num_workers: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
@@ -339,6 +341,7 @@ class OpenAIEmbedding(BaseEmbedding):
         self._client = None
         self._aclient = None
         self._http_client = http_client
+        self._async_http_client = async_http_client
 
     def _resolve_credentials(
         self,
@@ -358,24 +361,24 @@ class OpenAIEmbedding(BaseEmbedding):
 
     def _get_aclient(self) -> AsyncOpenAI:
         if not self.reuse_client:
-            return AsyncOpenAI(**self._get_credential_kwargs())
+            return AsyncOpenAI(**self._get_credential_kwargs(is_async=True))
 
         if self._aclient is None:
-            self._aclient = AsyncOpenAI(**self._get_credential_kwargs())
+            self._aclient = AsyncOpenAI(**self._get_credential_kwargs(is_async=True))
         return self._aclient
 
     @classmethod
     def class_name(cls) -> str:
         return "OpenAIEmbedding"
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:

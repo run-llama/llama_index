@@ -105,7 +105,9 @@ class ColbertIndex(BaseIndex[IndexDict]):
     def ref_doc_info(self) -> Dict[str, RefDocInfo]:
         raise NotImplementedError("ColbertStoreIndex does not support ref_doc_info.")
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> IndexDict:
         """Generate a PLAID index from the ColBERT checkpoint via its hugging face
         model_name.
         """

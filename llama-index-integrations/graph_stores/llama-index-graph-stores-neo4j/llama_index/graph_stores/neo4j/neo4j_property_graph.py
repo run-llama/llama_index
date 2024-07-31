@@ -117,6 +117,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             documents,
             property_graph_store=graph_store,
         )
+
+        # Close the neo4j connection explicitly.
+        graph_store.close()
         ```
     """
 
@@ -136,7 +139,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self.enhcnaced_schema = enhanced_schema
+        self.enhanced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password), **neo4j_kwargs
         )
@@ -153,6 +156,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
     @property
     def client(self):
         return self._driver
+
+    def close(self) -> None:
+        self._driver.close()
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
@@ -411,7 +417,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL {{
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t)
+            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:__Entity__)
             RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -419,7 +425,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t)
+            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:__Entity__)
             RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -466,20 +472,26 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Needs some optimization
         response = self.structured_query(
             f"""
+            WITH $ids AS id_list
+            UNWIND range(0, size(id_list) - 1) AS idx
             MATCH (e:`__Entity__`)
-            WHERE e.id in $ids
+            WHERE e.id = id_list[idx]
             MATCH p=(e)-[r*1..{depth}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel
-            WITH distinct rel
+            WITH distinct rel, idx
             WITH startNode(rel) AS source,
                 type(rel) AS type,
-                endNode(rel) AS endNode
+                endNode(rel) AS endNode,
+                idx
+            LIMIT toInteger($limit)
             RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
-                    source{{.* , embedding: Null, id: Null}} AS source_properties,
-                    type,
-                    endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
-                    endNode{{.* , embedding: Null, id: Null}} AS target_properties
+                source{{.* , embedding: Null, id: Null}} AS source_properties,
+                type,
+                endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                endNode{{.* , embedding: Null, id: Null}} AS target_properties,
+                idx
+            ORDER BY idx
             LIMIT toInteger($limit)
             """,
             param_map={"ids": ids, "limit": limit},
@@ -520,8 +532,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             full_result = [d.data() for d in result]
 
         if self.sanitize_query_output:
-            return value_sanitize(full_result)
-
+            return [value_sanitize(el) for el in full_result]
         return full_result
 
     def vector_query(
@@ -761,7 +772,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         formatted_node_props = []
         formatted_rel_props = []
 
-        if self.enhcnaced_schema:
+        if self.enhanced_schema:
             # Enhanced formatting for nodes
             for node_type, properties in schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")

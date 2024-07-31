@@ -17,9 +17,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.vector_stores.kdbai.utils import (
-    default_sparse_encoder_v1,
+    default_sparse_encoder,
     convert_metadata_col_v1,
-    default_sparse_encoder_v2,
     convert_metadata_col_v2,
 )
 
@@ -84,10 +83,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
         if hybrid_search:
             if sparse_encoder is None:
-                if kdbai.version("kdbai_client") >= "1.2.0":
-                    self._sparse_encoder = default_sparse_encoder_v2
-                else:
-                    self._sparse_encoder = default_sparse_encoder_v1
+                self._sparse_encoder = default_sparse_encoder
             else:
                 self._sparse_encoder = sparse_encoder
 
@@ -129,17 +125,17 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         df = pd.DataFrame()
         docs = []
 
-        if kdbai.version("kdbai_client") >= "1.2.0":
+        if isinstance(self._table, kdbai.Table):
+            schema = self._table.schema()["columns"]
+        elif isinstance(self._table, kdbai.TablePyKx):
             schema = self._table.schema["schema"]["c"]
             types = self._table.schema["schema"]["t"].decode("utf-8")
-        else:
-            schema = self._table.schema()["columns"]
 
         if self.hybrid_search:
-            if kdbai.version("kdbai_client") >= "1.2.0":
-                schema = [item for item in schema if item != "sparseVectors"]
-            else:
+            if isinstance(self._table, kdbai.Table):
                 schema = [item for item in schema if item["name"] != "sparseVectors"]
+            elif isinstance(self._table, kdbai.TablePyKx):
+                schema = [item for item in schema if item != "sparseVectors"]
 
         try:
             for node in nodes:
@@ -150,11 +146,21 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 }
 
                 if self.hybrid_search:
-                    doc["sparseVectors"] = self._sparse_encoder([node.get_content()])
+                    doc["sparseVectors"] = self._sparse_encoder(node.get_content())
 
                 # handle extra columns
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
-                    if kdbai.version("kdbai_client") >= "1.2.0":
+                    if isinstance(self._table, kdbai.Table):
+                        for column in schema[len(DEFAULT_COLUMN_NAMES) :]:
+                            try:
+                                doc[column["name"]] = convert_metadata_col_v1(
+                                    column, node.metadata[column["name"]]
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error writing column {column['name']} as type {column['pytype']}: {e}."
+                                )
+                    elif isinstance(self._table, kdbai.TablePyKx):
                         for column_name, column_type in zip(
                             schema[len(DEFAULT_COLUMN_NAMES) :],
                             types[len(DEFAULT_COLUMN_NAMES) :],
@@ -166,16 +172,6 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                             except Exception as e:
                                 logger.error(
                                     f"Error writing column {column_name} as qtype {column_type}: {e}."
-                                )
-                    else:
-                        for column in schema[len(DEFAULT_COLUMN_NAMES) :]:
-                            try:
-                                doc[column["name"]] = convert_metadata_col_v1(
-                                    column, node.metadata[column["name"]]
-                                )
-                            except Exception as e:
-                                logger.error(
-                                    f"Error writing column {column['name']} as type {column['pytype']}: {e}."
                                 )
 
                 docs.append(doc)
@@ -216,10 +212,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         if self.hybrid_search:
             alpha = query.alpha if query.alpha is not None else 0.5
 
-            if kdbai.version("kdbai_client") >= "1.2.0":
-                sparse_vectors = [self._sparse_encoder([query.query_str])]
-            else:
-                sparse_vectors = self._sparse_encoder([query.query_str])
+            sparse_vectors = [self._sparse_encoder(query.query_str)]
 
             results = self._table.hybrid_search(
                 dense_vectors=[query.query_embedding],

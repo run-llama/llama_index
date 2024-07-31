@@ -12,7 +12,7 @@ from llama_index.llms.fireworks.utils import (
 from llama_index.llms.openai import OpenAI
 
 DEFAULT_API_BASE = "https://api.fireworks.ai/inference/v1"
-DEFAULT_MODEL = "accounts/fireworks/models/mixtral-8x7b-instruct"
+DEFAULT_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
 
 class Fireworks(OpenAI):

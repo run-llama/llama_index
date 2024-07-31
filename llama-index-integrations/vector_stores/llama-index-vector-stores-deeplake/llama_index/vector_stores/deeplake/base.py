@@ -8,7 +8,7 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode
+from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -149,10 +149,10 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
         """Get nodes from vector store."""
-        if not node_ids:
-            data = self._vectorstore.search(filter=lambda x: True)
+        if node_ids:
+            data = self._vectorstore.search(filter={"id": node_ids})
         else:
-            data = self._vectorstore.search(filter=lambda x: x.id.text() in node_ids)
+            data = self._vectorstore.search(filter={})
 
         nodes = []
         for metadata in data["metadata"]:
@@ -196,7 +196,10 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
             return found_one
 
-        return [x for x in nodes if filter_func(x)]
+        if filters:
+            return [x for x in nodes if filter_func(x)]
+        else:
+            return nodes
 
     def delete_nodes(
         self,
@@ -294,6 +297,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         metadatas = data["metadata"]
         nodes = []
         for metadata in metadatas:
+            if "_node_type" not in metadata:
+                metadata["_node_type"] = TextNode.class_name()
             nodes.append(metadata_dict_to_node(metadata))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)

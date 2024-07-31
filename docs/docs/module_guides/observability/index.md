@@ -1,10 +1,5 @@
 # Observability
 
-**NOTE:**
-
-The tooling and integrations mentioned in this page is considered legacy. Observability
-is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
-
 LlamaIndex provides **one-click observability** 🔭 to allow you to build principled LLM applications in a production setting.
 
 A key requirement for principled development of LLM applications over your data (RAG systems, agents) is being able to observe, debug, and evaluate
@@ -19,6 +14,13 @@ Configure a variable once, and you'll be able to do things like the following:
 
 Each provider has similarities and differences. Take a look below for the full set of guides for each one!
 
+**NOTE:**
+
+Observability is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
+
+A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
+
+
 ## Usage Pattern
 
 To toggle, you will generally just need to do the following:
@@ -28,32 +30,130 @@ from llama_index.core import set_global_handler
 
 # general usage
 set_global_handler("<handler_name>", **kwargs)
-
-# W&B example
-# set_global_handler("wandb", run_args={"project": "llamaindex"})
 ```
 
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
-And that's it! Executions will get seamlessly piped to downstream service (e.g. W&B Prompts) and you'll be able to access features such as viewing execution traces of your application.
+And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
 
-**NOTE**: TruLens (by TruEra) uses a different "one-click" experience. See below for details.
-
-## Simple (LLM Inputs/Outputs)
-
-This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
-
-#### Usage Pattern
-
-```python
-import llama_index.core
-
-llama_index.core.set_global_handler("simple")
-```
 
 ## Partner `One-Click` Integrations
 
-We offer a rich set of integrations with our partners. A short description + usage pattern, and guide is provided for each partner.
+### LlamaTrace (Hosted Arize Phoenix)
+
+We've partnered with Arize on [LlamaTrace](https://llamatrace.com/), a hosted tracing, observability, and evaluation platform that works natively with LlamaIndex open-source users and has integrations with LlamaCloud.
+
+This is built upon the open-source Arize [Phoenix](https://github.com/Arize-ai/phoenix) project. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
+
+- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
+- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
+
+#### Usage Pattern
+
+To install the integration package, do `pip install -U llama-index-callbacks-arize-phoenix`.
+
+Then create an account on LlamaTrace: https://llamatrace.com/login. Create an API key and put it in the `PHOENIX_API_KEY` variable below.
+
+Then run the following code:
+
+```python
+# Phoenix can display in real time the traces automatically
+# collected from your LlamaIndex application.
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+
+# setup Arize Phoenix for logging/observability
+import llama_index.core
+import os
+
+PHOENIX_API_KEY = "<PHOENIX_API_KEY>"
+os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"api_key={PHOENIX_API_KEY}"
+llama_index.core.set_global_handler(
+    "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
+)
+
+...
+```
+
+#### Guides
+
+- [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
+
+![](../../_static/integrations/arize_phoenix.png)
+
+### Arize Phoenix (local)
+
+You can also choose to use a **local** instance of Phoenix through the open-source project.
+
+In this case you don't need to create an account on LlamaTrace or set an API key for Phoenix. The phoenix server will launch locally.
+
+#### Usage Pattern
+
+To install the integration package, do `pip install -U llama-index-callbacks-arize-phoenix`.
+
+Then run the following code:
+
+```python
+# Phoenix can display in real time the traces automatically
+# collected from your LlamaIndex application.
+# Run all of your LlamaIndex applications as usual and traces
+# will be collected and displayed in Phoenix.
+
+import phoenix as px
+
+# Look for a URL in the output to open the App in a browser.
+px.launch_app()
+# The App is initially empty, but as you proceed with the steps below,
+# traces will appear automatically as your LlamaIndex application runs.
+
+import llama_index.core
+
+llama_index.core.set_global_handler("arize_phoenix")
+...
+```
+
+#### Example Guides
+
+- [Auto-Retrieval Guide with Pinecone and Arize Phoenix](https://docs.llamaindex.ai/en/latest/examples/vector_stores/pinecone_auto_retriever/?h=phoenix)
+- [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
+
+### Literal AI
+
+[Literal AI](https://literalai.com/) is the go-to LLM evaluation and observability solution, enabling engineering and product teams to ship LLM applications reliably, faster and at scale. This is possible through a collaborative development cycle involving prompt engineering, LLM observability, LLM evaluation and LLM monitoring. Conversation Threads and Engine Runs can be automatically logged on Literal AI.
+
+#### Usage Pattern
+
+- Install the Literal AI Python SDK with `pip install literalai`
+- On your Literal AI project, go to **Settings** and grab your API key
+- If you are using a self-hosted instance of Literal AI, also make note of its base URL
+
+Then add the following lines to your applicative code :
+
+```python
+from literalai import LiteralClient
+from llama_index.core import Document, VectorStoreIndex
+
+# By default, the Literal AI client will initialize using the following environment variables :
+# LITERAL_API_KEY
+# LITERAL_API_URL
+literalai_client = LiteralClient()
+
+# You can also explicitly provide the configuration keys like so :
+# literalai_client = LiteralClient(api_key="lsk_xxxxx", url="http://localhost:3000")
+
+literalai_client.instrument_llamaindex()
+```
+
+#### Example Guides
+
+- [Literal AI integration with Llama Index](https://docs.getliteral.ai/integrations/llama-index)
+- [Build a Q&A application with LLamaIndex and monitor it with Literal AI](https://github.com/Chainlit/literal-cookbook/blob/main/python/llamaindex-integration)
+
+![](../../_static/integrations/literal_ai.gif)
+
+## Other Partner `One-Click` Integrations (Legacy Modules)
+
+These partner integrations use our legacy `CallbackManager` or third-party calls.
 
 ### Langfuse
 
@@ -151,40 +251,6 @@ Traceloop.init()
 - [OpenLLMetry](../../examples/callbacks/OpenLLMetry.ipynb)
 
 ![](../../_static/integrations/openllmetry.png)
-
-### Arize Phoenix
-
-Arize [Phoenix](https://github.com/Arize-ai/phoenix): LLMOps insights at lightning speed with zero-config observability. Phoenix provides a notebook-first experience for monitoring your models and LLM Applications by providing:
-
-- LLM Traces - Trace through the execution of your LLM Application to understand the internals of your LLM Application and to troubleshoot problems related to things like retrieval and tool execution.
-- LLM Evals - Leverage the power of large language models to evaluate your generative model or application's relevance, toxicity, and more.
-
-#### Usage Pattern
-
-```python
-# Phoenix can display in real time the traces automatically
-# collected from your LlamaIndex application.
-import phoenix as px
-
-# Look for a URL in the output to open the App in a browser.
-px.launch_app()
-# The App is initially empty, but as you proceed with the steps below,
-# traces will appear automatically as your LlamaIndex application runs.
-
-import llama_index.core
-
-llama_index.core.set_global_handler("arize_phoenix")
-
-# Run all of your LlamaIndex applications as usual and traces
-# will be collected and displayed in Phoenix.
-...
-```
-
-![](../../_static/integrations/arize_phoenix.png)
-
-#### Guides
-
-- [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
 
 ### OpenInference
 
@@ -355,6 +421,79 @@ openlit.init()
 #### Guides
 
 - [OpenLIT's Official Documentation](https://docs.openlit.io/latest/integrations/llama-index)
+
+### AgentOps
+
+[AgentOps](https://github.com/AgentOps-AI/agentops) helps developers build, evaluate,
+and monitor AI agents. AgentOps will help build agents from prototype to production,
+enabling agent monitoring, LLM cost tracking, benchmarking, and more.
+
+#### Install
+
+```shell
+pip install llama-index-instrumentation-agentops
+```
+
+#### Usage Pattern
+
+```python
+from llama_index.core import set_global_handler
+
+# NOTE: Feel free to set your AgentOps environment variables (e.g., 'AGENTOPS_API_KEY')
+# as outlined in the AgentOps documentation, or pass the equivalent keyword arguments
+# anticipated by AgentOps' AOClient as **eval_params in set_global_handler.
+
+set_global_handler("agentops")
+```
+
+### Simple (LLM Inputs/Outputs)
+
+This simple observability tool prints every LLM input/output pair to the terminal. Most useful for when you need to quickly enable debug logging on your LLM application.
+
+#### Usage Pattern
+
+```python
+import llama_index.core
+
+llama_index.core.set_global_handler("simple")
+```
+
+### MLflow
+[MLflow](https://mlflow.org/docs/latest/index.html) is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
+
+##### Install
+```shell
+pip install mlflow>=2.15 llama-index>=0.10.44
+```
+
+#### Usage Pattern
+
+```python
+import mlflow
+
+mlflow.llama_index.autolog()  # Enable mlflow tracing
+
+with mlflow.start_run() as run:
+    mlflow.llama_index.log_model(
+        index,
+        artifact_path="llama_index",
+        engine_type="query",  # Logged engine type for inference
+        input_example="hi",
+        registered_model_name="my_llama_index_vector_store",
+    )
+    model_uri = f"runs:/{run.info.run_id}/llama_index"
+
+predictions = mlflow.pyfunc.load_model(model_uri).predict("hi")
+print(f"Query engine prediction: {predictions}")
+```
+
+![](../../_static/integrations/mlflow.gif)
+
+#### Guides
+
+- [MLflow](https://mlflow.org/docs/latest/llms/llama-index/index.html)
+
+
 
 ## More observability
 
