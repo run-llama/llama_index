@@ -253,6 +253,5 @@ You can find many useful examples of using workflows in the notebooks below:
 
 - [RAG + Reranking](../../examples/workflow/rag.ipynb)
 - [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
-- [Function Calling Agent](TODO)
-- [ReAct Agent](TODO)
-- [Context Chat Engine](TODO)
+- [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [ReAct Agent](../../examples/workflow/react_agent.ipynb)
