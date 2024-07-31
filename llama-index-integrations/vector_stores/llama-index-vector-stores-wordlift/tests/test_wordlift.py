@@ -10,6 +10,15 @@ from wiremock.constants import Config
 from wiremock.testing.testcontainer import wiremock_container, WireMockContainer
 from wordlift_client import Configuration
 
+try:
+    # Should be installed as pyvespa-dependency
+    import docker
+
+    client = docker.from_env()
+    docker_available = client.ping()
+except Exception:
+    docker_available = False
+
 KEY = "key43245932904328493223"
 
 
@@ -968,6 +977,7 @@ def vector_store(configuration: Configuration) -> WordliftVectorStore:
     return WordliftVectorStore(configuration=configuration)
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add(
@@ -979,6 +989,7 @@ async def test_add(
         vector_store.add(node_embeddings)
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
@@ -1009,6 +1020,7 @@ async def test_delete_nodes(
         )
 
 
+@pytest.mark.skipif(not docker_available, reason="Docker not available")
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_wordlift_and_query(
