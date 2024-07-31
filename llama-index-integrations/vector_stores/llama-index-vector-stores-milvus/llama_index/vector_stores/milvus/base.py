@@ -537,10 +537,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             sparse_search_params = {"metric_type": "IP"}
 
             sparse_req = AnnSearchRequest(
-                [sparse_emb],
-                self.sparse_embedding_field,
-                sparse_search_params,
+                data=[sparse_emb],
+                anns_field=self.sparse_embedding_field,
+                param=sparse_search_params,
                 limit=query.similarity_top_k,
+                expr=string_expr,  # Apply metadata filters to sparse search
             )
 
             dense_search_params = {
@@ -549,10 +550,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             }
             dense_emb = query.query_embedding
             dense_req = AnnSearchRequest(
-                [dense_emb],
-                self.embedding_field,
-                dense_search_params,
+                data=[dense_emb],
+                anns_field=self.embedding_field,
+                param=dense_search_params,
                 limit=query.similarity_top_k,
+                expr=string_expr,  # Apply metadata filters to dense search
             )
             ranker = None
 
