@@ -1,15 +1,16 @@
 import os
+import random
 from typing import List
 
 import pytest
-import random
 import requests
+from docker.models.containers import Container
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.vector_stores.wordlift import WordliftVectorStore
-from wordlift_client import Configuration
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from wordlift_client import Configuration
 
 try:
     # Should be installed as pyvespa-dependency
@@ -29,7 +30,7 @@ def random_port() -> int:
 
 
 @pytest.fixture(scope="session")
-def wiremock_server(random_port: int) -> WireMockContainer:
+def wiremock_server(random_port: int) -> Container:
     wiremock_dir = os.path.join(os.path.dirname(__file__), "wiremock")
     container = client.containers.run(
         image="wiremock/wiremock:3.9.1-1",
