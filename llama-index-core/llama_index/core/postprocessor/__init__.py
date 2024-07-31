@@ -23,7 +23,6 @@ from llama_index.core.postprocessor.pii import (
     PIINodePostprocessor,
 )
 from llama_index.core.postprocessor.sbert_rerank import SentenceTransformerRerank
-from llama_index.core.postprocessor.tei_rerank import TextEmbeddingInference
 
 __all__ = [
     "SimilarityPostprocessor",
@@ -40,5 +39,4 @@ __all__ = [
     "SentenceTransformerRerank",
     "MetadataReplacementPostProcessor",
     "LongContextReorder",
-    "TextEmbeddingInference",
 ]
