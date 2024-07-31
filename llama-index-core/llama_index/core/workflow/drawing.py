@@ -2,7 +2,7 @@ from typing import Optional
 
 from .events import StopEvent
 from .decorators import StepConfig
-from .utils import get_steps_from_class
+from .utils import get_steps_from_class, get_steps_from_instance
 
 
 def draw_all_possible_flows(
@@ -26,6 +26,11 @@ def draw_all_possible_flows(
     net.add_edge(StopEvent.__name__, "_done")
 
     # Add nodes from all steps
+    steps = get_steps_from_class(workflow)
+    if not steps:
+        # If no steps are defined in the class, try to get them from the instance
+        steps = get_steps_from_instance(workflow)
+
     for step_name, step_func in get_steps_from_class(workflow).items():
         step_config: Optional[StepConfig] = getattr(step_func, "__step_config", None)
         if step_config is None:
