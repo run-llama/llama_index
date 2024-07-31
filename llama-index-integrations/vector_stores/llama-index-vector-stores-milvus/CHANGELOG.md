@@ -6,8 +6,7 @@
 
 - Introduced a new `IndexManagement` enum to control index creation behavior:
   - `NO_VALIDATION`: Skips index validation and creation.
-  - `VALIDATE_INDEX`: Always validates and recreates the index if necessary (default behavior).
-  - `CREATE_IF_NOT_EXISTS`: Creates the index only if it doesn't exist.
+  - `CREATE_IF_NOT_EXISTS`: Creates the index only if it doesn't exist (default behavior).
 - Added a new `index_management` parameter to the `MilvusVectorStore` constructor, allowing users to specify the desired index management strategy.
 
 ### Changed
@@ -33,5 +32,5 @@
 
 ### Upgrade Notes
 
-- This change is backwards compatible. Existing code using `MilvusVectorStore` without specifying `index_management` will default to the previous behavior (`VALIDATE_INDEX`).
+- This change is backwards compatible. Existing code using `MilvusVectorStore` without specifying `index_management` will default to the previous behavior (`CREATE_IF_NOT_EXISTS`).
 - Users can now optionally specify an `index_management` strategy when initializing `MilvusVectorStore` to control index creation behavior.

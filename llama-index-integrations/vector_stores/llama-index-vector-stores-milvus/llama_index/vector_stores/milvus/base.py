@@ -54,7 +54,6 @@ class IndexManagement(enum.IntEnum):
     """Enumeration representing the supported index management operations."""
 
     NO_VALIDATION = auto()
-    VALIDATE_INDEX = auto()
     CREATE_IF_NOT_EXISTS = auto()
 
 
@@ -192,7 +191,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     sparse_embedding_function: Any
     hybrid_ranker: str
     hybrid_ranker_params: dict = {}
-    index_management: IndexManagement = IndexManagement.VALIDATE_INDEX
+    index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -217,7 +216,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         sparse_embedding_function: Optional[BaseSparseEmbeddingFunction] = None,
         hybrid_ranker: str = "RRFRanker",
         hybrid_ranker_params: dict = {},
-        index_management: IndexManagement = IndexManagement.VALIDATE_INDEX,
+        index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -643,13 +642,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         index_exists = self._collection.has_index()
 
         if (
-            (
-                not index_exists
-                and self.index_management == IndexManagement.CREATE_IF_NOT_EXISTS
-            )
-            or (index_exists and self.overwrite)
-            or (self.index_management == IndexManagement.VALIDATE_INDEX)
-        ):
+            not index_exists
+            and self.index_management == IndexManagement.CREATE_IF_NOT_EXISTS
+        ) or (index_exists and self.overwrite):
             if index_exists:
                 self._collection.release()
                 self._collection.drop_index()
@@ -709,7 +704,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             (not dense_index_exists or not sparse_index_exists)
             and self.index_management == IndexManagement.CREATE_IF_NOT_EXISTS
             or (dense_index_exists and sparse_index_exists and self.overwrite)
-            or self.index_management == IndexManagement.VALIDATE_INDEX
         ):
             if dense_index_exists:
                 self._collection.release()
