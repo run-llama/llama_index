@@ -20,12 +20,12 @@ docker run --gpus all -p 8080:80 -v $volume:/data --pull always ghcr.io/huggingf
 Post successful startup of the docker image, the re-ranker can be initialised as follows:
 
 ```python
-from llama_index.postprocessor.tei_rerank import TextEmbeddingInference as TRI
+from llama_index.postprocessor.tei_rerank import TextEmbeddingInference as TEIR
 
 query_bundle = QueryBundle(prompt)
 retrieved_nodes = retriever.retrieve(query_bundle)
 
-postprocessor = TRI(
+postprocessor = TEIR(
     "BAAI/bge-reranker-large", "http://0.0.0.0/8080"
 )  # Name of the model used in the docker server and base url (ip:port)
 
