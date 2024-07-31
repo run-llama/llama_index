@@ -231,15 +231,7 @@ class WordliftVectorStore(BasePydanticVectorStore):
         ids: List[str] = []
 
         for item in page.items:
-            metadata = {**item.metadata}
-
-            try:
-                if item.fields["schema:url"][0]:
-                    metadata["url"] = item.fields["schema:url"][0]
-                if item.fields["schema:name"][0]:
-                    metadata["name"] = item.fields["schema:name"][0]
-            except Exception:
-                log.error("Cannot get metadata", exc_info=True)
+            metadata = {**item.metadata, **item.fields}
 
             nodes.append(
                 TextNode(
