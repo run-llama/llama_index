@@ -17,7 +17,7 @@ The simplest way to perform structured extraction is with our LLM classes. Take 
 There are also relevant sections for our LLM guides: [OpenAI](../examples/llm/openai.ipynb), [Anthropic](../examples/llm/anthropic.ipynb), and [Mistral](../examples/llm/mistralai.ipynb).
 
 #### In-depth Guides
-For a more comprehensive overview of structured data extraction with LlamaIndex, including lower-level modules, check out the following guides. Check out our standalone lower-level modules like Pydantic programs or as part of a RAG pipeline.
+For a more comprehensive overview of structured data extraction with LlamaIndex, including lower-level modules, check out the following guides. Check out our standalone lower-level modules like Pydantic programs or as part of a RAG workflow.
 We also have standalone output parsing modules that you can use yourself with an LLM / prompt.
 
 - [Structured Outputs](../module_guides/querying/structured_outputs/index.md)

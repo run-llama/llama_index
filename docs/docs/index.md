@@ -49,7 +49,7 @@ LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
 - **Engines** provide natural language access to your data. For example:
-    - Query engines are powerful interfaces for question-answering (e.g. a RAG pipeline).
+    - Query engines are powerful interfaces for question-answering (e.g. a RAG flow).
     - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
 - **Agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
 - **Observability/Evaluation** integrations that enable you to rigorously experiment, evaluate, and monitor your app in a virtuous cycle.
