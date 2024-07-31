@@ -6,6 +6,9 @@ An index that is built within Milvus.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+import enum
+from enum import auto
+
 
 import pymilvus  # noqa
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -45,6 +48,14 @@ try:
 except Exception as e:
     WeightedRanker = None
     RRFRanker = None
+
+
+class IndexManagement(enum.IntEnum):
+    """Enumeration representing the supported index management operations."""
+
+    NO_VALIDATION = auto()
+    VALIDATE_INDEX = auto()
+    CREATE_IF_NOT_EXISTS = auto()
 
 
 def _to_milvus_filter(
@@ -181,6 +192,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     sparse_embedding_function: Any
     hybrid_ranker: str
     hybrid_ranker_params: dict = {}
+    index_management: IndexManagement = IndexManagement.VALIDATE_INDEX
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -205,6 +217,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         sparse_embedding_function: Optional[BaseSparseEmbeddingFunction] = None,
         hybrid_ranker: str = "RRFRanker",
         hybrid_ranker_params: dict = {},
+        index_management: IndexManagement = IndexManagement.VALIDATE_INDEX,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -224,6 +237,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             sparse_embedding_function=sparse_embedding_function,
             hybrid_ranker=hybrid_ranker,
             hybrid_ranker_params=hybrid_ranker_params,
+            index_management=index_management,
         )
 
         # Select the similarity metric
@@ -602,72 +616,117 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _create_index_if_required(self, force: bool = False) -> None:
-        # This helper method is introduced to allow the index to be created
-        # both in the constructor and in the `add` method. The `force` flag is
-        # provided to ensure that the index is created in the constructor even
-        # if self.overwrite is false. In the `add` method, the index is
-        # recreated only if self.overwrite is true.
+    def _create_index_if_required(self) -> None:
+        """
+        Create or validate the index based on the index management strategy.
+
+        This method decides whether to create or validate the index based on
+        the specified index management strategy and the current state of the collection.
+        """
+        if self.index_management == IndexManagement.NO_VALIDATION:
+            return
+
         if self.enable_sparse is False:
-            if (self._collection.has_index() and self.overwrite) or force:
+            self._create_dense_index()
+        else:
+            self._create_hybrid_index(self.collection_name)
+
+    def _create_dense_index(self) -> None:
+        """
+        Create or recreate the dense vector index.
+
+        This method handles the creation of the dense vector index based on
+        the current index management strategy and the state of the collection.
+        """
+        index_exists = self._collection.has_index()
+
+        if (
+            (
+                not index_exists
+                and self.index_management == IndexManagement.CREATE_IF_NOT_EXISTS
+            )
+            or (index_exists and self.overwrite)
+            or (self.index_management == IndexManagement.VALIDATE_INDEX)
+        ):
+            if index_exists:
                 self._collection.release()
                 self._collection.drop_index()
-                base_params: Dict[str, Any] = self.index_config.copy()
-                index_type: str = base_params.pop("index_type", "FLAT")
-                index_params: Dict[str, Union[str, Dict[str, Any]]] = {
-                    "params": base_params,
-                    "metric_type": self.similarity_metric,
-                    "index_type": index_type,
-                }
-                self._collection.create_index(
-                    self.embedding_field, index_params=index_params
-                )
-                self._collection.load()
-        else:
-            if (
-                self._collection.has_index(index_name=self.embedding_field)
-                and self.overwrite
-            ) or force:
-                if self._collection.has_index(index_name=self.embedding_field) is True:
-                    self._collection.release()
-                    self._collection.drop_index(index_name=self.embedding_field)
-                if (
-                    self._collection.has_index(index_name=self.sparse_embedding_field)
-                    is True
-                ):
-                    self._collection.drop_index(index_name=self.sparse_embedding_field)
-                self._create_hybrid_index(self.collection_name)
-                self._collection.load()
 
-    def _create_hybrid_index(self, collection_name):
-        schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
+            base_params: Dict[str, Any] = self.index_config.copy()
+            index_type: str = base_params.pop("index_type", "FLAT")
+            index_params: Dict[str, Union[str, Dict[str, Any]]] = {
+                "params": base_params,
+                "metric_type": self.similarity_metric,
+                "index_type": index_type,
+            }
+            self._collection.create_index(
+                self.embedding_field, index_params=index_params
+            )
+            self._collection.load()
 
-        schema.add_field(
-            field_name="id",
-            datatype=DataType.VARCHAR,
-            max_length=65535,
-            is_primary=True,
-        )
-        schema.add_field(
-            field_name=self.embedding_field,
-            datatype=DataType.FLOAT_VECTOR,
-            dim=self.dim,
-        )
-        schema.add_field(
-            field_name=self.sparse_embedding_field,
-            datatype=DataType.SPARSE_FLOAT_VECTOR,
-        )
-        self._collection = Collection(
-            collection_name, schema=schema, using=self._milvusclient._using
+    def _create_hybrid_index(self, collection_name: str) -> None:
+        """
+        Create or recreate the hybrid (dense and sparse) vector index.
+
+        Args:
+            collection_name (str): The name of the collection to create the index for.
+        """
+        # Check if the collection exists, if not, create it
+        if collection_name not in self._milvusclient.list_collections():
+            schema = MilvusClient.create_schema(
+                auto_id=False, enable_dynamic_field=True
+            )
+            schema.add_field(
+                field_name="id",
+                datatype=DataType.VARCHAR,
+                max_length=65535,
+                is_primary=True,
+            )
+            schema.add_field(
+                field_name=self.embedding_field,
+                datatype=DataType.FLOAT_VECTOR,
+                dim=self.dim,
+            )
+            schema.add_field(
+                field_name=self.sparse_embedding_field,
+                datatype=DataType.SPARSE_FLOAT_VECTOR,
+            )
+            self._milvusclient.create_collection(
+                collection_name=collection_name, schema=schema
+            )
+
+        # Initialize or get the collection
+        self._collection = Collection(collection_name, using=self._milvusclient._using)
+
+        dense_index_exists = self._collection.has_index(index_name=self.embedding_field)
+        sparse_index_exists = self._collection.has_index(
+            index_name=self.sparse_embedding_field
         )
 
-        sparse_index = {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "IP"}
-        self._collection.create_index(self.sparse_embedding_field, sparse_index)
-        base_params = self.index_config.copy()
-        index_type = base_params.pop("index_type", "FLAT")
-        dense_index = {
-            "params": base_params,
-            "metric_type": self.similarity_metric,
-            "index_type": index_type,
-        }
-        self._collection.create_index(self.embedding_field, dense_index)
+        if (
+            (not dense_index_exists or not sparse_index_exists)
+            and self.index_management == IndexManagement.CREATE_IF_NOT_EXISTS
+            or (dense_index_exists and sparse_index_exists and self.overwrite)
+            or self.index_management == IndexManagement.VALIDATE_INDEX
+        ):
+            if dense_index_exists:
+                self._collection.release()
+                self._collection.drop_index(index_name=self.embedding_field)
+            if sparse_index_exists:
+                self._collection.drop_index(index_name=self.sparse_embedding_field)
+
+            # Create sparse index
+            sparse_index = {"index_type": "SPARSE_INVERTED_INDEX", "metric_type": "IP"}
+            self._collection.create_index(self.sparse_embedding_field, sparse_index)
+
+            # Create dense index
+            base_params = self.index_config.copy()
+            index_type = base_params.pop("index_type", "FLAT")
+            dense_index = {
+                "params": base_params,
+                "metric_type": self.similarity_metric,
+                "index_type": index_type,
+            }
+            self._collection.create_index(self.embedding_field, dense_index)
+
+        self._collection.load()
