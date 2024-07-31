@@ -175,7 +175,7 @@ from llama_index.core.workflow import Context
 
 
 @step(pass_context=True)
-async def query(self, ctx, Context, ev: QueryEvent) -> StopEvent:
+async def query(self, ctx: Context, ev: QueryEvent) -> StopEvent:
     # retrieve from context
     query = ctx.data.get("query")
 
@@ -185,6 +185,29 @@ async def query(self, ctx, Context, ev: QueryEvent) -> StopEvent:
     result = run_query(query)
     return StopEvent(result=result)
 ```
+
+## Waiting for Multiple Events
+
+The context does more than just hold data, it also provides utilities to buffer and wait for multiple events.
+
+For example, you might have a step like:
+
+```python
+@step(pass_context=True)
+async def query(
+    self, ctx: Context, ev: QueryEvent | RetrieveEvent
+) -> StopEvent | None:
+    data = ctx.collect_events(evm[QueryEvent, RetrieveEvent])
+    # check if we can run
+    if data is None:
+        return None
+
+    # use buffered events
+    print(data[0])  # QueryEvent
+    print(data[1])  # RetrieveEvent
+```
+
+Using `ctx.collect_events()` we can buffer and wait for ALL expected events to arrive. This function will only return data (in the requested order) once all events have arrived.
 
 ## Stepwise Execution
 
