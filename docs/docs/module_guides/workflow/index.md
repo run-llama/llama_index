@@ -8,6 +8,24 @@ You can create a `Workflow` to do anything! Build an agent, a RAG flow, an extra
 
 Workflows are also automatically instrumented, so you get observability into each step using tools like [Arize Pheonix](../observability/index.md#arize-phoenix-local). (**NOTE:** Observability works for integrations that take advantage of the newer instrumentation system. Usage may vary.)
 
+!!! tip
+    Workflows make async a first-class citizen, and this page assumes you are running in an async environment. What this means for you is setting up your code for async properly. If you are already running in a server like FastAPI, or in a notebook, you can freely use await already!
+
+    If you are running your own python scripts, its best practice to have a single async entry point.
+
+    ```python
+    async def main():
+        w = MyWorkflow(...)
+        result = await w.run(...)
+        print(result)
+
+
+    if __name__ == "__main__":
+        import asyncio
+
+        asyncio.run(main())
+    ```
+
 ## Getting Started
 
 As an illustrative example, let's consider a naive workflow where a joke is generated and then critiqued.
@@ -129,6 +147,25 @@ Lastly, we create and run the workflow. There are some settings like timeouts (i
 
 The `.run()` method is async, so we use await here to wait for the result.
 
+## Drawing the Workflow
+
+Workflows can be visualized, using the power of type annotations in your step definitions. You can either draw all possible paths through the workflow, or the most recent execution, to help with debugging.
+
+```python
+from llama_index.core.workflow import (
+    draw_all_possible_paths,
+    draw_most_recent_execution,
+)
+
+# Draw all
+draw_all_possible_paths(JokeFlow, filename="joke_flow_all.html")
+
+# Draw an execution
+w = JokeFlow()
+await w.run(topic="Pirates")
+draw_most_recent_execution(w, filename="joke_flow_recent.html")
+```
+
 ## Working with Global Context/State
 
 Optionally, you can choose to use global context between steps. For example, maybe multiple steps access the original `query` input from the user. You can store this in global context so that every step has access.
@@ -140,13 +177,31 @@ from llama_index.core.workflow import Context
 @step(pass_context=True)
 async def query(self, ctx, Context, ev: QueryEvent) -> StopEvent:
     # retrieve from context
-    query = ctx.get("query")
+    query = ctx.data.get("query")
 
     # store in context
     ctx["key"] = "val"
 
     result = run_query(query)
     return StopEvent(result=result)
+```
+
+## Stepwise Execution
+
+Workflows have built-in utilities for stepwise execution, allowing you to control execution and debug state as things progress.
+
+```python
+w = JokeFlow(...)
+
+# Kick off the workflow
+w.run_step(topic="Pirates")
+
+# Iterate until done
+while not w.is_done():
+    w.run_step()
+
+# Get the final result
+result = w.get_result()
 ```
 
 ## Decorating non-class Functions
