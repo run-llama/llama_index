@@ -62,7 +62,7 @@ class GoogleMapsTextSearchReader(BaseReader):
                 break
             for place in places:
                 formatted_address = place["formattedAddress"]
-                rating = place["rating"]
+                average_rating = place["rating"]
                 display_name = place["displayName"]
                 if isinstance(display_name, dict):
                     display_name = display_name["text"]
@@ -85,7 +85,7 @@ class GoogleMapsTextSearchReader(BaseReader):
                 place = Place(
                     reviews=reviews,
                     address=formatted_address,
-                    average_rating=rating,
+                    average_rating=average_rating,
                     display_name=display_name,
                     number_of_ratings=number_of_ratings,
                 )
