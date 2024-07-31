@@ -1,5 +1,4 @@
 import inspect
-import types
 from typing import (
     get_args,
     get_origin,
@@ -12,6 +11,12 @@ from typing import (
     Dict,
     get_type_hints,
 )
+
+# handle python version compatibility
+try:
+    from types import UnionType
+except ImportError:
+    UnionType = Union
 
 from .context import Context
 from .events import Event
@@ -101,7 +106,7 @@ def _get_param_types(param: inspect.Parameter) -> List[object]:
     typ = param.annotation
     if typ is inspect.Parameter.empty:
         return [Any]
-    if get_origin(typ) in (Union, Optional, types.UnionType):
+    if get_origin(typ) in (Union, Optional, UnionType):
         return [t for t in get_args(typ) if t is not type(None)]
     return [typ]
 
@@ -117,7 +122,7 @@ def _get_return_types(func: Callable) -> List[object]:
         return []
 
     origin = get_origin(return_hint)
-    if origin == Union or origin == types.UnionType:
+    if origin in (Union, UnionType):
         # Optional is Union[type, None] so it's covered here
         return [t for t in get_args(return_hint) if t is not type(None)]
     else:
