@@ -205,10 +205,16 @@ class WordliftVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        request = VectorSearchQueryRequest(
-            query_embedding=query.query_embedding,
-            similarity_top_k=query.similarity_top_k,
-        )
+        if query.query_str:
+            request = VectorSearchQueryRequest(
+                query_string=query.query_str,
+                similarity_top_k=query.similarity_top_k,
+            )
+        else:
+            request = VectorSearchQueryRequest(
+                query_embedding=query.query_embedding,
+                similarity_top_k=query.similarity_top_k,
+            )
 
         async with wordlift_client.ApiClient(self._configuration) as api_client:
             api_instance = wordlift_client.VectorSearchQueriesApi(api_client)
