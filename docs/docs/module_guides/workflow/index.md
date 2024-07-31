@@ -196,8 +196,8 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
 
 You can find many useful examples of using workflows in the notebooks below:
 
-- [RAG + Reranking](TODO)
-- [Reliable Structured Generation](TODO)
+- [RAG + Reranking](../../examples/workflow/rag.ipynb)
+- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
 - [Function Calling Agent](TODO)
 - [ReAct Agent](TODO)
 - [Context Chat Engine](TODO)
