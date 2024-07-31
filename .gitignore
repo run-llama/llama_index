@@ -15,3 +15,5 @@ credentials.json
 token.json
 .python-version
 .DS_Store
+llama/
+.vscode/
