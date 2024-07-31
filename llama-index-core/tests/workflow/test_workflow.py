@@ -10,7 +10,7 @@ from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
 
 
-from .conftest import TestEvent
+from .conftest import OneTestEvent
 
 
 @pytest.mark.asyncio()
@@ -82,12 +82,12 @@ async def test_workflow_event_propagation():
 
     class EventTrackingWorkflow(Workflow):
         @step()
-        async def step1(self, ev: StartEvent) -> TestEvent:
+        async def step1(self, ev: StartEvent) -> OneTestEvent:
             events.append("step1")
-            return TestEvent()
+            return OneTestEvent()
 
         @step()
-        async def step2(self, ev: TestEvent) -> StopEvent:
+        async def step2(self, ev: OneTestEvent) -> StopEvent:
             events.append("step2")
             return StopEvent(result="Done")
 
@@ -100,11 +100,11 @@ async def test_workflow_event_propagation():
 async def test_sync_async_steps():
     class SyncAsyncWorkflow(Workflow):
         @step()
-        async def async_step(self, ev: StartEvent) -> TestEvent:
-            return TestEvent()
+        async def async_step(self, ev: StartEvent) -> OneTestEvent:
+            return OneTestEvent()
 
         @step()
-        def sync_step(self, ev: TestEvent) -> StopEvent:
+        def sync_step(self, ev: OneTestEvent) -> StopEvent:
             return StopEvent(result="Done")
 
     workflow = SyncAsyncWorkflow()

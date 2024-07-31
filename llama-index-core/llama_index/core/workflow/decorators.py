@@ -1,11 +1,8 @@
-import inspect
 from typing import Any, Callable, List, Optional, TYPE_CHECKING, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 from .utils import (
     validate_step_signature,
-    get_param_types,
-    get_return_types,
     is_free_function,
 )
 from .errors import WorkflowValidationError
@@ -40,20 +37,7 @@ def step(workflow: Optional[Type["Workflow"]] = None, pass_context: bool = False
             workflow.add_step(func)
 
         # This will raise providing a message with the specific validation failure
-        validate_step_signature(func)
-
-        # Get the function signature
-        sig = inspect.signature(func)
-
-        for name, param in sig.parameters.items():
-            if name in ("self", "cls"):
-                continue
-
-            event_types = get_param_types(param)
-            event_name = name
-
-        # Extract return type
-        return_types = get_return_types(func)
+        event_name, event_types, return_types = validate_step_signature(func)
 
         # store the configuration in the function object
         func.__step_config = StepConfig(

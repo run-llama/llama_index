@@ -11,6 +11,7 @@ from llama_index.core.workflow.errors import (
 )
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.context import Context
 
 __all__ = [
     "Context",
@@ -24,4 +25,5 @@ __all__ = [
     "draw_all_possible_flows",
     "draw_most_recent_execution",
     "step",
+    "Context",
 ]

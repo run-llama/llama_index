@@ -3,14 +3,15 @@ import pytest
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
+from llama_index.core.bridge.pydantic import Field
 
 
-class TestEvent(Event):
-    pass
+class OneTestEvent(Event):
+    test_param: str = Field(default="test")
 
 
 class AnotherTestEvent(Event):
-    pass
+    another_test_param: str = Field(default="another_test")
 
 
 class LastEvent(Event):
@@ -19,11 +20,11 @@ class LastEvent(Event):
 
 class DummyWorkflow(Workflow):
     @step()
-    async def start_step(self, ev: StartEvent) -> TestEvent:
-        return TestEvent()
+    async def start_step(self, ev: StartEvent) -> OneTestEvent:
+        return OneTestEvent()
 
     @step()
-    async def middle_step(self, ev: TestEvent) -> LastEvent:
+    async def middle_step(self, ev: OneTestEvent) -> LastEvent:
         return LastEvent()
 
     @step()
@@ -38,4 +39,4 @@ def workflow():
 
 @pytest.fixture()
 def events():
-    return [TestEvent, AnotherTestEvent]
+    return [OneTestEvent, AnotherTestEvent]

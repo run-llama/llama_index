@@ -702,6 +702,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/index.md
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
+          - Workflows: ./module_guides/querying/workflow/index.md
           - Query Pipelines:
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md

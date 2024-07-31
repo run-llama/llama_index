@@ -4,9 +4,9 @@ Querying is the most important part of your LLM application. To learn more about
 
 If you wish to combine advanced reasoning with tool use, check out our [agents](../deploying/agents/index.md) guide.
 
-## Query Pipeline
+## Query Workflows
 
-You can create query pipelines/chains with ease with our declarative `QueryPipeline` interface. Check out our [query pipeline guide](pipeline/index.md) for more details.
+You can create workflows for querying with ease, using our event-driven `Workflow` interface. Check out our [workflow guide](workflow/index.md) for more details.
 
 Otherwise check out how to use our query modules as standalone components 👇.
 

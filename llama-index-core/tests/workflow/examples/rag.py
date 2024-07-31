@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import dataclass
 from typing import Optional, List, Any, Union
 
 from llama_index.core import VectorStoreIndex
@@ -23,17 +22,14 @@ from llama_index.core.workflow.context import Context
 from llama_index.llms.ollama import Ollama
 
 
-@dataclass
 class QueryEvent(Event):
     query: str
 
 
-@dataclass
 class RetrieverEvent(Event):
     nodes: List[NodeWithScore]
 
 
-@dataclass
 class QueryResult(Event):
     nodes: List[NodeWithScore]
 
@@ -46,7 +42,7 @@ class RAGWorkflow(Workflow):
             return None
 
         _, documents = download_llama_dataset(dsname, "./data")
-        ctx["INDEX"] = VectorStoreIndex.from_documents(documents=documents)
+        ctx.data["INDEX"] = VectorStoreIndex.from_documents(documents=documents)
         return StopEvent(result=f"Indexed {len(documents)} documents.")
 
     @step(pass_context=True)
@@ -57,7 +53,7 @@ class RAGWorkflow(Workflow):
 
         print(f"Query the database with: {query}")
 
-        index: Any = ctx.get("INDEX")
+        index: Any = ctx.data.get("INDEX")
         if index is None:
             print("Index is empty, load some documents before querying!")
             return None
@@ -75,11 +71,13 @@ class RAGWorkflow(Workflow):
         self, ctx: Context, ev: Union[RetrieverEvent, StartEvent]
     ) -> Optional[QueryResult]:
         if isinstance(ev, StartEvent):
-            ctx["QUERY"] = ev.get("query", "")
+            ctx.data["QUERY"] = ev.get("query", "")
             return None
         elif isinstance(ev, RetrieverEvent):
             ranker = LLMRerank(choice_batch_size=5, top_n=3)
-            new_nodes = ranker.postprocess_nodes(ev.nodes, query_str=ctx.get("QUERY"))
+            new_nodes = ranker.postprocess_nodes(
+                ev.nodes, query_str=ctx.data.get("QUERY")
+            )
             print(f"Reranked nodes to {len(new_nodes)}")
             return QueryResult(nodes=new_nodes)
         else:
@@ -92,12 +90,12 @@ async def synthesize(
 ) -> Optional[StopEvent]:
     # Should never fallback, it'll get better once we have a proper context storage
     if isinstance(ev, StartEvent):
-        ctx["QUERY"] = ev.get("query", "")
+        ctx.data["QUERY"] = ev.get("query", "")
         return None
     elif isinstance(ev, QueryResult):
         llm = Ollama(model="llama3.1:8b", request_timeout=120)
         summarizer = Refine(llm=llm, streaming=True, verbose=True)
-        query = ctx.get("QUERY", "")
+        query = ctx.data.get("QUERY", "")
         response = await summarizer.asynthesize(query, nodes=ev.nodes)
         return StopEvent(result=response)
     else:
