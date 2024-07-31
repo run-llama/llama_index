@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Type
 
 from .events import Event
 
@@ -13,13 +13,19 @@ class Context:
 
         # Step-specific instance
         self.parent = parent
-        self._params_buffer: Dict[str, Any] = {}
+        self._events_buffer: Dict[Type[Event], Event] = {}
 
-    def collect_params(self, ev: Event, *params) -> Optional[Dict[str, Any]]:
-        for param in params:
-            if hasattr(ev, param):
-                self._params_buffer[param] = getattr(ev, param)
+    def collect_events(
+        self, ev: Event, expected: List[Type[Event]]
+    ) -> Optional[List[Event]]:
+        self._events_buffer[type(ev)] = ev
 
-        if list(self._params_buffer.keys()) == list(params):
-            return self._params_buffer
+        retval: List[Event] = []
+        for e_type in expected:
+            e_instance = self._events_buffer.get(e_type)
+            if e_instance:
+                retval.append(e_instance)
+
+        if len(retval) == len(expected):
+            return retval
         return None

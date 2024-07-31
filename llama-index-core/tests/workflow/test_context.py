@@ -12,25 +12,28 @@ from .conftest import OneTestEvent, AnotherTestEvent
 
 
 @pytest.mark.asyncio()
-async def test_collect_params():
+async def test_collect_events():
+    ev1 = OneTestEvent()
+    ev2 = AnotherTestEvent()
+
     class TestWorkflow(Workflow):
         @step()
         async def step1(self, _: StartEvent) -> OneTestEvent:
-            return OneTestEvent()
+            return ev1
 
         @step()
         async def step2(self, _: StartEvent) -> AnotherTestEvent:
-            return AnotherTestEvent()
+            return ev2
 
         @step(pass_context=True)
         async def step3(
             self, ctx: Context, ev: Union[OneTestEvent, AnotherTestEvent]
         ) -> Optional[StopEvent]:
-            params = ctx.collect_params(ev, "test_param", "another_test_param")
+            params = ctx.collect_events(ev, [OneTestEvent, AnotherTestEvent])
             if params is None:
                 return None
             return StopEvent(result=params)
 
     workflow = TestWorkflow()
     result = await workflow.run()
-    assert result == {"test_param": "test", "another_test_param": "another_test"}
+    assert result == [ev1, ev2]
