@@ -55,5 +55,9 @@ class StopEvent(Event):
 
     result: Any = Field(default=None)
 
+    def __init__(self, result: Any = None) -> None:
+        # forces the user to provide a result
+        super().__init__(result=result)
+
 
 EventType = type[Event]
