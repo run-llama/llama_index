@@ -26,7 +26,7 @@ class Review(BaseModel):
 class Place(BaseModel):
     reviews: List[Review]
     address: str
-    average_rating: int
+    average_rating: float
     display_name: str
     number_of_ratings: int
 
