@@ -248,7 +248,7 @@ class Vllm(LLM):
         return {**base_kwargs}
 
     @atexit.register
-    def close():    
+    def close():
         import torch
         import gc
         if torch.cuda.is_available():
