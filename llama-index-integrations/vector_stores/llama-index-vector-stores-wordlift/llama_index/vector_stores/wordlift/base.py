@@ -207,11 +207,13 @@ class WordliftVectorStore(BasePydanticVectorStore):
             request = VectorSearchQueryRequest(
                 query_string=query.query_str,
                 similarity_top_k=query.similarity_top_k,
+                fields=["schema:url", "schema:name"],
             )
         else:
             request = VectorSearchQueryRequest(
                 query_embedding=query.query_embedding,
                 similarity_top_k=query.similarity_top_k,
+                fields=["schema:url", "schema:name"],
             )
 
         async with wordlift_client.ApiClient(self._configuration) as api_client:
@@ -229,12 +231,14 @@ class WordliftVectorStore(BasePydanticVectorStore):
         ids: List[str] = []
 
         for item in page.items:
+            metadata = {**item.metadata, **item.fields}
+
             nodes.append(
                 TextNode(
                     text=item.text,
                     id_=item.node_id,
                     embedding=(item.embeddings if "embeddings" in item else None),
-                    metadata=item.metadata,
+                    metadata=metadata,
                 )
             )
             similarities.append(item.score)
