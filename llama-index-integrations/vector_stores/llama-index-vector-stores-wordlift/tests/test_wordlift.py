@@ -7,8 +7,6 @@ import requests
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores import VectorStoreQuery
 from llama_index.vector_stores.wordlift import WordliftVectorStore
-from wiremock.client import *
-from wiremock.testing.testcontainer import WireMockContainer
 from wordlift_client import Configuration
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
