@@ -90,9 +90,10 @@ class NVIDIARerank(BaseNodePostprocessor):
         """
         super().__init__(model=model, **kwargs)
 
-        self._base_url = base_url or BASE_URL
-        if self._base_url != BASE_URL:
-            self._base_url = self._validate_url(self._base_url)
+        if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
+            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        else:
+            base_url = self._validate_url(base_url)
 
         self._api_key = get_from_param_or_env(
             "api_key",
