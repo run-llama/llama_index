@@ -29,10 +29,10 @@ async def test_collect_events():
         async def step3(
             self, ctx: Context, ev: Union[OneTestEvent, AnotherTestEvent]
         ) -> Optional[StopEvent]:
-            params = ctx.collect_events(ev, [OneTestEvent, AnotherTestEvent])
-            if params is None:
+            events = ctx.collect_events(ev, [OneTestEvent, AnotherTestEvent])
+            if events is None:
                 return None
-            return StopEvent(result=params)
+            return StopEvent(result=events)
 
     workflow = TestWorkflow()
     result = await workflow.run()
