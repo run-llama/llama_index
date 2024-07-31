@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .events import StopEvent
+from .events import StartEvent, StopEvent
 from .decorators import StepConfig
 from .utils import get_steps_from_class, get_steps_from_instance
 
@@ -44,7 +44,7 @@ def draw_all_possible_flows(
             net.add_node(
                 event_type.__name__,
                 label=event_type.__name__,
-                color="#90EE90",
+                color="#90EE90" if event_type != StartEvent else "#E27AFF",
                 shape="ellipse",
             )  # Light green for events
 
