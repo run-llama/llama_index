@@ -156,7 +156,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 ):
                     # find the site with the specified name
                     for site in json_response["value"]:
-                        if "name" in site and site["name"].lower() == sharepoint_site_name.lower():
+                        if (
+                            "name" in site
+                            and site["name"].lower() == sharepoint_site_name.lower()
+                        ):
                             return site["id"]
                     site_information_endpoint = json_response.get(
                         "@odata.nextLink", None
@@ -709,7 +712,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         # Get the file ID
         # remove the site_name prefix
         parts = [part for part in input_file.parts if part != self.sharepoint_site_name]
-        file_path = '/'.join(parts)
+        file_path = "/".join(parts)
         endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
 
         response = requests.get(
