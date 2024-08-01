@@ -12,6 +12,7 @@ from asyncio import (
     AbstractEventLoop,
 )
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from random import random
 from threading import Lock
 from typing import Callable, Optional, Any, Dict, List
@@ -22,7 +23,7 @@ import wrapt
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.dispatcher import Dispatcher
-from llama_index.core.instrumentation.events import BaseEvent
+from llama_index.core.instrumentation.events import BaseEvent, event_tags
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import BaseSpan
 from llama_index.core.instrumentation.span_handlers import BaseSpanHandler
@@ -501,6 +502,55 @@ async def test_dispatcher_async_fire_event(
 
     # span_exit
     mock_span_exit.call_count == 3
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_dispatcher_attaches_tags_to_events(use_async: bool):
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    async def run_func_with_event():
+        if use_async:
+            tasks = [async_func_with_event(a=3, c=5)]
+            _ = await asyncio.gather(*tasks)
+        else:
+            _ = func_with_event(3, c=5)
+
+    test_tags = {"test_tag_key": "test_tag_value"}
+
+    # Ensure that no tags are set without context manager
+    run_func_with_event()
+    assert all(e.tags == {} for e in event_handler.events)
+
+    # Check that tags are set when using context manager
+    event_handler.events = []
+    with event_tags(test_tags):
+        run_func_with_event()
+    assert all(e.tags == test_tags for e in event_handler.events)
+
+
+def test_dispatcher_attaches_tags_to_concurrent_events():
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    test_tags = {"test_tag_key": "test_tag_value"}
+
+    def run_func_with_event_tags():
+        with event_tags(test_tags):
+            func_with_event(3, c=5)
+
+    # Run functions concurrently
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future1 = executor.submit(run_func_with_event_tags)
+        future2 = executor.submit(run_func_with_event_tags)
+
+    # Ensure that each function recorded an event with the expected tags
+    future1.result()
+    future2.result()
+
+    assert len(event_handler.events) == 2
+    assert all(e.tags == test_tags for e in event_handler.events)
 
 
 @patch.object(Dispatcher, "span_exit")

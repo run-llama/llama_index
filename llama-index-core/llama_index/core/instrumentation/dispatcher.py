@@ -4,7 +4,7 @@ import inspect
 import uuid
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.instrumentation import active_event_tags
+from llama_index.core.instrumentation.events import active_event_tags
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.span_handlers import (
