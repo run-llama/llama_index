@@ -616,7 +616,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
-                    vectors_config=dense_config,
+                    vectors_config={
+                        DENSE_VECTOR_NAME: dense_config
+                    },
                     quantization_config=self._quantization_config,
                 )
 
@@ -668,7 +670,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config=dense_config,
+                    vectors_config={DENSE_VECTOR_NAME: dense_config},
                     quantization_config=self._quantization_config,
                 )
             # To improve search performance Qdrant recommends setting up
@@ -823,11 +825,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             return self.parse_to_query_result(response[0])
         else:
-            response = self._client.search(
+            response = self._client.search_batch(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
-                limit=query.similarity_top_k,
-                query_filter=query_filter,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name=DENSE_VECTOR_NAME,
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
             )
             return self.parse_to_query_result(response)
 
@@ -957,9 +967,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             response = await self._aclient.search(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
-                limit=query.similarity_top_k,
-                query_filter=query_filter,
+                requests=[
+                    rest.SearchRequest(
+                        vector=rest.NamedVector(
+                            name=DENSE_VECTOR_NAME,
+                            vector=query_embedding,
+                        ),
+                        limit=query.similarity_top_k,
+                        filter=query_filter,
+                        with_payload=True,
+                    ),
+                ],
             )
 
             return self.parse_to_query_result(response)
