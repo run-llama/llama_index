@@ -57,6 +57,10 @@ class IndexManagement(int, enum.Enum):
     CREATE_IF_NOT_EXISTS = auto()
 
 
+DEFAULT_MAX_BATCH_SIZE = 700
+DEFAULT_MAX_MB_SIZE = 14 * 1024 * 1024  # 14MB in bytes
+
+
 class AzureAISearchVectorStore(BasePydanticVectorStore):
     """
     Azure AI Search vector store.
@@ -712,17 +716,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         ids = []
         accumulated_size = 0
-        max_size = 16 * 1024 * 1024  # 16MB in bytes
-        max_docs = 600  # the limit is 1000 reduced to 600 to avoid the 16MB limit
+        max_size = DEFAULT_MAX_MB_SIZE  # 16MB in bytes
+        max_docs = DEFAULT_MAX_BATCH_SIZE
 
         for node in nodes:
             logger.debug(f"Processing embedding: {node.node_id}")
             ids.append(node.node_id)
 
             index_document = self._create_index_document(node)
-            document_size = len(
-                str(node.get_content(metadata_mode=MetadataMode.ALL)).encode("utf-8")
-            )
+            document_size = len(json.dumps(index_document).encode("utf-8"))
             documents.append(index_document)
             accumulated_size += document_size
 
@@ -780,17 +782,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         ids = []
         accumulated_size = 0
-        max_size = 16 * 1024 * 1024  # 16MB in bytes
-        max_docs = 1000
+        max_size = DEFAULT_MAX_MB_SIZE  # 16MB in bytes
+        max_docs = DEFAULT_MAX_BATCH_SIZE
 
         for node in nodes:
             logger.debug(f"Processing embedding: {node.node_id}")
             ids.append(node.node_id)
 
             index_document = self._create_index_document(node)
-            document_size = len(
-                str(node.get_content(metadata_mode=MetadataMode.NONE)).encode("utf-8")
-            )
+            document_size = len(json.dumps(index_document).encode("utf-8"))
             documents.append(index_document)
             accumulated_size += document_size
 
