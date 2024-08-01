@@ -22,7 +22,7 @@ dispatcher = get_dispatcher(__name__)
 
 
 class OpenVINORerank(BaseNodePostprocessor):
-    model: str = Field(description="Huggingface model id or local path.")
+    model_id_or_path: str = Field(description="Huggingface model id or local path.")
     top_n: int = Field(description="Number of nodes to return sorted by score.")
     keep_retrieval_score: bool = Field(
         default=False,
@@ -34,8 +34,7 @@ class OpenVINORerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 3,
-        model: str = "BAAI/bge-reranker-large",
-        tokenizer: str = "BAAI/bge-reranker-large",
+        model_id_or_path: str = "BAAI/bge-reranker-large",
         device: Optional[str] = "auto",
         model_kwargs: Dict[str, Any] = {},
         keep_retrieval_score: Optional[bool] = False,
@@ -86,23 +85,22 @@ class OpenVINORerank(BaseNodePostprocessor):
             except Exception:
                 return True
 
-        if require_model_export(model):
+        if require_model_export(model_id_or_path):
             # use remote model
             self._model = OVModelForSequenceClassification.from_pretrained(
-                model, export=True, device=device, **model_kwargs
+                model_id_or_path, export=True, device=device, **model_kwargs
             )
         else:
             # use local model
             self._model = OVModelForSequenceClassification.from_pretrained(
-                model, device=device, **model_kwargs
+                model_id_or_path, device=device, **model_kwargs
             )
 
-        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        self._tokenizer = AutoTokenizer.from_pretrained(model_id_or_path)
         super().__init__(
             top_n=top_n,
-            model=model,
+            model_id_or_path=model_id_or_path,
             device=device,
-            tokenizer=tokenizer,
             keep_retrieval_score=keep_retrieval_score,
         )
 
@@ -139,7 +137,7 @@ class OpenVINORerank(BaseNodePostprocessor):
                 query=query_bundle,
                 nodes=nodes,
                 top_n=self.top_n,
-                model_name=self.model,
+                model_name=self.model_id_or_path,
             )
         )
 
@@ -157,7 +155,7 @@ class OpenVINORerank(BaseNodePostprocessor):
             CBEventType.RERANKING,
             payload={
                 EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model,
+                EventPayload.MODEL_NAME: self.model_id_or_path,
                 EventPayload.QUERY_STR: query_bundle.query_str,
                 EventPayload.TOP_K: self.top_n,
             },
@@ -168,12 +166,13 @@ class OpenVINORerank(BaseNodePostprocessor):
             )
 
             outputs = self._model(**input_tensors, return_dict=True)
-            if outputs[0].shape[1] > 1:
-                scores = outputs[0][:, 1]
-            else:
-                scores = outputs[0].flatten()
+            logits = outputs[0]
 
-            scores = list(1 / (1 + np.exp(-scores)))
+            if logits.shape[1] == 1:
+                scores = 1 / (1 + np.exp(-logits.flatten()))
+            else:
+                exp_logits = np.exp(logits)
+                scores = exp_logits[:, 1] / np.sum(exp_logits, axis=1)
 
             assert len(scores) == len(nodes)
 
@@ -181,12 +180,12 @@ class OpenVINORerank(BaseNodePostprocessor):
                 if self.keep_retrieval_score:
                     # keep the retrieval score in metadata
                     node.node.metadata["retrieval_score"] = node.score
-                node.score = float(score)
+                node.score = score
 
-            reranked_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
+            new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
                 : self.top_n
             ]
-            event.on_end(payload={EventPayload.NODES: reranked_nodes})
+            event.on_end(payload={EventPayload.NODES: new_nodes})
 
-        dispatcher.event(ReRankEndEvent(nodes=reranked_nodes))
-        return reranked_nodes
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
+        return new_nodes

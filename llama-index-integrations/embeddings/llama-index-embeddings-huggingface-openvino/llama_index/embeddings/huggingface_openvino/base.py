@@ -1,4 +1,5 @@
 from typing import Any, List, Optional, Dict
+from pathlib import Path
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -12,7 +13,7 @@ from transformers import AutoTokenizer
 
 
 class OpenVINOEmbedding(BaseEmbedding):
-    folder_name: str = Field(description="Folder name to load from.")
+    model_id_or_path: str = Field(description="Huggingface model id or local path.")
     max_length: int = Field(description="Maximum length of input.")
     pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
     normalize: str = Field(default=True, description="Normalize embeddings or not.")
@@ -32,7 +33,7 @@ class OpenVINOEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        folder_name: str,
+        model_id_or_path: str = "BAAI/bge-m3",
         pooling: str = "cls",
         max_length: Optional[int] = None,
         normalize: bool = True,
@@ -46,10 +47,63 @@ class OpenVINOEmbedding(BaseEmbedding):
         device: Optional[str] = "auto",
     ):
         self._device = device
-        self._model = model or OVModelForFeatureExtraction.from_pretrained(
-            folder_name, device=self._device, **model_kwargs
-        )
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+
+        try:
+            from huggingface_hub import HfApi
+        except ImportError as e:
+            raise ValueError(
+                "Could not import huggingface_hub python package. "
+                "Please install it with: "
+                "`pip install -U huggingface_hub`."
+            ) from e
+
+        def require_model_export(
+            model_id: str, revision: Any = None, subfolder: Any = None
+        ) -> bool:
+            model_dir = Path(model_id)
+            if subfolder is not None:
+                model_dir = model_dir / subfolder
+            if model_dir.is_dir():
+                return (
+                    not (model_dir / "openvino_model.xml").exists()
+                    or not (model_dir / "openvino_model.bin").exists()
+                )
+            hf_api = HfApi()
+            try:
+                model_info = hf_api.model_info(model_id, revision=revision or "main")
+                normalized_subfolder = (
+                    None if subfolder is None else Path(subfolder).as_posix()
+                )
+                model_files = [
+                    file.rfilename
+                    for file in model_info.siblings
+                    if normalized_subfolder is None
+                    or file.rfilename.startswith(normalized_subfolder)
+                ]
+                ov_model_path = (
+                    "openvino_model.xml"
+                    if subfolder is None
+                    else f"{normalized_subfolder}/openvino_model.xml"
+                )
+                return (
+                    ov_model_path not in model_files
+                    or ov_model_path.replace(".xml", ".bin") not in model_files
+                )
+            except Exception:
+                return True
+
+        if require_model_export(model_id_or_path):
+            # use remote model
+            self._model = model or OVModelForFeatureExtraction.from_pretrained(
+                model_id_or_path, export=True, device=device, **model_kwargs
+            )
+        else:
+            # use local model
+            self._model = model or OVModelForFeatureExtraction.from_pretrained(
+                model_id_or_path, device=self._device, **model_kwargs
+            )
+
+        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(model_id_or_path)
 
         if max_length is None:
             try:
@@ -70,7 +124,7 @@ class OpenVINOEmbedding(BaseEmbedding):
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            folder_name=folder_name,
+            model_id_or_path=model_id_or_path,
             max_length=max_length,
             pooling=pooling,
             normalize=normalize,
