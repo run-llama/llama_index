@@ -36,22 +36,21 @@ def default_parse_dynamic_triplets(
     try:
         # Attempt to parse the output as JSON
         data = json.loads(llm_output)
-        if isinstance(data, list):
-            for item in data:
-                head = item.get('head')
-                head_type = item.get('head_type')
-                relation = item.get('relation')
-                tail = item.get('tail')
-                tail_type = item.get('tail_type')
+        for item in data:
+            head = item.get('head')
+            head_type = item.get('head_type')
+            relation = item.get('relation')
+            tail = item.get('tail')
+            tail_type = item.get('tail_type')
 
-                if head and head_type and relation and tail and tail_type:
-                    head_node = EntityNode(name=head, label=head_type)
-                    tail_node = EntityNode(name=tail, label=tail_type)
-                    relation_node = Relation(
-                        source_id=head_node.id, target_id=tail_node.id, label=relation
-                    )
-                    triplets.append((head_node, relation_node, tail_node))
-        else:
+            if head and head_type and relation and tail and tail_type:
+                head_node = EntityNode(name=head, label=head_type)
+                tail_node = EntityNode(name=tail, label=tail_type)
+                relation_node = Relation(
+                    source_id=head_node.id, target_id=tail_node.id, label=relation
+                )
+                triplets.append((head_node, relation_node, tail_node))
+
     except json.JSONDecodeError:
         # Flexible pattern to match the key-value pairs for head, head_type, relation, tail, and tail_type
         pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']relation[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']tail[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']'
@@ -87,28 +86,26 @@ def default_parse_dynamic_triplets_with_props(
     try:
         # Attempt to parse the output as JSON
         data = json.loads(llm_output)
-        if isinstance(data, list):
-            for item in data:
-                head = item.get('head')
-                head_type = item.get('head_type')
-                head_props = item.get('head_props', {})
-                relation = item.get('relation')
-                relation_props = item.get('relation_props', {})
-                tail = item.get('tail')
-                tail_type = item.get('tail_type')
-                tail_props = item.get('tail_props', {})
+        for item in data:
+            head = item.get('head')
+            head_type = item.get('head_type')
+            head_props = item.get('head_props', {})
+            relation = item.get('relation')
+            relation_props = item.get('relation_props', {})
+            tail = item.get('tail')
+            tail_type = item.get('tail_type')
+            tail_props = item.get('tail_props', {})
 
-                if head and head_type and relation and tail and tail_type:
-                    head_node = EntityNode(name=head, label=head_type, properties=head_props)
-                    tail_node = EntityNode(name=tail, label=tail_type, properties=tail_props)
-                    relation_node = Relation(
-                        source_id=head_node.id,
-                        target_id=tail_node.id,
-                        label=relation,
-                        properties=relation_props,
-                    )
-                    triplets.append((head_node, relation_node, tail_node))
-        else:
+            if head and head_type and relation and tail and tail_type:
+                head_node = EntityNode(name=head, label=head_type, properties=head_props)
+                tail_node = EntityNode(name=tail, label=tail_type, properties=tail_props)
+                relation_node = Relation(
+                    source_id=head_node.id,
+                    target_id=tail_node.id,
+                    label=relation,
+                    properties=relation_props,
+                )
+                triplets.append((head_node, relation_node, tail_node))
     except json.JSONDecodeError:
         # Flexible pattern to match the key-value pairs for head, head_type, head_props, relation, relation_props, tail, tail_type, and tail_props
         pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']head_props[\}"\']\s*:\s*\{(.*?)\}\s*,\s*[\{"\']relation[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']relation_props[\}"\']\s*:\s*\{(.*?)\}\s*,\s*[\{"\']tail[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']tail_props[\}"\']\s*:\s*\{(.*?)\}\s*'
