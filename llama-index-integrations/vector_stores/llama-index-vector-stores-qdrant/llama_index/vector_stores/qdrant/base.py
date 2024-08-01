@@ -616,9 +616,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
-                    vectors_config={
-                        DENSE_VECTOR_NAME: dense_config
-                    },
+                    vectors_config={DENSE_VECTOR_NAME: dense_config},
                     quantization_config=self._quantization_config,
                 )
 
