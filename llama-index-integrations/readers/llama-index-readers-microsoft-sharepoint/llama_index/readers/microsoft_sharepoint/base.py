@@ -156,7 +156,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 ):
                     # find the site with the specified name
                     for site in json_response["value"]:
-                        if "name" in site and site["name"].lower() == sharepoint_site_name.lower():
+                        if (
+                            "name" in site 
+                            and site["name"].lower() == sharepoint_site_name.lower()
+                        ):
                             return site["id"]
                     site_information_endpoint = json_response.get(
                         "@odata.nextLink", None
