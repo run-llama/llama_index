@@ -207,9 +207,9 @@ class DynamicLLMPathExtractor(TransformComponent):
             num_workers=num_workers,
             max_triplets_per_chunk=max_triplets_per_chunk,
             allowed_entity_types=allowed_entity_types or [],
-            allowed_entity_props=allowed_entity_props,
+            allowed_entity_props=allowed_entity_props or [],
             allowed_relation_types=allowed_relation_types or [],
-            allowed_relation_props=allowed_relation_props,
+            allowed_relation_props=allowed_relation_props or [],
         )
 
     @classmethod
