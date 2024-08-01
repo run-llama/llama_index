@@ -149,4 +149,4 @@ Also make sure to check out our entire [Structured Outputs](../../module_guides/
 
 If you want to design complex query flows, you can compose your own query workflow across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
 
-Take a look at our [Workflow Guide](../../module_guides/querying/workflow/index.md) for more details.
+Take a look at our [Workflow Guide](../../module_guides/workflow/index.md) for more details.

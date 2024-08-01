@@ -6,7 +6,7 @@ If you wish to combine advanced reasoning with tool use, check out our [agents](
 
 ## Query Workflows
 
-You can create workflows for querying with ease, using our event-driven `Workflow` interface. Check out our [workflow guide](workflow/index.md) for more details.
+You can create workflows for querying with ease, using our event-driven `Workflow` interface. Check out our [workflow guide](../workflow/index.md) for more details.
 
 Otherwise check out how to use our query modules as standalone components 👇.
 

@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.postprocessor.tei_rerank_rerank"
+import_path = "llama_index.postprocessor.tei_rerank"
 
 [tool.llamahub.class_authors]
 TextEmbeddingInference = "llama-index"

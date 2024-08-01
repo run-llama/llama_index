@@ -2,4 +2,3 @@
     options:
       members:
         - FalkorDBGraphStore
-        - FalkorDBPropertyGraphStore
