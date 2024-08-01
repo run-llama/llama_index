@@ -1,0 +1,32 @@
+name: Docs Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  POETRY_VERSION: "1.8.3"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      # You can use PyPy versions in python-version.
+      # For example, pypy-2.7 and pypy-3.8
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+          cache-dependency-path: "**/poetry.lock"
+      - name: Build docs
+        shell: bash
+        run: cd docs && poetry install && mkdocs build
