@@ -47,7 +47,7 @@ class OpenVINOEmbedding(BaseEmbedding):
         device: Optional[str] = "auto",
     ):
         self._device = device
-        
+
         try:
             from huggingface_hub import HfApi
         except ImportError as e:
@@ -91,7 +91,7 @@ class OpenVINOEmbedding(BaseEmbedding):
                 )
             except Exception:
                 return True
-            
+
         if require_model_export(model_id_or_path):
             # use remote model
             self._model = model or OVModelForFeatureExtraction.from_pretrained(
@@ -102,7 +102,7 @@ class OpenVINOEmbedding(BaseEmbedding):
             self._model = model or OVModelForFeatureExtraction.from_pretrained(
                 model_id_or_path, device=self._device, **model_kwargs
             )
-            
+
         self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(model_id_or_path)
 
         if max_length is None:

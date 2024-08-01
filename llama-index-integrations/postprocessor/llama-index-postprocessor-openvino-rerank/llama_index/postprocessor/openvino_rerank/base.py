@@ -187,4 +187,5 @@ class OpenVINORerank(BaseNodePostprocessor):
             ]
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
         return new_nodes

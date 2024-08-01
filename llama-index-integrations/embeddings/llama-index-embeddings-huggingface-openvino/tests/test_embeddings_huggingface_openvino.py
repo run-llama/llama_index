@@ -12,7 +12,7 @@ def test_openvinoembedding_get_text_embedding(tmp_path):
     OpenVINOEmbedding.create_and_save_openvino_model(
         "BAAI/bge-small-en-v1.5", model_dir
     )
-    embed_model = OpenVINOEmbedding(folder_name=model_dir)
+    embed_model = OpenVINOEmbedding(model_id_or_path=model_dir)
     embeddings = embed_model.get_text_embedding("Hello World!")
 
     assert len(embeddings) == 384
