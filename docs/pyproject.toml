@@ -6,7 +6,6 @@ requires = ["poetry-core"]
 authors = ["Laurie Voss <github@seldo.com>"]
 description = ""
 name = "new-docs"
-readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
