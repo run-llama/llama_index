@@ -12,12 +12,11 @@ from langchain.text_splitter import (
     TextSplitter as LCSplitter,
 )
 from langchain.text_splitter import TokenTextSplitter as LCTokenTextSplitter
-from streamlit.runtime.uploaded_file_manager import UploadedFile
-
 from llama_index import SimpleDirectoryReader
 from llama_index.node_parser.interface import TextSplitter
 from llama_index.schema import Document
 from llama_index.text_splitter import CodeSplitter, SentenceSplitter, TokenTextSplitter
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 DEFAULT_TEXT = "The quick brown fox jumps over the lazy dog."
 

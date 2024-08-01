@@ -1,0 +1,14 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.poetry]
+authors = ["Your Name <you@example.com>"]
+description = ""
+name = "contributor-2"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<3.12"
+llama-index = "^0.10.12"
+llama-index-networks = {allow-prereleases = true, version = "^0.2.0a0"}

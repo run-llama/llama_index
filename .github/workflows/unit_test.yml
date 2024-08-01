@@ -7,31 +7,48 @@ on:
   pull_request:
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.8.3"
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-unit-tester
     strategy:
       # You can use PyPy versions in python-version.
       # For example, pypy-2.7 and pypy-3.8
       matrix:
-        python-version: ["3.10", "3.9", "3.8"]
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
+      - name: clear space
+        env:
+          CI: true
+        shell: bash
+        run: rm -rf /opt/hostedtoolcache/*
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: update rustc
+        run: rustup update stable
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+          cache: "poetry"
+          cache-dependency-path: "**/poetry.lock"
+      - uses: pantsbuild/actions/init-pants@v5-scie-pants
         with:
-          version: ${{ env.POETRY_VERSION }}
-      - name: Install deps
-        shell: bash
-        run: poetry install --with dev
+          # v0 makes it easy to bust the cache if needed
+          # just increase the integer to start with a fresh cache
+          gha-cache-key: v1-py${{ matrix.python_version }}
+          named-caches-hash: v1-py${{ matrix.python_version }}
+          pants-python-version: ${{ matrix.python-version }}
+          pants-ci-config: pants.toml
+      - name: Check BUILD files
+        run: |
+          pants tailor --check :: -docs/::
       - name: Run testing
         env:
           CI: true
         shell: bash
-        run: poetry run make test
+        run: poetry run make -s test

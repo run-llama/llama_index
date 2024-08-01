@@ -1,0 +1,3 @@
+semanticscholar==0.4.1
+arxiv==1.4.8
+PyPDF2==3.0.1

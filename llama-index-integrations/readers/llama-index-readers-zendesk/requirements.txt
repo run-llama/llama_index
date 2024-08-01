@@ -1,0 +1,2 @@
+beautifulsoup4
+requests

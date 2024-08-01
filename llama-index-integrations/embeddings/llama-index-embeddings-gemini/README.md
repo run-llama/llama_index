@@ -1,0 +1,1 @@
+# LlamaIndex Embeddings Integration: Gemini

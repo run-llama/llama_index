@@ -1,0 +1,2 @@
+selenium
+chromedriver-autoinstaller
