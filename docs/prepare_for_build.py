@@ -95,6 +95,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "schema": "Schema",
     "storage": "Storage",
     "tools": "Tools",
+    "workflow": "Workflow",
 }
 API_REF_TEMPLATE = """::: {import_path}
     options:
