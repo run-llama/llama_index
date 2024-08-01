@@ -18,6 +18,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_DYNAMIC_EXTRACT_PROPS_PROMPT,
 )
 
+
 def default_parse_dynamic_triplets(
     llm_output: str,
 ) -> List[Tuple[EntityNode, Relation, EntityNode]]:
@@ -37,11 +38,11 @@ def default_parse_dynamic_triplets(
         # Attempt to parse the output as JSON
         data = json.loads(llm_output)
         for item in data:
-            head = item.get('head')
-            head_type = item.get('head_type')
-            relation = item.get('relation')
-            tail = item.get('tail')
-            tail_type = item.get('tail_type')
+            head = item.get("head")
+            head_type = item.get("head_type")
+            relation = item.get("relation")
+            tail = item.get("tail")
+            tail_type = item.get("tail_type")
 
             if head and head_type and relation and tail and tail_type:
                 head_node = EntityNode(name=head, label=head_type)
@@ -68,6 +69,7 @@ def default_parse_dynamic_triplets(
             triplets.append((head_node, relation_node, tail_node))
     return triplets
 
+
 def default_parse_dynamic_triplets_with_props(
     llm_output: str,
 ) -> List[Tuple[EntityNode, Relation, EntityNode]]:
@@ -87,18 +89,22 @@ def default_parse_dynamic_triplets_with_props(
         # Attempt to parse the output as JSON
         data = json.loads(llm_output)
         for item in data:
-            head = item.get('head')
-            head_type = item.get('head_type')
-            head_props = item.get('head_props', {})
-            relation = item.get('relation')
-            relation_props = item.get('relation_props', {})
-            tail = item.get('tail')
-            tail_type = item.get('tail_type')
-            tail_props = item.get('tail_props', {})
+            head = item.get("head")
+            head_type = item.get("head_type")
+            head_props = item.get("head_props", {})
+            relation = item.get("relation")
+            relation_props = item.get("relation_props", {})
+            tail = item.get("tail")
+            tail_type = item.get("tail_type")
+            tail_props = item.get("tail_props", {})
 
             if head and head_type and relation and tail and tail_type:
-                head_node = EntityNode(name=head, label=head_type, properties=head_props)
-                tail_node = EntityNode(name=tail, label=tail_type, properties=tail_props)
+                head_node = EntityNode(
+                    name=head, label=head_type, properties=head_props
+                )
+                tail_node = EntityNode(
+                    name=tail, label=tail_type, properties=tail_props
+                )
                 relation_node = Relation(
                     source_id=head_node.id,
                     target_id=tail_node.id,
@@ -138,8 +144,12 @@ def default_parse_dynamic_triplets_with_props(
             relation_props_dict = parse_props(relation_props)
             tail_props_dict = parse_props(tail_props)
 
-            head_node = EntityNode(name=head, label=head_type, properties=head_props_dict)
-            tail_node = EntityNode(name=tail, label=tail_type, properties=tail_props_dict)
+            head_node = EntityNode(
+                name=head, label=head_type, properties=head_props_dict
+            )
+            tail_node = EntityNode(
+                name=tail, label=tail_type, properties=tail_props_dict
+            )
             relation_node = Relation(
                 source_id=head_node.id,
                 target_id=tail_node.id,
