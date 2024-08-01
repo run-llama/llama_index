@@ -1522,6 +1522,8 @@ nav:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
 plugins:
+  - search:
+      enabled: false
   - include_dir_to_nav
   - mkdocs-jupyter:
       execute: false
