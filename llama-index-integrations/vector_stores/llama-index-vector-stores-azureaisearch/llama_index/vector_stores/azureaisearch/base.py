@@ -713,7 +713,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         ids = []
         accumulated_size = 0
         max_size = 16 * 1024 * 1024  # 16MB in bytes
-        max_docs = 1000
+        max_docs = 600  # the limit is 1000 reduced to 600 to avoid the 16MB limit
 
         for node in nodes:
             logger.debug(f"Processing embedding: {node.node_id}")
@@ -721,7 +721,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             index_document = self._create_index_document(node)
             document_size = len(
-                str(node.get_content(metadata_mode=MetadataMode.NONE)).encode("utf-8")
+                str(node.get_content(metadata_mode=MetadataMode.ALL)).encode("utf-8")
             )
             documents.append(index_document)
             accumulated_size += document_size
