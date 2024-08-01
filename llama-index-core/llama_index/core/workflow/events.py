@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 
@@ -60,4 +60,4 @@ class StopEvent(Event):
         super().__init__(result=result)
 
 
-EventType = type[Event]
+EventType = Type[Event]
