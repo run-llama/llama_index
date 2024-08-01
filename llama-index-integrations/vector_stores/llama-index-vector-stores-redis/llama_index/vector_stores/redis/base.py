@@ -345,15 +345,20 @@ class RedisVectorStore(BasePydanticVectorStore):
         if metadata_filters:
             if metadata_filters.filters:
                 for filter in metadata_filters.filters:
-                    # Index must be created with the metadata field in the index schema
-                    field = self._index.schema.fields.get(filter.key)
-                    if not field:
-                        logger.warning(
-                            f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
-                        )
-                        continue
-                    # Extract redis filter
-                    redis_filter = self._to_redis_filter(field, filter)
+                    # Handle nested MetadataFilters recursively
+                    if isinstance(filter, MetadataFilters):
+                        redis_filter = self._create_redis_filter_expression(filter)
+                    else:
+                        # Index must be created with the metadata field in the index schema
+                        field = self._index.schema.fields.get(filter.key)
+                        if not field:
+                            logger.warning(
+                                f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
+                            )
+                            continue
+                        # Extract redis filter
+                        redis_filter = self._to_redis_filter(field, filter)
+
                     # Combine with conditional
                     if metadata_filters.condition == "and":
                         filter_expression = filter_expression & redis_filter
