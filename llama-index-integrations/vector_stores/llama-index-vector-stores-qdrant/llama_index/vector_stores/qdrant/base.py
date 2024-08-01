@@ -275,7 +275,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                             }
                         )
                 else:
-                    vectors.append(node.get_embedding())
+                    vectors.append({DENSE_VECTOR_NAME: node.get_embedding()})
 
                 metadata = node_to_metadata_dict(
                     node, remove_text=False, flat_metadata=self.flat_metadata
