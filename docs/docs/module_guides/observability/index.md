@@ -315,7 +315,7 @@ tru_query_engine.query("What did the author do growing up?")
 
 ### HoneyHive
 
-HoneyHive allows users to trace the execution flow of any LLM pipeline. Users can then debug and analyze their traces, or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
+HoneyHive allows users to trace the execution flow of any LLM workflow. Users can then debug and analyze their traces, or customize feedback on specific trace events to create evaluation or fine-tuning datasets from production.
 
 #### Usage Pattern
 
@@ -325,7 +325,7 @@ from llama_index.core import set_global_handler
 set_global_handler(
     "honeyhive",
     project="My HoneyHive Project",
-    name="My LLM Pipeline Name",
+    name="My LLM Workflow Name",
     api_key="MY HONEYHIVE API KEY",
 )
 
@@ -337,7 +337,7 @@ from llama_index.core import Settings
 
 # hh_tracer = HoneyHiveLlamaIndexTracer(
 #     project="My HoneyHive Project",
-#     name="My LLM Pipeline Name",
+#     name="My LLM Workflow Name",
 #     api_key="MY HONEYHIVE API KEY",
 # )
 # Settings.callback_manager = CallbackManager([hh_tracer])

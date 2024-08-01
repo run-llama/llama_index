@@ -52,6 +52,7 @@ FOLDER_NAME_TO_LABEL = {
     "./examples/transforms": "Transforms",
     "./examples/usecases": "Use Cases",
     "./examples/vector_stores": "Vector Stores",
+    "./examples/workflow": "Workflow",
 }
 
 # integration config
