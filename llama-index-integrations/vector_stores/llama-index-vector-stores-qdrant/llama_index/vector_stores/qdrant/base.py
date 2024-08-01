@@ -803,25 +803,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ],
             )
             return self.parse_to_query_result(sparse_response[0])
-
-        elif self.enable_hybrid:
-            # search for dense vectors only
-            response = self._client.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
-                            vector=query_embedding,
-                        ),
-                        limit=query.similarity_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-
-            return self.parse_to_query_result(response[0])
         else:
             response = self._client.search_batch(
                 collection_name=self.collection_name,
@@ -944,26 +925,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ],
             )
             return self.parse_to_query_result(sparse_response[0])
-        elif self.enable_hybrid:
-            # search for dense vectors only
-            response = await self._aclient.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
-                            vector=query_embedding,
-                        ),
-                        limit=query.similarity_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-
-            return self.parse_to_query_result(response[0])
         else:
-            response = await self._aclient.search(
+            response = await self._aclient.search_batch(
                 collection_name=self.collection_name,
                 requests=[
                     rest.SearchRequest(
