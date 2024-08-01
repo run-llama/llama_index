@@ -4,6 +4,8 @@ extra:
     provider: google
 extra_css:
   - css/style.css
+extra_javascript:
+  - javascript/mendablesearch.js
 markdown_extensions:
   - attr_list
   - admonition
@@ -1520,7 +1522,6 @@ nav:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
 plugins:
-  - search
   - include_dir_to_nav
   - mkdocs-jupyter:
       execute: false
@@ -2744,8 +2745,6 @@ theme:
     - navigation.footer
     - toc.follow
     - content.code.copy
-    - search.suggest
-    - search.highlight
   logo: _static/assets/LlamaSquareBlack.svg
   name: material
   palette:
