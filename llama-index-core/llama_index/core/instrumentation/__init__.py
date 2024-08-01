@@ -1,5 +1,7 @@
 import inspect
 from abc import ABC
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any, List
 
 from llama_index.core.instrumentation.dispatcher import (
@@ -18,6 +20,18 @@ root_dispatcher: Dispatcher = Dispatcher(
 )
 
 root_manager: Manager = Manager(root_dispatcher)
+
+# ContextVar for managing active event tags
+active_event_tags = ContextVar("event_tags", default={})
+
+
+@contextmanager
+def event_tags(new_tags):
+    token = active_event_tags.set(new_tags)
+    try:
+        yield
+    finally:
+        active_event_tags.reset(token)
 
 
 def get_dispatcher(name: str = "root") -> Dispatcher:

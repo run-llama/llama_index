@@ -4,6 +4,7 @@ import inspect
 import uuid
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.instrumentation import active_event_tags
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.span_handlers import (
@@ -100,6 +101,10 @@ class Dispatcher(BaseModel):
     def event(self, event: BaseEvent, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
         c = self
+
+        # Attach event tags from the active context
+        event.tags.update(active_event_tags.get())
+
         while c:
             for h in c.event_handlers:
                 try:
