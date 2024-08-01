@@ -837,7 +837,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                 ],
             )
-            return self.parse_to_query_result(response)
+            return self.parse_to_query_result(response[0])
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -978,7 +978,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ],
             )
 
-            return self.parse_to_query_result(response)
+            return self.parse_to_query_result(response[0])
 
     def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
         """
