@@ -4,8 +4,6 @@ extra:
     provider: google
 extra_css:
   - css/style.css
-extra_javascript:
-  - javascript/mendablesearch.js
 markdown_extensions:
   - attr_list
   - admonition
