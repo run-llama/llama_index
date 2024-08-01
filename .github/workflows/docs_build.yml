@@ -29,4 +29,4 @@ jobs:
           cache-dependency-path: "**/poetry.lock"
       - name: Build docs
         shell: bash
-        run: cd docs && poetry install && mkdocs build
+        run: cd docs && poetry shell && poetry install && mkdocs build
