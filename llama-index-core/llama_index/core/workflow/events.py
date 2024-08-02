@@ -19,6 +19,20 @@ class StartEvent(Event):
         super().__init__()
         self._data = data
 
+    def __getattr__(self, __name: str) -> Any:
+        if __name in self._data:
+            return self._data[__name]
+        else:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{__name}'"
+            )
+
+    def __setattr__(self, __name: str, value: Any) -> None:
+        if __name in self._data:
+            self._data[__name] = value
+        else:
+            super().__setattr__(__name, value)
+
     def __getitem__(self, key: str) -> Any:
         return self._data[key]
 
