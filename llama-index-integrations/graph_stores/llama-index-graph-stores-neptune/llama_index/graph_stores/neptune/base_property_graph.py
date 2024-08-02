@@ -30,9 +30,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     def client(self) -> Any:
         return self._client
 
-    def get(
-        self, properties: Dict | None = None, ids: List[str] | None = None
-    ) -> List[LabelledNode]:
+    def get(self, properties: Dict = None, ids: List[str] = None) -> List[LabelledNode]:
         """Get the nodes from the graph.
 
         Args:
