@@ -534,23 +534,27 @@ def test_dispatcher_attaches_tags_to_concurrent_events():
     event_handler = _TestEventHandler()
     dispatcher.add_event_handler(event_handler)
 
-    test_tags = {"test_tag_key": "test_tag_value"}
+    num_functions = 5
+    test_tags = [{"test_tag_key": num} for num in range(num_functions)]
 
-    def run_func_with_event_tags():
-        with event_tags(test_tags):
+    def run_func_with_event_tags(tag):
+        with event_tags(tag):
             func_with_event(3, c=5)
 
     # Run functions concurrently
+    futures = []
     with ThreadPoolExecutor(max_workers=2) as executor:
-        future1 = executor.submit(run_func_with_event_tags)
-        future2 = executor.submit(run_func_with_event_tags)
+        for tag in test_tags:
+            futures.append(executor.submit(run_func_with_event_tags, tag))
 
-    # Ensure that each function recorded an event with the expected tags
-    future1.result()
-    future2.result()
+    for future in futures:
+        future.result()
 
-    assert len(event_handler.events) == 2
-    assert all(e.tags == test_tags for e in event_handler.events)
+    # Ensure that each function recorded an event with its own tags
+    assert len(event_handler.events) == num_functions
+    assert {str(e.tags) for e in event_handler.events} == {
+        str(tag) for tag in test_tags
+    }
 
 
 @patch.object(Dispatcher, "span_exit")
