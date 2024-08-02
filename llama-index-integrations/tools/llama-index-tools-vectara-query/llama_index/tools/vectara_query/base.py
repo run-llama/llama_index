@@ -1,9 +1,6 @@
 from typing import List, Dict
-
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.indices.managed.vectara import VectaraIndex
-
-# from llama_index.legacy.schema import NodeWithScore
 
 
 class VectaraQueryToolSpec(BaseToolSpec):
@@ -81,7 +78,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
 
         return response.response
 
-    # ASK OFER ABOUT WHETHER WE WANT TO USE RETRIEVER OR AUTO-RETRIEVER FOR THIS FUNCTION (and if he can explain the difference)
     def semantic_search(
         self,
         query: str,
@@ -93,7 +89,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
         reranker: str = "mmr",
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.2,
-        # include_citations: bool = True # ASK OFER ABOUT HOW THIS WORKS IN VECTARA_AGENT, IF WE WANT IT IN THIS AS WELL.
     ) -> List[Dict]:
         """
         Makes a query to a Vectara corpus and returns the top search results from the retrieved documents.
@@ -108,10 +103,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - reranker (str): The reranker mode, either "mmr" or "default".
         - rerank_k (int): Number of top-k documents for reranking.
         - mmr_diversity_bias (float): MMR diversity bias.
-
-        MAY NOT INCLUDE:
-        - include_citations (bool): Whether to include citations in the response.
-          If True, uses MARKDOWN vectara citations that requires the Vectara scale plan.
         """
         retriever_engine = self.index.as_retriever(
             lambda_val=lambda_val,
