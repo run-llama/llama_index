@@ -1,3 +1,3 @@
-from llama_index.retrievers.relik.base import RelikKGRetriever
+from llama_index.retrievers.relik.base import RelikPathExtractor
 
-__all__ = ["RelikKGRetriever"]
+__all__ = ["RelikPathExtractor"]

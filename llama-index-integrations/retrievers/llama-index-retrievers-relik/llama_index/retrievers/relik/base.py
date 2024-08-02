@@ -1,7 +1,7 @@
-import asyncio
+import logging
+import tqdm
 from typing import Any, List
 
-from llama_index.core.async_utils import run_jobs
 from llama_index.core.graph_stores.types import (
     EntityNode,
     Relation,
@@ -15,8 +15,8 @@ DEFAULT_NODE_TYPE = "Entity"
 
 class RelikPathExtractor(TransformComponent):
     """
-    A transformer class for converting documents into graph structures
-    using the Relik library and models.
+    A transformer class for converting documents into graph structures.
+    Uses the Relik library and models.
     This class leverages relik models for extracting relationships
     and nodes from text documents and converting them into a graph format.
     The relationships are filtered based on a specified confidence threshold.
@@ -27,17 +27,21 @@ class RelikPathExtractor(TransformComponent):
           Default is "relik-ie/relik-relation-extraction-small-wikipedia".
         relationship_confidence_threshold (float): The confidence threshold for
           filtering relationships. Default is 0.0.
+        skip_errors (bool): Whether to skip errors during extraction. Defaults to False.
     """
 
     relik_model: Any
     relationship_confidence_threshold: float
     num_workers: int
+    skip_errors: bool
 
     def __init__(
         self,
         model: str = "relik-ie/relik-relation-extraction-small-wikipedia",
-        relationship_confidence_threshold: float = 0.0,
+        relationship_confidence_threshold: float = 0.5,
+        skip_errors: bool = False,
         num_workers: int = 4,
+        verbose: bool = False,
     ) -> None:
         """Init params."""
         try:
@@ -47,11 +51,19 @@ class RelikPathExtractor(TransformComponent):
                 "Could not import relik python package. "
                 "Please install it with `pip install relik`."
             )
+
+        if verbose:
+            logging.getLogger("relik").setLevel(logging.INFO)
+        else:
+            logging.getLogger("relik").setLevel(logging.WARNING)
+
         relik_model = relik.Relik.from_pretrained(model)
+
         super().__init__(
             relik_model=relik_model,
             relationship_confidence_threshold=relationship_confidence_threshold,
             num_workers=num_workers,
+            skip_errors=skip_errors,
         )
 
     @classmethod
@@ -62,17 +74,25 @@ class RelikPathExtractor(TransformComponent):
         self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """Extract triples from nodes."""
-        return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
+        result_nodes = []
+        for node in tqdm.tqdm(
+            nodes, desc="Extracting triples", disable=not show_progress
+        ):
+            result_nodes.append(self._extract(node))
 
-    async def _aextract(self, node: BaseNode) -> BaseNode:
+        return result_nodes
+
+    def _extract(self, node: BaseNode) -> BaseNode:
         """Extract triples from a node."""
         assert hasattr(node, "text")
 
         text = node.get_content(metadata_mode="llm")
         try:
             relik_out = self.relik_model(text)
-        except ValueError:
-            triples = []
+        except Exception as e:
+            if self.skip_errors:
+                return node
+            raise ValueError(f"Failed to extract triples from text: {e}")
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
         existing_relations = node.metadata.pop(KG_RELATIONS_KEY, [])
@@ -112,13 +132,4 @@ class RelikPathExtractor(TransformComponent):
         self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """Extract triples from nodes async."""
-        jobs = []
-        for node in nodes:
-            jobs.append(self._aextract(node))
-
-        return await run_jobs(
-            jobs,
-            workers=self.num_workers,
-            show_progress=show_progress,
-            desc="Extracting paths from text",
-        )
+        return self.__call__(nodes, show_progress=show_progress, **kwargs)
