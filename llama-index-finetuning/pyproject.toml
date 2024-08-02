@@ -8,7 +8,7 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["CohereRerankerFinetuneEngine", "EmbeddingAdapterFinetuneEngine", "EmbeddingQAFinetuneDataset", "GradientFinetuneEngine", "MistralAIFinetuneEngine", "OpenAIFinetuneEngine", "SentenceTransformersFinetuneEngine", "generate_cohere_reranker_finetuning_dataset", "generate_qa_embedding_pairs"]
+classes = ["CohereRerankerFinetuneEngine", "EmbeddingAdapterFinetuneEngine", "EmbeddingQAFinetuneDataset", "MistralAIFinetuneEngine", "OpenAIFinetuneEngine", "SentenceTransformersFinetuneEngine", "generate_cohere_reranker_finetuning_dataset", "generate_qa_embedding_pairs"]
 contains_example = false
 import_path = "llama_index.finetuning"
 

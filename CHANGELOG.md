@@ -1,5 +1,93 @@
 # ChangeLog
 
+## [2024-07-31]
+
+### `llama-index-core` [0.10.59]
+
+- Introduce `Workflow`s for event-driven orchestration (#15067)
+- Added feature to context chat engine allowing previous chunks to be inserted into the current context window (#14889)
+- MLflow Integration added to docs (#14977)
+- docs(literalai): add Literal AI integration to documentation (#15023)
+- expand span coverage for query pipeline (#14997)
+- make re-raising error skip constructor during `asyncio_run()` (#14970)
+
+### `llama-index-embeddings-ollama` [0.1.3]
+
+- Add proper async embedding support
+
+### `llama-index-embeddings-textembed` [0.0.1]
+
+- add support for textembed embedding (#14968)
+
+### `llama-index-graph-stores-falkordb` [0.1.5]
+
+- initial implementation FalkorDBPropertyGraphStore (#14936)
+
+### `llama-index-llms-azure-inference` [0.1.1]
+
+- Fix: Azure AI inference integration support for tools (#15044)
+
+### `llama-index-llms-fireworks` [0.1.7]
+
+- Updates to Default model for support for function calling (#15046)
+
+### `llama-index-llms-ollama` [0.2.2]
+
+- toggle for ollama function calling (#14972)
+- Add function calling for Ollama (#14948)
+
+### `llama-index-llms-openllm` [0.2.0]
+
+- update to OpenLLM 0.6 (#14935)
+
+### `llama-index-packs-longrag` [0.1.0]
+
+- Adds a LlamaPack that implements LongRAG (#14916)
+
+### `llama-index-postprocessor-tei-rerank` [0.1.0]
+
+- Support for Re-Ranker via Text Embedding Interface (#15063)
+
+### `llama-index-readers-confluence` [0.1.7]
+
+- confluence reader sort auth parameters priority (#14905)
+
+### `llama-index-readers-file` [0.1.31]
+
+- UnstructuredReader use filename as ID (#14946)
+
+### `llama-index-readers-gitlab` [0.1.0]
+
+- Add GitLab reader integration (#15030)
+
+### `llama-index-readers-google` [0.2.11]
+
+- Fix issue with average ratings being a float vs an int (#15070)
+
+### `llama-index-retrievers-bm25` [0.2.2]
+
+- use proper stemmer in bm25 tokenize (#14965)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.13]
+
+- Fix issue with deleting non-existent index (#14949)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.5]
+
+- disable embeddings for sparse strategy (#15032)
+
+### `llama-index-vector-stores-kdbai` [0.2.0]
+
+- Update default sparse encoder for Hybrid search (#15019)
+
+### `llama-index-vector-stores-milvus` [0.1.22]
+
+- Enhance MilvusVectorStore with flexible index management for overwriting (#15058)
+
+### `llama-index-vector-stores-postgres` [0.1.13]
+
+- Adds option to construct PGVectorStore with a HNSW index (#15024)
+
 ## [2024-07-24]
 
 ### `llama-index-core` [0.10.58]

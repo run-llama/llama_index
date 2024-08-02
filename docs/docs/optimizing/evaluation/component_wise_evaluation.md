@@ -1,6 +1,6 @@
 # Component Wise Evaluation
 
-To do more in-depth evaluation of your pipeline, it helps to break it down into an evaluation of individual components.
+To do more in-depth evaluation of your workflow, it helps to break it down into an evaluation of individual components.
 
 For instance, a particular failure case may be due to a combination of not retrieving the right documents and also the LLM misunderstanding the context and hallucinating an incorrect result. Being able to isolate and deal with these issues separately can help reduce complexity and guide you in a step-by-step manner to a more satisfactory overall result.
 
@@ -20,7 +20,7 @@ Since most publically-available embedding and retrieval models are already bench
 
 For instance, after fine-tuning an embedding model on your dataset, it may be helpful to view whether and by how much its performance degrades on a diverse set of domains. This can be an indication of how much data drift may affect your retrieval accuracy, such as if you add documents to your RAG system outside of your fine-tuning training distribution.
 
-Here is a notebook showing how the BEIR dataset can be used with your retrieval pipeline.
+Here is a notebook showing how the BEIR dataset can be used with your retrieval flow.
 
 - [BEIR Evaluation](../../examples/evaluation/BeirEvaluation.ipynb)
 
@@ -28,7 +28,7 @@ We will be adding more methods to evaluate retrieval soon. This includes evaluat
 
 ## Evaluating the Query Engine Components (e.g. Without Retrieval)
 
-In this case, we may want to evaluate how specific components of a query engine (one which may generate sub-questions or follow-up questions) may perform on a standard benchmark. It can help give an indication of how far behind or ahead your retrieval pipeline is compared to alternate pipelines or models.
+In this case, we may want to evaluate how specific components of a query engine (one which may generate sub-questions or follow-up questions) may perform on a standard benchmark. It can help give an indication of how far behind or ahead your retrieval flow is compared to alternate flows or models.
 
 ### HotpotQA Dataset
 

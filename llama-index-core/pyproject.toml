@@ -43,7 +43,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.10.58"
+version = "0.10.59"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -84,8 +84,9 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pypdf = "*"
-pytest = "7.2.1"
+pytest = "^7.2"
 pytest-asyncio = "0.21.0"
+pytest-cov = "^5.0"
 pytest-dotenv = "0.5.2"
 pytest-mock = "3.11.1"
 rake-nltk = "1.0.6"
@@ -125,13 +126,11 @@ url = "https://pypi.nvidia.com"
 
 [tool.ruff]
 exclude = [
-    "examples",
-    "llama_index/core/_static",
     "notebooks",
 ]
 ignore = [
     "COM812",  # Too aggressive
-    "D212",  # Using D213
+    "D213",  # LlamaIndex uses Google docstring style
     "D417",  # Too aggressive
     "F541",  # Messes with prompts.py
     "TCH002",

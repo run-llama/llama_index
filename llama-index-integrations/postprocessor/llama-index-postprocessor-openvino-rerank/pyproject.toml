@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-postprocessor-openvino-rerank"
 readme = "README.md"
-version = "0.1.6"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -36,7 +36,7 @@ huggingface-hub = "^0.23.0"
 
 [tool.poetry.dependencies.optimum]
 extras = ["openvino"]
-version = "^1.18.0"
+version = "^1.21.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
