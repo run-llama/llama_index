@@ -456,7 +456,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 source_id=record["source_id"],
                 target_id=record["target_id"],
                 label=record["type"],
-                properties=remove_empty_values(record["target_properties"]),
+                properties=remove_empty_values(record["rel_properties"]),
             )
             triples.append([source, rel, target])
         return triples
