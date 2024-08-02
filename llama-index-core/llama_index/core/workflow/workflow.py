@@ -30,7 +30,7 @@ class _WorkflowMeta(type):
 class Workflow(metaclass=_WorkflowMeta):
     def __init__(
         self,
-        timeout: int = 10,
+        timeout: Optional[float] = 10.0,
         disable_validation: bool = False,
         verbose: bool = False,
     ) -> None:
