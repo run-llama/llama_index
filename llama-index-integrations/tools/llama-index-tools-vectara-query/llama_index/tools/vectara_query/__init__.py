@@ -1,4 +1,6 @@
-from llama_index.tools.vectara_query.base import <FILL>
+from llama_index.tools.vectara_query.base import (
+    VectaraQueryToolSpec,
+)
 
 
-__all__ = ["<FILL>"]
+__all__ = ["VectaraQueryToolSpec"]
