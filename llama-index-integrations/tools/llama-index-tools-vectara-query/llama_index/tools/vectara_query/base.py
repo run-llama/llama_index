@@ -1,10 +1,9 @@
-from typing import List
+from typing import List, Dict
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.indices.managed.vectara import VectaraIndex
 
-# from llama_index.indices.managed.vectara.base import VectaraIndex
-from llama_index.legacy.schema import NodeWithScore
+# from llama_index.legacy.schema import NodeWithScore
 
 
 class VectaraQueryToolSpec(BaseToolSpec):
@@ -76,7 +75,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
         )
 
         response = query_engine.query(query)
-        print(f"DEBUG: RECEIVED RESPONSE: {response}")
 
         if str(response) == "None":
             return "Tool failed to generate a response"
@@ -96,7 +94,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.2,
         # include_citations: bool = True # ASK OFER ABOUT HOW THIS WORKS IN VECTARA_AGENT, IF WE WANT IT IN THIS AS WELL.
-    ) -> List[NodeWithScore]:
+    ) -> List[Dict]:
         """
         Makes a query to a Vectara corpus and returns the top search results from the retrieved documents.
 
@@ -127,6 +125,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
         )
 
         response = retriever_engine.retrieve(query)
-        print(f"DEBUG: RECEIVED RESPONSE {response}")
 
-        return response
+        res = []
+        for doc in response:
+            res.append(
+                {"text": doc.node.text, "metadata": doc.node.metadata, "FCS": doc.score}
+            )
+        return res
