@@ -42,7 +42,7 @@ class RelikPathExtractor(TransformComponent):
         relationship_confidence_threshold: float = 0.1,
         skip_errors: bool = False,
         num_workers: int = 4,
-        model_config: Dict[str, any] = {},
+        model_config: Dict[str, Any] = {},
         ignore_self_loops: bool = True,
     ) -> None:
         """Init params."""
