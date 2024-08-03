@@ -1,5 +1,6 @@
 import tqdm
-from typing import Any, List
+import logging
+from typing import Any, List, Dict
 
 from llama_index.core.graph_stores.types import (
     EntityNode,
@@ -33,30 +34,37 @@ class RelikPathExtractor(TransformComponent):
     relationship_confidence_threshold: float
     num_workers: int
     skip_errors: bool
+    ignore_self_loops: bool
 
     def __init__(
         self,
-        model: str = "relik-ie/relik-relation-extraction-small-wikipedia",
+        model: str = "relik-ie/relik-relation-extraction-small",
         relationship_confidence_threshold: float = 0.1,
         skip_errors: bool = False,
         num_workers: int = 4,
+        model_config: Dict[str, any] = {},
+        ignore_self_loops: bool = True,
     ) -> None:
         """Init params."""
         try:
             import relik  # type: ignore
+
+            # Remove default INFO logging
+            logging.getLogger("relik").setLevel(logging.WARNING)
         except ImportError:
             raise ImportError(
                 "Could not import relik python package. "
                 "Please install it with `pip install relik`."
             )
 
-        relik_model = relik.Relik.from_pretrained(model)
+        relik_model = relik.Relik.from_pretrained(model, **model_config)
 
         super().__init__(
             relik_model=relik_model,
             relationship_confidence_threshold=relationship_confidence_threshold,
             num_workers=num_workers,
             skip_errors=skip_errors,
+            ignore_self_loops=ignore_self_loops,
         )
 
     @classmethod
@@ -106,6 +114,9 @@ class RelikPathExtractor(TransformComponent):
         for triple in relik_out.triplets:
             # Ignore relationship if below confidence threshold
             if triple.confidence < self.relationship_confidence_threshold:
+                continue
+            # Ignore self loops
+            if self.ignore_self_loops and triple.subject.text == triple.object.text:
                 continue
             rel_node = Relation(
                 label=triple.label.replace(" ", "_").upper(),
