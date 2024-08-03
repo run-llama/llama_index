@@ -5,14 +5,14 @@
 
 One of the first steps when building an LLM-based application is which LLM to use; you can also use more than one if you wish.
 
-LLMs are used at multiple different stages of your pipeline:
+LLMs are used at multiple different stages of your workflow:
 
 - During **Indexing** you may use an LLM to determine the relevance of data (whether to index it at all) or you may use an LLM to summarize the raw data and index the summaries instead.
 - During **Querying** LLMs can be used in two ways:
   - During **Retrieval** (fetching data from your index) LLMs can be given an array of options (such as multiple different indices) and make decisions about where best to find the information you're looking for. An agentic LLM can also use _tools_ at this stage to query different data sources.
   - During **Response Synthesis** (turning the retrieved data into an answer) an LLM can combine answers to multiple sub-queries into a single coherent answer, or it can transform data, such as from unstructured text to JSON or another programmatic output format.
 
-LlamaIndex provides a single interface to a large number of different LLMs, allowing you to pass in any LLM you choose to any stage of the pipeline. It can be as simple as this:
+LlamaIndex provides a single interface to a large number of different LLMs, allowing you to pass in any LLM you choose to any stage of the flow. It can be as simple as this:
 
 ```python
 from llama_index.llms.openai import OpenAI
@@ -21,7 +21,7 @@ response = OpenAI().complete("Paul Graham is ")
 print(response)
 ```
 
-Usually, you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the pipeline, as in this example:
+Usually, you will instantiate an LLM and pass it to `Settings`, which you then pass to other stages of the flow, as in this example:
 
 ```python
 from llama_index.llms.openai import OpenAI

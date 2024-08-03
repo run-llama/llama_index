@@ -79,8 +79,6 @@ Load data from a specific resource.
 #### Args:
 
 - **`resource (str)`**: The resource identifier.
-- **`ai_prompt (str)`**: The custom AI prompt that specifies what data to
-  extract from the files.
 
 #### Returns:
 
@@ -184,47 +182,5 @@ Get information about a specific resource.
 ```python
 resource = reader.get_resource_info(file_id=test_data["test_csv_id"])
 ```
-
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index).
-
-## Parameters
-
-### box_client
-
-The Box Client represent the set for a Box API connection. It can be created using either the Client Credential Grant (CCG) or JSON Web Tokens (JWT).
-
-It will cache the access tokens, reusing them for subsequent requests, and automatically refresh them when they expire.
-
-### folder_id
-
-You can extract a folder_id directly from its drive URL.
-
-For example, the folder_id of `https://app.box.com/folder/273980493541` is `273980493541`.
-
-### is_recursive
-
-The reader can transverse the folder recursively to get all the files inside the folder, and its sub-folders.
-
-> [!WARNING]
-> There can be an overwhelming amount of files and folders, at which point the reader becomes impractical.
-
-### file_ids
-
-You can extract a file_id directly from its sharable drive URL.
-
-For example, the file_id of `https://app.box.com/file/1584054196674` is `1584054196674`.
-
-The reader expects a list of file ids as strings to load the files.
-
-<!---
-### query_string
-
-You can also filter the files by the query string e.g.: `query_string="name contains 'test'"`
-It gives more flexibility to filter the documents. More info: https://developers.google.com/drive/api/v3/search-files
---->
-
-## Usage
-
-#### With CCG authentication
 
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index).

@@ -1,3 +1,3 @@
-from llama_index.llms.openllm.base import OpenLLM, OpenLLMAPI
+from llama_index.llms.openllm.base import OpenLLM
 
-__all__ = ["OpenLLM", "OpenLLMAPI"]
+__all__ = ["OpenLLM"]

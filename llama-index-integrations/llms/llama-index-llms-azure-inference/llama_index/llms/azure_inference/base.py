@@ -1,7 +1,17 @@
 """Azure AI model inference chat completions client."""
 
 import json
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    TYPE_CHECKING,
+)
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -14,7 +24,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import (
@@ -72,6 +82,25 @@ def to_inference_message(
         )
         new_messages.append(ChatRequestMessage(message_dict))
     return new_messages
+
+
+def to_inference_tool(metadata: Type[BaseModel]) -> Dict[str, Any]:
+    """Converts a tool metadata to a tool dict for Azure AI model inference.
+
+    Args:
+        tool_metadata (Type[ToolMedata]): The metadata of the tool to convert.
+
+    Returns:
+        Dict[str, Any]: The converted tool dict.
+    """
+    return {
+        "type": "function",
+        "function": {
+            "name": metadata.name,
+            "description": metadata.description,
+            "parameters": metadata.get_parameters_dict(),
+        },
+    }
 
 
 def from_inference_message(message: ChatResponseMessage) -> ChatMessage:
@@ -492,3 +521,27 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        tool_dicts = [to_inference_tool(tool.metadata) for tool in tools]
+
+        return {
+            "messages": chat_history,
+            "tools": tool_dicts or None,
+            **kwargs,
+        }

@@ -15,6 +15,7 @@ class LlamaCloudRetriever(BaseRetriever):
         self,
         name: str,
         project_name: str = DEFAULT_PROJECT_NAME,
+        organization_id: Optional[str] = None,
         dense_similarity_top_k: Optional[int] = None,
         sparse_similarity_top_k: Optional[int] = None,
         enable_reranking: Optional[bool] = None,
@@ -35,9 +36,13 @@ class LlamaCloudRetriever(BaseRetriever):
         self._client = get_client(api_key, base_url, app_url, timeout)
         self._aclient = get_aclient(api_key, base_url, app_url, timeout)
 
-        projects = self._client.projects.list_projects(project_name=project_name)
+        projects = self._client.projects.list_projects(
+            project_name=project_name, organization_id=organization_id
+        )
         if len(projects) == 0:
             raise ValueError(f"No project found with name {project_name}")
+
+        self.project_id = projects[0].id
 
         self._dense_similarity_top_k = (
             dense_similarity_top_k if dense_similarity_top_k is not None else OMIT
@@ -73,6 +78,7 @@ class LlamaCloudRetriever(BaseRetriever):
         """Retrieve from the platform."""
         pipelines = self._client.pipelines.search_pipelines(
             project_name=self.project_name,
+            project_id=self.project_id,
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED.value,
         )
@@ -115,6 +121,7 @@ class LlamaCloudRetriever(BaseRetriever):
             project_name=self.project_name,
             pipeline_name=self.name,
             pipeline_type=PipelineType.MANAGED.value,
+            project_id=self.project_id,
         )
         if len(pipelines) == 0:
             raise ValueError(
