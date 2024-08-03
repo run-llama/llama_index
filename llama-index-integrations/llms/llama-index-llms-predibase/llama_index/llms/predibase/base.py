@@ -267,9 +267,6 @@ class PredibaseLLM(CustomLLM):
                         ) from ge
                 else:
                     # The adapter version is omitted, hence look for the adapter ID in the HuggingFace repository.
-                    print(
-                        f"\n[ALEX_TEST] [WOUTPUT] OPTIONS-HF:\n{options} ; TYPE: {type(options)!s}"
-                    )
                     try:
                         response = lorax_client.generate(
                             prompt=prompt,
@@ -278,9 +275,6 @@ class PredibaseLLM(CustomLLM):
                             **options,
                         )
                     except GenerationError as ge:
-                        print(
-                            f"\n[ALEX_TEST] [WOUTPUT] ERROR-HF:\n{ge} ; TYPE: {type(ge)!s}"
-                        )
                         raise ValueError(
                             f"""Either an adapter with the ID "{self.adapter_id}" cannot be found in a HuggingFace repository, \
 or it is incompatible with the base model (please make sure that the adapter configuration is consistent).
