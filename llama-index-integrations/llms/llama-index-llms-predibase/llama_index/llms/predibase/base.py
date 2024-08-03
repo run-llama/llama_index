@@ -180,12 +180,13 @@ class PredibaseLLM(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> "CompletionResponse":
         options: Dict[str, Union[str, float]] = copy.deepcopy(kwargs)
-        options.update(
-            {
+        options: Dict[str, Union[str, float]] = {
+            **{
                 "max_new_tokens": self.max_new_tokens,
                 "temperature": self.temperature,
             }
-        )
+            ** (kwargs or {}),
+        }
 
         response_text: str
 
@@ -247,6 +248,7 @@ class PredibaseLLM(CustomLLM):
                 if self.adapter_version:
                     # Since the adapter version is provided, query the Predibase repository.
                     pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
+                    options.pop("api_token", None)
                     try:
                         response = lorax_client.generate(
                             prompt=prompt,
