@@ -40,8 +40,28 @@ def remove_empty_values(input_dict: Dict) -> Dict:
 
 
 def create_neptune_database_client(
-    host, port, provided_client, credentials_profile_name, region_name, sign, use_https
+    host: str,
+    port: int,
+    provided_client: Any,
+    credentials_profile_name: str,
+    region_name: str,
+    sign: bool,
+    use_https: bool,
 ):
+    """Create a Neptune Database Client.
+
+    Args:
+            host (str): The host endpoint
+            port (int, optional): The port. Defaults to 8182.
+            client (Any, optional): If provided, this is the client that will be used. Defaults to None.
+            credentials_profile_name (Optional[str], optional): If provided this is the credentials profile that will be used. Defaults to None.
+            region_name (Optional[str], optional): The region to use. Defaults to None.
+            sign (bool, optional): True will SigV4 sign all requests, False will not. Defaults to True.
+            use_https (bool, optional): True to use https, False to use http. Defaults to True.
+
+    Returns:
+        Any: The neptune client
+    """
     try:
         client = None
         if provided_client is not None:
@@ -90,8 +110,22 @@ def create_neptune_database_client(
 
 
 def create_neptune_analytics_client(
-    graph_identifier, provided_client, credentials_profile_name, region_name
+    graph_identifier: str,
+    provided_client: Any,
+    credentials_profile_name: str,
+    region_name: str,
 ):
+    """Creates a Neptune Analytics Client.
+
+    Args:
+        graph_identifier (str): The geaph identifier
+        provided_client (Any): A client
+        credentials_profile_name (str): The profile name
+        region_name (str): The region name
+
+    Returns:
+        Any: The client
+    """
     try:
         if not graph_identifier.startswith("g-") or "." in graph_identifier:
             raise ValueError(
@@ -149,7 +183,7 @@ def create_neptune_analytics_client(
             ) from e
 
 
-def refresh_schema(query, summary) -> None:
+def refresh_schema(query: str, summary: Dict) -> None:
     """Refreshes the Neptune graph schema information."""
     types = {
         "str": "STRING",
@@ -176,7 +210,7 @@ def refresh_schema(query, summary) -> None:
         """
 
 
-def _get_triples(query, e_labels: List[str]) -> List[str]:
+def _get_triples(query: str, e_labels: List[str]) -> List[str]:
     """Get the node-edge->node triple combinations."""
     triple_query = """
         MATCH (a)-[e:`{e_label}`]->(b)
@@ -197,7 +231,7 @@ def _get_triples(query, e_labels: List[str]) -> List[str]:
     return triple_schema
 
 
-def _get_node_properties(query, n_labels: List[str], types: Dict) -> List:
+def _get_node_properties(query: str, n_labels: List[str], types: Dict) -> List:
     """Get the node properties for the label."""
     node_properties_query = """
         MATCH (a:`{n_label}`)
@@ -231,7 +265,9 @@ def _get_node_properties(query, n_labels: List[str], types: Dict) -> List:
     return node_properties
 
 
-def _get_edge_properties(query, e_labels: List[str], types: Dict[str, Any]) -> List:
+def _get_edge_properties(
+    query: str, e_labels: List[str], types: Dict[str, Any]
+) -> List:
     """Get the edge properties for the label."""
     edge_properties_query = """
         MATCH ()-[e:`{e_label}`]->()

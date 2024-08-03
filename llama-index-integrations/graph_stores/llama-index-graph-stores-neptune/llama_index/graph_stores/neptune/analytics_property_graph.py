@@ -30,9 +30,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
         )
         self.graph_identifier = graph_identifier
 
-    def structured_query(
-        self, query: str, param_map: Dict[str, Any] | None = None
-    ) -> Any:
+    def structured_query(self, query: str, param_map: Dict[str, Any] = None) -> Any:
         """Run the structured query.
 
         Args:
@@ -66,9 +64,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                 }
             )
 
-    def vector_query(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[List[LabelledNode] | List[float]]:
+    def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[List[Any]]:
         """Query the graph store with a vector store query.
 
         Returns:

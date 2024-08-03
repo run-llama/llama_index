@@ -184,8 +184,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         graph_nodes: List[LabelledNode],
         depth: int = 2,
         limit: int = 30,
-        ignore_rels: List[str] | None = None,
-    ) -> List[Tuple[LabelledNode | Relation]]:
+        ignore_rels: List[str] = None,
+    ) -> List[Tuple[Any]]:
         """Get a depth aware map of relations.
 
         Args:
@@ -286,10 +286,10 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
 
     def delete(
         self,
-        entity_names: List[str] | None = None,
-        relation_names: List[str] | None = None,
-        properties: Dict | None = None,
-        ids: List[str] | None = None,
+        entity_names: List[str] = None,
+        relation_names: List[str] = None,
+        properties: Dict = None,
+        ids: List[str] = None,
     ) -> None:
         """Delete data matching the criteria.
 
@@ -326,9 +326,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
             self.structured_query(cypher + " DETACH DELETE e", param_map=params)
 
     @abstractmethod
-    def structured_query(
-        self, query: str, param_map: Dict[str, Any] | None = None
-    ) -> Any:
+    def structured_query(self, query: str, param_map: Dict[str, Any] = None) -> Any:
         raise NotImplementedError
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
@@ -344,9 +342,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         return self.structured_query(query, params)
 
     @abstractmethod
-    def vector_query(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[List[LabelledNode] | List[float]]:
+    def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[List[Any]]:
         raise NotImplementedError
 
     @abstractmethod

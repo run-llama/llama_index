@@ -39,9 +39,7 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
             host, port, client, credentials_profile_name, region_name, sign, use_https
         )
 
-    def structured_query(
-        self, query: str, param_map: Dict[str, Any] | None = None
-    ) -> Any:
+    def structured_query(self, query: str, param_map: Dict[str, Any] = None) -> Any:
         """Run the structured query.
 
         Args:
@@ -72,9 +70,7 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
                 }
             )
 
-    def vector_query(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> Tuple[List[LabelledNode] | List[float]]:
+    def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[List[Any]]:
         """NOT SUPPORTED.
 
         Args:
