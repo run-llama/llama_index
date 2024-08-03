@@ -1,6 +1,5 @@
 import os
 from typing import Any, Callable, Dict, Optional, Sequence, Union
-import copy
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -179,13 +178,12 @@ class PredibaseLLM(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> "CompletionResponse":
-        options: Dict[str, Union[str, float]] = copy.deepcopy(kwargs)
         options: Dict[str, Union[str, float]] = {
             **{
                 "max_new_tokens": self.max_new_tokens,
                 "temperature": self.temperature,
-            }
-            ** (kwargs or {}),
+            },
+            **(kwargs or {}),
         }
 
         response_text: str
