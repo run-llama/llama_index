@@ -5,7 +5,11 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import AsyncStreamingResponse, Response
+from llama_index.core.base.response.schema import (
+    AsyncStreamingResponse,
+    Response,
+    StreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
@@ -424,7 +428,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             )
             cast(Dict, response.metadata).update(metadata)
             if self._streaming:
-                return cast(AsyncStreamingResponse, response)
+                return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
