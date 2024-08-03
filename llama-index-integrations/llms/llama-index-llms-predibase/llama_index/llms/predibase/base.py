@@ -49,6 +49,7 @@ class PredibaseLLM(CustomLLM):
             predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
             adapter_id="my-adapter-id",  # optional parameter
             adapter_version=3,  # optional parameter (applies to Predibase only)
+            api_token,  # optional parameter for accessing services hosting adapters (e.g., HuggingFace)
             temperature=0.3,
             max_new_tokens=512,
         )
@@ -70,6 +71,10 @@ class PredibaseLLM(CustomLLM):
     adapter_version: str = Field(
         default=None,
         description="The optional version number of fine-tuned adapter use (applies to Predibase only).",
+    )
+    api_token: str = Field(
+        default=None,
+        description="The adapter hosting service API key to use.",
     )
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -98,6 +103,7 @@ class PredibaseLLM(CustomLLM):
         adapter_id: Optional[str] = None,
         adapter_version: Optional[int] = None,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
+        api_token: Optional[str] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         callback_manager: Optional[CallbackManager] = None,
@@ -123,6 +129,7 @@ class PredibaseLLM(CustomLLM):
             predibase_sdk_version=predibase_sdk_version,
             adapter_id=adapter_id,
             adapter_version=adapter_version,
+            api_token=api_token,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             context_window=context_window,
@@ -180,6 +187,7 @@ class PredibaseLLM(CustomLLM):
     ) -> "CompletionResponse":
         options: Dict[str, Union[str, float]] = {
             **{
+                "api_token": self.api_token,
                 "max_new_tokens": self.max_new_tokens,
                 "temperature": self.temperature,
             },
