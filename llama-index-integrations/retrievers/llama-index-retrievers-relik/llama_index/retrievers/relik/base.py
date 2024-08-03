@@ -1,4 +1,3 @@
-import logging
 import tqdm
 from typing import Any, List
 
@@ -26,7 +25,7 @@ class RelikPathExtractor(TransformComponent):
         model (str): The name of the pretrained Relik model to use.
           Default is "relik-ie/relik-relation-extraction-small-wikipedia".
         relationship_confidence_threshold (float): The confidence threshold for
-          filtering relationships. Default is 0.0.
+          filtering relationships. Default is 0.1.
         skip_errors (bool): Whether to skip errors during extraction. Defaults to False.
     """
 
@@ -38,10 +37,9 @@ class RelikPathExtractor(TransformComponent):
     def __init__(
         self,
         model: str = "relik-ie/relik-relation-extraction-small-wikipedia",
-        relationship_confidence_threshold: float = 0.5,
+        relationship_confidence_threshold: float = 0.1,
         skip_errors: bool = False,
         num_workers: int = 4,
-        verbose: bool = False,
     ) -> None:
         """Init params."""
         try:
@@ -51,11 +49,6 @@ class RelikPathExtractor(TransformComponent):
                 "Could not import relik python package. "
                 "Please install it with `pip install relik`."
             )
-
-        if verbose:
-            logging.getLogger("relik").setLevel(logging.INFO)
-        else:
-            logging.getLogger("relik").setLevel(logging.WARNING)
 
         relik_model = relik.Relik.from_pretrained(model)
 
