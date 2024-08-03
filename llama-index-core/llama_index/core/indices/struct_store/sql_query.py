@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
     AsyncStreamingResponse,
     Response,
     StreamingResponse,
@@ -403,7 +404,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         """Get service context."""
         return self._service_context
 
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
             query_bundle
@@ -434,7 +435,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
-    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(
             query_bundle
