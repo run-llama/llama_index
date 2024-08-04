@@ -98,6 +98,7 @@ class Gemini(CustomLLM):
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
         model_name: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         **generate_kwargs: Any,
     ):
         """Creates a new Gemini model interface."""
@@ -125,6 +126,11 @@ class Gemini(CustomLLM):
             config_params["client_options"] = {"api_endpoint": api_base}
         if transport:
             config_params["transport"] = transport
+        if default_headers:
+            default_metadata: Sequence[Dict[str, str]] = []
+            for key, value in default_headers.items():
+                default_metadata.append((key, value))
+            config_params["default_metadata"] = default_metadata
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
         genai.configure(**config_params)
 
