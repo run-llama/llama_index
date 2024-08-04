@@ -421,6 +421,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
+                   r{{.*}} AS rel_properties,
                    t.name AS target_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS target_type,
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
@@ -429,10 +430,11 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
+                   r{{.*}} AS rel_properties,
                    e.name AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
                    t{{.* , embedding: Null, name: Null}} AS target_properties
         }}
-        RETURN source_id, source_type, type, target_id, target_type, source_properties, target_properties"""
+        RETURN source_id, source_type, type, rel_properties, target_id, target_type, source_properties, target_properties"""
         cypher_statement += return_statement
 
         data = self.structured_query(cypher_statement, param_map=params)
@@ -454,6 +456,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 source_id=record["source_id"],
                 target_id=record["target_id"],
                 label=record["type"],
+                properties=remove_empty_values(record["rel_properties"]),
             )
             triples.append([source, rel, target])
         return triples
@@ -482,12 +485,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             WITH distinct rel, idx
             WITH startNode(rel) AS source,
                 type(rel) AS type,
+                rel{{.*}} AS rel_properties,
                 endNode(rel) AS endNode,
                 idx
             LIMIT toInteger($limit)
             RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
                 source{{.* , embedding: Null, id: Null}} AS source_properties,
                 type,
+                rel_properties,
                 endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
                 endNode{{.* , embedding: Null, id: Null}} AS target_properties,
                 idx
@@ -517,6 +522,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 source_id=record["source_id"],
                 target_id=record["target_id"],
                 label=record["type"],
+                properties=remove_empty_values(record["rel_properties"]),
             )
             triples.append([source, rel, target])
 

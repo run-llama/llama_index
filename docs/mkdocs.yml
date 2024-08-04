@@ -119,6 +119,7 @@ nav:
           - ./examples/chat_engine/chat_engine_repl.ipynb
       - Cookbooks:
           - ./examples/cookbooks/GraphRAG_v1.ipynb
+          - ./examples/cookbooks/GraphRAG_v2.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
