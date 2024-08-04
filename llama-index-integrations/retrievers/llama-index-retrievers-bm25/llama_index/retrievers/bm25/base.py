@@ -1,5 +1,8 @@
+import json
 import logging
-from typing import Any, Callable, List, Optional, cast
+import os
+
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -17,6 +20,10 @@ import Stemmer
 
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_PERSIST_ARGS = {"similarity_top_k": "similarity_top_k", "_verbose": "verbose"}
+
+DEFAULT_PERSIST_FILENAME = "retriever.json"
 
 
 class BM25Retriever(BaseRetriever):
@@ -70,7 +77,7 @@ class BM25Retriever(BaseRetriever):
             corpus_tokens = bm25s.tokenize(
                 [node.get_content() for node in nodes],
                 stopwords=language,
-                stemmer=stemmer,
+                stemmer=self.stemmer,
                 show_progress=verbose,
             )
             self.bm25 = bm25s.BM25()
@@ -123,15 +130,27 @@ class BM25Retriever(BaseRetriever):
             verbose=verbose,
         )
 
+    def get_persist_args(self) -> Dict[str, Any]:
+        """Get Persist Args Dict to Save."""
+        return {
+            DEFAULT_PERSIST_ARGS[key]: getattr(self, key)
+            for key in DEFAULT_PERSIST_ARGS
+            if hasattr(self, key)
+        }
+
     def persist(self, path: str, **kwargs: Any) -> None:
         """Persist the retriever to a directory."""
         self.bm25.save(path, corpus=self.corpus, **kwargs)
+        with open(os.path.join(path, DEFAULT_PERSIST_FILENAME), "w") as f:
+            json.dump(self.get_persist_args(), f, indent=2)
 
     @classmethod
     def from_persist_dir(cls, path: str, **kwargs: Any) -> "BM25Retriever":
         """Load the retriever from a directory."""
         bm25 = bm25s.BM25.load(path, load_corpus=True, **kwargs)
-        return cls(existing_bm25=bm25)
+        with open(os.path.join(path, DEFAULT_PERSIST_FILENAME)) as f:
+            retriever_data = json.load(f)
+        return cls(existing_bm25=bm25, **retriever_data)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query = query_bundle.query_str

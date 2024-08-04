@@ -216,7 +216,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
         distance_strategy: Optional[DISTANCE_STRATEGIES] = "COSINE",
         retrieval_strategy: Optional[AsyncRetrievalStrategy] = None,
         metadata_mappings: Optional[Dict[str, Any]] = None,
-        custom_index_settings: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> None:
         nest_asyncio.apply()
@@ -252,7 +251,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
             text_field=text_field,
             vector_field=vector_field,
             metadata_mappings=metadata_mappings,
-            custom_index_settings=custom_index_settings,
         )
 
         super().__init__(
@@ -269,6 +267,11 @@ class ElasticsearchStore(BasePydanticVectorStore):
             distance_strategy=distance_strategy,
             retrieval_strategy=retrieval_strategy,
         )
+
+        # Disable query embeddings when using Sparse vectors or BM25.
+        # ELSER generates its own embeddings server-side
+        if not isinstance(retrieval_strategy, AsyncDenseVectorStrategy):
+            self.is_embedding_query = False
 
     @property
     def client(self) -> Any:
@@ -337,22 +340,24 @@ class ElasticsearchStore(BasePydanticVectorStore):
         if len(nodes) == 0:
             return []
 
-        embeddings: List[List[float]] = []
+        embeddings: Optional[List[List[float]]] = None
         texts: List[str] = []
         metadatas: List[dict] = []
         ids: List[str] = []
         for node in nodes:
             ids.append(node.node_id)
-            embeddings.append(node.get_embedding())
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node, remove_text=True))
 
-        if not self._store.num_dimensions:
-            self._store.num_dimensions = len(embeddings[0])
+        # Generate embeddings when using dense vectors. They are not needed
+        # for other strategies.
+        if isinstance(self.retrieval_strategy, AsyncDenseVectorStrategy):
+            embeddings = []
+            for node in nodes:
+                embeddings.append(node.get_embedding())
 
-        # Omit the vectors argument entirely if embeddings aren't generated.
-        if not any(embeddings):
-            embeddings = None
+            if not self._store.num_dimensions:
+                self._store.num_dimensions = len(embeddings[0])
 
         return await self._store.add_texts(
             texts=texts,

@@ -22,9 +22,8 @@ ccg_conf = CCGConfig(
 )
 auth = BoxCCGAuth(ccg_conf)
 client = BoxClient(auth)
-reader = BoxReader(box_client=client)
 
-box_client = BoxClient(auth)
+reader = BoxReader(box_client=client)
 ```
 
 ### Load data
@@ -58,10 +57,10 @@ processes them into a structured format using a SimpleDirectoryReader.
 
 ```python
 # Using a list of file ids
-docs = reader.load_data(file_ids=[test_data["test_csv_id"]])
+docs = reader.load_data(file_ids=["test_csv_id"])
 
 # Using a folder id
-docs = reader.load_data(folder_id=test_data["test_folder_id"])
+docs = reader.load_data(folder_id="test_folder_id")
 ```
 
 ### Load resource

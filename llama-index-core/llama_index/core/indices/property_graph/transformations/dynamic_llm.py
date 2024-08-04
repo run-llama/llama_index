@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Callable, List, Optional, Union, Tuple
 import re
-
+import json
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.schema import TransformComponent, BaseNode
 from llama_index.core.prompts import PromptTemplate
@@ -34,21 +34,39 @@ def default_parse_dynamic_triplets(
     """
     triplets = []
 
-    # Regular expression to match the structure of each dictionary in the list
-    pattern = r"{'head': '(.*?)', 'head_type': '(.*?)', 'relation': '(.*?)', 'tail': '(.*?)', 'tail_type': '(.*?)'}"
+    try:
+        # Attempt to parse the output as JSON
+        data = json.loads(llm_output)
+        for item in data:
+            head = item.get("head")
+            head_type = item.get("head_type")
+            relation = item.get("relation")
+            tail = item.get("tail")
+            tail_type = item.get("tail_type")
 
-    # Find all matches in the output
-    matches = re.findall(pattern, llm_output)
+            if head and head_type and relation and tail and tail_type:
+                head_node = EntityNode(name=head, label=head_type)
+                tail_node = EntityNode(name=tail, label=tail_type)
+                relation_node = Relation(
+                    source_id=head_node.id, target_id=tail_node.id, label=relation
+                )
+                triplets.append((head_node, relation_node, tail_node))
 
-    for match in matches:
-        head, head_type, relation, tail, tail_type = match
-        head_node = EntityNode(name=head, label=head_type)
-        tail_node = EntityNode(name=tail, label=tail_type)
-        relation_node = Relation(
-            source_id=head_node.id, target_id=tail_node.id, label=relation
-        )
-        triplets.append((head_node, relation_node, tail_node))
+    except json.JSONDecodeError:
+        # Flexible pattern to match the key-value pairs for head, head_type, relation, tail, and tail_type
+        pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']relation[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']tail[\}"\']\s*:\s*[\{"\'](.*?)[\}"\'],\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']'
 
+        # Find all matches in the output
+        matches = re.findall(pattern, llm_output)
+
+        for match in matches:
+            head, head_type, relation, tail, tail_type = match
+            head_node = EntityNode(name=head, label=head_type)
+            tail_node = EntityNode(name=tail, label=tail_type)
+            relation_node = Relation(
+                source_id=head_node.id, target_id=tail_node.id, label=relation
+            )
+            triplets.append((head_node, relation_node, tail_node))
     return triplets
 
 
@@ -67,38 +85,78 @@ def default_parse_dynamic_triplets_with_props(
     """
     triplets = []
 
-    # Regular expression to match the structure of each dictionary in the list
-    pattern = r"{'head': '(.*?)', 'head_type': '(.*?)', 'head_props': {(.*?)}, 'relation': '(.*?)', 'relation_props': {(.*?)}, 'tail': '(.*?)', 'tail_type': '(.*?)', 'tail_props': {(.*?)}}"
+    try:
+        # Attempt to parse the output as JSON
+        data = json.loads(llm_output)
+        for item in data:
+            head = item.get("head")
+            head_type = item.get("head_type")
+            head_props = item.get("head_props", {})
+            relation = item.get("relation")
+            relation_props = item.get("relation_props", {})
+            tail = item.get("tail")
+            tail_type = item.get("tail_type")
+            tail_props = item.get("tail_props", {})
 
-    # Find all matches in the output
-    matches = re.findall(pattern, llm_output)
+            if head and head_type and relation and tail and tail_type:
+                head_node = EntityNode(
+                    name=head, label=head_type, properties=head_props
+                )
+                tail_node = EntityNode(
+                    name=tail, label=tail_type, properties=tail_props
+                )
+                relation_node = Relation(
+                    source_id=head_node.id,
+                    target_id=tail_node.id,
+                    label=relation,
+                    properties=relation_props,
+                )
+                triplets.append((head_node, relation_node, tail_node))
+    except json.JSONDecodeError:
+        # Flexible pattern to match the key-value pairs for head, head_type, head_props, relation, relation_props, tail, tail_type, and tail_props
+        pattern = r'[\{"\']head[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']head_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']head_props[\}"\']\s*:\s*\{(.*?)\}\s*,\s*[\{"\']relation[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']relation_props[\}"\']\s*:\s*\{(.*?)\}\s*,\s*[\{"\']tail[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']tail_type[\}"\']\s*:\s*[\{"\'](.*?)[\}"\']\s*,\s*[\{"\']tail_props[\}"\']\s*:\s*\{(.*?)\}\s*'
 
-    for match in matches:
-        (
-            head,
-            head_type,
-            head_props,
-            relation,
-            relation_props,
-            tail,
-            tail_type,
-            tail_props,
-        ) = match
+        # Find all matches in the output
+        matches = re.findall(pattern, llm_output)
 
-        head_props = dict(re.findall(r"'(.*?)': '(.*?)'", head_props))
-        relation_props = dict(re.findall(r"'(.*?)': '(.*?)'", relation_props))
-        tail_props = dict(re.findall(r"'(.*?)': '(.*?)'", tail_props))
+        for match in matches:
+            (
+                head,
+                head_type,
+                head_props,
+                relation,
+                relation_props,
+                tail,
+                tail_type,
+                tail_props,
+            ) = match
 
-        head_node = EntityNode(name=head, label=head_type, properties=head_props)
-        tail_node = EntityNode(name=tail, label=tail_type, properties=tail_props)
-        relation_node = Relation(
-            source_id=head_node.id,
-            target_id=tail_node.id,
-            label=relation,
-            properties=relation_props,
-        )
-        triplets.append((head_node, relation_node, tail_node))
+            # Use more robust parsing for properties
+            def parse_props(props_str):
+                try:
+                    # Handle mixed quotes and convert to a proper dictionary
+                    props_str = props_str.replace("'", '"')
+                    return json.loads(f"{{{props_str}}}")
+                except json.JSONDecodeError:
+                    return {}
 
+            head_props_dict = parse_props(head_props)
+            relation_props_dict = parse_props(relation_props)
+            tail_props_dict = parse_props(tail_props)
+
+            head_node = EntityNode(
+                name=head, label=head_type, properties=head_props_dict
+            )
+            tail_node = EntityNode(
+                name=tail, label=tail_type, properties=tail_props_dict
+            )
+            relation_node = Relation(
+                source_id=head_node.id,
+                target_id=tail_node.id,
+                label=relation,
+                properties=relation_props_dict,
+            )
+            triplets.append((head_node, relation_node, tail_node))
     return triplets
 
 
@@ -207,9 +265,9 @@ class DynamicLLMPathExtractor(TransformComponent):
             num_workers=num_workers,
             max_triplets_per_chunk=max_triplets_per_chunk,
             allowed_entity_types=allowed_entity_types or [],
-            allowed_entity_props=allowed_entity_props,
+            allowed_entity_props=allowed_entity_props or [],
             allowed_relation_types=allowed_relation_types or [],
-            allowed_relation_props=allowed_relation_props,
+            allowed_relation_props=allowed_relation_props or [],
         )
 
     @classmethod

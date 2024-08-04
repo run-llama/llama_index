@@ -1,3 +1,4 @@
+from typing import Optional
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
 from llama_index.core.schema import Document
@@ -8,6 +9,7 @@ from uuid import uuid4
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
 openai_api_key = os.environ.get("OPENAI_API_KEY", None)
+organization_id = os.environ.get("LLAMA_CLOUD_ORGANIZATION_ID", None)
 
 
 def test_class():
@@ -36,12 +38,13 @@ def test_retrieve():
     assert response is not None and len(response.response) > 0
 
 
+@pytest.mark.parametrize("organization_id", [None, organization_id])
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api keyset"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.integration()
-def test_documents_crud():
+def test_documents_crud(organization_id: Optional[str]):
     os.environ["OPENAI_API_KEY"] = openai_api_key
     documents = [
         Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
@@ -51,6 +54,8 @@ def test_documents_crud():
         name=f"test pipeline {uuid4()}",
         api_key=api_key,
         base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
     )
     docs = index.ref_doc_info
     assert len(docs) == 1
@@ -61,7 +66,8 @@ def test_documents_crud():
     assert all(n.node.metadata["source"] == "test" for n in nodes)
 
     index.insert(
-        Document(text="Hello world.", doc_id="2", metadata={"source": "inserted"})
+        Document(text="Hello world.", doc_id="2", metadata={"source": "inserted"}),
+        verbose=True,
     )
     docs = index.ref_doc_info
     assert len(docs) == 2
@@ -73,7 +79,8 @@ def test_documents_crud():
     assert any(n.node.ref_doc_id == "2" for n in nodes)
 
     index.update_ref_doc(
-        Document(text="Hello world.", doc_id="2", metadata={"source": "updated"})
+        Document(text="Hello world.", doc_id="2", metadata={"source": "updated"}),
+        verbose=True,
     )
     docs = index.ref_doc_info
     assert len(docs) == 2
@@ -90,7 +97,7 @@ def test_documents_crud():
     assert docs["3"].metadata["source"] == "refreshed"
     assert docs["1"].metadata["source"] == "refreshed"
 
-    index.delete_ref_doc("3")
+    index.delete_ref_doc("3", verbose=True)
     docs = index.ref_doc_info
     assert len(docs) == 2
     assert "3" not in docs

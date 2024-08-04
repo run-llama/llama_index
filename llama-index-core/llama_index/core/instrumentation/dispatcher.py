@@ -212,9 +212,14 @@ class Dispatcher(BaseModel):
 
     def span(self, func):
         # The `span` decorator should be idempotent.
-        if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
-            return func
-        setattr(func, DISPATCHER_SPAN_DECORATED_ATTR, True)
+        try:
+            if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
+                return func
+            setattr(func, DISPATCHER_SPAN_DECORATED_ATTR, True)
+        except AttributeError:
+            # instance methods can fail with:
+            # AttributeError: 'method' object has no attribute '__dispatcher_span_decorated__'
+            pass
 
         @wrapt.decorator
         def wrapper(func, instance, args, kwargs):

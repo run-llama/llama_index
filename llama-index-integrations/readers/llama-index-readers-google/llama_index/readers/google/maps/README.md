@@ -4,7 +4,7 @@
 
 This loader reads your upcoming Google Calendar events and parses the relevant info into `Documents`.
 
-As a prerequisite, you will need to create Google Maps API credentials and set up a billing account. See [here](https://developers.google.com/maps/gmp-get-started) for instructions.
+As a prerequisite, you will need to create Google Maps API credentials and set up a billing account. See [here](https://developers.google.com/maps/gmp-get-started) for instructions. Please also enable the [Places API (New)](https://console.cloud.google.com/apis/library/places.googleapis.com) to enable the text search for your API key.
 
 [Here](https://developers.google.com/maps/documentation/places/web-service/text-search). is the detailed information on text search.
 

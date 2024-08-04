@@ -42,7 +42,6 @@ python_tests(
         "!!llama-index-integrations/llms/llama-index-llms-nvidia-triton:poetry#tritonclient",
         "!!llama-index-integrations/llms/llama-index-llms-openllm/pyproject.toml:poetry",
         "!!llama-index-integrations/llms/llama-index-llms-openllm:poetry#openllm",
-        "!!llama-index-integrations/llms/llama-index-llms-openllm:poetry#openllm-client",
         "!!llama-index-integrations/llms/llama-index-llms-portkey/pyproject.toml:poetry",
         "!!llama-index-integrations/llms/llama-index-llms-portkey:poetry#portkey",
         "!!llama-index-integrations/output_parsers/llama-index-output-parsers-guardrails/pyproject.toml:poetry",
