@@ -153,14 +153,22 @@ The `.run()` method is async, so we use await here to wait for the result.
 
 Workflows can be visualized, using the power of type annotations in your step definitions. You can either draw all possible paths through the workflow, or the most recent execution, to help with debugging.
 
+Firs install:
+
+```bash
+pip install llama-index-utils-workflow
+```
+
+Then import and use:
+
 ```python
-from llama_index.core.workflow import (
-    draw_all_possible_paths,
+from llama_index.utils.workflow import (
+    draw_all_possible_flows,
     draw_most_recent_execution,
 )
 
 # Draw all
-draw_all_possible_paths(JokeFlow, filename="joke_flow_all.html")
+draw_all_possible_flows(JokeFlow, filename="joke_flow_all.html")
 
 # Draw an execution
 w = JokeFlow()

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from llama_index.core.workflow.drawing import (
+from llama_index.utils.workflow import (
     draw_all_possible_flows,
     draw_most_recent_execution,
 )

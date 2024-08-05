@@ -1,22 +1,20 @@
-from deprecated import deprecated
+from pyvis.network import Network
 from typing import Optional
 
-from .events import StartEvent, StopEvent
-from .decorators import StepConfig
-from .utils import get_steps_from_class, get_steps_from_instance
-
-
-@deprecated(
-    reason="Install `llama-index-utils-workflow` and use the import `from llama_index.utils.workflow` instead."
+from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.decorators import StepConfig
+from llama_index.core.workflow.utils import (
+    get_steps_from_class,
+    get_steps_from_instance,
 )
+
+
 def draw_all_possible_flows(
     workflow,
     filename: str = "workflow_all_flows.html",
     notebook: bool = False,
 ) -> None:
     """Draws all possible flows of the workflow."""
-    from pyvis.network import Network
-
     net = Network(directed=True, height="750px", width="100%")
 
     # Add the nodes + edge for stop events
@@ -69,17 +67,12 @@ def draw_all_possible_flows(
     net.show(filename, notebook=notebook)
 
 
-@deprecated(
-    reason="Install `llama-index-utils-workflow` and use the import `from llama_index.utils.workflow` instead."
-)
 def draw_most_recent_execution(
     workflow,
     filename: str = "workflow_recent_execution.html",
     notebook: bool = False,
 ) -> None:
     """Draws the most recent execution of the workflow."""
-    from pyvis.network import Network
-
     net = Network(directed=True, height="750px", width="100%")
 
     # Add nodes and edges based on execution history
