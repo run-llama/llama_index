@@ -330,6 +330,7 @@ nav:
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/optimum_intel.ipynb
+          - ./examples/llm/paieas.ipynb
           - ./examples/llm/palm.ipynb
           - ./examples/llm/perplexity.ipynb
           - ./examples/llm/portkey.ipynb
@@ -772,6 +773,7 @@ nav:
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
+          - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
           - ./api_reference/callbacks/promptlayer.md
@@ -933,6 +935,7 @@ nav:
           - ./api_reference/llms/openrouter.md
           - ./api_reference/llms/openvino.md
           - ./api_reference/llms/optimum_intel.md
+          - ./api_reference/llms/paieas.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
           - ./api_reference/llms/portkey.md
@@ -1330,6 +1333,7 @@ nav:
           - ./api_reference/retrievers/pathway.md
           - ./api_reference/retrievers/query_fusion.md
           - ./api_reference/retrievers/recursive.md
+          - ./api_reference/retrievers/relik.md
           - ./api_reference/retrievers/router.md
           - ./api_reference/retrievers/sql.md
           - ./api_reference/retrievers/summary.md
@@ -2089,6 +2093,9 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-tei-rerank
             - ../llama-index-integrations/readers/llama-index-readers-gitlab
             - ../llama-index-integrations/extractors/llama-index-extractors-llama-extract
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-relik
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-literalai
+            - ../llama-index-integrations/llms/llama-index-llms-paieas
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

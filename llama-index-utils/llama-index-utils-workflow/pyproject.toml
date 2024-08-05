@@ -9,10 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.storage.index_store.postgres"
-
-[tool.llamahub.class_authors]
-PostgresIndexStore = "llama-index"
+import_path = "llama_index.utils.workflow"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +19,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index index_store postgres integration"
+description = "llama-index utils for workflows"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-storage-index-store-postgres"
+name = "llama-index-utils-workflow"
 readme = "README.md"
-version = "0.2.0"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.61"
-llama-index-storage-kvstore-postgres = "^0.1.2"
+llama-index-core = "^0.10.1"
+pyvis = "^0.3.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
