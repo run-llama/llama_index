@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.retrievers.relik"
+import_path = "llama_index.extractors.relik"
 
 [tool.llamahub.class_authors]
 RelikPathExtractor = "llama-index"
@@ -22,10 +22,10 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index retrievers relik integration"
+description = "llama-index extractors relik integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-retrievers-relik"
+name = "llama-index-extractors-relik"
 readme = "README.md"
 version = "0.1.0"
 
