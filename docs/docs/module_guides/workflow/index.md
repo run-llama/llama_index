@@ -265,7 +265,7 @@ class MyWorkflow(Workflow):
         # wait for events to finish
         events = ctx.collect_events([MyEventResult, MyEventResult])
         if not events:
-            return
+            return None
 
         return StopEvent(result=events)
 ```
