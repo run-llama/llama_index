@@ -76,6 +76,9 @@ class RankGPTRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
+
         items = {
             "query": query_bundle.query_str,
             "hits": [{"content": node.get_content()} for node in nodes],

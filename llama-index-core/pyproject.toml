@@ -14,7 +14,10 @@ skip = "./llama_index/core/_static,./examples,./experimental,*.csv,*.html,*.json
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
+explicit_package_bases = true
 ignore_missing_imports = true
+namespace_packages = true
+plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]

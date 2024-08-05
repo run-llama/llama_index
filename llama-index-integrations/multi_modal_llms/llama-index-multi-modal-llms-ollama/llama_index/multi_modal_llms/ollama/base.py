@@ -19,7 +19,7 @@ from llama_index.core.multi_modal_llms import (
     MultiModalLLMMetadata,
 )
 from llama_index.core.multi_modal_llms.generic_utils import image_documents_to_base64
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 
 
 def get_additional_kwargs(
@@ -152,7 +152,7 @@ class OllamaMultiModal(MultiModalLLM):
     def complete(
         self,
         prompt: str,
-        image_documents: Sequence[ImageDocument],
+        image_documents: Sequence[ImageNode],
         formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponse:
@@ -174,7 +174,7 @@ class OllamaMultiModal(MultiModalLLM):
     def stream_complete(
         self,
         prompt: str,
-        image_documents: Sequence[ImageDocument],
+        image_documents: Sequence[ImageNode],
         formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponseGen:
@@ -201,7 +201,7 @@ class OllamaMultiModal(MultiModalLLM):
             )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         raise NotImplementedError("Ollama does not support async completion.")
 
@@ -211,7 +211,7 @@ class OllamaMultiModal(MultiModalLLM):
         raise NotImplementedError("Ollama does not support async chat.")
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Ollama does not support async streaming completion.")
 

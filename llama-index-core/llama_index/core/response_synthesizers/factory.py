@@ -10,7 +10,6 @@ from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
 from llama_index.core.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
-from llama_index.core.prompts.prompts import PromptTemplate
 from llama_index.core.response_synthesizers.accumulate import Accumulate
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.response_synthesizers.compact_and_accumulate import (
@@ -50,7 +49,9 @@ def get_response_synthesizer(
     streaming: bool = False,
     structured_answer_filtering: bool = False,
     output_cls: Optional[BaseModel] = None,
-    program_factory: Optional[Callable[[PromptTemplate], BasePydanticProgram]] = None,
+    program_factory: Optional[
+        Callable[[BasePromptTemplate], BasePydanticProgram]
+    ] = None,
     verbose: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""

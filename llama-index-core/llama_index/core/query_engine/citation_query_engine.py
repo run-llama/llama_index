@@ -232,7 +232,7 @@ class CitationQueryEngine(BaseQueryEngine):
                 new_node = NodeWithScore(
                     node=TextNode.parse_obj(node.node), score=node.score
                 )
-                new_node.node.text = text
+                new_node.node.set_content(text)
                 new_nodes.append(new_node)
         return new_nodes
 

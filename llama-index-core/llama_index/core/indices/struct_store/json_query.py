@@ -49,7 +49,9 @@ def default_output_response_parser(llm_output: str) -> str:
     try:
         llm_output_parsed = re.search(
             pattern=r"JSONPath:\s+(.*)", string=llm_output
-        ).groups()[0]
+        ).groups()[
+            0
+        ]  # type: ignore
     except Exception:
         logger.warning(
             f"JSON Path could not be parsed in the LLM response after the 'JSONPath' identifier. "
@@ -61,7 +63,7 @@ def default_output_response_parser(llm_output: str) -> str:
     return llm_output_parsed
 
 
-def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
+def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str, str]:
     """Default output processor that extracts values based on JSON Path expressions."""
     # Post-process the LLM output to remove the JSONPath: prefix
     llm_output = llm_output.replace("JSONPath: ", "").replace("JSON Path: ", "").strip()
@@ -76,7 +78,7 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
         IMPORT_ERROR_MSG = "You need to install jsonpath-ng to use this function!"
         raise ImportError(IMPORT_ERROR_MSG) from exc
 
-    results = {}
+    results: Dict[str, str] = {}
 
     for expression in expressions:
         try:

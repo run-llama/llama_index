@@ -155,9 +155,9 @@ class VectorIndexRetriever(BaseRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[i] = self._docstore.get_node(
+                        query_result.nodes[i] = self._docstore.get_node(  # type: ignore
                             node_id
-                        )  # type: ignore[index]
+                        )
 
         log_vector_store_query_result(query_result)
 

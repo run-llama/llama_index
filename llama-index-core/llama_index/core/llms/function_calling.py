@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union, TYPE_CHECKING, Dict
+from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 from abc import abstractmethod
 import asyncio
 
@@ -29,7 +29,7 @@ class FunctionCallingLLM(LLM):
 
     def chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -55,7 +55,7 @@ class FunctionCallingLLM(LLM):
 
     async def achat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,

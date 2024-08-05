@@ -701,6 +701,8 @@ class AgentRunner(BaseAgentRunner):
                 and chat_response.is_dummy_stream
             )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
+
+        assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     @dispatcher.span
@@ -726,6 +728,8 @@ class AgentRunner(BaseAgentRunner):
                 and chat_response.is_dummy_stream
             )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
+
+        assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     def undo_step(self, task_id: str) -> None:

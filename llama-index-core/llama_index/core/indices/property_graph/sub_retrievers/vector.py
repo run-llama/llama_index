@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Sequence, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
@@ -12,8 +12,8 @@ from llama_index.core.graph_stores.types import (
 from llama_index.core.settings import Settings
 from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle
 from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
     VectorStoreQuery,
-    VectorStore,
     MetadataFilters,
 )
 
@@ -28,7 +28,7 @@ class VectorContextRetriever(BasePGRetriever):
             Whether to include source text in the retrieved nodes. Defaults to True.
         embed_model (Optional[BaseEmbedding], optional):
             The embedding model to use. Defaults to Settings.embed_model.
-        vector_store (Optional[VectorStore], optional):
+        vector_store (Optional[BasePydanticVectorStore], optional):
             The vector store to use. Defaults to None.
             Should be supplied if the graph store does not support vector queries.
         similarity_top_k (int, optional):
@@ -44,7 +44,7 @@ class VectorContextRetriever(BasePGRetriever):
         graph_store: PropertyGraphStore,
         include_text: bool = True,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         similarity_top_k: int = 4,
         path_depth: int = 1,
         similarity_score: Optional[float] = None,
@@ -74,7 +74,7 @@ class VectorContextRetriever(BasePGRetriever):
             **self._retriever_kwargs,
         )
 
-    def _get_kg_ids(self, kg_nodes: List[BaseNode]) -> List[str]:
+    def _get_kg_ids(self, kg_nodes: Sequence[BaseNode]) -> List[str]:
         """Backward compatibility method to get kg_ids from kg_nodes."""
         return [node.metadata.get(VECTOR_SOURCE_KEY, node.id_) for node in kg_nodes]
 

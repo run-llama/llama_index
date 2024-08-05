@@ -66,7 +66,7 @@ class KeywordNodePostprocessor(BaseNodePostprocessor):
 class SimilarityPostprocessor(BaseNodePostprocessor):
     """Similarity-based Node processor."""
 
-    similarity_cutoff: float = Field(default=None)
+    similarity_cutoff: float = Field(default=0.0)
 
     @classmethod
     def class_name(cls) -> str:

@@ -14,7 +14,7 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.indices.utils import truncate_text
-from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
     DEFAULT_TEXT_QA_PROMPT_SEL,
@@ -62,7 +62,10 @@ class DefaultRefineProgram(BasePydanticProgram):
     """
 
     def __init__(
-        self, prompt: BasePromptTemplate, llm: LLMPredictorType, output_cls: BaseModel
+        self,
+        prompt: BasePromptTemplate,
+        llm: LLMPredictorType,
+        output_cls: Optional[BaseModel],
     ):
         self._prompt = prompt
         self._llm = llm
@@ -74,7 +77,7 @@ class DefaultRefineProgram(BasePydanticProgram):
 
     def __call__(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
         if self._output_cls is not None:
-            answer = self._llm.structured_predict(
+            answer = self._llm.structured_predict(  # type: ignore
                 self._output_cls,
                 self._prompt,
                 **kwds,
@@ -89,7 +92,7 @@ class DefaultRefineProgram(BasePydanticProgram):
 
     async def acall(self, *args: Any, **kwds: Any) -> StructuredRefineResponse:
         if self._output_cls is not None:
-            answer = await self._llm.astructured_predict(
+            answer = await self._llm.astructured_predict(  # type: ignore
                 self._output_cls,
                 self._prompt,
                 **kwds,
@@ -137,7 +140,7 @@ class Refine(BaseSynthesizer):
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
         self._structured_answer_filtering = structured_answer_filtering
-        self._output_cls = output_cls
+        self._output_cls = output_cls  # type: ignore
 
         if self._streaming and self._structured_answer_filtering:
             raise ValueError(
@@ -199,20 +202,22 @@ class Refine(BaseSynthesizer):
         dispatcher.event(GetResponseEndEvent())
         return response
 
-    def _default_program_factory(self, prompt: PromptTemplate) -> BasePydanticProgram:
+    def _default_program_factory(
+        self, prompt: BasePromptTemplate
+    ) -> BasePydanticProgram:
         if self._structured_answer_filtering:
             from llama_index.core.program.utils import get_program_for_llm
 
             return get_program_for_llm(
-                StructuredRefineResponse,
+                StructuredRefineResponse,  # type: ignore
                 prompt,
-                self._llm,
+                self._llm,  # type: ignore
                 verbose=self._verbose,
             )
         else:
             return DefaultRefineProgram(
                 prompt=prompt,
-                llm=self._llm,
+                llm=self._llm,  # type: ignore
                 output_cls=self._output_cls,
             )
 

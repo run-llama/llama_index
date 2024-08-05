@@ -121,7 +121,11 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
 
         llm_response = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
-            image_documents=[image_node.node for image_node in image_nodes],
+            image_documents=[
+                image_node.node
+                for image_node in image_nodes
+                if isinstance(image_node.node, ImageNode)
+            ],
         )
         return Response(
             response=str(llm_response),
@@ -132,15 +136,19 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
     def _get_response_with_images(
         self,
         prompt_str: str,
-        image_nodes: List[ImageNode],
+        image_nodes: List[NodeWithScore],
     ) -> RESPONSE_TYPE:
+        assert all(isinstance(node.node, ImageNode) for node in image_nodes)
+
         fmt_prompt = self._image_qa_template.format(
             query_str=prompt_str,
         )
 
         llm_response = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
-            image_documents=[image_node.node for image_node in image_nodes],
+            image_documents=[
+                node.node for node in image_nodes if isinstance(node.node, ImageNode)
+            ],
         )
         return Response(
             response=str(llm_response),
@@ -161,9 +169,14 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         fmt_prompt = self._text_qa_template.format(
             context_str=context_str, query_str=query_bundle.query_str
         )
+
         llm_response = await self._multi_modal_llm.acomplete(
             prompt=fmt_prompt,
-            image_documents=[image_node.node for image_node in image_nodes],
+            image_documents=[
+                image_node.node
+                for image_node in image_nodes
+                if isinstance(image_node.node, ImageNode)
+            ],
         )
         return Response(
             response=str(llm_response),

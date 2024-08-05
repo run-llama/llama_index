@@ -27,7 +27,7 @@ from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
-from llama_index.core.schema import BaseNode, ImageNode
+from llama_index.core.schema import BaseNode, ImageNode, TextNode
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 from llama_index.core.storage.storage_context import StorageContext
@@ -201,8 +201,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         id_to_text_embed_map = None
 
         if is_image:
+            assert all(isinstance(node, ImageNode) for node in nodes)
             id_to_embed_map = embed_image_nodes(
-                nodes,
+                nodes,  # type: ignore
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
@@ -215,7 +216,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                     show_progress=show_progress,
                 )
                 # TODO: refactor this change of image embed model to same as text
-                self._image_embed_model = self._embed_model
+                self._image_embed_model = self._embed_model  # type: ignore
 
         else:
             id_to_embed_map = embed_nodes(
@@ -230,6 +231,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             result = node.copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
+                assert isinstance(result, ImageNode)
                 text_embedding = id_to_text_embed_map[node.node_id]
                 result.text_embedding = text_embedding
                 result.embedding = (
@@ -253,8 +255,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         id_to_text_embed_map = None
 
         if is_image:
+            assert all(isinstance(node, ImageNode) for node in nodes)
             id_to_embed_map = await async_embed_image_nodes(
-                nodes,
+                nodes,  # type: ignore
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
@@ -266,7 +269,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                     show_progress=show_progress,
                 )
                 # TODO: refactor this change of image embed model to same as text
-                self._image_embed_model = self._embed_model
+                self._image_embed_model = self._embed_model  # type: ignore
 
         else:
             id_to_embed_map = await async_embed_nodes(
@@ -281,6 +284,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             result = node.copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
+                assert isinstance(result, ImageNode)
                 text_embedding = id_to_text_embed_map[node.node_id]
                 result.text_embedding = text_embedding
                 result.embedding = (
@@ -308,7 +312,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         for node in nodes:
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if node.text:
+            if isinstance(node, TextNode) and node.text:
                 text_nodes.append(node)
 
         if len(text_nodes) > 0:
@@ -324,7 +328,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         if len(image_nodes) > 0:
             # embed image nodes as images directly
-            image_nodes = await self._aget_node_with_embedding(
+            image_nodes = await self._aget_node_with_embedding(  # type: ignore
                 image_nodes,
                 show_progress,
                 is_image=True,
@@ -362,19 +366,19 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             return
 
         image_nodes: List[ImageNode] = []
-        text_nodes: List[BaseNode] = []
+        text_nodes: List[TextNode] = []
         new_text_ids: List[str] = []
         new_img_ids: List[str] = []
 
         for node in nodes:
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if node.text:
+            if isinstance(node, TextNode) and node.text:
                 text_nodes.append(node)
 
         if len(text_nodes) > 0:
             # embed all nodes as text - include image nodes that have text attached
-            text_nodes = self._get_node_with_embedding(
+            text_nodes = self._get_node_with_embedding(  # type: ignore
                 text_nodes, show_progress, is_image=False
             )
             new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
@@ -386,7 +390,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if len(image_nodes) > 0:
             # embed image nodes as images directly
             # check if we should use text embedding for images instead of default
-            image_nodes = self._get_node_with_embedding(
+            image_nodes = self._get_node_with_embedding(  # type: ignore
                 image_nodes,
                 show_progress,
                 is_image=True,

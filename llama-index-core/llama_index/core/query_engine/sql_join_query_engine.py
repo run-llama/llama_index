@@ -222,7 +222,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
 
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
 
-        self._selector = selector or get_selector_from_llm(self._llm, is_multi=False)
+        self._selector = selector or get_selector_from_llm(self._llm, is_multi=False)  # type: ignore
         assert isinstance(self._selector, (LLMSingleSelector, PydanticSingleSelector))
 
         self._sql_join_synthesis_prompt = (

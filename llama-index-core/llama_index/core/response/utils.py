@@ -1,6 +1,6 @@
 """Utilities for response."""
 
-from typing import Generator
+from typing import AsyncGenerator, Generator
 
 
 def get_response_text(response_gen: Generator) -> str:
@@ -11,7 +11,7 @@ def get_response_text(response_gen: Generator) -> str:
     return response_text
 
 
-async def aget_response_text(response_gen: Generator) -> str:
+async def aget_response_text(response_gen: AsyncGenerator) -> str:
     """Get response text."""
     response_text = ""
     async for response in response_gen:

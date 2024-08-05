@@ -13,7 +13,6 @@ from llama_index.core.question_gen.prompts import (
 from llama_index.core.question_gen.types import BaseQuestionGenerator, SubQuestion
 from llama_index.core.schema import QueryBundle
 from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.settings import Settings, llm_from_settings_or_context
 from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.types import BaseOutputParser
@@ -34,7 +33,7 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
     @classmethod
     def from_defaults(
         cls,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         service_context: Optional[ServiceContext] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
@@ -63,7 +62,8 @@ class LLMQuestionGenerator(BaseQuestionGenerator):
             if output_parser is None:
                 output_parser = SubQuestionOutputParser()
             self._prompt = PromptTemplate(
-                prompts["question_gen_prompt"].template, output_parser=output_parser
+                prompts["question_gen_prompt"].get_template(llm=self._llm),
+                output_parser=output_parser,
             )
 
     def generate(

@@ -69,18 +69,20 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
         pass
 
     @abstractmethod
-    def __call__(self, *args: Any, **kwds: Any) -> Model:
+    def __call__(self, *args: Any, **kwargs: Any) -> Model:
         pass
 
-    async def acall(self, *args: Any, **kwds: Any) -> Model:
-        return self(*args, **kwds)
+    async def acall(self, *args: Any, **kwargs: Any) -> Model:
+        return self(*args, **kwargs)
 
-    def stream_call(self, *args: Any, **kwds: Any) -> Generator[Model, None, None]:
+    def stream_call(
+        self, *args: Any, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
         raise NotImplementedError("stream_call is not supported by default.")
 
     async def astream_call(
-        self, *args: Any, **kwds: Any
-    ) -> AsyncGenerator[Model, None]:
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
         raise NotImplementedError("astream_call is not supported by default.")
 
 
