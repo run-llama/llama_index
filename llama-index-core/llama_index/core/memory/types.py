@@ -25,8 +25,7 @@ class BaseMemory(BaseComponent):
     @abstractmethod
     def from_defaults(
         cls,
-        chat_history: Optional[List[ChatMessage]] = None,
-        llm: Optional[LLM] = None,
+        **kwargs: Any,
     ) -> "BaseMemory":
         """Create a chat memory from defaults."""
 
@@ -76,6 +75,7 @@ class BaseChatStoreMemory(BaseMemory):
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
+        **kwargs: Any,
     ) -> "BaseChatStoreMemory":
         """Create a chat memory from defaults."""
 

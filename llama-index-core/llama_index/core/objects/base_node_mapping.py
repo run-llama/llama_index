@@ -57,10 +57,10 @@ class BaseObjectNodeMapping(Generic[OT]):
         """
 
     @abstractmethod
-    def to_node(self, obj: OT) -> TextNode:
+    def to_node(self, obj: OT) -> BaseNode:
         """To node."""
 
-    def to_nodes(self, objs: Sequence[OT]) -> Sequence[TextNode]:
+    def to_nodes(self, objs: Sequence[OT]) -> Sequence[BaseNode]:
         return [self.to_node(obj) for obj in objs]
 
     def from_node(self, node: BaseNode) -> OT:

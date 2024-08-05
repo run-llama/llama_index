@@ -22,7 +22,7 @@ from llama_index.core.llms.llm import (
     stream_completion_response_to_tokens,
 )
 from llama_index.core.llms.utils import LLMType, resolve_llm
-from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.schema import BaseComponent
 from llama_index.core.types import PydanticProgramMode, TokenAsyncGen, TokenGen
 from typing_extensions import Self
@@ -179,7 +179,7 @@ class LLMPredictor(BaseLLMPredictor):
     def _run_program(
         self,
         output_cls: BaseModel,
-        prompt: PromptTemplate,
+        prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
         from llama_index.core.program.utils import get_program_for_llm
@@ -197,7 +197,7 @@ class LLMPredictor(BaseLLMPredictor):
     async def _arun_program(
         self,
         output_cls: BaseModel,
-        prompt: PromptTemplate,
+        prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
         from llama_index.core.program.utils import get_program_for_llm

@@ -292,8 +292,8 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         nodes = []
         edges = []
         for node in self.graph.nodes.values():
-            node = {"id": node.id, "properties": {"label": node.id}}
-            nodes.append(node)
+            node_dict = {"id": node.id, "properties": {"label": node.id}}
+            nodes.append(node_dict)
         for triplet in self.graph.triplets:
             edge = {
                 "id": triplet[1],
@@ -304,4 +304,4 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             edges.append(edge)
         w.nodes = nodes
         w.edges = edges
-        display(w)
+        display(w)  # type: ignore[name-defined]

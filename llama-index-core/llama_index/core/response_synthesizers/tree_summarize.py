@@ -96,7 +96,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
                 else:
-                    response = await self._llm.astructured_predict(
+                    response = await self._llm.astructured_predict(  # type: ignore
                         self._output_cls,
                         summary_template,
                         context_str=text_chunks[0],
@@ -119,7 +119,7 @@ class TreeSummarize(BaseSynthesizer):
                 ]
             else:
                 tasks = [
-                    self._llm.astructured_predict(
+                    self._llm.astructured_predict(  # type: ignore
                         self._output_cls,
                         summary_template,
                         context_str=text_chunk,
@@ -172,7 +172,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
                 else:
-                    response = self._llm.structured_predict(
+                    response = self._llm.structured_predict(  # type: ignore
                         self._output_cls,
                         summary_template,
                         context_str=text_chunks[0],
@@ -195,7 +195,7 @@ class TreeSummarize(BaseSynthesizer):
                     ]
                 else:
                     tasks = [
-                        self._llm.astructured_predict(
+                        self._llm.astructured_predict(  # type: ignore
                             self._output_cls,
                             summary_template,
                             context_str=text_chunk,
@@ -222,7 +222,7 @@ class TreeSummarize(BaseSynthesizer):
                     ]
                 else:
                     summaries = [
-                        self._llm.structured_predict(
+                        self._llm.structured_predict(  # type: ignore
                             self._output_cls,
                             summary_template,
                             context_str=text_chunk,

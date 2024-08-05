@@ -425,7 +425,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             cast(Dict, response.metadata).update(metadata)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
@@ -453,7 +453,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             cast(Dict, response.metadata).update(metadata)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
 

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -157,7 +157,7 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -167,11 +167,10 @@ class ContextChatEngine(BaseChatEngine):
 
         # If the fetched context is completely empty
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
                 [
                     n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
+                    for n in prev_chunks
                 ]
             )
 
@@ -181,11 +180,16 @@ class ContextChatEngine(BaseChatEngine):
             )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        prefix_messages_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
+
+        if hasattr(self._memory, "tokenizer_fn"):
+            prefix_messages_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([(m.content or "") for m in prefix_messages])
+                )
             )
-        )
+        else:
+            prefix_messages_token_count = 0
+
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=prefix_messages_token_count
         )
@@ -211,7 +215,7 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -222,11 +226,10 @@ class ContextChatEngine(BaseChatEngine):
 
         # If the fetched context is completely empty
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
                 [
                     n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
+                    for n in prev_chunks
                 ]
             )
 
@@ -236,11 +239,16 @@ class ContextChatEngine(BaseChatEngine):
             )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
+
+        if hasattr(self._memory, "tokenizer_fn"):
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([(m.content or "") for m in prefix_messages])
+                )
             )
-        )
+        else:
+            initial_token_count = 0
+
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -269,7 +277,7 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[Sequence[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -279,11 +287,10 @@ class ContextChatEngine(BaseChatEngine):
 
         # If the fetched context is completely empty
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
                 [
                     n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
+                    for n in prev_chunks
                 ]
             )
 
@@ -293,11 +300,16 @@ class ContextChatEngine(BaseChatEngine):
             )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
+
+        if hasattr(self._memory, "tokenizer_fn"):
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([(m.content or "") for m in prefix_messages])
+                )
             )
-        )
+        else:
+            initial_token_count = 0
+
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )
@@ -324,7 +336,7 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[Sequence[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -334,11 +346,10 @@ class ContextChatEngine(BaseChatEngine):
 
         # If the fetched context is completely empty
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
             context_str = "\n\n".join(
                 [
                     n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
+                    for n in prev_chunks
                 ]
             )
 
@@ -348,11 +359,16 @@ class ContextChatEngine(BaseChatEngine):
             )
 
         prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
+
+        if hasattr(self._memory, "tokenizer_fn"):
+            initial_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join([(m.content or "") for m in prefix_messages])
+                )
             )
-        )
+        else:
+            initial_token_count = 0
+
         all_messages = prefix_messages + self._memory.get(
             initial_token_count=initial_token_count
         )

@@ -5,7 +5,7 @@ from typing import Any, List, Type
 from llama_index.core.bridge.pydantic import BaseModel, Field, create_model
 from llama_index.core.llms.llm import LLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
-from llama_index.core.prompts.base import PromptTemplate
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.types import BasePydanticProgram, PydanticProgramMode
 
 
@@ -33,7 +33,7 @@ def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
 
 def get_program_for_llm(
     output_cls: BaseModel,
-    prompt: PromptTemplate,
+    prompt: BasePromptTemplate,
     llm: LLM,
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     **kwargs: Any,

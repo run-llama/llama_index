@@ -1,5 +1,5 @@
 from contextvars import Token
-from typing import Any, List, Optional, Dict, Protocol
+from typing import Any, Callable, List, Optional, Dict, Protocol
 import inspect
 import uuid
 from deprecated import deprecated
@@ -210,7 +210,7 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span(self, func):
+    def span(self, func) -> Any:
         # The `span` decorator should be idempotent.
         try:
             if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
@@ -222,7 +222,7 @@ class Dispatcher(BaseModel):
             pass
 
         @wrapt.decorator
-        def wrapper(func, instance, args, kwargs):
+        def wrapper(func: Callable, instance: Any, args: list, kwargs: dict) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
 
@@ -247,7 +247,9 @@ class Dispatcher(BaseModel):
                 active_span_id.reset(token)
 
         @wrapt.decorator
-        async def async_wrapper(func, instance, args, kwargs):
+        async def async_wrapper(
+            func: Callable, instance: Any, args: list, kwargs: dict
+        ) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
 

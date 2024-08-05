@@ -346,13 +346,13 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
     ) -> List[str]:
         """Add nodes to vector store."""
 
     async def async_add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """
