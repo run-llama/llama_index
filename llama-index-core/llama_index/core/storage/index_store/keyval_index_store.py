@@ -11,6 +11,7 @@ from llama_index.core.storage.kvstore.types import BaseKVStore
 DEFAULT_NAMESPACE = "index_store"
 DEFAULT_COLLECTION_SUFFIX = "/data"
 
+
 class KVIndexStore(BaseIndexStore):
     """Key-Value Index store.
 
@@ -18,10 +19,15 @@ class KVIndexStore(BaseIndexStore):
         kvstore (BaseKVStore): key-value store
         namespace (str): namespace for the index store
         collection_suffix (str): suffix for the collection name
-        
+
     """
 
-    def __init__(self, kvstore: BaseKVStore, namespace: Optional[str] = None, collection_suffix: Optional[str]=None) -> None:
+    def __init__(
+        self,
+        kvstore: BaseKVStore,
+        namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
+    ) -> None:
         """Init a KVIndexStore."""
         self._kvstore = kvstore
         self._namespace = namespace or DEFAULT_NAMESPACE
