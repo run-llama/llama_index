@@ -130,6 +130,8 @@ class Gemini(CustomLLM):
             default_metadata: Sequence[Dict[str, str]] = []
             for key, value in default_headers.items():
                 default_metadata.append((key, value))
+            # `default_metadata` contains (key, value) pairs that will be sent with every request.
+            # When using `transport="rest"`, these will be sent as HTTP headers.
             config_params["default_metadata"] = default_metadata
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
         genai.configure(**config_params)
