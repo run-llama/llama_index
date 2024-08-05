@@ -23,11 +23,11 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
-        tags: Dict[str, Any] = {},
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> SimpleSpan:
         """Create a span."""
-        return SimpleSpan(id_=id_, parent_id=parent_span_id, tags=tags)
+        return SimpleSpan(id_=id_, parent_id=parent_span_id, tags=tags or {})
 
     def prepare_to_exit_span(
         self,

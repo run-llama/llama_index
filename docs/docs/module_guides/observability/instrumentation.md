@@ -191,7 +191,7 @@ class MyCustomSpanHandler(BaseSpanHandler[MyCustomSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
-        tags: Dict[str, Any] = {},
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Optional[MyCustomSpan]:
         """Create a span."""

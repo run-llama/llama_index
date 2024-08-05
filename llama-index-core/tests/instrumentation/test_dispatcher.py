@@ -671,7 +671,7 @@ def test_context_nesting():
             bound_args: inspect.BoundArguments,
             instance: Optional[Any] = None,
             parent_span_id: Optional[str] = None,
-            tags: Dict[str, Any] = {},
+            tags: Optional[Dict[str, Any]] = None,
             **kwargs: Any,
         ) -> None:
             r, n = bound_args.args[:2]

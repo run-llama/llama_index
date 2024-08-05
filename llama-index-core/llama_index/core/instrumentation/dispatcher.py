@@ -153,7 +153,7 @@ class Dispatcher(BaseModel):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_id: Optional[str] = None,
-        tags: Dict[str, Any] = {},
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""

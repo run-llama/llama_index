@@ -100,7 +100,7 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         bound_args: BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
-        tags: Dict[str, Any] = {},
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> SimpleSpan:
         self._shared_handler_state.is_agent_chat_span[id_] = False
