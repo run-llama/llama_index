@@ -5,7 +5,7 @@ from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.llms.paieas import PaiEas
 
-should_skip = os.environ.get("PAIEAS_API_KEY", None) is not None
+should_skip = os.environ.get("PAIEAS_API_KEY", None) is None
 
 
 def test_text_inference_embedding_class():
