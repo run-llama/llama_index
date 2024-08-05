@@ -34,4 +34,4 @@ jobs:
         run: pip install ./llama-index-core/ mypy
       - name: Run MyPy
         shell: bash
-        run: cd ./llama-index-core/ && mypy --python-version=3.8 --namespace-packages --explicit-package-bases --disallow-untyped-defs --ignore-missing-imports llama_index
+        run: cd ./llama-index-core/ && poetry run mypy llama_index
