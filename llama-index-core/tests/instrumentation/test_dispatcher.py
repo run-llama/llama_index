@@ -12,6 +12,7 @@ from asyncio import (
     AbstractEventLoop,
 )
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from random import random
 from threading import Lock
 from typing import Callable, Optional, Any, Dict, List
@@ -21,7 +22,7 @@ import wrapt
 
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation import DispatcherSpanMixin
-from llama_index.core.instrumentation.dispatcher import Dispatcher
+from llama_index.core.instrumentation.dispatcher import Dispatcher, instrument_tags
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import BaseSpan
@@ -155,6 +156,7 @@ def test_dispatcher_span_args(mock_uuid, mock_span_enter, mock_span_exit):
         "bound_args": bound_args,
         "instance": None,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -191,6 +193,7 @@ def test_dispatcher_span_args_with_instance(mock_uuid, mock_span_enter, mock_spa
         "bound_args": bound_args,
         "instance": instance,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -304,6 +307,7 @@ async def test_dispatcher_async_span_args(mock_uuid, mock_span_enter, mock_span_
         "bound_args": bound_args,
         "instance": None,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -343,6 +347,7 @@ async def test_dispatcher_async_span_args_with_instance(
         "bound_args": bound_args,
         "instance": instance,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -503,6 +508,64 @@ async def test_dispatcher_async_fire_event(
     mock_span_exit.call_count == 3
 
 
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+@patch.object(Dispatcher, "span_enter")
+async def test_dispatcher_attaches_tags_to_events_and_spans(
+    mock_span_enter: MagicMock,
+    use_async: bool,
+):
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+    test_tags = {"test_tag_key": "test_tag_value"}
+
+    # Check that tags are set when using context manager
+    with instrument_tags(test_tags):
+        if use_async:
+            await async_func_with_event(a=3, c=5)
+        else:
+            func_with_event(a=3, c=5)
+
+    mock_span_enter.assert_called_once()
+    assert mock_span_enter.call_args[1]["tags"] == test_tags
+    assert all(e.tags == test_tags for e in event_handler.events)
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_dispatcher_attaches_tags_to_concurrent_events(
+    mock_span_enter: MagicMock,
+):
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    num_functions = 5
+    test_tags = [{"test_tag_key": num} for num in range(num_functions)]
+    test_tags_set = {str(tag) for tag in test_tags}
+
+    def run_func_with_tags(tag):
+        with instrument_tags(tag):
+            func_with_event(3, c=5)
+
+    # Run functions concurrently
+    futures = []
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        for tag in test_tags:
+            futures.append(executor.submit(run_func_with_tags, tag))
+
+    for future in futures:
+        future.result()
+
+    # Ensure that each function recorded a span and event with the tags
+    assert len(mock_span_enter.call_args_list) == num_functions
+    assert len(event_handler.events) == num_functions
+    actual_span_tags = {
+        str(call_kwargs["tags"]) for _, call_kwargs in mock_span_enter.call_args_list
+    }
+    actual_event_tags = {str(e.tags) for e in event_handler.events}
+    assert actual_span_tags == test_tags_set
+    assert actual_event_tags == test_tags_set
+
+
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
@@ -608,6 +671,7 @@ def test_context_nesting():
             bound_args: inspect.BoundArguments,
             instance: Optional[Any] = None,
             parent_span_id: Optional[str] = None,
+            tags: Optional[Dict[str, Any]] = None,
             **kwargs: Any,
         ) -> None:
             r, n = bound_args.args[:2]
