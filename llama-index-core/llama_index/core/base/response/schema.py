@@ -180,7 +180,7 @@ class AsyncStreamingResponse:
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        return asyncio_run(self._async_str)
+        return asyncio_run(self._async_str())
 
     async def _async_str(self) -> str:
         """Convert to string representation."""

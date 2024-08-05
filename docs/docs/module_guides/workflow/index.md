@@ -52,7 +52,7 @@ class JokeFlow(Workflow):
 
     @step()
     async def generate_joke(self, ev: StartEvent) -> JokeEvent:
-        topic = ev.get("topic")
+        topic = ev.topic
 
         prompt = f"Write your best joke about {topic}."
         response = await self.llm.acomplete(prompt)
@@ -101,7 +101,7 @@ class JokeFlow(Workflow):
 
     @step()
     async def generate_joke(self, ev: StartEvent) -> JokeEvent:
-        topic = ev.get("topic")
+        topic = ev.topic
 
         prompt = f"Write your best joke about {topic}."
         response = await self.llm.acomplete(prompt)
@@ -110,7 +110,9 @@ class JokeFlow(Workflow):
     ...
 ```
 
-Here, we come to the entry-point of our workflow. While events are use-defined, there are two special-case events, the `StartEvent` and the `StopEvent`. Here, the `StartEvent` signifies where to send the initial workflow input. Since the input can be anything, its accessed safely using the `.get()` method.
+Here, we come to the entry-point of our workflow. While events are use-defined, there are two special-case events, the `StartEvent` and the `StopEvent`. Here, the `StartEvent` signifies where to send the initial workflow input.
+
+The `StartEvent` is a bit of a special object since it can hold arbitrary attributes. Here, we accessed the topic with `ev.topic`, which would raise an error if it wasn't there. You could also do `ev.get("topic")` to handle the case where the attribute might not be there without raising an error.
 
 At this point, you may have noticed that we haven't explicitly told the workflow what events are handled by which steps. Instead, the `@step()` decorator is used to infer the input and output types of each step. Furthermore, these inferred input and output types are also used to verify for you that the workflow is valid before running!
 
@@ -252,7 +254,7 @@ joke_flow = Workflow(timeout=60, verbose=True)
 
 @step(workflow=joke_flow)
 async def generate_joke(ev: StartEvent) -> JokeEvent:
-    topic = ev.get("topic")
+    topic = ev.topic
 
     prompt = f"Write your best joke about {topic}."
     response = await llm.acomplete(prompt)

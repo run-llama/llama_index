@@ -1,5 +1,35 @@
 # ChangeLog
 
+## [2024-02-02]
+
+### `llama-index-core` [0.10.60]
+
+- update `StartEvent` usage to allow for dot notation attribute access (#15124)
+- Add GraphRAGV2 notebook (#15119)
+- Fixed minor bug in DynamicLLMPathExtractor as well as default output parsers not working (#15085)
+- update typing for workflow timeouts (#15102)
+- fix(sql_wrapper): dont mention foreign keys when there is none (#14998)
+
+### `llama-index-graph-stores-neo4j` [0.2.11]
+
+- fix neo4j retrieving relation properties (#15111) (#15108)
+
+### `llama-index-llms-vllm` [0.1.9]
+
+- Update base.py to use @atexit for cleanup (#15047)
+
+### `llama-index-vector-stores-pinecone` [0.1.9]
+
+- bump pinecone client version deps (#15121)
+
+### `llama-index-vector-stores-redis` [0.2.1]
+
+- Handle nested MetadataFilters for Redis vector store (#15093)
+
+### `llama-index-vector-stores-wordlift` [0.2.0]
+
+- Update WordLift Vector Store to use new client package (#15045)
+
 ## [2024-07-31]
 
 ### `llama-index-core` [0.10.59]
