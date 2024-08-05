@@ -122,7 +122,7 @@ llama_index.core.set_global_handler("arize_phoenix")
 [Literal AI](https://literalai.com/) is the go-to LLM evaluation and observability solution, enabling engineering and product teams to ship LLM applications reliably, faster and at scale. This is possible through a collaborative development cycle involving prompt engineering, LLM observability, LLM evaluation and LLM monitoring. Conversation Threads and Agent Runs can be automatically logged on Literal AI.
 
 The simplest way to get started and try out Literal AI is to signup on our [cloud instance](https://cloud.getliteral.ai/).
-You can then navigate to **Settings**, grab your API key, and start logging !
+You can then navigate to **Settings**, grab your API key, and start logging!
 
 #### Usage Pattern
 
