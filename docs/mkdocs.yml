@@ -1040,6 +1040,7 @@ nav:
           - ./api_reference/extractors/marvin.md
           - ./api_reference/extractors/pydantic.md
           - ./api_reference/extractors/question.md
+          - ./api_reference/extractors/relik.md
           - ./api_reference/extractors/summary.md
           - ./api_reference/extractors/title.md
       - Multi-Modal LLMs:
@@ -1333,7 +1334,6 @@ nav:
           - ./api_reference/retrievers/pathway.md
           - ./api_reference/retrievers/query_fusion.md
           - ./api_reference/retrievers/recursive.md
-          - ./api_reference/retrievers/relik.md
           - ./api_reference/retrievers/router.md
           - ./api_reference/retrievers/sql.md
           - ./api_reference/retrievers/summary.md
@@ -2096,6 +2096,7 @@ plugins:
             - ../llama-index-integrations/retrievers/llama-index-retrievers-relik
             - ../llama-index-integrations/callbacks/llama-index-callbacks-literalai
             - ../llama-index-integrations/llms/llama-index-llms-paieas
+            - ../llama-index-integrations/extractors/llama-index-extractors-relik
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
