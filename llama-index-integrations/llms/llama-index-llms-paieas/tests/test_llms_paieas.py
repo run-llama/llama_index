@@ -1,6 +1,11 @@
+import os
+import pytest
+
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.llms.paieas import PaiEas
+
+should_skip = os.environ.get("PAIEAS_API_KEY", None) is not None
 
 
 def test_text_inference_embedding_class():
@@ -8,6 +13,7 @@ def test_text_inference_embedding_class():
     assert BaseLLM.__name__ in names_of_base_classes
 
 
+@pytest.mark.skipif(should_skip, reason="PAIEAS_API_KEY is not set.")
 def test_pai_eas_llm_complete():
     eas_llm = PaiEas()
     if eas_llm:
@@ -16,6 +22,7 @@ def test_pai_eas_llm_complete():
         assert len(response.text) > 0
 
 
+@pytest.mark.skipif(should_skip, reason="PAIEAS_API_KEY is not set.")
 def test_pai_eas_llm_stream_complete():
     eas_llm = PaiEas()
 
@@ -29,6 +36,7 @@ def test_pai_eas_llm_stream_complete():
         assert len(text) > 0
 
 
+@pytest.mark.skipif(should_skip, reason="PAIEAS_API_KEY is not set.")
 def test_pai_eas_llm_chat():
     eas_llm = PaiEas()
     if eas_llm:
@@ -43,6 +51,7 @@ def test_pai_eas_llm_chat():
         assert len(response.message.content) > 0
 
 
+@pytest.mark.skipif(should_skip, reason="PAIEAS_API_KEY is not set.")
 def test_pai_eas_llm_stream_chat():
     eas_llm = PaiEas()
     if eas_llm:
