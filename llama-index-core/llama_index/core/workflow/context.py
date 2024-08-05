@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, Any, Optional, List, Type
 
 from .events import Event
@@ -13,13 +14,11 @@ class Context:
 
         # Step-specific instance
         self.parent = parent
-        self._events_buffer: Dict[Type[Event], List[Event]] = {}
+        self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
     ) -> Optional[List[Event]]:
-        if type(ev) not in self._events_buffer:
-            self._events_buffer[type(ev)] = []
         self._events_buffer[type(ev)].append(ev)
 
         retval: List[Event] = []
