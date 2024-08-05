@@ -135,7 +135,7 @@ Then add the following lines to your applicative code :
 ```python
 from llama_index.core import set_global_handler
 
-# You should provide your Literal AI API key and base url using the following environment variables :
+# You should provide your Literal AI API key and base url using the following environment variables:
 # LITERAL_API_KEY, LITERAL_API_URL
 set_global_handler("literalai")
 ```
