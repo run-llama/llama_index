@@ -428,11 +428,11 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             WITH e
             MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:__Entity__)
             RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
-                   e{{.* , embedding: Null, name: Null}} AS source_properties,
+                   t{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
                    r{{.*}} AS rel_properties,
                    e.name AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
-                   t{{.* , embedding: Null, name: Null}} AS target_properties
+                   e{{.* , embedding: Null, name: Null}} AS target_properties
         }}
         RETURN source_id, source_type, type, rel_properties, target_id, target_type, source_properties, target_properties"""
         cypher_statement += return_statement
