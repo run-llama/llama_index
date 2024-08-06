@@ -95,14 +95,15 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[
-        StrictInt,
-        StrictFloat,
-        StrictStr,
-        List[StrictStr],
-        List[StrictFloat],
-        List[StrictInt],
-        None,
+    value: Optional[
+        Union[
+            StrictInt,
+            StrictFloat,
+            StrictStr,
+            List[StrictStr],
+            List[StrictFloat],
+            List[StrictInt],
+        ]
     ]
     operator: FilterOperator = FilterOperator.EQ
 
