@@ -167,22 +167,17 @@ class Cohere(FunctionCallingLLM):
     def get_tool_calls_from_response(
         self,
         response: "ChatResponse",
-        error_on_no_tool_call: bool = True,
+        error_on_no_tool_call: bool = False,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[ToolCall] = response.message.additional_kwargs.get(
-            "tool_calls"
+        tool_calls: List[ToolCall] = (
+            response.message.additional_kwargs.get("tool_calls", []) or []
         )
-        if not tool_calls:
-            tool_calls = []
 
-        if len(tool_calls) < 1:
-            if error_on_no_tool_call:
-                raise ValueError(
-                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
-                )
-            else:
-                return []
+        if len(tool_calls) < 1 and error_on_no_tool_call:
+            raise ValueError(
+                f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+            )
 
         tool_selections = []
         for tool_call in tool_calls:
