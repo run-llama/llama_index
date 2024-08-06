@@ -1,1 +1,4 @@
-python_sources()
+python_sources(
+    name="llama-index-llms-githubllm",
+    sources=["*.py", "*.pyi"],
+)

@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.llms.githubllm"
+
+[tool.llamahub.class_authors]
+GithubLLM = "Josephrp"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -17,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Tonic <tonic@tonic-ai.com>"]
 description = "llama-index llms githubllm integration"
 license = "MIT"
 name = "llama-index-llms-githubllm"
