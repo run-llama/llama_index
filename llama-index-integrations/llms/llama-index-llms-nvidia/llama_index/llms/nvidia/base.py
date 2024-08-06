@@ -131,9 +131,7 @@ class NVIDIA(OpenAILike):
         expected_format = "Expected format is 'http://host:port'."
         result = urlparse(base_url)
         if not (result.scheme and result.netloc):
-            raise ValueError(
-                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
-            )
+            raise ValueError(f"Invalid base_url, {expected_format}")
         if result.path:
             normalized_path = result.path.strip("/")
             if normalized_path == "v1":
@@ -141,7 +139,7 @@ class NVIDIA(OpenAILike):
             elif normalized_path == "v1/chat/completions":
                 warnings.warn(f"{expected_format} Rest is Ignored.")
             else:
-                raise ValueError(f"Base URL path is not recognized. {expected_format}")
+                raise ValueError(f"Invalid base_url, {expected_format}")
         return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
 
     @property

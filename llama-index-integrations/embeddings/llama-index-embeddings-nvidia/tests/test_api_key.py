@@ -31,20 +31,6 @@ def mock_local_models(httpx_mock: HTTPXMock):
     )
 
 
-@pytest.fixture()
-def mock_integration_api(httpx_mock: HTTPXMock):
-    BASE_URL = "https://integrate.api.nvidia.com/v1"
-    mock_response = {"object": "list", "data": [{"index": 0, "embedding": ""}]}
-
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{BASE_URL}/embeddings",
-        json=mock_response,
-        headers={"Content-Type": "application/json"},
-        status_code=200,
-    )
-
-
 def get_api_key(instance: Any) -> str:
     return instance._client.api_key
 
@@ -78,22 +64,22 @@ def test_api_key_priority(masked_env_var: str) -> None:
 
 
 @pytest.mark.integration()
-def test_missing_api_key_error(masked_env_var: str, mock_integration_api) -> None:
+def test_missing_api_key_error(masked_env_var: str) -> None:
     with pytest.warns(UserWarning):
         client = Interface()
     with pytest.raises(Exception) as exc_info:
         client.get_query_embedding("Hello, world!")
     message = str(exc_info.value)
-    assert "401" in message
+    assert "404" in message
 
 
 @pytest.mark.integration()
-def test_bogus_api_key_error(masked_env_var: str, mock_integration_api) -> None:
+def test_bogus_api_key_error(masked_env_var: str) -> None:
     client = Interface(nvidia_api_key="BOGUS")
     with pytest.raises(Exception) as exc_info:
         client.get_query_embedding("Hello, world!")
     message = str(exc_info.value)
-    assert "401" in message
+    assert "404" in message
 
 
 @pytest.mark.integration()

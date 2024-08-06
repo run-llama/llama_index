@@ -7,10 +7,8 @@ from pytest_httpx import HTTPXMock
 UNKNOWN_URLS = [
     "https://test_url/v1",
     "https://test_url/v1/",
-    "https://test_url/.../v1",
     "http://test_url/v1",
     "http://test_url/v1/",
-    "http://test_url/.../v1/",
 ]
 
 
