@@ -223,7 +223,6 @@ class OpensearchVectorClient:
                 datetime.fromisoformat(value)
                 return False
             except ValueError as e:
-                print("Not a date field: ", value, e)
                 return True
         else:
             return False
