@@ -70,6 +70,12 @@ class NodeParser(TransformComponent, ABC):
             parent_doc = parent_doc_map.get(node.ref_doc_id, None)
 
             if parent_doc is not None:
+                if parent_doc.source_node is not None:
+                    node.relationships.update(
+                        {
+                            NodeRelationship.SOURCE: parent_doc.source_node,
+                        }
+                    )
                 start_char_idx = parent_doc.text.find(
                     node.get_content(metadata_mode=MetadataMode.NONE)
                 )
