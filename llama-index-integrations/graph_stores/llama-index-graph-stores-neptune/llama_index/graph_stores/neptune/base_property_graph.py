@@ -113,7 +113,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         Returns:
             List[Triplet]: A list of triples
         """
-        cypher_statement = "MATCH (e:{BASE_ENTITY_LABEL}) "
+        cypher_statement = f"MATCH (e:`{BASE_ENTITY_LABEL}`) "
 
         params = {}
         if entity_names or properties or ids:
@@ -136,23 +136,13 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
 
         return_statement = f"""
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:'{BASE_ENTITY_LABEL}')
+            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:{BASE_ENTITY_LABEL})
             RETURN e.name AS source_id, [l in labels(e) WHERE l <> '{BASE_ENTITY_LABEL}' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
                    r{{.*}} AS rel_properties,
                    t.name AS target_id, [l in labels(t) WHERE l <> '{BASE_ENTITY_LABEL}' | l][0] AS target_type,
-                   t{{.* , embedding: Null, name: Null}} AS target_properties
-            UNION ALL
-            WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:'{BASE_ENTITY_LABEL}')
-            RETURN t.name AS source_id, [l in labels(t) WHERE l <> '{BASE_ENTITY_LABEL}' | l][0] AS source_type,
-                   e{{.* , embedding: Null, name: Null}} AS source_properties,
-                   type(r) AS type,
-                   r{{.*}} AS rel_properties,
-                   e.name AS target_id, [l in labels(e) WHERE l <> '{BASE_ENTITY_LABEL}' | l][0] AS target_type,
-                   t{{.* , embedding: Null, name: Null}} AS target_properties
-        RETURN source_id, source_type, type, rel_properties, target_id, target_type, source_properties, target_properties"""
+                   t{{.* , embedding: Null, name: Null}} AS target_properties"""
         cypher_statement += return_statement
 
         data = self.structured_query(cypher_statement, param_map=params)
