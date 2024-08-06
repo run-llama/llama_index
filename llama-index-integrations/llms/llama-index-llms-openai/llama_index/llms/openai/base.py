@@ -851,10 +851,13 @@ class OpenAI(FunctionCallingLLM):
             strict = self.strict
         else:
             strict = True
-
-        for tool_spec in tool_specs:
-            if tool_spec["type"] == "function":
-                tool_spec["function"]["strict"] = strict
+        if self.metadata.is_function_calling_model:
+            for tool_spec in tool_specs:
+                if tool_spec["type"] == "function":
+                    tool_spec["function"]["strict"] = strict
+                    tool_spec["function"]["parameters"][
+                        "additionalProperties"
+                    ] = False  # in current openai 1.40.0 it is always false.
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
