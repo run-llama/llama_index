@@ -292,7 +292,7 @@ class OpensearchVectorClient:
 
         return bool_query
 
-    def _parse_filters(self, filters: Optional[MetadataFilters]) -> list[dict]:
+    def _parse_filters(self, filters: Optional[MetadataFilters]) -> List[dict]:
         """Parse MetadataFilters to equivalent OpenSearch expression."""
         if filters is None:
             return []

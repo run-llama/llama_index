@@ -4,7 +4,7 @@ import pytest
 import time
 import uuid
 from datetime import datetime
-from typing import List, Generator
+from typing import List, Generator, Set
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.opensearch import (
@@ -484,8 +484,8 @@ def test_filter_in(
     os_store: OpensearchVectorStore,
     insert_document,
     operator: FilterOperator,
-    exp_doc_ids: set[str],
-    value: list[str],
+    exp_doc_ids: Set[str],
+    value: List[str],
 ):
     """Test that OpensearchVectorStore correctly applies FilterOperator.IN/ANY/NIN in filters."""
     for metadata, id_ in [
@@ -637,7 +637,7 @@ def test_filter_nested(
     os_store: OpensearchVectorStore,
     insert_document,
     filters: MetadataFilters,
-    exp_match_ids: set[str],
+    exp_match_ids: Set[str],
 ):
     """Test that OpensearchVectorStore correctly applies nested filters."""
     for metadata, id_ in [
