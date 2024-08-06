@@ -18,6 +18,7 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
+import uuid
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
@@ -190,7 +191,7 @@ class Cohere(FunctionCallingLLM):
             # argument_dict = json.loads(tool_call.parameters)
             tool_selections.append(
                 ToolSelection(
-                    tool_id="TESTESTSE",
+                    tool_id=uuid.uuid4().hex[:],
                     tool_name=tool_call.name,
                     tool_kwargs=tool_call.parameters,
                 )
