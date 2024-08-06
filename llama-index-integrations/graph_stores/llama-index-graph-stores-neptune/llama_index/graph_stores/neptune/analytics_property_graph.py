@@ -159,7 +159,9 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                 self.structured_query(
                     """
                     WITH $data AS row
-                    MERGE (e:`{BASE_ENTITY_LABEL}` {id: row.id})
+                    MERGE (e:`"""
+                    + BASE_ENTITY_LABEL
+                    + """` {id: row.id})
                     SET e += removeKeyFromMap(row.properties, '')
                     SET e.name = row.name
                     SET e:`"""
