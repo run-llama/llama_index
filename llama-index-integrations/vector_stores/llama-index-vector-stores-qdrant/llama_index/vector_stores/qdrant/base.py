@@ -44,8 +44,10 @@ from qdrant_client.http.models import (
     MatchText,
     MatchValue,
     Payload,
+    PayloadField,
     Range,
     HasIdCondition,
+    IsEmptyCondition,
 )
 
 logger = logging.getLogger(__name__)
@@ -1094,6 +1096,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         key=subfilter.key,
                         match=MatchExcept(**{"except": values}),
                     )
+                )
+            elif subfilter.operator == FilterOperator.IS_EMPTY:
+                # This condition will match all records where the field reports either does not exist, or has null or [] value.
+                # https://qdrant.tech/documentation/concepts/filtering/#is-empty
+                conditions.append(
+                    IsEmptyCondition(is_empty=PayloadField(key=subfilter.key))
                 )
 
         filter = Filter()
