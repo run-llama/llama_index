@@ -229,6 +229,7 @@ class OpenAI(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -264,6 +265,7 @@ class OpenAI(FunctionCallingLLM):
         self._aclient = None
         self._http_client = http_client
         self._async_http_client = async_http_client
+        self.strict = strict
 
     def _get_client(self) -> SyncOpenAI:
         if not self.reuse_client:
@@ -832,6 +834,7 @@ class OpenAI(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
@@ -839,6 +842,17 @@ class OpenAI(FunctionCallingLLM):
 
         # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        if strict is not None:
+            strict = strict
+        elif self.strict is not None:
+            strict = self.strict
+        else:
+            strict = True
+
+        if strict:
+            for tool_spec in tool_specs:
+                if tool_spec["type"] == "function":
+                    tool_spec["function"]["strict"] = True
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
