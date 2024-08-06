@@ -10,6 +10,7 @@ from box_sdk_gen import (
 
 from llama_index.readers.box.BoxAPI.box_api import (
     box_check_connection,
+    get_box_files_payload,
     search_files,
 )
 
@@ -88,3 +89,18 @@ class BoxSearchToolSpec(BaseToolSpec):
             limit=limit,
             offset=offset,
         )
+        box_payloads = get_box_files_payload(
+            self._box_client, [box_file.id for box_file in box_files]
+        )
+
+        docs: List[Document] = []
+
+        for box_payload in box_payloads:
+            file = box_payload.resource_info
+            doc = Document(
+                extra_info=file.to_dict(),
+                metadata=file.to_dict(),
+            )
+            docs.append(doc)
+
+        return docs
