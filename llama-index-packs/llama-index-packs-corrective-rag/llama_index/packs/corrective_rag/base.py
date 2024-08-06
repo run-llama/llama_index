@@ -1,7 +1,7 @@
 """Corrective RAG LlamaPack class."""
 
 import asyncio
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from llama_index.core import VectorStoreIndex, SummaryIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
@@ -82,10 +82,10 @@ class QueryEvent(Event):
 
 class CorrectiveRAGWorkflow(Workflow):
     @step(pass_context=True)
-    async def ingest(self, ctx: Context, ev: StartEvent) -> StopEvent | None:
+    async def ingest(self, ctx: Context, ev: StartEvent) -> Optional[StopEvent]:
         """Ingest step (for ingesting docs and initializing index)."""
-        documents: List[Document] | None = ev.get("documents")
-        tavily_ai_apikey: str | None = ev.get("tavily_ai_apikey")
+        documents: Optional[List[Document]] = ev.get("documents")
+        tavily_ai_apikey: Optional[str] = ev.get("tavily_ai_apikey")
 
         if any(i is None for i in [documents, tavily_ai_apikey]):
             return None
@@ -105,7 +105,7 @@ class CorrectiveRAGWorkflow(Workflow):
         return StopEvent()
 
     @step(pass_context=True)
-    async def retrieve(self, ctx: Context, ev: StartEvent) -> RetrieveEvent | None:
+    async def retrieve(self, ctx: Context, ev: StartEvent) -> Optional[RetrieveEvent]:
         """Retrieve the relevant nodes for the query."""
         query_str = ev.get("query_str")
         retriever_kwargs = ev.get("retriever_kwargs")

@@ -202,7 +202,7 @@ class LongRAGWorkflow(Workflow):
     """Long RAG Workflow."""
 
     @step()
-    async def ingest(self, ev: StartEvent) -> LoadNodeEvent | None:
+    async def ingest(self, ev: StartEvent) -> t.Optional[LoadNodeEvent]:
         """Ingestion step.
 
         Args:
@@ -214,11 +214,11 @@ class LongRAGWorkflow(Workflow):
         """
         data_dir: str = ev.get("data_dir")
         llm: LLM = ev.get("llm")
-        chunk_size: int | None = ev.get("chunk_size")
+        chunk_size: t.Optional[int] = ev.get("chunk_size")
         similarity_top_k: int = ev.get("similarity_top_k")
         small_chunk_size: int = ev.get("small_chunk_size")
-        index: VectorStoreIndex | None = ev.get("index")
-        index_kwargs: t.Dict[str, t.Any] | None = ev.get("index_kwargs")
+        index: t.Optional[VectorStoreIndex] = ev.get("index")
+        index_kwargs: t.Optional[t.Dict[str, t.Any]] = ev.get("index_kwargs")
 
         if any(i is None for i in [data_dir, llm, similarity_top_k, small_chunk_size]):
             return None
@@ -283,7 +283,7 @@ class LongRAGWorkflow(Workflow):
         )
 
     @step(pass_context=True)
-    async def query(self, ctx: Context, ev: StartEvent) -> StopEvent | None:
+    async def query(self, ctx: Context, ev: StartEvent) -> t.Optional[StopEvent]:
         """Query step.
 
         Args:
@@ -293,7 +293,7 @@ class LongRAGWorkflow(Workflow):
         Returns:
             StopEvent | None: stop event with result
         """
-        query_str: str | None = ev.get("query_str")
+        query_str: t.Optional[str] = ev.get("query_str")
 
         if query_str is None:
             return None
