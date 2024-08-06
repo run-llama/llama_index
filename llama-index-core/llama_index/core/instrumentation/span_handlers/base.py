@@ -58,6 +58,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Logic for entering a span."""
@@ -69,6 +70,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
                 bound_args=bound_args,
                 instance=instance,
                 parent_span_id=parent_id,
+                tags=tags,
             )
             if span:
                 with self.lock:
@@ -113,6 +115,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Optional[T]:
         """Create a span.
