@@ -1,4 +1,5 @@
-from contextvars import Token
+from contextlib import contextmanager
+from contextvars import ContextVar, Token
 from typing import Any, List, Optional, Dict, Protocol
 import inspect
 import uuid
@@ -15,6 +16,19 @@ from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
 
 DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
+
+
+# ContextVar for managing active instrument tags
+active_instrument_tags = ContextVar("instrument_tags", default={})
+
+
+@contextmanager
+def instrument_tags(new_tags):
+    token = active_instrument_tags.set(new_tags)
+    try:
+        yield
+    finally:
+        active_instrument_tags.reset(token)
 
 
 # Keep for backwards compatibility
@@ -100,6 +114,10 @@ class Dispatcher(BaseModel):
     def event(self, event: BaseEvent, **kwargs) -> None:
         """Dispatch event to all registered handlers."""
         c = self
+
+        # Attach tags from the active context
+        event.tags.update(active_instrument_tags.get())
+
         while c:
             for h in c.event_handlers:
                 try:
@@ -135,6 +153,7 @@ class Dispatcher(BaseModel):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
@@ -147,6 +166,7 @@ class Dispatcher(BaseModel):
                         bound_args=bound_args,
                         instance=instance,
                         parent_id=parent_id,
+                        tags=tags,
                         **kwargs,
                     )
                 except BaseException:
@@ -225,11 +245,16 @@ class Dispatcher(BaseModel):
         def wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            tags = active_instrument_tags.get()
 
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
-                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+                id_=id_,
+                bound_args=bound_args,
+                instance=instance,
+                parent_id=parent_id,
+                tags=tags,
             )
             try:
                 result = func(*args, **kwargs)
@@ -250,11 +275,16 @@ class Dispatcher(BaseModel):
         async def async_wrapper(func, instance, args, kwargs):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            tags = active_instrument_tags.get()
 
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
-                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+                id_=id_,
+                bound_args=bound_args,
+                instance=instance,
+                parent_id=parent_id,
+                tags=tags,
             )
             try:
                 result = await func(*args, **kwargs)

@@ -153,14 +153,22 @@ The `.run()` method is async, so we use await here to wait for the result.
 
 Workflows can be visualized, using the power of type annotations in your step definitions. You can either draw all possible paths through the workflow, or the most recent execution, to help with debugging.
 
+Firs install:
+
+```bash
+pip install llama-index-utils-workflow
+```
+
+Then import and use:
+
 ```python
-from llama_index.core.workflow import (
-    draw_all_possible_paths,
+from llama_index.utils.workflow import (
+    draw_all_possible_flows,
     draw_most_recent_execution,
 )
 
 # Draw all
-draw_all_possible_paths(JokeFlow, filename="joke_flow_all.html")
+draw_all_possible_flows(JokeFlow, filename="joke_flow_all.html")
 
 # Draw an execution
 w = JokeFlow()
@@ -177,14 +185,17 @@ from llama_index.core.workflow import Context
 
 
 @step(pass_context=True)
-async def query(self, ctx: Context, ev: QueryEvent) -> StopEvent:
+async def query(self, ctx: Context, ev: MyEvent) -> StopEvent:
     # retrieve from context
     query = ctx.data.get("query")
 
-    # store in context
-    ctx["key"] = "val"
+    # do something with context and event
+    val = ...
+    result = ...
 
-    result = run_query(query)
+    # store in context
+    ctx.data["key"] = val
+
     return StopEvent(result=result)
 ```
 
@@ -192,24 +203,80 @@ async def query(self, ctx: Context, ev: QueryEvent) -> StopEvent:
 
 The context does more than just hold data, it also provides utilities to buffer and wait for multiple events.
 
-For example, you might have a step like:
+For example, you might have a step that waits for a query and retrieved nodes before synthesizing a response:
 
 ```python
+from llama_index.core import get_response_synthesizer
+
+
 @step(pass_context=True)
-async def query(
+async def synthesize(
     self, ctx: Context, ev: QueryEvent | RetrieveEvent
 ) -> StopEvent | None:
-    data = ctx.collect_events(evm[QueryEvent, RetrieveEvent])
+    data = ctx.collect_events(ev, [QueryEvent, RetrieveEvent])
     # check if we can run
     if data is None:
         return None
 
-    # use buffered events
-    print(data[0])  # QueryEvent
-    print(data[1])  # RetrieveEvent
+    # unpack -- data is returned in order
+    query_event, retrieve_event = data
+
+    # run response synthesis
+    synthesizer = get_response_synthesizer()
+    response = synthesizer.synthesize(
+        query_event.query, nodes=retrieve_event.nodes
+    )
+
+    return StopEvent(result=response)
 ```
 
 Using `ctx.collect_events()` we can buffer and wait for ALL expected events to arrive. This function will only return data (in the requested order) once all events have arrived.
+
+## Manually Triggering Events
+
+Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `self.send_event(event)` method within a workflow.
+
+Here is a short toy example showing how this would be used:
+
+```python
+from llama_index.core.workflow import step, Context, Event, Workflow
+
+
+class MyEvent(Event):
+    pass
+
+
+class MyEventResult(Event):
+    result: str
+
+
+class GatherEvent(Event):
+    pass
+
+
+class MyWorkflow(Workflow):
+    @step()
+    async def dispatch_step(self, ev: StartEvent) -> MyEvent | GatherEvent:
+        self.send_event(MyEvent())
+        self.send_event(MyEvent())
+
+        return GatherEvent()
+
+    @step()
+    async def handle_my_event(self, ev: MyEvent) -> MyEventResult:
+        return MyEventResult(result="result")
+
+    @step(pass_context=True)
+    async def gather(
+        self, ctx: Context, ev: GatherEvent | MyEventResult
+    ) -> StopEvent | None:
+        # wait for events to finish
+        events = ctx.collect_events([MyEventResult, MyEventResult])
+        if not events:
+            return None
+
+        return StopEvent(result=events)
+```
 
 ## Stepwise Execution
 
@@ -243,6 +310,7 @@ from llama_index.core.workflow import (
     Workflow,
     step,
 )
+from llama_index.llms.openai import OpenAI
 
 
 class JokeEvent(Event):
@@ -257,6 +325,8 @@ async def generate_joke(ev: StartEvent) -> JokeEvent:
     topic = ev.topic
 
     prompt = f"Write your best joke about {topic}."
+
+    llm = OpenAI()
     response = await llm.acomplete(prompt)
     return JokeEvent(joke=str(response))
 

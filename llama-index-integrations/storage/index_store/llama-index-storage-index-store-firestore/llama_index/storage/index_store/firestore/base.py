@@ -17,9 +17,12 @@ class FirestoreIndexStore(KVIndexStore):
         self,
         firestore_kvstore: FirestoreKVStore,
         namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> None:
         """Init a FirestoreIndexStore."""
-        super().__init__(firestore_kvstore, namespace=namespace)
+        super().__init__(
+            firestore_kvstore, namespace=namespace, collection_suffix=collection_suffix
+        )
 
     @classmethod
     def from_database(
@@ -27,12 +30,16 @@ class FirestoreIndexStore(KVIndexStore):
         project: str,
         database: str,
         namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> "FirestoreIndexStore":
         """
+        Load a FirestoreIndexStore from a Firestore database.
+
         Args:
             project (str): The project which the client acts on behalf of.
             database (str): The database name that the client targets.
             namespace (str): namespace for the docstore.
+            collection_suffix (str): suffix for the collection name
         """
         firestore_kvstore = FirestoreKVStore(project=project, database=database)
-        return cls(firestore_kvstore, namespace)
+        return cls(firestore_kvstore, namespace, collection_suffix)

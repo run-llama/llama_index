@@ -1,3 +1,4 @@
+from deprecated import deprecated
 from typing import Optional
 
 from .events import StartEvent, StopEvent
@@ -5,6 +6,9 @@ from .decorators import StepConfig
 from .utils import get_steps_from_class, get_steps_from_instance
 
 
+@deprecated(
+    reason="Install `llama-index-utils-workflow` and use the import `from llama_index.utils.workflow` instead."
+)
 def draw_all_possible_flows(
     workflow,
     filename: str = "workflow_all_flows.html",
@@ -65,6 +69,9 @@ def draw_all_possible_flows(
     net.show(filename, notebook=notebook)
 
 
+@deprecated(
+    reason="Install `llama-index-utils-workflow` and use the import `from llama_index.utils.workflow` instead."
+)
 def draw_most_recent_execution(
     workflow,
     filename: str = "workflow_recent_execution.html",
