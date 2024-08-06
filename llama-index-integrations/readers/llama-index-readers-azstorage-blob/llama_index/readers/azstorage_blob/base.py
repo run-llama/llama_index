@@ -98,9 +98,9 @@ class AzStorageBlobReader(
             )
 
         for obj in blobs_list:
-            sanitized_file_name = obj.name.replace("/", "-")
+            sanitized_file_name = obj.name.replace("/", "-") if not self.blob else obj
             download_file_path = os.path.join(temp_dir, sanitized_file_name)
-            logger.info(f"Start download of {obj.name}")
+            logger.info(f"Start download of {sanitized_file_name}")
             start_time = time.time()
             blob_client = container_client.get_blob_client(obj)
             stream = blob_client.download_blob()
@@ -108,7 +108,9 @@ class AzStorageBlobReader(
                 stream.readinto(download_file)
             blob_meta[sanitized_file_name] = blob_client.get_blob_properties()
             end_time = time.time()
-            logger.debug(f"{obj.name} downloaded in {end_time - start_time} seconds.")
+            logger.debug(
+                f"{sanitized_file_name} downloaded in {end_time - start_time} seconds."
+            )
 
         return blob_meta
 

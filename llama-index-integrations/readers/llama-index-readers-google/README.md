@@ -3,6 +3,7 @@
 Effortlessly incorporate Google-based data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities, including:
 
 - Google Calendar
+- Google Chat
 - Google Docs
 - Google Drive
 - Gmail
@@ -77,4 +78,18 @@ documents = loader.load_data(
 
 index = VectorStoreIndex.from_documents(documents)
 index.query("Which Turkish restaurant has the best reviews?")
+```
+
+### Google Chat Reader
+
+```py
+from llama_index.readers.google import GoogleChatReader
+from llama_index.core import VectorStoreIndex
+
+space_names = ["<CHAT_ID>"]
+chatReader = GoogleChatReader()
+docs = chatReader.load_data(space_names=space_names)
+index = VectorStoreIndex.from_documents(docs)
+query_eng = index.as_query_engine()
+print(query_eng.query("What was this conversation about?"))
 ```

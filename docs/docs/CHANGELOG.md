@@ -1,5 +1,218 @@
 # ChangeLog
 
+## [2024-07-08]
+
+### `llama-index-core` [0.10.53]
+
+- fix handling react usage in `llm.predict_and_call` for llama-agents (#14556)
+- add the missing arg verbose when `ReActAgent` calling `super().__init__` (#14565)
+- fix `llama-index-core\llama_index\core\node_parser\text\utils.py` error when use IngestionPipeline parallel (#14560)
+- deprecate `KnowledgeGraphIndex`, tweak docs (#14575)
+- Fix `ChatSummaryMemoryBuffer` fails to summary chat history with tool callings (#14563)
+- Added `DynamicLLMPathExtractor` for Entity Detection With a Schema inferred by LLMs on the fly (#14566)
+- add cloud document converter (#14608)
+- fix KnowledgeGraphIndex arg 'kg_triple_extract_template' typo error (#14619)
+- Fix: Update `UnstructuredElementNodeParser` due to change in unstructured (#14606)
+
+### `llama-index-callbacks-promptlayer` [0.1.3]
+
+- Conditions logging to promptlayer on successful request (#14632)
+
+### `llama-index-llms-ai21` [0.3.1]
+
+- Fix MessageRole import from the wrong package in AI21 Package (#14596)
+
+### `llama-index-llms-bedrock` [0.1.12]
+
+- handle empty response in Bedrock AnthropicProvider (#14479)
+- add claude 3.5 sonnet support to Bedrock InvokeAPI (#14594)
+
+### `llama-index-llms-bedrock-converse` [0.1.4]
+
+-  Fix Bedrock Converse's tool use blocks, when there are multiple consecutive function calls (#14386)
+
+### `llama-index-llms-optimum-intel` [0.1.0]
+
+- add optimum intel with ipex backend to llama-index-integration (#14553)
+
+### `llama-index-llms-qianfan` [0.1.0]
+
+- add baidu-qianfan llm (#14414)
+
+### `llama-index-llms-text-generation-inference` [0.1.4]
+
+- fix: crash LLMMetadata in model name lookup (#14569)
+- Remove hf embeddings dep from text-embeddings-inference (#14592)
+
+### `llama-index-llms-yi` [0.1.1]
+
+- update yi llm context_window (#14578)
+
+### `llama-index-readers-file` [0.1.28]
+
+- add fs arg to PandasExcelReader.load_data (#14554)
+- UnstructuredReader enhancements (#14390)
+
+### `llama-index-readers-web` [0.1.22]
+
+- nit: firecrawl fixes for creating documents (#14579)
+
+### `llama-index-retrievers-bm25` [0.2.0]
+
+- Update BM25Retriever to use newer (and faster) bm25s library #(14581)
+
+### `llama-index-vector-stores-qdrant` [0.2.11]
+
+- refactor: Don't swallow exceptions from Qdrant collection_exists (#14564)
+- add support for qdrant bm42, setting sparse + dense configs (#14577)
+
+## [2024-07-03]
+
+### `llama-index-core` [0.10.52]
+
+- fix file reader path bug on windows (#14537)
+- follow up with kwargs propagation in colbert index due to change in parent class (#14522)
+- deprecate query pipeline agent in favor of FnAgentWorker (#14525O)
+
+### `llama-index-callbacks-arize-phoenix` [0.1.6]
+
+- support latest version of arize #14526
+
+### `llama-index-embeddings-litellm` [0.1.0]
+
+- Add support for LiteLLM Proxy Server for embeddings (#14523)
+
+### `llama-index-finetuning` [0.1.10]
+
+- Adding device choice from sentence_transformers (#14546)
+
+### `llama-index-graph-stores-neo4` [0.2.7]
+
+- Fixed ordering of returned nodes on vector queries (#14461)
+
+### `llama-index-llms-bedrock` [0.1.10]
+
+- handle empty response in Bedrock AnthropicProvider (#14479)
+
+### `llama-index-llms-bedrock-converse` [0.1.4]
+
+- Fix Bedrock Converse's join_two_dicts function when a new string kwarg is added (#14548)
+
+### `llama-index-llms-upstage` [0.1.4]
+
+- Add upstage tokenizer and token counting method (#14502)
+
+### `llama-index-readers-azstorage-blob` [0.1.7]
+
+- Fix bug with getting object name for blobs (#14547)
+
+### `llama-index-readers-file` [0.1.26]
+
+- Pandas excel reader load data fix for appending documents (#14501)
+
+### `llama-index-readers-iceberg` [0.1.0]
+
+- Add Iceberg Reader integration to LLamaIndex (#14477)
+
+### `llama-index-readers-notion` [0.1.8]
+
+- Added retries (#14488)
+- add `list_databases` method (#14488)
+
+### `llama-index-readers-slack` [0.1.5]
+
+- Enhance SlackReader to fetch Channel IDs from Channel Names/Patterns (#14429)
+
+### `llama-index-readers-web` [0.1.21]
+
+- Add API url to firecrawl reader (#14452)
+
+### `llama-index-retrievers-bm25` [0.1.5]
+
+- fix score in nodes returned by the BM25 retriever (#14495)
+
+### `llama-index-vector-stores-azureaisearch` [0.1.9]
+
+- add async methods to azure ai search (#14496)
+
+### `llama-index-vector-stores-kdbai` [0.1.8]
+
+- Kdbai rest compatible (#14511)
+
+### `llama-index-vector-stores-mongodb` [0.1.6]
+
+- Adds Hybrid and Full-Text Search to MongoDBAtlasVectorSearch (#14490)
+
+## [2024-06-28]
+
+### `llama-index-core` [0.10.51]
+
+- fixed issue with function calling llms and empty tool calls (#14453)
+- Fix ChatMessage not considered as stringable in query pipeline (#14378)
+- Update schema llm path extractor to also take a list of valid triples (#14357)
+- Pass the kwargs on when `build_index_from_nodes` (#14341)
+
+### `llama-index-agent-dashscope` [0.1.0]
+
+- Add Alibaba Cloud dashscope agent (#14318)
+
+### `llama-index-graph-stores-neo4j` [0.2.6]
+
+- Add MetadataFilters to neo4j_property_graph (#14362)
+
+### `llama-index-llms-nvidia` [0.1.4]
+
+- add known context lengths for hosted models (#14436)
+
+### `llama-index-llms-perplexity` [0.1.4]
+
+- update available models (#14409)
+
+### `llama-index-llms-predibase` [0.1.6]
+
+- Better error handling for invalid API token (#14440)
+
+### `llama-index-llms-yi` [0.1.0]
+
+- Integrate Yi model (#14353)
+
+### `llama-index-readers-google` [0.2.9]
+
+- Creates Data Loader for Google Chat (#14397)
+
+### `llama-index-readers-s3` [0.1.10]
+
+- Invalidate s3fs cache in S3Reader (#14441)
+
+### `llama-index-readers-structured-data` [0.1.0]
+
+- Add StructuredDataReader support for xlsx, csv, json and jsonl (#14369)
+
+### `llama-index-tools-jina` [0.1.0]
+
+- Integrating a new tool called jina search (#14317)
+
+### `llama-index-vector-stores-astradb` [0.1.8]
+
+- Update Astra DB vector store to use modern astrapy library (#14407)
+
+### `llama-index-vector-stores-chromadb` [0.1.10]
+
+- Fix the index accessing of ids of chroma get (#14434)
+
+### `llama-index-vector-stores-deeplake` [0.1.4]
+
+- Implemented delete_nodes() and clear() in deeplake vector store (#14457)
+- Implemented get_nodes() in deeplake vector store (#14388)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.1]
+
+- Add support for dynamic metadata fields in Elasticsearch index creation (#14431)
+
+### `llama-index-vector-stores-kdbai` [0.1.7]
+
+- Kdbai version compatible (#14402)
+
 ## [2024-06-24]
 
 ### `llama-index-core` [0.10.50]

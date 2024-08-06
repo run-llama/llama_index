@@ -604,11 +604,21 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
         if isinstance(user_msg, ChatMessage):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -652,11 +662,21 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
         if isinstance(user_msg, ChatMessage):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -667,7 +687,7 @@ class LLM(BaseLLM):
         step = worker.initialize_step(task)
 
         try:
-            output = await worker.arun_step(step, task).output
+            output = (await worker.arun_step(step, task)).output
 
             # react agent worker inserts a "Observation: " prefix to the response
             if output.response and output.response.startswith("Observation: "):

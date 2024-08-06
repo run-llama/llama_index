@@ -5,7 +5,7 @@ import logging
 import uuid
 from typing import Any, List, Optional, cast
 import asyncio
-
+import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -24,6 +24,7 @@ from llama_index.core.chat_engine.types import (
     AgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
@@ -38,6 +39,8 @@ from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
@@ -202,16 +205,21 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         verbose: bool = False,
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
+        tool_args_str = json.dumps(tool_call.tool_kwargs)
+        tool_metadata = (
+            tool.metadata
+            if tool is not None
+            else ToolMetadata(description="", name=tool_call.tool_name)
+        )
 
+        dispatcher.event(
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool_metadata)
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: (
-                    tool.metadata
-                    if tool is not None
-                    else ToolMetadata(description="", name=tool_call.tool_name)
-                ),
+                EventPayload.FUNCTION_CALL: tool_args_str,
+                EventPayload.TOOL: tool_metadata,
             },
         ) as event:
             tool_output = (
@@ -243,16 +251,21 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         verbose: bool = False,
     ) -> bool:
         tool = get_function_by_name(tools, tool_call.tool_name)
+        tool_args_str = json.dumps(tool_call.tool_kwargs)
+        tool_metadata = (
+            tool.metadata
+            if tool is not None
+            else ToolMetadata(description="", name=tool_call.tool_name)
+        )
 
+        dispatcher.event(
+            AgentToolCallEvent(arguments=tool_args_str, tool=tool_metadata)
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: json.dumps(tool_call.tool_kwargs),
-                EventPayload.TOOL: (
-                    tool.metadata
-                    if tool is not None
-                    else ToolMetadata(description="", name=tool_call.tool_name)
-                ),
+                EventPayload.FUNCTION_CALL: tool_args_str,
+                EventPayload.TOOL: tool_metadata,
             },
         ) as event:
             tool_output = (
