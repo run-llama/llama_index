@@ -5,7 +5,7 @@ from llama_index.tools.box import BoxSearchToolSpec, BoxSearchByMetadataToolSpec
 from tests.conftest import get_testing_data
 
 
-def test_box_too_search(box_client_ccg_integration_testing: BoxClient):
+def test_box_tool_search(box_client_ccg_integration_testing: BoxClient):
     query = "invoice"
     box_tool = BoxSearchToolSpec(box_client_ccg_integration_testing)
     docs = box_tool.search(query=query)
