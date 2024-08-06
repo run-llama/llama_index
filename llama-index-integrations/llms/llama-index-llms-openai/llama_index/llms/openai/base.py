@@ -201,7 +201,10 @@ class OpenAI(FunctionCallingLLM):
     api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
-    strict: Optional[bool] = None
+    strict: bool = Field(
+        default=False,
+        description="Whether to use strict mode for invoking tools/using schemas.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -230,7 +233,7 @@ class OpenAI(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        strict: Optional[bool] = None,
+        strict: bool = False,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -847,10 +850,9 @@ class OpenAI(FunctionCallingLLM):
         # if strict is passed in, use, else default to the class-level attribute, else default to True`
         if strict is not None:
             strict = strict
-        elif self.strict is not None:
-            strict = self.strict
         else:
-            strict = True
+            strict = self.strict
+
         if self.metadata.is_function_calling_model:
             for tool_spec in tool_specs:
                 if tool_spec["type"] == "function":
