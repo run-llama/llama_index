@@ -5,7 +5,7 @@ from llama_index.tools.box import BoxAIPromptToolSpec
 from tests.conftest import get_testing_data
 
 
-def test_box_tool_extract(box_client_ccg_integration_testing: BoxClient):
+def test_box_tool_ai_prompt(box_client_ccg_integration_testing: BoxClient):
     test_data = get_testing_data()
 
     box_tool = BoxAIPromptToolSpec(box_client=box_client_ccg_integration_testing)
