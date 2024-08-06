@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import pytest
-import uuid
-from typing import List, Generator
 import time
+import uuid
+from datetime import datetime
+from typing import List, Generator, Set
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.opensearch import (
@@ -11,12 +12,12 @@ from llama_index.vector_stores.opensearch import (
     OpensearchVectorStore,
 )
 from llama_index.core.vector_stores.types import (
+    FilterCondition,
     FilterOperator,
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
 )
-from llama_index.core.vector_stores.types import VectorStoreQuery
 
 ##
 # Start Opensearch locally
@@ -49,6 +50,12 @@ def _get_sample_vector(num: float) -> List[float]:
     where the length of the vector is TEST_EMBED_DIM.
     """
     return [num] + [1.0] * (TEST_EMBED_DIM - 1)
+
+
+def _get_sample_vector_store_query(filters: MetadataFilters) -> VectorStoreQuery:
+    return VectorStoreQuery(
+        query_embedding=[0.1] * TEST_EMBED_DIM, similarity_top_k=100, filters=filters
+    )
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
@@ -327,3 +334,333 @@ def test_clear(
     res = os_store.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
     assert len(res.ids) == 0
+
+
+@pytest.fixture()
+def insert_document(os_store: OpensearchVectorStore):
+    """Factory to insert a document with custom metadata into the OpensearchVectorStore."""
+
+    def _insert_document(doc_id: str, metadata: dict):
+        """Helper function to insert a document with custom metadata."""
+        os_store.add(
+            [
+                TextNode(
+                    id_=doc_id,
+                    text="Lorem Ipsum",
+                    metadata=metadata,
+                    embedding=[0.1, 0.2, 0.3],
+                )
+            ]
+        )
+
+    return _insert_document
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize("operator", [FilterOperator.EQ, FilterOperator.NE])
+@pytest.mark.parametrize(
+    ("key", "value", "false_value"),
+    [
+        ("author", "John Doe", "Doe John"),
+        ("created_at", "2019-03-23T21:34:46+00:00", "2020-03-23T21:34:46+00:00"),
+        ("directory", "parent/sub_dir", "parent"),
+        ("page", 42, 43),
+    ],
+)
+def test_filter_eq(
+    os_store: OpensearchVectorStore,
+    insert_document,
+    operator: FilterOperator,
+    key: str,
+    value,
+    false_value,
+):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.EQ/NE in filters."""
+    for meta, id_ in [
+        ({key: value}, "match"),
+        ({key: false_value}, "nomatch1"),
+        ({}, "nomatch2"),
+    ]:
+        insert_document(doc_id=id_, metadata=meta)
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key=key, value=value, operator=operator)]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    if operator == FilterOperator.EQ:
+        assert doc_ids == {"match"}
+    else:  # FilterOperator.NE
+        assert doc_ids == {"nomatch1", "nomatch2"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    ("operator", "exp_doc_ids"),
+    [
+        (FilterOperator.GT, {"page3", "page4"}),
+        (FilterOperator.GTE, {"page2", "page3", "page4"}),
+        (FilterOperator.LT, {"page1"}),
+        (FilterOperator.LTE, {"page1", "page2"}),
+    ],
+)
+def test_filter_range_number(
+    os_store: OpensearchVectorStore,
+    insert_document,
+    operator: FilterOperator,
+    exp_doc_ids: set,
+):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.GT/GTE/LT/LTE in filters for numbers."""
+    for i in range(1, 5):
+        insert_document(doc_id=f"page{i}", metadata={"page": i})
+    insert_document(doc_id="nomatch", metadata={})
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="page", value=2, operator=operator)]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == exp_doc_ids
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    ("operator", "exp_doc_ids"),
+    [
+        (FilterOperator.GT, {"date3", "date4"}),
+        (FilterOperator.GTE, {"date2", "date3", "date4"}),
+        (FilterOperator.LT, {"date1"}),
+        (FilterOperator.LTE, {"date1", "date2"}),
+    ],
+)
+def test_filter_range_datetime(
+    os_store: OpensearchVectorStore,
+    insert_document,
+    operator: FilterOperator,
+    exp_doc_ids: set,
+):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.GT/GTE/LT/LTE in filters for datetime."""
+    dt = datetime.now()
+    for i in range(1, 5):
+        insert_document(
+            doc_id=f"date{i}", metadata={"created_at": dt.replace(second=i).isoformat()}
+        )
+    insert_document(doc_id="nomatch", metadata={})
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="created_at",
+                    value=dt.replace(second=2).isoformat(),
+                    operator=operator,
+                )
+            ]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == exp_doc_ids
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    ("operator", "exp_doc_ids"),
+    [
+        (FilterOperator.IN, {"match1", "match2"}),
+        (FilterOperator.ANY, {"match1", "match2"}),
+        (FilterOperator.NIN, {"nomatch"}),
+    ],
+)
+@pytest.mark.parametrize("value", [["product"], ["accounting", "product"]])
+def test_filter_in(
+    os_store: OpensearchVectorStore,
+    insert_document,
+    operator: FilterOperator,
+    exp_doc_ids: Set[str],
+    value: List[str],
+):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.IN/ANY/NIN in filters."""
+    for metadata, id_ in [
+        ({"category": ["product", "management"]}, "match1"),
+        ({"category": ["product", "marketing"]}, "match2"),
+        ({"category": ["management"]}, "nomatch"),
+    ]:
+        insert_document(doc_id=id_, metadata=metadata)
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[MetadataFilter(key="category", value=value, operator=operator)]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == exp_doc_ids
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_all(
+    os_store: OpensearchVectorStore,
+    insert_document,
+):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.ALL in filters."""
+    for metadata, id_ in [
+        ({"category": ["product", "management", "marketing"]}, "match1"),
+        ({"category": ["product", "marketing"]}, "match2"),
+        ({"category": ["product", "management"]}, "nomatch"),
+    ]:
+        insert_document(doc_id=id_, metadata=metadata)
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="category",
+                    value=["product", "marketing"],
+                    operator=FilterOperator.ALL,
+                )
+            ]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == {"match1", "match2"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_text_match(
+    os_store: OpensearchVectorStore,
+    insert_document,
+):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
+    fuzzy matching works as intended.
+    """
+    for metadata, id_ in [
+        ({"name": "John Doe"}, "match1"),
+        ({"name": "Doe John Johnson"}, "match2"),
+        ({"name": "Johnny Doe"}, "match3"),
+        ({"name": "Mary Sue"}, "nomatch"),
+    ]:
+        insert_document(doc_id=id_, metadata=metadata)
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="name", value="John Doe", operator=FilterOperator.TEXT_MATCH
+                )
+            ]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == {"match1", "match2", "match3"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_contains(os_store: OpensearchVectorStore, insert_document):
+    """Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
+    exact substring matches.
+    """
+    for metadata, id_ in [
+        ({"name": "John Doe"}, "match1"),
+        ({"name": "Johnny Doe"}, "match2"),
+        ({"name": "Jon Doe"}, "nomatch"),
+    ]:
+        insert_document(doc_id=id_, metadata=metadata)
+
+    query = _get_sample_vector_store_query(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="name", value="ohn", operator=FilterOperator.CONTAINS
+                )
+            ]
+        )
+    )
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == {"match1", "match2"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    ("filters", "exp_match_ids"),
+    [
+        (
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(key="page", value=42),
+                    MetadataFilters(
+                        filters=[
+                            MetadataFilter(
+                                key="status",
+                                value="published",
+                                operator=FilterOperator.EQ,
+                            ),
+                            MetadataFilter(
+                                key="category",
+                                value=["group1", "group2"],
+                                operator=FilterOperator.ANY,
+                            ),
+                        ],
+                        condition=FilterCondition.OR,
+                    ),
+                ],
+                condition=FilterCondition.AND,
+            ),
+            {"doc_in_category", "doc_published"},
+        ),
+        (
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(key="page", value=42, operator=FilterOperator.GT),
+                    MetadataFilter(key="page", value=45, operator=FilterOperator.LT),
+                ],
+            ),
+            {"page43", "page44"},
+        ),
+    ],
+)
+def test_filter_nested(
+    os_store: OpensearchVectorStore,
+    insert_document,
+    filters: MetadataFilters,
+    exp_match_ids: Set[str],
+):
+    """Test that OpensearchVectorStore correctly applies nested filters."""
+    for metadata, id_ in [
+        (
+            {"category": ["group1", "group3"], "status": "in_review", "page": 42},
+            "doc_in_category",
+        ),
+        (
+            {"category": ["group3", "group4"], "status": "in_review", "page": 42},
+            "nomatch1",
+        ),
+        (
+            {"category": ["group3", "group4"], "status": "published", "page": 42},
+            "doc_published",
+        ),
+    ]:
+        insert_document(doc_id=id_, metadata=metadata)
+    for i in range(43, 46):
+        insert_document(doc_id=f"page{i}", metadata={"page": i})
+    insert_document(doc_id="nomatch2", metadata={})
+
+    query = _get_sample_vector_store_query(filters=filters)
+    query_result = os_store.query(query)
+
+    doc_ids = {node.id_ for node in query_result.nodes}
+    assert doc_ids == exp_match_ids
