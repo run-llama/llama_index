@@ -42,10 +42,6 @@ def asyncio_run(coro: Coroutine) -> Any:
                 "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
             )
 
-    except Exception as e:
-        # Catch any other exceptions and re-raise with more context
-        raise type(e)(f"Error running coroutine: {e!s}") from e
-
 
 def run_async_tasks(
     tasks: List[Coroutine],

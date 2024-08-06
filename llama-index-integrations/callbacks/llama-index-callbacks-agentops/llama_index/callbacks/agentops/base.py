@@ -100,11 +100,14 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
         bound_args: BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> SimpleSpan:
         self._shared_handler_state.is_agent_chat_span[id_] = False
         self._shared_handler_state.span_parent[id_] = parent_span_id
-        return super().new_span(id_, bound_args, instance, parent_span_id, **kwargs)
+        return super().new_span(
+            id_, bound_args, instance, parent_span_id, tags, **kwargs
+        )
 
     def prepare_to_exit_span(
         self,

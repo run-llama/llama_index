@@ -1,3 +1,4 @@
+import httpx
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -28,6 +29,7 @@ class OllamaEmbedding(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         ollama_additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             model_name=model_name,
@@ -47,7 +49,7 @@ class OllamaEmbedding(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return self.get_general_text_embedding(query)
+        return await self.aget_general_text_embedding(query)
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
@@ -55,7 +57,7 @@ class OllamaEmbedding(BaseEmbedding):
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return self.get_general_text_embedding(text)
+        return await self.aget_general_text_embedding(text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
@@ -68,7 +70,7 @@ class OllamaEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return self._get_text_embeddings(texts)
+        return self._aget_text_embeddings(texts)
 
     def get_general_text_embedding(self, prompt: str) -> List[float]:
         """Get Ollama embedding."""
@@ -105,3 +107,32 @@ class OllamaEmbedding(BaseEmbedding):
             raise ValueError(
                 f"Error raised for Ollama Call: {e}.\nResponse: {response.text}"
             )
+
+    async def aget_general_text_embedding(self, prompt: str) -> List[float]:
+        """Asynchronously get Ollama embedding."""
+        async with httpx.AsyncClient() as client:
+            ollama_request_body = {
+                "prompt": prompt,
+                "model": self.model_name,
+                "options": self.ollama_additional_kwargs,
+            }
+
+            response = await client.post(
+                url=f"{self.base_url}/api/embeddings",
+                headers={"Content-Type": "application/json"},
+                json=ollama_request_body,
+            )
+            response.encoding = "utf-8"
+            if response.status_code != 200:
+                optional_detail = response.json().get("error")
+                raise ValueError(
+                    f"Ollama call failed with status code {response.status_code}."
+                    f" Details: {optional_detail}"
+                )
+
+            try:
+                return response.json()["embedding"]
+            except httpx.HTTPStatusError as e:
+                raise ValueError(
+                    f"Error raised for Ollama Call: {e}.\nResponse: {response.text}"
+                )

@@ -62,6 +62,7 @@ version = ">=v2.2.6"
 
 [tool.poetry.group.test_integration.dependencies]
 pytest-httpx = "0.21.0"
+requests-mock = "^1.12.1"
 
 [[tool.poetry.packages]]
 include = "llama_index/"

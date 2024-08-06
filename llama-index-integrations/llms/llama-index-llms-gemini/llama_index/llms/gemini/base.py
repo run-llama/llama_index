@@ -33,21 +33,19 @@ if typing.TYPE_CHECKING:
 
 
 GEMINI_MODELS = (
-    "models/gemini-pro-vision",
-    "models/gemini-pro-vision-latest",
-    "models/gemini-ultra-vision",
-    "models/gemini-ultra-vision-latest",
-    "models/gemini-pro",
-    "models/gemini-pro-latest",
-    "models/gemini-ultra",
-    "models/gemini-ultra-latest",
-    "models/gemini-1.5-pro",
-    "models/gemini-1.5-pro-latest",
+    # Gemini 1.0 Pro Vision has been deprecated on July 12, 2024.
+    # According to official recommendations, switch the default model to gemini-1.5-flash
     "models/gemini-1.5-flash",
     "models/gemini-1.5-flash-latest",
+    "models/gemini-pro",
+    "models/gemini-pro-latest",
+    "models/gemini-1.5-pro",
+    "models/gemini-1.5-pro-latest",
+    "models/gemini-1.0-pro",
     # for some reason, google lists this without the models prefix
     "gemini-1.5-flash",
     "gemini-1.5-flash-latest",
+    "gemini-1.0-pro",
 )
 
 
@@ -98,6 +96,7 @@ class Gemini(CustomLLM):
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
         model_name: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         **generate_kwargs: Any,
     ):
         """Creates a new Gemini model interface."""
@@ -125,6 +124,13 @@ class Gemini(CustomLLM):
             config_params["client_options"] = {"api_endpoint": api_base}
         if transport:
             config_params["transport"] = transport
+        if default_headers:
+            default_metadata: Sequence[Dict[str, str]] = []
+            for key, value in default_headers.items():
+                default_metadata.append((key, value))
+            # `default_metadata` contains (key, value) pairs that will be sent with every request.
+            # When using `transport="rest"`, these will be sent as HTTP headers.
+            config_params["default_metadata"] = default_metadata
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
         genai.configure(**config_params)
 

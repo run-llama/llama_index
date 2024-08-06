@@ -1,10 +1,26 @@
 """Pydantic program through function calling."""
 
 import logging
-from typing import Any, Dict, Optional, Type, cast, Union, List
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Type,
+    cast,
+    Union,
+    List,
+    Generator,
+    AsyncGenerator,
+)
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    create_model,
+    ValidationError,
+)
 from llama_index.core.llms.llm import LLM
+from llama_index.core.base.llms.types import ChatResponse
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.types import BasePydanticProgram, Model
@@ -49,6 +65,50 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
         description=schema_description,
         fn_schema=output_cls,
     )
+
+
+class FlexibleModel(BaseModel):
+    class Config:
+        extra = "allow"
+
+
+def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
+    """Create a flexible version of the model that allows any fields."""
+    return create_model(
+        f"Flexible{model.__name__}",
+        __base__=FlexibleModel,
+        **{field: (Optional[Any], None) for field in model.__fields__},
+    )
+
+
+def num_valid_fields(obj: BaseModel) -> int:
+    """
+    Recursively count the number of fields in a Pydantic object (including nested objects) that aren't None.
+
+    Args:
+        obj (Any): A Pydantic model instance or any other object.
+
+    Returns:
+        int: The number of fields that have non-None values.
+    """
+    if isinstance(obj, BaseModel):
+        count = 0
+        for value in obj.__dict__.values():
+            if isinstance(value, (list, tuple)):
+                count += sum(num_valid_fields(item) for item in value)
+            elif isinstance(value, dict):
+                count += sum(num_valid_fields(item) for item in value.values())
+            elif isinstance(value, BaseModel):
+                count += num_valid_fields(value)
+            elif value is not None:
+                count += 1
+        return count
+    elif isinstance(obj, (list, tuple)):
+        return sum(num_valid_fields(item) for item in obj)
+    elif isinstance(obj, dict):
+        return sum(num_valid_fields(item) for item in obj.values())
+    else:
+        return 1 if obj is not None else 0
 
 
 class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
@@ -167,3 +227,129 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             agent_response,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
         )
+
+    def _process_objects(
+        self,
+        chat_response: ChatResponse,
+        output_cls: Type[BaseModel],
+        cur_objects: Optional[List[BaseModel]] = None,
+    ) -> Union[Model, List[Model]]:
+        """Process stream."""
+        tool_calls = self._llm.get_tool_calls_from_response(
+            chat_response,
+            # error_on_no_tool_call=True
+            error_on_no_tool_call=False,
+        )
+        # TODO: change
+        if len(tool_calls) == 0:
+            # if no tool calls, return single blank output_class
+            return output_cls()
+
+        tool_fn_args = [call.tool_kwargs for call in tool_calls]
+        objects = [output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
+
+        if cur_objects is None or num_valid_fields(objects) > num_valid_fields(
+            cur_objects
+        ):
+            cur_objects = objects
+
+        # right now the objects are typed according to a flexible schema
+        # try to do a pass to convert the objects to the output_cls
+        new_cur_objects = []
+        for obj in cur_objects:
+            try:
+                new_obj = self._output_cls.parse_obj(obj.dict())
+            except ValidationError as e:
+                _logger.warning(f"Failed to parse object: {e}")
+                new_obj = obj
+            new_cur_objects.append(new_obj)
+
+        if self._allow_parallel_tool_calls:
+            return new_cur_objects
+        else:
+            if len(new_cur_objects) > 1:
+                _logger.warning(
+                    "Multiple outputs found, returning first one. "
+                    "If you want to return all outputs, set output_multiple=True."
+                )
+            return new_cur_objects[0]
+
+    def stream_call(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream object.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+
+        """
+        # TODO: we can extend this to non-function calling LLMs as well, coming soon
+        if not isinstance(self._llm, FunctionCallingLLM):
+            raise ValueError("stream_call is only supported for LLMs.")
+
+        llm_kwargs = llm_kwargs or {}
+        tool = _get_function_tool(self._output_cls)
+
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+        messages = self._llm._extend_messages(messages)
+
+        chat_response_gen = self._llm.stream_chat_with_tools(
+            [tool],
+            chat_history=messages,
+            verbose=self._verbose,
+            allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+            **llm_kwargs,
+        )
+        # NOTE: create a new class that treats all its fields as optional
+        # inspired by instructor
+        # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
+        partial_output_cls = create_flexible_model(self._output_cls)
+        cur_objects = None
+        for partial_resp in chat_response_gen:
+            objects = self._process_objects(
+                partial_resp, partial_output_cls, cur_objects=cur_objects
+            )
+            cur_objects = objects if isinstance(objects, list) else [objects]
+            yield objects
+
+    async def astream_call(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+        """Stream objects.
+
+        Returns a generator returning partials of the same object
+        or a list of objects until it returns.
+
+        """
+        llm_kwargs = llm_kwargs or {}
+
+        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
+            # TODO: we can extend this to non-function calling LLMs as well, coming soon
+            if not isinstance(self._llm, FunctionCallingLLM):
+                raise ValueError("stream_call is only supported for LLMs.")
+
+            tool = _get_function_tool(self._output_cls)
+
+            messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+            messages = self._llm._extend_messages(messages)
+
+            chat_response_gen = await self._llm.astream_chat_with_tools(
+                [tool],
+                chat_history=messages,
+                verbose=self._verbose,
+                allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+                **llm_kwargs,
+            )
+            # NOTE: create a new class that treats all its fields as optional
+            # inspired by instructor
+            # https://python.useinstructor.com/concepts/partial/#understanding-partial-responses
+            partial_output_cls = create_flexible_model(self._output_cls)
+            cur_objects = None
+            async for partial_resp in chat_response_gen:
+                objects = self._process_objects(
+                    partial_resp, partial_output_cls, cur_objects=cur_objects
+                )
+                cur_objects = objects if isinstance(objects, list) else [objects]
+                yield objects
+
+        return gen()

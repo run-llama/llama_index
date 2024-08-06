@@ -1,68 +1,117 @@
 import asyncio
-import logging
-import traceback
-from typing import Any, List, Dict
+from logging import getLogger
+from typing import Any, List, Dict, Optional
 
+import nest_asyncio
+import wordlift_client
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-from llama_index.core.vector_stores import VectorStoreQuery, VectorStoreQueryResult
+from llama_index.core.vector_stores import (
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+    MetadataFilters,
+)
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
 )
+from wordlift_client import NodeRequest, VectorSearchQueryRequest, Configuration
+from wordlift_client.exceptions import ApiException
+from wordlift_client.models import AccountInfo, NodeRequestMetadataValue
 
-from manager_client import NodeRequest, VectorSearchQueryRequest
-from manager_client.exceptions import ServiceException
-from utils import (
-    VectorSearchService,
-    WordliftVectorStoreException,
-    WordliftVectorQueryServiceException,
-)
-
-log = logging.getLogger("global")
+log = getLogger(__name__)
 
 
-class KeyProvider:
-    key: str
+def _make_configuration(
+    host: str = "https://api.wordlift.io", key: str = None
+) -> Configuration:
+    """
+    Create a Configuration instance to provide to an ApiClient.
 
-    def __init__(self, key: str):
-        self.key = key
+    :param host: The api endpoint, by default https://api.wordlift.io
+    :param key: The API key
+    :return: A Configuration instance
+    """
+    configuration = Configuration(
+        host=host,
+    )
 
-    async def for_add(self, nodes: List[BaseNode]) -> str:
-        return self.key
+    configuration.api_key["ApiKey"] = key
+    configuration.api_key_prefix["ApiKey"] = "Key"
 
-    async def for_delete(self, ref_doc_id: str) -> str:
-        return self.key
-
-    async def for_query(self, query: VectorStoreQuery) -> str:
-        return self.key
+    return configuration
 
 
-class WordliftVectorStore(VectorStore):
-    stores_text = True
+def _generate_id(account: AccountInfo, node_id: str) -> str:
+    return _trailing_slash(account.dataset_uri) + node_id
 
-    vector_search_service: VectorSearchService
 
-    @staticmethod
-    def create(key: str):
-        return WordliftVectorStore(KeyProvider(key), VectorSearchService())
+def _trailing_slash(value: str) -> str:
+    if not value.endswith("/"):
+        value += "/"
+    return value
+
+
+def _make_metadata_as_node_request_metadata_value(
+    metadata: Dict[str, Any]
+) -> Dict[str, NodeRequestMetadataValue]:
+    values: Dict[str, NodeRequestMetadataValue] = {}
+    for key, value in metadata.items():
+        values[key] = NodeRequestMetadataValue(value)
+
+    return values
+
+
+class WordliftVectorStore(BasePydanticVectorStore):
+    stores_text: bool = True
+
+    _account: Optional[AccountInfo] = PrivateAttr(default=None)
+    _configuration: Configuration = PrivateAttr()
 
     def __init__(
-        self,
-        key_provider: KeyProvider,
-        vector_search_service: VectorSearchService,
+        self, key: Optional[str] = None, configuration: Optional[Configuration] = None
     ):
-        super(WordliftVectorStore, self).__init__(use_async=True)
+        nest_asyncio.apply()
 
-        self.vector_search_service = vector_search_service
-        self.key_provider = key_provider
+        if configuration is None:
+            self._configuration = _make_configuration(key=key)
+        else:
+            self._configuration = configuration
+
+        super().__init__(use_async=True)
+
+    @property
+    def account(self) -> AccountInfo:
+        if self._account is None:
+            self._account = asyncio.get_event_loop().run_until_complete(
+                self._get_account()
+            )
+
+        return self._account
+
+    async def _get_account(self):
+        """
+        Get the account data for the provided key.
+
+        :return:
+        """
+        async with wordlift_client.ApiClient(self._configuration) as api_client:
+            api_instance = wordlift_client.AccountApi(api_client)
+
+            try:
+                return await api_instance.get_me()
+            except ApiException as e:
+                raise RuntimeError(
+                    "Failed to get account info, check the provided key"
+                ) from e
+
+    @property
+    def client(self) -> Any:
+        return self.account
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        log.debug("Add node(s)\n")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        task = loop.create_task(self.async_add(nodes, **add_kwargs))
-        add = loop.run_until_complete(task)
-        loop.close()
-        return add
+        return asyncio.get_event_loop().run_until_complete(
+            self.async_add(nodes, **add_kwargs)
+        )
 
     async def async_add(
         self,
@@ -73,16 +122,20 @@ class WordliftVectorStore(VectorStore):
         if not nodes:
             return []
 
-        log.debug("{0} node(s) received\n".format(len(nodes)))
-
-        # Get the key to use for the operation.
-        key = await self.key_provider.for_add(nodes)
+        log.debug(f"{len(nodes)} node(s) received\n")
 
         requests = []
         for node in nodes:
             node_dict = node.dict()
-            metadata: Dict[str, Any] = node_dict.get("metadata", {})
+            # metadata: Dict[str, Any] = node_dict.get("metadata", {})
+            metadata = _make_metadata_as_node_request_metadata_value(
+                node_dict.get("metadata", {})
+            )
+
+            # Get or generate an ID
             entity_id = metadata.get("entity_id", None)
+            if entity_id is None:
+                entity_id = _generate_id(self.account, node.id_)
 
             entry = NodeRequest(
                 entity_id=entity_id,
@@ -93,66 +146,99 @@ class WordliftVectorStore(VectorStore):
             )
             requests.append(entry)
 
-        log.debug("Inserting data, using key {0}: {1}".format(key, requests))
+        async with wordlift_client.ApiClient(self._configuration) as api_client:
+            api_instance = wordlift_client.VectorSearchNodesApi(api_client)
 
-        try:
-            await self.vector_search_service.update_nodes_collection(
-                node_request=requests, key=key
-            )
-        except Exception:
-            print(traceback.format_exc())
-            return []
+            try:
+                await api_instance.update_nodes_collection(node_request=requests)
+            except ApiException as e:
+                raise RuntimeError("Error creating entities") from e
 
         return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        raise NotImplementedError
+        return asyncio.get_event_loop().run_until_complete(
+            self.adelete(ref_doc_id, **delete_kwargs)
+        )
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        await self.adelete_nodes([ref_doc_id], **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        return asyncio.get_event_loop().run_until_complete(
+            self.adelete_nodes(node_ids, filters, **delete_kwargs)
+        )
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        # Bail out if the list is not provided.
+        if node_ids is None:
+            return
+
+        # Create the IDs.
+        ids = []
+        for node_id in node_ids:
+            ids.append(_generate_id(self.account, node_id))
+
+        async with wordlift_client.ApiClient(self._configuration) as api_client:
+            api_instance = wordlift_client.EntitiesApi(api_client)
+
+            try:
+                await api_instance.delete_entities(id=ids)
+            except ApiException as e:
+                raise RuntimeError("Error deleting entities") from e
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        log.debug("Running in NON async mode")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        task = loop.create_task(self.aquery(query, **kwargs))
-        query = loop.run_until_complete(task)
-        loop.close()
-        return query
+        return asyncio.get_event_loop().run_until_complete(self.aquery(query, **kwargs))
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        request = VectorSearchQueryRequest(
-            query_embedding=query.query_embedding,
-            similarity_top_k=query.similarity_top_k,
-        )
+        if query.query_str:
+            request = VectorSearchQueryRequest(
+                query_string=query.query_str,
+                similarity_top_k=query.similarity_top_k,
+                fields=["schema:url", "schema:name"],
+            )
+        else:
+            request = VectorSearchQueryRequest(
+                query_embedding=query.query_embedding,
+                similarity_top_k=query.similarity_top_k,
+                fields=["schema:url", "schema:name"],
+            )
 
-        # Get the key to use for the operation.
-        key = await self.key_provider.for_query(query)
+        async with wordlift_client.ApiClient(self._configuration) as api_client:
+            api_instance = wordlift_client.VectorSearchQueriesApi(api_client)
 
-        try:
-            page = await self.vector_search_service.query_nodes_collection(
-                vector_search_query_request=request, key=key
-            )
-        except ServiceException as exception:
-            raise WordliftVectorQueryServiceException(
-                exception=exception, msg=exception.body
-            )
-        except Exception as exception:
-            print(traceback.format_exc())
-            raise WordliftVectorStoreException(
-                exception=exception, msg="Failed to fetch query results"
-            )
+            try:
+                page = await api_instance.create_query(
+                    vector_search_query_request=request,
+                )
+            except ApiException as e:
+                log.error(f"Error querying for entities: {e}", exc_info=True)
 
         nodes: List[TextNode] = []
         similarities: List[float] = []
         ids: List[str] = []
 
         for item in page.items:
+            metadata = {**item.metadata, **item.fields}
+
             nodes.append(
                 TextNode(
                     text=item.text,
                     id_=item.node_id,
-                    embedding=item.embeddings,
-                    metadata=item.metadata,
+                    embedding=(item.embeddings if "embeddings" in item else None),
+                    metadata=metadata,
                 )
             )
             similarities.append(item.score)

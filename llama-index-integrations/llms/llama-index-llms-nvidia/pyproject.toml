@@ -59,6 +59,7 @@ types-setuptools = "67.1.0.0"
 
 [tool.poetry.group.test_integration.dependencies]
 pytest-httpx = "0.21.0"
+requests-mock = "^1.12.1"
 
 [tool.pytest.ini_options]
 markers = [
