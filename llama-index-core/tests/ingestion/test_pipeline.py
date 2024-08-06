@@ -57,7 +57,7 @@ def test_run_pipeline() -> None:
     assert len(nodes[0].metadata) > 0
 
 
-def test_run_pipeline_with_parent_node():
+def test_run_pipeline_with_ref_doc_id():
     documents = [
         Document(text="one", doc_id="1"),
     ]
