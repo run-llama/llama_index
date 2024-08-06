@@ -192,7 +192,7 @@ class LoadNodeEvent(Event):
     """Event for loading nodes."""
 
     small_nodes: t.Iterable[TextNode]
-    grouped_nodes: list[TextNode]
+    grouped_nodes: t.List[TextNode]
     index: VectorStoreIndex
     similarity_top_k: int
     llm: LLM
@@ -218,7 +218,7 @@ class LongRAGWorkflow(Workflow):
         similarity_top_k: int = ev.get("similarity_top_k")
         small_chunk_size: int = ev.get("small_chunk_size")
         index: VectorStoreIndex | None = ev.get("index")
-        index_kwargs: dict[str, t.Any] | None = ev.get("index_kwargs")
+        index_kwargs: t.Dict[str, t.Any] | None = ev.get("index_kwargs")
 
         if any(i is None for i in [data_dir, llm, similarity_top_k, small_chunk_size]):
             return None

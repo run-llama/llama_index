@@ -58,13 +58,13 @@ DEFAULT_TRANSFORM_QUERY_TEMPLATE = PromptTemplate(
 class RetrieveEvent(Event):
     """Retrieve event (gets retrieved nodes)."""
 
-    retrieved_nodes: list[NodeWithScore]
+    retrieved_nodes: List[NodeWithScore]
 
 
 class RelevanceEvalEvent(Event):
     """Relevance evaluation event (gets results of relevance evaluation)."""
 
-    relevant_results: list[str]
+    relevant_results: List[str]
 
 
 class TextExtractEvent(Event):
@@ -84,7 +84,7 @@ class CorrectiveRAGWorkflow(Workflow):
     @step(pass_context=True)
     async def ingest(self, ctx: Context, ev: StartEvent) -> StopEvent | None:
         """Ingest step (for ingesting docs and initializing index)."""
-        documents: list[Document] | None = ev.get("documents")
+        documents: List[Document] | None = ev.get("documents")
         tavily_ai_apikey: str | None = ev.get("tavily_ai_apikey")
 
         if any(i is None for i in [documents, tavily_ai_apikey]):
