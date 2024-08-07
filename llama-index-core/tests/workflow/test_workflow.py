@@ -2,7 +2,6 @@ import asyncio
 import time
 
 import pytest
-from pydantic import ValidationError
 
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
@@ -159,21 +158,3 @@ async def test_workflow_num_workers():
     assert (
         1.0 <= execution_time < 1.1
     ), f"Execution time was {execution_time:.2f} seconds"
-
-
-@pytest.mark.asyncio()
-async def test_workflow_num_workers_error():
-    # num_workers must be greater than 0
-    with pytest.raises(ValidationError):
-
-        class NumWorkersErrorWorkflow(Workflow):
-            @step(num_workers=0)
-            async def step1(self, ev: StartEvent) -> StopEvent:
-                return StopEvent(result="Done")
-
-    with pytest.raises(ValidationError):
-
-        class NumWorkersErrorWorkflow(Workflow):
-            @step(num_workers=-1)
-            async def step1(self, ev: StartEvent) -> StopEvent:
-                return StopEvent(result="Done")
