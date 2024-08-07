@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import (
@@ -83,7 +83,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("callback_manager", pre=True)
+    @field_validator("callback_manager", mode="before")
+    @classmethod
     def _validate_callback_manager(
         cls, v: Optional[CallbackManager]
     ) -> CallbackManager:

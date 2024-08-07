@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, Optional, cast
 
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
@@ -162,7 +162,8 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
     num_nodes: int = Field(default=1)
     mode: str = Field(default="next")
 
-    @validator("mode")
+    @field_validator("mode")
+    @classmethod
     def _validate_mode(cls, v: str) -> str:
         """Validate mode."""
         if v not in ["next", "previous", "both"]:

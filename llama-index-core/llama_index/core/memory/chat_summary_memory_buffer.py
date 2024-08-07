@@ -49,6 +49,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
     _token_count: int = PrivateAttr(default=0)
 
     @model_validator(mode="before")
+    @classmethod
     def validate_memory(cls, values: dict) -> dict:
         """Validate the memory."""
         # Validate token limits

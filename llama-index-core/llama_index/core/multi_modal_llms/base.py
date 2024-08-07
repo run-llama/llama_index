@@ -17,7 +17,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, validator
+from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_CONTEXT_WINDOW,
@@ -83,7 +83,8 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("callback_manager", pre=True)
+    @field_validator("callback_manager", mode="before")
+    @classmethod
     def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
         if v is None:
             return CallbackManager([])

@@ -6,7 +6,7 @@ Memory backed by a vector database.
 
 import uuid
 from typing import Any, Dict, List, Optional
-from llama_index.core.bridge.pydantic import validator
+from llama_index.core.bridge.pydantic import field_validator
 
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import VectorStore
@@ -68,7 +68,8 @@ class VectorMemory(BaseMemory):
         description="The super node for the current active user-message batch.",
     )
 
-    @validator("vector_index")
+    @field_validator("vector_index")
+    @classmethod
     def validate_vector_index(cls, value: Any) -> Any:
         """Validate vector index."""
         # NOTE: we can't import VectorStoreIndex directly due to circular imports,

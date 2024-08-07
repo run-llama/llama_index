@@ -33,6 +33,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
         return "ChatMemoryBuffer"
 
     @model_validator(mode="before")
+    @classmethod
     def validate_memory(cls, values: dict) -> dict:
         # Validate token limit
         token_limit = values.get("token_limit", -1)

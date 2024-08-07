@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Sequence
 
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.core.node_parser.node_utils import (
     build_nodes_from_splits,
@@ -40,7 +40,8 @@ class NodeParser(TransformComponent, ABC):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("id_func", pre=True)
+    @field_validator("id_func", mode="before")
+    @classmethod
     def _validate_id_func(cls, v: Any) -> Any:
         if v is None:
             return default_id_func

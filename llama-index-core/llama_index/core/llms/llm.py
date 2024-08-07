@@ -34,7 +34,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
     model_validator,
-    validator,
+    field_validator,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -193,19 +193,22 @@ class LLM(BaseLLM):
 
     # -- Pydantic Configs --
 
-    @validator("messages_to_prompt", pre=True)
+    @field_validator("messages_to_prompt", mode="before")
+    @classmethod
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
     ) -> MessagesToPromptType:
         return messages_to_prompt or generic_messages_to_prompt
 
-    @validator("completion_to_prompt", pre=True)
+    @field_validator("completion_to_prompt", mode="before")
+    @classmethod
     def set_completion_to_prompt(
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
+    @classmethod
     def check_prompts(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if values.get("completion_to_prompt") is None:
             values["completion_to_prompt"] = default_completion_to_prompt
