@@ -3,20 +3,20 @@ import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.workflow.decorators import step, StepConfig
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
+from llama_index.core.workflow.decorators import StepConfig, step
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_steps_from_instance,
 )
 
+from .context import Context
 from .errors import (
+    WorkflowDone,
     WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
-    WorkflowDone,
 )
-from .context import Context
 
 dispatcher = get_dispatcher(__name__)
 
@@ -76,6 +76,67 @@ class Workflow(metaclass=_WorkflowMeta):
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}
 
+    async def _task(
+        self,
+        name: str,
+        queue: asyncio.Queue,
+        step: Callable,
+        config: StepConfig,
+        stepwise: bool = False,
+    ) -> None:
+        while True:
+            ev = await queue.get()
+            if type(ev) not in config.accepted_events:
+                continue
+
+            # do we need to wait for the step flag?
+            if stepwise:
+                await self._step_flags[name].wait()
+
+                # clear all flags so that we only run one step
+                for flag in self._step_flags.values():
+                    flag.clear()
+
+            if self._verbose and name != "_done":
+                print(f"Running step {name}")
+
+            # run step
+            args = []
+            if config.pass_context:
+                args.append(self.get_context(name))
+            args.append(ev)
+
+            # - check if its async or not
+            # - if not async, run it in an executor
+            instrumented_step = dispatcher.span(step)
+
+            if asyncio.iscoroutinefunction(step):
+                new_ev = await instrumented_step(*args)
+            else:
+                new_ev = await asyncio.get_event_loop().run_in_executor(
+                    None, instrumented_step, *args
+                )
+
+            if self._verbose and name != "_done":
+                if new_ev is not None:
+                    print(f"Step {name} produced event {type(new_ev).__name__}")
+                else:
+                    print(f"Step {name} produced no event")
+
+            # handle the return value
+            if new_ev is None:
+                continue
+
+            # Store the accepted event for the drawing operations
+            self._accepted_events.append((name, type(ev).__name__))
+
+            if not isinstance(new_ev, Event):
+                warnings.warn(
+                    f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
+                )
+            else:
+                self.send_event(new_ev)
+
     def _start(self, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.
 
@@ -89,69 +150,12 @@ class Workflow(metaclass=_WorkflowMeta):
             )
             if not step_config:
                 raise ValueError(f"Step {name} is missing `@step()` decorator.")
-
-            async def _task(
-                name: str,
-                queue: asyncio.Queue,
-                step: Callable,
-                config: StepConfig,
-            ) -> None:
-                while True:
-                    ev = await queue.get()
-                    if type(ev) not in config.accepted_events:
-                        continue
-
-                    # do we need to wait for the step flag?
-                    if stepwise:
-                        await self._step_flags[name].wait()
-
-                        # clear all flags so that we only run one step
-                        for flag in self._step_flags.values():
-                            flag.clear()
-
-                    if self._verbose and name != "_done":
-                        print(f"Running step {name}")
-
-                    # run step
-                    args = []
-                    if config.pass_context:
-                        args.append(self.get_context(name))
-                    args.append(ev)
-
-                    # - check if its async or not
-                    # - if not async, run it in an executor
-                    instrumented_step = dispatcher.span(step)
-
-                    if asyncio.iscoroutinefunction(step):
-                        new_ev = await instrumented_step(*args)
-                    else:
-                        new_ev = await asyncio.get_event_loop().run_in_executor(
-                            None, instrumented_step, *args
-                        )
-
-                    if self._verbose and name != "_done":
-                        if new_ev is not None:
-                            print(f"Step {name} produced event {type(new_ev).__name__}")
-                        else:
-                            print(f"Step {name} produced no event")
-
-                    # handle the return value
-                    if new_ev is None:
-                        continue
-
-                    # Store the accepted event for the drawing operations
-                    self._accepted_events.append((name, type(ev).__name__))
-
-                    if not isinstance(new_ev, Event):
-                        warnings.warn(
-                            f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
-                        )
-                    else:
-                        self.send_event(new_ev)
-
             self._tasks.add(
                 asyncio.create_task(
-                    _task(name, self._queues[name], step_func, step_config), name=name
+                    self._task(
+                        name, self._queues[name], step_func, step_config, stepwise
+                    ),
+                    name=name,
                 )
             )
 
@@ -165,6 +169,36 @@ class Workflow(metaclass=_WorkflowMeta):
         for queue in self._queues.values():
             queue.put_nowait(message)
         self._broker_log.append(message)
+
+    def replicate_step(
+        self, original_name: str, new_name: str, stepwise: bool = False
+    ) -> None:
+        """Replicates an existing step function to a new name.
+        This method is used to create a new step function that shares the same
+        queue and configuration as the original step function.
+        """
+        all_steps = self._get_steps()
+
+        if original_name not in all_steps:
+            raise ValueError(f"Step {original_name} does not exist")
+        if new_name in all_steps:
+            raise ValueError(f"Step {new_name} already exists")
+        step_func = all_steps[original_name]
+
+        step_config = getattr(step_func, "__step_config", None)
+
+        self._tasks.add(
+            asyncio.create_task(
+                self._task(
+                    new_name,
+                    self._queues[original_name],
+                    step_func,
+                    step_config,
+                    stepwise,
+                ),
+                name=new_name,
+            )
+        )
 
     @dispatcher.span
     async def run(self, **kwargs: Any) -> str:
