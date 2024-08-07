@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from llama_index.core.base.agent.types import TaskStepOutput, TaskStep
-from llama_index.core.bridge.pydantic import root_validator, validator
+from llama_index.core.bridge.pydantic import model_validator, validator
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
@@ -69,7 +69,7 @@ class AgentChatWithStepEndEvent(BaseEvent):
 
     response: Optional[AGENT_CHAT_RESPONSE_TYPE]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validate_response(cls: Any, values: Any) -> Any:
         """Validate response."""
         response = values.get("response")

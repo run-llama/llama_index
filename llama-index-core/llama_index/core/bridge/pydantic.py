@@ -9,7 +9,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
     create_model,
-    root_validator,
+    model_validator,
     validator,
     parse_obj_as,
 )
@@ -23,7 +23,7 @@ __all__ = [
     "GetJsonSchemaHandler",
     "Field",
     "PrivateAttr",
-    "root_validator",
+    "model_validator",
     "validator",
     "create_model",
     "StrictFloat",

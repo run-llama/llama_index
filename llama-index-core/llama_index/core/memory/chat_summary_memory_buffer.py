@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_validator
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
 from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
@@ -48,7 +48,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     _token_count: int = PrivateAttr(default=0)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validate_memory(cls, values: dict) -> dict:
         """Validate the memory."""
         # Validate token limits

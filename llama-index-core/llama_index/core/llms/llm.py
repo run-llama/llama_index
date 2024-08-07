@@ -33,7 +33,7 @@ from llama_index.core.base.query_pipeline.query import (
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
-    root_validator,
+    model_validator,
     validator,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
@@ -205,7 +205,7 @@ class LLM(BaseLLM):
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
 
-    @root_validator
+    @model_validator(mode="after")
     def check_prompts(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if values.get("completion_to_prompt") is None:
             values["completion_to_prompt"] = default_completion_to_prompt
