@@ -1,9 +1,9 @@
 """Corrective RAG LlamaPack class."""
 
-import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.core import VectorStoreIndex, SummaryIndex
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.openai import OpenAI
 from llama_index.core.schema import Document, NodeWithScore
@@ -108,7 +108,7 @@ class CorrectiveRAGWorkflow(Workflow):
     async def retrieve(self, ctx: Context, ev: StartEvent) -> Optional[RetrieveEvent]:
         """Retrieve the relevant nodes for the query."""
         query_str = ev.get("query_str")
-        retriever_kwargs = ev.get("retriever_kwargs")
+        retriever_kwargs = ev.get("retriever_kwargs", {})
 
         if query_str is None:
             return None
@@ -199,7 +199,7 @@ class CorrectiveRAGPack(BaseLlamaPack):
         """Init params."""
         self._wf = CorrectiveRAGWorkflow()
 
-        asyncio.run(
+        asyncio_run(
             self._wf.run(documents=documents, tavily_ai_apikey=tavily_ai_apikey)
         )
 
@@ -212,4 +212,4 @@ class CorrectiveRAGPack(BaseLlamaPack):
 
     def run(self, query_str: str, **kwargs: Any) -> Any:
         """Run the pipeline."""
-        return asyncio.run(self._wf.run(query_str=query_str, retriever_kwargs=kwargs))
+        return asyncio_run(self._wf.run(query_str=query_str, retriever_kwargs=kwargs))

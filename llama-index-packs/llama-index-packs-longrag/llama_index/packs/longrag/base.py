@@ -1,7 +1,7 @@
-import asyncio
 import typing as t
 
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -344,7 +344,7 @@ class LongRAGPack(BaseLlamaPack):
         self._small_chunk_size = small_chunk_size
 
         # run wf initialization
-        result = asyncio.run(
+        result = asyncio_run(
             self._wf.run(
                 data_dir=self._data_dir,
                 llm=self._llm,
@@ -372,4 +372,4 @@ class LongRAGPack(BaseLlamaPack):
 
     def run(self, query: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Runs pipeline."""
-        return asyncio.run(self._wf.run(query_str=query))
+        return asyncio_run(self._wf.run(query_str=query))

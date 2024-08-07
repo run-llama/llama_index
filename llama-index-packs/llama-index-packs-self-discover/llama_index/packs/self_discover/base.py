@@ -1,6 +1,6 @@
-import asyncio
 from typing import Any, Dict, Optional
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.llms import LLM
@@ -107,6 +107,9 @@ class SelfDiscoverWorkflow(Workflow):
         llm: LLM = ev.get("llm")
         ctx.data["llm"] = llm
 
+        if task is None or llm is None:
+            raise ValueError("'task' and 'llm' arguments are required.")
+
         # format prompt and get result from LLM
         prompt = SELECT_PRMOPT_TEMPLATE.format(
             task=task, reasoning_modules=_REASONING_MODULES
@@ -190,4 +193,4 @@ class SelfDiscoverPack(BaseLlamaPack):
 
     def run(self, task):
         """Runs the configured pipeline for a specified task and reasoning modules."""
-        return asyncio.run(self.workflow.run(task=task, llm=self.llm))
+        return asyncio_run(self.workflow.run(task=task, llm=self.llm))
