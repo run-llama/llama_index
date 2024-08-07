@@ -392,7 +392,7 @@ def _convert_to_cohere_tool(
     tool: BaseTool,
 ) -> Dict[str, Any]:
     """
-    Convert a BaseTool instance, JSON schema dict, or BaseModel type to a Cohere tool.
+    Convert a BaseTool instance to a Cohere tool.
     """
     parameters = tool.metadata.get_parameters_dict()
     properties = parameters.get("properties", {})
