@@ -12,7 +12,7 @@ from pydantic import (
     model_validator,
     field_validator,
     ValidationInfo,
-    parse_obj_as,
+    TypeAdapter,
 )
 from pydantic.error_wrappers import ValidationError
 from pydantic.fields import FieldInfo
@@ -32,6 +32,7 @@ __all__ = [
     "StrictStr",
     "FieldInfo",
     "ValidationInfo",
+    "TypeAdapter",
     "ValidationError",
     "GenericModel",
     "BaseConfig",
