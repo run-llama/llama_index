@@ -3,3 +3,5 @@
       members:
         - NeptuneAnalyticsGraphStore
         - NeptuneDatabaseGraphStore
+        - NeptuneAnalyticsPropertyGraphStore
+        - NeptuneDatabasePropertyGraphStore

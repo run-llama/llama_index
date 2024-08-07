@@ -12,6 +12,10 @@
 
 - Neo4j property graph client side batching (#15179)
 
+### `llama-index-graph-stores-neptune` [0.1.4]
+
+- PropertyGraphStore support for Amazon Neptune (#15126)
+
 ### `llama-index-llms-gemini` [0.2.0]
 
 - feat: add default_headers to Gemini model (#15141)
@@ -27,6 +31,10 @@
 ### `llama-index-vector-stores-qdrant` [0.2.15]
 
 - feat: Allow None metadata filter by using IS_EMPTY operator (#15167)
+
+### `llama-index-vector-stores-wordlift` [0.3.0]
+
+- Add support for fields projection and update sample Notebook (#15140)
 
 ## [2024-08-05]
 
