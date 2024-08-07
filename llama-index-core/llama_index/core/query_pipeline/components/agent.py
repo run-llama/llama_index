@@ -175,6 +175,7 @@ class AgentFnComponent(BaseAgentComponent):
     ) -> None:
         """Initialize."""
         # determine parameters
+        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
         default_req_params, default_opt_params = get_parameters(fn)
         # make sure task and step are part of the list, and remove them from the list
         if "task" not in default_req_params or "state" not in default_req_params:
@@ -192,7 +193,6 @@ class AgentFnComponent(BaseAgentComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
 
     class Config:
         arbitrary_types_allowed = True
