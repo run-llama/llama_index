@@ -22,13 +22,7 @@ from llama_index.core.prompts.mixin import (
     PromptMixinType,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -196,7 +190,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         table_retriever (ObjectRetriever[SQLTableSchema]): Object retriever for
             SQLTableSchema objects. Defaults to None.
         context_str_prefix (str): Prefix for context string. Defaults to None.
-        service_context (ServiceContext): Service context. Defaults to None.
         return_raw (bool): Whether to return plain-text dump of SQL results, or parsed into Nodes.
         handle_sql_errors (bool): Whether to handle SQL errors. Defaults to True.
         sql_only (bool) : Whether to get only sql and not the sql query result.
@@ -216,7 +209,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        service_context: Optional[ServiceContext] = None,
         return_raw: bool = True,
         handle_sql_errors: bool = True,
         sql_only: bool = False,
@@ -231,21 +223,16 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             sql_database, tables, context_query_kwargs, table_retriever
         )
         self._context_str_prefix = context_str_prefix
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._sql_parser_mode = sql_parser_mode
 
-        embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
+        embed_model = embed_model or Settings.embed_model
         self._sql_parser = self._load_sql_parser(sql_parser_mode, embed_model)
         self._handle_sql_errors = handle_sql_errors
         self._sql_only = sql_only
         self._verbose = verbose
-        super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

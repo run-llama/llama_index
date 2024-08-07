@@ -22,12 +22,7 @@ from llama_index.core.output_parsers.base import (
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import IndexNode, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import (
     FilterCondition,
     MetadataFilters,
@@ -89,20 +84,13 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         extra_filters: Optional[MetadataFilters] = None,
         object_map: Optional[dict] = None,
         objects: Optional[List[IndexNode]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         self._index = index
         self._vector_store_info = vector_store_info
         self._default_empty_query_vector = default_empty_query_vector
-
-        service_context = service_context or self._index.service_context
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        self._llm = llm or Settings.llm
+        callback_manager = callback_manager or Settings.callback_manager
 
         # prompt
         prompt_template_str = (

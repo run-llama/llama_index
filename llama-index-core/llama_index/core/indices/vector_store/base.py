@@ -23,8 +23,7 @@ from llama_index.core.schema import (
     MetadataMode,
     TransformComponent,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, embed_model_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import iter_batch
@@ -61,8 +60,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -71,14 +68,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self._embed_model = (
             resolve_embed_model(embed_model, callback_manager=callback_manager)
             if embed_model
-            else embed_model_from_settings_or_context(Settings, service_context)
+            else Settings.embed_model
         )
 
         self._insert_batch_size = insert_batch_size
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,
@@ -92,8 +88,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
         if not vector_store.stores_text:
@@ -107,7 +101,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return cls(
             nodes=[],
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             **kwargs,
         )
