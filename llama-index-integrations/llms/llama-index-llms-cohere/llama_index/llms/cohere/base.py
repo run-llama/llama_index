@@ -155,7 +155,7 @@ class Cohere(FunctionCallingLLM):
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-            chat_history.append(user_msg)
+        chat_history.append(user_msg)
 
         tools_cohere_format = format_to_cohere_tools(tools)
         return {
