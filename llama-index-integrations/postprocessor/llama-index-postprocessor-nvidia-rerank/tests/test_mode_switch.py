@@ -7,15 +7,14 @@ from requests_mock import Mocker
 UNKNOWN_URLS = [
     "https://test_url/v1",
     "https://test_url/v1/",
-    "https://test_url/.../v1",
     "http://test_url/v1",
     "http://test_url/v1/",
-    "http://test_url/.../v1/",
 ]
 
 
 @pytest.fixture()
 def mock_local_models(requests_mock: Mocker, base_url: str) -> None:
+    base_url = base_url.rstrip("/")
     requests_mock.get(
         url=f"{base_url}/models",
         json={

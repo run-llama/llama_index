@@ -92,10 +92,9 @@ class NVIDIARerank(BaseNodePostprocessor):
         """
         super().__init__(model=model, **kwargs)
 
-        if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
-            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
-        else:
+        if base_url and base_url not in KNOWN_URLS:
             base_url = self._validate_url(base_url)
+        self._base_url = base_url or MODEL_ENDPOINT_MAP.get(model, BASE_URL)
 
         self._api_key = get_from_param_or_env(
             "api_key",
@@ -110,7 +109,6 @@ class NVIDIARerank(BaseNodePostprocessor):
             warnings.warn(
                 "An API key is required for hosted NIM. This will become an error in 0.2.0."
             )
-
         if not model:
             self.__set_default_model()
 
@@ -142,8 +140,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             "Authorization": f"Bearer {self._api_key}",
             "Accept": "application/json",
         }
-
-        url = urljoin(self._base_url, "/models")
+        url = urljoin(self._base_url, "models")
         response = session.get(url, headers=_headers)
         response.raise_for_status()
 
@@ -178,9 +175,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         expected_format = "Expected format is 'http://host:port'."
         result = urlparse(base_url)
         if not (result.scheme and result.netloc):
-            raise ValueError(
-                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
-            )
+            raise ValueError(f"Invalid base_url, {expected_format}")
         if result.path:
             normalized_path = result.path.strip("/")
             if normalized_path == "v1":
@@ -188,8 +183,8 @@ class NVIDIARerank(BaseNodePostprocessor):
             elif normalized_path == "v1/rankings":
                 warnings.warn(f"{expected_format} Rest is Ignored.")
             else:
-                raise ValueError(f"Base URL path is not recognized. {expected_format}")
-        return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
+                raise ValueError(f"Invalid base_url, {expected_format}")
+        return urlunparse((result.scheme, result.netloc, "v1/", "", "", ""))
 
     @property
     def available_models(self) -> List[Model]:
