@@ -177,14 +177,16 @@ class Workflow(metaclass=_WorkflowMeta):
         This method is used to create a new step function that shares the same
         queue and configuration as the original step function.
         """
-        all_steps = self._get_steps()
+        if new_name in {task.get_name() for task in self._tasks}:
+            return
 
+        all_steps = self._get_steps()
         if original_name not in all_steps:
             raise ValueError(f"Step {original_name} does not exist")
         if new_name in all_steps:
             raise ValueError(f"Step {new_name} already exists")
-        step_func = all_steps[original_name]
 
+        step_func = all_steps[original_name]
         step_config = getattr(step_func, "__step_config", None)
 
         self._tasks.add(
