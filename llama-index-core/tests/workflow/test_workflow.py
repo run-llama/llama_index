@@ -125,6 +125,7 @@ async def test_replicate_step():
             # replicate the step 2 times, because we still have the original test_step
             for i in range(ctx.data["num_to_collect"] - 1):
                 self.replicate_step("test_step", f"replicated_step_{i}")
+            self.replicate_step("test_step", f"replicated_step_{0}")
             self.send_event(OneTestEvent(test_param="test1"))
             self.send_event(OneTestEvent(test_param="test2"))
             self.send_event(OneTestEvent(test_param="test3"))
@@ -161,3 +162,51 @@ async def test_replicate_step():
     assert (
         1.0 <= execution_time < 1.1
     ), f"Execution time was {execution_time:.2f} seconds"
+
+
+@pytest.mark.asyncio()
+async def test_replicate_step_run_step():
+    class ReplicateStepWorkflow(Workflow):
+        @step(pass_context=True)
+        async def original_step(
+            self, ctx: Context, ev: StartEvent
+        ) -> OneTestEvent | LastEvent:
+            ctx.data["num_to_collect"] = 3
+            for i in range(ctx.data["num_to_collect"] - 1):
+                self.replicate_step("test_step", f"replicated_step_{i}")
+            self.send_event(OneTestEvent(test_param="test1"))
+            self.send_event(OneTestEvent(test_param="test2"))
+            self.send_event(OneTestEvent(test_param="test3"))
+            return LastEvent()
+
+        @step()
+        async def test_step(self, ev: OneTestEvent) -> AnotherTestEvent:
+            await asyncio.sleep(0)  # Reduced sleep time for faster test execution
+            return AnotherTestEvent(another_test_param=ev.test_param)
+
+        @step(pass_context=True)
+        async def final_step(
+            self, ctx: Context, ev: AnotherTestEvent | LastEvent
+        ) -> StopEvent:
+            events = ctx.collect_events(
+                ev, [AnotherTestEvent] * ctx.data["num_to_collect"]
+            )
+            if events is None:
+                return None
+            return StopEvent(result=[ev.another_test_param for ev in events])
+
+    workflow = ReplicateStepWorkflow()
+
+    # Run original_step
+    result = await workflow.run_step()
+    assert result is None
+    assert not workflow.is_done()
+    # Run test_step and replicated steps
+    for _ in range(5):
+        result = await workflow.run_step()
+        assert result is None
+        assert not workflow.is_done()
+    # Run final_step
+    result = await workflow.run_step()
+    assert set(result) == {"test1", "test2", "test3"}
+    assert workflow.is_done()
