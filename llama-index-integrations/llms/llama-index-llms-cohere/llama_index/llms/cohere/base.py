@@ -183,7 +183,6 @@ class Cohere(FunctionCallingLLM):
         for tool_call in tool_calls:
             if not isinstance(tool_call, ToolCall):
                 raise ValueError("Invalid tool_call object")
-            # argument_dict = json.loads(tool_call.parameters)
             tool_selections.append(
                 ToolSelection(
                     tool_id=uuid.uuid4().hex[:],
