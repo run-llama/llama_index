@@ -1,12 +1,11 @@
-from typing import Any, Callable, List, Optional, TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
+
+from pydantic import Field
 
 from llama_index.core.bridge.pydantic import BaseModel
-from .utils import (
-    validate_step_signature,
-    is_free_function,
-)
-from .errors import WorkflowValidationError
 
+from .errors import WorkflowValidationError
+from .utils import is_free_function, validate_step_signature
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -17,9 +16,14 @@ class StepConfig(BaseModel):
     event_name: str
     return_types: List[Any]
     pass_context: bool
+    num_workers: int = Field(default=1, gt=0)
 
 
-def step(workflow: Optional[Type["Workflow"]] = None, pass_context: bool = False):
+def step(
+    workflow: Optional[Type["Workflow"]] = None,
+    pass_context: bool = False,
+    num_workers: int = 1,
+):
     """Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
@@ -45,6 +49,7 @@ def step(workflow: Optional[Type["Workflow"]] = None, pass_context: bool = False
             event_name=event_name,
             return_types=return_types,
             pass_context=pass_context,
+            num_workers=num_workers,
         )
 
         return func
