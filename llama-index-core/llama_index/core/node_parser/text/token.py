@@ -61,11 +61,6 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             )
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
-        self._tokenizer = tokenizer or get_tokenizer()
-
-        all_seps = [separator] + (backup_separators or [])
-        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
-
         super().__init__(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
@@ -76,6 +71,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
+        self._tokenizer = tokenizer or get_tokenizer()
+        all_seps = [separator] + (backup_separators or [])
+        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
     @classmethod
     def from_defaults(

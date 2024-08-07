@@ -367,9 +367,6 @@ class SummaryExtractor(BaseExtractor):
         # validation
         if not all(s in ["self", "prev", "next"] for s in summaries):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
-        self._self_summary = "self" in summaries
-        self._prev_summary = "prev" in summaries
-        self._next_summary = "next" in summaries
 
         super().__init__(
             llm=llm or llm_predictor or Settings.llm,
@@ -378,6 +375,9 @@ class SummaryExtractor(BaseExtractor):
             num_workers=num_workers,
             **kwargs,
         )
+        self._self_summary = "self" in summaries
+        self._prev_summary = "prev" in summaries
+        self._next_summary = "next" in summaries
 
     @classmethod
     def class_name(cls) -> str:

@@ -66,6 +66,7 @@ class AgentInputComponent(QueryComponent):
     ) -> None:
         """Initialize."""
         # determine parameters
+        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
         default_req_params, default_opt_params = get_parameters(fn)
         if req_params is None:
             req_params = default_req_params
@@ -74,7 +75,6 @@ class AgentInputComponent(QueryComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
 
     class Config:
         arbitrary_types_allowed = True

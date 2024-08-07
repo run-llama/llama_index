@@ -40,22 +40,19 @@ class LLMRerank(BaseNodePostprocessor):
         top_n: int = 10,
     ) -> None:
         choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
-
         llm = llm or llm_from_settings_or_context(Settings, service_context)
-
-        self._format_node_batch_fn = (
-            format_node_batch_fn or default_format_node_batch_fn
-        )
-        self._parse_choice_select_answer_fn = (
-            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
-        )
-
         super().__init__(
             llm=llm,
             choice_select_prompt=choice_select_prompt,
             choice_batch_size=choice_batch_size,
             service_context=service_context,
             top_n=top_n,
+        )
+        self._format_node_batch_fn = (
+            format_node_batch_fn or default_format_node_batch_fn
+        )
+        self._parse_choice_select_answer_fn = (
+            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
 
     def _get_prompts(self) -> PromptDictType:

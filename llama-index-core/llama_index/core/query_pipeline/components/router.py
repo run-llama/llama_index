@@ -111,15 +111,13 @@ class RouterComponent(QueryComponent):
                 raise ValueError("Expected one required input key")
             query_keys.append(next(iter(new_component.free_req_input_keys)))
             new_components.append(new_component)
-
-        self._query_keys = query_keys
-
         super().__init__(
             selector=selector,
             choices=choices,
             components=new_components,
             verbose=verbose,
         )
+        self._query_keys = query_keys
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

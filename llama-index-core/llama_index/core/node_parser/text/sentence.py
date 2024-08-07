@@ -83,8 +83,18 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 f"({chunk_size}), should be smaller."
             )
         id_func = id_func or default_id_func
-
         callback_manager = callback_manager or CallbackManager([])
+        super().__init__(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            secondary_chunking_regex=secondary_chunking_regex,
+            separator=separator,
+            paragraph_separator=paragraph_separator,
+            callback_manager=callback_manager,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
+        )
         self._chunking_tokenizer_fn = (
             chunking_tokenizer_fn or split_by_sentence_tokenizer()
         )
@@ -100,18 +110,6 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             split_by_sep(separator),
             split_by_char(),
         ]
-
-        super().__init__(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            secondary_chunking_regex=secondary_chunking_regex,
-            separator=separator,
-            paragraph_separator=paragraph_separator,
-            callback_manager=callback_manager,
-            include_metadata=include_metadata,
-            include_prev_next_rel=include_prev_next_rel,
-            id_func=id_func,
-        )
 
     @classmethod
     def from_defaults(
