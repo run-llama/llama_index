@@ -9,10 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.retrievers.relik"
-
-[tool.llamahub.class_authors]
-RelikPathExtractor = "llama-index"
+import_path = "llama_index.utils.workflow"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,18 +19,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index retrievers relik integration"
+description = "llama-index utils for workflows"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-retrievers-relik"
+name = "llama-index-utils-workflow"
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
+python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-relik = "^1.0.3"
-huggingface-hub = "<0.24.0"  # TODO: relik breaks on newer versions
+pyvis = "^0.3.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

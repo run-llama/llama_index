@@ -1,5 +1,4 @@
 from typing import Any, List, Dict, Optional, Tuple
-
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -39,6 +38,7 @@ EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
+CHUNK_SIZE = 1000
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -268,63 +268,69 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 pass
 
         if chunk_dicts:
-            self.structured_query(
-                """
-                UNWIND $data AS row
-                MERGE (c:Chunk {id: row.id})
-                SET c.text = row.text
-                WITH c, row
-                SET c += row.properties
-                WITH c, row.embedding AS embedding
-                WHERE embedding IS NOT NULL
-                CALL db.create.setNodeVectorProperty(c, 'embedding', embedding)
-                RETURN count(*)
-                """,
-                param_map={"data": chunk_dicts},
-            )
+            for index in range(0, len(chunk_dicts), CHUNK_SIZE):
+                chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
+                self.structured_query(
+                    """
+                    UNWIND $data AS row
+                    MERGE (c:Chunk {id: row.id})
+                    SET c.text = row.text
+                    WITH c, row
+                    SET c += row.properties
+                    WITH c, row.embedding AS embedding
+                    WHERE embedding IS NOT NULL
+                    CALL db.create.setNodeVectorProperty(c, 'embedding', embedding)
+                    RETURN count(*)
+                    """,
+                    param_map={"data": chunked_params},
+                )
 
         if entity_dicts:
-            self.structured_query(
-                """
-                UNWIND $data AS row
-                MERGE (e:`__Entity__` {id: row.id})
-                SET e += apoc.map.clean(row.properties, [], [])
-                SET e.name = row.name
-                WITH e, row
-                CALL apoc.create.addLabels(e, [row.label])
-                YIELD node
-                WITH e, row
-                CALL {
+            for index in range(0, len(entity_dicts), CHUNK_SIZE):
+                chunked_params = entity_dicts[index : index + CHUNK_SIZE]
+                self.structured_query(
+                    """
+                    UNWIND $data AS row
+                    MERGE (e:`__Entity__` {id: row.id})
+                    SET e += apoc.map.clean(row.properties, [], [])
+                    SET e.name = row.name
                     WITH e, row
+                    CALL apoc.create.addLabels(e, [row.label])
+                    YIELD node
                     WITH e, row
-                    WHERE row.embedding IS NOT NULL
-                    CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
-                    RETURN count(*) AS count
-                }
-                WITH e, row WHERE row.properties.triplet_source_id IS NOT NULL
-                MERGE (c:Chunk {id: row.properties.triplet_source_id})
-                MERGE (e)<-[:MENTIONS]-(c)
-                """,
-                param_map={"data": entity_dicts},
-            )
+                    CALL {
+                        WITH e, row
+                        WITH e, row
+                        WHERE row.embedding IS NOT NULL
+                        CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
+                        RETURN count(*) AS count
+                    }
+                    WITH e, row WHERE row.properties.triplet_source_id IS NOT NULL
+                    MERGE (c:Chunk {id: row.properties.triplet_source_id})
+                    MERGE (e)<-[:MENTIONS]-(c)
+                    """,
+                    param_map={"data": chunked_params},
+                )
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
+        for index in range(0, len(params), CHUNK_SIZE):
+            chunked_params = params[index : index + CHUNK_SIZE]
 
-        self.structured_query(
-            """
-            UNWIND $data AS row
-            MERGE (source {id: row.source_id})
-            ON CREATE SET source:Chunk
-            MERGE (target {id: row.target_id})
-            ON CREATE SET target:Chunk
-            WITH source, target, row
-            CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
-            RETURN count(*)
-            """,
-            param_map={"data": params},
-        )
+            self.structured_query(
+                """
+                UNWIND $data AS row
+                MERGE (source {id: row.source_id})
+                ON CREATE SET source:Chunk
+                MERGE (target {id: row.target_id})
+                ON CREATE SET target:Chunk
+                WITH source, target, row
+                CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
+                RETURN count(*)
+                """,
+                param_map={"data": chunked_params},
+            )
 
     def get(
         self,

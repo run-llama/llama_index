@@ -14,6 +14,7 @@ from llama_index.core.base.llms.generic_utils import (
 
 
 from llama_index.llms.openai_like import OpenAILike
+from urllib.parse import urlparse, urlunparse
 
 DEFAULT_MODEL = "meta/llama3-8b-instruct"
 BASE_URL = "https://integrate.api.nvidia.com/v1/"
@@ -71,6 +72,8 @@ class NVIDIA(OpenAILike):
         )
 
         self._is_hosted = base_url in KNOWN_URLS
+        if base_url not in KNOWN_URLS:
+            base_url = self._validate_url(base_url)
 
         if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
             warnings.warn(
@@ -86,6 +89,29 @@ class NVIDIA(OpenAILike):
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             **kwargs,
         )
+
+    def _validate_url(self, base_url):
+        """
+        Base URL Validation.
+        ValueError : url which do not have valid scheme and netloc.
+        Warning : v1/chat/completions routes.
+        ValueError : Any other routes other than above.
+        """
+        expected_format = "Expected format is 'http://host:port'."
+        result = urlparse(base_url)
+        if not (result.scheme and result.netloc):
+            raise ValueError(
+                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
+            )
+        if result.path:
+            normalized_path = result.path.strip("/")
+            if normalized_path == "v1":
+                pass
+            elif normalized_path == "v1/chat/completions":
+                warnings.warn(f"{expected_format} Rest is Ignored.")
+            else:
+                raise ValueError(f"Base URL path is not recognized. {expected_format}")
+        return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
 
     @property
     def available_models(self) -> List[Model]:
