@@ -18,7 +18,7 @@ class IngestionCache(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    nodes_key = "nodes"
+    nodes_key: str = "nodes"
 
     collection: str = Field(
         default=DEFAULT_CACHE_NAME, description="Collection name of the cache."
