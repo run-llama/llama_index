@@ -34,13 +34,13 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         dropped_spans: List[T] = [],
         current_span_ids: Dict[Any, str] = {},
     ):
-        self._lock = None
         super().__init__(
             open_spans=open_spans,
             completed_spans=completed_spans,
             dropped_spans=dropped_spans,
             current_span_ids=current_span_ids,
         )
+        self._lock = None
 
     def class_name(cls) -> str:
         """Class name."""

@@ -13,6 +13,8 @@ from llama_index.core.callbacks.schema import (
     CBEventType,
     EventPayload,
 )
+from llama_index.core.bridge.pydantic import GetJsonSchemaHandler
+from llama_index.core.bridge.pydantic_core import CoreSchema
 
 logger = logging.getLogger(__name__)
 global_stack_trace = ContextVar("trace", default=[BASE_TRACE_EVENT])
@@ -149,9 +151,13 @@ class CallbackManager(BaseCallbackHandler, ABC):
         self.handlers = handlers
 
     @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
-        """Avoids serialization errors."""
-        schema.update(type="object", default={})
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema.update(type="object", default={})
+        return json_schema
 
     @contextmanager
     def event(

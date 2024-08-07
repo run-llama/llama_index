@@ -2,6 +2,7 @@ import pydantic
 from pydantic import (
     BaseConfig,
     BaseModel,
+    GetJsonSchemaHandler,
     Field,
     PrivateAttr,
     StrictFloat,
@@ -19,6 +20,7 @@ from pydantic.generics import GenericModel
 __all__ = [
     "pydantic",
     "BaseModel",
+    "GetJsonSchemaHandler",
     "Field",
     "PrivateAttr",
     "root_validator",
