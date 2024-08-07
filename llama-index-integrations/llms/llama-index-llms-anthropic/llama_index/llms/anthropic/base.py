@@ -64,7 +64,8 @@ DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
 class Anthropic(FunctionCallingLLM):
-    """Anthropic LLM.
+    """
+    Anthropic LLM.
 
     Examples:
         `pip install llama-index-llms-anthropic`
@@ -101,6 +102,15 @@ class Anthropic(FunctionCallingLLM):
     max_retries: int = Field(
         default=10, description="The maximum number of API retries.", gte=0
     )
+    vertexai_project_id: Optional[str] = Field(
+        default=None, description="Project ID for VertexAI in Google Cloud"
+    )
+    vertexai_region: Optional[str] = Field(
+        default=None, description="Region for VertexAI in Google Cloud"
+    )
+    vertexai_service_account_file: Optional[str] = Field(
+        default=None, description="Google Cloud service account file for VertexAI"
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
@@ -125,24 +135,52 @@ class Anthropic(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        vertexai_project_id: Optional[str] = None,
+        vertexai_region: Optional[str] = None,
+        vertexai_service_account_file: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        self._client = anthropic.Anthropic(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-            default_headers=default_headers,
-        )
-        self._aclient = anthropic.AsyncAnthropic(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-            default_headers=default_headers,
-        )
+        if api_key is None and vertexai_service_account_file is not None:
+            from google.oauth2 import service_account
+
+            credentials = service_account.Credentials.from_service_account_file(
+                vertexai_service_account_file
+            )
+            self._client = anthropic.AnthropicVertex(
+                credentials=credentials,
+                project_id=vertexai_project_id,
+                region=vertexai_region,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
+            self._aclient = anthropic.AsyncAnthropicVertex(
+                credentials=credentials,
+                project_id=vertexai_project_id,
+                region=vertexai_region,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
+        else:
+            self._client = anthropic.Anthropic(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
+            self._aclient = anthropic.AsyncAnthropic(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
 
         super().__init__(
             temperature=temperature,
