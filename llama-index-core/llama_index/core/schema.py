@@ -63,7 +63,7 @@ class BaseComponent(BaseModel):
         return self.to_json(**kwargs)
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().dict(**kwargs)
+        data = super().model_dump(**kwargs, by_alias=True)
         data["class_name"] = self.class_name()
         return data
 
@@ -201,7 +201,7 @@ class BaseNode(BaseComponent):
     """
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         # hash is computed on local field, during the validation process
         validate_assignment = True
 
@@ -405,6 +405,7 @@ class TextNode(BaseNode):
     @property
     def hash(self) -> str:
         doc_identity = str(self.text) + str(self.metadata)
+        print(f"{self.metadata}, {self.metadata!s}", flush=True)
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
     @classmethod
