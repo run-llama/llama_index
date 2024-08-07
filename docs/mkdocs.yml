@@ -392,6 +392,7 @@ nav:
           - ./examples/multi_modal/mm_agent.ipynb
           - ./examples/multi_modal/multi_modal_pydantic.ipynb
           - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
+          - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
