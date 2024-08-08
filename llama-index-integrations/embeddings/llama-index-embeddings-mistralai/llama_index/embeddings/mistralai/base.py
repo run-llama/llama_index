@@ -24,8 +24,7 @@ class MistralAIEmbedding(BaseEmbedding):
     """
 
     # Instance variables initialized via Pydantic's mechanism
-    _mistralai_client: Any = PrivateAttr()
-    _mistralai_async_client: Any = PrivateAttr()
+    _client: Any = PrivateAttr()
 
     def __init__(
         self,
