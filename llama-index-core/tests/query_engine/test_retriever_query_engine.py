@@ -1,35 +1,20 @@
-import pytest
 from llama_index.core import Document, TreeIndex
 from llama_index.core.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
 from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.core import Settings
 
-pytest.importorskip("llama_index.llms.openai")
-
 
 def test_query_engine_falls_back_to_inheriting_retrievers_service_context(
-    monkeypatch,
+    monkeypatch, mock_llm
 ) -> None:
-    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
-
     documents = [Document(text="Hi")]
-    gpt35turbo_predictor = OpenAI(
-        temperature=0,
-        model_name="gpt-3.5-turbo-0613",
-        streaming=True,
-        openai_api_key="test-test-test",
-    )
-
-    monkeypatch.setattr(Settings, "llm", gpt35turbo_predictor)
+    monkeypatch.setattr(Settings, "llm", mock_llm)
 
     gpt35_tree_index = TreeIndex.from_documents(documents)
-    gpt35_tree_index._llm = gpt35turbo_predictor
     retriever = TreeSelectLeafRetriever(index=gpt35_tree_index, child_branch_factor=2)
     query_engine = RetrieverQueryEngine(retriever=retriever)
 
-    assert (
-        retriever._llm.metadata.model_name == gpt35turbo_predictor.metadata.model_name
-    )
+    assert retriever._llm.class_name() == "MockLLM"
     assert (
         query_engine._response_synthesizer._llm.metadata.model_name
         == retriever._llm.metadata.model_name
