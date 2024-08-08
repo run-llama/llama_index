@@ -3,14 +3,18 @@ import openai
 import pytest
 
 from llama_index.agent.openai import OpenAIAgent
-from llama_index.tools.box import BoxSearchToolSpec
+from llama_index.tools.box import BoxSearchToolSpec, BoxSearchOptions
 
 from tests.conftest import get_testing_data
 
 
 def test_box_tool_search(box_client_ccg_integration_testing: BoxClient):
+    options = BoxSearchOptions()
+    options.limit = 5
+
+    box_tool = BoxSearchToolSpec(box_client_ccg_integration_testing, options=options)
+
     query = "invoice"
-    box_tool = BoxSearchToolSpec(box_client_ccg_integration_testing)
     docs = box_tool.box_search(query=query)
     assert len(docs) > 0
 
@@ -22,7 +26,12 @@ def test_box_tool_search_agent(box_client_ccg_integration_testing: BoxClient):
     if openai_api_key is None:
         raise pytest.skip("OpenAI API key is not provided.")
 
-    box_tool_spec = BoxSearchToolSpec(box_client_ccg_integration_testing)
+    options = BoxSearchOptions()
+    options.limit = 5
+
+    box_tool_spec = BoxSearchToolSpec(
+        box_client_ccg_integration_testing, options=options
+    )
 
     openai.api_key = openai_api_key
 
