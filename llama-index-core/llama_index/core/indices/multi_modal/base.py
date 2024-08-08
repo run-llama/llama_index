@@ -28,8 +28,7 @@ from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode, ImageNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import (
     DEFAULT_VECTOR_STORE,
@@ -72,8 +71,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         # those flags are used for cases when only one vector store is used
         is_image_vector_store_empty: bool = False,
         is_text_vector_store_empty: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -143,7 +140,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     ) -> SimpleMultiModalQueryEngine:
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
-        llm = llm or llm_from_settings_or_context(Settings, self._service_context)
+        llm = llm or Settings.llm
         assert isinstance(llm, MultiModalLLM)
 
         return SimpleMultiModalQueryEngine(
@@ -157,8 +154,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         # Image-related kwargs
         image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
@@ -172,7 +167,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(
             nodes=[],
-            service_context=service_context,
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,

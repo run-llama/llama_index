@@ -19,15 +19,10 @@ from llama_index.core.prompts.default_prompts import (
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import BaseNode, MetadataMode
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from llama_index.core.utils import truncate_text
 
@@ -39,7 +34,6 @@ class SQLDocumentContextBuilder:
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        service_context (Optional[ServiceContext]): Service Context to use.
         text_splitter (Optional[TextSplitter]): Text Splitter to use.
         table_context_prompt (Optional[BasePromptTemplate]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
@@ -54,7 +48,6 @@ class SQLDocumentContextBuilder:
         self,
         sql_database: SQLDatabase,
         llm: Optional[LLMPredictorType] = None,
-        service_context: Optional[ServiceContext] = None,
         text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[BasePromptTemplate] = None,
         refine_table_context_prompt: Optional[BasePromptTemplate] = None,
@@ -66,13 +59,11 @@ class SQLDocumentContextBuilder:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
         self._text_splitter = text_splitter
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm.metadata,
         )
-        self._callback_manager = callback_manager_from_settings_or_context(
-            Settings, service_context
-        )
+        self._callback_manager = Settings.callback_manager
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )

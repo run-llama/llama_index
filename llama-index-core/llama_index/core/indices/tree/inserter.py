@@ -16,11 +16,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore import BaseDocumentStore
 from llama_index.core.storage.docstore.registry import get_default_docstore
 
@@ -31,7 +27,6 @@ class TreeIndexInserter:
     def __init__(
         self,
         index_graph: IndexGraph,
-        service_context: Optional[ServiceContext] = None,
         llm: Optional[LLM] = None,
         num_children: int = 10,
         insert_prompt: BasePromptTemplate = DEFAULT_INSERT_PROMPT,
@@ -45,7 +40,7 @@ class TreeIndexInserter:
         self.summary_prompt = summary_prompt
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm.metadata,
         )
