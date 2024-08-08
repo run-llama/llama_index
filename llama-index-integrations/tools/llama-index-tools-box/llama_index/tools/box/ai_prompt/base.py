@@ -13,6 +13,8 @@ from llama_index.readers.box.BoxAPI.box_api import (
 
 
 class BoxAIPromptToolSpec(BaseToolSpec):
+    spec_functions = ["ai_prompt"]
+
     _box_client: BoxClient
 
     def __init__(self, box_client: BoxClient) -> None:
