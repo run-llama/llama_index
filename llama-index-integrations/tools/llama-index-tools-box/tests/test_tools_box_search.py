@@ -41,4 +41,5 @@ def test_box_tool_search_agent(box_client_ccg_integration_testing: BoxClient):
     )
 
     answer = agent.chat("search all invoices")
+    # print(answer)
     assert answer is not None

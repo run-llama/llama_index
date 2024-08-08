@@ -46,5 +46,5 @@ def test_box_tool_ai_extract_agent(box_client_ccg_integration_testing: BoxClient
     )
 
     answer = agent.chat(f"{ai_prompt} for {document_id}")
-    print(answer)
+    # print(answer)
     assert answer is not None
