@@ -18,12 +18,14 @@ from llama_index.readers.box.BoxAPI.box_api import (
 class BoxSearchToolSpec(BaseToolSpec):
     """Box search tool spec."""
 
+    spec_functions = ["box_search"]
+
     _box_client: BoxClient
 
     def __init__(self, box_client: BoxClient) -> None:
         self._box_client = box_client
 
-    def search(
+    def box_search(
         self,
         query: Optional[str] = None,
         scope: Optional[SearchForContentScope] = None,
@@ -45,33 +47,6 @@ class BoxSearchToolSpec(BaseToolSpec):
         matching the provided parameters. It then returns a list containing the IDs
         of the found resources.
 
-        Args:
-            query (Optional[str], optional): A search query string. Defaults to None.
-            scope (Optional[SearchForContentScope], optional): The scope of the search.
-                Defaults to None.
-            file_extensions (Optional[List[str]], optional): A list of file extensions
-                to filter by. Defaults to None.
-            created_at_range (Optional[List[str]], optional): A list representing a date
-                range for file creation time. Defaults to None.
-            updated_at_range (Optional[List[str]], optional): A list representing a date
-                range for file update time. Defaults to None.
-            size_range (Optional[List[int]], optional): A list representing a size range
-                for files. Defaults to None.
-            owner_user_ids (Optional[List[str]], optional): A list of user IDs to filter
-                by owner. Defaults to None.
-            recent_updater_user_ids (Optional[List[str]], optional): A list of user IDs to
-                filter by recent updater. Defaults to None.
-            ancestor_folder_ids (Optional[List[str]], optional): A list of folder IDs to
-                search within. Defaults to None.
-            content_types (Optional[List[SearchForContentContentTypes]], optional): A list
-                of content types to filter by. Defaults to None.
-            limit (Optional[int], optional): The maximum number of results to return.
-                Defaults to None.
-            offset (Optional[int], optional): The number of results to skip before
-                starting to collect. Defaults to None.
-
-        Returns:
-            List[Document]: A list of documents representing the found resources.
         """
         box_check_connection(self._box_client)
         box_files = search_files(

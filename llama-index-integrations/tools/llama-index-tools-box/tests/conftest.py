@@ -135,4 +135,5 @@ def get_testing_data() -> dict:
         "test_txt_po_id": "1517628697289",
         "metadata_template_key": "rbInvoicePO",
         "metadata_enterprise_scope": "enterprise_" + os.getenv("BOX_ENTERPRISE_ID"),
+        "openai_api_key": os.getenv("OPENAI_API_KEY"),
     }
