@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 
-from pydantic import Field
-
 from llama_index.core.bridge.pydantic import BaseModel
 
 from .errors import WorkflowValidationError
@@ -16,7 +14,7 @@ class StepConfig(BaseModel):
     event_name: str
     return_types: List[Any]
     pass_context: bool
-    num_workers: int = Field(default=1, gt=0)
+    num_workers: int
 
 
 def step(
@@ -39,6 +37,11 @@ def step(
                 msg = f"To decorate {func.__name__} please pass a workflow instance to the @step() decorator."
                 raise WorkflowValidationError(msg)
             workflow.add_step(func)
+
+        if not isinstance(num_workers, int) or num_workers <= 0:
+            raise WorkflowValidationError(
+                "num_workers must be an integer greater than 0"
+            )
 
         # This will raise providing a message with the specific validation failure
         event_name, event_types, return_types = validate_step_signature(func)

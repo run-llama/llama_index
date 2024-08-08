@@ -1,7 +1,6 @@
 import re
 
 import pytest
-from pydantic import ValidationError
 
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowValidationError
@@ -53,18 +52,21 @@ def test_decorate_free_function_wrong_decorator():
 
 
 def test_decorate_free_function_wrong_num_workers():
-    # num_workers must be greater than 0
     class TestWorkflow(Workflow):
         pass
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        WorkflowValidationError, match="num_workers must be an integer greater than 0"
+    ):
 
         @step(workflow=TestWorkflow, num_workers=0)
         def f1(ev: Event) -> Event:
             return Event()
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(
+        WorkflowValidationError, match="num_workers must be an integer greater than 0"
+    ):
 
-        @step(workflow=TestWorkflow, num_workers=-1)
+        @step(workflow=TestWorkflow, num_workers=0.5)
         def f2(ev: Event) -> Event:
             return Event()
