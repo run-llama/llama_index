@@ -37,7 +37,7 @@ from llama_index.llms.mistralai.utils import (
 
 from mistralai.async_client import MistralAsyncClient
 from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ToolCall
+from mistralai.models import ToolCall
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
