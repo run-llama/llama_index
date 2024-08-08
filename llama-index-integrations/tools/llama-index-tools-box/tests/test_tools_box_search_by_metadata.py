@@ -22,21 +22,22 @@ def test_box_tool_search_by_metadata(box_client_ccg_integration_testing: BoxClie
     )
     ancestor_folder_id = test_data["test_folder_invoice_po_id"]
     query = "documentType = :docType "
-    query_params = {"docType": "Invoice"}
+    query_params = '{"docType": "Invoice"}'
 
     # Search options
     options = BoxSearchByMetadataOptions(
         from_=from_,
         ancestor_folder_id=ancestor_folder_id,
         query=query,
-        query_params=query_params,
     )
 
     box_tool = BoxSearchByMetadataToolSpec(
         box_client=box_client_ccg_integration_testing, options=options
     )
 
-    docs = box_tool.search()
+    docs = box_tool.search(
+        query_params=query_params,
+    )
     assert len(docs) > 0
 
 
@@ -57,14 +58,13 @@ def test_box_tool_search_by_metadata_agent(
     )
     ancestor_folder_id = test_data["test_folder_invoice_po_id"]
     query = "documentType = :docType "
-    query_params = {"docType": "Invoice"}
+    query_params = '{"docType": "Invoice"}'
 
     # Search options
     options = BoxSearchByMetadataOptions(
         from_=from_,
         ancestor_folder_id=ancestor_folder_id,
         query=query,
-        query_params=query_params,
     )
 
     box_tool = BoxSearchByMetadataToolSpec(
@@ -78,6 +78,8 @@ def test_box_tool_search_by_metadata_agent(
         verbose=True,
     )
 
-    answer = agent.chat("search all documents")
-    # print(answer)
+    answer = agent.chat(
+        f"search all documents using the query_params as the key value pair of  {query_params} "
+    )
+    print(answer)
     assert answer is not None

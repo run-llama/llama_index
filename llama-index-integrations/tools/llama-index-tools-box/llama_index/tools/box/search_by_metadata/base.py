@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
+import json
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -17,7 +18,7 @@ class BoxSearchByMetadataOptions:
     from_: str
     ancestor_folder_id: str
     query: Optional[str] = (None,)
-    query_params: Optional[Dict[str, str]] = (None,)
+    # query_params: Optional[Dict[str, str]] = (None,)
     limit: Optional[int] = None
     # marker: Optional[str] = None # The AI agent won't know what to do with this...
 
@@ -26,13 +27,11 @@ class BoxSearchByMetadataOptions:
         from_: str,
         ancestor_folder_id: str,
         query: Optional[str] = None,
-        query_params: Optional[Dict[str, str]] = None,
         limit: Optional[int] = None,
     ) -> None:
         self.from_ = from_
         self.ancestor_folder_id = ancestor_folder_id
         self.query = query
-        self.query_params = query_params
         self.limit = limit
         # self.marker = marker # The AI agent won't know what to do with this...
 
@@ -53,6 +52,9 @@ class BoxSearchByMetadataToolSpec(BaseToolSpec):
 
     def search(
         self,
+        # query: Optional[str] = None,
+        # query_params: Optional[Dict[str, str]] = None,
+        query_params: Optional[str] = None,
     ) -> List[Document]:
         """
         Searches for Box resources based on metadata and returns a list of Llama Index
@@ -64,12 +66,16 @@ class BoxSearchByMetadataToolSpec(BaseToolSpec):
         """
         box_check_connection(self._box_client)
 
+        # Box API accepts a dictionary of query parameters as a string, so we need to
+        # convert the provided JSON string to a dictionary.
+        params_dict = json.loads(query_params)
+
         box_files = search_files_by_metadata(
             box_client=self._box_client,
             from_=self._options.from_,
             ancestor_folder_id=self._options.ancestor_folder_id,
             query=self._options.query,
-            query_params=self._options.query_params,
+            query_params=params_dict,
             limit=self._options.limit,
             # marker=self._options.marker, # The AI agent won't know what to do with this...
         )
