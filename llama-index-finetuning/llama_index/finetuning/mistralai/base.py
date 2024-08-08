@@ -6,8 +6,8 @@ import time
 from typing import Any, Optional, Dict
 import sys
 
-from mistralai.client import MistralClient
-from mistralai.models.jobs import DetailedJob, WandbIntegrationIn, TrainingParameters
+from mistralai import Mistral
+from mistralai.models import DetailedJobOut, WandbIntegration, TrainingParameters
 
 from llama_index.core.llms.llm import LLM
 from llama_index.finetuning.callbacks.finetuning_handler import (
@@ -47,10 +47,10 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         self.training_steps = training_steps
         self.learning_rate = learning_rate
         self.wandb_integration_dict = wandb_integration_dict
-        self._client = MistralClient(api_key=os.getenv("MISTRAL_API_KEY", None))
+        self._client = Mistral(api_key=os.getenv("MISTRAL_API_KEY", None))
         self._start_job: Optional[Any] = None
         if start_job_id is not None:
-            self._start_job = self._client.jobs.retrieve(start_job_id)
+            self._start_job = self._client.fine_tuning.jobs.get(start_job_id)
 
     @classmethod
     def from_finetuning_handler(
@@ -78,10 +78,10 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
 
         # upload file
         with open(self.training_path, "rb") as f:
-            train_file = self._client.files.create(file=f)
+            train_file = self._client.files.upload(file=f)
         if self.validation_path:
             with open(self.validation_path, "rb") as f:
-                eval_file = self._client.files.create(file=f)
+                eval_file = self._client.files.upload(file=f)
         logger.info("File uploaded...")
         if self._verbose:
             print("File uploaded...")
@@ -89,7 +89,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         # launch training
         while True:
             try:
-                job_output = self._client.jobs.create(
+                job_output = self._client.fine_tuning.jobs.create(
                     training_files=[train_file.id],
                     validation_files=[eval_file.id] if self.validation_path else None,
                     model=self.base_model,
@@ -98,7 +98,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
                         learning_rate=self.learning_rate,
                     ),
                     integrations=[
-                        WandbIntegrationIn(
+                        WandbIntegration(
                             project=self.wandb_integration_dict["project"],
                             run_name=self.wandb_integration_dict["run_name"],
                             api_key=self.wandb_integration_dict["api_key"],
@@ -117,7 +117,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         if self._verbose:
             print(info_str)
 
-    def get_current_job(self) -> DetailedJob:
+    def get_current_job(self) -> Optional[DetailedJobOut]:
         """Get current job."""
         # validate that it works
         if not self._start_job:
@@ -125,7 +125,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
 
         # try getting id, make sure that run succeeded
         job_id = self._start_job.id
-        return self._client.jobs.retrieve(job_id)
+        return self._client.fine_tuning.jobs.get(job_id)
 
     def get_finetuned_model(self, **model_kwargs: Any) -> LLM:
         """Gets finetuned model."""
