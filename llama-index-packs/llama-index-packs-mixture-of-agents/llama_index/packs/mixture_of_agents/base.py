@@ -49,7 +49,7 @@ class MixtureOfAgentWorkflow(Workflow):
         reference_llms: List[LLM],
         num_layers: int = 3,
         max_tokens: int = 2048,
-        temperature: int = 0.7,
+        temperature: float = 0.7,
         **kwargs,
     ):
         super().__init__(**kwargs)
