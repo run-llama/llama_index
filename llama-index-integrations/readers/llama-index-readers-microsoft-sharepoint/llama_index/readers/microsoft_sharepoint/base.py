@@ -437,7 +437,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_site_name: Optional[str],
         sharepoint_folder_path: Optional[str],
         sharepoint_folder_id: Optional[str],
-        sharepoint_site_id: Optional[str],
         recursive: bool,
     ) -> Dict[str, str]:
         """
@@ -455,12 +454,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         access_token = self._get_access_token()
 
-        if sharepoint_site_id:
-            self._site_id_with_host_name = sharepoint_site_id
-        else:
-            self._site_id_with_host_name = self._get_site_id_with_host_name(
-                access_token, sharepoint_site_name
-            )
+        self._site_id_with_host_name = self._get_site_id_with_host_name(
+            access_token, sharepoint_site_name
+        )
 
         self._drive_id = self._get_drive_id()
 
@@ -534,7 +530,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
-        sharepoint_site_id: Optional[str] = None,
         recursive: bool = True,
     ) -> List[Document]:
         """
@@ -575,7 +570,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     sharepoint_site_name,
                     sharepoint_folder_path,
                     sharepoint_folder_id,
-                    sharepoint_site_id,
                     recursive,
                 )
 
