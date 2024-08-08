@@ -556,11 +556,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if not sharepoint_folder_id:
             sharepoint_folder_id = self.sharepoint_folder_id
 
-        if not sharepoint_site_id:
-            sharepoint_site_id = self.sharepoint_site_id
-
         # TODO: make both of these values optional — and just default to the client ID defaults
-        if not (sharepoint_site_name or sharepoint_site_id):
+        if not (sharepoint_site_name or self.sharepoint_site_id):
             raise ValueError("sharepoint_site_name must be provided.")
 
         try:
