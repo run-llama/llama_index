@@ -40,14 +40,6 @@ class Context:
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
 
     @property
-    def parent(self) -> Optional["Context"]:
-        """Access this Context's parent object.
-
-        It returns `None` if the current context is root.
-        """
-        return self._parent
-
-    @property
     def globals(self) -> Dict[str, Any]:
         """Returns the local storage."""
         return self._globals
@@ -68,7 +60,7 @@ class Context:
     @property
     def lock(self) -> asyncio.Lock:
         """Returns a mutex to lock the Context."""
-        return self.parent._lock if self.parent else self._lock
+        return self._parent._lock if self._parent else self._lock
 
     async def __aenter__(self) -> "Context":
         await self.lock.acquire()
