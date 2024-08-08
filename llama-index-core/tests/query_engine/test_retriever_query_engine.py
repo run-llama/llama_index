@@ -1,24 +1,17 @@
 import pytest
-from llama_index.core import (
-    Document,
-    ServiceContext,
-    TreeIndex,
-)
-from llama_index.core.indices.tree.select_leaf_retriever import (
-    TreeSelectLeafRetriever,
-)
-from llama_index.core.query_engine.retriever_query_engine import (
-    RetrieverQueryEngine,
-)
+from llama_index.core import Document, TreeIndex
+from llama_index.core.indices.tree.select_leaf_retriever import TreeSelectLeafRetriever
+from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.core import Settings
 
-try:
+pytest.importorskip("llama_index.llms.openai")
+
+
+def test_query_engine_falls_back_to_inheriting_retrievers_service_context(
+    monkeypatch,
+) -> None:
     from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
-except ImportError:
-    OpenAI = None  # type: ignore
 
-
-@pytest.mark.skipif(OpenAI is None, reason="llama-index-llms-openai not installed")
-def test_query_engine_falls_back_to_inheriting_retrievers_service_context() -> None:
     documents = [Document(text="Hi")]
     gpt35turbo_predictor = OpenAI(
         temperature=0,
@@ -26,12 +19,11 @@ def test_query_engine_falls_back_to_inheriting_retrievers_service_context() -> N
         streaming=True,
         openai_api_key="test-test-test",
     )
-    gpt35_sc = ServiceContext.from_defaults(
-        llm=gpt35turbo_predictor,
-        chunk_size=512,
-    )
 
-    gpt35_tree_index = TreeIndex.from_documents(documents, service_context=gpt35_sc)
+    monkeypatch.setattr(Settings, "llm", gpt35turbo_predictor)
+
+    gpt35_tree_index = TreeIndex.from_documents(documents)
+    gpt35_tree_index._llm = gpt35turbo_predictor
     retriever = TreeSelectLeafRetriever(index=gpt35_tree_index, child_branch_factor=2)
     query_engine = RetrieverQueryEngine(retriever=retriever)
 
