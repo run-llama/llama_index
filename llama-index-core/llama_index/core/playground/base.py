@@ -1,4 +1,5 @@
 """Experiment with different indices, models, and more."""
+
 from __future__ import annotations
 
 import time
@@ -145,17 +146,11 @@ class Playground:
                 )
 
                 # insert token counter into service context
-                service_context = index.service_context
                 token_counter = TokenCountingHandler()
                 callback_manager = CallbackManager([token_counter])
-                if service_context is not None:
-                    service_context.llm.callback_manager = callback_manager
-                    service_context.embed_model.callback_manager = callback_manager
 
                 try:
-                    query_engine = index.as_query_engine(
-                        retriever_mode=retriever_mode, service_context=service_context
-                    )
+                    query_engine = index.as_query_engine(retriever_mode=retriever_mode)
                 except ValueError:
                     continue
 
