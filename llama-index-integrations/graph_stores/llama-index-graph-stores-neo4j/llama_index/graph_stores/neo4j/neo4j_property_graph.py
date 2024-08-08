@@ -33,6 +33,7 @@ def remove_empty_values(input_dict):
 
 
 BASE_ENTITY_LABEL = "__Entity__"
+BASE_NODE_LABEL = "__Node__"
 EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
 EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 EXHAUSTIVE_SEARCH_LIMIT = 10000
@@ -152,6 +153,15 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
+        # Create index for faster imports and retrieval
+        self.structured_query(
+            f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_NODE_LABEL}`)
+            REQUIRE n.id IS UNIQUE;"""
+        )
+        self.structured_query(
+            f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
+            REQUIRE n.id IS UNIQUE;"""
+        )
 
     @property
     def client(self):
@@ -164,7 +174,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         """Refresh the schema."""
         node_query_results = self.structured_query(
             node_properties_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+            param_map={
+                "EXCLUDED_LABELS": [
+                    *EXCLUDED_LABELS,
+                    BASE_ENTITY_LABEL,
+                    BASE_NODE_LABEL,
+                ]
+            },
         )
         node_properties = (
             [el["output"] for el in node_query_results] if node_query_results else []
@@ -179,7 +195,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         rel_objs_query_result = self.structured_query(
             rel_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+            param_map={
+                "EXCLUDED_LABELS": [
+                    *EXCLUDED_LABELS,
+                    BASE_ENTITY_LABEL,
+                    BASE_NODE_LABEL,
+                ]
+            },
         )
         relationships = (
             [el["output"] for el in rel_objs_query_result]
@@ -271,10 +293,10 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             for index in range(0, len(chunk_dicts), CHUNK_SIZE):
                 chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
                 self.structured_query(
-                    """
+                    f"""
                     UNWIND $data AS row
-                    MERGE (c:Chunk {id: row.id})
-                    SET c.text = row.text
+                    MERGE (c:{BASE_NODE_LABEL} {{id: row.id}})
+                    SET c.text = row.text, c:Chunk
                     WITH c, row
                     SET c += row.properties
                     WITH c, row.embedding AS embedding
@@ -289,24 +311,24 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             for index in range(0, len(entity_dicts), CHUNK_SIZE):
                 chunked_params = entity_dicts[index : index + CHUNK_SIZE]
                 self.structured_query(
-                    """
+                    f"""
                     UNWIND $data AS row
-                    MERGE (e:`__Entity__` {id: row.id})
+                    MERGE (e:{BASE_NODE_LABEL} {{id: row.id}})
                     SET e += apoc.map.clean(row.properties, [], [])
-                    SET e.name = row.name
+                    SET e.name = row.name, e:`{BASE_ENTITY_LABEL}`
                     WITH e, row
                     CALL apoc.create.addLabels(e, [row.label])
                     YIELD node
                     WITH e, row
-                    CALL {
+                    CALL {{
                         WITH e, row
                         WITH e, row
                         WHERE row.embedding IS NOT NULL
                         CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
                         RETURN count(*) AS count
-                    }
+                    }}
                     WITH e, row WHERE row.properties.triplet_source_id IS NOT NULL
-                    MERGE (c:Chunk {id: row.properties.triplet_source_id})
+                    MERGE (c:{BASE_NODE_LABEL} {{id: row.properties.triplet_source_id}})
                     MERGE (e)<-[:MENTIONS]-(c)
                     """,
                     param_map={"data": chunked_params},
@@ -319,14 +341,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             chunked_params = params[index : index + CHUNK_SIZE]
 
             self.structured_query(
-                """
+                f"""
                 UNWIND $data AS row
-                MERGE (source {id: row.source_id})
+                MERGE (source: {BASE_NODE_LABEL} {{id: row.source_id}})
                 ON CREATE SET source:Chunk
-                MERGE (target {id: row.target_id})
+                MERGE (target: {BASE_NODE_LABEL} {{id: row.target_id}})
                 ON CREATE SET target:Chunk
                 WITH source, target, row
-                CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
+                CALL apoc.merge.relationship(source, row.label, {{}}, row.properties, target) YIELD rel
                 RETURN count(*)
                 """,
                 param_map={"data": chunked_params},
@@ -338,7 +360,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        cypher_statement = "MATCH (e) "
+        cypher_statement = f"MATCH (e: {BASE_NODE_LABEL}) "
 
         params = {}
         if properties or ids:
@@ -398,7 +420,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         # TODO: handle ids of chunk nodes
-        cypher_statement = "MATCH (e:`__Entity__`) "
+        cypher_statement = f"MATCH (e:`{BASE_ENTITY_LABEL}`) "
 
         params = {}
         if entity_names or properties or ids:
@@ -423,21 +445,21 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL {{
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:__Entity__)
-            RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
+            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:`{BASE_ENTITY_LABEL}`)
+            RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
                    r{{.*}} AS rel_properties,
-                   t.name AS target_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   t.name AS target_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:__Entity__)
-            RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
+            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:`{BASE_ENTITY_LABEL}`)
+            RETURN t.name AS source_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    t{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
                    r{{.*}} AS rel_properties,
-                   e.name AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   e.name AS target_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                    e{{.* , embedding: Null, name: Null}} AS target_properties
         }}
         RETURN source_id, source_type, type, rel_properties, target_id, target_type, source_properties, target_properties"""
@@ -483,7 +505,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             f"""
             WITH $ids AS id_list
             UNWIND range(0, size(id_list) - 1) AS idx
-            MATCH (e:`__Entity__`)
+            MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE e.id = id_list[idx]
             MATCH p=(e)-[r*1..{depth}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
@@ -495,11 +517,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 endNode(rel) AS endNode,
                 idx
             LIMIT toInteger($limit)
-            RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
+            RETURN source.id AS source_id, [l in labels(source)
+                   WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                 source{{.* , embedding: Null, id: Null}} AS source_properties,
                 type,
                 rel_properties,
-                endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
+                endNode.id AS target_id, [l in labels(endNode)
+                   WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                 endNode{{.* , embedding: Null, id: Null}} AS target_properties,
                 idx
             ORDER BY idx
@@ -564,12 +588,12 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         )
 
         data = self.structured_query(
-            f"""MATCH (e:`__Entity__`)
+            f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
             WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
             ORDER BY score DESC LIMIT toInteger($limit)
             RETURN e.id AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
+               [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
                score""",
             param_map={
