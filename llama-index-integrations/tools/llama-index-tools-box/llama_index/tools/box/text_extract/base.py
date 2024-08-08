@@ -24,6 +24,7 @@ class BoxTextExtractToolSpec(BaseToolSpec):
             with the Box API.
     """
 
+    spec_functions = ["extract"]
     _box_client: BoxClient
 
     def __init__(self, box_client: BoxClient) -> None:
