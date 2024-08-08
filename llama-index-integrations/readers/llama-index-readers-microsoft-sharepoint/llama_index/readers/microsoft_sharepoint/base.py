@@ -144,9 +144,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         self._authorization_headers = {"Authorization": f"Bearer {access_token}"}
 
         if self.sharepoint_site_id:
-            sharepoint_side_id = self.sharepoint_site_id
+            return self.sharepoint_site_id
 
-        if not (sharepoint_site_name or sharepoint_side_id):
+        if not (sharepoint_site_name):
             raise ValueError("The SharePoint site name or ID must be provided.")
 
         site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
@@ -434,9 +434,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     def _download_files_from_sharepoint(
         self,
         download_dir: str,
-        sharepoint_site_name: str,
+        sharepoint_site_name: Optional[str],
         sharepoint_folder_path: Optional[str],
         sharepoint_folder_id: Optional[str],
+        sharepoint_site_id: Optional[str],
         recursive: bool,
     ) -> Dict[str, str]:
         """
@@ -454,9 +455,12 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         access_token = self._get_access_token()
 
-        self._site_id_with_host_name = self._get_site_id_with_host_name(
-            access_token, sharepoint_site_name
-        )
+        if sharepoint_site_id:
+            self._site_id_with_host_name = sharepoint_site_id
+        else:
+            self._site_id_with_host_name = self._get_site_id_with_host_name(
+                access_token, sharepoint_site_name
+            )
 
         self._drive_id = self._get_drive_id()
 
@@ -530,6 +534,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
+        sharepoint_site_id: Optional[str] = None,
         recursive: bool = True,
     ) -> List[Document]:
         """
@@ -570,6 +575,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     sharepoint_site_name,
                     sharepoint_folder_path,
                     sharepoint_folder_id,
+                    sharepoint_site_id,
                     recursive,
                 )
 
