@@ -13,22 +13,46 @@ from llama_index.readers.box.BoxAPI.box_api import (
 )
 
 
-class BoxSearchByMetadataToolSpec(BaseToolSpec):
-    """Box search tool spec."""
+class BoxSearchByMetadataOptions:
+    from_: str
+    ancestor_folder_id: str
+    query: Optional[str] = (None,)
+    query_params: Optional[Dict[str, str]] = (None,)
+    limit: Optional[int] = None
+    # marker: Optional[str] = None # The AI agent won't know what to do with this...
 
-    _box_client: BoxClient
-
-    def __init__(self, box_client: BoxClient) -> None:
-        self._box_client = box_client
-
-    def search(
+    def __init__(
         self,
         from_: str,
         ancestor_folder_id: str,
         query: Optional[str] = None,
         query_params: Optional[Dict[str, str]] = None,
         limit: Optional[int] = None,
-        marker: Optional[str] = None,
+    ) -> None:
+        self.from_ = from_
+        self.ancestor_folder_id = ancestor_folder_id
+        self.query = query
+        self.query_params = query_params
+        self.limit = limit
+        # self.marker = marker # The AI agent won't know what to do with this...
+
+
+class BoxSearchByMetadataToolSpec(BaseToolSpec):
+    """Box search tool spec."""
+
+    spec_functions = ["search"]
+
+    _box_client: BoxClient
+    _options: BoxSearchByMetadataOptions
+
+    def __init__(
+        self, box_client: BoxClient, options: BoxSearchByMetadataOptions
+    ) -> None:
+        self._box_client = box_client
+        self._options = options
+
+    def search(
+        self,
     ) -> List[Document]:
         """
         Searches for Box resources based on metadata and returns a list of Llama Index
@@ -37,32 +61,17 @@ class BoxSearchByMetadataToolSpec(BaseToolSpec):
         This method utilizes the Box API search functionality to find resources
         matching the provided metadata query. It then returns a list containing the IDs
         of the found resources.
-
-        Args:
-            box_client (BoxClient): An authenticated Box client object used
-                for interacting with the Box API.
-            from_ (str): The metadata template key to search from.
-            ancestor_folder_id (str): The ID of the Box folder to search within.
-            query (Optional[str], optional): A search query string. Defaults to None.
-            query_params (Optional[Dict[str, str]], optional): Additional query parameters
-                to filter the search results. Defaults to None.
-            limit (Optional[int], optional): The maximum number of results to return.
-                Defaults to None.
-            marker (Optional[str], optional): The marker for the start of the next page of
-                results. Defaults to None.
-
-        Returns:
-            List[str]: A list of Box resource IDs matching the search criteria.
         """
         box_check_connection(self._box_client)
+
         box_files = search_files_by_metadata(
             box_client=self._box_client,
-            from_=from_,
-            ancestor_folder_id=ancestor_folder_id,
-            query=query,
-            query_params=query_params,
-            limit=limit,
-            marker=marker,
+            from_=self._options.from_,
+            ancestor_folder_id=self._options.ancestor_folder_id,
+            query=self._options.query,
+            query_params=self._options.query_params,
+            limit=self._options.limit,
+            # marker=self._options.marker, # The AI agent won't know what to do with this...
         )
         box_payloads = get_box_files_payload(
             self._box_client, [box_file.id for box_file in box_files]
