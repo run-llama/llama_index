@@ -23,7 +23,6 @@ def test_box_tool_search_agent(box_client_ccg_integration_testing: BoxClient):
         raise pytest.skip("OpenAI API key is not provided.")
 
     box_tool_spec = BoxSearchToolSpec(box_client_ccg_integration_testing)
-    tool = box_tool_spec.to_tool_list()[0]
 
     openai.api_key = openai_api_key
 
