@@ -18,10 +18,7 @@ from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.schema import MetadataMode, NodeWithScore
-from llama_index.core.settings import (
-    Settings,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -107,7 +104,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
