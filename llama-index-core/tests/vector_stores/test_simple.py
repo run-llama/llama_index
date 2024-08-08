@@ -400,6 +400,23 @@ class SimpleVectorStoreTest(unittest.TestCase):
         assert result.ids is not None
         self.assertEqual(len(result.ids), 2)
 
+    def test_query_with_is_empty_filter_returns_matches(self) -> None:
+        simple_vector_store = SimpleVectorStore()
+        simple_vector_store.add(_node_embeddings_for_test())
+
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="not_existed_key", operator=FilterOperator.IS_EMPTY, value=None
+                )
+            ]
+        )
+        query = VectorStoreQuery(
+            query_embedding=[1.0, 1.0], filters=filters, similarity_top_k=3
+        )
+        result = simple_vector_store.query(query)
+        self.assertEqual(len(result.ids), len(_node_embeddings_for_test()))
+
     def test_clear(self) -> None:
         simple_vector_store = SimpleVectorStore()
         simple_vector_store.add(_node_embeddings_for_test())

@@ -1,5 +1,79 @@
 # ChangeLog
 
+## [2024-08-06]
+
+### `llama-index-core` [0.10.62]
+
+- feat: Allow None metadata filter by using IS_EMPTY operator (#15167)
+- fix: use parent source node to node relationships if possible during node parsing (#15182)
+- Use node hash instead of node text to match nodes in fusion retriever (#15172)
+
+### `llama-index-graph-stores-neo4j` [0.2.13]
+
+- Neo4j property graph client side batching (#15179)
+
+### `llama-index-graph-stores-neptune` [0.1.4]
+
+- PropertyGraphStore support for Amazon Neptune (#15126)
+
+### `llama-index-llms-gemini` [0.2.0]
+
+- feat: add default_headers to Gemini model (#15141)
+
+### `llama-index-llms-openai` [0.1.28]
+
+- OpenAI: Support new strict functionality in tool param (#15177)
+
+### `llama-index-vector-stores-opensearch` [0.1.14]
+
+- Add support for full MetadataFilters in Opensearch (#15176)
+
+### `llama-index-vector-stores-qdrant` [0.2.15]
+
+- feat: Allow None metadata filter by using IS_EMPTY operator (#15167)
+
+### `llama-index-vector-stores-wordlift` [0.3.0]
+
+- Add support for fields projection and update sample Notebook (#15140)
+
+## [2024-08-05]
+
+### `llama-index-core` [0.10.61]
+
+- Tweaks to workflow docs (document `.send_event()`, expand examples) (#15154)
+- Create context manager to instrument event and span tags (#15116)
+- keyval index store index store updated to accept custom collection suffix (#15134)
+- make workflow context able to collect multiples of the same event (#15153)
+- Fix `__str__` method for AsyncStreamingResponse (#15131)
+
+### `llama-index-callbacks-literalai` [1.0.0]
+
+- feat(integration): add a global handler for Literal AI (#15064)
+
+### `llama-index-extractors-relik` [0.1.0]
+
+- Add relik kg constructor (#15123)
+
+### `llama-index-graph-stores-neo4j` [0.1.12]
+
+- fix neo4j property graph relation properties when querying (#15068)
+
+### `llama-index-llms-fireworks` [0.1.9]
+
+- feat: add default_headers to Fireworks llm (#15150)
+
+### `llama-index-llms-gemini` [0.1.12]
+
+- Fix: Gemini 1.0 Pro Vision has been official deprecated, switch default model to gemini-1.5-flash (#15000)
+
+### `llama-index-llms-paieas` [0.1.0]
+
+- Add LLM for AlibabaCloud PaiEas (#14983)
+
+### `llama-index-llms-predibase` [0.1.7]
+
+- Fix Predibase Integration for HuggingFace-hosted fine-tuned adapters (#15130)
+
 ## [2024-02-02]
 
 ### `llama-index-core` [0.10.60]

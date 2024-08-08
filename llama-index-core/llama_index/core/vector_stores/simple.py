@@ -91,12 +91,19 @@ def _build_metadata_filter_fn(
         filter_matches_list = []
         for filter_ in filter_list:
             filter_matches = True
-
-            filter_matches = _process_filter_match(
-                operator=filter_.operator,
-                value=filter_.value,
-                metadata_value=metadata.get(filter_.key, None),
-            )
+            metadata_value = metadata.get(filter_.key, None)
+            if filter_.operator == FilterOperator.IS_EMPTY:
+                filter_matches = (
+                    metadata_value is None
+                    or metadata_value == ""
+                    or metadata_value == []
+                )
+            else:
+                filter_matches = _process_filter_match(
+                    operator=filter_.operator,
+                    value=filter_.value,
+                    metadata_value=metadata_value,
+                )
 
             filter_matches_list.append(filter_matches)
 

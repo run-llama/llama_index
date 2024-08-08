@@ -5,7 +5,12 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import Response
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    AsyncStreamingResponse,
+    Response,
+    StreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
@@ -399,7 +404,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         """Get service context."""
         return self._service_context
 
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
             query_bundle
@@ -423,12 +428,14 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 nodes=retrieved_nodes,
             )
             cast(Dict, response.metadata).update(metadata)
+            if self._streaming:
+                return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
-    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(
             query_bundle
@@ -445,12 +452,16 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 callback_manager=self.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
                 refine_template=self._refine_synthesis_prompt,
+                verbose=self._verbose,
+                streaming=self._streaming,
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
                 nodes=retrieved_nodes,
             )
             cast(Dict, response.metadata).update(metadata)
+            if self._streaming:
+                return cast(AsyncStreamingResponse, response)
             return cast(Response, response)
         else:
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
