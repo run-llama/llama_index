@@ -143,11 +143,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         self._authorization_headers = {"Authorization": f"Bearer {access_token}"}
 
-        if not (sharepoint_site_name or self.sharepoint_site_id):
-            raise ValueError("The SharePoint site name or ID must be provided.")
-
         if self.sharepoint_site_id:
-            return self.sharepoint_site_id
+            sharepoint_side_id = self.sharepoint_site_id
+
+        if not (sharepoint_site_name or sharepoint_side_id):
+            raise ValueError("The SharePoint site name or ID must be provided.")
 
         site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
 
