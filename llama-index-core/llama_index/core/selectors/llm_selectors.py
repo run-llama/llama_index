@@ -16,11 +16,10 @@ from llama_index.core.selectors.prompts import (
     MultiSelectPrompt,
     SingleSelectPrompt,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import (
     LLMPredictorType,
 )
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.types import BaseOutputParser
 
@@ -73,12 +72,11 @@ class LLMSingleSelector(BaseSelector):
     def from_defaults(
         cls,
         llm: Optional[LLMPredictorType] = None,
-        service_context: Optional[ServiceContext] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> "LLMSingleSelector":
         # optionally initialize defaults
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         prompt_template_str = prompt_template_str or DEFAULT_SINGLE_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
@@ -169,10 +167,8 @@ class LLMMultiSelector(BaseSelector):
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
         max_outputs: Optional[int] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> "LLMMultiSelector":
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         prompt_template_str = prompt_template_str or DEFAULT_MULTI_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
