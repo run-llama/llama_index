@@ -134,7 +134,7 @@ _DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, _SignatureCaptureOptions]] =
             end_signature_types=[_SignatureCaptureType(type="}", inclusive=False)],
             name_identifier="name",
         ),
-    },    
+    },
 }
 
 
@@ -164,7 +164,7 @@ _COMMENT_OPTIONS: Dict[str, _CommentOptions] = {
     ),
     "php": _CommentOptions(
         comment_template="// {}", scope_method=_ScopeMethod.BRACKETS
-    ),    
+    ),
 }
 
 assert all(
