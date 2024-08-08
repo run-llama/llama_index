@@ -18,7 +18,6 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import (
     Column,
@@ -41,8 +40,7 @@ def _delete_table_items(engine: Any, table: Table) -> None:
 
 
 def test_sql_index(
-    mock_service_context: ServiceContext,
-    struct_kwargs: Tuple[Dict, Dict],
+    struct_kwargs: Tuple[Dict, Dict], patch_llm_predictor, patch_token_text_splitter
 ) -> None:
     """Test SQLStructStoreIndex."""
     engine = create_engine("sqlite:///:memory:")
@@ -63,8 +61,7 @@ def test_sql_index(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
 
@@ -83,8 +80,7 @@ def test_sql_index(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
     # test that the document is inserted
@@ -96,7 +92,8 @@ def test_sql_index(
 
 
 def test_sql_index_nodes(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex with nodes."""
@@ -129,8 +126,7 @@ def test_sql_index_nodes(
         nodes,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
 
@@ -160,8 +156,7 @@ def test_sql_index_nodes(
         nodes,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
 
@@ -175,7 +170,8 @@ def test_sql_index_nodes(
 
 
 def test_sql_index_with_context(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex."""
@@ -206,8 +202,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
     assert index.sql_context_container.context_dict == table_context_dict
@@ -224,8 +219,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
     for k, v in table_context_dict.items():
@@ -246,7 +240,6 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_context_prompt=MOCK_TABLE_CONTEXT_PROMPT,
         table_context_task="extract_test",
-        service_context=mock_service_context,
     )
     sql_context_container = sql_context_builder.build_context_container(
         ignore_db_schema=True
@@ -256,8 +249,7 @@ def test_sql_index_with_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     assert isinstance(index, SQLStructStoreIndex)
     assert index.sql_context_container.context_dict == {
@@ -268,7 +260,9 @@ def test_sql_index_with_context(
     # TODO:
 
 
-def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> None:
+def test_sql_index_with_derive_index(
+    patch_llm_predictor, patch_token_text_splitter
+) -> None:
     """Test derive index."""
     # test setting table_context_dict
     engine = create_engine("sqlite:///:memory:")
@@ -299,7 +293,8 @@ def test_sql_index_with_derive_index(mock_service_context: ServiceContext) -> No
 
 
 def test_sql_index_with_index_context(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex."""
@@ -324,7 +319,7 @@ def test_sql_index_with_index_context(
         sql_database, context_dict=table_context_dict
     )
     context_index = context_builder.derive_index_from_context(
-        SummaryIndex, ignore_db_schema=True, service_context=mock_service_context
+        SummaryIndex, ignore_db_schema=True
     )
     # NOTE: the response only contains the first line (metadata), since
     # with the mock patch, newlines are treated as separate calls.
@@ -348,8 +343,7 @@ def test_sql_index_with_index_context(
         sql_database=sql_database,
         table_name=table_name,
         sql_context_container=sql_context_container,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     # just assert this runs
     sql_query_engine = NLStructStoreQueryEngine(index)

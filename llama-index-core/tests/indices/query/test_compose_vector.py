@@ -2,7 +2,6 @@
 
 from typing import Any, Dict, List
 
-import pytest
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.data_structs.data_structs import IndexStruct
@@ -12,7 +11,6 @@ from llama_index.core.indices.keyword_table.simple_base import (
 )
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 
 
@@ -86,17 +84,11 @@ class MockEmbedding(BaseEmbedding):
             raise ValueError("Invalid text for `mock_get_text_embedding`.")
 
 
-@pytest.fixture()
-def mock_service_context(
-    patch_token_text_splitter: Any, patch_llm_predictor: Any
-) -> ServiceContext:
-    return ServiceContext.from_defaults(embed_model=MockEmbedding())
-
-
 def test_recursive_query_vector_table(
     documents: List[Document],
-    mock_service_context: ServiceContext,
     index_kwargs: Dict,
+    patch_token_text_splitter,
+    patch_llm_predictor,
 ) -> None:
     """Test query."""
     vector_kwargs = index_kwargs["vector"]
@@ -105,16 +97,16 @@ def test_recursive_query_vector_table(
     # use a diff set of documents
     # try building a list for every two, then a tree
     vector1 = VectorStoreIndex.from_documents(
-        documents[0:2], service_context=mock_service_context, **vector_kwargs
+        documents[0:2], embed_model=MockEmbedding(), **vector_kwargs
     )
     vector2 = VectorStoreIndex.from_documents(
-        documents[2:4], service_context=mock_service_context, **vector_kwargs
+        documents[2:4], embed_model=MockEmbedding(), **vector_kwargs
     )
     list3 = VectorStoreIndex.from_documents(
-        documents[4:6], service_context=mock_service_context, **vector_kwargs
+        documents[4:6], embed_model=MockEmbedding(), **vector_kwargs
     )
     list4 = VectorStoreIndex.from_documents(
-        documents[6:8], service_context=mock_service_context, **vector_kwargs
+        documents[6:8], embed_model=MockEmbedding(), **vector_kwargs
     )
     indices = [vector1, vector2, list3, list4]
 
@@ -129,8 +121,7 @@ def test_recursive_query_vector_table(
         SimpleKeywordTableIndex,
         indices,
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **table_kwargs
+        **table_kwargs,
     )
 
     custom_query_engines = {
@@ -154,8 +145,9 @@ def test_recursive_query_vector_table(
 
 def test_recursive_query_vector_table_query_configs(
     documents: List[Document],
-    mock_service_context: ServiceContext,
     index_kwargs: Dict,
+    patch_llm_predictor,
+    patch_token_text_splitter,
 ) -> None:
     """Test query.
 
@@ -169,10 +161,10 @@ def test_recursive_query_vector_table_query_configs(
     # use a diff set of documents
     # try building a list for every two, then a tree
     vector1 = VectorStoreIndex.from_documents(
-        documents[0:2], service_context=mock_service_context, **vector_kwargs
+        documents[0:2], embed_model=MockEmbedding(), **vector_kwargs
     )
     vector2 = VectorStoreIndex.from_documents(
-        documents[2:4], service_context=mock_service_context, **vector_kwargs
+        documents[2:4], embed_model=MockEmbedding(), **vector_kwargs
     )
     assert isinstance(vector1.index_struct, IndexStruct)
     assert isinstance(vector2.index_struct, IndexStruct)
@@ -187,8 +179,7 @@ def test_recursive_query_vector_table_query_configs(
         SimpleKeywordTableIndex,
         [vector1, vector2],
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **table_kwargs
+        **table_kwargs,
     )
     assert isinstance(graph, ComposableGraph)
 
@@ -211,7 +202,8 @@ def test_recursive_query_vector_table_query_configs(
 def test_recursive_query_vector_table_async(
     allow_networking: Any,
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     index_kwargs: Dict,
 ) -> None:
     """Test async query of table index over vector indices."""
@@ -221,16 +213,16 @@ def test_recursive_query_vector_table_async(
     # use a diff set of documents
     # try building a list for every two, then a tree
     vector1 = VectorStoreIndex.from_documents(
-        documents[0:2], service_context=mock_service_context, **vector_kwargs
+        documents[0:2], embed_model=MockEmbedding(), **vector_kwargs
     )
     vector2 = VectorStoreIndex.from_documents(
-        documents[2:4], service_context=mock_service_context, **vector_kwargs
+        documents[2:4], embed_model=MockEmbedding(), **vector_kwargs
     )
     list3 = VectorStoreIndex.from_documents(
-        documents[4:6], service_context=mock_service_context, **vector_kwargs
+        documents[4:6], embed_model=MockEmbedding(), **vector_kwargs
     )
     list4 = VectorStoreIndex.from_documents(
-        documents[6:8], service_context=mock_service_context, **vector_kwargs
+        documents[6:8], embed_model=MockEmbedding(), **vector_kwargs
     )
     indices = [vector1, vector2, list3, list4]
 
@@ -245,8 +237,7 @@ def test_recursive_query_vector_table_async(
         SimpleKeywordTableIndex,
         children_indices=indices,
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **table_kwargs
+        **table_kwargs,
     )
 
     custom_query_engines = {
@@ -264,7 +255,8 @@ def test_recursive_query_vector_table_async(
 
 def test_recursive_query_vector_vector(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     index_kwargs: Dict,
 ) -> None:
     """Test query."""
@@ -273,16 +265,16 @@ def test_recursive_query_vector_vector(
     # use a diff set of documents
     # try building a list for every two, then a tree
     vector1 = VectorStoreIndex.from_documents(
-        documents[0:2], service_context=mock_service_context, **vector_kwargs
+        documents[0:2], embed_model=MockEmbedding(), **vector_kwargs
     )
     vector2 = VectorStoreIndex.from_documents(
-        documents[2:4], service_context=mock_service_context, **vector_kwargs
+        documents[2:4], embed_model=MockEmbedding(), **vector_kwargs
     )
     list3 = VectorStoreIndex.from_documents(
-        documents[4:6], service_context=mock_service_context, **vector_kwargs
+        documents[4:6], embed_model=MockEmbedding(), **vector_kwargs
     )
     list4 = VectorStoreIndex.from_documents(
-        documents[6:8], service_context=mock_service_context, **vector_kwargs
+        documents[6:8], embed_model=MockEmbedding(), **vector_kwargs
     )
 
     indices = [vector1, vector2, list3, list4]
@@ -297,8 +289,8 @@ def test_recursive_query_vector_vector(
         VectorStoreIndex,
         children_indices=indices,
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **vector_kwargs
+        embed_model=MockEmbedding(),
+        **vector_kwargs,
     )
     custom_query_engines = {
         index.index_id: index.as_query_engine(similarity_top_k=1) for index in indices

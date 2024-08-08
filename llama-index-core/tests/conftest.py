@@ -10,6 +10,8 @@ from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser.text import SentenceSplitter, TokenTextSplitter
 from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictor
+from llama_index.core.settings import _Settings
+
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,
@@ -104,6 +106,22 @@ def mock_service_context(
 @pytest.fixture()
 def mock_llm() -> MockLLM:
     return MockLLM()
+
+
+@pytest.fixture()
+def mock_embed_model():
+    return MockEmbedding()
+
+
+@pytest.fixture()
+def mock_settings():
+    from llama_index.core import Settings
+
+    old = Settings
+    Settings = _Settings()
+    Settings.embed_model = MockEmbedding()
+    yield Settings
+    Settings = old
 
 
 @pytest.fixture(autouse=True)
