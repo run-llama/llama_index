@@ -122,7 +122,7 @@ query_engine.query("<query>")
 Similarly, a `RouterRetriever` is composed on top of other retrievers as tools. An example is given below:
 
 ```python
-from llama_index.core.query_engine import RouterQueryEngine
+from llama_index.core.retrievers import RouterRetriever
 from llama_index.core.selectors import PydanticSingleSelector
 from llama_index.core.tools import RetrieverTool
 
