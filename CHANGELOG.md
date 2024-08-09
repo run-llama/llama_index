@@ -1,5 +1,41 @@
 # ChangeLog
 
+## [2024-08-09]
+
+### `llama-index-core` [0.10.64]
+
+- fix: children nodes not carrying metadata from source nodes (#15254)
+- Workflows: fix the validation error in the decorator (#15252)
+- fix: strip '''sql (Markdown SQL code snippet) in SQL Retriever (#15235)
+
+### `llama-index-indices-managed-colbert` [0.2.0]
+
+- Remove usage of ServiceContext in Colbert integration (#15249)
+
+### `llama-index-vector-stores-milvus` [0.1.23]
+
+- feat: Support Milvus collection properties (#15241)
+
+### `llama-index-llms-cleanlab` [0.1.2]
+
+- Update models supported by Cleanlab TLM (#15240)
+
+### `llama-index-llms-huggingface` [0.2.6]
+
+- add generation prompt to HF chat template (#15239)
+
+### `llama-index-llms-openvino` [0.2.1]
+
+- add generation prompt to HF chat template (#15239)
+
+### `llama-index-graph-stores-neo4j` [0.2.14]
+
+- Neo4jPropertyGraphStore.get() check for id prop (#15228)
+
+### `llama-index-readers-file` [0.1.33]
+
+- Fix fs.open path type (#15226)
+
 ## [2024-08-08]
 
 ### `llama-index-core` [0.10.63]
