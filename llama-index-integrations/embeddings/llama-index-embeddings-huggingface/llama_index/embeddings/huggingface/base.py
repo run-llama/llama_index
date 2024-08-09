@@ -32,6 +32,17 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
+    """
+    Args:
+        parallel_process (bool): Default to False. If True it will start a multi-process pool to process the encoding
+        with several independent processes.
+
+        target_devices (List[str], optional): It will only taken into account if `parallel_process` = `True`. PyTorch
+            target devices, e.g. ["cuda:0", "cuda:1", ...], ["npu:0", "npu:1", ...], or ["cpu", "cpu", "cpu", "cpu"].
+            If target_devices is None and CUDA/NPU is available, then all available CUDA/NPU devices will be used.
+            If target_devices is None and CUDA/NPU is not available, then 4 CPU devices will be used.
+    """
+
     max_length: int = Field(
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
     )
@@ -65,9 +76,13 @@ class HuggingFaceEmbedding(BaseEmbedding):
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        parallel_process: bool = False,
+        target_devices: Optional[list[str]] = None,
         **model_kwargs,
     ):
         self._device = device or infer_torch_device()
+        self.parallel_process = parallel_process
+        self.target_devices = target_devices
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -122,12 +137,28 @@ class HuggingFaceEmbedding(BaseEmbedding):
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """Embed sentences."""
-        return self._model.encode(
-            sentences,
-            batch_size=self.embed_batch_size,
-            prompt_name=prompt_name,
-            normalize_embeddings=self.normalize,
-        ).tolist()
+        if self.parallel_process:
+            pool = self._model.start_multi_process_pool(
+                target_devices=self.target_devices
+            )
+            emb = self._model.encode_multi_process(
+                sentences=sentences,
+                pool=pool,
+                batch_size=self.embed_batch_size,
+                prompt_name=prompt_name,
+                normalize_embeddings=self.normalize,
+            ).tolist()
+            self._model.stop_multi_process_pool(pool=pool)
+
+            return emb
+
+        else:
+            return self._model.encode(
+                sentences,
+                batch_size=self.embed_batch_size,
+                prompt_name=prompt_name,
+                normalize_embeddings=self.normalize,
+            ).tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
