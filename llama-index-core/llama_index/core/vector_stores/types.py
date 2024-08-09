@@ -249,6 +249,7 @@ class VectorStoreQuery:
     # only for mmr
     mmr_threshold: Optional[float] = None
 
+    sparse_query_embedding: Optional[tuple[list[int], list[float]]] = None
     # NOTE: currently only used by postgres hybrid search
     sparse_top_k: Optional[int] = None
     # NOTE: return top k results from hybrid search. similarity_top_k is used for dense search top k
