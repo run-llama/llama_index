@@ -251,7 +251,7 @@ class VectorStoreQuery:
 
     # Note: Used by QdrantVectorStore to enable passing down sparse embeddings
     sparse_query_embedding: Optional[tuple[list[int], list[float]]] = None
-    # NOTE: currently only used by postgres hybrid search
+    # NOTE: Used by postgres and Qdrant
     sparse_top_k: Optional[int] = None
     # NOTE: return top k results from hybrid search. similarity_top_k is used for dense search top k
     hybrid_top_k: Optional[int] = None
