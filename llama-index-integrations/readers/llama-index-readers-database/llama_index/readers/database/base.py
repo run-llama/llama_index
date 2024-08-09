@@ -73,16 +73,21 @@ class DatabaseReader(BaseReader):
                 "set of credentials."
             )
 
-    def load_data(self, query: str) -> List[Document]:
+    def load_data(self, query: str, metadata: dict=None, doc_cols: list=None, metadata_cols: list=None) -> List[Document]:
         """Query and load data from the Database, returning a list of Documents.
 
         Args:
             query (str): Query parameter to filter tables and rows.
+            metadata (dict): Metadata to be added to the documents. Default is None, which means no metadata.
+            doc_cols (list): Columns to be used as documents. Default is None, which means all columns.
+            metadata_cols (list): Columns to be used as metadata. Default is None, which means no columns as metadata.
 
         Returns:
             List[Document]: A list of Document objects.
         """
         documents = []
+        if not metadata:
+            metadata = {}
         with self.sql_database.engine.connect() as connection:
             if query is None:
                 raise ValueError("A query parameter is necessary to filter the data")
@@ -91,8 +96,12 @@ class DatabaseReader(BaseReader):
 
             for item in result.fetchall():
                 # fetch each item
-                doc_str = ", ".join(
-                    [f"{col}: {entry}" for col, entry in zip(result.keys(), item)]
-                )
-                documents.append(Document(text=doc_str))
+                doc_str = ""
+                for col, entry in zip(result.keys(), item):
+                    if doc_cols is None or col in doc_cols:
+                        doc_str += ", ".join([f"{col}: {entry}"])
+                    if metadata_cols and col in metadata_cols:
+                        metadata[col] = entry
+
+                documents.append(Document(text=doc_str, metadata=metadata))
         return documents
