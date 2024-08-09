@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Union
 from enum import Enum
 
 
-import pymilvus  # noqa
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
@@ -36,6 +35,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from pymilvus import Collection, MilvusClient, DataType, AnnSearchRequest
+from pymilvus.client.types import LoadState
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +121,13 @@ class MilvusVectorStore(BasePydanticVectorStore):
         search_config (dict, optional): The configuration used for searching
             the Milvus index. Note that this must be compatible with the index
             type specified by `index_config`. Defaults to None.
+        collection_properties (dict, optional): The collection properties such as TTL
+            (Time-To-Live) and MMAP (memory mapping). Defaults to None.
+            It could include:
+            - 'collection.ttl.seconds' (int): Once this property is set, data in the
+                current collection expires in the specified time. Expired data in the
+                collection will be cleaned up and will not be involved in searches or queries.
+            - 'mmap.enabled' (bool): Whether to enable memory-mapped storage at the collection level.
         batch_size (int): Configures the number of documents processed in one
             batch when inserting data into Milvus. Defaults to DEFAULT_BATCH_SIZE.
         enable_sparse (bool): A boolean flag indicating whether to enable support
@@ -185,6 +192,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
     search_config: Optional[dict]
+    collection_properties: Optional[dict]
     batch_size: int = DEFAULT_BATCH_SIZE
     enable_sparse: bool = False
     sparse_embedding_field: str = "sparse_embedding"
@@ -211,6 +219,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         output_fields: Optional[List[str]] = None,
         index_config: Optional[dict] = None,
         search_config: Optional[dict] = None,
+        collection_properties: Optional[dict] = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         enable_sparse: bool = False,
         sparse_embedding_function: Optional[BaseSparseEmbeddingFunction] = None,
@@ -231,6 +240,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields or [],
             index_config=index_config if index_config else {},
             search_config=search_config if search_config else {},
+            collection_properties=collection_properties,
             batch_size=batch_size,
             enable_sparse=enable_sparse,
             sparse_embedding_function=sparse_embedding_function,
@@ -288,6 +298,15 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         self._collection = Collection(collection_name, using=self._milvusclient._using)
         self._create_index_if_required()
+
+        # Set properties
+        if collection_properties:
+            if self._milvusclient.get_load_state(collection_name) == LoadState.Loaded:
+                self._collection.release()
+                self._collection.set_properties(properties=collection_properties)
+                self._collection.load()
+            else:
+                self._collection.set_properties(properties=collection_properties)
 
         self.enable_sparse = enable_sparse
         if self.enable_sparse is True and sparse_embedding_function is None:
