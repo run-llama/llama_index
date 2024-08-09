@@ -8,13 +8,10 @@ from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 from llama_index.indices.managed.vectara.query import VectaraQueryEngine
 
 
-## FOLLOW THIS FOR BUILDING TOOLS: https://github.com/run-llama/llama_index/blob/15227173b8c1241c9fbc761342a2344cd90c6593/llama-index-integrations/indices/llama-index-indices-managed-vectara/llama_index/indices/managed/vectara/query.py#L159
-
-
 class VectaraQueryToolSpec(BaseToolSpec):
     """Vectara Query tool spec."""
 
-    spec_functions = ["rag_query", "semantic_search"]
+    spec_functions = ["semantic_search", "rag_query"]
 
     def __init__(
         self,
@@ -57,8 +54,8 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - citations_pattern (str): URL pattern for citations. If non-empty, specifies
             the URL pattern to use for citations; for example "{doc.url}".
             see (https://docs.vectara.com/docs/api-reference/search-apis/search#citation-format-in-summary) for more details.
-            If unspecified, citations are generated in numeric form [1],[2], etc
-            This is a Vectara Scale only feature. Defaults to None.
+            If unspecified, citations are generated in numeric form [1],[2], etc.
+            This is a Vectara Scale only feature.
         """
         self.index = VectaraIndex(
             vectara_customer_id=vectara_customer_id,
@@ -85,31 +82,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
 
         self.query_engine = VectaraQueryEngine(retriever=self.retriever)
 
-    def rag_query(
-        self,
-        query: str,
-    ) -> Dict:
-        """
-        Makes a query to a Vectara corpus and returns the generated summary, the citation metadata, and the factual consistency score.
-
-        Parameters:
-        - query (str): The input query from the user.
-        """
-        response = self.query_engine._query(query_bundle=QueryBundle(query_str=query))
-
-        if str(response) == "None":
-            return Response(response="Tool failed to generate a response.")
-
-        # print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
-
-        return {
-            "summary": response.response,
-            "citation_metadata": response.source_nodes,
-            "factual_consistency_score": response.metadata["fcs"]
-            if "fcs" in response.metadata
-            else 0.0,
-        }
-
     def semantic_search(
         self,
         query: str,
@@ -135,3 +107,28 @@ class VectaraQueryToolSpec(BaseToolSpec):
             }
             for doc in response
         ]
+
+    def rag_query(
+        self,
+        query: str,
+    ) -> Dict:
+        """
+        Makes a query to a Vectara corpus and returns the generated summary, the citation metadata, and the factual consistency score.
+
+        Parameters:
+        - query (str): The input query from the user.
+        """
+        response = self.query_engine._query(query_bundle=QueryBundle(query_str=query))
+
+        if str(response) == "None":
+            return Response(response="Tool failed to generate a response.")
+
+        # print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
+
+        return {
+            "summary": response.response,
+            "citation_metadata": response.source_nodes,
+            "factual_consistency_score": response.metadata["fcs"]
+            if "fcs" in response.metadata
+            else 0.0,
+        }

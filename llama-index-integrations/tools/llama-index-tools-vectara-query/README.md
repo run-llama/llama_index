@@ -32,6 +32,6 @@ agent.chat("What are the different types of electric vehicles?")
 
 The available tools are:
 
-`semantic_search`: A tool that accepts a query and search parameters and uses semantic search to obtain the top search results.
+`semantic_search`: A tool that accepts a query and uses semantic search to obtain the top search results.
 
-`rag_query`: A tool that accepts a query and other parameters and uses RAG to obtain a generative response grounded in the search results.
+`rag_query`: A tool that accepts a query and uses RAG to obtain a generative response grounded in the search results.
