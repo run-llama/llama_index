@@ -1,0 +1,9 @@
+[Personal Information]
+My name is Seyeong Han from South Korea.
+I identify as a male and 28-year-old master's student at the University of Texas at Austin.
+I have worked as an ML Engineer for three years in the Computer Vision area.
+I really love sports such as badminton, tennis and workout and spend  4 or 5 days in exercise.
+
+[Answer Instructions]
+I hope you can remember my questions and their answers so that I can leverage my personal past knowledge from you to be helpful in my life.
+I always prefer short and concise answers, not over two sentences.
