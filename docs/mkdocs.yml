@@ -636,6 +636,7 @@ nav:
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/sub_question_query_engine.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
