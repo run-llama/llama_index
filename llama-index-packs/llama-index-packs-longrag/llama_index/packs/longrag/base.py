@@ -1,6 +1,7 @@
 import typing as t
 
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -12,20 +13,20 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
-    VectorStoreQueryResult,
     BasePydanticVectorStore,
-)
-from llama_index.core.indices.query.embedding_utils import (
-    get_top_k_embeddings,
 )
 from llama_index.core.settings import (
     Settings,
     embed_model_from_settings_or_context,
     llm_from_settings_or_context,
 )
-from llama_index.core.vector_stores.types import (
-    VectorStoreQuery,
-    VectorStoreQueryResult,
+from llama_index.core.workflow import (
+    Context,
+    Workflow,
+    StartEvent,
+    StopEvent,
+    step,
+    Event,
 )
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
@@ -121,36 +122,6 @@ def get_grouped_docs(
     return ret_nodes
 
 
-def query(
-    query: VectorStoreQuery, embeddings: t.Dict[str, t.List[float]]
-) -> VectorStoreQueryResult:
-    """Queries.
-
-    Args:
-        query (VectorStoreQuery): Query
-        embeddings (t.Dict[str, t.List[float]]): Embeddings for docs
-
-    Returns:
-        VectorStoreQueryResult: Query result
-    """
-    query_embedding = query.query_embedding
-
-    emb_list: t.List[t.List[float]] = []
-    node_ids: t.List[str] = []
-
-    for id_, emb in embeddings.items():
-        node_ids.append(id_)
-        emb_list.append(emb)
-
-    top_similarities, top_ids = get_top_k_embeddings(
-        query_embedding,
-        embeddings=emb_list,
-        embedding_ids=node_ids,
-    )
-
-    return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids)
-
-
 class LongRAGRetriever(BaseRetriever):
     """Long RAG Retriever."""
 
@@ -217,6 +188,122 @@ class LongRAGRetriever(BaseRetriever):
         return top_parents
 
 
+class LoadNodeEvent(Event):
+    """Event for loading nodes."""
+
+    small_nodes: t.Iterable[TextNode]
+    grouped_nodes: t.List[TextNode]
+    index: VectorStoreIndex
+    similarity_top_k: int
+    llm: LLM
+
+
+class LongRAGWorkflow(Workflow):
+    """Long RAG Workflow."""
+
+    @step()
+    async def ingest(self, ev: StartEvent) -> t.Optional[LoadNodeEvent]:
+        """Ingestion step.
+
+        Args:
+            ctx (Context): Context
+            ev (StartEvent): start event
+
+        Returns:
+            StopEvent | None: stop event with result
+        """
+        data_dir: str = ev.get("data_dir")
+        llm: LLM = ev.get("llm")
+        chunk_size: t.Optional[int] = ev.get("chunk_size")
+        similarity_top_k: int = ev.get("similarity_top_k")
+        small_chunk_size: int = ev.get("small_chunk_size")
+        index: t.Optional[VectorStoreIndex] = ev.get("index")
+        index_kwargs: t.Optional[t.Dict[str, t.Any]] = ev.get("index_kwargs")
+
+        if any(i is None for i in [data_dir, llm, similarity_top_k, small_chunk_size]):
+            return None
+
+        if not index:
+            docs = SimpleDirectoryReader(data_dir).load_data()
+            if chunk_size is not None:
+                nodes = split_doc(
+                    chunk_size, docs
+                )  # split documents into chunks of chunk_size
+                grouped_nodes = get_grouped_docs(
+                    nodes
+                )  # get list of nodes after grouping (groups are combined into one node), these are long retrieval units
+            else:
+                grouped_nodes = docs
+
+            # split large retrieval units into smaller nodes
+            small_nodes = split_doc(small_chunk_size, grouped_nodes)
+
+            index_kwargs = index_kwargs or {}
+            index = VectorStoreIndex(small_nodes, **index_kwargs)
+        else:
+            # get smaller nodes from index and form large retrieval units from these nodes
+            small_nodes = index.docstore.docs.values()
+            grouped_nodes = get_grouped_docs(small_nodes, None)
+
+        return LoadNodeEvent(
+            small_nodes=small_nodes,
+            grouped_nodes=grouped_nodes,
+            index=index,
+            similarity_top_k=similarity_top_k,
+            llm=llm,
+        )
+
+    @step(pass_context=True)
+    async def make_query_engine(self, ctx: Context, ev: LoadNodeEvent) -> StopEvent:
+        """Query engine construction step.
+
+        Args:
+            ctx (Context): context
+            ev (LoadNodeEvent): event
+
+        Returns:
+            StopEvent: stop event
+        """
+        # make retriever and query engine
+        retriever = LongRAGRetriever(
+            grouped_nodes=ev.grouped_nodes,
+            small_toks=ev.small_nodes,
+            similarity_top_k=ev.similarity_top_k,
+            vector_store=ev.index.vector_store,
+        )
+        query_eng = RetrieverQueryEngine.from_args(retriever, ev.llm)
+        ctx.data["query_eng"] = query_eng
+
+        return StopEvent(
+            result={
+                "retriever": retriever,
+                "query_engine": query_eng,
+                "index": ev.index,
+            }
+        )
+
+    @step(pass_context=True)
+    async def query(self, ctx: Context, ev: StartEvent) -> t.Optional[StopEvent]:
+        """Query step.
+
+        Args:
+            ctx (Context): context
+            ev (StartEvent): start event
+
+        Returns:
+            StopEvent | None: stop event with result
+        """
+        query_str: t.Optional[str] = ev.get("query_str")
+
+        if query_str is None:
+            return None
+
+        query_eng: RetrieverQueryEngine = ctx.data.get("query_eng")
+
+        result = query_eng.query(query_str)
+        return StopEvent(result=result)
+
+
 class LongRAGPack(BaseLlamaPack):
     """Implements Long RAG.
 
@@ -232,6 +319,7 @@ class LongRAGPack(BaseLlamaPack):
         small_chunk_size: int = DEFAULT_SMALL_CHUNK_SIZE,
         index: t.Optional[VectorStoreIndex] = None,
         index_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+        verbose: bool = False,
     ):
         """Constructor.
 
@@ -243,7 +331,11 @@ class LongRAGPack(BaseLlamaPack):
             small_chunk_size (int, optional): Small chunk size to split large documents into smaller embeddings of small_chunk_size. Defaults to DEFAULT_SMALL_CHUNK_SIZE.
             index (Optional[VectorStoreIndex], optional): Vector index to use (from persist dir). If None, creates a new vector index. Defaults to None
             index_kwargs (Optional[Dict[str, Any]], optional): Kwargs to use when constructing VectorStoreIndex. Defaults to None.
+            verbose (bool, Optional): Verbose mode. Defaults to False
         """
+        # initialize workflow
+        self._wf = LongRAGWorkflow(verbose=verbose)
+
         # initialize vars
         self._data_dir = data_dir
         self._llm = llm or llm_from_settings_or_context(Settings, None)
@@ -251,35 +343,22 @@ class LongRAGPack(BaseLlamaPack):
         self._similarity_top_k = similarity_top_k
         self._small_chunk_size = small_chunk_size
 
-        # read docs
-        if not index:
-            docs = SimpleDirectoryReader(self._data_dir).load_data()  # read documents
-            if self._chunk_size is not None:
-                nodes = split_doc(
-                    self._chunk_size, docs
-                )  # split documents into chunks of chunk_size
-                grouped_nodes = get_grouped_docs(
-                    nodes
-                )  # get list of nodes after grouping (groups are combined into one node), these are long retrieval units
-            else:
-                grouped_nodes = docs
-
-            small_nodes = split_doc(small_chunk_size, grouped_nodes)
-            index_kwargs = index_kwargs or {}
-            self._index = VectorStoreIndex(small_nodes, **index_kwargs)
-        else:
-            self._index = index
-            small_nodes = self._index.docstore.docs.values()
-            grouped_nodes = get_grouped_docs(small_nodes, None)
-
-        # # make retriever and query engine
-        self._retriever = LongRAGRetriever(
-            grouped_nodes=grouped_nodes,
-            small_toks=small_nodes,
-            similarity_top_k=self._similarity_top_k,
-            vector_store=self._index.vector_store,
+        # run wf initialization
+        result = asyncio_run(
+            self._wf.run(
+                data_dir=self._data_dir,
+                llm=self._llm,
+                chunk_size=self._chunk_size,
+                similarity_top_k=self._similarity_top_k,
+                small_chunk_size=self._small_chunk_size,
+                index=index,
+                index_kwargs=index_kwargs,
+            )
         )
-        self._query_eng = RetrieverQueryEngine.from_args(self._retriever, llm=self._llm)
+
+        self._retriever = result["retriever"]
+        self._query_eng = result["query_engine"]
+        self._index = result["index"]
 
     def get_modules(self) -> t.Dict[str, t.Any]:
         """Get Modules."""
@@ -288,8 +367,9 @@ class LongRAGPack(BaseLlamaPack):
             "llm": self._llm,
             "retriever": self._retriever,
             "index": self._index,
+            "workflow": self._wf,
         }
 
     def run(self, query: str, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Runs pipeline."""
-        return self._query_eng.query(query)
+        return asyncio_run(self._wf.run(query_str=query))
