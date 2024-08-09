@@ -16,12 +16,27 @@ from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 from cleanlab_studio import Studio
 
-DEFAULT_CONTEXT_WINDOW = 16385
+DEFAULT_CONTEXT_WINDOW = 131072
 DEFAULT_MAX_TOKENS = 512
-DEFAULT_MODEL = "gpt-3.5-turbo-16k"
+DEFAULT_MODEL = "gpt-4o-mini"
 
 
 class CleanlabTLM(CustomLLM):
+    """
+    Cleanlab TLM.
+
+    Examples:
+        `pip install llama-index-llms-cleanlab`
+
+        ```python
+        from llama_index.llms.cleanlab import CleanlabTLM
+
+        llm = CleanlabTLM(quality_preset="best", api_key=api_key)
+        resp = llm.complete("Who is Paul Graham?")
+        print(resp)
+        ```
+    """
+
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
@@ -30,9 +45,7 @@ class CleanlabTLM(CustomLLM):
         default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate in TLM response.",
     )
-    model: str = Field(
-        default="gpt-3.5-turbo-16k", description="The base model to use."
-    )
+    model: str = Field(default=DEFAULT_MODEL, description="The base model to use.")
     quality_preset: str = Field(
         default="medium", description="Pre-defined configuration to use for TLM."
     )
@@ -62,6 +75,14 @@ class CleanlabTLM(CustomLLM):
                     self.context_window = 8192
                 elif self.model == "gpt-3.5-turbo-16k":
                     self.context_window = 16385
+                elif self.model in ["gpt-4o-mini", "gpt-4o"]:
+                    self.context_window = 131072
+                elif self.model in [
+                    "claude-3-haiku",
+                    "claude-3-sonnet",
+                    "claude-3.5-sonnet",
+                ]:
+                    self.context_window = 204800
                 else:
                     # ValueError is raised by Studio object for non-supported models
                     # Set context_window to dummy (default) value
