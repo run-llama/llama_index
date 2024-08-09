@@ -730,10 +730,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         query_embedding = cast(List[float], query.query_embedding)
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
-        qdrant_filters = kwargs.get("qdrant_filters")
-        if qdrant_filters is not None:
-            query_filter = qdrant_filters
-        else:
+        query_filter = kwargs.get("qdrant_filters")
+        if query_filter is None:
             query_filter = cast(Filter, self._build_query_filter(query))
 
         if (
@@ -864,11 +862,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         query_embedding = cast(List[float], query.query_embedding)
 
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
-        qdrant_filters = kwargs.get("qdrant_filters")
-        if qdrant_filters is not None:
-            query_filter = qdrant_filters
-        else:
-            # build metadata filters
+        query_filter = kwargs.get("qdrant_filters")
+        if query_filter is None:
             query_filter = cast(Filter, self._build_query_filter(query))
 
         if (
