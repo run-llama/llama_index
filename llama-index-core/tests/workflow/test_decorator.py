@@ -42,7 +42,7 @@ def test_decorate_free_function_wrong_decorator():
     with pytest.raises(
         WorkflowValidationError,
         match=re.escape(
-            "To decorate f please pass a workflow instance to the @step() decorator."
+            "To decorate f please pass a workflow class to the @step() decorator."
         ),
     ):
 
