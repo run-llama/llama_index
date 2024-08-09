@@ -45,7 +45,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - n_sentences_before (int): Number of sentences before the summary.
         - n_sentences_after (int): Number of sentences after the summary.
         - metadata_filter (str): A string with expressions to filter the search documents.
-        - reranker (str): The reranker mode, either "mmr", "multilingual_reranker_v1", or "none".
+        - reranker (str): The reranker mode, either "mmr", "slingshot", "multilingual_reranker_v1", or "none".
         - rerank_k (int): Number of top-k documents for reranking.
         - mmr_diversity_bias (float): MMR diversity bias.
         - summarizer_prompt_name (str): If enable_summarizer is True, the Vectara summarizer to use.
