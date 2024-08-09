@@ -48,7 +48,7 @@ class BaseIndex(Generic[IS], ABC):
         index_struct: Optional[IS] = None,
         storage_context: Optional[StorageContext] = None,
         callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
+        transformations: Optional[Sequence[TransformComponent]] = None,
         show_progress: bool = False,
         # deprecated
         service_context: Optional[ServiceContext] = None,
@@ -109,7 +109,7 @@ class BaseIndex(Generic[IS], ABC):
         storage_context: Optional[StorageContext] = None,
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        transformations: Optional[List[TransformComponent]] = None,
+        transformations: Optional[Sequence[TransformComponent]] = None,
         # deprecated
         service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
