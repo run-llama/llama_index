@@ -346,8 +346,8 @@ class HuggingFaceLLM(CustomLLM):
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
             if self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
-        else:
-            full_prompt = self.completion_to_prompt(full_prompt)
+            else:
+                full_prompt = self.completion_to_prompt(full_prompt)
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self._model.device)
@@ -381,8 +381,8 @@ class HuggingFaceLLM(CustomLLM):
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
             if self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
-        else:
-            full_prompt = self.completion_to_prompt(full_prompt)
+            else:
+                full_prompt = self.completion_to_prompt(full_prompt)
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
         inputs = inputs.to(self._model.device)
