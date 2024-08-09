@@ -28,3 +28,13 @@ def _is_pinecone_v3() -> bool:
     ):  # Will not work with .dev versions, e.g. "3.0.0.dev8"
         return True
     return False
+
+def _is_serverless(index_name: str) -> bool:
+    """
+    Check the spec type of the given index. Returns True if the index is serverless.
+    """
+    pinecone = _import_pinecone()
+    spec = pinecone.describe_index(index_name).spec.to_dict()
+    if "serverless" in spec.keys():
+        return True
+    return False
