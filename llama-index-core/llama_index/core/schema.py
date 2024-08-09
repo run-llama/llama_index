@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from llama_cloud.types.cloud_document import CloudDocument
 
 
-DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
+DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\nContent:\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
 # NOTE: for pretty printing
 TRUNCATE_LENGTH = 350
@@ -441,7 +441,7 @@ class TextNode(BaseNode):
             [
                 self.metadata_template.format(key=key, value=str(value))
                 for key, value in self.metadata.items()
-                if key in usable_metadata_keys
+                if key in usable_metadata_keys and value
             ]
         )
 

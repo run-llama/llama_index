@@ -47,8 +47,8 @@ class MarkdownReader(BaseReader):
         in_code_block = False
 
         for line in lines:
-            if line.startswith("```"):
-                # This is the end of a code block if we are already in it, and vice versa.
+            stripped_line = line.strip().rstrip()
+            if stripped_line.startswith("```") and not stripped_line.endswith("```"):
                 in_code_block = not in_code_block
 
             header_match = re.match(r"^#+\s", line)
