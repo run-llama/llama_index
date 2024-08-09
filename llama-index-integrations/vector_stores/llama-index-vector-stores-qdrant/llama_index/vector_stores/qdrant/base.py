@@ -718,6 +718,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
+        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
+            raise ValueError(
+                "Hybrid search is not enabled. Please build the query with "
+                "`enable_hybrid=True` in the constructor."
+            )
+
         query_embedding = cast(List[float], query.query_embedding)
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
         qdrant_filters = kwargs.get("qdrant_filters")
@@ -726,12 +732,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             query_filter = cast(Filter, self._build_query_filter(query))
 
-        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
-            raise ValueError(
-                "Hybrid search is not enabled. Please build the query with "
-                "`enable_hybrid=True` in the constructor."
-            )
-        elif (
+        if (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
             and self._sparse_query_fn is not None
@@ -850,6 +851,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
+        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
+            raise ValueError(
+                "Hybrid search is not enabled. Please build the query with "
+                "`enable_hybrid=True` in the constructor."
+            )
+
         query_embedding = cast(List[float], query.query_embedding)
 
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
@@ -860,12 +867,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             # build metadata filters
             query_filter = cast(Filter, self._build_query_filter(query))
 
-        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
-            raise ValueError(
-                "Hybrid search is not enabled. Please build the query with "
-                "`enable_hybrid=True` in the constructor."
-            )
-        elif (
+        if (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
             and self._sparse_query_fn is not None
