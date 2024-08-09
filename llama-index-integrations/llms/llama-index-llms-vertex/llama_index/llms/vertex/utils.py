@@ -75,6 +75,7 @@ def completion_with_retry(
     chat: bool = False,
     stream: bool = False,
     is_gemini: bool = False,
+    datastore: Optional[str] = None,
     params: Any = {},
     **kwargs: Any,
 ) -> Any:
@@ -90,7 +91,14 @@ def completion_with_retry(
             tools = kwargs.pop("tools", None) if "tools" in kwargs else []
             tools = to_gemini_tools(tools) if tools else []
             generation_config = kwargs if kwargs else {}
-
+            if datastore:
+                from vertexai.preview.generative_models import Tool, grounding
+                tool = Tool.from_retrieval(
+                    grounding.Retrieval(grounding.VertexAISearch(datastore=datastore))
+                )
+                return generation.send_message(
+                    prompt, stream=stream, generation_config=generation_config, tools=[tool]
+                )
             return generation.send_message(
                 prompt, stream=stream, tools=tools, generation_config=generation_config
             )
@@ -116,6 +124,7 @@ async def acompletion_with_retry(
     chat: bool = False,
     is_gemini: bool = False,
     params: Any = {},
+    datastore: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -130,6 +139,14 @@ async def acompletion_with_retry(
             tools = kwargs.pop("tools", None) if "tools" in kwargs else []
             tools = to_gemini_tools(tools) if tools else []
             generation_config = kwargs if kwargs else {}
+            if datastore:
+                from vertexai.preview.generative_models import Tool, grounding
+                tool = Tool.from_retrieval(
+                    grounding.Retrieval(grounding.VertexAISearch(datastore=datastore))
+                )
+                return await generation.send_message_async(
+                    prompt, generation_config=generation_config, tools=[tool]
+                )
             return await generation.send_message_async(
                 prompt, tools=tools, generation_config=generation_config
             )
