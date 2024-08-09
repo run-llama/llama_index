@@ -90,7 +90,7 @@ class NodeParser(TransformComponent, ABC):
 
                 # update metadata
                 if self.include_metadata:
-                    # Merge parent_doc.metadata with node.metadata, giving preference to node's values
+                    # Merge parent_doc.metadata into nodes.metadata, giving preference to node's values
                     node.metadata = {**parent_doc.metadata, **node.metadata}
 
             if parent_node is not None:
@@ -99,7 +99,7 @@ class NodeParser(TransformComponent, ABC):
 
                     combined_metadata = {**parent_metadata, **node.metadata}
 
-                    # Merge parent_node.metadata with node.metadata, giving preference to node's values
+                    # Merge parent_node.metadata into nodes.metadata, giving preference to node's values
                     node.metadata.update(combined_metadata)
 
             if self.include_prev_next_rel:
