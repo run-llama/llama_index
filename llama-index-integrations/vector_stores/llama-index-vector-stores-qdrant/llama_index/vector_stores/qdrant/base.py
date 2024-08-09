@@ -711,6 +711,21 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Asynchronous method to check if a collection exists."""
         return await self._aclient.collection_exists(collection_name)
 
+    def _get_sparse_embedding(
+        self, query: VectorStoreQuery
+    ) -> tuple[list[int], list[float]]:
+        sparse_query_embedding = query.sparse_query_embedding
+        if sparse_query_embedding is None:
+            assert (
+                query.query_str is not None
+            ), "Cannot compute the sparse query embedding without the query string."
+            # The second assert should not be triggered, as this function is called only if `self.enable_hybrid==True`
+            assert (
+                self._sparse_query_fn is not None
+            ), "No valid sparse embedding is set up."
+            sparse_query_embedding = self._sparse_query_fn([query.query_str])
+        return sparse_query_embedding
+
     def query(
         self,
         query: VectorStoreQuery,
@@ -740,9 +755,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
+            sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = self._client.search_batch(
@@ -792,9 +805,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
+            sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = self._client.search_batch(
@@ -872,9 +883,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
+            sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = await self._aclient.search_batch(
@@ -923,9 +932,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
+            sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
             sparse_top_k = query.sparse_top_k or query.similarity_top_k
 
             sparse_response = await self._aclient.search_batch(
