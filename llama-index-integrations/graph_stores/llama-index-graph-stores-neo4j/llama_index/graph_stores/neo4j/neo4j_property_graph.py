@@ -363,11 +363,10 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         cypher_statement = f"MATCH (e: {BASE_NODE_LABEL}) "
 
         params = {}
-        if properties or ids:
-            cypher_statement += "WHERE "
+        cypher_statement += "WHERE e.id IS NOT NULL "
 
         if ids:
-            cypher_statement += "e.id in $ids "
+            cypher_statement += "AND e.id in $ids "
             params["ids"] = ids
 
         if properties:
@@ -375,7 +374,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             for i, prop in enumerate(properties):
                 prop_list.append(f"e.`{prop}` = $property_{i}")
                 params[f"property_{i}"] = properties[prop]
-            cypher_statement += " AND ".join(prop_list)
+            cypher_statement += " AND " + " AND ".join(prop_list)
 
         return_statement = """
         WITH e
