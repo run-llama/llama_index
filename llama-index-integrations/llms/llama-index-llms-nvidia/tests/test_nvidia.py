@@ -15,6 +15,7 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionUsage
+from pytest_httpx import HTTPXMock
 
 
 class CachedNVIDIApiKeys:
@@ -114,6 +115,40 @@ def mock_chat_completion_stream_v1(
     ]
 
     yield from responses
+
+
+@pytest.fixture()
+def known_unknown() -> str:
+    return "mock-model"
+
+
+@pytest.fixture()
+def mock_local_models(httpx_mock: HTTPXMock):
+    mock_response = {
+        "data": [
+            {
+                "id": "mock-model",
+                "object": "model",
+                "created": 1234567890,
+                "owned_by": "OWNER",
+                "root": "mock-model",
+            },
+            {
+                "id": "lora1",
+                "object": "model",
+                "created": 1234567890,
+                "owned_by": "OWNER",
+                "root": "mock-model",
+            },
+        ]
+    }
+
+    httpx_mock.add_response(
+        url="http://localhost:8000/v1/models",
+        method="GET",
+        json=mock_response,
+        status_code=200,
+    )
 
 
 async def mock_async_chat_completion_stream_v1(
@@ -223,3 +258,22 @@ def test_validates_api_key_is_present() -> None:
 
 def test_metadata() -> None:
     assert isinstance(NVIDIA().metadata, LLMMetadata)
+
+
+def test_default_known(mock_local_models, known_unknown: str) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # check if default model is getting set
+    with pytest.warns(UserWarning):
+        x = NVIDIA(base_url="http://localhost:8000/v1")
+        assert x.model == known_unknown
+
+
+def test_default_lora() -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # find a model that matches the public_class under test
+    x = NVIDIA(base_url="http://localhost:8000/v1", model="lora1")
+    assert x.model == "lora1"

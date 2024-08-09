@@ -27,6 +27,7 @@ KNOWN_URLS = [
 
 class Model(BaseModel):
     id: str
+    base_model: Optional[str]
 
 
 class NVIDIA(OpenAILike):
@@ -37,7 +38,7 @@ class NVIDIA(OpenAILike):
 
     def __init__(
         self,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = None,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = BASE_URL,
@@ -81,7 +82,6 @@ class NVIDIA(OpenAILike):
             )
 
         super().__init__(
-            model=model,
             api_key=api_key,
             api_base=base_url,
             max_tokens=max_tokens,
@@ -89,6 +89,37 @@ class NVIDIA(OpenAILike):
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             **kwargs,
         )
+        self.model = model
+        self._is_hosted = base_url in KNOWN_URLS
+
+        if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
+            warnings.warn(
+                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
+            )
+
+        if not model:
+            self.__get_default_model()
+
+    def __get_default_model(self):
+        """Set default model."""
+        if not self._is_hosted:
+            valid_models = [
+                model.id
+                for model in self.available_models
+                if not model.base_model or model.base_model == model.id
+            ]
+            self.model = next(iter(valid_models), None)
+            if self.model:
+                warnings.warn(
+                    f"Default model is set as: {self.model}. \n"
+                    "Set model using model parameter. \n"
+                    "To get available models use available_models property.",
+                    UserWarning,
+                )
+            else:
+                raise ValueError("No locally hosted model was found.")
+        else:
+            self.model = DEFAULT_MODEL
 
     def _validate_url(self, base_url):
         """
@@ -100,9 +131,7 @@ class NVIDIA(OpenAILike):
         expected_format = "Expected format is 'http://host:port'."
         result = urlparse(base_url)
         if not (result.scheme and result.netloc):
-            raise ValueError(
-                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
-            )
+            raise ValueError(f"Invalid base_url, {expected_format}")
         if result.path:
             normalized_path = result.path.strip("/")
             if normalized_path == "v1":
@@ -110,12 +139,18 @@ class NVIDIA(OpenAILike):
             elif normalized_path == "v1/chat/completions":
                 warnings.warn(f"{expected_format} Rest is Ignored.")
             else:
-                raise ValueError(f"Base URL path is not recognized. {expected_format}")
+                raise ValueError(f"Invalid base_url, {expected_format}")
         return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
 
     @property
     def available_models(self) -> List[Model]:
-        models = self._get_client().models.list().data
+        models = [
+            Model(
+                id=model.id,
+                base_model=getattr(model, "params", {}).get("root", None),
+            )
+            for model in self._get_client().models.list().data
+        ]
         # only exclude models in hosted mode. in non-hosted mode, the administrator has control
         # over the model name and may deploy an excluded name that will work.
         if self._is_hosted:
