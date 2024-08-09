@@ -77,6 +77,7 @@ nav:
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
+          - ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/bedrock_converse_agent.ipynb
           - ./examples/agent/coa_agent.ipynb
@@ -107,17 +108,6 @@ nav:
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
-      - Callbacks:
-          - ./examples/callbacks/AimCallback.ipynb
-          - ./examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb
-          - ./examples/callbacks/LangfuseCallbackHandler.ipynb
-          - ./examples/callbacks/LlamaDebugHandler.ipynb
-          - ./examples/callbacks/OpenInferenceCallback.ipynb
-          - ./examples/callbacks/OpenLLMetry.ipynb
-          - ./examples/callbacks/PromptLayerHandler.ipynb
-          - ./examples/callbacks/TokenCountingHandler.ipynb
-          - ./examples/callbacks/UpTrainCallback.ipynb
-          - ./examples/callbacks/WandbCallbackHandler.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -128,6 +118,8 @@ nav:
           - ./examples/chat_engine/chat_engine_react.ipynb
           - ./examples/chat_engine/chat_engine_repl.ipynb
       - Cookbooks:
+          - ./examples/cookbooks/GraphRAG_v1.ipynb
+          - ./examples/cookbooks/GraphRAG_v2.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
@@ -229,14 +221,17 @@ nav:
           - ./examples/embeddings/premai.ipynb
           - ./examples/embeddings/sagemaker_embedding_endpoint.ipynb
           - ./examples/embeddings/text_embedding_inference.ipynb
+          - ./examples/embeddings/textembed.ipynb
           - ./examples/embeddings/together.ipynb
           - ./examples/embeddings/upstage.ipynb
           - ./examples/embeddings/voyageai.ipynb
+          - ./examples/embeddings/yandexgpt.ipynb
       - Evaluation:
           - ./examples/evaluation/BeirEvaluation.ipynb
           - ./examples/evaluation/Deepeval.ipynb
           - ./examples/evaluation/HotpotQADistractor.ipynb
           - ./examples/evaluation/QuestionGeneration.ipynb
+          - ./examples/evaluation/RAGChecker.ipynb
           - ./examples/evaluation/RetryQuery.ipynb
           - ./examples/evaluation/TonicValidateEvaluators.ipynb
           - ./examples/evaluation/UpTrain.ipynb
@@ -280,6 +275,7 @@ nav:
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/anthropic.ipynb
           - ./examples/llm/anyscale.ipynb
+          - ./examples/llm/azure_inference.ipynb
           - ./examples/llm/azure_openai.ipynb
           - ./examples/llm/bedrock.ipynb
           - ./examples/llm/bedrock_converse.ipynb
@@ -334,6 +330,7 @@ nav:
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/optimum_intel.ipynb
+          - ./examples/llm/paieas.ipynb
           - ./examples/llm/palm.ipynb
           - ./examples/llm/perplexity.ipynb
           - ./examples/llm/portkey.ipynb
@@ -433,6 +430,18 @@ nav:
           - ./examples/node_postprocessor/rankLLM.ipynb
       - Object Stores:
           - ./examples/objects/object_index.ipynb
+      - Observability:
+          - ./examples/observability/AimCallback.ipynb
+          - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
+          - ./examples/observability/LangfuseCallbackHandler.ipynb
+          - ./examples/observability/LlamaDebugHandler.ipynb
+          - ./examples/observability/MLflow.ipynb
+          - ./examples/observability/OpenInferenceCallback.ipynb
+          - ./examples/observability/OpenLLMetry.ipynb
+          - ./examples/observability/PromptLayerHandler.ipynb
+          - ./examples/observability/TokenCountingHandler.ipynb
+          - ./examples/observability/UpTrainCallback.ipynb
+          - ./examples/observability/WandbCallbackHandler.ipynb
       - Output Parsers:
           - ./examples/output_parsing/GuardrailsDemo.ipynb
           - ./examples/output_parsing/LangchainOutputParserDemo.ipynb
@@ -520,6 +529,7 @@ nav:
           - ./examples/retrievers/router_retriever.ipynb
           - ./examples/retrievers/simple_fusion.ipynb
           - ./examples/retrievers/vectara_auto_retriever.ipynb
+          - ./examples/retrievers/vertex_ai_search_retriever.ipynb
           - ./examples/retrievers/videodb_retriever.ipynb
           - ./examples/retrievers/you_retriever.ipynb
       - Tools:
@@ -569,6 +579,7 @@ nav:
           - ./examples/vector_stores/LanceDBIndexDemo.ipynb
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
+          - ./examples/vector_stores/LindormDemo.ipynb
           - ./examples/vector_stores/MetalIndexDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
@@ -620,6 +631,12 @@ nav:
           - ./examples/vector_stores/postgres.ipynb
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
+      - Workflow:
+          - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/rag.ipynb
+          - ./examples/workflow/react_agent.ipynb
+          - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/sub_question_query_engine.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -695,6 +712,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/index.md
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
+          - Workflows: ./module_guides/workflow/index.md
           - Query Pipelines:
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md
@@ -748,6 +766,7 @@ nav:
           - ./api_reference/agent/openai_legacy.md
           - ./api_reference/agent/react.md
       - Callbacks:
+          - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
           - ./api_reference/callbacks/argilla.md
           - ./api_reference/callbacks/arize_phoenix.md
@@ -755,6 +774,7 @@ nav:
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
+          - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
           - ./api_reference/callbacks/promptlayer.md
@@ -771,6 +791,7 @@ nav:
           - ./api_reference/embeddings/adapter.md
           - ./api_reference/embeddings/alephalpha.md
           - ./api_reference/embeddings/anyscale.md
+          - ./api_reference/embeddings/azure_inference.md
           - ./api_reference/embeddings/azure_openai.md
           - ./api_reference/embeddings/bedrock.md
           - ./api_reference/embeddings/clarifai.md
@@ -812,10 +833,12 @@ nav:
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
           - ./api_reference/embeddings/text_embeddings_inference.md
+          - ./api_reference/embeddings/textembed.md
           - ./api_reference/embeddings/together.md
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
+          - ./api_reference/embeddings/yandexgpt.md
       - Evaluation:
           - ./api_reference/evaluation/answer_relevancy.md
           - ./api_reference/evaluation/context_relevancy.md
@@ -863,6 +886,7 @@ nav:
           - ./api_reference/llms/alephalpha.md
           - ./api_reference/llms/anthropic.md
           - ./api_reference/llms/anyscale.md
+          - ./api_reference/llms/azure_inference.md
           - ./api_reference/llms/azure_openai.md
           - ./api_reference/llms/bedrock.md
           - ./api_reference/llms/bedrock_converse.md
@@ -911,6 +935,8 @@ nav:
           - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
           - ./api_reference/llms/openvino.md
+          - ./api_reference/llms/optimum_intel.md
+          - ./api_reference/llms/paieas.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
           - ./api_reference/llms/portkey.md
@@ -963,6 +989,7 @@ nav:
           - ./api_reference/packs/llama_dataset_metadata.md
           - ./api_reference/packs/llama_guard_moderator.md
           - ./api_reference/packs/llava_completion.md
+          - ./api_reference/packs/longrag.md
           - ./api_reference/packs/mixture_of_agents.md
           - ./api_reference/packs/multi_document_agents.md
           - ./api_reference/packs/multi_tenancy_rag.md
@@ -1010,9 +1037,11 @@ nav:
           - ./api_reference/extractors/entity.md
           - ./api_reference/extractors/index.md
           - ./api_reference/extractors/keyword.md
+          - ./api_reference/extractors/llama_extract.md
           - ./api_reference/extractors/marvin.md
           - ./api_reference/extractors/pydantic.md
           - ./api_reference/extractors/question.md
+          - ./api_reference/extractors/relik.md
           - ./api_reference/extractors/summary.md
           - ./api_reference/extractors/title.md
       - Multi-Modal LLMs:
@@ -1066,6 +1095,7 @@ nav:
           - ./api_reference/postprocessor/sbert_rerank.md
           - ./api_reference/postprocessor/sentence_optimizer.md
           - ./api_reference/postprocessor/similarity.md
+          - ./api_reference/postprocessor/tei_rerank.md
           - ./api_reference/postprocessor/time_weighted.md
           - ./api_reference/postprocessor/voyageai_rerank.md
       - Object Stores:
@@ -1158,6 +1188,7 @@ nav:
           - ./api_reference/readers/bilibili.md
           - ./api_reference/readers/bitbucket.md
           - ./api_reference/readers/boarddocs.md
+          - ./api_reference/readers/box.md
           - ./api_reference/readers/chatgpt_plugin.md
           - ./api_reference/readers/chroma.md
           - ./api_reference/readers/clickhouse.md
@@ -1184,6 +1215,7 @@ nav:
           - ./api_reference/readers/gcs.md
           - ./api_reference/readers/genius.md
           - ./api_reference/readers/github.md
+          - ./api_reference/readers/gitlab.md
           - ./api_reference/readers/google.md
           - ./api_reference/readers/gpt_repo.md
           - ./api_reference/readers/graphdb_cypher.md
@@ -1309,6 +1341,7 @@ nav:
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
           - ./api_reference/retrievers/vector.md
+          - ./api_reference/retrievers/vertexai_search.md
           - ./api_reference/retrievers/videodb.md
           - ./api_reference/retrievers/you.md
       - Schema:
@@ -1393,6 +1426,7 @@ nav:
               - ./api_reference/storage/vector_store/kdbai.md
               - ./api_reference/storage/vector_store/lancedb.md
               - ./api_reference/storage/vector_store/lantern.md
+              - ./api_reference/storage/vector_store/lindorm.md
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
@@ -1474,6 +1508,10 @@ nav:
           - ./api_reference/tools/yahoo_finance.md
           - ./api_reference/tools/yelp.md
           - ./api_reference/tools/zapier.md
+      - Workflow:
+          - ./api_reference/workflow/context.md
+          - ./api_reference/workflow/events.md
+          - ./api_reference/workflow/workflow.md
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
@@ -2044,6 +2082,22 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-databricks
             - ../llama-index-integrations/llms/llama-index-llms-optimum-intel
             - ../llama-index-integrations/llms/llama-index-llms-qianfan
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-agentops
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-azure-inference
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-yandexgpt
+            - ../llama-index-integrations/readers/llama-index-readers-box
+            - ../llama-index-integrations/llms/llama-index-llms-azure-inference
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-lindorm
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-vertexai-search
+            - ../llama-index-packs/llama-index-packs-longrag
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-textembed
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-tei-rerank
+            - ../llama-index-integrations/readers/llama-index-readers-gitlab
+            - ../llama-index-integrations/extractors/llama-index-extractors-llama-extract
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-relik
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-literalai
+            - ../llama-index-integrations/llms/llama-index-llms-paieas
+            - ../llama-index-integrations/extractors/llama-index-extractors-relik
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2123,15 +2177,25 @@ plugins:
         ./examples/agent/react_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/react_agent/
         ./examples/agent/react_agent_with_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/agent/react_agent_with_query_engine/
         ./examples/callbacks/AimCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/AimCallback/
+        ./examples/callbacks/AimCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/AimCallback/
         ./examples/callbacks/HoneyHiveLlamaIndexTracer.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/HoneyHiveLlamaIndexTracer/
+        ./examples/callbacks/HoneyHiveLlamaIndexTracer.md: https://docs.llamaindex.ai/en/stable/examples/observability/HoneyHiveLlamaIndexTracer/
         ./examples/callbacks/LangfuseCallbackHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/LangfuseCallbackHandler/
+        ./examples/callbacks/LangfuseCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/LangfuseCallbackHandler/
         ./examples/callbacks/LlamaDebugHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/LlamaDebugHandler/
+        ./examples/callbacks/LlamaDebugHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/LlamaDebugHandler/
         ./examples/callbacks/OpenInferenceCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/OpenInferenceCallback/
+        ./examples/callbacks/OpenInferenceCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenInferenceCallback/
         ./examples/callbacks/OpenLLMetry.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/OpenLLMetry/
+        ./examples/callbacks/OpenLLMetry.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenLLMetry/
         ./examples/callbacks/PromptLayerHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/PromptLayerHandler/
+        ./examples/callbacks/PromptLayerHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/PromptLayerHandler/
         ./examples/callbacks/TokenCountingHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/TokenCountingHandler/
+        ./examples/callbacks/TokenCountingHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/TokenCountingHandler/
         ./examples/callbacks/UpTrainCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/UpTrainCallback/
+        ./examples/callbacks/UpTrainCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/UpTrainCallback/
         ./examples/callbacks/WandbCallbackHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/WandbCallbackHandler/
+        ./examples/callbacks/WandbCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/WandbCallbackHandler/
         ./examples/chat_engine/chat_engine_best.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_best/
         ./examples/chat_engine/chat_engine_condense_plus_context.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_plus_context/
         ./examples/chat_engine/chat_engine_condense_question.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_question/

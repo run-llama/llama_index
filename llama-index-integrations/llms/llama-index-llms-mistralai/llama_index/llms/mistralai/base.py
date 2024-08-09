@@ -35,32 +35,42 @@ from llama_index.llms.mistralai.utils import (
     mistralai_modelname_to_contextsize,
 )
 
-from mistralai.async_client import MistralAsyncClient
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ToolCall
+from mistralai import Mistral
+from mistralai.models import ToolCall
+from mistralai.models import (
+    Messages,
+    AssistantMessage,
+    SystemMessage,
+    ToolMessage,
+    UserMessage,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.chat_engine.types import AgentChatResponse
 
 DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
-from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
-
 
 def to_mistral_chatmessage(
     messages: Sequence[ChatMessage],
-) -> List[mistral_chatmessage]:
+) -> List[Messages]:
     new_messages = []
     for m in messages:
         tool_calls = m.additional_kwargs.get("tool_calls")
-        new_messages.append(
-            mistral_chatmessage(
-                role=m.role.value, content=m.content, tool_calls=tool_calls
+        if m.role == MessageRole.USER:
+            new_messages.append(UserMessage(content=m.content))
+        elif m.role == MessageRole.ASSISTANT:
+            new_messages.append(
+                AssistantMessage(content=m.content, tool_calls=tool_calls)
             )
-        )
+        elif m.role == MessageRole.SYSTEM:
+            new_messages.append(SystemMessage(content=m.content))
+        elif m.role == MessageRole.TOOL or m.role == MessageRole.FUNCTION:
+            new_messages.append(ToolMessage(content=m.content))
+        else:
+            raise ValueError(f"Unsupported message role {m.role}")
 
     return new_messages
 
@@ -113,10 +123,6 @@ class MistralAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=5, description="The maximum number of API retries.", gte=0
     )
-    safe_mode: bool = Field(
-        default=False,
-        description="The parameter to enforce guardrails in chat generations.",
-    )
     random_seed: str = Field(
         default=None, description="The random seed to use for sampling."
     )
@@ -124,8 +130,7 @@ class MistralAI(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the MistralAI API."
     )
 
-    _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _client: Mistral = PrivateAttr()
 
     def __init__(
         self,
@@ -160,17 +165,9 @@ class MistralAI(FunctionCallingLLM):
         # Use the custom endpoint if provided, otherwise default to DEFAULT_MISTRALAI_ENDPOINT
         endpoint = endpoint or DEFAULT_MISTRALAI_ENDPOINT
 
-        self._client = MistralClient(
+        self._client = Mistral(
             api_key=api_key,
-            endpoint=endpoint,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        self._aclient = MistralAsyncClient(
-            api_key=api_key,
-            endpoint=endpoint,
-            timeout=timeout,
-            max_retries=max_retries,
+            server_url=endpoint,
         )
 
         super().__init__(
@@ -201,7 +198,6 @@ class MistralAI(FunctionCallingLLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
-            safe_mode=self.safe_mode,
             random_seed=self.random_seed,
             is_function_calling_model=is_mistralai_function_calling_model(self.model),
         )
@@ -213,7 +209,8 @@ class MistralAI(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "random_seed": self.random_seed,
-            "safe_mode": self.safe_mode,
+            "retries": self.max_retries,
+            "timeout_ms": self.timeout * 1000,
         }
         return {
             **base_kwargs,
@@ -232,7 +229,7 @@ class MistralAI(FunctionCallingLLM):
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = self._client.chat(messages=messages, **all_kwargs)
+        response = self._client.chat.complete(messages=messages, **all_kwargs)
 
         tool_calls = response.choices[0].message.tool_calls
 
@@ -263,18 +260,30 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.chat_stream(messages=messages, **all_kwargs)
+        response = self._client.chat.stream(messages=messages, **all_kwargs)
 
         def gen() -> ChatResponseGen:
             content = ""
-            role = MessageRole.ASSISTANT
             for chunk in response:
-                content_delta = chunk.choices[0].delta.content
+                delta = chunk.data.choices[0].delta
+                role = delta.role or MessageRole.ASSISTANT
+                # NOTE: Unlike openAI, we are directly injecting the tool calls
+                additional_kwargs = {}
+                if delta.tool_calls:
+                    additional_kwargs["tool_calls"] = delta.tool_calls
+
+                content_delta = delta.content
                 if content_delta is None:
-                    continue
-                content += content_delta
+                    pass
+                    # continue
+                else:
+                    content += content_delta
                 yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
+                    message=ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs=additional_kwargs,
+                    ),
                     delta=content_delta,
                     raw=chunk,
                 )
@@ -296,7 +305,9 @@ class MistralAI(FunctionCallingLLM):
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = await self._aclient.chat(messages=messages, **all_kwargs)
+        response = await self._client.chat.complete_async(
+            messages=messages, **all_kwargs
+        )
         tool_calls = response.choices[0].message.tool_calls
         return ChatResponse(
             message=ChatMessage(
@@ -325,18 +336,30 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._aclient.chat_stream(messages=messages, **all_kwargs)
+        response = await self._client.chat.stream_async(messages=messages, **all_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
-            role = MessageRole.ASSISTANT
             async for chunk in response:
-                content_delta = chunk.choices[0].delta.content
+                delta = chunk.data.choices[0].delta
+                role = delta.role or MessageRole.ASSISTANT
+                # NOTE: Unlike openAI, we are directly injecting the tool calls
+                additional_kwargs = {}
+                if delta.tool_calls:
+                    additional_kwargs["tool_calls"] = delta.tool_calls
+
+                content_delta = delta.content
                 if content_delta is None:
-                    continue
-                content += content_delta
+                    pass
+                    # continue
+                else:
+                    content += content_delta
                 yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
+                    message=ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs=additional_kwargs,
+                    ),
                     delta=content_delta,
                     raw=chunk,
                 )
@@ -350,7 +373,7 @@ class MistralAI(FunctionCallingLLM):
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -358,8 +381,8 @@ class MistralAI(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
+    ) -> Dict[str, Any]:
+        """Prepare the chat with tools."""
         # misralai uses the same openai tool format
         tool_specs = [
             tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
@@ -372,49 +395,27 @@ class MistralAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages,
-            tools=tool_specs or None,
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
             **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+        }
 
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Predict and call the tool."""
-        # misralai uses the same openai tool format
-        tool_specs = [
-            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
-        ]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = await self.achat(
-            messages,
-            tools=tool_specs or None,
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
@@ -432,8 +433,7 @@ class MistralAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             if not isinstance(tool_call, ToolCall):
                 raise ValueError("Invalid tool_call object")
-            if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by Mistralai.")
+
             argument_dict = json.loads(tool_call.function.arguments)
 
             tool_selections.append(
@@ -455,11 +455,11 @@ class MistralAI(FunctionCallingLLM):
             )
 
         if stop:
-            response = self._client.completion(
+            response = self._client.fim.complete(
                 model=self.model, prompt=prompt, suffix=suffix, stop=stop
             )
         else:
-            response = self._client.completion(
+            response = self._client.fim.complete(
                 model=self.model, prompt=prompt, suffix=suffix
             )
 

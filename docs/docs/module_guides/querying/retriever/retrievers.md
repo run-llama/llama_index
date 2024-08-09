@@ -16,7 +16,7 @@ Check out our comprehensive guides on various retriever modules, many of which c
 ### Advanced Retrieval and Search
 
 These guides contain advanced retrieval techniques. Some are common like keyword/hybrid search, reranking, and more.
-Some are specific to LLM + RAG pipelines, like small-to-big and auto-merging retrieval.
+Some are specific to LLM + RAG workflows, like small-to-big and auto-merging retrieval.
 
 - [Define Custom Retriever](../../../examples/query_engine/CustomRetrievers.ipynb)
 - [BM25 Hybrid Retriever](../../../examples/retrievers/bm25_retriever.ipynb)

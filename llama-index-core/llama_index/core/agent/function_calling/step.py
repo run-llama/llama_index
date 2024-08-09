@@ -309,6 +309,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+        tool_outputs: List[ToolOutput] = []
 
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
@@ -336,10 +337,10 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    tool_outputs,
                     verbose=self._verbose,
                 )
-
+                task.extra_state["sources"].append(tool_outputs[-1])
                 task.extra_state["n_function_calls"] += 1
 
                 # check if any of the tools return directly -- only works if there is one tool call
@@ -368,9 +369,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(
-            response=response_str, sources=task.extra_state["sources"]
-        )
+        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
         return TaskStepOutput(
             output=agent_response,
@@ -402,6 +401,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
+        tool_outputs: List[ToolOutput] = []
 
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
@@ -428,17 +428,18 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    tool_outputs,
                     verbose=self._verbose,
                 )
                 for tool_call in tool_calls
             ]
             return_directs = await asyncio.gather(*tasks)
+            task.extra_state["sources"].extend(tool_outputs)
 
             # check if any of the tools return directly -- only works if there is one tool call
             if len(return_directs) == 1 and return_directs[0]:
                 is_done = True
-                response = task.extra_state["sources"][-1].content
+                response = tool_outputs[-1].content
 
             task.extra_state["n_function_calls"] += len(tool_calls)
             # put tool output in sources and memory
@@ -461,9 +462,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(
-            response=response_str, sources=task.extra_state["sources"]
-        )
+        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
         return TaskStepOutput(
             output=agent_response,

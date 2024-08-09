@@ -14,6 +14,9 @@ LLAMA_MODELS = {
     "accounts/fireworks/models/llamaguard-7b": 4096,
     "accounts/fireworks/models/llama-v3-8b-instruct": 8192,
     "accounts/fireworks/models/llama-v3-70b-instruct": 8192,
+    "accounts/fireworks/models/llama-v3p1-8b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p1-405b-instruct": 131072,
 }
 
 MISTRAL_MODELS = {
@@ -23,9 +26,15 @@ MISTRAL_MODELS = {
     "accounts/fireworks/models/mixtral-8x22b-instruct": 65536,
 }
 
+FUNCTION_CALLING_MODELS = {
+    "accounts/fireworks/models/firefunction-v2": 8192,
+}
+
+
 ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
     **MISTRAL_MODELS,
+    **FUNCTION_CALLING_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}

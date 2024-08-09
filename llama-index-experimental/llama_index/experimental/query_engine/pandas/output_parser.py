@@ -29,8 +29,8 @@ def default_output_processor(
         )
         return output
 
-    local_vars = {"df": df}
-    global_vars = {"np": np, "pd": pd}
+    local_vars = {"df": df, "pd": pd}
+    global_vars = {"np": np}
 
     output = parse_code_markdown(output, only_last=True)[0]
 

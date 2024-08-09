@@ -77,6 +77,21 @@ class LLMStructuredPredictEndEvent(BaseEvent):
         return "LLMStructuredPredictEndEvent"
 
 
+class LLMStructuredPredictInProgressEvent(BaseEvent):
+    """LLMStructuredPredictInProgressEvent.
+
+    Args:
+        output (BaseModel): Predicted output class.
+    """
+
+    output: BaseModel
+
+    @classmethod
+    def class_name(cls):
+        """Class name."""
+        return "LLMStructuredPredictInProgressEvent"
+
+
 class LLMCompletionStartEvent(BaseEvent):
     """LLMCompletionStartEvent.
 

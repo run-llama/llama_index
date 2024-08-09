@@ -33,6 +33,9 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.utils import print_text
 from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 # TODO: Make this (safely) pydantic?
@@ -386,6 +389,7 @@ class QueryPipeline(QueryComponent):
         for module in self.module_dict.values():
             module.set_callback_manager(callback_manager)
 
+    @dispatcher.span
     def run(
         self,
         *args: Any,
@@ -529,6 +533,7 @@ class QueryPipeline(QueryComponent):
             ) as query_event:
                 return self._run_multi(module_input_dict, show_intermediates=True)
 
+    @dispatcher.span
     async def arun(
         self,
         *args: Any,
@@ -725,6 +730,7 @@ class QueryPipeline(QueryComponent):
         else:
             return result_output
 
+    @dispatcher.span
     def _run(
         self,
         *args: Any,
@@ -780,6 +786,7 @@ class QueryPipeline(QueryComponent):
                 intermediates,
             )
 
+    @dispatcher.span
     async def _arun(
         self,
         *args: Any,
@@ -904,6 +911,7 @@ class QueryPipeline(QueryComponent):
             root_key, kwargs = self._get_root_key_and_kwargs(**pipeline_inputs)
             return RunState(self.module_dict, {root_key: kwargs})
 
+    @dispatcher.span
     def _run_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates=False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
@@ -947,6 +955,7 @@ class QueryPipeline(QueryComponent):
 
         return run_state.result_outputs, run_state.intermediate_outputs
 
+    @dispatcher.span
     async def _arun_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:

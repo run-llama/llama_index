@@ -4,10 +4,7 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import MetadataFilters
 
 from .base import ColbertIndex
@@ -40,7 +37,6 @@ class ColbertRetriever(BaseRetriever):
     ) -> None:
         """Initialize params."""
         self._index = index
-        self._service_context = self._index.service_context
         self._docstore = self._index.docstore
         self._similarity_top_k = similarity_top_k
         self._node_ids = node_ids
@@ -48,10 +44,7 @@ class ColbertRetriever(BaseRetriever):
         self._filters = filters
         self._kwargs: Dict[str, Any] = kwargs.get("colbert_kwargs", {})
         super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, self._service_context
-            ),
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             verbose=verbose,
         )

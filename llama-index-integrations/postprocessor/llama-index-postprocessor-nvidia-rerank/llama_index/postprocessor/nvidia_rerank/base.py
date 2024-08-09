@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, Literal, Generator
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
@@ -21,6 +21,7 @@ BASE_URL = "https://ai.api.nvidia.com/v1"
 
 MODEL_ENDPOINT_MAP = {
     DEFAULT_MODEL: BASE_URL,
+    "nvidia/nv-rerankqa-mistral-4b-v3": "https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-rerankqa-mistral-4b-v3/reranking",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
@@ -90,7 +91,10 @@ class NVIDIARerank(BaseNodePostprocessor):
         """
         super().__init__(model=model, **kwargs)
 
-        self._base_url = base_url or MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
+            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        else:
+            base_url = self._validate_url(base_url)
 
         self._api_key = get_from_param_or_env(
             "api_key",
@@ -105,6 +109,29 @@ class NVIDIARerank(BaseNodePostprocessor):
             warnings.warn(
                 "An API key is required for hosted NIM. This will become an error in 0.2.0."
             )
+
+    def _validate_url(self, base_url):
+        """
+        Base URL Validation.
+        ValueError : url which do not have valid scheme and netloc.
+        Warning : v1/rankings routes.
+        ValueError : Any other routes other than above.
+        """
+        expected_format = "Expected format is 'http://host:port'."
+        result = urlparse(base_url)
+        if not (result.scheme and result.netloc):
+            raise ValueError(
+                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
+            )
+        if result.path:
+            normalized_path = result.path.strip("/")
+            if normalized_path == "v1":
+                pass
+            elif normalized_path == "v1/rankings":
+                warnings.warn(f"{expected_format} Rest is Ignored.")
+            else:
+                raise ValueError(f"Base URL path is not recognized. {expected_format}")
+        return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
 
     @property
     def available_models(self) -> List[Model]:
@@ -225,7 +252,8 @@ class NVIDIARerank(BaseNodePostprocessor):
                 # the hosted NIM path is different from the local NIM path
                 url = self._base_url
                 if self._is_hosted:
-                    url += "/retrieval/nvidia/reranking"
+                    if url.endswith("/v1"):
+                        url += "/retrieval/nvidia/reranking"
                 else:
                     url += "/ranking"
                 response = session.post(url, headers=_headers, json=payloads)
