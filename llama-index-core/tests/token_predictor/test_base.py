@@ -8,6 +8,7 @@ from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.node_parser import TokenTextSplitter
 from llama_index.core.schema import Document
+
 from tests.mock_utils.mock_text_splitter import mock_token_splitter_newline
 
 
