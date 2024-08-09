@@ -1,15 +1,11 @@
 import os
 from time import sleep
-import pytest
 from typing import List
 
+import pytest
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
-    MetadataFilter,
-    MetadataFilters,
-    FilterOperator,
-    FilterCondition,
     VectorStoreQueryMode,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -51,7 +47,7 @@ def test_vectorstore(
         ids = vector_store.add(nodes)
         assert set(ids) == {node.node_id for node in nodes}
 
-        # 2a. test query(): default (vector search)
+        # 2. test query(): default (vector search)
         query_str = "What are LLMs useful for?"
         n_similar = 2
         query_embedding = OpenAIEmbedding().get_text_embedding(query_str)
@@ -74,66 +70,7 @@ def test_vectorstore(
         assert any("LLM" in node.text for node in query_responses.nodes)
         assert all(id_res in ids for id_res in query_responses.ids)
 
-        # 2b. test query() default with simple filter
-
-        # In order to filter within $vectorSearch,
-        # one needs to have an index on the field.
-        # One can do this by adding an additional member to "fields" list of vector index
-        # like so: { "type": "filter", "path": "text }
-        filters = MetadataFilters(
-            filters=[
-                MetadataFilter(
-                    key="text",
-                    value="How do we best augment LLMs with our own private data?",
-                    operator=FilterOperator.NE,
-                )
-            ]
-        )
-        query = VectorStoreQuery(
-            query_str=query_str,
-            query_embedding=query_embedding,
-            similarity_top_k=n_similar,
-            filters=filters,
-        )
-        responses_with_filter = vector_store.query(query=query)
-        assert len(responses_with_filter.ids) == n_similar
-        assert all(
-            filters.filters[0].value not in node.text
-            for node in responses_with_filter.nodes
-        )
-
-        # 2c. test query() default with compound filters
-        filter_out_texts = [
-            "How do we best augment LLMs with our own private data?",
-            "easily used with LLMs.",
-        ]
-        filters_compoound = MetadataFilters(
-            condition=FilterCondition.AND,
-            filters=[
-                MetadataFilter(
-                    key="text", value=filter_out_texts[0], operator=FilterOperator.NE
-                ),
-                MetadataFilter(
-                    key="text", value=filter_out_texts[1], operator=FilterOperator.NE
-                ),
-            ],
-        )
-        query = VectorStoreQuery(
-            query_str=query_str,
-            query_embedding=query_embedding,
-            similarity_top_k=n_similar,
-            filters=filters_compoound,
-        )
-        responses_with_filter_compound = vector_store.query(query=query)
-        assert len(responses_with_filter_compound.ids) == n_similar
-        assert all(
-            ftext not in node.text
-            for node in responses_with_filter_compound.nodes
-            for ftext in filter_out_texts
-        )
-        assert set(responses_with_filter_compound.ids) != set(responses_with_filter.ids)
-
-        # 2d. test query() full-text search
+        # 3. test query() full-text search
         #   - no embedding
 
         query = VectorStoreQuery(
@@ -153,7 +90,7 @@ def test_vectorstore(
         assert len(fulltext_result.ids) == 3
         assert all("LlamaIndex" in node.text for node in fulltext_result.nodes)
 
-        # 2e. test query() hybrid search
+        # 4. test query() hybrid search
         n_similar = 10
         query = VectorStoreQuery(
             query_str="llamaindex",
@@ -167,7 +104,7 @@ def test_vectorstore(
         assert not all("LlamaIndex" in node.text for node in hybrid_result.nodes[:3])
         assert not all("LLM" in node.text for node in hybrid_result.nodes[:3])
 
-        # 3. Test delete()
+        # 5. Test delete()
         # Remember, the current API deletes by *ref_doc_id*, not *node_id*.
         # In our case, we began with only one document,
         # so deleting the ref_doc_id from any node

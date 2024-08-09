@@ -9,6 +9,7 @@ provide a valid OPENAI_API_KEY.
 import os
 from time import sleep
 from typing import List
+
 import pytest
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import Document

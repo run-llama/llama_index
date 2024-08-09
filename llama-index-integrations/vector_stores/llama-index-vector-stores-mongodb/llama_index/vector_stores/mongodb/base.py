@@ -4,6 +4,7 @@ An index that is built on top of an existing vector store.
 
 """
 
+
 import logging
 import os
 from importlib.metadata import version
@@ -14,27 +15,25 @@ from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
-    VectorStoreQueryResult,
     VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
 from llama_index.vector_stores.mongodb.pipelines import (
-    fulltext_search_stage,
-    vector_search_stage,
     combine_pipelines,
-    reciprocal_rank_stage,
-    final_hybrid_stage,
     filters_to_mql,
+    final_hybrid_stage,
+    fulltext_search_stage,
+    reciprocal_rank_stage,
+    vector_search_stage,
 )
 from pymongo import MongoClient
-from pymongo.driver_info import DriverInfo
 from pymongo.collection import Collection
-
+from pymongo.driver_info import DriverInfo
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +225,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     def client(self) -> Any:
         """Return MongoDB client."""
         return self._mongodb_client
+
+    @property
+    def collection(self) -> Any:
+        """Return pymongo Collection."""
+        return self._collection
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         if query.mode == VectorStoreQueryMode.DEFAULT:
