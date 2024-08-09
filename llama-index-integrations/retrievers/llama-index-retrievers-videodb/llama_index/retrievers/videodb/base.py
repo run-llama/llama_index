@@ -7,14 +7,10 @@ import os
 
 from typing import List, Optional
 from videodb import connect
+from videodb import SearchType, IndexType
 
 
 logger = logging.getLogger(__name__)
-
-
-class SearchType:
-    keyword = "keyword"
-    semantic = "semantic"
 
 
 class VideoDBRetriever(BaseRetriever):
@@ -26,6 +22,8 @@ class VideoDBRetriever(BaseRetriever):
         score_threshold: Optional[float] = 0.2,
         result_threshold: Optional[int] = 5,
         search_type: Optional[str] = SearchType.semantic,
+        index_type: Optional[str] = IndexType.spoken_word,
+        scene_index_id: Optional[str] = None,
         base_url: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -43,6 +41,8 @@ class VideoDBRetriever(BaseRetriever):
         self.score_threshold = score_threshold
         self.result_threshold = result_threshold
         self.search_type = search_type
+        self.scene_index_id = scene_index_id
+        self.index_type = index_type
         super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
@@ -52,19 +52,24 @@ class VideoDBRetriever(BaseRetriever):
             kwargs["base_url"] = self._base_url
         conn = connect(**kwargs)
         if self.video:
+            search_args = {
+                "query": query_bundle.query_str,
+                "search_type": self.search_type,
+                "index_type": self.index_type,
+                "score_threshold": self.score_threshold,
+                "result_threshold": self.result_threshold,
+            }
+            if self.index_type == IndexType.scene and self.scene_index_id:
+                search_args["index_id"] = self.scene_index_id
             coll = conn.get_collection(self.collection)
             video = coll.get_video(self.video)
-            search_res = video.search(
-                query_bundle.query_str,
-                search_type=self.search_type,
-                score_threshold=self.score_threshold,
-                result_threshold=self.result_threshold,
-            )
+            search_res = video.search(**search_args)
         else:
             coll = conn.get_collection(self.collection)
             search_res = coll.search(
                 query_bundle.query_str,
                 search_type=self.search_type,
+                index_type=self.index_type,
                 score_threshold=self.score_threshold,
                 result_threshold=self.result_threshold,
             )
@@ -82,6 +87,7 @@ class VideoDBRetriever(BaseRetriever):
                     "title": shot.video_title,
                     "start": shot.start,
                     "end": shot.end,
+                    "type": self.index_type,
                 },
             )
             nodes.append(NodeWithScore(node=textnode, score=score))
