@@ -59,6 +59,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     _model: Any = PrivateAttr()
     _device: str = PrivateAttr()
+    _parallel_process: bool = PrivateAttr()
+    _target_devices: Optional[list[str]] = PrivateAttr()
 
     def __init__(
         self,
@@ -81,8 +83,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         **model_kwargs,
     ):
         self._device = device or infer_torch_device()
-        self.parallel_process = parallel_process
-        self.target_devices = target_devices
+        self._parallel_process = parallel_process
+        self._target_devices = target_devices
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -137,9 +139,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """Embed sentences."""
-        if self.parallel_process:
+        if self._parallel_process:
             pool = self._model.start_multi_process_pool(
-                target_devices=self.target_devices
+                target_devices=self._target_devices
             )
             emb = self._model.encode_multi_process(
                 sentences=sentences,
@@ -147,18 +149,18 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 batch_size=self.embed_batch_size,
                 prompt_name=prompt_name,
                 normalize_embeddings=self.normalize,
-            ).tolist()
+            )
             self._model.stop_multi_process_pool(pool=pool)
 
-            return emb
-
         else:
-            return self._model.encode(
+            emb = self._model.encode(
                 sentences,
                 batch_size=self.embed_batch_size,
                 prompt_name=prompt_name,
                 normalize_embeddings=self.normalize,
-            ).tolist()
+            )
+
+        return emb.tolist()
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
