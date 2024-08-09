@@ -64,7 +64,7 @@ class BaseIndex(Generic[IS], ABC):
         self._show_progress = show_progress
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
-        self._callback_manager = Settings.callback_manager
+        self._callback_manager = callback_manager or Settings.callback_manager
 
         objects = objects or []
         self._object_map = {obj.index_id: obj.obj for obj in objects}

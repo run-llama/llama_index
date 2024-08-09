@@ -1,4 +1,5 @@
 """LLM reranker."""
+
 from typing import Callable, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -12,8 +13,7 @@ from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 
 class LLMRerank(BaseNodePostprocessor):
@@ -36,12 +36,11 @@ class LLMRerank(BaseNodePostprocessor):
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
-        service_context: Optional[ServiceContext] = None,
         top_n: int = 10,
     ) -> None:
         choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
 
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         self._format_node_batch_fn = (
             format_node_batch_fn or default_format_node_batch_fn
@@ -54,7 +53,6 @@ class LLMRerank(BaseNodePostprocessor):
             llm=llm,
             choice_select_prompt=choice_select_prompt,
             choice_batch_size=choice_batch_size,
-            service_context=service_context,
             top_n=top_n,
         )
 

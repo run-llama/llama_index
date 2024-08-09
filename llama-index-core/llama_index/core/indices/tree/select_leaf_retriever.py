@@ -124,7 +124,6 @@ class TreeSelectLeafRetriever(BaseRetriever):
         if len(self._index_struct.get_children(selected_node)) == 0:
             response_builder = get_response_synthesizer(
                 llm=self._llm,
-                service_context=self._service_context,
                 text_qa_template=self._text_qa_template,
                 refine_template=self._refine_template,
                 callback_manager=self.callback_manager,
