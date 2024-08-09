@@ -2,8 +2,10 @@
 
 import json
 import logging
+from .neptune import create_neptune_analytics_client
 from typing import Any, Dict, Optional
-from .base import NeptuneBaseGraphStore, NeptuneQueryException
+from .base import NeptuneBaseGraphStore
+from .neptune import NeptuneQueryException
 
 logger = logging.getLogger(__name__)
 
@@ -20,52 +22,10 @@ class NeptuneAnalyticsGraphStore(NeptuneBaseGraphStore):
     ) -> None:
         """Create a new Neptune Analytics graph wrapper instance."""
         self.node_label = node_label
-        try:
-            if client is not None:
-                self._client = client
-            else:
-                import boto3
-
-                if credentials_profile_name is not None:
-                    session = boto3.Session(profile_name=credentials_profile_name)
-                else:
-                    # use default credentials
-                    session = boto3.Session()
-
-                self.graph_identifier = graph_identifier
-
-                if region_name:
-                    self._client = session.client(
-                        "neptune-graph", region_name=region_name
-                    )
-                else:
-                    self._client = session.client("neptune-graph")
-
-        except ImportError:
-            raise ModuleNotFoundError(
-                "Could not import boto3 python package. "
-                "Please install it with `pip install boto3`."
-            )
-        except Exception as e:
-            if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
-                    "NeptuneGraph requires a boto3 version 1.34.40 or greater."
-                    "Please install it with `pip install -U boto3`."
-                ) from e
-            else:
-                raise ValueError(
-                    "Could not load credentials to authenticate with AWS client. "
-                    "Please check that credentials in the specified "
-                    "profile name are valid."
-                ) from e
-
-        try:
-            self._refresh_schema()
-        except Exception as e:
-            logger.error(
-                f"Could not retrieve schema for Neptune due to the following error: {e}"
-            )
-            self.schema = None
+        self._client = create_neptune_analytics_client(
+            graph_identifier, client, credentials_profile_name, region_name
+        )
+        self.graph_identifier = graph_identifier
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune Analytics graph."""

@@ -13,7 +13,9 @@ import_path = "llama_index.graph_stores.neptune"
 
 [tool.llamahub.class_authors]
 NeptuneAnalyticsGraphStore = "llama-index"
+NeptuneAnalyticsPropertyGraphStore = "llama-index"
 NeptuneDatabaseGraphStore = "llama-index"
+NeptuneDatabasePropertyGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -28,7 +30,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-graph-stores-neptune"
 readme = "README.md"
-version = "0.1.3"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

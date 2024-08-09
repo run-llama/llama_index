@@ -1,6 +1,83 @@
 # ChangeLog
 
-## [2024-02-05]
+## [2024-08-08]
+
+### `llama-index-core` [0.10.63]
+
+- add num_workers in workflow decorator to resolve step concurrancy issue (#15210)
+- Sub Question Query Engine as workflow notebook example (#15209)
+- Add Llamatrace to workflow notebooks (#15186)
+- Use node hash instead of node text to match nodes in fusion retriever (#15172)
+
+### `llama-index-embeddings-mistralai` [0.1.5]
+
+- handle mistral v1.0 client (#15229)
+
+### `llama-index-extractors-relik` [0.1.1]
+
+- Fix relik extractor skip error (#15225)
+
+### `llama-index-finetuning` [0.1.11]
+
+- handle mistral v1.0 client (#15229)
+
+### `llama-index-graph-stores-neo4j` [0.2.14]
+
+- Add neo4j generic node label (#15191)
+
+### `llama-index-llms-anthropic` [0.1.17]
+
+- Allow for images in Anthropic messages (#15227)
+
+### `llama-index-llms-mistralai` [0.1.20]
+
+- handle mistral v1.0 client (#15229)
+
+### `llama-index-packs-mixture-of-agents` [0.1.2]
+
+- Update Mixture Of Agents llamapack with workflows (#15232)
+
+### `llama-index-tools-slack` [0.1.4]
+
+- Fixed slack client ref in ToolSpec (#15202)
+
+## [2024-08-06]
+
+### `llama-index-core` [0.10.62]
+
+- feat: Allow None metadata filter by using IS_EMPTY operator (#15167)
+- fix: use parent source node to node relationships if possible during node parsing (#15182)
+- Use node hash instead of node text to match nodes in fusion retriever (#15172)
+
+### `llama-index-graph-stores-neo4j` [0.2.13]
+
+- Neo4j property graph client side batching (#15179)
+
+### `llama-index-graph-stores-neptune` [0.1.4]
+
+- PropertyGraphStore support for Amazon Neptune (#15126)
+
+### `llama-index-llms-gemini` [0.2.0]
+
+- feat: add default_headers to Gemini model (#15141)
+
+### `llama-index-llms-openai` [0.1.28]
+
+- OpenAI: Support new strict functionality in tool param (#15177)
+
+### `llama-index-vector-stores-opensearch` [0.1.14]
+
+- Add support for full MetadataFilters in Opensearch (#15176)
+
+### `llama-index-vector-stores-qdrant` [0.2.15]
+
+- feat: Allow None metadata filter by using IS_EMPTY operator (#15167)
+
+### `llama-index-vector-stores-wordlift` [0.3.0]
+
+- Add support for fields projection and update sample Notebook (#15140)
+
+## [2024-08-05]
 
 ### `llama-index-core` [0.10.61]
 
