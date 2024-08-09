@@ -35,7 +35,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
     """
     Args:
         parallel_process (bool): Default to False. If True it will start a multi-process pool to process the encoding
-        with several independent processes.
+            with several independent processes.
 
         target_devices (List[str], optional): It will only taken into account if `parallel_process` = `True`. PyTorch
             target devices, e.g. ["cuda:0", "cuda:1", ...], ["npu:0", "npu:1", ...], or ["cpu", "cpu", "cpu", "cpu"].
