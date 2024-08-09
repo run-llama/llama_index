@@ -1,11 +1,6 @@
-"""OpenAI Agent.
+"""NVIDIA Agent.
 
-Simple wrapper around AgentRunner + OpenAIAgentWorker.
-
-For the legacy implementation see:
-```python
-from llama_index.agent.legacy.openai.base import OpenAIAgent
-```
+Simple wrapper around AgentRunner + NVIDIAAgentWorker.
 """
 
 from typing import (
@@ -34,13 +29,9 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
 class NVIDIAAgent(AgentRunner):
-    """OpenAI agent.
+    """NVIDIA agent.
 
-    Subclasses AgentRunner with a OpenAIAgentWorker.
-
-    For the legacy implementation see:
-    ```python
-    from llama_index..agent.legacy.openai.base import OpenAIAgent
+    Subclasses AgentRunner with a NVIDIAAgentWorker.\
     ```
 
     """
@@ -115,6 +106,8 @@ class NVIDIAAgent(AgentRunner):
 
         memory = memory or memory_cls.from_defaults(chat_history, llm=llm)
 
+        # only llama3 endpoints support tool calling
+        # TODO: update filtering to support future models
         if not llm.model.startswith("meta/llama-3.1-"):
             raise ValueError(
                 f"Model name {llm.model} does not support function calling API. "

@@ -1,4 +1,4 @@
-"""OpenAI agent worker."""
+"""NVIDIA agent worker."""
 
 import asyncio
 import json
@@ -168,7 +168,7 @@ class NVIDIAAgentWorker(BaseAgentWorker):
         tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
         **kwargs: Any,
     ) -> "NVIDIAAgentWorker":
-        """Create an OpenAIAgent from a list of tools.
+        """Create a NVIDIAAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,
@@ -184,6 +184,8 @@ class NVIDIAAgentWorker(BaseAgentWorker):
         if callback_manager is not None:
             llm.callback_manager = callback_manager
 
+        # only llama3 endpoints support tool calling
+        # TODO: update filtering to support future models
         if not llm.model.startswith("meta/llama-3.1-"):
             raise ValueError(
                 f"Model name {llm.model} does not support function calling API. "
@@ -262,7 +264,7 @@ class NVIDIAAgentWorker(BaseAgentWorker):
         thread.start()
         # Wait for the event to be set
         chat_stream_response.is_function_not_none_thread_event.wait()
-        # If it is executing an openAI function, wait for the thread to finish
+        # If it is executing a function, wait for the thread to finish
         if chat_stream_response.is_function:
             thread.join()
 
@@ -285,7 +287,7 @@ class NVIDIAAgentWorker(BaseAgentWorker):
         )
         chat_stream_response._ensure_async_setup()
 
-        # wait until openAI functions stop executing
+        # wait until functions stop executing
         await chat_stream_response.is_function_false_event.wait()
 
         # return response stream
@@ -595,7 +597,7 @@ class NVIDIAAgentWorker(BaseAgentWorker):
                     raise ValueError("Invalid tool_call object")
 
                 if tool_call.type != "function":
-                    raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                    raise ValueError("Invalid tool type. Unsupported by NVIDIA")
 
                 # TODO: maybe execute this with multi-threading
                 return_direct = self._call_function(
