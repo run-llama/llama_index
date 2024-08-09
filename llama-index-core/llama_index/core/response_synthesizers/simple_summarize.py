@@ -8,7 +8,6 @@ from llama_index.core.prompts.default_prompt_selectors import (
 )
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
@@ -21,17 +20,11 @@ class SimpleSummarize(BaseSynthesizer):
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        if service_context is not None:
-            prompt_helper = service_context.prompt_helper
-
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
-            service_context=service_context,
             streaming=streaming,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
