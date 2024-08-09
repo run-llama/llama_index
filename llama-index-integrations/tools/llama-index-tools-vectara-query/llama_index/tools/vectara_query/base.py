@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.schema import QueryBundle
+from llama_index.core.base.response.schema import Response
 
 from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
@@ -31,8 +32,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
         summarizer_prompt_name: str = "vectara-summary-ext-24-05-sml",
         summary_num_results: int = 5,
         summary_response_lang: str = "eng",
-        # include_citations: bool = True, # CAN ADD A PARAMETER TO CHOOSE THE TYPE OF CITATION (MARKDOWN, HTML, ETC.)
-        citations_pattern: Optional[str] = None,
+        citations_pattern: Optional[
+            str
+        ] = None,  # Currently can only use MARKDOWN for citation type and does not allow user to specify text pattern (this is probably okay, but just want to make sure that Ofer is okay with this).
+        # See _build_vectara_query_body function at https://github.com/run-llama/llama_index/blob/3327c92fcb6c7dddc6d4b8ed7da30d88acbaf852/llama-index-integrations/indices/llama-index-indices-managed-vectara/llama_index/indices/managed/vectara/retriever.py#L223
     ) -> None:
         """Initializes the Vectara API and query parameters.
 
@@ -80,92 +83,29 @@ class VectaraQueryToolSpec(BaseToolSpec):
             citations_url_pattern=citations_pattern,
         )
 
-        # CHECK IF SUMMARY ARGUMENTS ARE REQUIRED OR IF IT WILL FOLLOW THE PARAMETERS WE SPECIFIED WHEN CREATING THE RETRIEVER.
-        self.query_engine = VectaraQueryEngine(
-            retriever=self.retriever,
-            summary_enabled=True,
-            summary_response_lang=summary_response_lang,
-            summary_num_results=summary_num_results,
-            summarizer_prompt_name=summarizer_prompt_name,
-        )
+        self.query_engine = VectaraQueryEngine(retriever=self.retriever)
 
-        # if enable_summarizer:
-        #     self.engine = self.index.as_query_engine(
-        #         lambda_val=lambda_val,
-        #         n_sentences_before=n_sentences_before,
-        #         n_sentences_after=n_sentences_after,
-        #         filter=metadata_filter,
-        #         vectara_query_mode=reranker,
-        #         rerank_k=rerank_k,
-        #         mmr_diversity_bias=mmr_diversity_bias,
-        #         summary_enabled=True,
-        #         summary_response_lang=summary_response_lang,
-        #         summary_num_results=summary_num_results,
-        #         summary_prompt_name=summarizer_prompt_name,
-        #     )
-        # else:
-        #     self.engine = self.index.as_retriever(
-        #         lambda_val=lambda_val,
-        #         similarity_top_k=num_results,
-        #         n_sentences_before=n_sentences_before,
-        #         n_sentences_after=n_sentences_after,
-        #         filter=metadata_filter,
-        #         vectara_query_mode=reranker,
-        #         rerank_k=rerank_k,
-        #         mmr_diversity_bias=mmr_diversity_bias,
-        #     )
-
-        # self.engine = self.index.as_query_engine(
-        #     lambda_val=lambda_val,
-        #     n_sentences_before=n_sentences_before,
-        #     n_sentences_after=n_sentences_after,
-        #     filter=metadata_filter,
-        #     vectara_query_mode=reranker,
-        #     rerank_k=rerank_k,
-        #     mmr_diversity_bias=mmr_diversity_bias,
-        #     summary_enabled=True,
-        #     summary_response_lang=summary_response_lang,
-        #     summary_num_results=summary_num_results,
-        #     summary_prompt_name=summarizer_prompt_name,
-        # )
-
-    # CURRENTLY CANNOT USE THIS TOOL IF enable_summarizer is False (it will return an error).
-    # We could change the behavior by just making one function that will call the correct method based on summary_enabled,
-    # but this means we can only use one of the tool functions, not both.
     def rag_query(
         self,
         query: str,
     ) -> Dict:
         """
-        Makes a query to a Vectara corpus and returns the generated summary and associated metadata (if self.include_citations is True).
+        Makes a query to a Vectara corpus and returns the generated summary, the citation metadata, and the factual consistency score.
 
         Parameters:
         - query (str): The input query from the user.
-
         """
         response = self.query_engine._query(query_bundle=QueryBundle(query_str=query))
 
-        # # NOT SURE IF THIS CHECK ACTUALLY WORKS
-        # if str(response) == "None":
-        #     return Response("Tool failed to generate a response.")
+        if str(response) == "None":
+            return Response(response="Tool failed to generate a response.")
 
-        print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
-
-        # # Extract citation metadata if requested
-        # pattern = r"\[\[(\d+)\]" if self.include_citations else r"\[(\d+)\]"
-        # matches = re.findall(pattern, response.response)
-        # citation_numbers = [int(match) for match in matches]
-        # citation_metadata: dict = {
-        #     f"metadata for citation {citation_number}": response.source_nodes[
-        #         citation_number - 1
-        #     ].metadata
-        #     for citation_number in citation_numbers
-        # }
+        # print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
 
         return {
-            "response": response.response,
-            #    "citation_metadata": citation_metadata,
-            "factual_consistency": response.metadata["fcs"]
+            "summary": response.response,
+            "citation_metadata": response.source_nodes,
+            "factual_consistency_score": response.metadata["fcs"]
             if "fcs" in response.metadata
             else 0.0,
         }
@@ -182,9 +122,16 @@ class VectaraQueryToolSpec(BaseToolSpec):
         """
         response = self.retriever._retrieve(query_bundle=QueryBundle(query_str=query))
 
-        print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
+        # print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
+
+        if len(response) == 0:
+            return Response(response="Tool failed to retrieve any documents.")
 
         return [
-            {"text": doc.node.text, "metadata": doc.node.metadata, "FCS": doc.score}
+            {
+                "text": doc.node.text,
+                "citation_metadata": doc.node.metadata,
+                "factual_consistency_score": doc.score,
+            }
             for doc in response
         ]
