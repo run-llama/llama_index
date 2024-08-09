@@ -341,7 +341,6 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         cypher_statement = "MATCH (e) "
 
         params = {}
-        # if properties or ids:
         cypher_statement += "WHERE e.id IS NOT NULL "
 
         if ids:
