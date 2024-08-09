@@ -395,9 +395,9 @@ nav:
           - ./examples/multi_modal/mm_agent.ipynb
           - ./examples/multi_modal/multi_modal_pydantic.ipynb
           - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
-          - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
+          - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
           - ./examples/multi_modal/replicate_multi_modal.ipynb
@@ -634,6 +634,7 @@ nav:
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
           - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
