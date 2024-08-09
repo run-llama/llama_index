@@ -15,12 +15,7 @@ from llama_index.core.prompts.default_prompts import DEFAULT_JSONALYZE_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 logger = logging.getLogger(__name__)
@@ -212,7 +207,6 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     Converts natural language statasical queries to SQL within in-mem SQLite queries.
 
     list_of_dict(List[Dict[str, Any]]): List of dictionaries to query.
-    service_context (ServiceContext): ServiceContext
     jsonalyze_prompt (BasePromptTemplate): The JSONalyze prompt to use.
     use_async (bool): Whether to use async.
     analyzer (Callable): The analyzer that executes the query.
@@ -228,7 +222,6 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     def __init__(
         self,
         list_of_dict: List[Dict[str, Any]],
-        service_context: Optional[ServiceContext] = None,
         llm: Optional[LLM] = None,
         jsonalyze_prompt: Optional[BasePromptTemplate] = None,
         use_async: bool = False,
@@ -242,7 +235,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._list_of_dict = list_of_dict
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._jsonalyze_prompt = jsonalyze_prompt or DEFAULT_JSONALYZE_PROMPT
         self._use_async = use_async
         self._analyzer = load_jsonalyzer(use_async, analyzer)
@@ -254,11 +247,7 @@ class JSONalyzeQueryEngine(BaseQueryEngine):
         self._table_name = table_name
         self._verbose = verbose
 
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            )
-        )
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

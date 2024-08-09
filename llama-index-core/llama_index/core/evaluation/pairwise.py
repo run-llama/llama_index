@@ -17,8 +17,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
 )
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 DEFAULT_SYSTEM_TEMPLATE = (
     "Please act as an impartial judge and evaluate the quality of the responses provided by two "
@@ -99,8 +98,6 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
     Outputs whether the `response` given is better than the `reference` response.
 
     Args:
-        service_context (Optional[ServiceContext]):
-            The service context to use for evaluation.
         eval_template (Optional[Union[str, BasePromptTemplate]]):
             The template to use for evaluation.
         enforce_consensus (bool): Whether to enforce consensus (consistency if we
@@ -116,10 +113,8 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             [str], Tuple[Optional[bool], Optional[float], Optional[str]]
         ] = _default_parser_function,
         enforce_consensus: bool = True,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self._eval_template: BasePromptTemplate
         if isinstance(eval_template, str):

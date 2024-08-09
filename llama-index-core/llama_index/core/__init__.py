@@ -62,10 +62,6 @@ from llama_index.core.readers import SimpleDirectoryReader, download_loader
 # Response Synthesizer
 from llama_index.core.response_synthesizers.factory import get_response_synthesizer
 from llama_index.core.schema import Document, QueryBundle
-from llama_index.core.service_context import (
-    ServiceContext,
-    set_global_service_context,
-)
 
 # storage
 from llama_index.core.storage.storage_context import StorageContext
@@ -85,7 +81,6 @@ logging.getLogger(__name__).addHandler(NullHandler())
 
 __all__ = [
     "StorageContext",
-    "ServiceContext",
     "ComposableGraph",
     # indices
     "SummaryIndex",
@@ -137,7 +132,6 @@ __all__ = [
     "load_indices_from_storage",
     "QueryBundle",
     "get_response_synthesizer",
-    "set_global_service_context",
     "set_global_handler",
     "set_global_tokenizer",
     "get_tokenizer",
@@ -151,9 +145,6 @@ global_handler: Optional[BaseCallbackHandler] = None
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
-
-# global service context for ServiceContext.from_defaults()
-global_service_context: Optional[ServiceContext] = None
 
 # global tokenizer
 global_tokenizer: Optional[Callable[[str], list]] = None

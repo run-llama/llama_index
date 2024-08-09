@@ -1,4 +1,5 @@
 """Relevancy evaluation."""
+
 from __future__ import annotations
 
 import asyncio
@@ -11,8 +12,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the retrieved context from the document sources are relevant to the query.\n"
@@ -70,8 +70,6 @@ class ContextRelevancyEvaluator(BaseEvaluator):
     This evaluator considers the query string and retrieved contexts.
 
     Args:
-        service_context(Optional[ServiceContext]):
-            The service context to use for evaluation.
         raise_error(Optional[bool]):
             Whether to raise an error if the response is invalid.
             Defaults to False.
@@ -91,11 +89,11 @@ class ContextRelevancyEvaluator(BaseEvaluator):
         parser_function: Callable[
             [str], Tuple[Optional[float], Optional[str]]
         ] = _default_parser_function,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        from llama_index.core import Settings
+
+        self._llm = llm or Settings.llm
         self._raise_error = raise_error
 
         self._eval_template: BasePromptTemplate

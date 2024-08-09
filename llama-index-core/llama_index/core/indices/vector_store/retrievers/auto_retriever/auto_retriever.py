@@ -49,8 +49,6 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
             parameters.
         prompt_template_str: custom prompt template string for LLM.
             Uses default template string if None.
-        service_context: service context containing reference to an LLM.
-            Uses service context from index be default if None.
         similarity_top_k (int): number of top k results to return.
         empty_query_top_k (Optional[int]): number of top k results to return
             if the inferred query string is blank (uses metadata filters only).

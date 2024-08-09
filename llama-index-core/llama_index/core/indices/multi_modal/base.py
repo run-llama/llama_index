@@ -102,7 +102,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             use_async=use_async,

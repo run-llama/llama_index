@@ -1,4 +1,4 @@
-""" Knowledge Graph Query Engine."""
+"""Knowledge Graph Query Engine."""
 
 import deprecated
 import logging
@@ -19,12 +19,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import print_text
 
@@ -61,7 +56,6 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
     Query engine to call a knowledge graph.
 
     Args:
-        service_context (Optional[ServiceContext]): A service context to use.
         storage_context (Optional[StorageContext]): A storage context to use.
         refresh_schema (bool): Whether to refresh the schema.
         verbose (bool): Whether to print intermediate results.
@@ -80,8 +74,6 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         refresh_schema: bool = False,
         verbose: bool = False,
         response_synthesizer: Optional[BaseSynthesizer] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ):
         # Ensure that we have a graph store
@@ -92,7 +84,7 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         self._storage_context = storage_context
         self.graph_store = storage_context.graph_store
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         # Get Graph schema
         self._graph_schema = self.graph_store.get_schema(refresh=refresh_schema)
@@ -104,13 +96,9 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
             graph_response_answer_prompt or DEFAULT_KG_RESPONSE_ANSWER_PROMPT
         )
         self._verbose = verbose
-        callback_manager = callback_manager_from_settings_or_context(
-            Settings, service_context
-        )
+        callback_manager = Settings.callback_manager
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            llm=self._llm,
-            callback_manager=callback_manager,
-            service_context=service_context,
+            llm=self._llm, callback_manager=callback_manager
         )
 
         super().__init__(callback_manager=callback_manager)

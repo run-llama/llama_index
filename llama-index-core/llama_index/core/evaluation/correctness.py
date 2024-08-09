@@ -1,4 +1,5 @@
 """Correctness evaluation."""
+
 import asyncio
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
@@ -13,8 +14,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
 )
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 DEFAULT_SYSTEM_TEMPLATE = """
 You are an expert evaluation system for a question answering chatbot.
@@ -78,7 +78,6 @@ class CorrectnessEvaluator(BaseEvaluator):
     Passing is defined as a score greater than or equal to the given threshold.
 
     Args:
-        service_context (Optional[ServiceContext]): Service context.
         eval_template (Optional[Union[BasePromptTemplate, str]]):
             Template for the evaluation prompt.
         score_threshold (float): Numerical threshold for passing the evaluation,
@@ -90,13 +89,11 @@ class CorrectnessEvaluator(BaseEvaluator):
         llm: Optional[LLM] = None,
         eval_template: Optional[Union[BasePromptTemplate, str]] = None,
         score_threshold: float = 4.0,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         parser_function: Callable[
             [str], Tuple[Optional[float], Optional[str]]
         ] = default_parser,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self._eval_template: BasePromptTemplate
         if isinstance(eval_template, str):

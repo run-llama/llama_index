@@ -23,8 +23,7 @@ from llama_index.core.query_engine.flare.output_parser import (
 
 from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
 from llama_index.core.schema import QueryBundle, NodeWithScore
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 # These prompts are taken from the FLARE repo:
@@ -106,8 +105,6 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
     Args:
         query_engine (BaseQueryEngine): query engine to use
         llm (Optional[LLM]): LLM model. Defaults to None.
-        service_context (Optional[ServiceContext]): service context.
-            Defaults to None.
         instruct_prompt (Optional[PromptTemplate]): instruct prompt. Defaults to None.
         lookahead_answer_inserter (Optional[BaseLookaheadAnswerInserter]):
             lookahead answer inserter. Defaults to None.
@@ -127,7 +124,6 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         self,
         query_engine: BaseQueryEngine,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         instruct_prompt: Optional[BasePromptTemplate] = None,
         lookahead_answer_inserter: Optional[BaseLookaheadAnswerInserter] = None,
         done_output_parser: Optional[IsDoneOutputParser] = None,
@@ -140,7 +136,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         """Init params."""
         super().__init__(callback_manager=callback_manager)
         self._query_engine = query_engine
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._instruct_prompt = instruct_prompt or DEFAULT_INSTRUCT_PROMPT
         self._lookahead_answer_inserter = lookahead_answer_inserter or (
             LLMLookaheadAnswerInserter(llm=self._llm)
