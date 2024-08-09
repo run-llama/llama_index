@@ -68,6 +68,7 @@ class NodeParser(TransformComponent, ABC):
     ) -> List[BaseNode]:
         for i, node in enumerate(nodes):
             parent_doc = parent_doc_map.get(node.ref_doc_id, None)
+            parent_node = node.relationships.get(NodeRelationship.SOURCE, None)
 
             if parent_doc is not None:
                 if parent_doc.source_node is not None:
@@ -89,7 +90,13 @@ class NodeParser(TransformComponent, ABC):
 
                 # update metadata
                 if self.include_metadata:
-                    node.metadata.update(parent_doc.metadata)
+                    # Update parent_doc.metadata with node.metadata, giving preference to node's values
+                    node.metadata = {**parent_doc.metadata, **node.metadata}
+
+            if parent_node is not None:
+                if self.include_metadata:
+                    # Update parent_node.metadata with node.metadata, giving preference to node's values
+                    node.metadata.update(parent_node.metadata)
 
             if self.include_prev_next_rel:
                 # establish prev/next relationships if nodes share the same source_node
