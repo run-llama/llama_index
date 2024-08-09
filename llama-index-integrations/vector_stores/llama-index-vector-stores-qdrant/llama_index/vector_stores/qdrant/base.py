@@ -754,7 +754,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
             sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
@@ -804,7 +803,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         elif (
             query.mode == VectorStoreQueryMode.SPARSE
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
             sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
@@ -882,7 +880,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if (
             query.mode == VectorStoreQueryMode.HYBRID
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
             sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
@@ -931,7 +928,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         elif (
             query.mode == VectorStoreQueryMode.SPARSE
             and self.enable_hybrid
-            and self._sparse_query_fn is not None
             and query.query_str is not None
         ):
             sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
