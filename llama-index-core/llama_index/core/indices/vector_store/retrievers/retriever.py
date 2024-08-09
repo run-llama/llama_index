@@ -128,6 +128,7 @@ class VectorIndexRetriever(BaseRetriever):
             alpha=self._alpha,
             filters=self._filters,
             sparse_top_k=self._sparse_top_k,
+            sparse_query_embedding=query_bundle_with_embeddings.sparse_embedding,
             hybrid_top_k=self._hybrid_top_k,
         )
 

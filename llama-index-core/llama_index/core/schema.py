@@ -857,6 +857,7 @@ class QueryBundle(DataClassJsonMixin):
         custom_embedding_strs (list[str]): list of strings used for embedding the query.
             This is currently used by all embedding-based queries.
         embedding (list[float]): the stored embedding for the query.
+        sparse_embedding (list[float]): the stored sparse embedding for the query.
     """
 
     query_str: str
@@ -864,6 +865,7 @@ class QueryBundle(DataClassJsonMixin):
     image_path: Optional[str] = None
     custom_embedding_strs: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
+    sparse_embedding: Optional[tuple[list[int], list[float]]] = None
 
     @property
     def embedding_strs(self) -> List[str]:
