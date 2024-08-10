@@ -28,7 +28,7 @@ class MarvinMetadataExtractor(BaseExtractor):
         #create extractor list
         extractors = [
             TitleExtractor(nodes=1, llm=llm),
-            MarvinMetadataExtractor(target=YourMetadataModel),
+            MarvinMetadataExtractor(marvin_model=YourMetadataModel),
         ]
 
         #create node parser to parse nodes from document
