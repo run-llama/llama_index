@@ -29,4 +29,4 @@ embeddings = GigaChatEmbedding(
 
 ## Example
 
-See the [example notebook](../../../docs/docs/examples/embeddings/gigachat.ipynb) for a detailed walkthrough of using GigaChat embeddings with LlamaIndex.
+See the [example notebook](https://github.com/run-llama/llama_index/tree/main/docs/docs/examples/embeddings/gigachat.ipynb) for a detailed walkthrough of using GigaChat embeddings with LlamaIndex.
