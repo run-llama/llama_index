@@ -23,7 +23,7 @@ class MarvinMetadataExtractor(BaseExtractor):
     Node-level extractor. Extracts
     `marvin_metadata` metadata field.
     Args:
-        target: The target pydantic model to cast the metadata into.
+        marvin_model: The target pydantic model to cast the metadata into.
     Usage:
         #create extractor list
         extractors = [
