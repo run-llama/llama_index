@@ -11,7 +11,7 @@ from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch, index
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
-MONGODB_URI = os.environ["MONGODB_URI"]
+MONGODB_URI = os.environ.get("MONGODB_URI")
 DB_NAME = os.environ.get("MONGODB_DATABASE", "llama_index_test_db")
 COLLECTION_NAME = "test_index_commands"
 VECTOR_INDEX_NAME = "vector_index"
@@ -41,6 +41,9 @@ def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
     )
 
 
+@pytest.mark.skipif(
+    os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
+)
 def test_search_index_commands(collection: Collection) -> None:
     """Tests create, update, and drop index utility functions."""
     index_name = VECTOR_INDEX_NAME

@@ -147,6 +147,11 @@ def test_metadata_filters(metadata_filters: MetadataFilters) -> None:
     }
 
 
+@pytest.mark.skipif(
+    os.environ.get("MONGODB_URI") is None,
+    reason="Requires MONGODB_URI in os.environ",
+    allow_module_level=True,
+)
 def test_search_with_filter(
     collection: Collection,
     vector_store: MongoDBAtlasVectorSearch,
