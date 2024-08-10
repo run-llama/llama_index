@@ -54,7 +54,7 @@ class Vertex(FunctionCallingLLM):
         `pip install llama-index-llms-vertex`
 
         ```python
-        from llama_index.llms.openai import Vertex
+        from llama_index.llms.vertex import Vertex
 
         # Set up necessary variables
         credentials = {
