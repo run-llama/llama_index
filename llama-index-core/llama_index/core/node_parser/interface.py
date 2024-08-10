@@ -95,12 +95,8 @@ class NodeParser(TransformComponent, ABC):
 
             if parent_node is not None:
                 if self.include_metadata:
-                    parent_metadata = parent_node.metadata
-
-                    combined_metadata = {**parent_metadata, **node.metadata}
-
                     # Merge parent_node.metadata into nodes.metadata, giving preference to node's values
-                    node.metadata.update(combined_metadata)
+                    node.metadata.update(parent_node.metadata)
 
             if self.include_prev_next_rel:
                 # establish prev/next relationships if nodes share the same source_node
