@@ -16,9 +16,11 @@ pip install llama-index-embeddings-gigachat
 ```python
 from llama_index.embeddings.gigachat import GigaChatEmbedding
 ```
+
 **Initialization Parameters:**
-   - `auth_data`: GigaChat authentication data.
-   - `scope`: The scope of your GigaChat API access. Use "GIGACHAT_API_PERS" for personal use or "GIGACHAT_API_CORP" for corporate use.
+
+- `auth_data`: GigaChat authentication data.
+- `scope`: The scope of your GigaChat API access. Use "GIGACHAT_API_PERS" for personal use or "GIGACHAT_API_CORP" for corporate use.
 
 ```python
 embeddings = GigaChatEmbedding(
