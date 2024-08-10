@@ -92,9 +92,11 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
             "This query engine does not support asynthesize, use aquery directly"
         )
 
-    @abstractmethod
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
+        # TODO: consolidate with outer query method
+        # currently not consolidated because we are in the midst of transitioning every query engine to workflows
+        # so old query engines will still override this method to use a non-workflow-based approach
+
 
     @abstractmethod
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
