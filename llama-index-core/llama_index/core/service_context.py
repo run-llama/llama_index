@@ -362,7 +362,7 @@ class ServiceContext:
             prompt_helper=prompt_helper_dict,
             embed_model=embed_model_dict,
             transformations=tranform_list_dict,
-        ).dict()
+        ).model_dump()
 
     @classmethod
     def from_dict(cls, data: dict) -> "ServiceContext":
@@ -373,7 +373,7 @@ class ServiceContext:
             load_predictor,
         )
 
-        service_context_data = ServiceContextData.parse_obj(data)
+        service_context_data = ServiceContextData.model_validate(data)
 
         llm_predictor = load_predictor(service_context_data.llm_predictor)
 

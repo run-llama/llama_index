@@ -17,10 +17,13 @@ from pydantic import (
     TypeAdapter,
     WithJsonSchema,
     BeforeValidator,
+    SerializeAsAny,
+    WrapSerializer,
 )
 from pydantic.error_wrappers import ValidationError
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
+from pydantic.json_schema import JsonSchemaValue
 
 __all__ = [
     "pydantic",
@@ -45,4 +48,7 @@ __all__ = [
     "BaseConfig",
     "parse_obj_as",
     "BeforeValidator",
+    "JsonSchemaValue",
+    "SerializeAsAny",
+    "WrapSerializer",
 ]

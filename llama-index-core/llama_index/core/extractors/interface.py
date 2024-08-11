@@ -1,4 +1,5 @@
 """Node parser interface."""
+
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, cast

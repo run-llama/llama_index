@@ -5,7 +5,6 @@ from typing import Annotated, Any, Callable, Dict, List, Sequence
 
 from llama_index.core.bridge.pydantic import (
     Field,
-    PlainSerializer,
     WithJsonSchema,
     BeforeValidator,
 )
@@ -38,7 +37,6 @@ IdFuncCallable = Annotated[
     BeforeValidator(_validate_id_func),
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
-    PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
 ]
 
 

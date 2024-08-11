@@ -33,7 +33,6 @@ from llama_index.core.base.query_pipeline.query import (
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     WithJsonSchema,
-    PlainSerializer,
     Field,
     field_validator,
 )
@@ -152,7 +151,7 @@ MessagesToPromptCallable = Annotated[
     Optional[MessagesToPromptType],
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
-    PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
+    # PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
 ]
 
 
@@ -160,7 +159,7 @@ CompletionToPromptCallable = Annotated[
     Optional[CompletionToPromptType],
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
-    PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
+    # PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
 ]
 
 
@@ -186,12 +185,12 @@ class LLM(BaseLLM):
     )
     messages_to_prompt: MessagesToPromptCallable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
-        default=generic_messages_to_prompt,
+        default=None,
         exclude=None,
     )
     completion_to_prompt: CompletionToPromptCallable = Field(
         description="Function to convert a completion to an LLM prompt.",
-        default=default_completion_to_prompt,
+        default=None,
         exclude=None,
     )
     output_parser: Optional[BaseOutputParser] = Field(

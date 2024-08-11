@@ -13,7 +13,13 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GetJsonSchemaHandler,
+    JsonSchemaValue,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
 from typing_extensions import Self
@@ -39,15 +45,18 @@ logger = logging.getLogger(__name__)
 class BaseComponent(BaseModel):
     """Base component object to capture class names."""
 
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: "BaseComponent") -> None:
-            """Add class name to schema."""
-            schema["properties"]["class_name"] = {
-                "title": "Class Name",
-                "type": "string",
-                "default": model.class_name(),
-            }
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema["properties"]["class_name"] = {
+            "title": "Class Name",
+            "type": "string",
+            "default": cls.class_name(),
+        }
+        return json_schema
 
     @classmethod
     def class_name(cls) -> str:
@@ -62,10 +71,13 @@ class BaseComponent(BaseModel):
     def json(self, **kwargs: Any) -> str:
         return self.to_json(**kwargs)
 
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         data = super().model_dump(**kwargs)
         data["class_name"] = self.class_name()
         return data
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        return self.model_dump(**kwargs)
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
