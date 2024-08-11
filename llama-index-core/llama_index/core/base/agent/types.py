@@ -17,6 +17,9 @@ from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle
+from llama_index.core.pydantic_annotations import (
+    PydanticAnnotations,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.agent.runner.base import AgentRunner
@@ -172,8 +175,8 @@ class Task(BaseModel):
         ),
     )
 
-    callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager,
+    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+        default_factory=lambda: CallbackManager([]),
         exclude=True,
         description="Callback manager for the task.",
     )

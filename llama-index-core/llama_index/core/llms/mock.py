@@ -26,7 +26,7 @@ class MockLLM(CustomLLM):
     ) -> None:
         super().__init__(
             max_tokens=max_tokens,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,

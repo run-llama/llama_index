@@ -34,6 +34,9 @@ from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
+from llama_index.core.pydantic_annotations import (
+    PydanticAnnotations,
+)
 
 
 class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
@@ -57,7 +60,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
     tools: Sequence[BaseTool] = Field(..., description="Tools to use for reasoning")
     llm: LLM = Field(..., description="LLM to use")
-    callback_manager: CallbackManager = Field(
+    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
     tool_retriever: Optional[ObjectRetriever[BaseTool]] = Field(

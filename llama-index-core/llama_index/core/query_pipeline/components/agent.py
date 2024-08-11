@@ -10,6 +10,9 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.pydantic_annotations import (
+    PydanticAnnotations,
+)
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
@@ -267,7 +270,7 @@ class CustomAgentComponent(BaseAgentComponent):
 
     """
 
-    callback_manager: CallbackManager = Field(
+    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
 

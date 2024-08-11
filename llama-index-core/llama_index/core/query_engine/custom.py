@@ -9,6 +9,9 @@ from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.schema import QueryBundle, QueryType
+from llama_index.core.pydantic_annotations import (
+    PydanticAnnotations,
+)
 
 STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]
 
@@ -24,7 +27,7 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
 
     """
 
-    callback_manager: CallbackManager = Field(
+    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
 
