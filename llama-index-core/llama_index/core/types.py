@@ -4,9 +4,9 @@ from contextvars import copy_context
 from enum import Enum
 from functools import partial
 from typing import (
+    Annotated,
     Any,
     AsyncGenerator,
-    Dict,
     Generator,
     Generic,
     List,
@@ -16,8 +16,7 @@ from typing import (
 )
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel, GetJsonSchemaHandler
-from llama_index.core.bridge.pydantic_core import CoreSchema
+from llama_index.core.bridge.pydantic import BaseModel, WithJsonSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
@@ -31,15 +30,6 @@ RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
 # NOTE: this is necessary to make it compatible with pydantic
 class BaseOutputParser(DispatcherSpanMixin, ABC):
     """Output parser class."""
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> Dict[str, Any]:
-        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema.update(type="object", default={})
-        return json_schema
 
     @abstractmethod
     def parse(self, output: str) -> Any:
@@ -60,6 +50,13 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
                 messages[-1].content = self.format(messages[-1].content or "")
 
         return messages
+
+
+BaseOutputParser = Annotated[
+    BaseOutputParser,
+    WithJsonSchema({"type": "object"}, mode="serialization"),
+    WithJsonSchema({"type": "object"}, mode="validation"),
+]
 
 
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):

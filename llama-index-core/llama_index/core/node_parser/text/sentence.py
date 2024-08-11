@@ -1,4 +1,5 @@
 """Sentence splitter."""
+
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Tuple
 
@@ -6,7 +7,9 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import DEFAULT_CHUNK_SIZE
-from llama_index.core.node_parser.interface import MetadataAwareTextSplitter
+from llama_index.core.node_parser.interface import (
+    MetadataAwareTextSplitter,
+)
 from llama_index.core.node_parser.node_utils import default_id_func
 from llama_index.core.node_parser.text.utils import (
     split_by_char,
@@ -14,7 +17,6 @@ from llama_index.core.node_parser.text.utils import (
     split_by_sentence_tokenizer,
     split_by_sep,
 )
-from llama_index.core.schema import Document
 from llama_index.core.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
@@ -74,7 +76,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
-        id_func: Optional[Callable[[int, Document], str]] = None,
+        id_func: Optional[Callable] = None,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:

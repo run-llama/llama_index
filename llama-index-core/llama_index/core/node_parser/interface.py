@@ -25,7 +25,7 @@ from llama_index.core.schema import (
 from llama_index.core.utils import get_tqdm_iterable
 
 
-def _validate_id_func(cls, v: Any) -> Any:
+def _validate_id_func(v: Any) -> Any:
     if v is None:
         return default_id_func
     return v
@@ -53,9 +53,8 @@ class NodeParser(TransformComponent, ABC):
         default_factory=CallbackManager, exclude=True
     )
     id_func: IdFuncCallable = Field(
-        default=None,
+        default=default_id_func,
         description="Function to generate node IDs.",
-        exclude=True,
     )
 
     class Config:

@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import (
+    Annotated,
     TYPE_CHECKING,
     Any,
     Callable,
@@ -14,7 +15,7 @@ from typing import (
     Union,
 )
 
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, WithJsonSchema, PlainSerializer
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import (
@@ -46,6 +47,14 @@ from llama_index.core.prompts.utils import get_template_vars
 from llama_index.core.types import BaseOutputParser
 
 
+AnnotatedCallable = Annotated[
+    Callable,
+    WithJsonSchema({"type": "string"}),
+    WithJsonSchema({"type": "string"}),
+    PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
+]
+
+
 class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
     metadata: Dict[str, Any]
     template_vars: List[str]
@@ -54,7 +63,7 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
     template_var_mappings: Optional[Dict[str, Any]] = Field(
         default_factory=dict, description="Template variable mappings (Optional)."
     )
-    function_mappings: Optional[Dict[str, Callable]] = Field(
+    function_mappings: Optional[Dict[str, AnnotatedCallable]] = Field(
         default_factory=dict,
         description=(
             "Function mappings (Optional). This is a mapping from template "
