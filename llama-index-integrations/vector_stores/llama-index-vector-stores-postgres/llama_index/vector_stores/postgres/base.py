@@ -382,12 +382,18 @@ class PGVectorStore(BasePydanticVectorStore):
         with self._session() as session, session.begin():
             index_exists = session.execute(
                 sqlalchemy.text(
-                    f"SELECT 1 FROM pg_indexes WHERE tablename = '{self._table_class.__tablename__}' AND indexname = '{index_name}';"
+                    f"""
+                    SELECT 1
+                    FROM pg_indexes
+                    WHERE schemaname = '{self.schema_name}'
+                      AND tablename = '{self._table_class.__tablename__}'
+                      AND indexname = '{index_name}';
+                    """
                 )
             ).fetchone()
 
             if index_exists:
-                _logger.info(f"Index {index_name} already exists, skipping creation.")
+                _logger.debug(f"Index {index_name} already exists, skipping creation.")
                 return
 
             statement = sqlalchemy.text(
