@@ -4,9 +4,8 @@ from abc import ABC
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Annotated, Any, Dict, Generator, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, cast
 
-from llama_index.core.bridge.pydantic import WithJsonSchema
 from llama_index.core.callbacks.base_handler import BaseCallbackHandler
 from llama_index.core.callbacks.schema import (
     BASE_TRACE_EVENT,
@@ -245,13 +244,6 @@ class CallbackManager(BaseCallbackHandler, ABC):
     @property
     def trace_map(self) -> Dict[str, List[str]]:
         return self._trace_map
-
-
-CallbackManager = Annotated[
-    CallbackManager,
-    WithJsonSchema({"type": "object"}, mode="serialization"),
-    WithJsonSchema({"type": "object"}, mode="validation"),
-]
 
 
 class EventContext:

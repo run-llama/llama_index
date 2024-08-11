@@ -8,7 +8,6 @@ from typing import Generic, Sequence, Type, TypeVar
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
-    GenericModel,
     ValidationError,
 )
 from llama_index.core.node_parser import (
@@ -346,7 +345,7 @@ ConfigurableTransformations = build_configurable_transformation_enum()
 T = TypeVar("T", bound=BaseComponent)
 
 
-class ConfiguredTransformation(GenericModel, Generic[T]):
+class ConfiguredTransformation(BaseModel, Generic[T]):
     """
     A class containing metadata & implementation for a transformation in a pipeline.
     """
