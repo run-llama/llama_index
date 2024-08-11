@@ -149,15 +149,8 @@ def default_completion_to_prompt(prompt: str) -> str:
     return prompt
 
 
-def set_messages_to_prompt(
-    messages_to_prompt: Optional[MessagesToPromptType],
-) -> MessagesToPromptType:
-    return messages_to_prompt or generic_messages_to_prompt
-
-
 MessagesToPromptCallable = Annotated[
     Callable,
-    BeforeValidator(set_messages_to_prompt),
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
     PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
@@ -201,12 +194,12 @@ class LLM(BaseLLM):
     )
     messages_to_prompt: MessagesToPromptCallable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
-        default=None,
+        default=generic_messages_to_prompt,
         exclude=True,
     )
     completion_to_prompt: CompletionToPromptCallable = Field(
         description="Function to convert a completion to an LLM prompt.",
-        default=None,
+        default=default_completion_to_prompt,
         exclude=True,
     )
     output_parser: Optional[BaseOutputParser] = Field(
