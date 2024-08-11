@@ -33,7 +33,6 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
-    BeforeValidator,
     WithJsonSchema,
     PlainSerializer,
     Field,
@@ -157,15 +156,8 @@ MessagesToPromptCallable = Annotated[
 ]
 
 
-def set_completion_to_prompt(
-    completion_to_prompt: Optional[CompletionToPromptType],
-) -> CompletionToPromptType:
-    return completion_to_prompt or default_completion_to_prompt
-
-
 CompletionToPromptCallable = Annotated[
     Callable,
-    BeforeValidator(set_completion_to_prompt),
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
     PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
