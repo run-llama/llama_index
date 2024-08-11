@@ -12,21 +12,22 @@ if __name__ == "__main__":
 
     from llama_index.core import Settings
     from llama_index.core import Document
-    from llama_index.core import StorageContext
 
     Settings.chunk_size = 512
 
     # Load Documents
     sentences = [
-        "BGE M3 is an embedding model supporting dense retrieval, lexical matching and multi-vector interaction.", 
-        "BM25 is a bag-of-words retrieval function that ranks a set of documents based on the query terms appearing in each document"
+        "BGE M3 is an embedding model supporting dense retrieval, lexical matching and multi-vector interaction.",
+        "BM25 is a bag-of-words retrieval function that ranks a set of documents based on the query terms appearing in each document",
     ]
     documents = [Document(doc_id=i, text=s) for i, s in enumerate(sentences)]
     # Create Index
-    index = BGEM3Index.from_documents(documents, weights_for_different_modes=[0.4, 0.2, 0.4])
+    index = BGEM3Index.from_documents(
+        documents, weights_for_different_modes=[0.4, 0.2, 0.4]
+    )
     # Get retriever
     retriever = index.as_retriever()
     nodes = retriever.retrieve("What is BGE M3?")
     # print(nodes)
-    nodes = retriever.retrieve("Defination of BM25")
+    nodes = retriever.retrieve("Definition of BM25")
     # print(nodes)
