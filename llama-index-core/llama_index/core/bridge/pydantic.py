@@ -1,9 +1,11 @@
 import pydantic
 from pydantic import (
     BaseConfig,
+    ConfigDict,
     BaseModel,
     GetJsonSchemaHandler,
     Field,
+    PlainSerializer,
     PrivateAttr,
     StrictFloat,
     StrictInt,
@@ -13,6 +15,7 @@ from pydantic import (
     field_validator,
     ValidationInfo,
     TypeAdapter,
+    WithJsonSchema,
 )
 from pydantic.error_wrappers import ValidationError
 from pydantic.fields import FieldInfo
@@ -21,8 +24,10 @@ from pydantic.generics import GenericModel
 __all__ = [
     "pydantic",
     "BaseModel",
+    "ConfigDict",
     "GetJsonSchemaHandler",
     "Field",
+    "PlainSerializer",
     "PrivateAttr",
     "model_validator",
     "field_validator",
@@ -34,6 +39,7 @@ __all__ = [
     "ValidationInfo",
     "TypeAdapter",
     "ValidationError",
+    "WithJsonSchema",
     "GenericModel",
     "BaseConfig",
     "parse_obj_as",

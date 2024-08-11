@@ -1,9 +1,15 @@
 """Node parser interface."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Annotated, Any, Callable, Dict, List, Sequence
 
-from llama_index.core.bridge.pydantic import Field, field_validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    field_validator,
+    PlainSerializer,
+    WithJsonSchema,
+    BeforeValidator,
+)
 from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.core.node_parser.node_utils import (
     build_nodes_from_splits,
@@ -18,6 +24,27 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import get_tqdm_iterable
 
+AnnotatedCallbackManager = Annotated[
+    CallbackManager,
+    WithJsonSchema({"type": "object"}, mode="serialization"),
+    WithJsonSchema({"type": "object"}, mode="validation"),
+]
+
+
+def _validate_id_func(cls, v: Any) -> Any:
+    if v is None:
+        return default_id_func
+    return v
+
+
+AnnotatedCallable = Annotated[
+    Callable,
+    BeforeValidator(_validate_id_func),
+    WithJsonSchema({"type": "string"}),
+    WithJsonSchema({"type": "string"}),
+    PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
+]
+
 
 class NodeParser(TransformComponent, ABC):
     """Base interface for node parser."""
@@ -28,10 +55,10 @@ class NodeParser(TransformComponent, ABC):
     include_prev_next_rel: bool = Field(
         default=True, description="Include prev/next node relationships."
     )
-    callback_manager: CallbackManager = Field(
+    callback_manager: AnnotatedCallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-    id_func: Callable = Field(
+    id_func: AnnotatedCallable = Field(
         default=None,
         description="Function to generate node IDs.",
         exclude=True,
