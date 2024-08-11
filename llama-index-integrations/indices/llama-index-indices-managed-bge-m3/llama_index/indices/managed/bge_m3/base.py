@@ -145,6 +145,7 @@ class BGEM3Index(BaseIndex[IndexDict]):
         sc = StorageContext.from_defaults(persist_dir=persist_dir)
         index = BGEM3Index(
             model_name=model_name,
+            index_name=index_name,
             index_struct=sc.index_store.index_structs()[0],
             storage_context=sc,
             weights_for_different_modes=weights_for_different_modes,
