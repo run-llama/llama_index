@@ -63,7 +63,7 @@ class BaseComponent(BaseModel):
         return self.to_json(**kwargs)
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().model_dump(**kwargs, by_alias=True)
+        data = super().model_dump(**kwargs)
         data["class_name"] = self.class_name()
         return data
 
@@ -405,7 +405,6 @@ class TextNode(BaseNode):
     @property
     def hash(self) -> str:
         doc_identity = str(self.text) + str(self.metadata)
-        print(f"{self.metadata}, {self.metadata!s}", flush=True)
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
     @classmethod
