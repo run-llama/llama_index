@@ -377,9 +377,21 @@ class PGVectorStore(BasePydanticVectorStore):
         hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
         hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
 
+        index_name = f"{self._table_class.__tablename__}_embedding_idx"
+
         with self._session() as session, session.begin():
+            index_exists = session.execute(
+                sqlalchemy.text(
+                    f"SELECT 1 FROM pg_indexes WHERE tablename = '{self._table_class.__tablename__}' AND indexname = '{index_name}';"
+                )
+            ).fetchone()
+
+            if index_exists:
+                _logger.info(f"Index {index_name} already exists, skipping creation.")
+                return
+
             statement = sqlalchemy.text(
-                f"CREATE INDEX ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+                f"CREATE INDEX {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
             )
             session.execute(statement)
             session.commit()
