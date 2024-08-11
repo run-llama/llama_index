@@ -81,6 +81,7 @@ class BaseComponent(BaseModel):
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
+        print(f"state: {state}", flush=True)
 
         # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []
@@ -96,15 +97,17 @@ class BaseComponent(BaseModel):
 
         # remove private attributes if they aren't pickleable -- kind of dangerous
         keys_to_remove = []
-        for key, val in state["__private_attribute_values__"].items():
-            try:
-                pickle.dumps(val)
-            except Exception:
-                keys_to_remove.append(key)
+        private_attrs = state.get("__pydantic_private__", None)
+        if private_attrs:
+            for key, val in state["__pydantic_private__"].items():
+                try:
+                    pickle.dumps(val)
+                except Exception:
+                    keys_to_remove.append(key)
 
-        for key in keys_to_remove:
-            logging.warning(f"Removing unpickleable private attribute {key}")
-            del state["__private_attribute_values__"][key]
+            for key in keys_to_remove:
+                logging.warning(f"Removing unpickleable private attribute {key}")
+                del state["__pydantic_private__"][key]
 
         return state
 
