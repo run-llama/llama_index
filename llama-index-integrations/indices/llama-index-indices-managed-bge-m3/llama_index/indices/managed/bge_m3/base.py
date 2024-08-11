@@ -9,7 +9,6 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.base import BaseIndex, IndexNode
 from llama_index.core.schema import BaseNode, NodeWithScore
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from FlagEmbedding import BGEM3FlagModel
@@ -50,8 +49,6 @@ class BGEM3Index(BaseIndex[IndexDict]):
         doc_maxlen: int = 8192,
         query_maxlen: int = 8192,
         weights_for_different_modes: List[float] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         self.index_path = "storage/bge_m3_index"
@@ -67,7 +64,7 @@ class BGEM3Index(BaseIndex[IndexDict]):
         except ImportError as exc:
             raise ImportError(
                 "Please install FlagEmbedding to use this feature from the repo:",
-                "https://github.com/FlagOpen/FlagEmbedding/tree/master/FlagEmbedding/BGE_M3"
+                "https://github.com/FlagOpen/FlagEmbedding/tree/master/FlagEmbedding/BGE_M3",
             ) from exc
         self.model = BGEM3FlagModel(
             model_name,
@@ -79,7 +76,6 @@ class BGEM3Index(BaseIndex[IndexDict]):
             nodes=nodes,
             index_struct=index_struct,
             index_name=index_name,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,
@@ -94,7 +90,7 @@ class BGEM3Index(BaseIndex[IndexDict]):
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         from .retriever import BGEM3Retriever
-        
+
         return BGEM3Retriever(index=self, object_map=self._object_map, **kwargs)
 
     @property
@@ -116,7 +112,7 @@ class BGEM3Index(BaseIndex[IndexDict]):
             index_struct.add_node(node, text_id=str(i))
 
         self._multi_embed_store = self.model.encode(
-            docs_list, 
+            docs_list,
             batch_size=self.batch_size,
             max_length=self.doc_maxlen,
             return_dense=True,
@@ -140,8 +136,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
 
     @classmethod
     def load_from_disk(
-        cls, 
-        persist_dir: str, 
+        cls,
+        persist_dir: str,
         model_name: str = "BAAI/bge-m3",
         index_name: str = "",
         weights_for_different_modes: List[float] = None,
@@ -149,7 +145,7 @@ class BGEM3Index(BaseIndex[IndexDict]):
         sc = StorageContext.from_defaults(persist_dir=persist_dir)
         index = BGEM3Index(
             model_name=model_name,
-            index_struct=sc.index_store.index_structs()[0], 
+            index_struct=sc.index_store.index_structs()[0],
             storage_context=sc,
             weights_for_different_modes=weights_for_different_modes,
         )
@@ -181,13 +177,23 @@ class BGEM3Index(BaseIndex[IndexDict]):
             query_embed["dense_vecs"], self._multi_embed_store["dense_vecs"].T
         )
 
-        sparse_scores = np.array([self.model.compute_lexical_matching_score(
-            query_embed["lexical_weights"], doc_lexical_weights
-        ) for doc_lexical_weights in self._multi_embed_store["lexical_weights"]])
+        sparse_scores = np.array(
+            [
+                self.model.compute_lexical_matching_score(
+                    query_embed["lexical_weights"], doc_lexical_weights
+                )
+                for doc_lexical_weights in self._multi_embed_store["lexical_weights"]
+            ]
+        )
 
-        colbert_scores = np.array([self.model.colbert_score(
-            query_embed["colbert_vecs"], doc_colbert_vecs
-        ).item() for doc_colbert_vecs in self._multi_embed_store["colbert_vecs"]])
+        colbert_scores = np.array(
+            [
+                self.model.colbert_score(
+                    query_embed["colbert_vecs"], doc_colbert_vecs
+                ).item()
+                for doc_colbert_vecs in self._multi_embed_store["colbert_vecs"]
+            ]
+        )
 
         if self.weights_for_different_modes is None:
             weights_for_different_modes = [1.0, 1.0, 1.0]

@@ -4,10 +4,7 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import MetadataFilters
 from llama_index.indices.managed.bge_m3.base import BGEM3Index
 
@@ -39,7 +36,6 @@ class BGEM3Retriever(BaseRetriever):
     ) -> None:
         """Initialize params."""
         self._index = index
-        self._service_context = self._index.service_context
         self._docstore = self._index.docstore
         self._similarity_top_k = similarity_top_k
         self._node_ids = node_ids
@@ -51,10 +47,7 @@ class BGEM3Retriever(BaseRetriever):
         self._query_maxlen = self._index.query_maxlen
         self._weights_for_different_modes = self._index.weights_for_different_modes
         super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, self._service_context
-            ),
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             verbose=verbose,
         )
