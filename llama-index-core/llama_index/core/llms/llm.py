@@ -35,6 +35,7 @@ from llama_index.core.bridge.pydantic import (
     WithJsonSchema,
     Field,
     field_validator,
+    model_validator,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -186,12 +187,12 @@ class LLM(BaseLLM):
     messages_to_prompt: MessagesToPromptCallable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
         default=None,
-        exclude=None,
+        exclude=True,
     )
     completion_to_prompt: CompletionToPromptCallable = Field(
         description="Function to convert a completion to an LLM prompt.",
         default=None,
-        exclude=None,
+        exclude=True,
     )
     output_parser: Optional[BaseOutputParser] = Field(
         description="Output parser to parse, validate, and correct errors programmatically.",
@@ -222,6 +223,14 @@ class LLM(BaseLLM):
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
+
+    @model_validator(mode="after")
+    def check_prompts(self) -> "LLM":
+        if self.completion_to_prompt is None:
+            self.completion_to_prompt = default_completion_to_prompt
+        if self.messages_to_prompt is None:
+            self.messages_to_prompt = generic_messages_to_prompt
+        return self
 
     # -- Utils --
 
