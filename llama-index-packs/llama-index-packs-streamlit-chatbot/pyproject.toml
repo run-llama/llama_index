@@ -37,7 +37,7 @@ llama-index-core = "^0.10.11.post1"
 streamlit = "^1.30.0"
 wikipedia = "^1.4.0"
 openai = "^1.10.0"
-nltk = "^3.8.1"
+nltk = ">=3.8.2"
 streamlit-pills = "^0.3.0"
 llama-index-readers-wikipedia = "^0.1.1"
 
