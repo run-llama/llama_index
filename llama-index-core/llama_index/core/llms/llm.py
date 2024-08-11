@@ -2,7 +2,6 @@ from collections import ChainMap
 from typing import (
     Annotated,
     Any,
-    Callable,
     Dict,
     List,
     Generator,
@@ -36,6 +35,7 @@ from llama_index.core.bridge.pydantic import (
     WithJsonSchema,
     PlainSerializer,
     Field,
+    field_validator,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -149,7 +149,7 @@ def default_completion_to_prompt(prompt: str) -> str:
 
 
 MessagesToPromptCallable = Annotated[
-    Callable,
+    Optional[MessagesToPromptType],
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
     PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
@@ -157,7 +157,7 @@ MessagesToPromptCallable = Annotated[
 
 
 CompletionToPromptCallable = Annotated[
-    Callable,
+    Optional[CompletionToPromptType],
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
     PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
@@ -187,12 +187,12 @@ class LLM(BaseLLM):
     messages_to_prompt: MessagesToPromptCallable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
         default=generic_messages_to_prompt,
-        exclude=True,
+        exclude=None,
     )
     completion_to_prompt: CompletionToPromptCallable = Field(
         description="Function to convert a completion to an LLM prompt.",
         default=default_completion_to_prompt,
-        exclude=True,
+        exclude=None,
     )
     output_parser: Optional[BaseOutputParser] = Field(
         description="Output parser to parse, validate, and correct errors programmatically.",
@@ -207,6 +207,22 @@ class LLM(BaseLLM):
         default=None,
         exclude=True,
     )
+
+    # -- Pydantic Configs --
+
+    @field_validator("messages_to_prompt")
+    @classmethod
+    def set_messages_to_prompt(
+        cls, messages_to_prompt: Optional[MessagesToPromptType]
+    ) -> MessagesToPromptType:
+        return messages_to_prompt or generic_messages_to_prompt
+
+    @field_validator("completion_to_prompt")
+    @classmethod
+    def set_completion_to_prompt(
+        cls, completion_to_prompt: Optional[CompletionToPromptType]
+    ) -> CompletionToPromptType:
+        return completion_to_prompt or default_completion_to_prompt
 
     # -- Utils --
 
