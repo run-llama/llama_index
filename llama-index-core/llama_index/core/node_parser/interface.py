@@ -24,12 +24,6 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import get_tqdm_iterable
 
-AnnotatedCallbackManager = Annotated[
-    CallbackManager,
-    WithJsonSchema({"type": "object"}, mode="serialization"),
-    WithJsonSchema({"type": "object"}, mode="validation"),
-]
-
 
 def _validate_id_func(cls, v: Any) -> Any:
     if v is None:
@@ -37,7 +31,7 @@ def _validate_id_func(cls, v: Any) -> Any:
     return v
 
 
-AnnotatedCallable = Annotated[
+IdFuncCallable = Annotated[
     Callable,
     BeforeValidator(_validate_id_func),
     WithJsonSchema({"type": "string"}),
@@ -55,10 +49,10 @@ class NodeParser(TransformComponent, ABC):
     include_prev_next_rel: bool = Field(
         default=True, description="Include prev/next node relationships."
     )
-    callback_manager: AnnotatedCallbackManager = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-    id_func: AnnotatedCallable = Field(
+    id_func: IdFuncCallable = Field(
         default=None,
         description="Function to generate node IDs.",
         exclude=True,
