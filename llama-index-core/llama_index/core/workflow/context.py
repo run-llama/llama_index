@@ -8,12 +8,12 @@ from .events import Event
 class Context:
     """A global object representing a context for a given workflow run.
 
-    The Context object can be used to store data that needs to be shared across iterations during a workflow execution.
-    Steps can use data stored in a Context object to keep a state across multiple executions within a workflow run.
-    Any Context instance offers two type of data storage: a global one, that's shared among all the steps within a
+    The Context object can be used to store data that needs to be available across iterations during a workflow
+    execution, and across multiple workflow runs.
+    Every context instance offers two type of data storage: a global one, that's shared among all the steps within a
     workflow, and private one, that's only accessible from a single step.
 
-    Both `set` and `get` operations on global data are governed by a lock, hence to be considered corountine-safe.
+    Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
     def __init__(self, parent: Optional["Context"] = None) -> None:
