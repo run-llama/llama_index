@@ -20,18 +20,21 @@ class StartEvent(Event):
         self._data = data
 
     def __getattr__(self, __name: str) -> Any:
-        if __name in self._data:
-            return self._data[__name]
+        if __name in self.__pydantic_private__ or __name in self.__fields__:
+            return super().__getattr__(__name)
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{__name}'"
-            )
+            try:
+                return self._data[__name]
+            except KeyError:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{__name}'"
+                )
 
-    def __setattr__(self, __name: str, value: Any) -> None:
-        if __name in self._data:
-            self._data[__name] = value
+    def __setattr__(self, name, value) -> None:
+        if name in self.__pydantic_private__ or name in self.__fields__:
+            super().__setattr__(name, value)
         else:
-            super().__setattr__(__name, value)
+            self._data.__setitem__(name, value)
 
     def __getitem__(self, key: str) -> Any:
         return self._data[key]
