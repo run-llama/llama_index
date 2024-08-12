@@ -158,7 +158,7 @@ def pg_hnsw_hybrid(db_hnsw: None) -> Any:
 
 
 @pytest.fixture()
-def pg_hnsw_multiple(db_hnsw: None) -> List[PGVectorStore]:
+def pg_hnsw_multiple(db_hnsw: None) -> Generator[List[PGVectorStore], None, None]:
     """
     This creates multiple instances of PGVectorStore.
     """
