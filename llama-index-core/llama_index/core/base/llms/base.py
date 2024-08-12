@@ -17,7 +17,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, model_validator
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
@@ -30,11 +30,17 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
     callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
-        default_factory=CallbackManager, exclude=True
+        default_factory=lambda: CallbackManager([]), exclude=True
     )
 
     class Config:
         arbitrary_types_allowed = True
+
+    @model_validator(mode="after")
+    def check_callback_manager(self) -> "BaseLLM":
+        if self.callback_manager is None:
+            self.callback_manager = CallbackManager([])
+        return self
 
     @property
     @abstractmethod
