@@ -64,7 +64,7 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         subscription_id: str,
         resource_group: str,
         resource_name: str,
-        model_deployment_name: str | None = None,
+        model_deployment_name: Optional[str] = None,
     ) -> LLM:
         """Deploy finetuned model.
 
