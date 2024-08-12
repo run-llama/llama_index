@@ -13,6 +13,13 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 contains_example = true
 import_path = "llama_index.tools.box"
 
+[tool.llamahub.class_authors]
+BoxAIExtractToolSpec = "barduinor"
+BoxAIPromptToolSpec = "barduinor"
+BoxSearchByMetadataToolSpec = "barduinor"
+BoxSearchToolSpec = "barduinor"
+BoxTextExtractToolSpec = "barduinor"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
