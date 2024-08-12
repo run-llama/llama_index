@@ -1,6 +1,6 @@
 """Google's Gemini multi-modal models."""
 import os
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import google.generativeai as genai
 import PIL
@@ -91,7 +91,7 @@ class GeminiMultiModal(MultiModalLLM):
         if api_base:
             config_params["client_options"] = {"api_endpoint": api_base}
         if default_headers:
-            default_metadata: Sequence[Dict[str, str]] = []
+            default_metadata: Sequence[Tuple[str, str]] = []
             for key, value in default_headers.items():
                 default_metadata.append((key, value))
             # `default_metadata` contains (key, value) pairs that will be sent with every request.
