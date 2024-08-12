@@ -50,7 +50,7 @@ types-setuptools = "67.1.0.0"
 
 [tool.poetry.group.dev.dependencies.black]
 extras = ["jupyter"]
-version = "<=23.9.1,>=23.7.0"
+version = ">=24.3.0"
 
 [tool.poetry.group.dev.dependencies.codespell]
 extras = ["toml"]
