@@ -6,6 +6,10 @@
 
 - chore: bump nltk version (#15277)
 
+### `llama-index-tools-box` [0.1.0]
+
+- Box tools for AI Agents (#15236)
+
 ### `llama-index-multi-modal-llms-gemini` [0.1.8]
 
 - feat: add default_headers to Gemini multi-model (#15296)
