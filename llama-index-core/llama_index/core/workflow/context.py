@@ -1,7 +1,6 @@
 from collections import defaultdict
 import asyncio
 from typing import Dict, Any, Optional, List, Type
-from types import TracebackType
 
 from .events import Event
 
@@ -11,23 +10,16 @@ class Context:
 
     The Context object can be used to store data that needs to be shared across iterations during a workflow execution.
     Steps can use data stored in a Context object to keep a state across multiple executions within a workflow run.
-    Any Context instance offers two type of data storage: `ctx.globals`, that's shared among all the steps within a
-    workflow, and `ctx.locals`, that's private to a single step.
+    Any Context instance offers two type of data storage: a global one, that's shared among all the steps within a
+    workflow, and private one, that's only accessible from a single step.
 
-    Note that using `ctx.globals` is not coroutine-safe if you `await` for something in-between accessing
-    the global state. In that case, make sure to lock the Context object before accessing `ctx.globals`. You can also
-    use the Context object as an async context manager:
-
-        with ctx:
-            ctx.globals["foo"] = "bar"
-            await some_async_call()
-            ctx.globals["foo"] = "baz"
+    Both `set` and `get` operations on global data are governed by a lock, hence to be considered corountine-safe.
     """
 
     def __init__(self, parent: Optional["Context"] = None) -> None:
         # Global data storage
         if parent:
-            self._globals = parent.data
+            self._globals = parent._globals
         else:
             self._globals: Dict[str, Any] = {}
             self._lock = asyncio.Lock()
@@ -39,10 +31,50 @@ class Context:
         self._parent: Optional[Context] = parent
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
 
-    @property
-    def globals(self) -> Dict[str, Any]:
-        """Returns the local storage."""
-        return self._globals
+    async def set(self, key: str, value: Any, make_private: bool = False) -> None:
+        """Store `value` into the Context under `key`.
+
+        Args:
+            key: A unique string to identify the value stored.
+            value: The data to be stored.
+            make_private: Make the value only accessible from the step that stored it.
+
+        Raises:
+            ValueError: When make_private is True but a key already exists in the global storage.
+        """
+        if make_private:
+            if key in self._globals:
+                msg = f"A key named '{key}' already exists in the Context storage."
+                raise ValueError(msg)
+            self._locals[key] = value
+            return
+
+        await self.lock.acquire()
+        self._globals[key] = value
+        self.lock.release()
+
+    async def get(self, key: str, default: Optional[Any] = None) -> Any:
+        """Get the value corresponding to `key` from the Context.
+
+        Args:
+            key: A unique string to identify the value stored.
+            default: The value to return when `key` is missing instead of raising an exception.
+
+        Raises:
+            ValueError: When there's not value accessible corresponding to `key`.
+        """
+        if key in self._locals:
+            return self._locals[key]
+        elif key in self._globals:
+            await self.lock.acquire()
+            ret = self._globals[key]
+            self.lock.release()
+            return ret
+        elif default is not None:
+            return default
+
+        msg = f"Key '{key}' not found in Context"
+        raise ValueError(msg)
 
     @property
     def data(self):
@@ -53,27 +85,9 @@ class Context:
         return self._globals
 
     @property
-    def locals(self) -> Dict[str, Any]:
-        """Returns the local storage."""
-        return self._locals
-
-    @property
     def lock(self) -> asyncio.Lock:
         """Returns a mutex to lock the Context."""
         return self._parent._lock if self._parent else self._lock
-
-    async def __aenter__(self) -> "Context":
-        await self.lock.acquire()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
-        self.lock.release()
-        return None
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
