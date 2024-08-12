@@ -29,10 +29,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         summarizer_prompt_name: str = "vectara-summary-ext-24-05-sml",
         summary_num_results: int = 5,
         summary_response_lang: str = "eng",
-        citations_pattern: Optional[
-            str
-        ] = None,  # Currently can only use MARKDOWN for citation type and does not allow user to specify text pattern (this is probably okay, but just want to make sure that Ofer is okay with this).
-        # See _build_vectara_query_body function at https://github.com/run-llama/llama_index/blob/3327c92fcb6c7dddc6d4b8ed7da30d88acbaf852/llama-index-integrations/indices/llama-index-indices-managed-vectara/llama_index/indices/managed/vectara/retriever.py#L223
+        citations_pattern: Optional[str] = None,
     ) -> None:
         """Initializes the Vectara API and query parameters.
 
@@ -51,11 +48,11 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - summarizer_prompt_name (str): If enable_summarizer is True, the Vectara summarizer to use.
         - summary_num_results (int): If enable_summarizer is True, the number of summary results.
         - summary_response_lang (str): If enable_summarizer is True, the response language for the summary.
-        - citations_pattern (str): URL pattern for citations. If non-empty, specifies
-            the URL pattern to use for citations; for example "{doc.url}".
-            see (https://docs.vectara.com/docs/api-reference/search-apis/search#citation-format-in-summary) for more details.
+        - citations_pattern (str): URL pattern for citations.
+            If specified, then citations are returned in MARKDOWN format in the specified pattern.
+            For more details, see (https://docs.vectara.com/docs/api-reference/search-apis/search#citation-format-in-summary).
             If unspecified, citations are generated in numeric form [1],[2], etc.
-            This is a Vectara Scale only feature.
+            This is a Vectara Scale Plan feature (https://vectara.com/pricing).
         """
         self.index = VectaraIndex(
             vectara_customer_id=vectara_customer_id,
@@ -73,6 +70,19 @@ class VectaraQueryToolSpec(BaseToolSpec):
             reranker=reranker,
             rerank_k=rerank_k,
             mmr_diversity_bias=mmr_diversity_bias,
+            summary_enabled=False,
+        )
+
+        query_engine_retriever = VectaraRetriever(
+            index=self.index,
+            similarity_top_k=num_results,
+            lambda_val=lambda_val,
+            n_sentences_before=n_sentences_before,
+            n_sentences_after=n_sentences_after,
+            filter=metadata_filter,
+            reranker=reranker,
+            rerank_k=rerank_k,
+            mmr_diversity_bias=mmr_diversity_bias,
             summary_enabled=True,
             summary_response_lang=summary_response_lang,
             summary_num_results=summary_num_results,
@@ -80,7 +90,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
             citations_url_pattern=citations_pattern,
         )
 
-        self.query_engine = VectaraQueryEngine(retriever=self.retriever)
+        self.query_engine = VectaraQueryEngine(retriever=query_engine_retriever)
 
     def semantic_search(
         self,
@@ -94,8 +104,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
         """
         response = self.retriever._retrieve(query_bundle=QueryBundle(query_str=query))
 
-        # print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
-
         if len(response) == 0:
             return Response(response="Tool failed to retrieve any documents.")
 
@@ -103,7 +111,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
             {
                 "text": doc.node.text,
                 "citation_metadata": doc.node.metadata,
-                "factual_consistency_score": doc.score,
             }
             for doc in response
         ]
@@ -122,8 +129,6 @@ class VectaraQueryToolSpec(BaseToolSpec):
 
         if str(response) == "None":
             return Response(response="Tool failed to generate a response.")
-
-        # print(f"DEBUG: GOT RESPONSE FROM QUERY: {response}")
 
         return {
             "summary": response.response,
