@@ -56,7 +56,7 @@ def box_file_to_llama_document(box_file: File) -> Document:
     """
     document = Document()
 
-    # this separations between etra_info and metadata seem to be pointless
+    # this separations between extra_info and metadata seem to be pointless
     # when we update one, the other gets also updated with the same data
     document.extra_info = box_file.to_dict()
     document.metadata = box_file_to_llama_document_metadata(box_file)

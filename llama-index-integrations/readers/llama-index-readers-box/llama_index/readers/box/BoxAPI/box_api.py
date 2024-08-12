@@ -26,17 +26,6 @@ from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
 logger = logging.getLogger(__name__)
 
 
-class _BoxResourcePayload:
-    resource_info: Optional[File]
-    ai_prompt: Optional[str]
-    ai_response: Optional[str]
-    downloaded_file_path: Optional[str]
-    text_representation: Optional[str]
-
-    def __init__(self, resource_info: File) -> None:
-        self.resource_info = resource_info
-
-
 def box_check_connection(box_client: BoxClient) -> None:
     """
     Checks if the Box client is connected to the Box API.
