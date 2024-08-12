@@ -34,15 +34,14 @@ class PreprocessReader(BaseReader):
         self._process_id = None
 
         for key, value in kwargs.items():
-            
             if key == "filepath":
                 self._filepath = value
                 self._preprocess.set_filepath(value)
-            
+
             if key == "process_id":
                 self._process_id = value
                 self._preprocess.set_process_id(value)
-            
+
             elif key in ["table_output_format", "table_output"]:
                 _info["table_output_format"] = value
 
@@ -50,12 +49,12 @@ class PreprocessReader(BaseReader):
                 _info["repeat_table_header"] = value
 
             elif key in [
-                "merge", 
+                "merge",
                 "repeat_title",
                 "keep_header",
                 "keep_footer",
                 "smart_header",
-                "image_text"
+                "image_text",
             ]:
                 _info[key] = value
 
