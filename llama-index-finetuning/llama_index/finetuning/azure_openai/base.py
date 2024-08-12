@@ -120,4 +120,4 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         if status != "succeeded":
             raise ValueError(f"Job {job_id} has status {status}, cannot get model")
 
-        return AzureOpenAI(model=model_id, engine=engine, **model_kwargs)
+        return AzureOpenAI(engine=engine, **model_kwargs)
