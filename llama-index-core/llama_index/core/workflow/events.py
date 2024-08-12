@@ -1,4 +1,4 @@
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, Union
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 
@@ -10,28 +10,55 @@ class Event(BaseModel):
         arbitrary_types_allowed = True
 
 
-class StartEvent(Event):
-    """StartEvent is implicitly sent when a workflow runs. Mimics the interface of a dict."""
+class DictLikeEvent(Event):
+    """Base class for event types that mimics the interface of a dict."""
 
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
 
-    def __init__(self, **data: Any):
-        super().__init__()
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, **params: Any):
+        """__init__.
+
+        NOTE: fields and private_attrs are pulled from params by name.
+        """
+        # pull out params for fields
+        fields = {k: v for k, v in params.items() if k in self.__fields__}
+        super().__init__(**fields)
+
+        # set private attrs
+        private_attrs = {
+            k: v for k, v in params.items() if k in self.__private_attributes__
+        }
+        for private_attr, value in private_attrs.items():
+            super().__setattr__(private_attr, value)
+
+        # set underlying data dictionary
+        data = {
+            k: v
+            for k, v in params.items()
+            if k not in self.__fields__ and k not in self.__private_attributes__
+        }
+
         self._data = data
 
     def __getattr__(self, __name: str) -> Any:
-        if __name in self._data:
-            return self._data[__name]
+        if __name in self.__private_attributes__ or __name in self.__fields__:
+            return super().__getattr__(__name)
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{__name}'"
-            )
+            try:
+                return self._data[__name]
+            except KeyError:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{__name}'"
+                )
 
-    def __setattr__(self, __name: str, value: Any) -> None:
-        if __name in self._data:
-            self._data[__name] = value
+    def __setattr__(self, name, value) -> None:
+        if name in self.__private_attributes__ or name in self.__fields__:
+            super().__setattr__(name, value)
         else:
-            super().__setattr__(__name, value)
+            self._data.__setitem__(name, value)
 
     def __getitem__(self, key: str) -> Any:
         return self._data[key]
@@ -64,7 +91,11 @@ class StartEvent(Event):
         return self._data
 
 
-class StopEvent(Event):
+class StartEvent(DictLikeEvent):
+    """StartEvent is implicitly sent when a workflow runs."""
+
+
+class StopEvent(DictLikeEvent):
     """EndEvent signals the workflow to stop."""
 
     result: Any = Field(default=None)
@@ -74,4 +105,10 @@ class StopEvent(Event):
         super().__init__(result=result)
 
 
-EventType = Type[Event]
+class CustomEvent(DictLikeEvent):
+    """StartEvent is implicitly sent when a workflow runs."""
+
+    _param1: str = PrivateAttr()
+
+
+EventType = Type[Union[Event, DictLikeEvent]]
