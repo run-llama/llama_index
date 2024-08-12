@@ -1,7 +1,9 @@
 """OpenAI Finetuning."""
 
 import logging
+import json
 import os
+import requests
 from typing import Any, Optional
 
 from openai import AzureOpenAI as SyncAzureOpenAI
@@ -55,6 +57,49 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         """
         finetuning_handler.save_finetuning_events(data_path)
         return cls(base_model=base_model, data_path=data_path, **kwargs)
+
+    def deploy_finetuned_model(
+        self,
+        token: str,
+        subscription_id: str,
+        resource_group: str,
+        resource_name: str,
+        model_deployment_name: str | None = None,
+    ) -> LLM:
+        """Deploy finetuned model.
+
+        - token: Azure AD token.
+        - subscription_id: 	The subscription ID for the associated Azure OpenAI resource.
+        - resource_group: 	The resource group name for your Azure OpenAI resource.
+        - resource_name: The Azure OpenAI resource name.
+        - model_deployment_name: Custom deployment name that you will use to reference the model when making inference calls.
+        """
+        current_job = self.get_current_job()
+        fine_tuned_model = current_job.fine_tuned_model
+
+        if model_deployment_name is None:
+            model_deployment_name = fine_tuned_model
+
+        deploy_params = {"api-version": os.getenv("OPENAI_API_VERSION", "2024-02-01")}
+        deploy_headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        deploy_data = {
+            "sku": {"name": "standard", "capacity": 1},
+            "properties": {
+                "model": {"format": "OpenAI", "name": fine_tuned_model, "version": "1"}
+            },
+        }
+        deploy_data = json.dumps(deploy_data)
+        request_url = f"https://management.azure.com/subscriptions/{subscription_id}/resourceGroups/{resource_group}/providers/Microsoft.CognitiveServices/accounts/{resource_name}/deployments/{model_deployment_name}"
+        print("Creating a new deployment...")
+
+        response = requests.put(
+            request_url, params=deploy_params, headers=deploy_headers, data=deploy_data
+        )
+        return response.json()
 
     def get_finetuned_model(self, engine: str, **model_kwargs: Any) -> LLM:
         """Get finetuned model.
