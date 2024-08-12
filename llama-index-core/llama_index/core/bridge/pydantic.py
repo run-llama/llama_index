@@ -19,6 +19,7 @@ from pydantic import (
     BeforeValidator,
     SerializeAsAny,
     WrapSerializer,
+    field_serializer,
 )
 from pydantic.error_wrappers import ValidationError
 from pydantic.fields import FieldInfo
@@ -51,4 +52,5 @@ __all__ = [
     "JsonSchemaValue",
     "SerializeAsAny",
     "WrapSerializer",
+    "field_serializer",
 ]

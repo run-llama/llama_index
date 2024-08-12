@@ -49,7 +49,7 @@ class ChatMessage(BaseModel):
 
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, (V1BaseModel, V2BaseModel)):
-            return value.dict()
+            return value.model_dump()
         if isinstance(value, dict):
             return {
                 key: self._recursive_serialization(value)
@@ -60,8 +60,11 @@ class ChatMessage(BaseModel):
         return value
 
     def dict(self, **kwargs: Any) -> dict:
+        return self.model_dump(**kwargs)
+
+    def model_dump(self, **kwargs: Any) -> dict:
         # ensure all additional_kwargs are serializable
-        msg = super().dict(**kwargs)
+        msg = super().model_dump(**kwargs)
 
         for key, value in msg.get("additional_kwargs", {}).items():
             value = self._recursive_serialization(value)

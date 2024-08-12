@@ -1,17 +1,34 @@
 import json
 import os
-from typing import Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Optional
 
 import fsspec
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, WrapSerializer
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
+
+
+def chat_message_serialization(chat_message: Any, handler, info) -> Dict[str, Any]:
+    partial_result = handler(chat_message, info)
+
+    for key, value in partial_result.get("additional_kwargs", {}).items():
+        value = chat_message._recursive_serialization(value)
+        if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
+            raise ValueError(f"Failed to serialize additional_kwargs value: {value}")
+        partial_result["additional_kwargs"][key] = value
+
+    return partial_result
+
+
+AnnotatedChatMessage = Annotated[
+    ChatMessage, WrapSerializer(chat_message_serialization)
+]
 
 
 class SimpleChatStore(BaseChatStore):
     """Simple chat store."""
 
-    store: Dict[str, List[ChatMessage]] = Field(default_factory=dict)
+    store: Dict[str, List[AnnotatedChatMessage]] = Field(default_factory=dict)
 
     @classmethod
     def class_name(cls) -> str:

@@ -24,8 +24,6 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
         default_factory=get_tokenizer,
         exclude=True,
     )
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
-    chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     @classmethod
     def class_name(cls) -> str:
@@ -83,6 +81,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
     def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
         """Create a chat memory buffer from a string."""
         dict_obj = json.loads(json_str)
+        print(f"dict_obj: {dict_obj}", flush=True)
         return cls.from_dict(dict_obj)
 
     def to_dict(self, **kwargs: Any) -> dict:
