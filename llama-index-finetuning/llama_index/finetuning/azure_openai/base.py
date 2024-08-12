@@ -75,6 +75,18 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         - model_deployment_name: Custom deployment name that you will use to reference the model when making inference calls.
         """
         current_job = self.get_current_job()
+
+        job_id = current_job.id
+        status = current_job.status
+        model_id = current_job.fine_tuned_model
+
+        if model_id is None:
+            raise ValueError(
+                f"Job {job_id} does not have a finetuned model id ready yet."
+            )
+        if status != "succeeded":
+            raise ValueError(f"Job {job_id} has status {status}, cannot get model")
+
         fine_tuned_model = current_job.fine_tuned_model
 
         if model_deployment_name is None:
@@ -109,15 +121,6 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         """
         current_job = self.get_current_job()
 
-        job_id = current_job.id
-        status = current_job.status
-        model_id = current_job.fine_tuned_model
-
-        if model_id is None:
-            raise ValueError(
-                f"Job {job_id} does not have a finetuned model id ready yet."
-            )
-        if status != "succeeded":
-            raise ValueError(f"Job {job_id} has status {status}, cannot get model")
-
-        return AzureOpenAI(engine=engine, **model_kwargs)
+        return AzureOpenAI(
+            engine=engine or current_job.fine_tuned_model, **model_kwargs
+        )
