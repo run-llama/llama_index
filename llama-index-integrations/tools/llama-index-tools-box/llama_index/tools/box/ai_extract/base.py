@@ -45,7 +45,6 @@ class BoxAIExtractToolSpec(BaseToolSpec):
 
             # create a document
             doc = Document(
-                # id=file.id,
                 extra_info=file.to_dict(),
                 metadata=file.to_dict(),
                 text=ai_response,

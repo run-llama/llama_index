@@ -67,7 +67,6 @@ class BoxTextExtractToolSpec(BaseToolSpec):
 
             # create a document
             doc = Document(
-                # id=file.id,
                 extra_info=file.to_dict(),
                 metadata=file.to_dict(),
                 text=payload.text_representation if payload.text_representation else "",
