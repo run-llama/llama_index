@@ -3,20 +3,20 @@ import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.workflow.decorators import step, StepConfig
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
+from llama_index.core.workflow.decorators import StepConfig, step
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_steps_from_instance,
 )
 
+from .context import Context
 from .errors import (
+    WorkflowDone,
     WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
-    WorkflowDone,
 )
-from .context import Context
 
 dispatcher = get_dispatcher(__name__)
 
@@ -149,11 +149,13 @@ class Workflow(metaclass=_WorkflowMeta):
                     else:
                         self.send_event(new_ev)
 
-            self._tasks.add(
-                asyncio.create_task(
-                    _task(name, self._queues[name], step_func, step_config), name=name
+            for _ in range(step_config.num_workers):
+                self._tasks.add(
+                    asyncio.create_task(
+                        _task(name, self._queues[name], step_func, step_config),
+                        name=name,
+                    )
                 )
-            )
 
     def send_event(self, message: Event) -> None:
         """Sends an event to a specific step in the workflow.

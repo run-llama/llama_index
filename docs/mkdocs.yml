@@ -330,6 +330,7 @@ nav:
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/optimum_intel.ipynb
+          - ./examples/llm/paieas.ipynb
           - ./examples/llm/palm.ipynb
           - ./examples/llm/perplexity.ipynb
           - ./examples/llm/portkey.ipynb
@@ -396,6 +397,7 @@ nav:
           - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
+          - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
           - ./examples/multi_modal/replicate_multi_modal.ipynb
@@ -632,9 +634,12 @@ nav:
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
           - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/workflows_cookbook.ipynb
+          - ./examples/workflow/sub_question_query_engine.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:
@@ -772,6 +777,7 @@ nav:
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
+          - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
           - ./api_reference/callbacks/promptlayer.md
@@ -933,6 +939,7 @@ nav:
           - ./api_reference/llms/openrouter.md
           - ./api_reference/llms/openvino.md
           - ./api_reference/llms/optimum_intel.md
+          - ./api_reference/llms/paieas.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
           - ./api_reference/llms/portkey.md
@@ -1037,6 +1044,7 @@ nav:
           - ./api_reference/extractors/marvin.md
           - ./api_reference/extractors/pydantic.md
           - ./api_reference/extractors/question.md
+          - ./api_reference/extractors/relik.md
           - ./api_reference/extractors/summary.md
           - ./api_reference/extractors/title.md
       - Multi-Modal LLMs:
@@ -2089,6 +2097,10 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-tei-rerank
             - ../llama-index-integrations/readers/llama-index-readers-gitlab
             - ../llama-index-integrations/extractors/llama-index-extractors-llama-extract
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-relik
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-literalai
+            - ../llama-index-integrations/llms/llama-index-llms-paieas
+            - ../llama-index-integrations/extractors/llama-index-extractors-relik
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

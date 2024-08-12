@@ -201,6 +201,10 @@ class OpenAI(FunctionCallingLLM):
     api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
+    strict: bool = Field(
+        default=False,
+        description="Whether to use strict mode for invoking tools/using schemas.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -229,6 +233,7 @@ class OpenAI(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        strict: bool = False,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -257,6 +262,7 @@ class OpenAI(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            strict=strict,
             **kwargs,
         )
 
@@ -832,6 +838,7 @@ class OpenAI(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
+        strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
@@ -839,6 +846,20 @@ class OpenAI(FunctionCallingLLM):
 
         # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        # if strict is passed in, use, else default to the class-level attribute, else default to True`
+        if strict is not None:
+            strict = strict
+        else:
+            strict = self.strict
+
+        if self.metadata.is_function_calling_model:
+            for tool_spec in tool_specs:
+                if tool_spec["type"] == "function":
+                    tool_spec["function"]["strict"] = strict
+                    tool_spec["function"]["parameters"][
+                        "additionalProperties"
+                    ] = False  # in current openai 1.40.0 it is always false.
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)

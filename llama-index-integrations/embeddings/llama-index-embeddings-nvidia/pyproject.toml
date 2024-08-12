@@ -60,6 +60,9 @@ version = "<=23.9.1,>=23.7.0"
 extras = ["toml"]
 version = ">=v2.2.6"
 
+[tool.poetry.group.test_integration.dependencies]
+requests-mock = "^1.12.1"
+
 [[tool.poetry.packages]]
 include = "llama_index/"
 

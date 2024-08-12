@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, cast, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, cast, List, Optional, TYPE_CHECKING
 from llama_index.core.instrumentation.span.simple import SimpleSpan
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from datetime import datetime
@@ -23,10 +23,11 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> SimpleSpan:
         """Create a span."""
-        return SimpleSpan(id_=id_, parent_id=parent_span_id)
+        return SimpleSpan(id_=id_, parent_id=parent_span_id, tags=tags or {})
 
     def prepare_to_exit_span(
         self,
