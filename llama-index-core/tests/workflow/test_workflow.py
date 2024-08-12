@@ -182,3 +182,21 @@ async def test_workflow_step_send_event():
     assert workflow.is_done()
     assert ("step2", "OneTestEvent") in workflow._accepted_events
     assert ("step3", "OneTestEvent") not in workflow._accepted_events
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_send_event_to_None():
+    class StepSendEventToNoneWorkflow(Workflow):
+        @step()
+        async def step1(self, ev: StartEvent) -> OneTestEvent:
+            self.send_event(OneTestEvent(), step=None)
+            return None
+
+        @step()
+        async def step2(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step2")
+
+    workflow = StepSendEventToNoneWorkflow()
+    await workflow.run()
+    assert workflow.is_done()
+    assert ("step2", "OneTestEvent") in workflow._accepted_events

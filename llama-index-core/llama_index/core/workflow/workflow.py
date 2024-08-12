@@ -166,19 +166,21 @@ class Workflow(metaclass=_WorkflowMeta):
         if step is None:
             for queue in self._queues.values():
                 queue.put_nowait(message)
-
-        if step not in self._get_steps():
-            raise WorkflowValidationError(f"Step {step} does not exist")
-
-        step_func = self._get_steps()[step]
-        step_config: Optional[StepConfig] = getattr(step_func, "__step_config", None)
-
-        if step_config and type(message) in step_config.accepted_events:
-            self._queues[step].put_nowait(message)
         else:
-            raise WorkflowValidationError(
-                f"Step {step} does not accept event of type {type(message)}"
+            if step not in self._get_steps():
+                raise WorkflowRuntimeError(f"Step {step} does not exist")
+
+            step_func = self._get_steps()[step]
+            step_config: Optional[StepConfig] = getattr(
+                step_func, "__step_config", None
             )
+
+            if step_config and type(message) in step_config.accepted_events:
+                self._queues[step].put_nowait(message)
+            else:
+                raise WorkflowRuntimeError(
+                    f"Step {step} does not accept event of type {type(message)}"
+                )
 
         self._broker_log.append(message)
 
