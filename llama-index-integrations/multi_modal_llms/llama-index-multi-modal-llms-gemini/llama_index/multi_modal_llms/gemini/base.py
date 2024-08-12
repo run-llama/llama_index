@@ -1,6 +1,6 @@
 """Google's Gemini multi-modal models."""
 import os
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import google.generativeai as genai
 import PIL
@@ -77,6 +77,7 @@ class GeminiMultiModal(MultiModalLLM):
         generation_config: Optional["genai.types.GenerationConfigDict"] = None,
         safety_settings: "genai.types.SafetySettingOptions" = None,
         api_base: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         transport: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **generate_kwargs: Any,
@@ -89,6 +90,13 @@ class GeminiMultiModal(MultiModalLLM):
         }
         if api_base:
             config_params["client_options"] = {"api_endpoint": api_base}
+        if default_headers:
+            default_metadata: Sequence[Tuple[str, str]] = []
+            for key, value in default_headers.items():
+                default_metadata.append((key, value))
+            # `default_metadata` contains (key, value) pairs that will be sent with every request.
+            # These will be sent as HTTP headers When using `transport="rest"`.
+            config_params["default_metadata"] = default_metadata
         if transport:
             config_params["transport"] = transport
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
