@@ -1,4 +1,4 @@
 poetry_requirements(
     name="poetry",
-    module_mapping={"FlagEmbedding": ["FlagEmbedding"]},
+    module_mapping={"flagembedding": ["FlagEmbedding"]},
 )
