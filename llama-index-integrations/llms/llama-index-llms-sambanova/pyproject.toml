@@ -12,7 +12,8 @@ contains_example = false
 import_path = "llama_index.llms.sambanova"
 
 [tool.llamahub.class_authors]
-SambanovaLLM = "Pradeep"
+SambaStudio = "Pradeep"
+Sambaverse = "Pradeep"
 
 [tool.mypy]
 disallow_untyped_defs = true
