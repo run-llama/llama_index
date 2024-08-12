@@ -23,8 +23,6 @@ from llama_index.vector_stores.postgres import PGVectorStore
 
 
 PARAMS: Dict[str, Union[str, int]] = {
-    "host": "pgtime",
-    "password": "latte8bubbly737g",
     "host": "localhost",
     "user": "postgres",
     "password": "mark90",
