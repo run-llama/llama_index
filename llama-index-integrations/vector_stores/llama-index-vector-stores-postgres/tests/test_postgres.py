@@ -23,6 +23,8 @@ from llama_index.vector_stores.postgres import PGVectorStore
 
 
 PARAMS: Dict[str, Union[str, int]] = {
+    "host": "pgtime",
+    "password": "latte8bubbly737g",
     "host": "localhost",
     "user": "postgres",
     "password": "mark90",
@@ -914,7 +916,7 @@ async def test_hnsw_index_creation(
     # create a connection to the TEST_DB_HNSW database to make sure that one, and only one, index was created
     with psycopg2.connect(**PARAMS, database=TEST_DB_HNSW) as hnsw_conn:
         with hnsw_conn.cursor() as c:
-            index_count = c.execute(
+            c.execute(
                 f"SELECT COUNT(*) FROM pg_indexes WHERE schemaname = '{TEST_SCHEMA_NAME}' AND tablename = '{data_test_table_name}' AND indexname LIKE '{data_test_index_name}%';"
             )
             index_count = c.fetchone()[0]
