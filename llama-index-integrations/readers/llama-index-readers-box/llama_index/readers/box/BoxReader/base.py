@@ -13,6 +13,7 @@ from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import Field
 
 from llama_index.readers.box.BoxAPI.box_api import (
+    add_extra_header_to_box_client,
     box_check_connection,
     get_box_files_details,
     get_box_folder_files_details,
@@ -47,7 +48,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
         self,
         box_client: BoxClient,
     ):
-        self._box_client = box_client
+        self._box_client = add_extra_header_to_box_client(box_client)
 
     @abstractmethod
     def load_data(

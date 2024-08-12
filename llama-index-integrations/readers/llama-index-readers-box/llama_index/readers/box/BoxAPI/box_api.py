@@ -26,6 +26,21 @@ from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
 logger = logging.getLogger(__name__)
 
 
+def add_extra_header_to_box_client(box_client: BoxClient) -> BoxClient:
+    """
+    Add extra headers to the Box client.
+
+    Args:
+        box_client (BoxClient): A Box client object.
+        header (Dict[str, str]): A dictionary of extra headers to add to the Box client.
+
+    Returns:
+        BoxClient: A Box client object with the extra headers added.
+    """
+    header = {"x-box-ai-library": "llama-index"}
+    return box_client.with_extra_headers(extra_headers=header)
+
+
 def box_check_connection(box_client: BoxClient) -> None:
     """
     Checks if the Box client is connected to the Box API.
