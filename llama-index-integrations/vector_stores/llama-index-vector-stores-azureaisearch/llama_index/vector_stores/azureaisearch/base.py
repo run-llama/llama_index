@@ -205,6 +205,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         for v in self._metadata_to_index_field_map.values():
             field_name, field_type = v
 
+            # Skip if the field is already mapped
+            if field_name in self._field_mapping.values():
+                continue
+
             if field_type == MetadataIndexFieldType.STRING:
                 index_field_type = "Edm.String"
             elif field_type == MetadataIndexFieldType.INT32:

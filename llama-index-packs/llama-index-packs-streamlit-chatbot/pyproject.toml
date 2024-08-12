@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["carolinedlu"]
 name = "llama-index-packs-streamlit-chatbot"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"
