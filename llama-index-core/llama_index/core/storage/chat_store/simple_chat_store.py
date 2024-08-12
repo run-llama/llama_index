@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
+from typing_extensions import Annotated
 
 import fsspec
 from llama_index.core.bridge.pydantic import Field, WrapSerializer

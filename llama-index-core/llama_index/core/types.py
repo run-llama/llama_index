@@ -4,7 +4,6 @@ from contextvars import copy_context
 from enum import Enum
 from functools import partial
 from typing import (
-    Annotated,
     Any,
     AsyncGenerator,
     Generator,
@@ -14,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from typing_extensions import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel, WithJsonSchema

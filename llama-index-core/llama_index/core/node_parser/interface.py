@@ -1,7 +1,8 @@
 """Node parser interface."""
 
 from abc import ABC, abstractmethod
-from typing import Annotated, Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Sequence
+from typing_extensions import Annotated
 
 from llama_index.core.bridge.pydantic import (
     Field,

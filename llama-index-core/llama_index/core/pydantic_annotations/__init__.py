@@ -1,4 +1,5 @@
-from typing import Annotated, Optional
+from typing import Optional
+from typing_extensions import Annotated
 
 from enum import Enum
 from llama_index.core.callbacks.base import CallbackManager

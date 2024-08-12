@@ -1,6 +1,5 @@
 from collections import ChainMap
 from typing import (
-    Annotated,
     Any,
     Dict,
     List,
@@ -14,6 +13,7 @@ from typing import (
     runtime_checkable,
     TYPE_CHECKING,
 )
+from typing_extensions import Annotated
 
 from llama_index.core.base.llms.types import (
     ChatMessage,

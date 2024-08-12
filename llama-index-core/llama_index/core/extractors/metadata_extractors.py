@@ -20,7 +20,8 @@ disambiguate the document or subsection from other similar documents or subsecti
 (similar with contrastive learning)
 """
 
-from typing import Any, Dict, List, Optional, Sequence, cast, Annotated
+from typing import Any, Dict, List, Optional, Sequence, cast
+from typing_extensions import Annotated
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.bridge.pydantic import (

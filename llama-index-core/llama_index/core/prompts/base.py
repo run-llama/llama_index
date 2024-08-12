@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import (
-    Annotated,
     TYPE_CHECKING,
     Any,
     Callable,
@@ -14,6 +13,7 @@ from typing import (
     Tuple,
     Union,
 )
+from typing_extensions import Annotated
 
 from llama_index.core.bridge.pydantic import Field, WithJsonSchema, PlainSerializer
 
