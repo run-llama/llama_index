@@ -638,8 +638,8 @@ nav:
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
-          - ./examples/workflow/workflows_cookbook.ipynb
           - ./examples/workflow/sub_question_query_engine.ipynb
+          - ./examples/workflow/workflows_cookbook.ipynb
   - Component Guides:
       - ./module_guides/index.md
       - Models:

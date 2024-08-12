@@ -1,5 +1,60 @@
 # ChangeLog
 
+## [2024-08-12]
+
+### `llama-index-core` [0.10.65]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-multi-modal-llms-gemini` [0.1.8]
+
+- feat: add default_headers to Gemini multi-model (#15296)
+
+### `llama-index-vector-stores-clickhouse` [0.2.0]
+
+- chore: stop using ServiceContext from the clickhouse integration (#15300)
+
+### `llama-index-experimental` [0.2.0]
+
+- chore: remove ServiceContext usage from experimental package (#15301)
+
+### `llama-index-extractors-marvin` [0.1.4]
+
+- fix: MarvinMetadataExtractor functionality and apply async support (#15247)
+
+### `llama-index-utils-workflow` [0.1.1]
+
+- chore: bump black version (#15288)
+- chore: bump nltk version (#15277)
+
+### `llama-index-readers-microsoft-onedrive` [0.1.9]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-embeddings-upstage` [0.1.3]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-embeddings-nvidia` [0.1.5]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-embeddings-litellm` [0.1.1]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-legacy` [0.9.48post1]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-packs-streamlit-chatbot` [0.1.5]
+
+- chore: bump nltk version (#15277)
+
+### `llama-index-embeddings-huggingface` [0.2.3]
+
+- Feature: added multiprocessing for creating hf embedddings (#15260)
+
 ## [2024-08-09]
 
 ### `llama-index-core` [0.10.64]
