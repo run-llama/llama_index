@@ -105,10 +105,4 @@ class StopEvent(DictLikeEvent):
         super().__init__(result=result)
 
 
-class CustomEvent(DictLikeEvent):
-    """StartEvent is implicitly sent when a workflow runs."""
-
-    _param1: str = PrivateAttr()
-
-
 EventType = Type[Union[Event, DictLikeEvent]]
