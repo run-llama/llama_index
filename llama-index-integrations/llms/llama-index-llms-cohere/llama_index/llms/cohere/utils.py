@@ -375,8 +375,7 @@ def document_message_to_cohere_document(message: DocumentMessage) -> Dict:
 def _remove_signature_from_tool_description(name: str, description: str) -> str:
     """
     Removes the `{name}{signature} - ` prefix and Args: section from tool description.
-    The signature is usually present for tools created with the @tool decorator,
-    whereas the Args: section may be present in function doc blocks.
+    The Args: section may be present in function doc blocks.
     """
     description = re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
     return re.sub(r"(?s)(?:\n?\n\s*?)?Args:.*$", "", description)
