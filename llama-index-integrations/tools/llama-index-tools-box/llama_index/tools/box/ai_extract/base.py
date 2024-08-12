@@ -13,11 +13,38 @@ from llama_index.readers.box.BoxAPI.box_api import (
 
 
 class BoxAIExtractToolSpec(BaseToolSpec):
+    """
+    Extracts AI generated content from a Box file.
+
+    Args:
+        box_client (BoxClient): A BoxClient instance for interacting with Box API.
+
+    Attributes:
+        spec_functions (list): A list of supported functions.
+        _box_client (BoxClient): An instance of BoxClient for interacting with Box API.
+
+    Methods:
+        ai_extract(file_id, ai_prompt): Extracts AI generated content from a Box file.
+
+    Args:
+        file_id (str): The ID of the Box file.
+        ai_prompt (str): The AI prompt to use for extraction.
+
+    Returns:
+        Document: A Document object containing the extracted AI content.
+    """
+
     spec_functions = ["ai_extract"]
 
     _box_client: BoxClient
 
     def __init__(self, box_client: BoxClient) -> None:
+        """
+        Initializes the BoxAIExtractToolSpec with a BoxClient instance.
+
+        Args:
+            box_client (BoxClient): The BoxClient instance to use for interacting with the Box API.
+        """
         self._box_client = box_client
 
     def ai_extract(
@@ -25,6 +52,17 @@ class BoxAIExtractToolSpec(BaseToolSpec):
         file_id: str,
         ai_prompt: str,
     ) -> Document:
+        """
+        Extracts AI generated content from a Box file using the provided AI prompt.
+
+        Args:
+            file_id (str): The ID of the Box file to process.
+            ai_prompt (str): The AI prompt to use for content extraction.
+
+        Returns:
+            Document: A Document object containing the extracted AI content,
+            including metadata about the original Box file.
+        """
         # Connect to Box
         box_check_connection(self._box_client)
 

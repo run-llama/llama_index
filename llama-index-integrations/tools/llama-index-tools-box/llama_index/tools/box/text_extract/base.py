@@ -28,6 +28,13 @@ class BoxTextExtractToolSpec(BaseToolSpec):
     _box_client: BoxClient
 
     def __init__(self, box_client: BoxClient) -> None:
+        """
+        Initializes the Box Text Extraction Tool Specification with the
+        provided Box client instance.
+
+        Args:
+            box_client (BoxClient): The Box client instance.
+        """
         self._box_client = box_client
 
     def extract(
