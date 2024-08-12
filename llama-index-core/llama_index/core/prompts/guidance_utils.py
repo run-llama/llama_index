@@ -68,7 +68,7 @@ def json_schema_to_guidance_output_template(
         ref = schema["$ref"]
         model = ref.split("/")[-1]
         return json_schema_to_guidance_output_template(
-            root["definitions"][model], key, indent, root
+            root["$defs"][model], key, indent, root
         )
 
     if schema["type"] == "object":
