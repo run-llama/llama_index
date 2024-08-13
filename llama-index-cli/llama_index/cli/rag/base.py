@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union, cast
 
 from llama_index.core import (
+    Settings,
     SimpleDirectoryReader,
     VectorStoreIndex,
 )
@@ -18,7 +19,6 @@ from llama_index.core.base.response.schema import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llms import LLM
 from llama_index.core.query_engine import CustomQueryEngine
@@ -127,15 +127,13 @@ class RagCLI(BaseModel):
                     embed_model = transformation
                     break
 
-        service_context = ServiceContext.from_defaults(
-            llm=llm, embed_model=embed_model or "default"
-        )
+        Settings.llm = llm
+        Settings.embed_model = embed_model
+
         retriever = VectorStoreIndex.from_vector_store(
-            ingestion_pipeline.vector_store, service_context=service_context
+            ingestion_pipeline.vector_store
         ).as_retriever(similarity_top_k=8)
-        response_synthesizer = CompactAndRefine(
-            service_context=service_context, streaming=True, verbose=verbose
-        )
+        response_synthesizer = CompactAndRefine(streaming=True, verbose=verbose)
 
         # define query pipeline
         query_pipeline = QueryPipeline(verbose=verbose)
