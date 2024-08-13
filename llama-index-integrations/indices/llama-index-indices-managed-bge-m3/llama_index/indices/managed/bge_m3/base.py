@@ -11,7 +11,6 @@ from llama_index.core.indices.base import BaseIndex, IndexNode
 from llama_index.core.schema import BaseNode, NodeWithScore
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
-from FlagEmbedding import BGEM3FlagModel
 
 
 class BGEM3Index(BaseIndex[IndexDict]):
@@ -60,7 +59,7 @@ class BGEM3Index(BaseIndex[IndexDict]):
         self._multi_embed_store = None
         self._docs_pos_to_node_id: Dict[int, str] = {}
         try:
-            pass
+            from FlagEmbedding import BGEM3FlagModel
         except ImportError as exc:
             raise ImportError(
                 "Please install FlagEmbedding to use this feature from the repo:",
