@@ -45,9 +45,10 @@ class OptimumEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         device: Optional[str] = None,
     ):
+        model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
         if max_length is None:
             try:
-                max_length = int(self._model.config.max_position_embeddings)
+                max_length = int(model.config.max_position_embeddings)
             except Exception:
                 raise ValueError(
                     "Unable to find max_length from model config. "
@@ -71,7 +72,7 @@ class OptimumEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
-        self._model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
+        self._model = model
         self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
         self._device = device or infer_torch_device()
 
