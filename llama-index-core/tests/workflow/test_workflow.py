@@ -158,3 +158,45 @@ async def test_workflow_num_workers():
     assert (
         1.0 <= execution_time < 1.1
     ), f"Execution time was {execution_time:.2f} seconds"
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_send_event():
+    class StepSendEventWorkflow(Workflow):
+        @step()
+        async def step1(self, ev: StartEvent) -> OneTestEvent:
+            self.send_event(OneTestEvent(), step="step2")
+            return None
+
+        @step()
+        async def step2(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step2")
+
+        @step()
+        async def step3(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step3")
+
+    workflow = StepSendEventWorkflow()
+    result = await workflow.run()
+    assert result == "step2"
+    assert workflow.is_done()
+    assert ("step2", "OneTestEvent") in workflow._accepted_events
+    assert ("step3", "OneTestEvent") not in workflow._accepted_events
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_send_event_to_None():
+    class StepSendEventToNoneWorkflow(Workflow):
+        @step()
+        async def step1(self, ev: StartEvent) -> OneTestEvent:
+            self.send_event(OneTestEvent(), step=None)
+            return None
+
+        @step()
+        async def step2(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step2")
+
+    workflow = StepSendEventToNoneWorkflow()
+    await workflow.run()
+    assert workflow.is_done()
+    assert ("step2", "OneTestEvent") in workflow._accepted_events
