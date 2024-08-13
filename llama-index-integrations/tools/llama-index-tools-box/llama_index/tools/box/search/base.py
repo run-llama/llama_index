@@ -10,9 +10,12 @@ from box_sdk_gen import (
 
 from llama_index.readers.box.BoxAPI.box_api import (
     box_check_connection,
-    get_box_files_payload,
     search_files,
+    get_box_files_details,
+    add_extra_header_to_box_client,
 )
+
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_document
 
 
 class BoxSearchOptions:
@@ -92,7 +95,7 @@ class BoxSearchToolSpec(BaseToolSpec):
             options (BoxSearchOptions, optional): An instance of `BoxSearchOptions` containing search options.
                 Defaults to `BoxSearchOptions()`.
         """
-        self._box_client = box_client
+        self._box_client = add_extra_header_to_box_client(box_client)
         self._options = options
 
     def box_search(
@@ -129,18 +132,15 @@ class BoxSearchToolSpec(BaseToolSpec):
             limit=self._options.limit,
             offset=self._options.offset,
         )
-        box_payloads = get_box_files_payload(
-            self._box_client, [box_file.id for box_file in box_files]
+
+        box_files = get_box_files_details(
+            box_client=self._box_client, file_ids=[file.id for file in box_files]
         )
 
         docs: List[Document] = []
 
-        for box_payload in box_payloads:
-            file = box_payload.resource_info
-            doc = Document(
-                extra_info=file.to_dict(),
-                metadata=file.to_dict(),
-            )
+        for file in box_files:
+            doc = box_file_to_llama_document(file)
             docs.append(doc)
 
         return docs
