@@ -3,13 +3,13 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 from typing import Any
 
 
-class TestEvent(Event):
+class _TestEvent(Event):
     param: str
     _private_param_1: str = PrivateAttr()
     _private_param_2: str = PrivateAttr(default_factory=str)
 
 
-class TestEvent2(Event):
+class _TestEvent2(Event):
     """Custom Test Event.
 
     Private Attrs:
@@ -38,7 +38,7 @@ def test_event_init_basic():
 
 
 def test_custom_event_with_fields_and_private_params():
-    evt = TestEvent(a=1, param="test_param", _private_param_1="test_private_param_1")
+    evt = _TestEvent(a=1, param="test_param", _private_param_1="test_private_param_1")
 
     assert evt.a == 1
     assert evt["a"] == evt.a
@@ -49,7 +49,7 @@ def test_custom_event_with_fields_and_private_params():
 
 
 def test_custom_event_override_init():
-    evt = TestEvent2(a=1, b=2, _private_param=2, _modified_private_param=2)
+    evt = _TestEvent2(a=1, b=2, _private_param=2, _modified_private_param=2)
 
     assert evt.a == 1
     assert evt.b == 2
