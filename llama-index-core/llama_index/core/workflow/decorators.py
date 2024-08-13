@@ -15,12 +15,14 @@ class StepConfig(BaseModel):
     return_types: List[Any]
     pass_context: bool
     num_workers: int
+    services: List[str]
 
 
 def step(
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
     num_workers: int = 1,
+    services: Optional[List[str]] = None,
 ):
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -53,6 +55,7 @@ def step(
             return_types=return_types,
             pass_context=pass_context,
             num_workers=num_workers,
+            services=services or [],
         )
 
         return func

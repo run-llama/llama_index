@@ -17,6 +17,7 @@ from .errors import (
     WorkflowTimeoutError,
     WorkflowValidationError,
 )
+from .service import ServiceManager
 
 dispatcher = get_dispatcher(__name__)
 
@@ -33,6 +34,7 @@ class Workflow(metaclass=_WorkflowMeta):
         timeout: Optional[float] = 10.0,
         disable_validation: bool = False,
         verbose: bool = False,
+        service_manager: ServiceManager = ServiceManager(),
     ) -> None:
         # Configuration
         self._timeout = timeout
@@ -48,6 +50,8 @@ class Workflow(metaclass=_WorkflowMeta):
         # Context management
         self._root_context: Context = Context()
         self._step_to_context: Dict[str, Context] = {}
+        # Services management
+        self._service_manager = service_manager
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -61,6 +65,10 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
+    def add_service(self, service_name: str, service: "Workflow") -> None:
+        """Attach a service to this workflow."""
+        self._service_manager.add(service_name, service)
+
     def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
 
@@ -71,6 +79,9 @@ class Workflow(metaclass=_WorkflowMeta):
         if step_name not in self._step_to_context:
             self._step_to_context[step_name] = Context(parent=self._root_context)
         return self._step_to_context[step_name]
+
+    def _get_service(self, name) -> "Workflow":
+        return self._service_manager.get(name)
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
@@ -116,6 +127,8 @@ class Workflow(metaclass=_WorkflowMeta):
                     args = []
                     if config.pass_context:
                         args.append(self.get_context(name))
+                    for service in config.services:
+                        args.append(self._get_service(service))
                     args.append(ev)
 
                     # - check if its async or not

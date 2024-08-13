@@ -53,6 +53,9 @@ def validate_step_signature(fn: Callable) -> Tuple[str, List[object], List[objec
         if t.annotation == Context:
             continue
 
+        if str(t.annotation) == "<class 'llama_index.core.workflow.workflow.Workflow'>":
+            continue
+
         event_types = _get_param_types(t)
 
         all_events = all(et == Event or issubclass(et, Event) for et in event_types)
