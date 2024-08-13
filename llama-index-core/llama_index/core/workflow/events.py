@@ -1,17 +1,47 @@
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Type
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 
 
 class Event(BaseModel):
-    """Base class for event types."""
+    """Base class for event types that mimics dict interface.
 
-    class Config:
-        arbitrary_types_allowed = True
+    PrivateAttr:
+        _data (Dict[str, Any]): Underlying Python dict.
 
+    Examples:
+        Basic example usage
+        ```python
+        from llama_index.core.workflows.events import Event
 
-class DictLikeEvent(Event):
-    """Base class for event types that mimics the interface of a dict."""
+        evt = Event(a=1, b=2)
+
+        # can use dot access to get values of `a` and `b`
+        print((evt.a, evt.b))
+
+        # can also set the attrs
+        evt.a = 2
+        ```
+
+        Custom event with additional Fields/PrivateAttr
+        ```python
+        from llama_index.core.workflows.events import Event
+        from llama_index.core.bridge.pydantic import Field, PrivateAttr
+
+        class CustomEvent(Event):
+            field_1: int = Field(description="my custom field")
+            _private_attr_1: int = PrivateAttr()
+
+        evt = CustomEvent(a=1, b=2, field_1=3, _private_attr_1=4)
+
+        # `field_1` and `_private_attr_1` get set as they do with Pydantic BaseModel
+        print(evt.field_1)
+        print(evt._private_attr_1)
+
+        # `a` and `b` get set in the underliying dict, namely `evt._data`
+        print((evt.a, evt.b))
+        ```
+    """
 
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
 
@@ -23,24 +53,20 @@ class DictLikeEvent(Event):
 
         NOTE: fields and private_attrs are pulled from params by name.
         """
-        # pull out params for fields
-        fields = {k: v for k, v in params.items() if k in self.__fields__}
+        # extract and set fields, private attrs and remaining shove in _data
+        fields = {}
+        private_attrs = {}
+        data = {}
+        for k, v in params.items():
+            if k in self.__fields__:
+                fields[k] = v
+            elif k in self.__private_attributes__:
+                private_attrs[k] = v
+            else:
+                data[k] = v
         super().__init__(**fields)
-
-        # set private attrs
-        private_attrs = {
-            k: v for k, v in params.items() if k in self.__private_attributes__
-        }
         for private_attr, value in private_attrs.items():
             super().__setattr__(private_attr, value)
-
-        # set underlying data dictionary
-        data = {
-            k: v
-            for k, v in params.items()
-            if k not in self.__fields__ and k not in self.__private_attributes__
-        }
-
         self._data = data
 
     def __getattr__(self, __name: str) -> Any:
@@ -91,11 +117,11 @@ class DictLikeEvent(Event):
         return self._data
 
 
-class StartEvent(DictLikeEvent):
+class StartEvent(Event):
     """StartEvent is implicitly sent when a workflow runs."""
 
 
-class StopEvent(DictLikeEvent):
+class StopEvent(Event):
     """EndEvent signals the workflow to stop."""
 
     result: Any = Field(default=None)
@@ -105,4 +131,4 @@ class StopEvent(DictLikeEvent):
         super().__init__(result=result)
 
 
-EventType = Type[Union[Event, DictLikeEvent]]
+EventType = Type[Event]
