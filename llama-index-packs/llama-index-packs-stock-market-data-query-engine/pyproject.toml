@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["anoopshrma"]
 name = "llama-index-packs-stock-market-data-query-engine"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
