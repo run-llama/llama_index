@@ -329,8 +329,9 @@ class HuggingFaceLLM(CustomLLM):
                 {"role": message.role.value, "content": message.content}
                 for message in messages
             ]
-            tokens = self._tokenizer.apply_chat_template(messages_dict)
-            return self._tokenizer.decode(tokens)
+            return self._tokenizer.apply_chat_template(
+                messages_dict, tokenize=False, add_generation_prompt=True
+            )
 
         return generic_messages_to_prompt(messages)
 
