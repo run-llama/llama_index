@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Sequence, Optional
+from typing import Any, Sequence, Optional, Dict, Union
 
 from gigachat import GigaChat
 from gigachat.models import Chat, Messages
@@ -200,7 +200,7 @@ class GigaChatLLM(CustomLLM):
                 yield CompletionResponse(text=response, delta=token)
 
     @property
-    def _gigachat_kwargs(self) -> dict[str, str | bool | float]:
+    def _gigachat_kwargs(self) -> Dict[str, Union[str, bool, float]]:
         """Get GigaChat specific kwargs."""
         return {
             "base_url": self.base_url,
