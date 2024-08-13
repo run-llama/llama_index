@@ -58,9 +58,9 @@ class Event(BaseModel):
         private_attrs = {}
         data = {}
         for k, v in params.items():
-            if k in self.__fields__:
+            if k in self.model_fields:
                 fields[k] = v
-            elif k in self.__pydantic_private__:
+            elif k in self.__private_attributes__:
                 private_attrs[k] = v
             else:
                 data[k] = v
@@ -70,7 +70,7 @@ class Event(BaseModel):
         self._data = data
 
     def __getattr__(self, __name: str) -> Any:
-        if __name in self.__pydantic_private__ or __name in self.__fields__:
+        if __name in self.__private_attributes__ or __name in self.model_fields:
             return super().__getattr__(__name)
         else:
             try:
@@ -81,7 +81,7 @@ class Event(BaseModel):
                 )
 
     def __setattr__(self, name, value) -> None:
-        if name in self.__pydantic_private__ or name in self.__fields__:
+        if name in self.__private_attributes__ or name in self.model_fields:
             super().__setattr__(name, value)
         else:
             self._data.__setitem__(name, value)
