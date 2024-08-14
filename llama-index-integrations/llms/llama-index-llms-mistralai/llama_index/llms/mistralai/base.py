@@ -35,9 +35,15 @@ from llama_index.llms.mistralai.utils import (
     mistralai_modelname_to_contextsize,
 )
 
-from mistralai.async_client import MistralAsyncClient
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ToolCall
+from mistralai import Mistral
+from mistralai.models import ToolCall
+from mistralai.models import (
+    Messages,
+    AssistantMessage,
+    SystemMessage,
+    ToolMessage,
+    UserMessage,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -46,20 +52,25 @@ DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
-from mistralai.models.chat_completion import ChatMessage as mistral_chatmessage
-
 
 def to_mistral_chatmessage(
     messages: Sequence[ChatMessage],
-) -> List[mistral_chatmessage]:
+) -> List[Messages]:
     new_messages = []
     for m in messages:
         tool_calls = m.additional_kwargs.get("tool_calls")
-        new_messages.append(
-            mistral_chatmessage(
-                role=m.role.value, content=m.content, tool_calls=tool_calls
+        if m.role == MessageRole.USER:
+            new_messages.append(UserMessage(content=m.content))
+        elif m.role == MessageRole.ASSISTANT:
+            new_messages.append(
+                AssistantMessage(content=m.content, tool_calls=tool_calls)
             )
-        )
+        elif m.role == MessageRole.SYSTEM:
+            new_messages.append(SystemMessage(content=m.content))
+        elif m.role == MessageRole.TOOL or m.role == MessageRole.FUNCTION:
+            new_messages.append(ToolMessage(content=m.content))
+        else:
+            raise ValueError(f"Unsupported message role {m.role}")
 
     return new_messages
 
@@ -112,10 +123,6 @@ class MistralAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=5, description="The maximum number of API retries.", gte=0
     )
-    safe_mode: bool = Field(
-        default=False,
-        description="The parameter to enforce guardrails in chat generations.",
-    )
     random_seed: str = Field(
         default=None, description="The random seed to use for sampling."
     )
@@ -123,8 +130,7 @@ class MistralAI(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the MistralAI API."
     )
 
-    _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _client: Mistral = PrivateAttr()
 
     def __init__(
         self,
@@ -159,17 +165,9 @@ class MistralAI(FunctionCallingLLM):
         # Use the custom endpoint if provided, otherwise default to DEFAULT_MISTRALAI_ENDPOINT
         endpoint = endpoint or DEFAULT_MISTRALAI_ENDPOINT
 
-        self._client = MistralClient(
+        self._client = Mistral(
             api_key=api_key,
-            endpoint=endpoint,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
-        self._aclient = MistralAsyncClient(
-            api_key=api_key,
-            endpoint=endpoint,
-            timeout=timeout,
-            max_retries=max_retries,
+            server_url=endpoint,
         )
 
         super().__init__(
@@ -200,7 +198,6 @@ class MistralAI(FunctionCallingLLM):
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
-            safe_mode=self.safe_mode,
             random_seed=self.random_seed,
             is_function_calling_model=is_mistralai_function_calling_model(self.model),
         )
@@ -212,7 +209,8 @@ class MistralAI(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "random_seed": self.random_seed,
-            "safe_mode": self.safe_mode,
+            "retries": self.max_retries,
+            "timeout_ms": self.timeout * 1000,
         }
         return {
             **base_kwargs,
@@ -231,7 +229,7 @@ class MistralAI(FunctionCallingLLM):
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = self._client.chat(messages=messages, **all_kwargs)
+        response = self._client.chat.complete(messages=messages, **all_kwargs)
 
         tool_calls = response.choices[0].message.tool_calls
 
@@ -262,12 +260,12 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.chat_stream(messages=messages, **all_kwargs)
+        response = self._client.chat.stream(messages=messages, **all_kwargs)
 
         def gen() -> ChatResponseGen:
             content = ""
             for chunk in response:
-                delta = chunk.choices[0].delta
+                delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
                 # NOTE: Unlike openAI, we are directly injecting the tool calls
                 additional_kwargs = {}
@@ -307,7 +305,9 @@ class MistralAI(FunctionCallingLLM):
 
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        response = await self._aclient.chat(messages=messages, **all_kwargs)
+        response = await self._client.chat.complete_async(
+            messages=messages, **all_kwargs
+        )
         tool_calls = response.choices[0].message.tool_calls
         return ChatResponse(
             message=ChatMessage(
@@ -336,12 +336,12 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._aclient.chat_stream(messages=messages, **all_kwargs)
+        response = await self._client.chat.stream_async(messages=messages, **all_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             async for chunk in response:
-                delta = chunk.choices[0].delta
+                delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
                 # NOTE: Unlike openAI, we are directly injecting the tool calls
                 additional_kwargs = {}
@@ -433,8 +433,7 @@ class MistralAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             if not isinstance(tool_call, ToolCall):
                 raise ValueError("Invalid tool_call object")
-            if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by Mistralai.")
+
             argument_dict = json.loads(tool_call.function.arguments)
 
             tool_selections.append(
@@ -456,11 +455,11 @@ class MistralAI(FunctionCallingLLM):
             )
 
         if stop:
-            response = self._client.completion(
+            response = self._client.fim.complete(
                 model=self.model, prompt=prompt, suffix=suffix, stop=stop
             )
         else:
-            response = self._client.completion(
+            response = self._client.fim.complete(
                 model=self.model, prompt=prompt, suffix=suffix
             )
 

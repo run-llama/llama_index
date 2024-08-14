@@ -2,6 +2,6 @@
     options:
       members:
         - NeptuneAnalyticsGraphStore
-        - NeptuneDatabaseGraphStore
         - NeptuneAnalyticsPropertyGraphStore
+        - NeptuneDatabaseGraphStore
         - NeptuneDatabasePropertyGraphStore

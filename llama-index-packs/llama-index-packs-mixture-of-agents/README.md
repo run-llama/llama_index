@@ -67,6 +67,7 @@ mixture_of_agents_pack = MixtureOfAgentsPack(
     ],  # Proposers
     num_layers=3,
     temperature=0.1,
+    timeout=200,  # timeout for response from workflow
 )
 ```
 
