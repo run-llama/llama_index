@@ -51,7 +51,7 @@ class Bedrock(LLM):
             aws_access_key_id="AWS Access Key ID to use",
             aws_secret_access_key="AWS Secret Access Key to use",
             aws_session_token="AWS Session Token to use",
-            aws_region_name="AWS Region to use, eg. us-east-1",
+            region_name="AWS Region to use, eg. us-east-1",
         )
 
         resp = llm.complete("Paul Graham is ")

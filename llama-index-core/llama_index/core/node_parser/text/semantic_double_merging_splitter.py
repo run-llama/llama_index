@@ -186,7 +186,6 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         for node in nodes_with_progress:
             nodes = self.build_semantic_nodes_from_documents([node])
             all_nodes.extend(nodes)
-
         return all_nodes
 
     def build_semantic_nodes_from_documents(
@@ -199,6 +198,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         for doc in documents:
             text = doc.text
             sentences = self.sentence_splitter(text)
+            sentences = [s.strip() for s in sentences]
             initial_chunks = self._create_initial_chunks(sentences)
             chunks = self._merge_initial_chunks(initial_chunks)
 
@@ -229,6 +229,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                         self.language_config.nlp(self._clean_text_advanced(sentence))
                     )
                     < self.initial_threshold
+                    and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
                 ):
                     # if not then leave first sentence as separate chunk
                     initial_chunks.append(chunk)
@@ -236,12 +237,17 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     continue
 
                 chunk_sentences = [chunk]
-
-                chunk_sentences.append(sentence)
-                chunk = " ".join(chunk_sentences)
-
+                if len(chunk) + len(sentence) + 1 <= self.max_chunk_size:
+                    chunk_sentences.append(sentence)
+                    chunk = " ".join(chunk_sentences)
+                    new = False
+                else:
+                    new = True
+                    initial_chunks.append(chunk)
+                    chunk = sentence
+                    continue
                 last_sentences = " ".join(chunk_sentences[-2:])
-                new = False
+                # new = False
 
             elif (
                 self.language_config.nlp(
@@ -250,7 +256,8 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     self.language_config.nlp(self._clean_text_advanced(sentence))
                 )
                 > self.appending_threshold
-                and not len(chunk) > self.max_chunk_size
+                and len(last_sentences) + len(sentence) + 1 <= self.max_chunk_size
+                # and not len(chunk) > self.max_chunk_size
             ):
                 # elif nlp(last_sentences).similarity(nlp(sentence)) > self.threshold:
                 chunk_sentences.append(sentence)
@@ -281,7 +288,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
             current_nlp = self.language_config.nlp(self._clean_text_advanced(current))
 
-            if len(current) > self.max_chunk_size:
+            if len(current) >= self.max_chunk_size:
                 chunks.append(current)
                 current = initial_chunks[i]
 
@@ -293,6 +300,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     )
                 )
                 > self.merging_threshold
+                and len(current) + len(initial_chunks[i]) + 1 <= self.max_chunk_size
             ):
                 current += " " + initial_chunks[i]
 
@@ -305,6 +313,11 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     )
                 )
                 > self.merging_threshold
+                and len(current)
+                + len(initial_chunks[i])
+                + len(initial_chunks[i + 1])
+                + 2
+                <= self.max_chunk_size
             ):
                 current += " " + initial_chunks[i] + " " + initial_chunks[i + 1]
                 skip = 1
@@ -319,6 +332,12 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 )
                 > self.merging_threshold
                 and self.merging_range == 2
+                and len(current)
+                + len(initial_chunks[i])
+                + len(initial_chunks[i + 1])
+                + len(initial_chunks[i + 2])
+                + 3
+                <= self.max_chunk_size
             ):
                 current += (
                     " "

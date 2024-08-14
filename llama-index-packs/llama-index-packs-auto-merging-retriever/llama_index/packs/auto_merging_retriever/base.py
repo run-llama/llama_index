@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, VectorStoreIndex
+from llama_index.core import VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser import (
     HierarchicalNodeParser,
@@ -13,7 +13,6 @@ from llama_index.core.retrievers.auto_merging_retriever import AutoMergingRetrie
 from llama_index.core.schema import Document
 from llama_index.core.storage import StorageContext
 from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.llms.openai import OpenAI
 
 
 class AutoMergingRetrieverPack(BaseLlamaPack):
@@ -41,15 +40,7 @@ class AutoMergingRetrieverPack(BaseLlamaPack):
 
         # define storage context (will include vector store by default too)
         storage_context = StorageContext.from_defaults(docstore=docstore)
-
-        service_context = ServiceContext.from_defaults(
-            llm=OpenAI(model="gpt-3.5-turbo")
-        )
-        self.base_index = VectorStoreIndex(
-            leaf_nodes,
-            storage_context=storage_context,
-            service_context=service_context,
-        )
+        self.base_index = VectorStoreIndex(leaf_nodes, storage_context=storage_context)
         base_retriever = self.base_index.as_retriever(similarity_top_k=6)
         self.retriever = AutoMergingRetriever(
             base_retriever, storage_context, verbose=True

@@ -3,20 +3,20 @@ import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.workflow.decorators import step, StepConfig
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
+from llama_index.core.workflow.decorators import StepConfig, step
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_steps_from_instance,
 )
 
+from .context import Context
 from .errors import (
+    WorkflowDone,
     WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
-    WorkflowDone,
 )
-from .context import Context
 
 dispatcher = get_dispatcher(__name__)
 
@@ -149,21 +149,39 @@ class Workflow(metaclass=_WorkflowMeta):
                     else:
                         self.send_event(new_ev)
 
-            self._tasks.add(
-                asyncio.create_task(
-                    _task(name, self._queues[name], step_func, step_config), name=name
+            for _ in range(step_config.num_workers):
+                self._tasks.add(
+                    asyncio.create_task(
+                        _task(name, self._queues[name], step_func, step_config),
+                        name=name,
+                    )
                 )
-            )
 
-    def send_event(self, message: Event) -> None:
+    def send_event(self, message: Event, step: Optional[str] = None) -> None:
         """Sends an event to a specific step in the workflow.
 
-        Currently we send all the events to all the receivers and we let
-        them discard events they don't want. This should be optimized so
-        that we efficiently send events where we know won't be discarded.
+        If step is None, the event is sent to all the receivers and we let
+        them discard events they don't want.
         """
-        for queue in self._queues.values():
-            queue.put_nowait(message)
+        if step is None:
+            for queue in self._queues.values():
+                queue.put_nowait(message)
+        else:
+            if step not in self._get_steps():
+                raise WorkflowRuntimeError(f"Step {step} does not exist")
+
+            step_func = self._get_steps()[step]
+            step_config: Optional[StepConfig] = getattr(
+                step_func, "__step_config", None
+            )
+
+            if step_config and type(message) in step_config.accepted_events:
+                self._queues[step].put_nowait(message)
+            else:
+                raise WorkflowRuntimeError(
+                    f"Step {step} does not accept event of type {type(message)}"
+                )
+
         self._broker_log.append(message)
 
     @dispatcher.span

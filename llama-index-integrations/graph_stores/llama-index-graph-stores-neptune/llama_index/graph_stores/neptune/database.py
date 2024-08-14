@@ -2,9 +2,9 @@
 
 import logging
 from typing import Any, Dict, Optional
-
-from .base import NeptuneBaseGraphStore, NeptuneQueryException
-import boto3
+from .neptune import create_neptune_database_client
+from .base import NeptuneBaseGraphStore
+from .neptune import NeptuneQueryException
 import json
 
 logger = logging.getLogger(__name__)
@@ -25,58 +25,9 @@ class NeptuneDatabaseGraphStore(NeptuneBaseGraphStore):
     ) -> None:
         """Create a new Neptune Database graph wrapper instance."""
         self.node_label = node_label
-        try:
-            if credentials_profile_name is not None:
-                session = boto3.Session(profile_name=credentials_profile_name)
-            else:
-                # use default credentials
-                session = boto3.Session()
-
-            client_params = {}
-            if region_name:
-                client_params["region_name"] = region_name
-
-            protocol = "https" if use_https else "http"
-
-            client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
-
-            if sign:
-                self._client = session.client("neptunedata", **client_params)
-            else:
-                from botocore import UNSIGNED
-                from botocore.config import Config
-
-                self._client = session.client(
-                    "neptunedata",
-                    **client_params,
-                    config=Config(signature_version=UNSIGNED),
-                )
-
-        except ImportError:
-            raise ModuleNotFoundError(
-                "Could not import boto3 python package. "
-                "Please install it with `pip install boto3`."
-            )
-        except Exception as e:
-            if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
-                    "Neptune Database requires a boto3 version 1.34.40 or greater."
-                    "Please install it with `pip install -U boto3`."
-                ) from e
-            else:
-                raise ValueError(
-                    "Could not load credentials to authenticate with AWS client. "
-                    "Please check that credentials in the specified "
-                    "profile name are valid."
-                ) from e
-
-        try:
-            self._refresh_schema()
-        except Exception as e:
-            logger.error(
-                f"Could not retrieve schema for Neptune due to the following error: {e}"
-            )
-            self.schema = None
+        self._client = create_neptune_database_client(
+            host, port, client, credentials_profile_name, region_name, sign, use_https
+        )
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
         """Query Neptune database."""

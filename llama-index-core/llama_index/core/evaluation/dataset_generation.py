@@ -1,4 +1,5 @@
 """Dataset generation from documents."""
+
 from __future__ import annotations
 
 import asyncio
@@ -29,12 +30,8 @@ from llama_index.core.schema import (
     NodeWithScore,
     TransformComponent,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-    transformations_from_settings_or_context,
 )
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
@@ -144,15 +141,10 @@ class DatasetGenerator(PromptMixin):
         question_gen_query: str | None = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
         show_progress: bool = False,
-        # deprecated
-        service_context: ServiceContext | None = None,
     ) -> None:
         """Init params."""
-        self.llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self.callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        self.llm = llm or Settings.llm
+        self.callback_manager = callback_manager or Settings.callback_manager
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -183,18 +175,11 @@ class DatasetGenerator(PromptMixin):
         required_keywords: List[str] | None = None,
         exclude_keywords: List[str] | None = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: ServiceContext | None = None,
     ) -> DatasetGenerator:
         """Generate dataset from documents."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
-        transformations = transformations or transformations_from_settings_or_context(
-            Settings, service_context
-        )
-        callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        llm = llm or Settings.llm
+        transformations = transformations or Settings.transformations
+        callback_manager = callback_manager or Settings.callback_manager
 
         nodes = run_transformations(
             documents, transformations, show_progress=show_progress
@@ -221,7 +206,6 @@ class DatasetGenerator(PromptMixin):
             text_qa_template=text_qa_template,
             question_gen_query=question_gen_query,
             show_progress=show_progress,
-            service_context=service_context,
         )
 
     async def _agenerate_dataset(

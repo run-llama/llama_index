@@ -37,7 +37,7 @@ class SageMakerEmbedding(BaseEmbedding):
         description="AWS Secret Access Key to use"
     )
     aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
-    aws_region_name: Optional[str] = Field(
+    region_name: Optional[str] = Field(
         description="AWS region name to use. Uses region configured in AWS CLI if not passed"
     )
     max_retries: Optional[int] = Field(
