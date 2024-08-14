@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["nfiacco"]
 name = "llama-index-readers-gcs"
 readme = "README.md"
-version = "0.1.7"
+version = "0.1.8"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
