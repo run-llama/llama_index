@@ -1,6 +1,5 @@
 import pydantic
 from pydantic import (
-    BaseConfig,
     ConfigDict,
     BaseModel,
     GetJsonSchemaHandler,
