@@ -359,8 +359,8 @@ class NVIDIAAgentWorker(BaseAgentWorker):
             tool_call_parser = self.tool_call_parser or default_tool_call_parser
 
             if self._verbose:
-                print("=== Calling Function ===")
-                print(
+                logger.warning("=== Calling Function ===")
+                logger.warning(
                     f"Calling function: {function_name} with args: {function_args_str}"
                 )
 
@@ -379,8 +379,8 @@ class NVIDIAAgentWorker(BaseAgentWorker):
             # Call tool, or wrap error into output objects
             if error_message is not None:
                 if self._verbose:
-                    print(error_message)
-                    print("========================\n")
+                    logger.error(error_message)
+                    logger.error("========================\n")
 
                 function_message = ChatMessage(
                     content=error_message,
@@ -399,8 +399,8 @@ class NVIDIAAgentWorker(BaseAgentWorker):
                 )
 
                 if self._verbose:
-                    print(f"Got output: {tool_output!s}")
-                    print("========================\n")
+                    logger.info(f"Got output: {tool_output!s}")
+                    logger.info("========================\n")
 
                 function_message = ChatMessage(
                     content=str(tool_output),
@@ -465,8 +465,8 @@ class NVIDIAAgentWorker(BaseAgentWorker):
             tool_call_parser = self.tool_call_parser or default_tool_call_parser
 
             if self._verbose:
-                print("=== Calling Function ===")
-                print(
+                logger.info("=== Calling Function ===")
+                logger.info(
                     f"Calling function: {function_name} with args: {function_args_str}"
                 )
 
@@ -786,34 +786,6 @@ class NVIDIAAgentWorker(BaseAgentWorker):
         task.memory.put_messages(task.extra_state["new_memory"].get_all())
         # reset new memory
         task.extra_state["new_memory"].reset()
-
-    def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
-        """Undo step from task.
-
-        If this cannot be implemented, return None.
-
-        """
-        raise NotImplementedError("Undo is not yet implemented")
-        # if len(task.completed_steps) == 0:
-        #     return None
-
-        # # pop last step output
-        # last_step_output = task.completed_steps.pop()
-        # # add step to the front of the queue
-        # task.step_queue.appendleft(last_step_output.task_step)
-
-        # # undo any `step_state` variables that have changed
-        # last_step_output.step_state["n_function_calls"] -= 1
-
-        # # TODO: we don't have memory pop capabilities yet
-        # # # now pop the memory until we get to the state
-        # # last_step_response = cast(AgentChatResponse, last_step_output.output)
-        # # while last_step_response != task.memory.:
-        # #     last_message = last_step_output.task_step.memory.pop()
-        # #     if last_message == cast(AgentChatResponse, last_step_output.output).response:
-        # #         break
-
-        # # while cast(AgentChatResponse, last_step_output.output).response !=
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
