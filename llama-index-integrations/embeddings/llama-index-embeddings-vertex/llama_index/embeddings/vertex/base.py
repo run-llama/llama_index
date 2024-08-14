@@ -1,7 +1,9 @@
+import json
 from enum import Enum
 from typing import Optional, List, Any, Dict, Union
 
 import vertexai
+from google.oauth2 import service_account
 from llama_index.core.base.embeddings.base import Embedding, BaseEmbedding
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
 from llama_index.core.callbacks import CallbackManager
@@ -47,6 +49,8 @@ _QUERY_EMBED_TASK_TYPE_MAPPING: Dict[VertexEmbeddingMode, str] = {
     VertexEmbeddingMode.RETRIEVAL_MODE: "RETRIEVAL_QUERY",
 }
 
+_UNSUPPORTED_TASK_TYPE_MODEL = {"textembedding-gecko@001"}
+
 
 def init_vertexai(
     project: Optional[str] = None,
@@ -70,9 +74,12 @@ def init_vertexai(
 
 
 def _get_embedding_request(
-    texts: List[str], embed_mode: VertexEmbeddingMode, is_query: bool
+    texts: List[str], embed_mode: VertexEmbeddingMode, is_query: bool, model_name: str
 ) -> List[Union[str, TextEmbeddingInput]]:
-    if embed_mode != VertexEmbeddingMode.DEFAULT_MODE:
+    if model_name in _UNSUPPORTED_TASK_TYPE_MODEL:
+        # omit the task_type but still return TextEmbeddingInput
+        texts = [TextEmbeddingInput(text=text) for text in texts]
+    elif embed_mode != VertexEmbeddingMode.DEFAULT_MODE:
         mapping = (
             _QUERY_EMBED_TASK_TYPE_MAPPING
             if is_query
@@ -83,6 +90,46 @@ def _get_embedding_request(
             for text in texts
         ]
     return texts
+
+
+def _process_credentials(
+    credentials: Optional[Any],
+) -> Optional[service_account.Credentials]:
+    """
+    Process the provided credentials, handling strings, dictionaries, and Credentials objects.
+
+    Args:
+        credentials: The credentials input which can be a JSON string, dictionary, or None.
+
+    Returns:
+        service_account.Credentials or None.
+
+    Raises:
+        ValueError: If the credentials are provided as a string but are not valid JSON or
+                    if the credentials are provided in an unsupported format.
+    """
+    if credentials is None:
+        return None
+
+    if isinstance(credentials, service_account.Credentials):
+        return credentials
+
+    if isinstance(credentials, str):
+        try:
+            credentials_dict = json.loads(credentials)
+            return service_account.Credentials.from_service_account_info(
+                credentials_dict
+            )
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON string for credentials.")
+
+    if isinstance(credentials, dict):
+        return service_account.Credentials.from_service_account_info(credentials)
+
+    raise ValueError(
+        "Unsupported credentials format. Please provide a service_account."
+        "Credentials instance, a JSON string, or a dictionary."
+    )
 
 
 class VertexTextEmbedding(BaseEmbedding):
@@ -98,23 +145,32 @@ class VertexTextEmbedding(BaseEmbedding):
         model_name: str = "textembedding-gecko@003",
         project: Optional[str] = None,
         location: Optional[str] = None,
-        credentials: Optional[auth_credentials.Credentials] = None,
+        credentials: Optional[Any] = None,
         embed_mode: VertexEmbeddingMode = VertexEmbeddingMode.RETRIEVAL_MODE,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        num_workers: Optional[int] = None,
     ) -> None:
-        init_vertexai(project=project, location=location, credentials=credentials)
+        service_account_credentials = _process_credentials(credentials)
+        init_vertexai(
+            project=project, location=location, credentials=service_account_credentials
+        )
         callback_manager = callback_manager or CallbackManager([])
         additional_kwargs = additional_kwargs or {}
 
         super().__init__(
             embed_mode=embed_mode,
+            project=project,
+            location=location,
+            credentials=credentials,
             additional_kwargs=additional_kwargs,
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            num_workers=num_workers,
         )
+
         self._model = TextEmbeddingModel.from_pretrained(model_name)
 
     @classmethod
@@ -123,7 +179,10 @@ class VertexTextEmbedding(BaseEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         texts = _get_embedding_request(
-            texts=texts, embed_mode=self.embed_mode, is_query=False
+            texts=texts,
+            embed_mode=self.embed_mode,
+            is_query=False,
+            model_name=self.model_name,
         )
         embeddings = self._model.get_embeddings(texts, **self.additional_kwargs)
         return [embedding.values for embedding in embeddings]
@@ -136,7 +195,10 @@ class VertexTextEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         texts = _get_embedding_request(
-            texts=texts, embed_mode=self.embed_mode, is_query=False
+            texts=texts,
+            embed_mode=self.embed_mode,
+            is_query=False,
+            model_name=self.model_name,
         )
         embeddings = await self._model.get_embeddings_async(
             texts, **self.additional_kwargs
@@ -145,14 +207,20 @@ class VertexTextEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> Embedding:
         texts = _get_embedding_request(
-            texts=[query], embed_mode=self.embed_mode, is_query=True
+            texts=[query],
+            embed_mode=self.embed_mode,
+            is_query=True,
+            model_name=self.model_name,
         )
         embeddings = self._model.get_embeddings(texts, **self.additional_kwargs)
         return embeddings[0].values
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
         texts = _get_embedding_request(
-            texts=[query], embed_mode=self.embed_mode, is_query=True
+            texts=[query],
+            embed_mode=self.embed_mode,
+            is_query=True,
+            model_name=self.model_name,
         )
         embeddings = await self._model.get_embeddings_async(
             texts, **self.additional_kwargs

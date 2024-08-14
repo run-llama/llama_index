@@ -2,9 +2,10 @@ import io
 import unittest
 from unittest.mock import patch, Mock, MagicMock, AsyncMock
 
+from google.oauth2 import service_account
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings import MultiModalEmbedding
-from vertexai.language_models import TextEmbedding
+from vertexai.language_models import TextEmbedding, TextEmbeddingInput
 from vertexai.vision_models import MultiModalEmbeddingResponse
 
 from PIL import Image as PillowImage
@@ -14,13 +15,17 @@ from llama_index.embeddings.vertex import (
     VertexMultiModalEmbedding,
     VertexEmbeddingMode,
 )
+from llama_index.embeddings.vertex.base import (
+    _get_embedding_request,
+    _UNSUPPORTED_TASK_TYPE_MODEL,
+)
 
 
 class VertexTextEmbeddingTest(unittest.TestCase):
     @patch("vertexai.init")
     @patch("vertexai.language_models.TextEmbeddingModel.from_pretrained")
     def test_init(self, model_mock: Mock, mock_init: Mock):
-        mock_cred = Mock(return_value="mock_credentials_instance")
+        mock_cred = Mock(spec=service_account.Credentials)
         embedding = VertexTextEmbedding(
             model_name="textembedding-gecko@001",
             project="test-project",
@@ -28,6 +33,7 @@ class VertexTextEmbeddingTest(unittest.TestCase):
             credentials=mock_cred,
             embed_mode=VertexEmbeddingMode.RETRIEVAL_MODE,
             embed_batch_size=100,
+            num_workers=2,
         )
 
         mock_init.assert_called_once_with(
@@ -41,6 +47,7 @@ class VertexTextEmbeddingTest(unittest.TestCase):
         self.assertEqual(embedding.model_name, "textembedding-gecko@001")
         self.assertEqual(embedding.embed_mode, VertexEmbeddingMode.RETRIEVAL_MODE)
         self.assertEqual(embedding.embed_batch_size, 100)
+        self.assertEqual(embedding.num_workers, 2)
 
     @patch("vertexai.init")
     @patch("vertexai.language_models.TextEmbeddingModel.from_pretrained")
@@ -79,6 +86,28 @@ class VertexTextEmbeddingTest(unittest.TestCase):
         self.assertEqual(positional_args[0][0].task_type, "RETRIEVAL_QUERY")
         self.assertEqual(result, [0.1, 0.2, 0.3])
         self.assertTrue(keyword_args["auto_truncate"])
+
+    def test_unsupported_task_type_model(self):
+        texts = ["text1", "text2"]
+        for model_name in _UNSUPPORTED_TASK_TYPE_MODEL:
+            with self.subTest(model_name=model_name):
+                result = _get_embedding_request(
+                    texts, VertexEmbeddingMode.RETRIEVAL_MODE, False, model_name
+                )
+                self.assertTrue(
+                    all(isinstance(item, TextEmbeddingInput) for item in result)
+                )
+                self.assertTrue(all(item.task_type is None for item in result))
+
+    def test_supported_task_type_model(self):
+        texts = ["text1", "text2"]
+        model_name = "textembedding-gecko@003"
+        result = _get_embedding_request(
+            texts, VertexEmbeddingMode.RETRIEVAL_MODE, False, model_name
+        )
+
+        self.assertTrue(all(isinstance(item, TextEmbeddingInput) for item in result))
+        self.assertTrue(all(item.task_type == "RETRIEVAL_DOCUMENT" for item in result))
 
 
 class VertexTextEmbeddingTestAsync(unittest.IsolatedAsyncioTestCase):
