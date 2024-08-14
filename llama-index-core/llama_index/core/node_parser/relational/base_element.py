@@ -13,9 +13,6 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 
 DEFAULT_SUMMARY_QUERY_STR = """\
 What is this table about? Give a very concise summary (imagine you are adding a new caption and summary for this table), \
@@ -71,7 +68,7 @@ class BaseElementNodeParser(NodeParser):
     Supports text and tables currently.
     """
 
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
     llm: Optional[LLM] = Field(
