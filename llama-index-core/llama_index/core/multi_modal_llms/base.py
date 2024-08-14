@@ -27,9 +27,6 @@ from llama_index.core.constants import (
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.llms.callbacks import llm_completion_callback, llm_chat_callback
 from llama_index.core.schema import BaseComponent, ImageDocument
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 
 
 class MultiModalLLMMetadata(BaseModel):
@@ -79,7 +76,7 @@ class MultiModalLLMMetadata(BaseModel):
 class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """Multi-Modal LLM interface."""
 
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: Optional[CallbackManager] = Field(
         default_factory=CallbackManager, exclude=True
     )
 

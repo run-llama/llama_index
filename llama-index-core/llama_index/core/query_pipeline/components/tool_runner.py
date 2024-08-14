@@ -14,9 +14,6 @@ from llama_index.core.callbacks import (
     CBEventType,
     EventPayload,
 )
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.tools import AsyncBaseTool, adapt_to_async_tool
 
@@ -27,7 +24,7 @@ class ToolRunnerComponent(QueryComponent):
     tool_dict: Dict[str, AsyncBaseTool] = Field(
         ..., description="Dictionary of tool names to tools."
     )
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: Optional[CallbackManager] = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
 

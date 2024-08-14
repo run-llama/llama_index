@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import (
     Any,
+    Optional,
     Sequence,
 )
 
@@ -21,15 +22,12 @@ from llama_index.core.bridge.pydantic import Field, model_validator
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 
 
 class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: Optional[CallbackManager] = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
 

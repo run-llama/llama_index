@@ -16,9 +16,6 @@ from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
 from llama_index.core.async_utils import run_jobs
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 
 # TODO: change to numpy array
 Embedding = List[float]
@@ -75,7 +72,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         gt=0,
         lte=2048,
     )
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: Optional[CallbackManager] = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
     num_workers: Optional[int] = Field(

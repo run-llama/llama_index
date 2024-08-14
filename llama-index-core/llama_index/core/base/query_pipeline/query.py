@@ -23,9 +23,6 @@ from llama_index.core.base.response.schema import Response
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 
 ## Define common types used throughout these components
 StringableInput = Union[
@@ -246,7 +243,7 @@ class QueryComponent(BaseModel):
 class CustomQueryComponent(QueryComponent):
     """Custom query component."""
 
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: Optional[CallbackManager] = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
 

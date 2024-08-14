@@ -33,9 +33,6 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.utils import print_text
 from llama_index.core.query_pipeline.components.stateful import BaseStatefulComponent
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -208,7 +205,7 @@ class QueryPipeline(QueryComponent):
 
     """
 
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: Optional[CallbackManager] = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
 

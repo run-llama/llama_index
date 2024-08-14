@@ -22,9 +22,6 @@ from llama_index.core.schema import (
     TransformComponent,
 )
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 
 
 def _validate_id_func(v: Any) -> Any:
@@ -50,7 +47,7 @@ class NodeParser(TransformComponent, ABC):
     include_prev_next_rel: bool = Field(
         default=True, description="Include prev/next node relationships."
     )
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
     id_func: IdFuncCallable = Field(

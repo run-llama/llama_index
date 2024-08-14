@@ -20,9 +20,6 @@ from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
 )
-from llama_index.core.pydantic_annotations import (
-    PydanticAnnotations,
-)
 from llama_index.core.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
 )
@@ -76,9 +73,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
     """
 
     pipeline: QueryPipeline = Field(..., description="Query pipeline")
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
-        ..., exclude=True
-    )
+    callback_manager: CallbackManager = Field(..., exclude=True)
     task_key: str = Field("task", description="Key to store task in state")
     step_state_key: str = Field("step_state", description="Key to store step in state")
 
