@@ -15,21 +15,39 @@ Otherwise, `VertexTextEmbedding` supports async interface.
 
 ---
 
-## **Version: [0.1.1]**
+### New Features
 
-### **Key Enhancements**
+- **Flexible Credential Handling:**
 
-1. **Flexible Credential Handling**:
+  - The `_process_credentials` function now supports credentials provided as:
+    - **JSON String**: `credentials = '{"type": "service_account", ...}'`
+    - **Dictionary**: `credentials = {"type": "service_account", ...}`
+    - **`service_account.Credentials` object**: Directly pass the credentials object.
 
-   - Added `_process_credentials` to support credentials as JSON strings, dictionaries, or `service_account.Credentials` instances.
+  This ensures that credentials are correctly processed, regardless of the input format, and are used to initialize Vertex AI.
 
-2. **Task Type Compatibility**:
+- **Model Name Handling in Embedding Requests:**
+  - The `_get_embedding_request` function now accepts the `model_name` parameter, allowing it to manage models that do not support the `task_type` parameter, like `textembedding-gecko@001`.
 
-   - Improved `_get_embedding_request` to automatically omit the `task_type` parameter for models like `textembedding-gecko@001`.
+### Example Usage
 
-3. **Additional Configuration Options**:
+```python
+from llama_index.embeddings.vertex import (
+    VertexTextEmbedding,
+    VertexEmbeddingMode,
+)
 
-   - Introduced support for `num_workers` in `VertexTextEmbedding` for better customization.
+# Example using a JSON string for credentials
+json_credentials = (
+    '{"type": "service_account", "project_id": "your-project", ...}'
+)
+text_embedder = VertexTextEmbedding(
+    model_name="textembedding-gecko@003",
+    project="your-gcp-project",
+    location="your-gcp-location",
+    credentials=json_credentials,
+    embed_mode=VertexEmbeddingMode.RETRIEVAL_MODE,
+)
 
-4. **Improved Initialization**:
-   - Updated `init_vertexai` to utilize the new credential processing for seamless setup.
+embeddings = text_embedder.get_text_embedding("Hello World!")
+```
