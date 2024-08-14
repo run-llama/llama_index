@@ -151,13 +151,11 @@ def default_completion_to_prompt(prompt: str) -> str:
 MessagesToPromptCallable = Annotated[
     Optional[MessagesToPromptType],
     WithJsonSchema({"type": "string"}),
-    WithJsonSchema({"type": "string"}),
 ]
 
 
 CompletionToPromptCallable = Annotated[
     Optional[CompletionToPromptType],
-    WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
 ]
 
