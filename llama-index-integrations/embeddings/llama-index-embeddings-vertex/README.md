@@ -29,7 +29,7 @@ Otherwise, `VertexTextEmbedding` supports async interface.
 
 3. **Additional Configuration Options**:
 
-   - Introduced support for `num_workers`, `callback_manager`, and `additional_kwargs` in `VertexTextEmbedding` for better customization.
+   - Introduced support for `num_workers` in `VertexTextEmbedding` for better customization.
 
 4. **Improved Initialization**:
    - Updated `init_vertexai` to utilize the new credential processing for seamless setup.
