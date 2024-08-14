@@ -6,7 +6,6 @@ from llama_index.core.evaluation.base import EvaluationResult
 from llama_index.core.prompts.mixin import PromptDictType
 
 from llama_index.core.evaluation.batch_runner import BatchEvalRunner
-import pytest
 
 
 class MockEvaluator(BaseEvaluator):
@@ -56,7 +55,6 @@ def get_eval_results(key, eval_results):
     return correct / len(results)
 
 
-@pytest.mark.asyncio()
 def test_batch_runner() -> None:
     # single evaluator
     runner = BatchEvalRunner(

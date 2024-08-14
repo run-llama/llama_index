@@ -26,15 +26,19 @@ from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
 logger = logging.getLogger(__name__)
 
 
-class _BoxResourcePayload:
-    resource_info: Optional[File]
-    ai_prompt: Optional[str]
-    ai_response: Optional[str]
-    downloaded_file_path: Optional[str]
-    text_representation: Optional[str]
+def add_extra_header_to_box_client(box_client: BoxClient) -> BoxClient:
+    """
+    Add extra headers to the Box client.
 
-    def __init__(self, resource_info: File) -> None:
-        self.resource_info = resource_info
+    Args:
+        box_client (BoxClient): A Box client object.
+        header (Dict[str, str]): A dictionary of extra headers to add to the Box client.
+
+    Returns:
+        BoxClient: A Box client object with the extra headers added.
+    """
+    header = {"x-box-ai-library": "llama-index"}
+    return box_client.with_extra_headers(extra_headers=header)
 
 
 def box_check_connection(box_client: BoxClient) -> None:
@@ -55,27 +59,24 @@ def box_check_connection(box_client: BoxClient) -> None:
     return True
 
 
-def get_box_files_payload(
-    box_client: BoxClient, file_ids: List[str]
-) -> List[_BoxResourcePayload]:
+def get_box_files_details(box_client: BoxClient, file_ids: List[str]) -> List[File]:
     """
-    This function retrieves payloads for a list of Box files.
+    Retrieves details for multiple Box files identified by their IDs.
+
+    This function takes a Box client and a list of file IDs as input and returns a list of File objects containing details for each requested file.
 
     Args:
-        box_client (BoxClient): A Box client object.
-        file_ids (List[str]): A list of Box file IDs.
+        box_client (BoxClient): An authenticated Box client object.
+        file_ids (List[str]): A list of strings representing Box file IDs.
 
     Returns:
-        List[_BoxResourcePayload]: A list of _BoxResourcePayload objects.
-            - If a file is retrieved successfully, the resource_info attribute
-              will contain the corresponding Box file object.
-            - If an error occurs while retrieving a file, the resource_info
-              attribute will contain the error message.
+        List[File]: A list of File objects containing details for each requested file.
 
     Raises:
-        BoxAPIError: If an error occurs while interacting with the Box API.
+        BoxAPIError: If an error occurs while retrieving file details from the Box API.
     """
-    payloads: List[_BoxResourcePayload] = []
+    box_files_details: List[File] = []
+
     for file_id in file_ids:
         try:
             file = box_client.files.get_file_by_id(file_id)
@@ -83,63 +84,51 @@ def get_box_files_payload(
             logger.error(
                 f"An error occurred while getting file: {e.message}", exc_info=True
             )
-            payloads.append(
-                _BoxResourcePayload(
-                    resource_info=e.message,
-                )
-            )
+            raise
+
         logger.info(f"Getting file: {file.id} {file.name} {file.type}")
-        payloads.append(
-            _BoxResourcePayload(
-                resource_info=file,
-            )
-        )
-    return payloads
+        box_files_details.append(file)
+
+    return box_files_details
 
 
-def get_box_folder_payload(
+def get_box_folder_files_details(
     box_client: BoxClient, folder_id: str, is_recursive: bool = False
-) -> List[_BoxResourcePayload]:
+) -> List[File]:
     """
-    This function retrieves payloads for all files within a Box folder,
-    optionally including files from sub-folders.
+    Retrieves details for all files within a Box folder, optionally including nested sub-folders.
+
+    This function takes a Box client, a folder ID, and an optional recursion flag as input. It retrieves details for all files within the specified folder and returns a list of File objects containing details for each file.
 
     Args:
-        box_client (BoxClient): A Box client object.
-        folder_id (str): The ID of the Box folder.
-        is_recursive (bool, optional): If True, retrieves payloads for
-            files within sub-folders as well. Defaults to False.
+        box_client (BoxClient): An authenticated Box client object.
+        folder_id (str): The ID of the Box folder to retrieve files from.
+        is_recursive (bool, optional): A flag indicating whether to recursively traverse sub-folders within the target folder. Defaults to False.
 
     Returns:
-        List[_BoxResourcePayload]: A list of _BoxResourcePayload objects
-            containing information about files within the folder
-            (and sub-folders if is_recursive is True).
-            - If a file is retrieved successfully, the resource_info attribute
-              will contain the corresponding Box file object.
-            - If an error occurs while retrieving a file or folder,
-              the resource_info attribute will contain the error message.
+        List[File]: A list of File objects containing details for all files found within the specified folder and its sub-folders (if recursion is enabled).
 
     Raises:
-        BoxAPIError: If an error occurs while interacting with the Box API.
+        BoxAPIError: If an error occurs while retrieving folder or file details from the Box API.
     """
-    payloads: List[_BoxResourcePayload] = []
+    box_files_details: List[File] = []
     try:
         folder = box_client.folders.get_folder_by_id(folder_id)
     except BoxAPIError as e:
         logger.error(
             f"An error occurred while getting folder: {e.message}", exc_info=True
         )
-        return payloads
+        raise
 
     for item in box_client.folders.get_folder_items(folder.id).entries:
         if item.type == "file":
-            payloads.extend(get_box_files_payload(box_client, [item.id]))
+            box_files_details.extend(get_box_files_details(box_client, [item.id]))
         elif item.type == "folder":
             if is_recursive:
-                payloads.extend(
-                    get_box_folder_payload(box_client, item.id, is_recursive)
+                box_files_details.extend(
+                    get_box_folder_files_details(box_client, item.id, is_recursive)
                 )
-    return payloads
+    return box_files_details
 
 
 def download_file_by_id(box_client: BoxClient, box_file: File, temp_dir: str) -> str:
@@ -184,39 +173,34 @@ def get_file_content_by_id(box_client: BoxClient, box_file_id: str) -> bytes:
         raise
 
 
-def get_files_ai_prompt(
+def get_ai_response_from_box_files(
     box_client: BoxClient,
-    payloads: List[_BoxResourcePayload],
     ai_prompt: str,
+    box_files: List[File],
     individual_document_prompt: bool = True,
-) -> List[_BoxResourcePayload]:
+) -> List[File]:
     """
-    Gets AI prompts and responses for a list of Box files.
+    Retrieves AI responses for a prompt based on content within Box files.
+
+    This function takes a Box client, an AI prompt string, a list of Box File objects, and an optional flag indicating prompt mode as input. It utilizes the Box API's AI capabilities to generate AI responses based on the prompt and the content of the provided files. The function then updates the File objects with the prompt and AI response information.
 
     Args:
         box_client (BoxClient): An authenticated Box client object.
-        payloads (List[_BoxResourcePayload]): A list of _BoxResourcePayload objects
-            containing information about Box files.
-        ai_prompt (str): The AI prompt to use for generating responses.
-        individual_document_prompt (bool, optional): If True, generates an
-            individual AI prompt and response for each file in payloads.
-            If False, generates a single prompt and response for all files
-            combined. Defaults to True.
+        ai_prompt (str): The AI prompt string to be used for generating responses.
+        box_files (List[File]): A list of Box File objects representing the files to be analyzed.
+        individual_document_prompt (bool, optional): A flag indicating whether to generate individual prompts for each file (True) or a single prompt for all files (False). Defaults to True.
 
     Returns:
-        List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
-            with the following attributes added:
-            - ai_prompt (str): The AI prompt used for the file.
-            - ai_response (str): The AI response generated for the file
-              (may be an error message).
+        List[File]: The original list of Box File objects with additional attributes:
+            * `ai_prompt`: The AI prompt used for analysis.
+            * `ai_response`: The AI response generated based on the prompt and file content.
 
     Raises:
-        BoxAPIError: If an error occurs while interacting with the Box API.
+        BoxAPIError: If an error occurs while interacting with the Box AI API.
     """
     if individual_document_prompt:
         mode = CreateAiAskMode.SINGLE_ITEM_QA
-        for payload in payloads:
-            file = payload.resource_info
+        for file in box_files:
             ask_item = CreateAiAskItems(file.id)
             logger.info(f"Getting AI prompt for file: {file.id} {file.name}")
 
@@ -230,28 +214,23 @@ def get_files_ai_prompt(
                     f"An error occurred while getting AI response for file: {e}",
                     exc_info=True,
                 )
-                payload.ai_prompt = ai_prompt
-                if e.response_info.status_code == 400:
-                    payload.ai_response = "File type not supported by Box AI"
-                else:
-                    payload.ai_response = e.message
-                continue
-            payload.ai_prompt = ai_prompt
-            payload.ai_response = ai_response.answer
+                ai_response = None
+            file.ai_prompt = ai_prompt
+            file.ai_response = ai_response.answer if ai_response else None
 
     else:
         mode = CreateAiAskMode.MULTIPLE_ITEM_QA
-        file_ids = [CreateAiAskItems(payload.resource_info.id) for payload in payloads]
+        file_ids = [CreateAiAskItems(file.id) for file in box_files]
 
         # get the AI prompt for the file
         ai_response = box_client.ai.create_ai_ask(
             mode=mode, prompt=ai_prompt, items=file_ids
         )
-        for payload in payloads:
-            payload.ai_prompt = ai_prompt
-            payload.ai_response = ai_response.answer
+        for file in box_files:
+            file.ai_prompt = ai_prompt
+            file.ai_response = ai_response.answer
 
-    return payloads
+    return box_files
 
 
 def _do_request(box_client: BoxClient, url: str):
@@ -284,66 +263,57 @@ def _do_request(box_client: BoxClient, url: str):
 
 
 def get_text_representation(
-    box_client: BoxClient, payloads: List[_BoxResourcePayload], token_limit: int = 10000
-) -> List[_BoxResourcePayload]:
+    box_client: BoxClient, box_files: List[File], token_limit: int = 10000
+) -> List[File]:
     """
-    Retrieves and stores the text representation for a list of Box files.
+    Retrieves and populates the text representation for a list of Box files.
 
-    This function attempts to retrieve the pre-generated extracted text for each
-    file in the payloads list. If the extracted text is not available or needs
-    generation, it initiates the generation process and stores a placeholder
-    until the text is ready.
+    This function takes a Box client, a list of Box File objects, and an optional token limit as input. It attempts to retrieve the extracted text representation for each file using the Box API's representation hints. The function then updates the File objects with the extracted text content, handling cases where text needs generation or is unavailable.
 
     Args:
         box_client (BoxClient): An authenticated Box client object.
-        payloads (List[_BoxResourcePayload]): A list of _BoxResourcePayload objects
-            containing information about Box files.
-        token_limit (int, optional): The maximum number of tokens (words or
-            characters) to store in the text_representation attribute.
-            Defaults to 10000.
+        box_files (List[File]): A list of Box File objects representing the files to extract text from.
+        token_limit (int, optional): The maximum number of tokens to include in the text representation. Defaults to 10000.
 
     Returns:
-        List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
-            with the following attribute added or updated:
-            - text_representation (str, optional): The extracted text content
-              of the file, truncated to token_limit if applicable. None if
-              the text cannot be retrieved or is still being generated.
-    """
-    for payload in payloads:
-        box_file = payload.resource_info
+        List[File]: The original list of Box File objects with an additional attribute:
+            * `text_representation`: The extracted text content from the file (truncated to token_limit if applicable).
 
+    Raises:
+        BoxAPIError: If an error occurs while interacting with the Box API.
+    """
+    box_files_text_representations: List[File] = []
+    for file in box_files:
         try:
             # Request the file with the "extracted_text" representation hint
-            box_file = box_client.files.get_file_by_id(
-                box_file.id,
+            file_text_representation = box_client.files.get_file_by_id(
+                file.id,
                 x_rep_hints="[extracted_text]",
                 fields=["name", "representations"],
             )
         except BoxAPIError as e:
             logger.error(
-                f"Error getting file representation {box_file.id}: {e.message}",
+                f"Error getting file representation {file_text_representation.id}: {e.message}",
                 exc_info=True,
             )
-            payload.text_representation = None
-            continue
+            raise
 
         # Check if any representations exist
-        if not box_file.representations.entries:
-            logger.error(f"No representation for file {box_file.id}")
-            payload.text_representation = None
+        if not file_text_representation.representations.entries:
+            logger.warning(f"No representation for file {file_text_representation.id}")
             continue
 
         # Find the "extracted_text" representation
         extracted_text_entry = next(
             (
                 entry
-                for entry in box_file.representations.entries
+                for entry in file_text_representation.representations.entries
                 if entry.representation == "extracted_text"
             ),
             None,
         )
         if not extracted_text_entry:
-            payload.text_representation = None
+            file.text_representation = None
             continue
 
         # Handle cases where the extracted text needs generation
@@ -355,40 +325,39 @@ def get_text_representation(
 
         # Download and truncate the raw content
         raw_content = _do_request(box_client, url)
-        payload.text_representation = raw_content[:token_limit] if raw_content else None
+        file.text_representation = raw_content[:token_limit] if raw_content else None
 
-    return payloads
+        box_files_text_representations.append(file)
+
+    return box_files_text_representations
 
 
 def get_files_ai_extract_data(
-    box_client: BoxClient, payloads: List[_BoxResourcePayload], ai_prompt: str
-) -> List[_BoxResourcePayload]:
+    box_client: BoxClient, ai_prompt: str, box_files: List[File]
+) -> List[File]:
     """
-    Extracts data from Box files using Box AI.
+    Extracts data from Box files using Box AI features.
 
-    This function utilizes the Box AI Extract functionality to process each file
-    in the payloads list according to the provided prompt. The extracted data
-    is then stored in the ai_response attribute of each payload object.
+    This function takes a Box client, an AI prompt string, and a list of Box File objects as input. It utilizes the Box AI capabilities, specifically the `AiExtractManager`, to extract data from the files based on the provided prompt. The function then updates the File objects with the prompt and AI extracted data information.
 
     Args:
         box_client (BoxClient): An authenticated Box client object.
-        payloads (List[_BoxResourcePayload]): A list of _BoxResourcePayload objects
-            containing information about Box files.
-        ai_prompt (str): The AI prompt that specifies what data to extract
-            from the files.
+        ai_prompt (str): The AI prompt string used to guide data extraction.
+        box_files (List[File]): A list of Box File objects representing the files to extract data from.
 
     Returns:
-        List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
-            with the following attribute added or updated:
-            - ai_response (str, optional): The extracted data from the file
-              based on the AI prompt. May be empty if the extraction fails.
+        List[File]: The original list of Box File objects with additional attributes:
+            * `ai_prompt`: The AI prompt used for data extraction.
+            * `ai_response`: The extracted data from the file based on the prompt (format may vary depending on Box AI configuration).
+
+    Raises:
+        BoxAPIError: If an error occurs while interacting with the Box AI API.
     """
     ai_extract_manager = AiExtractManager(
         auth=box_client.auth, network_session=box_client.network_session
     )
 
-    for payload in payloads:
-        file = payload.resource_info
+    for file in box_files:
         ask_item = CreateAiExtractItems(file.id)
         logger.info(f"Getting AI extracted data for file: {file.id} {file.name}")
 
@@ -402,11 +371,12 @@ def get_files_ai_extract_data(
                 f"An error occurred while getting AI extracted data for file: {e}",
                 exc_info=True,
             )
-            # payload.ai_response = e.message
-            continue
-        payload.ai_response = ai_response.answer
+            raise
 
-    return payloads
+        file.ai_prompt = ai_prompt
+        file.ai_response = ai_response.answer
+
+    return box_files
 
 
 def search_files(

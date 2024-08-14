@@ -1,16 +1,18 @@
-import pytest
 import asyncio
+import time
 
-from llama_index.core.workflow.workflow import (
-    Workflow,
-    WorkflowValidationError,
-    WorkflowTimeoutError,
-)
+import pytest
+
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.workflow import (
+    Context,
+    Workflow,
+    WorkflowTimeoutError,
+    WorkflowValidationError,
+)
 
-
-from .conftest import OneTestEvent
+from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
 
 
 @pytest.mark.asyncio()
@@ -110,3 +112,91 @@ async def test_sync_async_steps():
     workflow = SyncAsyncWorkflow()
     await workflow.run()
     assert workflow.is_done()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_num_workers():
+    class NumWorkersWorkflow(Workflow):
+        @step(pass_context=True)
+        async def original_step(
+            self, ctx: Context, ev: StartEvent
+        ) -> OneTestEvent | LastEvent:
+            ctx.data["num_to_collect"] = 3
+            self.send_event(OneTestEvent(test_param="test1"))
+            self.send_event(OneTestEvent(test_param="test2"))
+            self.send_event(OneTestEvent(test_param="test3"))
+
+            return LastEvent()
+
+        @step(num_workers=3)
+        async def test_step(self, ev: OneTestEvent) -> AnotherTestEvent:
+            await asyncio.sleep(1.0)
+            return AnotherTestEvent(another_test_param=ev.test_param)
+
+        @step(pass_context=True)
+        async def final_step(
+            self, ctx: Context, ev: AnotherTestEvent | LastEvent
+        ) -> StopEvent:
+            events = ctx.collect_events(
+                ev, [AnotherTestEvent] * ctx.data["num_to_collect"]
+            )
+            if events is None:
+                return None
+            return StopEvent(result=[ev.another_test_param for ev in events])
+
+    workflow = NumWorkersWorkflow()
+
+    start_time = time.time()
+    result = await workflow.run()
+    end_time = time.time()
+
+    assert workflow.is_done()
+    assert set(result) == {"test1", "test2", "test3"}
+
+    # Check if the execution time is close to 1 second (with some tolerance)
+    execution_time = end_time - start_time
+    assert (
+        1.0 <= execution_time < 1.1
+    ), f"Execution time was {execution_time:.2f} seconds"
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_send_event():
+    class StepSendEventWorkflow(Workflow):
+        @step()
+        async def step1(self, ev: StartEvent) -> OneTestEvent:
+            self.send_event(OneTestEvent(), step="step2")
+            return None
+
+        @step()
+        async def step2(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step2")
+
+        @step()
+        async def step3(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step3")
+
+    workflow = StepSendEventWorkflow()
+    result = await workflow.run()
+    assert result == "step2"
+    assert workflow.is_done()
+    assert ("step2", "OneTestEvent") in workflow._accepted_events
+    assert ("step3", "OneTestEvent") not in workflow._accepted_events
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_send_event_to_None():
+    class StepSendEventToNoneWorkflow(Workflow):
+        @step()
+        async def step1(self, ev: StartEvent) -> OneTestEvent:
+            self.send_event(OneTestEvent(), step=None)
+            return None
+
+        @step()
+        async def step2(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step2")
+
+    workflow = StepSendEventToNoneWorkflow()
+    await workflow.run()
+    assert workflow.is_done()
+    assert ("step2", "OneTestEvent") in workflow._accepted_events

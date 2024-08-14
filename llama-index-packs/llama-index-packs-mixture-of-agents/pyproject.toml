@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["ravi03071991"]
 name = "llama-index-packs-mixture-of-agents"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
