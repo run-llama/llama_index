@@ -71,8 +71,8 @@ class BaseElementNodeParser(NodeParser):
     Supports text and tables currently.
     """
 
-    callback_manager: PydanticAnnotations.CALLBACK_MANAGER = Field(
-        default_factory=CallbackManager, exclude=True
+    callback_manager: PydanticAnnotations.CALLBACK_MANAGER.value = Field(
+        default_factory=lambda: CallbackManager([]), exclude=True
     )
     llm: Optional[LLM] = Field(
         default=None, description="LLM model to use for summarization."

@@ -6,6 +6,7 @@ from functools import partial
 from typing import (
     Any,
     AsyncGenerator,
+    Dict,
     Generator,
     Generic,
     List,
@@ -13,10 +14,14 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel, WithJsonSchema
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema, core_schema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
@@ -51,12 +56,18 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 
         return messages
 
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.any_schema()
 
-BaseOutputParser = Annotated[
-    BaseOutputParser,
-    WithJsonSchema({"type": "object"}, mode="serialization"),
-    WithJsonSchema({"type": "object"}, mode="validation"),
-]
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = handler(core_schema)
+        return handler.resolve_ref_schema(json_schema)
 
 
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):

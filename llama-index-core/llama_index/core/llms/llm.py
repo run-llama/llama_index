@@ -152,7 +152,6 @@ MessagesToPromptCallable = Annotated[
     Optional[MessagesToPromptType],
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
-    # PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
 ]
 
 
@@ -160,7 +159,6 @@ CompletionToPromptCallable = Annotated[
     Optional[CompletionToPromptType],
     WithJsonSchema({"type": "string"}),
     WithJsonSchema({"type": "string"}),
-    # PlainSerializer(lambda x: f"{x.__module__}.{x.__name__}", return_type=str),
 ]
 
 

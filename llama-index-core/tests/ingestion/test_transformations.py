@@ -21,7 +21,7 @@ def test_can_generate_schema_for_transformation_component_type(
     component_type = configurable_transformation_type.value.component_type
     configured_schema = ConfiguredTransformation[
         component_type  # type: ignore
-    ].schema()
+    ].model_json_schema()
     assert configured_schema is not None
     assert len(configured_schema) > 0
 
