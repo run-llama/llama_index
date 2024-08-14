@@ -12,6 +12,3 @@ class PydanticAnnotations(Enum):
         WithJsonSchema({"type": "object"}, mode="serialization"),
         WithJsonSchema({"type": "object"}, mode="validation"),
     ]
-
-
-__all__ = ["PydanticAnnotations"]
