@@ -7,16 +7,28 @@ from llama_index.core.workflow.service import ServiceManager
 
 
 class ServiceWorkflow(Workflow):
+    """This wokflow is only responsible to generate a number, it knows nothing about the caller."""
+
     @step()
     async def generate(self, ev: StartEvent) -> StopEvent:
         return StopEvent(result=42)
 
 
 class NumGenerated(Event):
+    """To be used in the dummy workflow below."""
+
     num: int
 
 
 class DummyWorkflow(Workflow):
+    """
+    This workflow needs a number, and it calls another workflow to get one.
+    A service named "service_workflow" must be added to `DummyWorkflow` for
+    the step to be able to use it (see below).
+    This step knows nothing about the other workflow, it gets an instance
+    and it only knows it has to call `run` on that instance.
+    """
+
     @step(services=["service_workflow"])
     async def get_a_number(self, svc: Workflow, ev: StartEvent) -> NumGenerated:
         res = await svc.run()
@@ -29,6 +41,8 @@ class DummyWorkflow(Workflow):
 
 @pytest.mark.asyncio()
 async def test_e2e():
+    # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
+    # and give it a name, in this case "service_workflow"
     wf = DummyWorkflow(
         service_manager=ServiceManager.from_workflows(
             service_workflow=ServiceWorkflow()
