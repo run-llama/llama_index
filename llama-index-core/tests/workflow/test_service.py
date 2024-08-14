@@ -3,6 +3,7 @@ import pytest
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.service import ServiceManager
 
 
 class ServiceWorkflow(Workflow):
@@ -28,7 +29,10 @@ class DummyWorkflow(Workflow):
 
 @pytest.mark.asyncio()
 async def test_e2e():
-    wf = DummyWorkflow()
-    wf.add_service("service_workflow", ServiceWorkflow())
+    wf = DummyWorkflow(
+        service_manager=ServiceManager.from_workflows(
+            service_workflow=ServiceWorkflow()
+        )
+    )
     res = await wf.run()
     print(res)

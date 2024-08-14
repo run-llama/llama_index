@@ -65,10 +65,6 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
-    def add_service(self, service_name: str, service: "Workflow") -> None:
-        """Attach a service to this workflow."""
-        self._service_manager.add(service_name, service)
-
     def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
 

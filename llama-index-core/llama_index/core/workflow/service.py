@@ -13,3 +13,10 @@ class ServiceManager:
 
     def add(self, name: str, service: "Workflow"):
         self._services[name] = service
+
+    @classmethod
+    def from_workflows(cls, **workflows: "Workflow") -> "ServiceManager":
+        sm = cls()
+        for name, wf in workflows.items():
+            sm.add(name, wf)
+        return sm
