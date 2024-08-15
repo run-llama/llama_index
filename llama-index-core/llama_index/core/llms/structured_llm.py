@@ -34,6 +34,22 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
+import re
+
+
+def _escape_braces(text: str) -> str:
+    """
+    Escape braces in text.
+    Only captures template variables, skips already escaped braces.
+    """
+
+    def replace(match):
+        if match.group(0).startswith("{{") and match.group(0).endswith("}}"):
+            return match.group(0)  # Already escaped, return as is
+        return "{{" + match.group(1) + "}}"
+
+    pattern = r"\{+([^{}]+?)\}+"
+    return re.sub(pattern, replace, text)
 
 
 def _escape_json(messages: Sequence[ChatMessage]) -> Sequence[ChatMessage]:
@@ -41,10 +57,12 @@ def _escape_json(messages: Sequence[ChatMessage]) -> Sequence[ChatMessage]:
     new_messages = []
     for message in messages:
         if isinstance(message.content, str):
+            escaped_msg = _escape_braces(message.content)
             new_messages.append(
                 ChatMessage(
                     role=message.role,
-                    content=message.content.replace("{", "{{").replace("}", "}}"),
+                    content=escaped_msg,
+                    additional_kwargs=message.additional_kwargs,
                 )
             )
         else:
