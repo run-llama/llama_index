@@ -30,12 +30,12 @@ license = "MIT"
 name = "llama-index-llms-openvino"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.41"
-llama-index-llms-huggingface = "^0.2.6"
+llama-index-llms-huggingface = "^0.2.7"
 optimum = {extras = ["openvino"], version = ">=1.21.2"}
 
 [tool.poetry.group.dev.dependencies]
