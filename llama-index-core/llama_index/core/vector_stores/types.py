@@ -350,6 +350,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     def add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
