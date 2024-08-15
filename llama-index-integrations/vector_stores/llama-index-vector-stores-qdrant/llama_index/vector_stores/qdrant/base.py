@@ -436,6 +436,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If trying to using async methods without aclient
         """
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
         collection_initialized = await self._acollection_exists(self.collection_name)
 
         if len(nodes) > 0 and not collection_initialized:
@@ -447,14 +449,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_vector_name = await self.asparse_vector_name()
         points, ids = self._build_points(nodes, sparse_vector_name)
 
-        await self._aclient.upload_points(
-            collection_name=self.collection_name,
-            points=points,
-            batch_size=self.batch_size,
-            parallel=self.parallel,
-            max_retries=self.max_retries,
-            wait=True,
-        )
+        for batch in iter_batch(points, self.batch_size):
+            retries = 0
+            while retries < self.max_retries:
+                try:
+                    await self._aclient.upsert(
+                        collection_name=self.collection_name,
+                        points=batch,
+                    )
+                    break
+                except (RpcError, UnexpectedResponse) as exc:
+                    retries += 1
+                    if retries >= self.max_retries:
+                        raise exc  # noqa: TRY201
 
         return ids
 
