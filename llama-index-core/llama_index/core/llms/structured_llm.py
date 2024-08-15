@@ -48,7 +48,7 @@ def _escape_braces(text: str) -> str:
             return match.group(0)  # Already escaped, return as is
         return "{{" + match.group(1) + "}}"
 
-    pattern = r"\{+([^{}]+?)\}+"
+    pattern = r"(?<!\{)\{([^{}]+?)\}(?!\})"
     return re.sub(pattern, replace, text)
 
 

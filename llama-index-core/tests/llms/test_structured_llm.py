@@ -46,3 +46,12 @@ def test_escape_json() -> None:
             additional_kwargs={"test": "test"},
         )
     ]
+
+    # shouldn't escape already escaped brackets with 4 brackets
+    test_case_5 = _escape_json(
+        [ChatMessage(role="user", content="test {{{{message}}}} {test}")]
+    )
+    assert test_case_5 == [
+        ChatMessage(role="user", content="test {{{{message}}}} {{test}}")
+    ]
+
