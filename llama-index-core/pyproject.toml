@@ -43,7 +43,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.10.65"
+version = "0.10.66"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -52,7 +52,7 @@ deprecated = ">=1.2.9.3"
 fsspec = ">=2023.5.0"
 httpx = "*"
 nest-asyncio = "^1.5.8"
-nltk = ">=3.8.2"
+nltk = ">=3.8.1"  # Should be >= 3.8.2 but nltk removed 3.8.2 from pypi
 numpy = "<2.0.0"  # Pin until we adapt to Numpy v2
 openai = ">=1.1.0"
 pandas = "*"
