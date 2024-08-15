@@ -48,7 +48,7 @@ class Cohere(LLM):
     """
 
     model: str = Field(description="The cohere model to use.")
-    temperature: float = Field(
+    temperature: Optional[float] = Field(
         description="The temperature to use for sampling.", default=None
     )
     max_retries: int = Field(
@@ -81,9 +81,6 @@ class Cohere(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        self._client = cohere.Client(api_key, client_name="llama_index")
-        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
-
         super().__init__(
             temperature=temperature,
             additional_kwargs=additional_kwargs,
@@ -98,6 +95,8 @@ class Cohere(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._client = cohere.Client(api_key, client_name="llama_index")
+        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
 
     @classmethod
     def class_name(cls) -> str:
