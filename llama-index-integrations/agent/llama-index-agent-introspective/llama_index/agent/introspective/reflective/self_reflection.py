@@ -146,14 +146,13 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         **kwargs: Any,
     ) -> None:
         """__init__."""
-        self._llm = llm
-        self._verbose = verbose
-
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
             max_iterations=max_iterations,
             **kwargs,
         )
+        self._llm = llm
+        self._verbose = verbose
 
     @classmethod
     def from_defaults(
