@@ -131,10 +131,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         target_devices: Optional[List[str]] = None,
         **model_kwargs,
     ):
-        self._device = device or infer_torch_device()
-        self._parallel_process = parallel_process
-        self._target_devices = target_devices
-
+        device = device or infer_torch_device()
         cache_folder = cache_folder or get_cache_dir()
 
         for variable, value in [
@@ -150,9 +147,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
         if model_name is None:
             raise ValueError("The `model_name` argument must be provided.")
 
-        self._model = SentenceTransformer(
+        model = SentenceTransformer(
             model_name,
-            device=self._device,
+            device=device,
             cache_folder=cache_folder,
             trust_remote_code=trust_remote_code,
             prompts={
@@ -164,9 +161,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
             **model_kwargs,
         )
         if max_length:
-            self._model.max_seq_length = max_length
+            model.max_seq_length = max_length
         else:
-            max_length = self._model.max_seq_length
+            max_length = model.max_seq_length
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -177,6 +174,10 @@ class HuggingFaceEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._device = device
+        self._model = model
+        self._parallel_process = parallel_process
+        self._target_devices = target_devices
 
     @classmethod
     def class_name(cls) -> str:
