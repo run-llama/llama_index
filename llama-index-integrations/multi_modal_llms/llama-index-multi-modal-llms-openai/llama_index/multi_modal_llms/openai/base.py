@@ -104,8 +104,6 @@ class OpenAIMultiModal(MultiModalLLM):
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
         api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
             api_base=api_base,
@@ -128,6 +126,8 @@ class OpenAIMultiModal(MultiModalLLM):
             default_headers=default_headers,
             **kwargs,
         )
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
         self._http_client = http_client
         self._client, self._aclient = self._get_clients(**kwargs)
 
