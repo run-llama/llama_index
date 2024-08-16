@@ -35,7 +35,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-llama-index-core = "^0.10.38"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 ibm-watsonx-ai = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
