@@ -49,9 +49,8 @@ class Context:
             self._locals[key] = value
             return
 
-        await self.lock.acquire()
-        self._globals[key] = value
-        self.lock.release()
+        async with self.lock:
+            self._globals[key] = value
 
     async def get(self, key: str, default: Optional[Any] = None) -> Any:
         """Get the value corresponding to `key` from the Context.
@@ -66,10 +65,8 @@ class Context:
         if key in self._locals:
             return self._locals[key]
         elif key in self._globals:
-            await self.lock.acquire()
-            ret = self._globals[key]
-            self.lock.release()
-            return ret
+            async with self.lock:
+                return self._globals[key]
         elif default is not None:
             return default
 
@@ -80,7 +77,7 @@ class Context:
     def data(self):
         """This property is provided for backward compatibility.
 
-        Use `globals` instead.
+        Use `get` and `set` instead.
         """
         return self._globals
 
