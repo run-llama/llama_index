@@ -96,6 +96,18 @@ class VertexTextEmbedding(BaseEmbedding):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Vertex."
     )
+    client_email: Optional[str] = Field(
+        description="The client email for the VertexAI credentials."
+    )
+    token_uri: Optional[str] = Field(
+        description="The token URI for the VertexAI credentials."
+    )
+    private_key_id: Optional[str] = Field(
+        description="The private key ID for the VertexAI credentials."
+    )
+    private_key: Optional[str] = Field(
+        description="The private key for the VertexAI credentials."
+    )
 
     _model: TextEmbeddingModel = PrivateAttr()
 
