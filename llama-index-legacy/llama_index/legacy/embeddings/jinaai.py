@@ -14,7 +14,7 @@ from llama_index.legacy.llms.generic_utils import get_from_param_or_env
 
 MAX_BATCH_SIZE = 2048
 
-API_URL = "https://api.jina.ai/v1/embeddings"
+DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 
 class JinaEmbedding(BaseEmbedding):
@@ -25,6 +25,10 @@ class JinaEmbedding(BaseEmbedding):
             Defaults to `jina-embeddings-v2-base-en`
     """
 
+    api_url: str = Field(
+        default=f"{DEFAULT_JINA_AI_API_URL}/rerank",
+        description="The URL of the JinaAI Rerank API.",
+    )
     api_key: str = Field(default=None, description="The JinaAI API key.")
     model: str = Field(
         default="jina-embeddings-v2-base-en",
@@ -37,6 +41,7 @@ class JinaEmbedding(BaseEmbedding):
         self,
         model: str = "jina-embeddings-v2-base-en",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        base_url: str = DEFAULT_JINA_AI_API_URL,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
@@ -48,6 +53,8 @@ class JinaEmbedding(BaseEmbedding):
             api_key=api_key,
             **kwargs,
         )
+
+        self.api_url = f"{base_url}/embeddings"
         self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
         self.model = model
         self._session = requests.Session()
@@ -80,7 +87,7 @@ class JinaEmbedding(BaseEmbedding):
         """Get text embeddings."""
         # Call Jina AI Embedding API
         resp = self._session.post(  # type: ignore
-            API_URL, json={"input": texts, "model": self.model}
+            self.api_url, json={"input": texts, "model": self.model}
         ).json()
         if "data" not in resp:
             raise RuntimeError(resp["detail"])
@@ -103,7 +110,7 @@ class JinaEmbedding(BaseEmbedding):
                 "Accept-Encoding": "identity",
             }
             async with session.post(
-                f"{API_URL}",
+                self.api_url,
                 json={"input": texts, "model": self.model},
                 headers=headers,
             ) as response:

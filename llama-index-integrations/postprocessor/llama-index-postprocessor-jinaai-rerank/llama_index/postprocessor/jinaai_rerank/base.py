@@ -12,12 +12,16 @@ from llama_index.core.instrumentation.events.rerank import (
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
-DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1/rerank"
+DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 dispatcher = get_dispatcher(__name__)
 
 
 class JinaRerank(BaseNodePostprocessor):
+    api_url: str = Field(
+        default=f"{DEFAULT_JINA_AI_API_URL}/rerank",
+        description="The URL of the JinaAI Rerank API.",
+    )
     api_key: str = Field(default=None, description="The JinaAI API key.")
     model: str = Field(
         default="jina-reranker-v1-base-en",
@@ -36,7 +40,7 @@ class JinaRerank(BaseNodePostprocessor):
         api_key: Optional[str] = None,
     ):
         super().__init__(top_n=top_n, model=model)
-        self.base_url = base_url
+        self.api_url = f"{base_url}/rerank"
         self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
         self.model = model
         self._session = requests.Session()
@@ -81,7 +85,7 @@ class JinaRerank(BaseNodePostprocessor):
                 for node in nodes
             ]
             resp = self._session.post(  # type: ignore
-                self.base_url,
+                self.api_url,
                 json={
                     "query": query_bundle.query_str,
                     "documents": texts,
