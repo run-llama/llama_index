@@ -38,8 +38,10 @@ version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 box-sdk-gen = "^1.1.0"
+llama-index-readers-box = "^0.1.2"
+llama-index-agent-openai = "^0.2.9"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
