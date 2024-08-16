@@ -350,6 +350,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     def add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
@@ -363,7 +364,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(nodes)
+        return self.add(nodes, **kwargs)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
