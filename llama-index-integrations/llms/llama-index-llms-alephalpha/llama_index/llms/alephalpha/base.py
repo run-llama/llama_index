@@ -63,26 +63,28 @@ class AlephAlpha(LLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Aleph Alpha API."
     )
-    repetition_penalties_include_prompt = Field(
+    repetition_penalties_include_prompt: bool = Field(
         default=True,
         description="Whether presence penalty or frequency penalty are updated from the prompt",
     )
-    repetition_penalties_include_completion = Field(
+    repetition_penalties_include_completion: bool = Field(
         default=True,
         description="Whether presence penalty or frequency penalty are updated from the completion.",
     )
-    sequence_penalty = Field(
+    sequence_penalty: float = Field(
         default=0.7,
         description="The sequence penalty to use. Increasing the sequence penalty reduces the likelihood of reproducing token sequences that already appear in the prompt",
         gte=0.0,
         lte=1.0,
     )
-    sequence_penalty_min_length = Field(
+    sequence_penalty_min_length: int = Field(
         default=3,
         description="Minimal number of tokens to be considered as sequence. Must be greater or equal 2.",
         gte=2,
     )
-    stop_sequences = Field(default=["\n\n"], description="The stop sequences to use.")
+    stop_sequences: List[str] = Field(
+        default=["\n\n"], description="The stop sequences to use."
+    )
     log_probs: Optional[int] = Field(
         default=None,
         description="Number of top log probabilities to return for each token generated.",
