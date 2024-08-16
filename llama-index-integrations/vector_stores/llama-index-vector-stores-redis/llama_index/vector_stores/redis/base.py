@@ -103,9 +103,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
     """
 
-    stores_text = True
-    stores_node = True
-    flat_metadata = False
+    stores_text: bool = True
+    stores_node: bool = True
+    flat_metadata: bool = False
 
     _index: SearchIndex = PrivateAttr()
     _overwrite: bool = PrivateAttr()
@@ -120,6 +120,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         return_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        super().__init__()
         # check for indicators of old schema
         self._flag_old_kwargs(**kwargs)
 
@@ -150,8 +151,6 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         # Create index
         self.create_index()
-
-        super().__init__()
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
