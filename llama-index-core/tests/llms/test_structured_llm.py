@@ -54,4 +54,3 @@ def test_escape_json() -> None:
     assert test_case_5 == [
         ChatMessage(role="user", content="test {{{{message}}}} {{test}}")
     ]
-
