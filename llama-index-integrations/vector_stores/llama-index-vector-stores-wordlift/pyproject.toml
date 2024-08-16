@@ -31,13 +31,14 @@ version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 pydantic = ">=1.10"
 aiohttp = ">=3.7.4"
 python-dateutil = ">=2.8.2"
 aiohttp-retry = ">=1.2"
 urllib3 = ">=1.21.1,<3"
 wordlift-client = ">=1.42.0,<2"
+docker = "^7.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
