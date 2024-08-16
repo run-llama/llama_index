@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.gigachat"
 
 [tool.llamahub.class_authors]
-CLASS = "afaneor"
+GigaChatLLM = "afaneor"
 
 [tool.mypy]
 disallow_untyped_defs = true
