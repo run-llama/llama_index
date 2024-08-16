@@ -31,7 +31,7 @@ version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 llama-index-embeddings-vertex = "^0.1.0"
 google-cloud-aiplatform = "^1.39.0"
 google-cloud-storage = "^2.16.0"
