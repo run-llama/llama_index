@@ -105,10 +105,11 @@ class SelfDiscoverWorkflow(Workflow):
         # get input data, store llm into ctx
         task = ev.get("task")
         llm: LLM = ev.get("llm")
-        ctx.data["llm"] = llm
 
         if task is None or llm is None:
             raise ValueError("'task' and 'llm' arguments are required.")
+
+        ctx.data["llm"] = llm
 
         # format prompt and get result from LLM
         prompt = SELECT_PRMOPT_TEMPLATE.format(

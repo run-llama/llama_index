@@ -113,6 +113,11 @@ class CorrectiveRAGWorkflow(Workflow):
         if query_str is None:
             return None
 
+        if "index" not in ctx.data or "tavily_tool" not in ctx.data:
+            raise ValueError(
+                "Index and tavily tool must be constructed. Run with 'documents' and 'tavily_ai_apikey' params first."
+            )
+
         retriever: BaseRetriever = ctx.data["index"].as_retriever(**retriever_kwargs)
         result = retriever.retrieve(query_str)
         ctx.data["retrieved_nodes"] = result
