@@ -33,8 +33,8 @@ version = "0.1.10"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.11.post1"
-llama-index-llms-openai = "^0.1.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
+llama-index-llms-openai = {path = "/Users/nerdai/Projects/llama_index/llama-index-integrations/llms/llama-index-llms-openai"}
 azure-identity = "^1.15.0"
 httpx = "*"
 

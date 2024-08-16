@@ -166,7 +166,8 @@ class OpenAI(FunctionCallingLLM):
         gt=0,
     )
     logprobs: Optional[bool] = Field(
-        description="Whether to return logprobs per token."
+        description="Whether to return logprobs per token.",
+        default=None,
     )
     top_logprobs: int = Field(
         description="The number of top token log probs to return.",
@@ -187,7 +188,7 @@ class OpenAI(FunctionCallingLLM):
         description="The timeout, in seconds, for API requests.",
         gte=0,
     )
-    default_headers: Dict[str, str] = Field(
+    default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
     reuse_client: bool = Field(
