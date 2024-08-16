@@ -83,7 +83,7 @@ def test_box_reader_load_resource(box_client_ccg_integration_testing: BoxClient)
     doc = reader.load_resource(resource_id)
     assert doc is not None
     assert len(doc) == 1
-    assert doc[0].extra_info["id"] == resource_id
+    assert doc[0].metadata["box_file_id"] == resource_id
 
 
 def test_box_reader_file_content(box_client_ccg_integration_testing):

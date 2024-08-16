@@ -18,12 +18,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 from llama_index.experimental.query_engine.pandas.prompts import DEFAULT_PANDAS_PROMPT
 from llama_index.experimental.query_engine.pandas.output_parser import (
@@ -109,7 +104,6 @@ class PandasQueryEngine(BaseQueryEngine):
         output_kwargs: Optional[dict] = None,
         head: int = 5,
         verbose: bool = False,
-        service_context: Optional[ServiceContext] = None,
         llm: Optional[LLM] = None,
         synthesize_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
@@ -126,17 +120,13 @@ class PandasQueryEngine(BaseQueryEngine):
         )
         self._verbose = verbose
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._synthesize_response = synthesize_response
         self._response_synthesis_prompt = (
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
         )
 
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            )
-        )
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -162,7 +152,7 @@ class PandasQueryEngine(BaseQueryEngine):
             "PandasIndex is deprecated. "
             "Directly construct PandasQueryEngine with df instead."
         )
-        return cls(df=index.df, service_context=index.service_context, **kwargs)
+        return cls(df=index.df, **kwargs)
 
     def _get_table_context(self) -> str:
         """Get table context."""

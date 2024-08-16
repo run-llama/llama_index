@@ -83,7 +83,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
         )
 
         data = self.structured_query(
-            f"""MATCH (e:'{BASE_ENTITY_LABEL}')
+            f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE ({filters})
             CALL neptune.algo.vectors.get(e)
             YIELD embedding
