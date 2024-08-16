@@ -339,6 +339,7 @@ nav:
           - ./examples/llm/qianfan.ipynb
           - ./examples/llm/rungpt.ipynb
           - ./examples/llm/sagemaker_endpoint_llm.ipynb
+          - ./examples/llm/sambanova.ipynb
           - ./examples/llm/solar.ipynb
           - ./examples/llm/together.ipynb
           - ./examples/llm/unify.ipynb
@@ -368,6 +369,7 @@ nav:
           - ./examples/low_level/router.ipynb
           - ./examples/low_level/vector_store.ipynb
       - Managed Indexes:
+          - ./examples/managed/BGEM3Demo.ipynb
           - ./examples/managed/GoogleDemo.ipynb
           - ./examples/managed/PostgresMLDemo.ipynb
           - ./examples/managed/VertexAIDemo.ipynb
@@ -633,6 +635,7 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
+          - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
@@ -859,6 +862,7 @@ nav:
           - ./api_reference/evaluation/semantic_similarity.md
           - ./api_reference/evaluation/tonic_validate.md
       - Indexes:
+          - ./api_reference/indices/bge_m3.md
           - ./api_reference/indices/colbert.md
           - ./api_reference/indices/dashscope.md
           - ./api_reference/indices/document_summary.md
@@ -949,6 +953,7 @@ nav:
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
+          - ./api_reference/llms/sambanova.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
@@ -1467,6 +1472,7 @@ nav:
           - ./api_reference/tools/azure_speech.md
           - ./api_reference/tools/azure_translate.md
           - ./api_reference/tools/bing_search.md
+          - ./api_reference/tools/box.md
           - ./api_reference/tools/brave_search.md
           - ./api_reference/tools/cassandra.md
           - ./api_reference/tools/chatgpt_plugin.md
@@ -2101,6 +2107,9 @@ plugins:
             - ../llama-index-integrations/callbacks/llama-index-callbacks-literalai
             - ../llama-index-integrations/llms/llama-index-llms-paieas
             - ../llama-index-integrations/extractors/llama-index-extractors-relik
+            - ../llama-index-integrations/indices/llama-index-indices-managed-bge-m3
+            - ../llama-index-integrations/tools/llama-index-tools-box
+            - ../llama-index-integrations/llms/llama-index-llms-sambanova
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
