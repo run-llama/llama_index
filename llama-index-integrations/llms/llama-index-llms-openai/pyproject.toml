@@ -33,7 +33,7 @@ version = "0.1.29"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.57"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 openai = "^1.40.0"
 
 [tool.poetry.group.dev.dependencies]
