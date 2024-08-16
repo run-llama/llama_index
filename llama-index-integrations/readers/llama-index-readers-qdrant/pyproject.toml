@@ -32,7 +32,7 @@ version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-core = "^0.10.11.post1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 qdrant-client = "^1.7.1"
 
 [tool.poetry.group.dev.dependencies]

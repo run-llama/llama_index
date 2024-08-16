@@ -33,7 +33,7 @@ version = "0.1.3"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 pypreprocess = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
