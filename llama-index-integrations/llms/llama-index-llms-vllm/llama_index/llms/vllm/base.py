@@ -177,24 +177,6 @@ class Vllm(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        if not api_url:
-            try:
-                from vllm import LLM as VLLModel
-            except ImportError:
-                raise ImportError(
-                    "Could not import vllm python package. "
-                    "Please install it with `pip install vllm`."
-                )
-            self._client = VLLModel(
-                model=model,
-                tensor_parallel_size=tensor_parallel_size,
-                trust_remote_code=trust_remote_code,
-                dtype=dtype,
-                download_dir=download_dir,
-                **vllm_kwargs
-            )
-        else:
-            self._client = None
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
             model=model,
@@ -221,6 +203,24 @@ class Vllm(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        if not api_url:
+            try:
+                from vllm import LLM as VLLModel
+            except ImportError:
+                raise ImportError(
+                    "Could not import vllm python package. "
+                    "Please install it with `pip install vllm`."
+                )
+            self._client = VLLModel(
+                model=model,
+                tensor_parallel_size=tensor_parallel_size,
+                trust_remote_code=trust_remote_code,
+                dtype=dtype,
+                download_dir=download_dir,
+                **vllm_kwargs
+            )
+        else:
+            self._client = None
 
     @classmethod
     def class_name(cls) -> str:
@@ -386,7 +386,6 @@ class VllmServer(Vllm):
         callback_manager: Optional[CallbackManager] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._client = None
         messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         completion_to_prompt = completion_to_prompt or (lambda x: x)
         callback_manager = callback_manager or CallbackManager([])
@@ -414,6 +413,7 @@ class VllmServer(Vllm):
             callback_manager=callback_manager,
             output_parser=output_parser,
         )
+        self._client = None
 
     @classmethod
     def class_name(cls) -> str:
