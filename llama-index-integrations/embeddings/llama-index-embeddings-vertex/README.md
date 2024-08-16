@@ -19,12 +19,7 @@ Otherwise, `VertexTextEmbedding` supports async interface.
 
 - **Flexible Credential Handling:**
 
-  - The `_process_credentials` function now supports credentials provided as:
-    - **JSON String**: `credentials = '{"type": "service_account", ...}'`
-    - **Dictionary**: `credentials = {"type": "service_account", ...}`
-    - **`service_account.Credentials` object**: Directly pass the credentials object.
-
-  This ensures that credentials are correctly processed, regardless of the input format, and are used to initialize Vertex AI.
+  - Credential Management: Supports both direct credentials and service account info for secure API access.
 
 - **Model Name Handling in Embedding Requests:**
   - The `_get_embedding_request` function now accepts the `model_name` parameter, allowing it to manage models that do not support the `task_type` parameter, like `textembedding-gecko@001`.
@@ -32,22 +27,33 @@ Otherwise, `VertexTextEmbedding` supports async interface.
 ### Example Usage
 
 ```python
-from llama_index.embeddings.vertex import (
-    VertexTextEmbedding,
-    VertexEmbeddingMode,
+from google.oauth2 import service_account
+from llama_index.embeddings.vertex import VertexTextEmbedding
+
+credentials = service_account.Credentials.from_service_account_file(
+    "path/to/your/service-account.json"
 )
 
-# Example using a JSON string for credentials
-json_credentials = (
-    '{"type": "service_account", "project_id": "your-project", ...}'
-)
-text_embedder = VertexTextEmbedding(
+embedding = VertexTextEmbedding(
     model_name="textembedding-gecko@003",
-    project="your-gcp-project",
-    location="your-gcp-location",
-    credentials=json_credentials,
-    embed_mode=VertexEmbeddingMode.RETRIEVAL_MODE,
+    project="your-project-id",
+    location="your-region",
+    credentials=credentials,
 )
+```
 
-embeddings = text_embedder.get_text_embedding("Hello World!")
+Alternatively, you can directly pass the required service account parameters:
+
+```python
+from llama_index.embeddings.vertex import VertexTextEmbedding
+
+embedding = VertexTextEmbedding(
+    model_name="textembedding-gecko@003",
+    project="your-project-id",
+    location="your-region",
+    client_email="your-service-account-email",
+    token_uri="your-token-uri",
+    private_key_id="your-private-key-id",
+    private_key="your-private-key",
+)
 ```

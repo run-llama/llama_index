@@ -1,4 +1,3 @@
-import json
 from enum import Enum
 from typing import Optional, List, Any, Dict, Union
 
@@ -92,46 +91,6 @@ def _get_embedding_request(
     return texts
 
 
-def _process_credentials(
-    credentials: Optional[Any],
-) -> Optional[service_account.Credentials]:
-    """
-    Process the provided credentials, handling strings, dictionaries, and Credentials objects.
-
-    Args:
-        credentials: The credentials input which can be a JSON string, dictionary, or None.
-
-    Returns:
-        service_account.Credentials or None.
-
-    Raises:
-        ValueError: If the credentials are provided as a string but are not valid JSON or
-                    if the credentials are provided in an unsupported format.
-    """
-    if credentials is None:
-        return None
-
-    if isinstance(credentials, service_account.Credentials):
-        return credentials
-
-    if isinstance(credentials, str):
-        try:
-            credentials_dict = json.loads(credentials)
-            return service_account.Credentials.from_service_account_info(
-                credentials_dict
-            )
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON string for credentials.")
-
-    if isinstance(credentials, dict):
-        return service_account.Credentials.from_service_account_info(credentials)
-
-    raise ValueError(
-        "Unsupported credentials format. Please provide a service_account."
-        "Credentials instance, a JSON string, or a dictionary."
-    )
-
-
 class VertexTextEmbedding(BaseEmbedding):
     embed_mode: VertexEmbeddingMode = Field(description="The embedding mode to use.")
     additional_kwargs: Dict[str, Any] = Field(
@@ -145,17 +104,34 @@ class VertexTextEmbedding(BaseEmbedding):
         model_name: str = "textembedding-gecko@003",
         project: Optional[str] = None,
         location: Optional[str] = None,
-        credentials: Optional[Any] = None,
+        credentials: Optional[auth_credentials.Credentials] = None,
         embed_mode: VertexEmbeddingMode = VertexEmbeddingMode.RETRIEVAL_MODE,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         num_workers: Optional[int] = None,
+        client_email: Optional[str] = None,
+        token_uri: Optional[str] = None,
+        private_key_id: Optional[str] = None,
+        private_key: Optional[str] = None,
     ) -> None:
-        service_account_credentials = _process_credentials(credentials)
-        init_vertexai(
-            project=project, location=location, credentials=service_account_credentials
-        )
+        if credentials is None:
+            if client_email and token_uri and private_key_id and private_key:
+                info = {
+                    "client_email": client_email,
+                    "token_uri": token_uri,
+                    "private_key_id": private_key_id,
+                    "private_key": private_key.replace("\\n", "\n"),
+                }
+                credentials = service_account.Credentials.from_service_account_info(
+                    info
+                )
+            else:
+                raise ValueError(
+                    "Either provide credentials or all of client_email, token_uri, private_key_id, and private_key."
+                )
+
+        init_vertexai(project=project, location=location, credentials=credentials)
         callback_manager = callback_manager or CallbackManager([])
         additional_kwargs = additional_kwargs or {}
 
@@ -169,6 +145,10 @@ class VertexTextEmbedding(BaseEmbedding):
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             num_workers=num_workers,
+            client_email=client_email,
+            token_uri=token_uri,
+            private_key_id=private_key_id,
+            private_key=private_key,
         )
 
         self._model = TextEmbeddingModel.from_pretrained(model_name)

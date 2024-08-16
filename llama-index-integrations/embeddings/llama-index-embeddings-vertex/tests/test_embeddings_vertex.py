@@ -2,7 +2,6 @@ import io
 import unittest
 from unittest.mock import patch, Mock, MagicMock, AsyncMock
 
-from google.oauth2 import service_account
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings import MultiModalEmbedding
 from vertexai.language_models import TextEmbedding, TextEmbeddingInput
@@ -25,7 +24,7 @@ class VertexTextEmbeddingTest(unittest.TestCase):
     @patch("vertexai.init")
     @patch("vertexai.language_models.TextEmbeddingModel.from_pretrained")
     def test_init(self, model_mock: Mock, mock_init: Mock):
-        mock_cred = Mock(spec=service_account.Credentials)
+        mock_cred = Mock(return_value="mock_credentials_instance")
         embedding = VertexTextEmbedding(
             model_name="textembedding-gecko@001",
             project="test-project",
@@ -54,10 +53,11 @@ class VertexTextEmbeddingTest(unittest.TestCase):
     def test_get_embedding_retrieval(self, model_mock: Mock, init_mock: Mock):
         model = MagicMock()
         model_mock.return_value = model
-
+        mock_cred = Mock(return_value="mock_credentials_instance")
         embedding = VertexTextEmbedding(
             project="test-project",
             location="us-test-location",
+            credentials=mock_cred,
             embed_mode=VertexEmbeddingMode.RETRIEVAL_MODE,
             additional_kwargs={"auto_truncate": True},
         )
@@ -121,12 +121,14 @@ class VertexTextEmbeddingTestAsync(unittest.IsolatedAsyncioTestCase):
             AsyncMock()
         )  # Ensure get_embeddings is an AsyncMock for async calls
         model_mock.return_value = model
+        mock_cred = Mock(return_value="mock_credentials_instance")
 
         embedding = VertexTextEmbedding(
             project="test-project",
             location="us-test-location",
             embed_mode=VertexEmbeddingMode.RETRIEVAL_MODE,
             additional_kwargs={"auto_truncate": True},
+            credentials=mock_cred,
         )
 
         model.get_embeddings_async.return_value = [
