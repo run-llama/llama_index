@@ -60,7 +60,9 @@ from langchain.text_splitter import (
     TextSplitter,
 )  # pants: no-infer-dep
 from langchain.tools import BaseTool, StructuredTool, Tool  # pants: no-infer-dep
-from langchain_community.chat_message_histories import ChatMessageHistory  # pants: no-infer-dep
+from langchain_community.chat_message_histories import (
+    ChatMessageHistory,
+)  # pants: no-infer-dep
 from langchain_community.chat_models import (
     ChatAnyscale,
     ChatOpenAI,
