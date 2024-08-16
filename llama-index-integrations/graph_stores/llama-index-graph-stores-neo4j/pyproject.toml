@@ -32,7 +32,7 @@ version = "0.2.14"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.40"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 neo4j = "^5.16.0"
 
 [tool.poetry.group.dev.dependencies]
