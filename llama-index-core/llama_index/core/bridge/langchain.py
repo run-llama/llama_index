@@ -20,8 +20,16 @@ from langchain.chains.prompt_selector import (
 )  # pants: no-infer-dep
 from langchain.chat_models.base import BaseChatModel  # pants: no-infer-dep
 from langchain.docstore.document import Document  # pants: no-infer-dep
-from langchain.memory import ConversationBufferMemory  # pants: no-infer-dep
-from langchain_community.chat_message_histories import ChatMessageHistory  # pants: no-infer-dep
+try:
+    # Attempt to import from langchain 0.2 version module
+    from langchain_community.chat_message_histories import ChatMessageHistory  # pants: no-infer-dep
+    from langchain.memory import ConversationBufferMemory  # pants: no-infer-dep
+except ImportError:
+    # If the import fails, fallback to the langchain 0.1 version import path
+    from langchain.memory import (
+        ChatMessageHistory,
+        ConversationBufferMemory,
+    )  # pants: no-infer-dep
 
 # chat and memory
 from langchain.memory.chat_memory import BaseChatMemory  # pants: no-infer-dep
