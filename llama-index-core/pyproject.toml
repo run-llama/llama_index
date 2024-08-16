@@ -69,7 +69,7 @@ tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 wrapt = "*"
-pydantic = "^2.8.2"
+pydantic = ">=2.0.0,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
