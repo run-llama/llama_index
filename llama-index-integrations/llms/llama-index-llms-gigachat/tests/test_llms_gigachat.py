@@ -150,7 +150,7 @@ async def test_astream_complete(mock_gigachat):
 
     # Act
     response = ""
-    async for resp in llm.astream_complete("What is the capital of France?"):
+    async for resp in await llm.astream_complete("What is the capital of France?"):
         response += resp.delta
 
     # Assert

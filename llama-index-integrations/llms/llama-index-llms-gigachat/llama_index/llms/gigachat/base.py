@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Sequence, Optional, Dict, Union
+from typing import Any, Sequence, Optional, Dict, Union, AsyncGenerator, Generator
 
 from gigachat import GigaChat
 from gigachat.models import Chat, Messages
@@ -167,37 +167,47 @@ class GigaChatLLM(CustomLLM):
             ),
         )
 
-    # @llm_completion_callback()
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, **kwargs: Any
-    ) -> CompletionResponseGen:
+    ) -> AsyncGenerator[CompletionResponse, Any]:
         """Get streaming completion asynchronously."""
-        async with GigaChat(**self._gigachat_kwargs) as giga:
-            chat = Chat(
-                model=self.model,
-                messages=[Messages(role="user", content=prompt)],
-            )
 
-            response = ""
-            async for token in giga.astream(chat):
-                response += token
-                yield CompletionResponse(text=response, delta=token)
+        async def gen() -> AsyncGenerator[CompletionResponse, Any]:
+            async with GigaChat(**self._gigachat_kwargs) as giga:
+                chat = Chat(
+                    model=self.model,
+                    messages=[Messages(role="user", content=prompt)],
+                )
+
+                response = ""
+                async for token in giga.astream(chat):
+                    delta = token.choices[0].delta.content
+                    response += delta
+                    yield CompletionResponse(text=response, delta=delta)
+
+        return gen()
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         """Get streaming completion."""
-        with GigaChat(**self._gigachat_kwargs) as giga:
-            chat = Chat(
-                model=self.model,
-                messages=[Messages(role="user", content=prompt)],
-            )
 
-            response = ""
-            for token in giga.stream(chat):
-                response += token
-                yield CompletionResponse(text=response, delta=token)
+        def gen() -> Generator[CompletionResponse, Any, Any]:
+            with GigaChat(**self._gigachat_kwargs) as giga:
+                chat = Chat(
+                    model=self.model,
+                    messages=[Messages(role="user", content=prompt)],
+                )
+
+                response = ""
+                for token in giga.stream(chat):
+                    delta = token.choices[0].delta.content
+                    response += delta
+                    yield CompletionResponse(text=response, delta=delta)
+
+        return gen()
 
     @property
     def _gigachat_kwargs(self) -> Dict[str, Union[str, bool, float]]:
