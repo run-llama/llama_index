@@ -33,8 +33,9 @@ version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 llama-index-embeddings-huggingface = "^0.1.1"
+llama-index-llms-openai = {path = "/Users/nerdai/Projects/llama_index/llama-index-integrations/llms/llama-index-llms-openai"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
