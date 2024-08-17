@@ -7,9 +7,12 @@ from box_sdk_gen import (
 
 from llama_index.readers.box.BoxAPI.box_api import (
     box_check_connection,
-    get_box_files_payload,
-    get_files_ai_prompt,
+    get_box_files_details,
+    get_ai_response_from_box_files,
+    add_extra_header_to_box_client,
 )
+
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_document
 
 
 class BoxAIPromptToolSpec(BaseToolSpec):
@@ -45,7 +48,7 @@ class BoxAIPromptToolSpec(BaseToolSpec):
         Args:
             box_client (BoxClient): The BoxClient instance to use for interacting with the Box API.
         """
-        self._box_client = box_client
+        self._box_client = add_extra_header_to_box_client(box_client)
 
     def ai_prompt(
         self,
@@ -68,26 +71,22 @@ class BoxAIPromptToolSpec(BaseToolSpec):
         # Connect to Box
         box_check_connection(self._box_client)
 
-        # get payload information
-        payloads = get_box_files_payload(
+        # get box files information
+        box_file = get_box_files_details(
             box_client=self._box_client, file_ids=[file_id]
-        )
+        )[0]
 
-        payloads = get_files_ai_prompt(
+        box_file = get_ai_response_from_box_files(
             box_client=self._box_client,
-            payloads=payloads,
+            box_files=[box_file],
             ai_prompt=ai_prompt,
+        )[0]
+
+        doc = box_file_to_llama_document(box_file)
+        doc.text = box_file.ai_response if box_file.ai_response else ""
+        doc.metadata["ai_prompt"] = box_file.ai_prompt
+        doc.metadata["ai_response"] = (
+            box_file.ai_response if box_file.ai_response else ""
         )
-
-        for payload in payloads:
-            file = payload.resource_info
-            ai_response = payload.ai_response
-
-            # create a document
-            doc = Document(
-                extra_info=file.to_dict(),
-                metadata=file.to_dict(),
-                text=ai_response,
-            )
 
         return doc

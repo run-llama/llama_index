@@ -3,7 +3,7 @@
 import os
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, SQLDatabase
+from llama_index.core import SQLDatabase
 from llama_index.core.indices.struct_store.sql_query import NLSQLTableQueryEngine
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from sqlalchemy import create_engine
@@ -44,18 +44,13 @@ class SnowflakeQueryEnginePack(BaseLlamaPack):
         self._sql_database = SQLDatabase(engine)
         self.tables = tables
 
-        self._service_context = ServiceContext.from_defaults()
-
         self.query_engine = NLSQLTableQueryEngine(
-            sql_database=self._sql_database,
-            tables=self.tables,
-            service_context=self._service_context,
+            sql_database=self._sql_database, tables=self.tables
         )
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
         return {
-            "service_context": self._service_context,
             "sql_database": self._sql_database,
             "query_engine": self.query_engine,
         }
