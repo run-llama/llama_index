@@ -209,38 +209,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
         response = await self.asynthesize(query_bundle=ev.query_bundle, nodes=ev.nodes)
         return StopEvent(result=response)
 
-    # @dispatcher.span
-    # def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-    #     """Answer a query."""
-    #     with self.callback_manager.event(
-    #         CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-    #     ) as query_event:
-    #         nodes = self.retrieve(query_bundle)
-    #         response = self._response_synthesizer.synthesize(
-    #             query=query_bundle,
-    #             nodes=nodes,
-    #         )
-    #         query_event.on_end(payload={EventPayload.RESPONSE: response})
-
-    #     return response
-
-    # @dispatcher.span
-    # async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-    #     """Answer a query."""
-    #     with self.callback_manager.event(
-    #         CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-    #     ) as query_event:
-    #         nodes = await self.aretrieve(query_bundle)
-
-    #         response = await self._response_synthesizer.asynthesize(
-    #             query=query_bundle,
-    #             nodes=nodes,
-    #         )
-
-    #         query_event.on_end(payload={EventPayload.RESPONSE: response})
-
-    #     return response
-
     @property
     def retriever(self) -> BaseRetriever:
         """Get the retriever object."""
