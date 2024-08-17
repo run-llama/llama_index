@@ -32,7 +32,7 @@ docugami = "^0.1.2"
 lxml = "4.9.3"
 openpyxl = "^3.1.2"
 chromadb = "^0.4.24"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 llama-index-embeddings-openai = "^0.1.6"
 llama-index-llms-openai = "^0.1.12"
 llama-index-vector-stores-chroma = "^0.1.6"
