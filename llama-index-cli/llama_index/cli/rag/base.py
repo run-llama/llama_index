@@ -16,7 +16,7 @@ from llama_index.core.base.response.schema import (
     StreamingResponse,
     Response,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, validator
+from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.ingestion import IngestionPipeline
@@ -100,7 +100,7 @@ class RagCLI(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("query_pipeline", always=True)
+    @field_validator("query_pipeline", mode="before")
     def query_pipeline_from_ingestion_pipeline(
         cls, query_pipeline: Any, values: Dict[str, Any]
     ) -> Optional[QueryPipeline]:
@@ -151,7 +151,7 @@ class RagCLI(BaseModel):
         query_pipeline.add_link("query", "summarizer", dest_key="query_str")
         return query_pipeline
 
-    @validator("chat_engine", always=True)
+    @field_validator("chat_engine", mode="before")
     def chat_engine_from_query_pipeline(
         cls, chat_engine: Any, values: Dict[str, Any]
     ) -> Optional[CondenseQuestionChatEngine]:
