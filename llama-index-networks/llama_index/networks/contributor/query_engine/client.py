@@ -51,6 +51,7 @@ class ContributorQueryEngineClient(BaseQueryEngine):
         result = requests.post(
             self.config.api_url + "/api/query", json=data, headers=headers
         )
+        print(f"result: {result.json()}", flush=True)
         try:
             contributor_response = ContributorQueryResponse.model_validate(
                 result.json()

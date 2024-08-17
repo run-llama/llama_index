@@ -7,7 +7,7 @@ from llama_index.core.schema import (
     ImageNode,
 )
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
 
 NODE_REGISTRY: Dict[str, Type[BaseNode]] = {
     "TextNode": TextNode,
@@ -21,8 +21,8 @@ class ContributorQueryRequest(BaseModel):
 
 
 class ContributorQueryResponse(BaseModel):
-    response: Optional[str]
-    score: Optional[float]
+    response: Optional[str] = Field(default=None)
+    score: Optional[float] = Field(default=None)
 
     def __str__(self) -> str:
         """Convert to string representation."""
@@ -38,7 +38,7 @@ class ContributorRetrieverRequest(BaseModel):
 
 
 class ContributorRetrieverResponse(BaseModel):
-    nodes_dict: Optional[List[Dict[str, Any]]]
+    nodes_dict: Optional[List[Dict[str, Any]]] = Field(default=None)
 
     def get_nodes(self) -> List[NodeWithScore]:
         """Build list of nodes with score."""

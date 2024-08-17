@@ -51,7 +51,9 @@ class ContributorRetrieverClient(BaseRetriever):
             self.config.api_url + "/api/retrieve", json=data, headers=headers
         )
         try:
-            contributor_response = ContributorRetrieverResponse.parse_obj(result.json())
+            contributor_response = ContributorRetrieverResponse.model_validate(
+                result.json()
+            )
         except Exception as e:
             raise ValueError("Failed to parse response") from e
         return contributor_response.get_nodes()
@@ -73,7 +75,7 @@ class ContributorRetrieverClient(BaseRetriever):
             ) as resp:
                 json_result = await resp.json()
             try:
-                contributor_response = ContributorRetrieverResponse.parse_obj(
+                contributor_response = ContributorRetrieverResponse.model_validate(
                     json_result
                 )
             except Exception as e:
