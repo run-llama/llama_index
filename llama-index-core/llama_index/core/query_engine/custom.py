@@ -3,7 +3,7 @@
 from abc import abstractmethod
 from typing import Union
 
-from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine, CombinedMeta
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -12,8 +12,20 @@ from llama_index.core.schema import QueryBundle, QueryType
 
 STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]
 
+PydanticMetaclass = type(BaseModel)
 
-class CustomQueryEngine(BaseModel, BaseQueryEngine):
+
+class ExtendedCombinedMeta(CombinedMeta, PydanticMetaclass):
+    def __new__(cls, name, bases, attrs, **kwargs):
+        # Use Pydantic's metaclass to create the class
+        return PydanticMetaclass.__new__(cls, name, bases, attrs, **kwargs)
+
+    def __init__(cls, name, bases, attrs, **kwargs):
+        CombinedMeta.__init__(cls, name, bases, attrs)
+        PydanticMetaclass.__init__(cls, name, bases, attrs, **kwargs)
+
+
+class CustomQueryEngine(BaseModel, BaseQueryEngine, metaclass=ExtendedCombinedMeta):
     """Custom query engine.
 
     Subclasses can define additional attributes as Pydantic fields.
