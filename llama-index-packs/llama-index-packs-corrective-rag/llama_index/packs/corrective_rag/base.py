@@ -1,14 +1,25 @@
 """Corrective RAG LlamaPack class."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from llama_index.core import VectorStoreIndex, SummaryIndex
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.llms.openai import OpenAI
 from llama_index.core.schema import Document, NodeWithScore
 from llama_index.core.query_pipeline.query import QueryPipeline
 from llama_index.tools.tavily_research.base import TavilyToolSpec
+from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.prompts import PromptTemplate
+
+from llama_index.core.workflow import (
+    StartEvent,
+    StopEvent,
+    step,
+    Workflow,
+    Context,
+    Event,
+)
 
 DEFAULT_RELEVANCY_PROMPT_TEMPLATE = PromptTemplate(
     template="""As a grader, your task is to evaluate the relevance of a document retrieved in response to a user's question.
@@ -44,89 +55,166 @@ DEFAULT_TRANSFORM_QUERY_TEMPLATE = PromptTemplate(
 )
 
 
-class CorrectiveRAGPack(BaseLlamaPack):
-    def __init__(self, documents: List[Document], tavily_ai_apikey: str) -> None:
-        """Init params."""
+class RetrieveEvent(Event):
+    """Retrieve event (gets retrieved nodes)."""
+
+    retrieved_nodes: List[NodeWithScore]
+
+
+class RelevanceEvalEvent(Event):
+    """Relevance evaluation event (gets results of relevance evaluation)."""
+
+    relevant_results: List[str]
+
+
+class TextExtractEvent(Event):
+    """Text extract event. Extracts relevant text and concatenates."""
+
+    relevant_text: str
+
+
+class QueryEvent(Event):
+    """Query event. Queries given relevant text and search text."""
+
+    relevant_text: str
+    search_text: str
+
+
+class CorrectiveRAGWorkflow(Workflow):
+    @step(pass_context=True)
+    async def ingest(self, ctx: Context, ev: StartEvent) -> Optional[StopEvent]:
+        """Ingest step (for ingesting docs and initializing index)."""
+        documents: Optional[List[Document]] = ev.get("documents")
+        tavily_ai_apikey: Optional[str] = ev.get("tavily_ai_apikey")
+
+        if any(i is None for i in [documents, tavily_ai_apikey]):
+            return None
+
         llm = OpenAI(model="gpt-4")
-        self.relevancy_pipeline = QueryPipeline(
+        ctx.data["relevancy_pipeline"] = QueryPipeline(
             chain=[DEFAULT_RELEVANCY_PROMPT_TEMPLATE, llm]
         )
-        self.transform_query_pipeline = QueryPipeline(
+        ctx.data["transform_query_pipeline"] = QueryPipeline(
             chain=[DEFAULT_TRANSFORM_QUERY_TEMPLATE, llm]
         )
 
-        self.llm = llm
-        self.index = VectorStoreIndex.from_documents(documents)
-        self.tavily_tool = TavilyToolSpec(api_key=tavily_ai_apikey)
+        ctx.data["llm"] = llm
+        ctx.data["index"] = VectorStoreIndex.from_documents(documents)
+        ctx.data["tavily_tool"] = TavilyToolSpec(api_key=tavily_ai_apikey)
 
-    def get_modules(self) -> Dict[str, Any]:
-        """Get modules."""
-        return {"llm": self.llm, "index": self.index}
+        return StopEvent()
 
-    def retrieve_nodes(self, query_str: str, **kwargs: Any) -> List[NodeWithScore]:
+    @step(pass_context=True)
+    async def retrieve(self, ctx: Context, ev: StartEvent) -> Optional[RetrieveEvent]:
         """Retrieve the relevant nodes for the query."""
-        retriever = self.index.as_retriever(**kwargs)
-        return retriever.retrieve(query_str)
+        query_str = ev.get("query_str")
+        retriever_kwargs = ev.get("retriever_kwargs", {})
 
-    def evaluate_relevancy(
-        self, retrieved_nodes: List[Document], query_str: str
-    ) -> List[str]:
+        if query_str is None:
+            return None
+
+        if "index" not in ctx.data or "tavily_tool" not in ctx.data:
+            raise ValueError(
+                "Index and tavily tool must be constructed. Run with 'documents' and 'tavily_ai_apikey' params first."
+            )
+
+        retriever: BaseRetriever = ctx.data["index"].as_retriever(**retriever_kwargs)
+        result = retriever.retrieve(query_str)
+        ctx.data["retrieved_nodes"] = result
+        ctx.data["query_str"] = query_str
+        return RetrieveEvent(retrieved_nodes=result)
+
+    @step(pass_context=True)
+    async def eval_relevance(
+        self, ctx: Context, ev: RetrieveEvent
+    ) -> RelevanceEvalEvent:
         """Evaluate relevancy of retrieved documents with the query."""
+        retrieved_nodes = ev.retrieved_nodes
+        query_str = ctx.data["query_str"]
+
         relevancy_results = []
         for node in retrieved_nodes:
-            relevancy = self.relevancy_pipeline.run(
+            relevancy = ctx.data["relevancy_pipeline"].run(
                 context_str=node.text, query_str=query_str
             )
             relevancy_results.append(relevancy.message.content.lower().strip())
-        return relevancy_results
 
-    def extract_relevant_texts(
-        self, retrieved_nodes: List[NodeWithScore], relevancy_results: List[str]
-    ) -> str:
+        ctx.data["relevancy_results"] = relevancy_results
+        return RelevanceEvalEvent(relevant_results=relevancy_results)
+
+    @step(pass_context=True)
+    async def extract_relevant_texts(
+        self, ctx: Context, ev: RelevanceEvalEvent
+    ) -> TextExtractEvent:
         """Extract relevant texts from retrieved documents."""
+        retrieved_nodes = ctx.data["retrieved_nodes"]
+        relevancy_results = ev.relevant_results
+
         relevant_texts = [
             retrieved_nodes[i].text
             for i, result in enumerate(relevancy_results)
             if result == "yes"
         ]
-        return "\n".join(relevant_texts)
 
-    def search_with_transformed_query(self, query_str: str) -> str:
+        result = "\n".join(relevant_texts)
+        return TextExtractEvent(relevant_text=result)
+
+    @step(pass_context=True)
+    async def transform_query_pipeline(
+        self, ctx: Context, ev: TextExtractEvent
+    ) -> QueryEvent:
         """Search the transformed query with Tavily API."""
-        search_results = self.tavily_tool.search(query_str, max_results=5)
-        return "\n".join([result.text for result in search_results])
-
-    def get_result(self, relevant_text: str, search_text: str, query_str: str) -> Any:
-        """Get result with relevant text."""
-        documents = [Document(text=relevant_text + "\n" + search_text)]
-        index = SummaryIndex.from_documents(documents)
-        query_engine = index.as_query_engine()
-        return query_engine.query(query_str)
-
-    def run(self, query_str: str, **kwargs: Any) -> Any:
-        """Run the pipeline."""
-        # Retrieve nodes based on the input query string.
-        retrieved_nodes = self.retrieve_nodes(query_str, **kwargs)
-
-        # Evaluate the relevancy of each retrieved document in relation to the query string.
-        relevancy_results = self.evaluate_relevancy(retrieved_nodes, query_str)
-        # Extract texts from documents that are deemed relevant based on the evaluation.
-        relevant_text = self.extract_relevant_texts(retrieved_nodes, relevancy_results)
-
-        # Initialize search_text variable to handle cases where it might not get defined.
-        search_text = ""
+        relevant_text = ev.relevant_text
+        relevancy_results = ctx.data["relevancy_results"]
+        query_str = ctx.data["query_str"]
 
         # If any document is found irrelevant, transform the query string for better search results.
         if "no" in relevancy_results:
-            transformed_query_str = self.transform_query_pipeline.run(
-                query_str=query_str
-            ).message.content
+            transformed_query_str = (
+                ctx.data["transform_query_pipeline"]
+                .run(query_str=query_str)
+                .message.content
+            )
             # Conduct a search with the transformed query string and collect the results.
-            search_text = self.search_with_transformed_query(transformed_query_str)
-
-        # Compile the final result. If there's additional search text from the transformed query,
-        # it's included; otherwise, only the relevant text from the initial retrieval is returned.
-        if search_text:
-            return self.get_result(relevant_text, search_text, query_str)
+            search_results = ctx.data["tavily_tool"].search(
+                transformed_query_str, max_results=5
+            )
+            search_text = "\n".join([result.text for result in search_results])
         else:
-            return self.get_result(relevant_text, "", query_str)
+            search_text = ""
+
+        return QueryEvent(relevant_text=relevant_text, search_text=search_text)
+
+    @step(pass_context=True)
+    async def query_result(self, ctx: Context, ev: QueryEvent) -> StopEvent:
+        """Get result with relevant text."""
+        relevant_text = ev.relevant_text
+        search_text = ev.search_text
+        query_str = ctx.data["query_str"]
+
+        documents = [Document(text=relevant_text + "\n" + search_text)]
+        index = SummaryIndex.from_documents(documents)
+        query_engine = index.as_query_engine()
+        result = query_engine.query(query_str)
+        return StopEvent(result=result)
+
+
+class CorrectiveRAGPack(BaseLlamaPack):
+    def __init__(self, documents: List[Document], tavily_ai_apikey: str) -> None:
+        """Init params."""
+        self._wf = CorrectiveRAGWorkflow()
+
+        asyncio_run(
+            self._wf.run(documents=documents, tavily_ai_apikey=tavily_ai_apikey)
+        )
+
+        self.llm = OpenAI(model="gpt-4")
+        self.index = self._wf.get_context("ingest").data["index"]
+
+    def get_modules(self) -> Dict[str, Any]:
+        """Get modules."""
+        return {"llm": self.llm, "index": self.index}
+
+    def run(self, query_str: str, **kwargs: Any) -> Any:
+        """Run the pipeline."""
+        return asyncio_run(self._wf.run(query_str=query_str, retriever_kwargs=kwargs))
