@@ -17,6 +17,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
     GetJsonSchemaHandler,
+    SerializeAsAny,
     JsonSchemaValue,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
@@ -599,7 +600,7 @@ class IndexNode(TextNode):
 
 
 class NodeWithScore(BaseComponent):
-    node: BaseNode
+    node: SerializeAsAny[BaseNode]
     score: Optional[float] = None
 
     def __str__(self) -> str:

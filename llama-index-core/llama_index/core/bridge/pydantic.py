@@ -20,6 +20,7 @@ from pydantic import (
     SerializeAsAny,
     WrapSerializer,
     field_serializer,
+    Secret,
 )
 from pydantic.error_wrappers import ValidationError
 from pydantic.fields import FieldInfo
@@ -54,4 +55,5 @@ __all__ = [
     "SerializeAsAny",
     "WrapSerializer",
     "field_serializer",
+    "Secret",
 ]
