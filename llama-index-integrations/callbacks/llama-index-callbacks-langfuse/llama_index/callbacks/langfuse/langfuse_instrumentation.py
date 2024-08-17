@@ -1,8 +1,8 @@
 from inspect import BoundArguments
+from threading import Lock
 from types import GeneratorType
 from typing import Optional, List, Any, Callable, Dict, Tuple, cast
 from uuid import uuid4
-import traceback
 
 import httpx
 from langfuse.client import (
@@ -83,6 +83,7 @@ class LangfuseSpanHandler(BaseSpanHandler[LangfuseSpan], extra=Extra.allow):
         self._span_map: Dict[str, List[LangfuseSpan]] = {}
         self._to_update: List[LangfuseSpan] = []
         self._trace: Optional[StatefulTraceClient] = None
+        self._lock = Lock()
 
     def new_span(
         self,
@@ -93,28 +94,33 @@ class LangfuseSpanHandler(BaseSpanHandler[LangfuseSpan], extra=Extra.allow):
         **kwargs: Any,
     ) -> Optional[LangfuseSpan]:
         """New span."""
-        # create trace span if no parent ID
-        if not parent_span_id:
-            # create trace
-            return self._get_trace_span(id_, bound_args.arguments, instance, **kwargs)
+        with self._lock:
+            # create trace span if no parent ID
+            if not parent_span_id:
+                # create trace
+                return self._get_trace_span(
+                    id_, bound_args.arguments, instance, **kwargs
+                )
 
-        if (
-            parent_span_id not in self._span_map
-            or len(self._span_map[parent_span_id]) < 1
-        ):
-            return None
+            if (
+                parent_span_id not in self._span_map
+                or len(self._span_map[parent_span_id]) < 1
+            ):
+                return None
 
-        # create parent instance
-        parent = self._span_map[parent_span_id][-1].client
+            # create parent instance
+            parent = self._span_map[parent_span_id][-1].client
 
-        if self._is_generation(instance):
-            # create generation span
-            return self._get_generation_span(
-                id_, instance, bound_args.arguments, parent
-            )
-        else:
-            # create normal span
-            return self._get_span(id_, parent, bound_args.arguments, instance, **kwargs)
+            if self._is_generation(instance):
+                # create generation span
+                return self._get_generation_span(
+                    id_, instance, bound_args.arguments, parent
+                )
+            else:
+                # create normal span
+                return self._get_span(
+                    id_, parent, bound_args.arguments, instance, **kwargs
+                )
 
     def prepare_to_exit_span(
         self,
@@ -125,7 +131,7 @@ class LangfuseSpanHandler(BaseSpanHandler[LangfuseSpan], extra=Extra.allow):
         **kwargs: Any,
     ) -> Optional[LangfuseSpan]:
         """Exit span."""
-        try:
+        with self._lock:
             if id_ not in self._span_map or len(self._span_map[id_]) < 1:
                 return None
 
@@ -159,9 +165,6 @@ class LangfuseSpanHandler(BaseSpanHandler[LangfuseSpan], extra=Extra.allow):
             # if this is a span/generation
             span.client.end(output=output, metadata=metadata)
 
-        except BaseException:
-            traceback.format_exc()
-
     def prepare_to_drop_span(
         self,
         id_: str,
@@ -171,28 +174,29 @@ class LangfuseSpanHandler(BaseSpanHandler[LangfuseSpan], extra=Extra.allow):
         **kwargs: Any,
     ) -> Optional[LangfuseSpan]:
         """Drop span due to early exiting."""
-        if id_ not in self._span_map or len(self._span_map[id_]) < 1:
-            return None
+        with self._lock:
+            if id_ not in self._span_map or len(self._span_map[id_]) < 1:
+                return None
 
-        span = self._span_map[id_].pop()
-        output = str(err) if err else "An error occurred."
+            span = self._span_map[id_].pop()
+            output = str(err) if err else "An error occurred."
 
-        # if this is a root level trace
-        if not span.parent_id:
-            trace = cast(StatefulTraceClient, span.client)
+            # if this is a root level trace
+            if not span.parent_id:
+                trace = cast(StatefulTraceClient, span.client)
 
-            if len(self._span_map[id_]) > 0:
-                # contains a root-level generation
-                gen_client = self._span_map[id_].pop()
-                generation = cast(StatefulGenerationClient, gen_client.client)
-                generation.end(status_message=output, level="ERROR")
+                if len(self._span_map[id_]) > 0:
+                    # contains a root-level generation
+                    gen_client = self._span_map[id_].pop()
+                    generation = cast(StatefulGenerationClient, gen_client.client)
+                    generation.end(status_message=output, level="ERROR")
 
-            trace.update(output=output)
+                trace.update(output=output)
 
-            return
+                return
 
-        # if this is a span/generation
-        span.client.end(status_message=output, level="ERROR")
+            # if this is a span/generation
+            span.client.end(status_message=output, level="ERROR")
 
     def flush(self) -> None:
         """Flushes langfuse."""

@@ -163,6 +163,7 @@ Then, create a span handler instance and add it to the dispatcher.
 
 ```py
 import llama_index.core.instrumentation as inst
+from llama_index.callbacks.langfuse import LangfuseSpanHandler
 
 langfuse_span_handler = LangfuseSpanHandler(
     public_key="<Your public key>",
