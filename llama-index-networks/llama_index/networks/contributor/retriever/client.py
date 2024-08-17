@@ -4,7 +4,8 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import QueryBundle, NodeWithScore
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.networks.schema.contributor import ContributorRetrieverResponse
-from pydantic.v1 import BaseSettings, Field
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic_settings import BaseSettings, SettingsConfigDict
 import requests
 import aiohttp
 
@@ -12,11 +13,9 @@ import aiohttp
 class ContributorRetrieverClientSettings(BaseSettings):
     """Settings for contributor."""
 
+    model_config = SettingsConfigDict(env_file=[".env", ".env.contributor.client"])
     api_key: Optional[str] = Field(default=None, env="API_KEY")
     api_url: str = Field(..., env="API_URL")
-
-    class Config:
-        env_file = ".env", ".env.contributor.client"
 
 
 class ContributorRetrieverClient(BaseRetriever):
