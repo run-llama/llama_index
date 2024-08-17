@@ -97,15 +97,17 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
                         training_steps=self.training_steps,
                         learning_rate=self.learning_rate,
                     ),
-                    integrations=[
-                        WandbIntegration(
-                            project=self.wandb_integration_dict["project"],
-                            run_name=self.wandb_integration_dict["run_name"],
-                            api_key=self.wandb_integration_dict["api_key"],
-                        ).dict()
-                    ]
-                    if self.wandb_integration_dict
-                    else None,
+                    integrations=(
+                        [
+                            WandbIntegration(
+                                project=self.wandb_integration_dict["project"],
+                                run_name=self.wandb_integration_dict["run_name"],
+                                api_key=self.wandb_integration_dict["api_key"],
+                            ).model_dump()
+                        ]
+                        if self.wandb_integration_dict
+                        else None
+                    ),
                 )
                 self._start_job = job_output
                 break
