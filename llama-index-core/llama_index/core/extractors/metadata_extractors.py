@@ -28,6 +28,7 @@ from llama_index.core.bridge.pydantic import (
     Field,
     PrivateAttr,
     WrapSerializer,
+    SerializeAsAny,
 )
 from llama_index.core.extractors.interface import BaseExtractor
 from llama_index.core.llms.llm import LLM
@@ -482,7 +483,7 @@ class PydanticProgramExtractor(BaseExtractor):
 
     """
 
-    program: BasePydanticProgram = Field(
+    program: SerializeAsAny[BasePydanticProgram] = Field(
         ..., description="Pydantic program to extract."
     )
     input_key: str = Field(

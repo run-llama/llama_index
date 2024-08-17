@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     BaseChatEngine,
@@ -164,7 +164,7 @@ class Task(BaseModel):
     input: str = Field(..., type=str, description="User input")
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
-    memory: BaseMemory = Field(
+    memory: SerializeAsAny[BaseMemory] = Field(
         ...,
         type=BaseMemory,
         description=(
