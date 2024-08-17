@@ -5,14 +5,15 @@
 #### Usage Pattern
 
 ```python
-from llama_index.core import set_global_handler
+import llama_index.core.instrumentation as inst
 
-# Make sure you've installed the 'llama-index-callbacks-langfuse' integration package.
-
-# NOTE: Set your environment variables 'LANGFUSE_SECRET_KEY', 'LANGFUSE_PUBLIC_KEY' and 'LANGFUSE_HOST'
-# as shown in your langfuse.com project settings.
-
-set_global_handler("langfuse")
+langfuse_span_handler = LangfuseSpanHandler(
+    public_key="<Your public key>",
+    secret_key="<Your secret key>",
+    host="<Host URL>",
+)
+dispatcher = inst.get_dispatcher()
+dispatcher.add_span_handler(langfuse_span_handler)
 ```
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)

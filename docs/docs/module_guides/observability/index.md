@@ -20,7 +20,6 @@ Observability is now being handled via the [`instrumentation` module](./instrume
 
 A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
 
-
 ## Usage Pattern
 
 To toggle, you will generally just need to do the following:
@@ -35,7 +34,6 @@ set_global_handler("<handler_name>", **kwargs)
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
 And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
-
 
 ## Partner `One-Click` Integrations
 
@@ -146,6 +144,34 @@ set_global_handler("literalai")
 - [Build a Q&A application with LLamaIndex and monitor it with Literal AI](https://github.com/Chainlit/literal-cookbook/blob/main/python/llamaindex-integration)
 
 ![](../../_static/integrations/literal_ai.gif)
+
+### Langfuse Span Handler
+
+[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed traces of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+
+LlamaIndex provides a span handler for [Langfuse](https://langfuse.com/) which uses the instrumentation API instead of the legacy `CallbackManager`. To get started, [sign up](https://cloud.langfuse.com/auth/sign-up) and create a new project on Langfuse, then obtain an API key.
+
+#### Usage Pattern
+
+First install the Langfuse callback manager.
+
+```
+$ pip install llama-index-callbacks-langfuse
+```
+
+Then, create a span handler instance and add it to the dispatcher.
+
+```py
+import llama_index.core.instrumentation as inst
+
+langfuse_span_handler = LangfuseSpanHandler(
+    public_key="<Your public key>",
+    secret_key="<Your secret key>",
+    host="<Host URL>",
+)
+dispatcher = inst.get_dispatcher()
+dispatcher.add_span_handler(langfuse_span_handler)
+```
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
@@ -455,9 +481,11 @@ llama_index.core.set_global_handler("simple")
 ```
 
 ### MLflow
+
 [MLflow](https://mlflow.org/docs/latest/index.html) is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
 
 ##### Install
+
 ```shell
 pip install mlflow>=2.15 llama-index>=0.10.44
 ```
@@ -488,8 +516,6 @@ print(f"Query engine prediction: {predictions}")
 #### Guides
 
 - [MLflow](https://mlflow.org/docs/latest/llms/llama-index/index.html)
-
-
 
 ## More observability
 
