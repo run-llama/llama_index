@@ -36,16 +36,6 @@ PydanticMetaclass = type(BaseModel)
 class CombinedMeta(_WorkflowMeta, ABCMeta):
     pass
 
-# class CombinedMeta(WorkflowABCMeta, PydanticMetaclass):
-#     def __new__(cls, name, bases, attrs, **kwargs):
-#         # return super().__new__(cls, name, bases, attrs)
-#         # Use Pydantic's metaclass to create the class
-#         return PydanticMetaclass.__new__(cls, name, bases, attrs, **kwargs)
-
-#     def __init__(cls, name, bases, attrs, **kwargs):
-#         WorkflowABCMeta.__init__(cls, name, bases, attrs, **kwargs)
-#         PydanticMetaclass.__init__(cls, name, bases, attrs, **kwargs)
-
 
 class BaseQueryEngine(ChainableMixin, PromptMixin, Workflow, metaclass=CombinedMeta):
     """Base query engine."""
@@ -124,14 +114,6 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, Workflow, metaclass=CombinedM
             response = await self.run(query_bundle=query_bundle)
             query_event.on_end(payload={EventPayload.RESPONSE: response})
         return response
-
-    # @abstractmethod
-    # def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-    #     pass
-
-    # @abstractmethod
-    # async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-    #     pass
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return a query component."""
