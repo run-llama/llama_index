@@ -9,6 +9,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
     ValidationError,
+    SerializeAsAny,
 )
 from llama_index.core.node_parser import (
     CodeSplitter,
@@ -351,7 +352,9 @@ class ConfiguredTransformation(BaseModel, Generic[T]):
     """
 
     name: str
-    component: T = Field(description="Component that implements the transformation")
+    component: SerializeAsAny[T] = Field(
+        description="Component that implements the transformation"
+    )
 
     @classmethod
     def from_component(cls, component: BaseComponent) -> "ConfiguredTransformation":
