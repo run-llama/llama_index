@@ -5,15 +5,16 @@ from typing import List, Optional
 from llama_index.core.schema import Document
 from llama_index.readers.box import BoxReaderBase
 from llama_index.readers.box.BoxAPI.box_api import (
-    _BoxResourcePayload,
-    get_box_files_payload,
-    get_box_folder_payload,
+    get_box_files_details,
+    get_box_folder_files_details,
     get_files_ai_extract_data,
+    box_check_connection,
 )
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_document
 
 from box_sdk_gen import (
-    BoxAPIError,
     BoxClient,
+    File,
 )
 
 
@@ -76,48 +77,36 @@ class BoxReaderAIExtract(BoxReaderBase):
                 data and file metadata.
         """
         # check if the box client is authenticated
-        try:
-            me = self._box_client.users.get_user_me()
-        except BoxAPIError as e:
-            logger.error(
-                f"An error occurred while connecting to Box: {e}", exc_info=True
-            )
-            raise
+        box_check_connection(self._box_client)
 
-        docs = []
-        payloads: List[_BoxResourcePayload] = []
+        docs: List[Document] = []
+        box_files: List[File] = []
 
         # get payload information
         if file_ids is not None:
-            payloads.extend(
-                get_box_files_payload(box_client=self._box_client, file_ids=file_ids)
+            box_files.extend(
+                get_box_files_details(box_client=self._box_client, file_ids=file_ids)
             )
         elif folder_id is not None:
-            payloads.extend(
-                get_box_folder_payload(
+            box_files.extend(
+                get_box_folder_files_details(
                     box_client=self._box_client,
                     folder_id=folder_id,
                     is_recursive=is_recursive,
                 )
             )
 
-        payloads = get_files_ai_extract_data(
+        box_files = get_files_ai_extract_data(
             box_client=self._box_client,
-            payloads=payloads,
+            box_files=box_files,
             ai_prompt=ai_prompt,
         )
 
-        for payload in payloads:
-            file = payload.resource_info
-            ai_response = payload.ai_response
-
-            # create a document
-            doc = Document(
-                # id=file.id,
-                extra_info=file.to_dict(),
-                metadata=file.to_dict(),
-                text=ai_response,
-            )
+        for file in box_files:
+            doc = box_file_to_llama_document(file)
+            doc.text = file.ai_response if file.ai_response else ""
+            doc.metadata["ai_prompt"] = file.ai_prompt
+            doc.metadata["ai_response"] = file.ai_response
             docs.append(doc)
         return docs
 

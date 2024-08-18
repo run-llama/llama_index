@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Poetry
         run: pipx install poetry==${{ env.POETRY_VERSION }}
       - name: Set up python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "poetry"
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: rm -rf llama-index-core/llama_index/core/_static/nltk_cache/corpora/stopwords.zip llama-index-core/llama_index/core/_static/nltk_cache/tokenizers/punkt.zip
       - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v1.17
+        uses: JRubics/poetry-publish@v2.0
         with:
           pypi_token: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
           ignore_dev_requirements: "yes"

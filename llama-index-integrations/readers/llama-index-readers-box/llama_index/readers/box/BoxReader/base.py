@@ -13,10 +13,10 @@ from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import Field
 
 from llama_index.readers.box.BoxAPI.box_api import (
-    _BoxResourcePayload,
+    add_extra_header_to_box_client,
     box_check_connection,
-    get_box_files_payload,
-    get_box_folder_payload,
+    get_box_files_details,
+    get_box_folder_files_details,
     download_file_by_id,
     get_file_content_by_id,
     search_files,
@@ -27,6 +27,11 @@ from box_sdk_gen import (
     BoxClient,
     SearchForContentScope,
     SearchForContentContentTypes,
+    File,
+)
+
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import (
+    box_file_to_llama_document_metadata,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,7 +48,7 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
         self,
         box_client: BoxClient,
     ):
-        self._box_client = box_client
+        self._box_client = add_extra_header_to_box_client(box_client)
 
     @abstractmethod
     def load_data(
@@ -78,11 +83,11 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
         # Connect to Box
         box_check_connection(self._box_client)
 
-        resource = get_box_files_payload(
+        resource = get_box_files_details(
             box_client=self._box_client, file_ids=[box_file_id]
         )
 
-        return resource[0].resource_info.to_dict()
+        return resource[0].to_dict()
 
     def list_resources(
         self,
@@ -111,21 +116,22 @@ class BoxReaderBase(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
         """
         # Connect to Box
         box_check_connection(self._box_client)
+
         # Get the file resources
-        payloads: List[_BoxResourcePayload] = []
+        box_files: List[File] = []
         if file_ids is not None:
-            payloads.extend(
-                get_box_files_payload(box_client=self._box_client, file_ids=file_ids)
+            box_files.extend(
+                get_box_files_details(box_client=self._box_client, file_ids=file_ids)
             )
         elif folder_id is not None:
-            payloads.extend(
-                get_box_folder_payload(
+            box_files.extend(
+                get_box_folder_files_details(
                     box_client=self._box_client,
                     folder_id=folder_id,
                     is_recursive=is_recursive,
                 )
             )
-        return [payload.resource_info.id for payload in payloads]
+        return [file.id for file in box_files]
 
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         file_id = input_file.name
@@ -311,14 +317,14 @@ class BoxReader(BoxReaderBase):
         box_check_connection(self._box_client)
 
         # Get the file resources
-        payloads: List[_BoxResourcePayload] = []
+        box_files: List[File] = []
         if file_ids is not None:
-            payloads.extend(
-                get_box_files_payload(box_client=self._box_client, file_ids=file_ids)
+            box_files.extend(
+                get_box_files_details(box_client=self._box_client, file_ids=file_ids)
             )
         elif folder_id is not None:
-            payloads.extend(
-                get_box_folder_payload(
+            box_files.extend(
+                get_box_folder_files_details(
                     box_client=self._box_client,
                     folder_id=folder_id,
                     is_recursive=is_recursive,
@@ -326,11 +332,11 @@ class BoxReader(BoxReaderBase):
             )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            payloads = self._download_files(payloads, temp_dir)
+            box_files_with_path = self._download_files(box_files, temp_dir)
 
             file_name_to_metadata = {
-                payload.downloaded_file_path: payload.resource_info.to_dict()
-                for payload in payloads
+                file.downloaded_file_path: box_file_to_llama_document_metadata(file)
+                for file in box_files_with_path
             }
 
             def get_metadata(filename: str) -> Any:
@@ -343,9 +349,7 @@ class BoxReader(BoxReaderBase):
             )
             return simple_loader.load_data()
 
-    def _download_files(
-        self, payloads: List[_BoxResourcePayload], temp_dir: str
-    ) -> List[_BoxResourcePayload]:
+    def _download_files(self, box_files: List[File], temp_dir: str) -> List[File]:
         """
         Downloads Box files and updates the corresponding payloads with local paths.
 
@@ -365,10 +369,12 @@ class BoxReader(BoxReaderBase):
             List[_BoxResourcePayload]: The updated list of _BoxResourcePayload objects
                 with the downloaded_file_path attribute set for each payload.
         """
-        for payload in payloads:
-            file = payload.resource_info
+        box_files_with_path: List[File] = []
+
+        for file in box_files:
             local_path = download_file_by_id(
                 box_client=self._box_client, box_file=file, temp_dir=temp_dir
             )
-            payload.downloaded_file_path = local_path
-        return payloads
+            file.downloaded_file_path = local_path
+            box_files_with_path.append(file)
+        return box_files_with_path

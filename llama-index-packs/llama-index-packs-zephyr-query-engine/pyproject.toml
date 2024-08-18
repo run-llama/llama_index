@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["logan-markewich"]
 name = "llama-index-packs-zephyr-query-engine"
 readme = "README.md"
-version = "0.1.2"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
