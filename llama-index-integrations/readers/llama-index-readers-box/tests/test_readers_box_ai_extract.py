@@ -66,6 +66,7 @@ def test_box_reader_ai_extract_folder(
     docs = reader.load_data(
         folder_id=data["test_folder_invoice_po_id"],
         ai_prompt=AI_PROMPT,
+        is_recursive=True,
     )
     assert len(docs) > 2
 
@@ -95,7 +96,7 @@ def test_box_reader_load_resource(box_client_ccg_integration_testing: BoxClient)
     docs = reader.load_resource(resource_id, ai_prompt=AI_PROMPT)
     assert docs is not None
     assert len(docs) == 1
-    assert docs[0].extra_info["id"] == resource_id
+    assert docs[0].metadata["box_file_id"] == resource_id
     doc_0 = json.loads(docs[0].text)
     assert doc_0["doc_type"] == "Invoice"
     assert doc_0["total"] == "$1,050"
