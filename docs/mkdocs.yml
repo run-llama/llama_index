@@ -121,6 +121,7 @@ nav:
           - ./examples/cookbooks/GraphRAG_v1.ipynb
           - ./examples/cookbooks/GraphRAG_v2.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
+          - ./examples/cookbooks/cleanlab_tlm_rag.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
           - ./examples/cookbooks/crewai_llamaindex.ipynb
@@ -635,12 +636,16 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
+          - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
+          - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/long_rag_pack.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/self_discover_workflow.ipynb
           - ./examples/workflow/sub_question_query_engine.ipynb
           - ./examples/workflow/workflows_cookbook.ipynb
   - Component Guides:
