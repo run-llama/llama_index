@@ -3,6 +3,7 @@ from typing import TypeVar, Iterable, AsyncIterator
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 
+from gigachat.models import ChatCompletionChunk, ChoicesChunk, MessagesChunk
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatMessage
 
@@ -102,7 +103,36 @@ async def test_achat(mock_gigachat):
 def test_stream_complete(mock_gigachat):
     # Arrange
     mock_gigachat_instance = mock_gigachat.return_value.__enter__.return_value
-    mock_gigachat_instance.stream.return_value = iter(["Pa", "ris"])
+    mock_gigachat_instance.stream.return_value = iter(
+        [
+            ChatCompletionChunk(
+                choices=[
+                    ChoicesChunk(
+                        delta=MessagesChunk(
+                            content="Pa",
+                        ),
+                        index=0,
+                    )
+                ],
+                created=1,
+                model="gigachat",
+                object="stream",
+            ),
+            ChatCompletionChunk(
+                choices=[
+                    ChoicesChunk(
+                        delta=MessagesChunk(
+                            content="ris",
+                        ),
+                        index=1,
+                    )
+                ],
+                created=2,
+                model="gigachat",
+                object="stream",
+            ),
+        ]
+    )
 
     llm = GigaChatLLM()
 
@@ -142,7 +172,38 @@ async def test_astream_complete(mock_gigachat):
 
     # Mock a coroutine that returns an async iterable
     def mock_astream(chat):
-        return AsyncIterWrapper(iter(["Pa", "ris"]))
+        return AsyncIterWrapper(
+            iter(
+                [
+                    ChatCompletionChunk(
+                        choices=[
+                            ChoicesChunk(
+                                delta=MessagesChunk(
+                                    content="Pa",
+                                ),
+                                index=0,
+                            )
+                        ],
+                        created=1,
+                        model="gigachat",
+                        object="stream",
+                    ),
+                    ChatCompletionChunk(
+                        choices=[
+                            ChoicesChunk(
+                                delta=MessagesChunk(
+                                    content="ris",
+                                ),
+                                index=1,
+                            )
+                        ],
+                        created=2,
+                        model="gigachat",
+                        object="stream",
+                    ),
+                ]
+            )
+        )
 
     mock_gigachat_instance.astream = mock_astream
 
