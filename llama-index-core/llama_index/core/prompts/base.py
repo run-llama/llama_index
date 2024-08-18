@@ -15,7 +15,12 @@ from typing import (
 )
 from typing_extensions import Annotated
 
-from llama_index.core.bridge.pydantic import Field, WithJsonSchema, PlainSerializer
+from llama_index.core.bridge.pydantic import (
+    Field,
+    WithJsonSchema,
+    PlainSerializer,
+    SerializeAsAny,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import (
@@ -330,7 +335,7 @@ class ChatPromptTemplate(BasePromptTemplate):
 
 
 class SelectorPromptTemplate(BasePromptTemplate):
-    default_template: BasePromptTemplate
+    default_template: SerializeAsAny[BasePromptTemplate]
     conditionals: Optional[
         List[Tuple[Callable[[BaseLLM], bool], BasePromptTemplate]]
     ] = None
@@ -550,8 +555,8 @@ Prompt = PromptTemplate
 class PromptComponent(QueryComponent):
     """Prompt component."""
 
-    prompt: BasePromptTemplate = Field(..., description="Prompt")
-    llm: Optional[BaseLLM] = Field(
+    prompt: SerializeAsAny[BasePromptTemplate] = Field(..., description="Prompt")
+    llm: Optional[SerializeAsAny[BaseLLM]] = Field(
         default=None, description="LLM to use for formatting prompt."
     )
     format_messages: bool = Field(
