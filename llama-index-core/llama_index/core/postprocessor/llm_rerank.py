@@ -1,7 +1,8 @@
 """LLM reranker."""
+
 from typing import Callable, List, Optional
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
@@ -20,7 +21,7 @@ class LLMRerank(BaseNodePostprocessor):
     """LLM-based reranker."""
 
     top_n: int = Field(description="Top N nodes to return.")
-    choice_select_prompt: BasePromptTemplate = Field(
+    choice_select_prompt: SerializeAsAny[BasePromptTemplate] = Field(
         description="Choice select prompt."
     )
     choice_batch_size: int = Field(description="Batch size for choice select.")

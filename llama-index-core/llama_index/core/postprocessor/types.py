@@ -8,7 +8,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
@@ -71,7 +71,9 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, 
 class PostprocessorComponent(QueryComponent):
     """Postprocessor component."""
 
-    postprocessor: BaseNodePostprocessor = Field(..., description="Postprocessor")
+    postprocessor: SerializeAsAny[BaseNodePostprocessor] = Field(
+        ..., description="Postprocessor"
+    )
 
     class Config:
         arbitrary_types_allowed = True
