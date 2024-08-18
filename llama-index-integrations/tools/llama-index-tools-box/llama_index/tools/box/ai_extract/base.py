@@ -1,15 +1,16 @@
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
-from box_sdk_gen import (
-    BoxClient,
-)
+from box_sdk_gen import BoxClient
 
 from llama_index.readers.box.BoxAPI.box_api import (
     box_check_connection,
-    get_box_files_payload,
+    get_box_files_details,
     get_files_ai_extract_data,
+    add_extra_header_to_box_client,
 )
+
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_document
 
 
 class BoxAIExtractToolSpec(BaseToolSpec):
@@ -45,7 +46,7 @@ class BoxAIExtractToolSpec(BaseToolSpec):
         Args:
             box_client (BoxClient): The BoxClient instance to use for interacting with the Box API.
         """
-        self._box_client = box_client
+        self._box_client = add_extra_header_to_box_client(box_client)
 
     def ai_extract(
         self,
@@ -67,25 +68,19 @@ class BoxAIExtractToolSpec(BaseToolSpec):
         box_check_connection(self._box_client)
 
         # get payload information
-        payloads = get_box_files_payload(
+        box_file = get_box_files_details(
             box_client=self._box_client, file_ids=[file_id]
-        )
+        )[0]
 
-        payloads = get_files_ai_extract_data(
+        box_file = get_files_ai_extract_data(
             box_client=self._box_client,
-            payloads=payloads,
+            box_files=[box_file],
             ai_prompt=ai_prompt,
-        )
+        )[0]
 
-        for payload in payloads:
-            file = payload.resource_info
-            ai_response = payload.ai_response
-
-            # create a document
-            doc = Document(
-                extra_info=file.to_dict(),
-                metadata=file.to_dict(),
-                text=ai_response,
-            )
+        doc = box_file_to_llama_document(box_file)
+        doc.text = box_file.ai_response if box_file.ai_response else ""
+        doc.metadata["ai_prompt"] = box_file.ai_prompt
+        doc.metadata["ai_response"] = box_file.ai_response
 
         return doc

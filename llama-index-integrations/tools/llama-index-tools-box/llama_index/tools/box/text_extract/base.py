@@ -7,9 +7,12 @@ from box_sdk_gen import (
 
 from llama_index.readers.box.BoxAPI.box_api import (
     box_check_connection,
-    get_box_files_payload,
+    get_box_files_details,
     get_text_representation,
+    add_extra_header_to_box_client,
 )
+
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_document
 
 
 class BoxTextExtractToolSpec(BaseToolSpec):
@@ -35,7 +38,7 @@ class BoxTextExtractToolSpec(BaseToolSpec):
         Args:
             box_client (BoxClient): The Box client instance.
         """
-        self._box_client = box_client
+        self._box_client = add_extra_header_to_box_client(box_client)
 
     def extract(
         self,
@@ -60,23 +63,15 @@ class BoxTextExtractToolSpec(BaseToolSpec):
         box_check_connection(self._box_client)
 
         # get payload information
-        payloads = get_box_files_payload(
+        box_file = get_box_files_details(
             box_client=self._box_client, file_ids=[file_id]
-        )
+        )[0]
 
-        payloads = get_text_representation(
+        box_file = get_text_representation(
             box_client=self._box_client,
-            payloads=payloads,
-        )
+            box_files=[box_file],
+        )[0]
 
-        for payload in payloads:
-            file = payload.resource_info
-
-            # create a document
-            doc = Document(
-                extra_info=file.to_dict(),
-                metadata=file.to_dict(),
-                text=payload.text_representation if payload.text_representation else "",
-            )
-
+        doc = box_file_to_llama_document(box_file)
+        doc.text = box_file.text_representation if box_file.text_representation else ""
         return doc

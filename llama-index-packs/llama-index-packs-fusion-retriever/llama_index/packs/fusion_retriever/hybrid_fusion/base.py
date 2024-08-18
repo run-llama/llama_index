@@ -1,8 +1,9 @@
 """Hybrid Fusion Retriever Pack."""
+
 import os
 from typing import Any, Dict, List
 
-from llama_index.core.indices.service_context import ServiceContext
+from llama_index.core import Settings
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -32,7 +33,7 @@ class HybridFusionRetrieverPack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        service_context = ServiceContext.from_defaults(chunk_size=chunk_size)
+        Settings.chunk_size = chunk_size
         if cache_dir is not None and os.path.exists(cache_dir):
             # Load from cache
             from llama_index import StorageContext, load_index_from_storage
@@ -42,11 +43,9 @@ class HybridFusionRetrieverPack(BaseLlamaPack):
             # load index
             index = load_index_from_storage(storage_context)
         elif documents is not None:
-            index = VectorStoreIndex.from_documents(
-                documents=documents, service_context=service_context
-            )
+            index = VectorStoreIndex.from_documents(documents=documents)
         else:
-            index = VectorStoreIndex(nodes, service_context=service_context)
+            index = VectorStoreIndex(nodes)
 
         if cache_dir is not None and not os.path.exists(cache_dir):
             index.storage_context.persist(persist_dir=cache_dir)
