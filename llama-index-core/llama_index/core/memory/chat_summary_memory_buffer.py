@@ -8,6 +8,7 @@ from llama_index.core.bridge.pydantic import (
     PrivateAttr,
     model_validator,
     field_serializer,
+    SerializeAsAny,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
@@ -40,7 +41,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     token_limit: int
     count_initial_tokens: bool = False
-    llm: Optional[LLM] = None
+    llm: Optional[SerializeAsAny[LLM]] = None
     summarize_prompt: Optional[str] = None
     tokenizer_fn: Callable[[str], List] = Field(
         # NOTE: mypy does not handle the typing here well, hence the cast
@@ -48,7 +49,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         exclude=True,
     )
 
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
+    chat_store: SerializeAsAny[BaseChatStore] = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     _token_count: int = PrivateAttr(default=0)

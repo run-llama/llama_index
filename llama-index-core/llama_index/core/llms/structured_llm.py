@@ -18,7 +18,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
@@ -43,7 +43,7 @@ class StructuredLLM(LLM):
 
     """
 
-    llm: LLM
+    llm: SerializeAsAny[LLM]
     output_cls: Type[BaseModel] = Field(
         ..., description="Output class for the structured LLM.", exclude=True
     )
@@ -182,7 +182,7 @@ class StructuredLLMComponent(QueryComponent):
 
     """
 
-    llm_component: BaseLLMComponent
+    llm_component: SerializeAsAny[BaseLLMComponent]
 
     class Config:
         arbitrary_types_allowed = True
