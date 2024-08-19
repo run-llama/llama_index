@@ -53,6 +53,23 @@ class RemoteReader(BaseReader):
         from urllib.parse import urlparse
         from urllib.request import Request, urlopen
 
+        # check the URL
+        parsed_url = urlparse(url)
+
+        # Check if the scheme is http or https
+        if parsed_url.scheme not in (
+            "http",
+            "https",
+            "ftp",
+            "ws",
+            "wss",
+            "sftp",
+            "ftps",
+        ):
+            raise ValueError(
+                "Invalid URL scheme. Only http, https, ftp, ftps, sftp, ws, and wss are allowed."
+            )
+
         extra_info = {"Source": url}
 
         req = Request(url, headers={"User-Agent": "Magic Browser"})
