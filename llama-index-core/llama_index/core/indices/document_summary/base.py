@@ -215,7 +215,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
             summary_nodes_with_embedding = []
             for node in summary_nodes:
-                node_with_embedding = node.copy()
+                node_with_embedding = node.model_copy()
                 node_with_embedding.embedding = id_to_embed_map[node.node_id]
                 summary_nodes_with_embedding.append(node_with_embedding)
             self._vector_store.add(summary_nodes_with_embedding)

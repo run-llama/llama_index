@@ -51,7 +51,7 @@ def _parse_tool_outputs(
 
 def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
     """Get function tool."""
-    schema = output_cls.schema()
+    schema = output_cls.model_json_schema()
     schema_description = schema.get("description", None)
 
     # NOTE: this does not specify the schema in the function signature,

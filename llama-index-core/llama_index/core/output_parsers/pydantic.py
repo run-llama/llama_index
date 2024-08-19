@@ -45,7 +45,7 @@ class PydanticOutputParser(ChainableOutputParser):
 
     def get_format_string(self, escape_json: bool = True) -> str:
         """Format string."""
-        schema_dict = self._output_cls.schema()
+        schema_dict = self._output_cls.model_json_schema()
         for key in self._excluded_schema_keys_from_format:
             del schema_dict[key]
 

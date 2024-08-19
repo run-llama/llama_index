@@ -85,7 +85,7 @@ class TaskStep(BaseModel):
 
     """
 
-    task_id: str = Field(..., diescription="Task ID")
+    task_id: str = Field(..., description="Task ID")
     step_id: str = Field(..., description="Step ID")
     input: Optional[str] = Field(default=None, description="User input")
     # memory: BaseMemory = Field(
