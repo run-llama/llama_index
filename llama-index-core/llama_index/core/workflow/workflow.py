@@ -335,6 +335,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
+        requested_services: Set[str] = set()
 
         for name, step_func in self._get_steps().items():
             step_config: Optional[StepConfig] = getattr(
@@ -352,6 +353,8 @@ class Workflow(metaclass=_WorkflowMeta):
                     continue
 
                 produced_events.add(event_type)
+
+            requested_services.update(step_config.services)
 
         # Check if all consumed events are produced
         unconsumed_events = consumed_events - produced_events
@@ -374,3 +377,10 @@ class Workflow(metaclass=_WorkflowMeta):
         # Check if there's at least one step that produces StopEvent
         if StopEvent not in produced_events:
             raise WorkflowValidationError("No step produces StopEvent")
+
+        # Check all the requested services are available
+        avail = set(self._service_manager._services.keys())
+        missing = avail - requested_services
+        if missing:
+            msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
+            raise WorkflowValidationError(msg)
