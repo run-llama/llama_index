@@ -313,7 +313,7 @@ class ChatPromptTemplate(BasePromptTemplate):
             # if there's mappings specified, make sure those are used
             content = content_template.format(**relevant_kwargs)
 
-            message: ChatMessage = message_template.copy()
+            message: ChatMessage = message_template.model_copy()
             message.content = content
             messages.append(message)
 
