@@ -27,6 +27,9 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: "poetry"
           cache-dependency-path: "**/poetry.lock"
+      - name: Clear python cache
+        shell: bash
+        run: poetry cache clear --all pypi
       - name: Install deps
         shell: bash
         run: pip install -e .
