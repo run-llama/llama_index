@@ -92,7 +92,7 @@ def test_tree_summarize_output_cls(
     full_response = "\n".join(texts)
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
     assert isinstance(response, TestModel)
-    assert response.dict() == response_dict
+    assert response.model_dump() == response_dict
 
 
 def test_tree_summarize_use_async(

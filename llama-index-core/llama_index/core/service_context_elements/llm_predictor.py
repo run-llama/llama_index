@@ -33,10 +33,14 @@ logger = logging.getLogger(__name__)
 class BaseLLMPredictor(BaseComponent, DispatcherSpanMixin, ABC):
     """Base LLM Predictor."""
 
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().dict(**kwargs)
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().model_dump(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        """Keep for backwards compatibility."""
+        return self.model_dump(**kwargs)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = super().to_dict(**kwargs)
