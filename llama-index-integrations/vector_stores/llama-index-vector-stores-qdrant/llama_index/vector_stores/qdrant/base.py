@@ -723,7 +723,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             assert (
                 self._sparse_query_fn is not None
             ), "No valid sparse embedding is set up."
-            sparse_query_embedding = self._sparse_query_fn([query.query_str])
+            _idx_batch, _val_batch = self._sparse_query_fn([query.query_str])
+            sparse_query_embedding = (_idx_batch[0], _val_batch[0])
         return sparse_query_embedding
 
     def _construct_requests(
@@ -755,8 +756,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         # Dynamically switch between the old and new sparse vector name
                         name=self._sparse_vector_name,
                         vector=rest.SparseVector(
-                            indices=sparse_indices[0],
-                            values=sparse_embedding[0],
+                            indices=sparse_indices,
+                            values=sparse_embedding,
                         ),
                     ),
                     limit=query.sparse_top_k or query.similarity_top_k,
