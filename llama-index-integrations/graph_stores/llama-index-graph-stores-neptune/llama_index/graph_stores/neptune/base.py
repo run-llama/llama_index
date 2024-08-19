@@ -99,7 +99,7 @@ class NeptuneBaseGraphStore(GraphStore):
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the Neptune KG store."""
         if refresh or not self.schema:
-            self.schema = refresh_schema(self.query, self._get_summary())
+            self.schema = refresh_schema(self.query, self._get_summary())["schema_str"]
 
         return self.schema
 
