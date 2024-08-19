@@ -12,11 +12,9 @@ from typing import (
     Type,
 )
 
-from llama_index.agent.nvidia.step import NVIDIAAgentWorker
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.objects.base import ObjectRetriever
@@ -24,6 +22,9 @@ from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool
 from llama_index.llms.nvidia import NVIDIA
 from llama_index.llms.openai.utils import OpenAIToolCall
+
+# as an agent
+from llama_index.agent.openai import OpenAIAgentWorker
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
@@ -51,7 +52,7 @@ class NVIDIAAgent(AgentRunner):
     ) -> None:
         """Init params."""
         callback_manager = callback_manager or llm.callback_manager
-        step_engine = NVIDIAAgentWorker.from_tools(
+        step_engine = OpenAIAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
             llm=llm,
@@ -74,7 +75,7 @@ class NVIDIAAgent(AgentRunner):
         cls,
         tools: Optional[List[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        llm: Optional[LLM] = None,
+        llm: Optional[NVIDIA] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
@@ -98,8 +99,6 @@ class NVIDIAAgent(AgentRunner):
 
         chat_history = chat_history or []
         llm = llm or Settings.llm
-        if not isinstance(llm, NVIDIA):
-            raise ValueError("llm must be a NVIDIA instance")
 
         if callback_manager is not None:
             llm.callback_manager = callback_manager

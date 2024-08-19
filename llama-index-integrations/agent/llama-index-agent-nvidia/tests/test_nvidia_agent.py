@@ -14,7 +14,7 @@ from llama_index.core.agent.function_calling.step import (
 from llama_index.core.base.agent.types import TaskStepOutput
 import pytest
 from llama_index.agent.nvidia.base import NVIDIAAgent
-from llama_index.agent.nvidia.step import (
+from llama_index.agent.openai.step import (
     call_tool_with_error_handling,
     advanced_tool_call_parser,
 )
@@ -203,7 +203,7 @@ def test_chat_basic(
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
 
     agent = NVIDIAAgent.from_tools(
         tools=[add_tool],
@@ -225,7 +225,7 @@ async def test_achat_basic(
     mock_instance = MockAsyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
 
     agent = NVIDIAAgent.from_tools(
         tools=[add_tool],
@@ -246,7 +246,7 @@ def test_stream_chat_basic(
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.side_effect = mock_chat_stream
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
 
     agent = NVIDIAAgent.from_tools(
         tools=[add_tool],
@@ -291,7 +291,7 @@ def test_chat_no_functions(MockSyncOpenAI: MagicMock, masked_env_var) -> None:
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
 
     agent = NVIDIAAgent.from_tools(
         llm=llm,
@@ -334,7 +334,7 @@ def test_call_tool_with_malformed_function_call(
         function=malformed_echo_function
     )
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     # sync
     agent = NVIDIAAgent.from_tools(
         tools=[echo_tool],
@@ -366,7 +366,7 @@ def test_call_tool_with_malformed_function_call_and_parser(
         function=malformed_echo_function
     )
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     # sync
     agent = NVIDIAAgent.from_tools(
         tools=[echo_tool],
@@ -390,7 +390,7 @@ def test_add_step(
     mock_instance = MockSyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     # sync
     agent = NVIDIAAgent.from_tools(
         tools=[add_tool],
@@ -429,7 +429,7 @@ async def test_async_add_step(
 ) -> None:
     mock_instance = MockAsyncOpenAI.return_value
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     # async
     agent = NVIDIAAgent.from_tools(
         tools=[add_tool],
@@ -476,7 +476,7 @@ def test_run_step_returns_message_if_tool_not_found(
     mock_instance.chat.completions.create.return_value = mock_chat_completion_tool_call(
         function=malformed_echo_function
     )
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     agent = NVIDIAAgent.from_tools(tools=[], llm=llm)
 
     task = agent.create_task("")
@@ -503,7 +503,7 @@ async def test_arun_step_returns_message_if_tool_not_found(
         mock_achat_completion_tool_call(function=echo_function)
     )
 
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     agent = NVIDIAAgent.from_tools(tools=[], llm=llm)
 
     task = agent.create_task("")
@@ -533,7 +533,7 @@ async def test_run_step_returns_correct_sources_history(
     masked_env_var,
 ) -> None:
     num_steps = 4
-    llm = NVIDIA(model="meta/llama-3.1-8b-instruct")
+    llm = NVIDIA(model="meta/llama-3.1-8b-instruct", is_function_calling_model=True)
     agent = NVIDIAAgent.from_tools(
         tools=[echo_tool],
         llm=llm,
