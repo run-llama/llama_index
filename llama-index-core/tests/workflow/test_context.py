@@ -37,3 +37,46 @@ async def test_collect_events():
     workflow = TestWorkflow()
     result = await workflow.run()
     assert result == [ev1, ev2]
+
+
+@pytest.mark.asyncio()
+async def test_set_global():
+    c1 = Context()
+    await c1.set(key="test_key", value=42)
+
+    c2 = Context(parent=c1)
+    assert await c2.get(key="test_key") == 42
+
+
+@pytest.mark.asyncio()
+async def test_set_private():
+    c1 = Context()
+    await c1.set(key="test_key", value=42, make_private=True)
+    assert await c1.get(key="test_key") == 42
+
+    c2 = Context(parent=c1)
+    with pytest.raises(ValueError):
+        await c2.get(key="test_key")
+
+
+@pytest.mark.asyncio()
+async def test_set_private_duplicate():
+    c1 = Context()
+    await c1.set(key="test_key", value=42)
+
+    c2 = Context(parent=c1)
+    with pytest.raises(ValueError):
+        await c2.set(key="test_key", value=99, make_private=True)
+
+
+@pytest.mark.asyncio()
+async def test_get_default():
+    c1 = Context()
+    assert await c1.get(key="test_key", default=42) == 42
+
+
+@pytest.mark.asyncio()
+async def test_legacy_data():
+    c1 = Context()
+    await c1.set(key="test_key", value=42)
+    assert c1.data["test_key"] == 42

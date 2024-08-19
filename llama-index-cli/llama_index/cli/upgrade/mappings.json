@@ -397,7 +397,6 @@
   "generate_qa_embedding_pairs": "llama_index.finetuning",
   "SentenceTransformersFinetuneEngine": "llama_index.finetuning",
   "EmbeddingAdapterFinetuneEngine": "llama_index.finetuning",
-  "GradientFinetuneEngine": "llama_index.finetuning",
   "generate_cohere_reranker_finetuning_dataset": "llama_index.finetuning",
   "CohereRerankerFinetuneEngine": "llama_index.finetuning",
   "MistralAIFinetuneEngine": "llama_index.finetuning",
