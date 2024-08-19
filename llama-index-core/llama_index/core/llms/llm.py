@@ -36,6 +36,7 @@ from llama_index.core.bridge.pydantic import (
     Field,
     field_validator,
     model_validator,
+    ConfigDict,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -854,11 +855,9 @@ class LLM(BaseLLM):
 class BaseLLMComponent(QueryComponent):
     """Base LLM component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     llm: LLM = Field(..., description="LLM")
     streaming: bool = Field(default=False, description="Streaming mode")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

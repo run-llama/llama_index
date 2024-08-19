@@ -191,11 +191,9 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 class BaseMultiModalComponent(QueryComponent):
     """Base LLM component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     multi_modal_llm: MultiModalLLM = Field(..., description="LLM")
     streaming: bool = Field(default=False, description="Streaming mode")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

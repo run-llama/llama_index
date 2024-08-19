@@ -8,7 +8,7 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 
 
@@ -48,6 +48,7 @@ class AgentInputComponent(QueryComponent):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -75,9 +76,6 @@ class AgentInputComponent(QueryComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -157,6 +155,7 @@ class AgentFnComponent(BaseAgentComponent):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -193,9 +192,6 @@ class AgentFnComponent(BaseAgentComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -267,12 +263,10 @@ class CustomAgentComponent(BaseAgentComponent):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: Optional[CallbackManager] = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

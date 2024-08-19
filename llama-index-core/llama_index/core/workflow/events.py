@@ -1,6 +1,6 @@
 from typing import Any, Dict, Type
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 
 
 class Event(BaseModel):
@@ -43,10 +43,8 @@ class Event(BaseModel):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(self, **params: Any):
         """__init__.

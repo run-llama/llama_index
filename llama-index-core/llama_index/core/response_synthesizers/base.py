@@ -26,7 +26,7 @@ from llama_index.core.base.response.schema import (
     StreamingResponse,
     AsyncStreamingResponse,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.prompt_helper import PromptHelper
@@ -344,10 +344,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 class SynthesizerComponent(QueryComponent):
     """Synthesizer component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     synthesizer: BaseSynthesizer = Field(..., description="Synthesizer")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

@@ -8,6 +8,7 @@ from llama_index.core.bridge.pydantic import (
     Field,
     WithJsonSchema,
     BeforeValidator,
+    ConfigDict,
 )
 from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.core.node_parser.node_utils import (
@@ -41,6 +42,7 @@ IdFuncCallable = Annotated[
 class NodeParser(TransformComponent, ABC):
     """Base interface for node parser."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     include_metadata: bool = Field(
         default=True, description="Whether or not to consider metadata when splitting."
     )
@@ -54,9 +56,6 @@ class NodeParser(TransformComponent, ABC):
         default=default_id_func,
         description="Function to generate node IDs.",
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @abstractmethod
     def _parse_nodes(

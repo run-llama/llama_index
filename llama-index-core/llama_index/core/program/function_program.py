@@ -17,6 +17,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     create_model,
     ValidationError,
+    ConfigDict,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.base.llms.types import ChatResponse
@@ -68,8 +69,7 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
 
 class FlexibleModel(BaseModel):
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:

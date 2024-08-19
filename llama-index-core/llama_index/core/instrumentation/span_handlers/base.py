@@ -3,13 +3,14 @@ import threading
 from abc import abstractmethod
 from typing import Any, Dict, List, Generic, Optional, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.instrumentation.span.base import BaseSpan
 
 T = TypeVar("T", bound=BaseSpan)
 
 
 class BaseSpanHandler(BaseModel, Generic[T]):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     open_spans: Dict[str, T] = Field(
         default_factory=dict, description="Dictionary of open spans."
     )
@@ -23,9 +24,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         default={}, description="Id of current spans in a given thread."
     )
     _lock: Optional[threading.Lock] = PrivateAttr()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,

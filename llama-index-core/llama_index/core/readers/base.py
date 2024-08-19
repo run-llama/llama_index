@@ -11,7 +11,7 @@ from typing import (
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Document as LCDocument
-from llama_index.core.bridge.pydantic import Field, GetJsonSchemaHandler
+from llama_index.core.bridge.pydantic import Field, GetJsonSchemaHandler, ConfigDict
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.schema import BaseComponent, Document
 
@@ -67,13 +67,11 @@ class BaseReader(ABC):
 class BasePydanticReader(BaseReader, BaseComponent):
     """Serialiable Data Loader with Pydantic."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     is_remote: bool = Field(
         default=False,
         description="Whether the data is loaded from a remote API or a local file.",
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class ResourcesReaderMixin(ABC):
@@ -214,14 +212,12 @@ class ResourcesReaderMixin(ABC):
 class ReaderConfig(BaseComponent):
     """Represents a reader and it's input arguments."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     reader: BasePydanticReader = Field(..., description="Reader to use.")
     reader_args: List[Any] = Field(default_factory=list, description="Reader args.")
     reader_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Reader kwargs."
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @classmethod
     def class_name(cls) -> str:

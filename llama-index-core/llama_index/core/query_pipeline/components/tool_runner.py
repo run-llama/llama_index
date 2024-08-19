@@ -8,7 +8,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks import (
     CallbackManager,
     CBEventType,
@@ -21,6 +21,7 @@ from llama_index.core.tools import AsyncBaseTool, adapt_to_async_tool
 class ToolRunnerComponent(QueryComponent):
     """Tool runner component that takes in a set of tools."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     tool_dict: Dict[str, AsyncBaseTool] = Field(
         ..., description="Dictionary of tool names to tools."
     )
@@ -41,9 +42,6 @@ class ToolRunnerComponent(QueryComponent):
         super().__init__(
             tool_dict=tool_dict, callback_manager=callback_manager, **kwargs
         )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

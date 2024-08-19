@@ -10,7 +10,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -88,9 +88,7 @@ class LLMPredictor(BaseLLMPredictor):
     deprecate this class and move all functionality into the LLM class.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     system_prompt: Optional[str]
     query_wrapper_prompt: Optional[BasePromptTemplate]
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT

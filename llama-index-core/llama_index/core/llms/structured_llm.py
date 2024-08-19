@@ -18,7 +18,12 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
@@ -182,10 +187,8 @@ class StructuredLLMComponent(QueryComponent):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     llm_component: SerializeAsAny[BaseLLMComponent]
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

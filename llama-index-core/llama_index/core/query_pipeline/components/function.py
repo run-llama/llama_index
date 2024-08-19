@@ -8,7 +8,7 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 
 
@@ -35,6 +35,7 @@ def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
 class FnComponent(QueryComponent):
     """Query component that takes in an arbitrary function."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -66,9 +67,6 @@ class FnComponent(QueryComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

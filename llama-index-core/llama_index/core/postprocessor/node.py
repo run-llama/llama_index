@@ -3,7 +3,12 @@
 import logging
 from typing import Dict, List, Optional, cast
 
-from llama_index.core.bridge.pydantic import Field, field_validator, SerializeAsAny
+from llama_index.core.bridge.pydantic import (
+    Field,
+    field_validator,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
@@ -280,6 +285,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     docstore: BaseDocumentStore
     service_context: Optional[ServiceContext] = None
     llm: Optional[SerializeAsAny[LLM]] = None
@@ -288,11 +294,6 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
     response_mode: ResponseMode = Field(default=ResponseMode.COMPACT)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     @classmethod
     def class_name(cls) -> str:

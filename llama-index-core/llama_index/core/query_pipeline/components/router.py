@@ -11,7 +11,12 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.utils import print_text
 
@@ -19,10 +24,8 @@ from llama_index.core.utils import print_text
 class SelectorComponent(QueryComponent):
     """Selector component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     selector: BaseSelector = Field(..., description="Selector")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -75,6 +78,7 @@ class RouterComponent(QueryComponent):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     selector: SerializeAsAny[BaseSelector] = Field(..., description="Selector")
     choices: List[str] = Field(
         ..., description="Choices (must correspond to components)"
@@ -85,9 +89,6 @@ class RouterComponent(QueryComponent):
     verbose: bool = Field(default=False, description="Verbose")
 
     _query_keys: List[str] = PrivateAttr()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,

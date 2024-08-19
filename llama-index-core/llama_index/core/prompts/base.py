@@ -39,7 +39,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
@@ -61,6 +61,7 @@ AnnotatedCallable = Annotated[
 
 
 class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     metadata: Dict[str, Any]
     template_vars: List[str]
     kwargs: Dict[str, str]
@@ -119,9 +120,6 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):
         new_kwargs = self._map_function_vars(kwargs)
         # map template vars (to point to existing format vars in string template)
         return self._map_template_vars(new_kwargs)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @abstractmethod
     def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
@@ -555,6 +553,7 @@ Prompt = PromptTemplate
 class PromptComponent(QueryComponent):
     """Prompt component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     prompt: SerializeAsAny[BasePromptTemplate] = Field(..., description="Prompt")
     llm: Optional[SerializeAsAny[BaseLLM]] = Field(
         default=None, description="LLM to use for formatting prompt."
@@ -563,9 +562,6 @@ class PromptComponent(QueryComponent):
         default=False,
         description="Whether to format the prompt into a list of chat messages.",
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
