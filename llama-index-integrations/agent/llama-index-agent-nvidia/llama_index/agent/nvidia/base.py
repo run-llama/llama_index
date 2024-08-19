@@ -18,7 +18,6 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.objects.base import ObjectRetriever
-from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool
 from llama_index.llms.nvidia import NVIDIA
 from llama_index.llms.openai.utils import OpenAIToolCall
@@ -40,10 +39,10 @@ class NVIDIAAgent(AgentRunner):
     def __init__(
         self,
         tools: List[BaseTool],
-        llm: NVIDIA,
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         verbose: bool = False,
+        llm: Optional[NVIDIA] = None,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
         default_tool_choice: str = "auto",
         callback_manager: Optional[CallbackManager] = None,
@@ -51,6 +50,8 @@ class NVIDIAAgent(AgentRunner):
         tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
     ) -> None:
         """Init params."""
+        if not llm:
+            llm = NVIDIA("meta/llama-3.1-70b-instruct", is_function_calling_model=True)
         callback_manager = callback_manager or llm.callback_manager
         step_engine = OpenAIAgentWorker.from_tools(
             tools=tools,
@@ -98,7 +99,8 @@ class NVIDIAAgent(AgentRunner):
         tools = tools or []
 
         chat_history = chat_history or []
-        llm = llm or Settings.llm
+        if not llm:  # default model
+            llm = NVIDIA("meta/llama-3.1-70b-instruct", is_function_calling_model=True)
 
         if callback_manager is not None:
             llm.callback_manager = callback_manager
