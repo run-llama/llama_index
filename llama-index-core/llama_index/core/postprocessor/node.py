@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List, Optional, cast
 
-from llama_index.core.bridge.pydantic import Field, field_validator
+from llama_index.core.bridge.pydantic import Field, field_validator, SerializeAsAny
 from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
@@ -282,7 +282,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     docstore: BaseDocumentStore
     service_context: Optional[ServiceContext] = None
-    llm: Optional[LLM] = None
+    llm: Optional[SerializeAsAny[LLM]] = None
     num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)

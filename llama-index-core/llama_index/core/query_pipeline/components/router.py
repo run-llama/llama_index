@@ -1,6 +1,5 @@
 """Router components."""
 
-
 from typing import Any, Dict, List
 
 from llama_index.core.base.base_selector import BaseSelector
@@ -12,7 +11,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.utils import print_text
 
@@ -76,11 +75,11 @@ class RouterComponent(QueryComponent):
 
     """
 
-    selector: BaseSelector = Field(..., description="Selector")
+    selector: SerializeAsAny[BaseSelector] = Field(..., description="Selector")
     choices: List[str] = Field(
         ..., description="Choices (must correspond to components)"
     )
-    components: List[QueryComponent] = Field(
+    components: List[SerializeAsAny[QueryComponent]] = Field(
         ..., description="Components (must correspond to choices)"
     )
     verbose: bool = Field(default=False, description="Verbose")
