@@ -78,7 +78,7 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             )
-            answer = answer.json()
+            answer = answer.model_dump_json()
         else:
             answer = self._llm.predict(
                 self._prompt,
@@ -93,7 +93,7 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             )
-            answer = answer.json()
+            answer = answer.model_dump_json()
         else:
             answer = await self._llm.apredict(
                 self._prompt,

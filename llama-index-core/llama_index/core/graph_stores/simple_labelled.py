@@ -166,7 +166,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         if fs is None:
             fs = fsspec.filesystem("file")
         with fs.open(persist_path, "w") as f:
-            f.write(self.graph.json())
+            f.write(self.graph.model_dump_json())
 
     @classmethod
     def from_persist_path(

@@ -110,7 +110,9 @@ class StructuredLLM(LLM):
             output_cls=self.output_cls, prompt=chat_prompt
         )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
             raw=output,
         )
 
@@ -162,7 +164,9 @@ class StructuredLLM(LLM):
             output_cls=self.output_cls, prompt=chat_prompt
         )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
             raw=output,
         )
 

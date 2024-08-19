@@ -123,7 +123,7 @@ class TreeSummarize(BaseSynthesizer):
 
             summary_responses = await asyncio.gather(*tasks)
             if self._output_cls is not None:
-                summaries = [summary.json() for summary in summary_responses]
+                summaries = [summary.model_dump_json() for summary in summary_responses]
             else:
                 summaries = summary_responses
 
@@ -200,7 +200,9 @@ class TreeSummarize(BaseSynthesizer):
                 summary_responses = run_async_tasks(tasks)
 
                 if self._output_cls is not None:
-                    summaries = [summary.json() for summary in summary_responses]
+                    summaries = [
+                        summary.model_dump_json() for summary in summary_responses
+                    ]
                 else:
                     summaries = summary_responses
             else:
@@ -223,7 +225,7 @@ class TreeSummarize(BaseSynthesizer):
                         )
                         for text_chunk in text_chunks
                     ]
-                    summaries = [summary.json() for summary in summaries]
+                    summaries = [summary.model_dump_json() for summary in summaries]
 
             # recursively summarize the summaries
             return self.get_response(
