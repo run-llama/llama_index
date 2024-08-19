@@ -278,11 +278,13 @@ class Bedrock(LLM):
             max_retries=self.max_retries,
             stream=True,
             **all_kwargs,
-        )["body"]
+        )
+        response_body = response["body"]
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
 
         def gen() -> CompletionResponseGen:
             content = ""
-            for r in response:
+            for r in response_body:
                 r = json.loads(r["chunk"]["bytes"])
                 content_delta = self._provider.get_text_from_stream_response(r)
                 content += content_delta
