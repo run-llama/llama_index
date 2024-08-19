@@ -255,7 +255,7 @@ class Bedrock(LLM):
         return CompletionResponse(
             text=self._provider.get_text_from_response(response_body),
             raw=response_body,
-            additional_kwargs=self._get_response_token_counts(response_headers)
+            additional_kwargs=self._get_response_token_counts(response_headers),
         )
 
     @llm_completion_callback()
@@ -286,9 +286,12 @@ class Bedrock(LLM):
                 r = json.loads(r["chunk"]["bytes"])
                 content_delta = self._provider.get_text_from_stream_response(r)
                 content += content_delta
-                yield CompletionResponse(text=content, delta=content_delta, raw=r,
-                additional_kwargs = self._get_response_token_counts(
-                    response_headers))
+                yield CompletionResponse(
+                    text=content,
+                    delta=content_delta,
+                    raw=r,
+                    additional_kwargs=self._get_response_token_counts(response_headers),
+                )
 
         return gen()
 
@@ -338,7 +341,4 @@ class Bedrock(LLM):
         if (input_tokens and output_tokens) is None:
             return {}
 
-        return {
-            "prompt_tokens": input_tokens,
-            "completion_tokens": output_tokens
-        }
+        return {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}
