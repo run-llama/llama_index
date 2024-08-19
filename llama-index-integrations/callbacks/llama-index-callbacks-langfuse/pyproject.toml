@@ -13,6 +13,7 @@ contains_example = false
 import_path = "llama_index.callbacks.langfuse"
 
 [tool.llamahub.class_authors]
+LangfuseSpanHandler = "jonathanhliu21"
 langfuse_callback_handler = "llama-index"
 
 [tool.mypy]
