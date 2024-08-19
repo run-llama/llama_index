@@ -58,12 +58,17 @@ class RemoteReader(BaseReader):
 
         # Check if the scheme is http or https
         if parsed_url.scheme in (
-            "file",
-            "javascript",
-            "data",
+            "http",
+            "https",
+            "ftp",
+            "ws",
+            "wss",
+            "sftp",
+            "ftps",
+            "s3",
         ):
             raise ValueError(
-                "Invalid URL scheme. `file`, `javascript`, and `data` schemes are not allowed."
+                "Invalid URL scheme. Only http, https, ftp, ftps, sftp, ws, wss, and s3 are allowed."
             )
 
         extra_info = {"Source": url}
