@@ -42,13 +42,6 @@ class LLMRerank(BaseNodePostprocessor):
 
         llm = llm or Settings.llm
 
-        self._format_node_batch_fn = (
-            format_node_batch_fn or default_format_node_batch_fn
-        )
-        self._parse_choice_select_answer_fn = (
-            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
-        )
-
         super().__init__(
             llm=llm,
             choice_select_prompt=choice_select_prompt,
