@@ -680,7 +680,6 @@
   "LATSAgentWorker": "llama_index.agent.lats",
   "CoAAgentWorker": "llama_index.agent.coa",
   "NVIDIAAgent": "llama_index.agent.nvidia",
-  "NVIDIAAgentWorker": "llama_index.agent.nvidia",
   "PostgresKVStore": "llama_index.storage.kvstore.postgres",
   "AzureKVStore": "llama_index.storage.kvstore.azure",
   "RedisKVStore": "llama_index.storage.kvstore.redis",

@@ -1,6 +1,6 @@
 """NVIDIA Agent.
 
-Simple wrapper around AgentRunner + NVIDIAAgentWorker.
+Simple wrapper around AgentRunner + OpenAIAgentWorker.
 """
 
 from typing import (
@@ -32,7 +32,7 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 class NVIDIAAgent(AgentRunner):
     """NVIDIA agent.
 
-    Subclasses AgentRunner with a NVIDIAAgentWorker.\
+    Subclasses AgentRunner with a OpenAIAgentWorker.\
     ```
 
     """
