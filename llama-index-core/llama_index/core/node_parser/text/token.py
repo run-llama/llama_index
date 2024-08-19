@@ -1,4 +1,5 @@
 """Token splitter."""
+
 import logging
 from typing import Callable, List, Optional
 
@@ -29,7 +30,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     chunk_overlap: int = Field(
         default=DEFAULT_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
-        gte=0,
+        ge=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"

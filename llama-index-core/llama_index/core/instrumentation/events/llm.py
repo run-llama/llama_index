@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from llama_index.core.bridge.pydantic import BaseModel, SerializeAsAny
+from llama_index.core.bridge.pydantic import BaseModel, SerializeAsAny, ConfigDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -101,6 +101,7 @@ class LLMCompletionStartEvent(BaseEvent):
         model_dict (dict): Model dictionary.
     """
 
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     prompt: str
     additional_kwargs: dict
     model_dict: dict
@@ -154,6 +155,7 @@ class LLMChatStartEvent(BaseEvent):
         model_dict (dict): Model dictionary.
     """
 
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     messages: List[ChatMessage]
     additional_kwargs: dict
     model_dict: dict

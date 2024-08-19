@@ -4,9 +4,16 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
 )
 from llama_index.core.query_pipeline.query import QueryPipeline
-from llama_index.core.bridge.pydantic import Field, ConfigDict
+from llama_index.core.bridge.pydantic import Field, ConfigDict, WithJsonSchema
 from llama_index.core.callbacks.base import CallbackManager
 from typing import Any, Dict, Optional, Callable
+from typing_extensions import Annotated
+
+AnnotatedCallable = Annotated[
+    Callable,
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
 
 
 class LoopComponent(QueryComponent):
@@ -14,8 +21,10 @@ class LoopComponent(QueryComponent):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     pipeline: QueryPipeline = Field(..., description="Query pipeline")
-    should_exit_fn: Optional[Callable] = Field(..., description="Should exit function")
-    add_output_to_input_fn: Optional[Callable] = Field(
+    should_exit_fn: Optional[AnnotatedCallable] = Field(
+        ..., description="Should exit function"
+    )
+    add_output_to_input_fn: Optional[AnnotatedCallable] = Field(
         ...,
         description="Add output to input function. If not provided, will reuse the original input for the next iteration. If provided, will call the function to combine the output into the input for the next iteration.",
     )

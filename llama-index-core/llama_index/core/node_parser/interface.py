@@ -34,8 +34,8 @@ def _validate_id_func(v: Any) -> Any:
 IdFuncCallable = Annotated[
     Callable,
     BeforeValidator(_validate_id_func),
-    WithJsonSchema({"type": "string"}),
-    WithJsonSchema({"type": "string"}),
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
 ]
 
 

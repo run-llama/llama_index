@@ -47,7 +47,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     chunk_overlap: int = Field(
         default=SENTENCE_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
-        gte=0,
+        ge=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"

@@ -2,14 +2,26 @@
 
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing_extensions import Annotated
 
 from llama_index.core.base.query_pipeline.query import (
     InputKeys,
     OutputKeys,
     QueryComponent,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    ConfigDict,
+    WithJsonSchema,
+)
 from llama_index.core.callbacks.base import CallbackManager
+
+AnnotatedCallable = Annotated[
+    Callable,
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
@@ -36,8 +48,8 @@ class FnComponent(QueryComponent):
     """Query component that takes in an arbitrary function."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    fn: Callable = Field(..., description="Function to run.")
-    async_fn: Optional[Callable] = Field(
+    fn: AnnotatedCallable = Field(..., description="Function to run.")
+    async_fn: Optional[AnnotatedCallable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
     )
     output_key: str = Field(
