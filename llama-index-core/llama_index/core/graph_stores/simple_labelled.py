@@ -224,7 +224,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
     def to_dict(self) -> dict:
         """Convert to dict."""
-        return self.graph.dict()
+        return self.graph.model_dump()
 
     # NOTE: Unimplemented methods for SimplePropertyGraphStore
 

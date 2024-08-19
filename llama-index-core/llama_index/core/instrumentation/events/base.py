@@ -22,6 +22,10 @@ class BaseEvent(BaseModel):
         return "BaseEvent"
 
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().dict(**kwargs)
+        """Keep for backwards compatibility."""
+        return self.model_dump(**kwargs)
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        data = super().model_dump(**kwargs)
         data["class_name"] = self.class_name()
         return data

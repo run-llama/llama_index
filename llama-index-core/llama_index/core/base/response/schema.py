@@ -62,7 +62,7 @@ class PydanticResponse:
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute, but prioritize the pydantic  response object."""
-        if self.response is not None and name in self.response.dict():
+        if self.response is not None and name in self.response.model_dump():
             return getattr(self.response, name)
         else:
             return None

@@ -544,7 +544,7 @@ class IndexNode(TextNode):
             elif isinstance(self.obj, BaseNode):
                 data["obj"] = doc_to_json(self.obj)
             elif isinstance(self.obj, BaseModel):
-                data["obj"] = self.obj.dict()
+                data["obj"] = self.obj.model_dump()
             else:
                 data["obj"] = json.dumps(self.obj)
         except Exception:

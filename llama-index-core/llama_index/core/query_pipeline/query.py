@@ -279,7 +279,7 @@ class QueryPipeline(QueryComponent):
             self.add_modules(modules)
             if links is not None:
                 for link in links:
-                    self.add_link(**link.dict())
+                    self.add_link(**link.model_dump())
 
     def add_chain(self, chain: Sequence[CHAIN_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
@@ -316,7 +316,7 @@ class QueryPipeline(QueryComponent):
         """Add links to the pipeline."""
         for link in links:
             if isinstance(link, Link):
-                self.add_link(**link.dict())
+                self.add_link(**link.model_dump())
             else:
                 raise ValueError("Link must be of type `Link` or `ConditionalLinks`.")
 

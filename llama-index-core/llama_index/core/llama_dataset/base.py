@@ -85,7 +85,7 @@ class BaseLlamaPredictionDataset(BaseModel):
             predictions = None
             if self.predictions:
                 predictions = [
-                    self._prediction_type.dict(el) for el in self.predictions
+                    self._prediction_type.model_dump(el) for el in self.predictions
                 ]
             data = {
                 "predictions": predictions,
@@ -99,7 +99,9 @@ class BaseLlamaPredictionDataset(BaseModel):
         with open(path) as f:
             data = json.load(f)
 
-        predictions = [cls._prediction_type.parse_obj(el) for el in data["predictions"]]
+        predictions = [
+            cls._prediction_type.model_validate(el) for el in data["predictions"]
+        ]
 
         return cls(
             predictions=predictions,
@@ -135,7 +137,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            examples = [self._example_type.dict(el) for el in self.examples]
+            examples = [self._example_type.model_dump(el) for el in self.examples]
             data = {
                 "examples": examples,
             }

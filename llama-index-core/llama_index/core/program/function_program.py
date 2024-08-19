@@ -258,7 +258,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         new_cur_objects = []
         for obj in cur_objects:
             try:
-                new_obj = self._output_cls.parse_obj(obj.dict())
+                new_obj = self._output_cls.model_validate(obj.model_dump())
             except ValidationError as e:
                 _logger.warning(f"Failed to parse object: {e}")
                 new_obj = obj
