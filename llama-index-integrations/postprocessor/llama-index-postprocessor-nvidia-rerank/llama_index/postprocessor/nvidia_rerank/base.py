@@ -53,6 +53,13 @@ class NVIDIARerank(BaseNodePostprocessor):
         ge=1,
         description="The maximum batch size supported by the inference server.",
     )
+    truncate: Optional[Literal["NONE", "END"]] = Field(
+        description=(
+            "Truncate input text if it exceeds the model's maximum token length. "
+            "Default is model dependent and is likely to raise error if an "
+            "input is too long."
+        ),
+    )
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
     _is_hosted: bool = PrivateAttr(True)
@@ -84,6 +91,9 @@ class NVIDIARerank(BaseNodePostprocessor):
             nvidia_api_key (str, optional): The NVIDIA API key. Defaults to None.
             api_key (str, optional): The API key. Defaults to None.
             base_url (str, optional): The base URL of the on-premises NIM. Defaults to None.
+            truncate (str): "NONE", "END", truncate input text if it exceeds
+                            the model's context length. Default is model dependent and
+                            is likely to raise an error if an input is too long.
             **kwargs: Additional keyword arguments.
 
         API Key:
@@ -92,9 +102,9 @@ class NVIDIARerank(BaseNodePostprocessor):
         super().__init__(model=model, **kwargs)
 
         if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
-            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+            self._base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
         else:
-            base_url = self._validate_url(base_url)
+            self._base_url = self._validate_url(base_url)
 
         self._api_key = get_from_param_or_env(
             "api_key",
@@ -243,6 +253,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             for batch in batched(nodes, self.max_batch_size):
                 payloads = {
                     "model": self.model,
+                    **({"truncate": self.truncate} if self.truncate else {}),
                     "query": {"text": query_bundle.query_str},
                     "passages": [
                         {"text": n.get_content(metadata_mode=MetadataMode.EMBED)}
