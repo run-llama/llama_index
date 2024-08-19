@@ -1,6 +1,6 @@
 import asyncio
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, AsyncGenerator
 
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import StepConfig, step
@@ -45,9 +45,24 @@ class Workflow(metaclass=_WorkflowMeta):
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
+        # Streaming machinery
+        self._streamed_events: asyncio.Queue = asyncio.Queue()
         # Context management
-        self._root_context: Context = Context()
+        self._root_context: Context = Context(workflow=self)
         self._step_to_context: Dict[str, Context] = {}
+
+    async def stream_events(self) -> AsyncGenerator[Event, None]:
+        # In the typical streaming use case, `run()` is not awaited but wrapped in a asyncio.Task. Since we'll be
+        # consuming events produced by `run()`, we must give its Task the chance to run before entering the dequeueing
+        # loop.
+        await asyncio.sleep(0)
+
+        # Enter the dequeuing loop.
+        while True:
+            ev = await self._streamed_events.get()
+            if ev is None:  # FIXME: Should we use a special event?
+                break
+            yield ev
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -200,6 +215,8 @@ class Workflow(metaclass=_WorkflowMeta):
 
         # Reset the events log
         self._accepted_events = []
+        # Init the streaming queue
+        self._streamed_events = asyncio.Queue()
         # Validate the workflow if needed
         self._validate()
         # Start the machinery
@@ -262,6 +279,7 @@ class Workflow(metaclass=_WorkflowMeta):
             self._accepted_events = []
             self._validate()
             self._start(stepwise=True)
+            self._streamed_events = asyncio.Queue()
             # Run the first step
             self.send_event(StartEvent(**kwargs))
 
@@ -316,6 +334,7 @@ class Workflow(metaclass=_WorkflowMeta):
     async def _done(self, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         self._retval = ev.result or None
+        self._streamed_events.put_nowait(None)  # FIXME: send a special event instead?
         # Signal we want to stop the workflow
         raise WorkflowDone
 

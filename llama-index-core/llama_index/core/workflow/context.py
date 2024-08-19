@@ -1,8 +1,11 @@
 from collections import defaultdict
 import asyncio
-from typing import Dict, Any, Optional, List, Type
+from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING
 
 from .events import Event
+
+if TYPE_CHECKING:
+    from .workflow import Workflow
 
 
 class Context:
@@ -16,13 +19,22 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, parent: Optional["Context"] = None) -> None:
-        # Global data storage
+    def __init__(
+        self, parent: Optional["Context"] = None, workflow: Optional["Workflow"] = None
+    ) -> None:
+        # Sanity check
+        if parent is None and workflow is None:
+            msg = "The `workflow` parameter is required to create a root context"
+            raise ValueError(msg)
+
         if parent:
+            # Share the global data storage
             self._globals = parent._globals
         else:
+            # Initialize the root context
             self._globals: Dict[str, Any] = {}
             self._lock = asyncio.Lock()
+            self._workflow = workflow
 
         # Local data storage
         self._locals: Dict[str, Any] = {}
@@ -30,6 +42,9 @@ class Context:
         # Step-specific instance
         self._parent: Optional[Context] = parent
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
+
+    def write_stream_event(self, ev: Event) -> None:
+        self.workflow._streamed_events.put_nowait(ev)
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.
@@ -85,6 +100,12 @@ class Context:
     def lock(self) -> asyncio.Lock:
         """Returns a mutex to lock the Context."""
         return self._parent._lock if self._parent else self._lock
+
+    @property
+    def workflow(self) -> "Workflow":
+        """Return the workflow instance this context is attached to."""
+        # workflow is guaranteed to be not None, ignore typing
+        return self._parent._workflow if self._parent else self._workflow  # type: ignore
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
