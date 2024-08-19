@@ -174,7 +174,7 @@ class Task(BaseModel):
         ),
     )
 
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]),
         exclude=True,
         description="Callback manager for the task.",

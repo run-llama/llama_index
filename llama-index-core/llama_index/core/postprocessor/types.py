@@ -17,7 +17,7 @@ from llama_index.core.schema import BaseComponent, NodeWithScore, QueryBundle
 
 class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, ABC):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
 

@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-from llama_index.core.bridge.pydantic import Field, field_validator, ConfigDict
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import (
@@ -75,22 +75,13 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         gt=0,
         le=2048,
     )
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
     num_workers: Optional[int] = Field(
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
-
-    @field_validator("callback_manager", mode="before")
-    @classmethod
-    def _validate_callback_manager(
-        cls, v: Optional[CallbackManager]
-    ) -> CallbackManager:
-        if v is None:
-            return CallbackManager([])
-        return v
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> Embedding:

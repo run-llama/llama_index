@@ -277,7 +277,7 @@ class CustomAgentComponent(BaseAgentComponent):
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
 

@@ -25,7 +25,7 @@ class ToolRunnerComponent(QueryComponent):
     tool_dict: Dict[str, AsyncBaseTool] = Field(
         ..., description="Dictionary of tool names to tools."
     )
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
 

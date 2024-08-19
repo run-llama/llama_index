@@ -20,7 +20,6 @@ from llama_index.core.base.query_pipeline.query import (
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
-    field_validator,
     ConfigDict,
 )
 from llama_index.core.callbacks import CallbackManager
@@ -83,16 +82,9 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """Multi-Modal LLM interface."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    callback_manager: Optional[CallbackManager] = Field(
+    callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-
-    @field_validator("callback_manager", mode="before")
-    @classmethod
-    def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
-        if v is None:
-            return CallbackManager([])
-        return v
 
     @property
     @abstractmethod
