@@ -237,9 +237,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_query_fn = sparse_query_fn
         self._hybrid_fusion_fn = hybrid_fusion_fn
 
-    def _build_points(
-        self, nodes: List[BaseNode], sparse_vector_name: str
-    ) -> Tuple[List[Any], List[str]]:
+    def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
         for node_batch in iter_batch(nodes, self.batch_size):
@@ -270,7 +268,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         vectors.append(
                             {
                                 # Dynamically switch between the old and new sparse vector name
-                                sparse_vector_name: rest.SparseVector(
+                                self._sparse_vector_name: rest.SparseVector(
                                     indices=sparse_indices[i],
                                     values=sparse_vectors[i],
                                 ),
@@ -416,7 +414,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes, self._sparse_vector_name)
+        points, ids = self._build_points(nodes)
 
         self._client.upload_points(
             collection_name=self.collection_name,
@@ -452,7 +450,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes, self._sparse_vector_name)
+        points, ids = self._build_points(nodes)
 
         for batch in iter_batch(points, self.batch_size):
             retries = 0
