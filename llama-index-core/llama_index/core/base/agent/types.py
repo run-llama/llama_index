@@ -89,7 +89,7 @@ class TaskStep(BaseModel):
     step_id: str = Field(..., description="Step ID")
     input: Optional[str] = Field(default=None, description="User input")
     # memory: BaseMemory = Field(
-    #     ..., type=BaseMemory, description="Conversational Memory"
+    #     ..., description="Conversational Memory"
     # )
     step_state: Dict[str, Any] = Field(
         default_factory=dict, description="Additional state for a given step."
@@ -162,14 +162,13 @@ class Task(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     task_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()), type=str, description="Task ID"
+        default_factory=lambda: str(uuid.uuid4()), description="Task ID"
     )
-    input: str = Field(..., type=str, description="User input")
+    input: str = Field(..., description="User input")
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
     memory: SerializeAsAny[BaseMemory] = Field(
         ...,
-        type=BaseMemory,
         description=(
             "Conversational Memory. Maintains state before execution of this task."
         ),
