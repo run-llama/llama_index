@@ -65,9 +65,10 @@ class RemoteReader(BaseReader):
             "wss",
             "sftp",
             "ftps",
+            "s3",
         ):
             raise ValueError(
-                "Invalid URL scheme. Only http, https, ftp, ftps, sftp, ws, and wss are allowed."
+                "Invalid URL scheme. Only http, https, ftp, ftps, sftp, ws, wss, and s3 are allowed."
             )
 
         extra_info = {"Source": url}
