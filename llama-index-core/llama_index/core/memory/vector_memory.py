@@ -136,7 +136,7 @@ class VectorMemory(BaseMemory):
 
         # retrieve underlying messages
         return [
-            ChatMessage.parse_obj(sub_dict)
+            ChatMessage.model_validate(sub_dict)
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]

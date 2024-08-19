@@ -246,7 +246,9 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             return output_cls()
 
         tool_fn_args = [call.tool_kwargs for call in tool_calls]
-        objects = [output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
+        objects = [
+            output_cls.model_validate(tool_fn_arg) for tool_fn_arg in tool_fn_args
+        ]
 
         if cur_objects is None or num_valid_fields(objects) > num_valid_fields(
             cur_objects

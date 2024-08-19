@@ -150,7 +150,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         with open(path) as f:
             data = json.load(f)
 
-        examples = [cls._example_type.parse_obj(el) for el in data["examples"]]
+        examples = [cls._example_type.model_validate(el) for el in data["examples"]]
 
         return cls(
             examples=examples,

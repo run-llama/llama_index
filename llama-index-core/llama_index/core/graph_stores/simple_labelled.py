@@ -205,9 +205,9 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         kg_nodes = {}
         for id, node_dict in node_dicts.items():
             if "name" in node_dict:
-                kg_nodes[id] = EntityNode.parse_obj(node_dict)
+                kg_nodes[id] = EntityNode.model_validate(node_dict)
             elif "text" in node_dict:
-                kg_nodes[id] = ChunkNode.parse_obj(node_dict)
+                kg_nodes[id] = ChunkNode.model_validate(node_dict)
             else:
                 raise ValueError(f"Could not infer node type for data: {node_dict!s}")
 
@@ -215,7 +215,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         data["nodes"] = {}
 
         # load the graph
-        graph = LabelledPropertyGraph.parse_obj(data)
+        graph = LabelledPropertyGraph.model_validate(data)
 
         # add the node back
         graph.nodes = kg_nodes
