@@ -57,7 +57,7 @@ class RemoteReader(BaseReader):
         parsed_url = urlparse(url)
 
         # Check if the scheme is http or https
-        if parsed_url.scheme in (
+        if parsed_url.scheme not in (
             "http",
             "https",
             "ftp",
