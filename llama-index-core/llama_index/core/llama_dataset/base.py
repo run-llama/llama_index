@@ -9,7 +9,7 @@ import tqdm
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.llms import LLM
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.evaluation import BaseEvaluator
 from openai import RateLimitError
 from pandas import DataFrame as PandasDataFrame
@@ -29,6 +29,7 @@ class CreatedByType(str, Enum):
 
 
 class CreatedBy(BaseModel):
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     model_name: Optional[str] = Field(
         default_factory=str, description="When CreatedByType.AI, specify model name."
     )

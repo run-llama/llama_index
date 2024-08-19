@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, AsyncGenerator, Generator, Optional, Union, List, Any
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 try:
@@ -132,6 +132,9 @@ CompletionResponseAsyncGen = AsyncGenerator[CompletionResponse, None]
 
 
 class LLMMetadata(BaseModel):
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(

@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-from llama_index.core.bridge.pydantic import Field, field_validator
+from llama_index.core.bridge.pydantic import Field, field_validator, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import (
@@ -63,6 +63,9 @@ def similarity(
 class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     """Base class for embeddings."""
 
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     model_name: str = Field(
         default="unknown", description="The name of the embedding model."
     )
@@ -79,9 +82,6 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @field_validator("callback_manager", mode="before")
     @classmethod

@@ -17,7 +17,12 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    ConfigDict,
+)
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_CONTEXT_WINDOW,
@@ -30,6 +35,7 @@ from llama_index.core.schema import BaseComponent, ImageDocument
 
 
 class MultiModalLLMMetadata(BaseModel):
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     context_window: Optional[int] = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(
@@ -76,12 +82,10 @@ class MultiModalLLMMetadata(BaseModel):
 class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """Multi-Modal LLM interface."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: Optional[CallbackManager] = Field(
         default_factory=CallbackManager, exclude=True
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @field_validator("callback_manager", mode="before")
     @classmethod
