@@ -711,7 +711,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _get_sparse_embedding(
         self, query: VectorStoreQuery
-    ) -> tuple[list[int], list[float]]:
+    ) -> Tuple[List[int], List[float]]:
         sparse_query_embedding = query.sparse_query_embedding
         if sparse_query_embedding is None:
             assert (
@@ -727,7 +727,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _construct_requests(
         self, query: VectorStoreQuery, kwargs: dict
-    ) -> list[rest.SearchRequest]:
+    ) -> List[rest.SearchRequest]:
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
                 "Hybrid search is not enabled. Please build the query with "
@@ -791,7 +791,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return requests
 
     def _post_process_search_batch_response(
-        self, query: VectorStoreQuery, response: list[list]
+        self, query: VectorStoreQuery, response: List[List]
     ) -> VectorStoreQueryResult:
         if query.mode == VectorStoreQueryMode.HYBRID:
             assert len(response) == 2

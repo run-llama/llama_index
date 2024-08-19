@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 from llama_index.core.bridge.pydantic import (
@@ -865,7 +865,7 @@ class QueryBundle(DataClassJsonMixin):
     image_path: Optional[str] = None
     custom_embedding_strs: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
-    sparse_embedding: Optional[tuple[list[int], list[float]]] = None
+    sparse_embedding: Optional[Tuple[List[int], List[float]]] = None
 
     @property
     def embedding_strs(self) -> List[str]:
