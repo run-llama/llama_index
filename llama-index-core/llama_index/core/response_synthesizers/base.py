@@ -38,13 +38,8 @@ from llama_index.core.schema import (
     QueryBundle,
     QueryType,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.synthesis import (
@@ -78,20 +73,15 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
-        output_cls: BaseModel = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
+        output_cls: Optional[BaseModel] = None,
     ) -> None:
         """Init params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         if callback_manager:
             self._llm.callback_manager = callback_manager
 
-        self._callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        self._callback_manager = callback_manager or Settings.callback_manager
 
         self._prompt_helper = (
             prompt_helper

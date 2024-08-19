@@ -17,8 +17,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
@@ -287,7 +286,6 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     docstore: BaseDocumentStore
-    service_context: Optional[ServiceContext] = None
     llm: Optional[SerializeAsAny[LLM]] = None
     num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
@@ -316,7 +314,7 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
-        llm = self.llm or llm_from_settings_or_context(Settings, self.service_context)
+        llm = self.llm or Settings.llm
 
         if query_bundle is None:
             raise ValueError("Missing query bundle.")
