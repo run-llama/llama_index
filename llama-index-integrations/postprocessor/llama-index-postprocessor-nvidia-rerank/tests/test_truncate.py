@@ -27,7 +27,7 @@ def mock_v1_models(requests_mock: Mocker) -> None:
 @pytest.fixture()
 def mock_v1_ranking(requests_mock: Mocker) -> None:
     requests_mock.post(
-        re.compile(r"https://ai.api.nvidia.com/v1/.*/reranking"),
+        re.compile(r"https://ai\.api\.nvidia\.com/v1/.*/reranking"),
         json={
             "rankings": [
                 {"index": 0, "logit": 4.2},
