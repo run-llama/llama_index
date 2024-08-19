@@ -7,7 +7,12 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
-from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     BaseChatEngine,
@@ -155,9 +160,7 @@ class Task(BaseModel):
 
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     task_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()), type=str, description="Task ID"
     )
@@ -190,8 +193,7 @@ class Task(BaseModel):
 class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     """Base agent worker."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

@@ -19,6 +19,7 @@ from llama_index.core.bridge.pydantic import (
     GetJsonSchemaHandler,
     SerializeAsAny,
     JsonSchemaValue,
+    ConfigDict,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -149,8 +150,7 @@ class BaseComponent(BaseModel):
 class TransformComponent(BaseComponent, DispatcherSpanMixin):
     """Base class for transform components."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
     def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
@@ -216,10 +216,8 @@ class BaseNode(BaseComponent):
 
     """
 
-    class Config:
-        populate_by_name = True
-        # hash is computed on local field, during the validation process
-        validate_assignment = True
+    # hash is computed on local field, during the validation process
+    model_config = ConfigDict(populate_by_name=True, validate_assignment=True)
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."

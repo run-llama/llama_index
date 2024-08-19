@@ -19,7 +19,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
@@ -55,6 +55,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     tools: Sequence[BaseTool] = Field(..., description="Tools to use for reasoning")
     llm: LLM = Field(..., description="LLM to use")
     callback_manager: CallbackManager = Field(
@@ -66,9 +67,6 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     verbose: bool = Field(False, description="Whether to print out reasoning steps")
 
     _get_tools: Callable[[str], Sequence[BaseTool]] = PrivateAttr()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
