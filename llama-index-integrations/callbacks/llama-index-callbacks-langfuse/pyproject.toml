@@ -13,6 +13,7 @@ contains_example = false
 import_path = "llama_index.callbacks.langfuse"
 
 [tool.llamahub.class_authors]
+LangfuseSpanHandler = "jonathanhliu21"
 langfuse_callback_handler = "llama-index"
 
 [tool.mypy]
@@ -28,7 +29,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-callbacks-langfuse"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
