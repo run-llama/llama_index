@@ -194,4 +194,4 @@ class VectorMemory(BaseMemory):
         self.vector_index.vector_store.clear()
 
 
-VectorMemory.update_forward_refs()
+VectorMemory.model_rebuild()

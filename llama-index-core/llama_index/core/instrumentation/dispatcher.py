@@ -329,4 +329,4 @@ class Manager:
             self.dispatchers[d.name] = d
 
 
-Dispatcher.update_forward_refs()
+Dispatcher.model_rebuild()
