@@ -13,6 +13,9 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 contains_example = true
 import_path = "llama_index.selectors.notdiamond"
 
+[tool.llamahub.class_authors]
+NotDiamondSelector = "acompa"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -21,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.11"
 
 [tool.poetry]
-authors = ["Not Diamond <t5@notdiamond.ai>"]
+authors = ["Not Diamond <support@notdiamond.ai>"]
 description = "llama-index selectors Not Diamond integration"
 name = "llama-index-selectors-notdiamond"
 packages = [{include = "llama_index/"}]
