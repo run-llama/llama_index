@@ -21,13 +21,11 @@ disambiguate the document or subsection from other similar documents or subsecti
 """
 
 from typing import Any, Dict, List, Optional, Sequence, cast
-from typing_extensions import Annotated
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.bridge.pydantic import (
     Field,
     PrivateAttr,
-    WrapSerializer,
     SerializeAsAny,
 )
 from llama_index.core.extractors.interface import BaseExtractor
@@ -180,7 +178,7 @@ class KeywordExtractor(BaseExtractor):
         prompt_template (str): template for keyword extraction
     """
 
-    llm: Annotated[LLMPredictorType, WrapSerializer(add_class_name)] = Field(
+    llm: SerializeAsAny[LLMPredictorType] = Field(
         description="The LLM to use for generation."
     )
     keywords: int = Field(
@@ -271,7 +269,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         embedding_only (bool): whether to use embedding only
     """
 
-    llm: Annotated[LLMPredictorType, WrapSerializer(add_class_name)] = Field(
+    llm: SerializeAsAny[LLMPredictorType] = Field(
         description="The LLM to use for generation."
     )
     questions: int = Field(
@@ -361,7 +359,7 @@ class SummaryExtractor(BaseExtractor):
         prompt_template (str): template for summary extraction
     """
 
-    llm: Annotated[LLMPredictorType, WrapSerializer(add_class_name)] = Field(
+    llm: SerializeAsAny[LLMPredictorType] = Field(
         description="The LLM to use for generation."
     )
     summaries: List[str] = Field(
