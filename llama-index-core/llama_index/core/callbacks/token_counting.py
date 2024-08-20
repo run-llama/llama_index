@@ -1,5 +1,15 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from llama_index.core.callbacks.pythonically_printing_base_handler import (
     PythonicallyPrintingBaseHandler,
@@ -8,6 +18,9 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.utils import get_tokenizer
 import logging
+
+if TYPE_CHECKING:
+    from llama_index.core.llms import ChatResponse, CompletionResponse
 
 
 @dataclass
@@ -23,10 +36,15 @@ class TokenCountingEvent:
         self.total_token_count = self.prompt_token_count + self.completion_token_count
 
 
-def get_tokens_from_raw_response(raw_response: Dict[str, Any]) -> Tuple[int, int]:
+def get_tokens_from_response(
+    response: Union["CompletionResponse", "ChatResponse"]
+) -> Tuple[int, int]:
     """Get the token counts from a raw response."""
-    usage = raw_response.get("usage", None)
+    usage = response.raw.get("usage", {})
     if usage is None:
+        usage = response.additional_kwargs
+
+    if not usage:
         return 0, 0
 
     if not isinstance(usage, dict):
@@ -59,10 +77,9 @@ def get_llm_token_counts(
         prompt = payload.get(EventPayload.PROMPT)
         completion = payload.get(EventPayload.COMPLETION)
 
-        if completion and completion.raw:
-            prompt_tokens, completion_tokens = get_tokens_from_raw_response(
-                completion.raw
-            )
+        if completion:
+            # get from raw or additional_kwargs
+            prompt_tokens, completion_tokens = get_tokens_from_response(completion)
         else:
             prompt_tokens, completion_tokens = 0, 0
 
@@ -87,10 +104,8 @@ def get_llm_token_counts(
         response = payload.get(EventPayload.RESPONSE)
         response_str = str(response)
 
-        if response and response.raw:
-            prompt_tokens, completion_tokens = get_tokens_from_raw_response(
-                response.raw
-            )
+        if response:
+            prompt_tokens, completion_tokens = get_tokens_from_response(response)
         else:
             prompt_tokens, completion_tokens = 0, 0
 
