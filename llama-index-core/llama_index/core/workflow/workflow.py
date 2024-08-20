@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
@@ -135,8 +136,9 @@ class Workflow(metaclass=_WorkflowMeta):
                     if asyncio.iscoroutinefunction(step):
                         new_ev = await instrumented_step(**kwargs)
                     else:
+                        run_task = functools.partial(instrumented_step, **kwargs)
                         new_ev = await asyncio.get_event_loop().run_in_executor(
-                            None, instrumented_step, **kwargs
+                            None, run_task
                         )
 
                     if self._verbose and name != "_done":
