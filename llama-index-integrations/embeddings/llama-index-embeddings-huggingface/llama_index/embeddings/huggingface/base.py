@@ -97,13 +97,13 @@ class HuggingFaceEmbedding(BaseEmbedding):
     )
     normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
-        description="Instruction to prepend to query text."
+        description="Instruction to prepend to query text.", default=None
     )
     text_instruction: Optional[str] = Field(
-        description="Instruction to prepend to text."
+        description="Instruction to prepend to text.", default=None
     )
     cache_folder: Optional[str] = Field(
-        description="Cache folder for Hugging Face files."
+        description="Cache folder for Hugging Face files.", default=None
     )
 
     _model: Any = PrivateAttr()
