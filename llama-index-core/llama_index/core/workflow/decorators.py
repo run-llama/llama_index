@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Dict
 from llama_index.core.bridge.pydantic import BaseModel
 
 from .errors import WorkflowValidationError
-from .utils import is_free_function, validate_step_signature_spec, inspect_signature
+from .utils import is_free_function, validate_step_signature, inspect_signature
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -46,7 +46,7 @@ def step(
 
         # This will raise providing a message with the specific validation failure
         spec = inspect_signature(func)
-        validate_step_signature_spec(spec)
+        validate_step_signature(spec)
         event_name, accepted_events = next(iter(spec.accepted_events.items()))
 
         # store the configuration in the function object

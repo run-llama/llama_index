@@ -5,7 +5,6 @@ from typing import (
     Any,
     List,
     Optional,
-    Tuple,
     Union,
     Callable,
     Dict,
@@ -72,7 +71,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
     )
 
 
-def validate_step_signature_spec(spec: StepSignatureSpec) -> None:
+def validate_step_signature(spec: StepSignatureSpec) -> None:
     num_of_events = len(spec.accepted_events)
     if num_of_events == 0:
         msg = "Step signature must have at least one parameter annotated as type Event"
@@ -84,63 +83,6 @@ def validate_step_signature_spec(spec: StepSignatureSpec) -> None:
     if not spec.return_types:
         msg = f"Return types of workflows step functions must be annotated with their type."
         raise WorkflowValidationError(msg)
-
-
-def validate_step_signature(fn: Callable) -> Tuple[str, List[object], List[object]]:
-    """Given a function, ensure the signature is compatible with a workflow step.
-
-    This function returns a tuple with:
-        - the name of the parameter delivering the event
-        - the list of event types in input
-        - the list of event types in output
-    """
-    sig = inspect.signature(fn)
-
-    # At least one parameter
-    if len(sig.parameters) == 0:
-        msg = "Step signature must have at least one parameter"
-        raise WorkflowValidationError(msg)
-
-    event_name = ""
-    event_types = []
-    num_of_possible_events = 0
-    for name, t in sig.parameters.items():
-        if name in ("self", "cls"):
-            continue
-
-        # All parameters must be annotated
-        if t.annotation == inspect._empty:
-            msg = "Step signature parameters must be annotated"
-            raise WorkflowValidationError(msg)
-
-        if t.annotation == Context:
-            continue
-
-        if str(t.annotation) == "<class 'llama_index.core.workflow.workflow.Workflow'>":
-            continue
-
-        event_types = _get_param_types(t)
-
-        all_events = all(et == Event or issubclass(et, Event) for et in event_types)
-
-        if not all_events:
-            msg = "Events in step signature parameters must be of type Event"
-            raise WorkflowValidationError(msg)
-
-        # Number of events in the signature must be exactly one
-        num_of_possible_events += 1
-        event_name = name
-
-    if num_of_possible_events != 1:
-        msg = f"Step signature must contain exactly one parameter of type Event but found {num_of_possible_events}."
-        raise WorkflowValidationError(msg)
-
-    return_types = _get_return_types(fn)
-    if not return_types:
-        msg = f"Return types of workflows step functions must be annotated with their type."
-        raise WorkflowValidationError(msg)
-
-    return (event_name, event_types, return_types)
 
 
 def get_steps_from_class(_class: object) -> Dict[str, Callable]:
