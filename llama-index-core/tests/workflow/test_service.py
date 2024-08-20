@@ -49,7 +49,7 @@ async def test_e2e():
     # and give it a name, in this case "service_workflow"
     wf.add_services(service_workflow=ServiceWorkflow())
     res = await wf.run()
-    print(res)
+    assert res == 84
 
 
 def test_service_manager_add():
