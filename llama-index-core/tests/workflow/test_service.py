@@ -29,8 +29,10 @@ class DummyWorkflow(Workflow):
     """
 
     @step(services=["service_workflow"])
-    async def get_a_number(self, svc: Workflow, ev: StartEvent) -> NumGenerated:
-        res = await svc.run()
+    async def get_a_number(
+        self, service_workflow: ServiceWorkflow, ev: StartEvent
+    ) -> NumGenerated:
+        res = await service_workflow.run()
         return NumGenerated(num=int(res))
 
     @step()

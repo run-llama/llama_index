@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 from llama_index.core.bridge.pydantic import BaseModel
 
 from .errors import WorkflowValidationError
-from .utils import is_free_function, validate_step_signature
+from .utils import is_free_function, validate_step_signature_spec, inspect_signature
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -13,7 +13,7 @@ class StepConfig(BaseModel):
     accepted_events: List[Any]
     event_name: str
     return_types: List[Any]
-    pass_context: bool
+    context_parameter: Optional[str]
     num_workers: int
     services: List[str]
 
@@ -46,14 +46,16 @@ def step(
             )
 
         # This will raise providing a message with the specific validation failure
-        event_name, event_types, return_types = validate_step_signature(func)
+        spec = inspect_signature(func)
+        validate_step_signature_spec(spec)
+        event_name, accepted_events = next(iter(spec.accepted_events.items()))
 
         # store the configuration in the function object
         func.__step_config = StepConfig(
-            accepted_events=event_types,
+            accepted_events=accepted_events,
             event_name=event_name,
-            return_types=return_types,
-            pass_context=pass_context,
+            return_types=spec.return_types,
+            context_parameter=spec.context_parameter,
             num_workers=num_workers,
             services=services or [],
         )

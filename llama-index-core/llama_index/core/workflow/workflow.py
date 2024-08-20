@@ -125,7 +125,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
                     # run step
                     args = []
-                    if config.pass_context:
+                    if config.context_parameter:
                         args.append(self.get_context(name))
                     for service in config.services:
                         args.append(self._get_service(service))
