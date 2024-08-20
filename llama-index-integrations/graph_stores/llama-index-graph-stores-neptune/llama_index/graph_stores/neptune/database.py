@@ -41,8 +41,6 @@ class NeptuneDatabaseGraphStore(NeptuneBaseGraphStore):
                 {
                     "message": "An error occurred while executing the query.",
                     "details": str(e),
-                    "query": query,
-                    "parameters": str(params),
                 }
             )
 

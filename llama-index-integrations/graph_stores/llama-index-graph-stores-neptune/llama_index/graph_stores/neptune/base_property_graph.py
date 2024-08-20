@@ -31,15 +31,12 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     def client(self) -> Any:
         return self._client
 
-    def get(
-        self, properties: Dict = None, ids: List[str] = None, exact_match: bool = True
-    ) -> List[LabelledNode]:
+    def get(self, properties: Dict = None, ids: List[str] = None) -> List[LabelledNode]:
         """Get the nodes from the graph.
 
         Args:
             properties (Dict | None, optional): The properties to retrieve. Defaults to None.
             ids (List[str] | None, optional): A list of ids to find in the graph. Defaults to None.
-            exact_match (bool, optional): Whether to do exact match on properties. Defaults to True.
 
         Returns:
             List[LabelledNode]: A list of nodes returned
@@ -51,10 +48,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
             cypher_statement += "WHERE "
 
         if ids:
-            if exact_match:
-                cypher_statement += "e.id IN $ids "
-            else:
-                cypher_statement += "WHERE size([x IN $ids where toLower(e.id) CONTAINS toLower(x)]) > 0 "
+            cypher_statement += "e.id in $ids "
             params["ids"] = ids
 
         if properties:
