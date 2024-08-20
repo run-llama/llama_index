@@ -1,7 +1,7 @@
 # LlamaIndex Integration: Google Readers
 
 Effortlessly incorporate Google-based data loaders into your Python workflow using LlamaIndex. It now supports more advanced operations through the implementation of ResourcesReaderMixin and FileSystemReaderMixin.
- Unlock the potential of various readers to enhance your data loading capabilities, including:
+Unlock the potential of various readers to enhance your data loading capabilities, including:
 
 - Google Calendar
 - Google Chat
@@ -33,6 +33,7 @@ You will need a `credentials.json` file from Google Cloud to interact with Googl
 See [this example](https://github.com/run-llama/gmail-extractor/blob/main/gmail.py) for a sample of code that successfully authenticates with Gmail once you have the `credentials.json` file.
 
 ## Examples
+
 ### Google Drive Reader
 
 ```python

@@ -14,7 +14,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
-from llama_index.core.readers.base import BasePydanticReader, BaseReader, ResourcesReaderMixin
+from llama_index.core.readers.base import (
+    BasePydanticReader,
+    BaseReader,
+    ResourcesReaderMixin,
+)
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -23,7 +27,9 @@ logger = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
-class GoogleDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
+class GoogleDriveReader(
+    BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin
+):
     """Google Drive Reader.
 
     Reads files from Google Drive. Credentials passed directly to the constructor
@@ -544,17 +550,23 @@ class GoogleDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemRead
         """List resources in the specified Google Drive folder or files."""
         self._creds = self._get_credentials()
 
-        drive_id = kwargs.get('drive_id', self.drive_id)
-        folder_id = kwargs.get('folder_id', self.folder_id)
-        file_ids = kwargs.get('file_ids', self.file_ids)
-        query_string = kwargs.get('query_string', self.query_string)
+        drive_id = kwargs.get("drive_id", self.drive_id)
+        folder_id = kwargs.get("folder_id", self.folder_id)
+        file_ids = kwargs.get("file_ids", self.file_ids)
+        query_string = kwargs.get("query_string", self.query_string)
 
         if folder_id:
-            fileids_meta = self._get_fileids_meta(drive_id, folder_id, query_string=query_string)
+            fileids_meta = self._get_fileids_meta(
+                drive_id, folder_id, query_string=query_string
+            )
         elif file_ids:
             fileids_meta = []
             for file_id in file_ids:
-                fileids_meta.extend(self._get_fileids_meta(drive_id, file_id=file_id, query_string=query_string))
+                fileids_meta.extend(
+                    self._get_fileids_meta(
+                        drive_id, file_id=file_id, query_string=query_string
+                    )
+                )
         else:
             raise ValueError("Either 'folder_id' or 'file_ids' must be provided.")
 
@@ -581,7 +593,9 @@ class GoogleDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemRead
 
     def load_resource(self, resource_id: str, **kwargs) -> List[Document]:
         """Load a specific resource from Google Drive."""
-        return self._load_from_file_ids(self.drive_id, [resource_id], None, self.query_string)
+        return self._load_from_file_ids(
+            self.drive_id, [resource_id], None, self.query_string
+        )
 
     def read_file_content(self, file_path: Union[str, Path], **kwargs) -> bytes:
         """Read the content of a specific file from Google Drive."""
