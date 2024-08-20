@@ -24,7 +24,7 @@ class MistralAIEmbedding(BaseEmbedding):
     """
 
     # Instance variables initialized via Pydantic's mechanism
-    _client: Any = PrivateAttr()
+    _client: Mistral = PrivateAttr()
 
     def __init__(
         self,
@@ -56,7 +56,7 @@ class MistralAIEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return (
-            self._client.embeddings.create(model=self.model_name, input=[query])
+            self._client.embeddings.create(model=self.model_name, inputs=[query])
             .data[0]
             .embedding
         )
@@ -66,7 +66,7 @@ class MistralAIEmbedding(BaseEmbedding):
         return (
             (
                 await self._client.embeddings.create_async(
-                    model=self.model_name, input=[query]
+                    model=self.model_name, inputs=[query]
                 )
             )
             .data[0]
@@ -76,7 +76,7 @@ class MistralAIEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         return (
-            self._client.embeddings.create(model=self.model_name, input=[text])
+            self._client.embeddings.create(model=self.model_name, inputs=[text])
             .data[0]
             .embedding
         )
@@ -84,7 +84,10 @@ class MistralAIEmbedding(BaseEmbedding):
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         return (
-            (await self._client.embeddings.create(model=self.model_name, input=[text]))
+            await self._client.embeddings.create(
+                model=self.model_name,
+                inputs=[text],
+            )
             .data[0]
             .embedding
         )
@@ -92,13 +95,13 @@ class MistralAIEmbedding(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         embedding_response = self._client.embeddings.create(
-            model=self.model_name, input=texts
+            model=self.model_name, inputs=texts
         ).data
         return [embed.embedding for embed in embedding_response]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         embedding_response = await self._client.embeddings.create_async(
-            model=self.model_name, input=texts
+            model=self.model_name, inputs=texts
         )
         return [embed.embedding for embed in embedding_response.data]
