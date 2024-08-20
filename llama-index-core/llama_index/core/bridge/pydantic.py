@@ -22,6 +22,7 @@ from pydantic import (
     WrapSerializer,
     field_serializer,
     Secret,
+    model_serializer,
 )
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
@@ -54,4 +55,5 @@ __all__ = [
     "WrapSerializer",
     "field_serializer",
     "Secret",
+    "model_serializer",
 ]

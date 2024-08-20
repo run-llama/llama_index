@@ -20,6 +20,7 @@ from llama_index.core.bridge.pydantic import (
     SerializeAsAny,
     JsonSchemaValue,
     ConfigDict,
+    model_serializer,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -73,8 +74,9 @@ class BaseComponent(BaseModel):
     def json(self, **kwargs: Any) -> str:
         return self.to_json(**kwargs)
 
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().model_dump(**kwargs)
+    @model_serializer(mode="wrap")
+    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+        data = handler(self)
         data["class_name"] = self.class_name()
         return data
 
@@ -83,7 +85,6 @@ class BaseComponent(BaseModel):
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
-        print(f"state: {state}", flush=True)
 
         # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []

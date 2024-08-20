@@ -70,7 +70,7 @@ class TitleExtractor(BaseExtractor):
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm: Annotated[LLMPredictorType, WrapSerializer(add_class_name)] = Field(
+    llm: SerializeAsAny[LLMPredictorType] = Field(
         description="The LLM to use for generation."
     )
     nodes: int = Field(

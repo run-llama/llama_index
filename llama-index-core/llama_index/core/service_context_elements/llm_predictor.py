@@ -10,7 +10,11 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr, ConfigDict
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    PrivateAttr,
+    ConfigDict,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -34,6 +38,7 @@ class BaseLLMPredictor(BaseComponent, DispatcherSpanMixin, ABC):
     """Base LLM Predictor."""
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        print("here", flush=True)
         data = super().model_dump(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data
