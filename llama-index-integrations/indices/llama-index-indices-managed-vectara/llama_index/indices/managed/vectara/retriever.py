@@ -255,7 +255,6 @@ class VectaraRetriever(BaseRetriever):
                         "textPattern": self._citations_text_pattern,
                     }
 
-        # print(f"DEBUG: QUERY BODY PAYLOAD\n{data}")
         return data
 
     def _vectara_stream(

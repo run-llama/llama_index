@@ -3,6 +3,7 @@ from llama_index.core.schema import Document
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.vectara import VectaraIndex
 import pytest
+import re
 
 #
 # For this test to run properly, please setup as follows:
@@ -11,6 +12,8 @@ import pytest
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID, VECTARA_CUSTOMER_ID, and OPENAI_API_KEY
+#
+# Note: In order to run test_citations, you will need a Scale account.
 #
 
 
@@ -136,7 +139,7 @@ def test_udf_retrieval(vectara1) -> None:
         n_sentences_before=0,
         n_sentences_after=0,
         reranker="udf",
-        udf_expression="5 * get('$.score') - max(0, (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
+        udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
     )
 
     res = qe.retrieve("What will the future look like?")
@@ -192,50 +195,37 @@ def test_file_upload(vectara2) -> None:
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
 
     # test query with Vectara summarization (default)
-    query_engine = vectara2.as_query_engine(
-        similarity_top_k=3,
-        citations_style="markdown",
-        citations_url_pattern="{doc.url}",
-        citations_text_pattern="{doc.url}",
-    )
+    query_engine = vectara2.as_query_engine(similarity_top_k=3)
     res = query_engine.query("How is Paul related to Reddit?")
     summary = res.response
-    # print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
-    assert "paul graham" in summary.lower() and "reddit" in summary.lower()
-    assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
-    # assert "https://www.paulgraham.com/worked.html" in summary.lower() # COMMENTED OUT BECAUSE OF ISSUE WITH CITATIONS NOT ALWAYS APPEARING
-
-    # test query with Vectara summarization
-    query_engine = vectara2.as_query_engine(
-        similarity_top_k=3, citations_style="numeric"
-    )
-    res = query_engine.query("How is Paul related to Reddit?")
-    summary = res.response
-    # print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
     assert "paul graham" in summary.lower() and "reddit" in summary.lower()
     assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
 
+
+def test_citations(vectara2) -> None:
     # test markdown citations
     query_engine = vectara2.as_query_engine(
-        similarity_top_k=5,
-        summary_num_results=3,
+        similarity_top_k=10,
+        summary_num_results=7,
+        summary_prompt_name="vectara-summary-ext-24-05-med-omni",
         citations_style="markdown",
         citations_url_pattern="{doc.url}",
         citations_text_pattern="(source)",
     )
     res = query_engine.query("Describe Paul's early life and career.")
     summary = res.response
-    print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
-    # assert "(source)" in summary
-    # assert "https://www.paulgraham.com/worked.html" in summary
+    # print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
+    assert "(source)" in summary
+    assert "https://www.paulgraham.com/worked.html" in summary
 
     # test numeric citations
     query_engine = vectara2.as_query_engine(
-        similarity_top_k=5,
-        summary_num_results=3,
+        similarity_top_k=10,
+        summary_num_results=7,
+        summary_prompt_name="mockingbird-1.0-2024-07-16",
         citations_style="numeric",
     )
     res = query_engine.query("Describe Paul's early life and career.")
     summary = res.response
-    print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
-    # assert re.search(r'\[\d+\]', summary)
+    # print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
+    assert re.search(r"\[\d+\]", summary)
