@@ -16,7 +16,7 @@ class OpenVINOEmbedding(BaseEmbedding):
     model_id_or_path: str = Field(description="Huggingface model id or local path.")
     max_length: int = Field(description="Maximum length of input.")
     pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
-    normalize: str = Field(default=True, description="Normalize embeddings or not.")
+    normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
@@ -24,7 +24,7 @@ class OpenVINOEmbedding(BaseEmbedding):
         description="Instruction to prepend to text."
     )
     cache_folder: Optional[str] = Field(
-        description="Cache folder for huggingface files."
+        description="Cache folder for huggingface files.", default=None
     )
 
     _model: Any = PrivateAttr()
@@ -46,8 +46,6 @@ class OpenVINOEmbedding(BaseEmbedding):
         model_kwargs: Dict[str, Any] = {},
         device: Optional[str] = "auto",
     ):
-        self._device = device
-
         try:
             from huggingface_hub import HfApi
         except ImportError as e:
@@ -94,27 +92,26 @@ class OpenVINOEmbedding(BaseEmbedding):
 
         if require_model_export(model_id_or_path):
             # use remote model
-            self._model = model or OVModelForFeatureExtraction.from_pretrained(
+            model = model or OVModelForFeatureExtraction.from_pretrained(
                 model_id_or_path, export=True, device=device, **model_kwargs
             )
         else:
             # use local model
-            self._model = model or OVModelForFeatureExtraction.from_pretrained(
-                model_id_or_path, device=self._device, **model_kwargs
+            model = model or OVModelForFeatureExtraction.from_pretrained(
+                model_id_or_path, device=device, **model_kwargs
             )
-
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(model_id_or_path)
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(model_id_or_path)
 
         if max_length is None:
             try:
-                max_length = int(self._model.config.max_position_embeddings)
+                max_length = int(model.config.max_position_embeddings)
             except Exception:
                 raise ValueError(
                     "Unable to find max_length from model config. "
                     "Please provide max_length."
                 )
             try:
-                max_length = min(max_length, int(self._tokenizer.model_max_length))
+                max_length = min(max_length, int(tokenizer.model_max_length))
             except Exception as exc:
                 print(f"An error occurred while retrieving tokenizer max length: {exc}")
 
@@ -123,7 +120,7 @@ class OpenVINOEmbedding(BaseEmbedding):
 
         super().__init__(
             embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             model_id_or_path=model_id_or_path,
             max_length=max_length,
             pooling=pooling,
@@ -131,6 +128,9 @@ class OpenVINOEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._device = device
+        self._model = model
+        self._tokenizer = tokenizer
 
     @classmethod
     def class_name(cls) -> str:
