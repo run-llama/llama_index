@@ -31,9 +31,10 @@ version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-llama-index-core = "^0.10.1"
 relik = "^1.0.3"
 huggingface-hub = "<0.24.0"  # TODO: relik breaks on newer versions
+spacy = "^3.7.6"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
