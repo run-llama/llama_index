@@ -8,7 +8,11 @@ import re
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create a corpus in your Vectara account, with a "filter attribute" called "test_num".
+# 2. Create a corpus in your Vectara account, with the following filter attributes:
+#   a. doc.test_num (text)
+#   b. doc.test_score (integer)
+#   c. doc.date (text)
+#   d. doc.url (text)
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID, VECTARA_CUSTOMER_ID, and OPENAI_API_KEY
