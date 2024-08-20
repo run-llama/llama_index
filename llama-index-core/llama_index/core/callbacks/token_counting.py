@@ -84,7 +84,7 @@ def get_llm_token_counts(
             prompt_tokens, completion_tokens = 0, 0
 
         if prompt_tokens == 0:
-            prompt_tokens = token_counter.estimate_tokens_in_messages(prompt)
+            prompt_tokens = token_counter.get_string_tokens(str(prompt))
 
         if completion_tokens == 0:
             completion_tokens = token_counter.get_string_tokens(str(completion))
