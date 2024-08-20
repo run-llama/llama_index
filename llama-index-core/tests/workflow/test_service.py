@@ -3,6 +3,7 @@ import pytest
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.context import Context
 
 
 class ServiceWorkflow(Workflow):
@@ -28,9 +29,9 @@ class DummyWorkflow(Workflow):
     and it only knows it has to call `run` on that instance.
     """
 
-    @step(services=["service_workflow"])
+    @step()
     async def get_a_number(
-        self, service_workflow: ServiceWorkflow, ev: StartEvent
+        self, service_workflow: ServiceWorkflow, ev: StartEvent, ctx: Context
     ) -> NumGenerated:
         res = await service_workflow.run()
         return NumGenerated(num=int(res))

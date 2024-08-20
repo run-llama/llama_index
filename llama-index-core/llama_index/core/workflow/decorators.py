@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Dict
 
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -15,14 +15,13 @@ class StepConfig(BaseModel):
     return_types: List[Any]
     context_parameter: Optional[str]
     num_workers: int
-    services: List[str]
+    services: Dict[str, List[Any]]
 
 
 def step(
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
     num_workers: int = 1,
-    services: Optional[List[str]] = None,
 ):
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -57,7 +56,7 @@ def step(
             return_types=spec.return_types,
             context_parameter=spec.context_parameter,
             num_workers=num_workers,
-            services=services or [],
+            services=spec.requested_services or {},
         )
 
         return func

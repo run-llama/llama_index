@@ -80,9 +80,6 @@ class Workflow(metaclass=_WorkflowMeta):
             self._step_to_context[step_name] = Context(parent=self._root_context)
         return self._step_to_context[step_name]
 
-    def _get_service(self, name) -> "Workflow":
-        return self._service_manager.get(name)
-
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}
@@ -124,22 +121,22 @@ class Workflow(metaclass=_WorkflowMeta):
                         print(f"Running step {name}")
 
                     # run step
-                    args = []
+                    kwargs = {}
                     if config.context_parameter:
-                        args.append(self.get_context(name))
-                    for service in config.services:
-                        args.append(self._get_service(service))
-                    args.append(ev)
+                        kwargs[config.context_parameter] = self.get_context(name)
+                    for service_name in config.services:
+                        kwargs[service_name] = self._service_manager.get(service_name)
+                    kwargs[config.event_name] = ev
 
                     # - check if its async or not
                     # - if not async, run it in an executor
                     instrumented_step = dispatcher.span(step)
 
                     if asyncio.iscoroutinefunction(step):
-                        new_ev = await instrumented_step(*args)
+                        new_ev = await instrumented_step(**kwargs)
                     else:
                         new_ev = await asyncio.get_event_loop().run_in_executor(
-                            None, instrumented_step, *args
+                            None, instrumented_step, **kwargs
                         )
 
                     if self._verbose and name != "_done":
@@ -358,7 +355,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
                 produced_events.add(event_type)
 
-            requested_services.update(step_config.services)
+            requested_services.update(step_config.services.keys())
 
         # Check if all consumed events are produced
         unconsumed_events = consumed_events - produced_events
@@ -385,7 +382,7 @@ class Workflow(metaclass=_WorkflowMeta):
         # Check all the requested services are available
         if requested_services:
             avail = set(self._service_manager._services.keys())
-            missing = avail - requested_services
+            missing = requested_services - avail
             if missing:
                 msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
                 raise WorkflowValidationError(msg)
