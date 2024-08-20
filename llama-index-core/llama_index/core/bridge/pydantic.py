@@ -22,6 +22,7 @@ from pydantic import (
     WrapSerializer,
     field_serializer,
     Secret,
+    SecretStr,
     model_serializer,
 )
 from pydantic.fields import FieldInfo
@@ -55,5 +56,6 @@ __all__ = [
     "WrapSerializer",
     "field_serializer",
     "Secret",
+    "SecretStr",
     "model_serializer",
 ]
