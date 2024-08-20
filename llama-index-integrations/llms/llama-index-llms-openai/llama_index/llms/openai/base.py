@@ -1,5 +1,4 @@
 import functools
-import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -71,9 +70,9 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
+from llama_index.core.llms.utils import parse_partial_json
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
@@ -120,7 +119,7 @@ class OpenAI(FunctionCallingLLM):
         model: name of the OpenAI model to use.
         temperature: a float from 0 to 1 controlling randomness in generation; higher will lead to more creative, less deterministic responses.
         max_tokens: the maximum number of tokens to generate.
-        additional_kwargs: Optional[Dict[str, Any]] = None,
+        additional_kwargs: Add additional parameters to OpenAI request body.
         max_retries: How many times to retry the API call if it fails.
         timeout: How long to wait, in seconds, for an API call before failing.
         reuse_client: Reuse the OpenAI client between requests. When doing anything with large volumes of async API calls, setting this to false can improve stability.
@@ -202,6 +201,10 @@ class OpenAI(FunctionCallingLLM):
     api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
+    strict: bool = Field(
+        default=False,
+        description="Whether to use strict mode for invoking tools/using schemas.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -230,6 +233,7 @@ class OpenAI(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        strict: bool = False,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -258,6 +262,7 @@ class OpenAI(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            strict=strict,
             **kwargs,
         )
 
@@ -825,7 +830,7 @@ class OpenAI(FunctionCallingLLM):
 
         return gen()
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -833,13 +838,28 @@ class OpenAI(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
+        strict: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ChatResponse:
+    ) -> Dict[str, Any]:
         """Predict and call the tool."""
         from llama_index.agent.openai.utils import resolve_tool_choice
 
         # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        # if strict is passed in, use, else default to the class-level attribute, else default to True`
+        if strict is not None:
+            strict = strict
+        else:
+            strict = self.strict
+
+        if self.metadata.is_function_calling_model:
+            for tool_spec in tool_specs:
+                if tool_spec["type"] == "function":
+                    tool_spec["function"]["strict"] = strict
+                    tool_spec["function"]["parameters"][
+                        "additionalProperties"
+                    ] = False  # in current openai 1.40.0 it is always false.
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -848,52 +868,28 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
             **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+        }
 
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
-
-        # misralai uses the same openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = await self.achat(
-            messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_choice) if tool_specs else None,
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:
@@ -914,7 +910,12 @@ class OpenAI(FunctionCallingLLM):
                 raise ValueError("Invalid tool_call object")
             if tool_call.type != "function":
                 raise ValueError("Invalid tool type. Unsupported by OpenAI")
-            argument_dict = json.loads(tool_call.function.arguments)
+
+            # this should handle both complete and partial jsons
+            try:
+                argument_dict = parse_partial_json(tool_call.function.arguments)
+            except ValueError:
+                argument_dict = {}
 
             tool_selections.append(
                 ToolSelection(

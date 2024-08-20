@@ -35,6 +35,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_site_name (Optional[str]): The name of the SharePoint site to download from.
         sharepoint_folder_path (Optional[str]): The path of the SharePoint folder to download from.
         sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
+        drive_name (Optional[str]): The name of the drive to download from.
+        drive_id (Optional[str]): The ID of the drive to download from. Overrides drive_name.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
         attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
@@ -45,12 +47,15 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     client_secret: str = None
     tenant_id: str = None
     sharepoint_site_name: Optional[str] = None
+    sharepoint_site_id: Optional[str] = None
     sharepoint_folder_path: Optional[str] = None
     sharepoint_folder_id: Optional[str] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
     attach_permission_metadata: bool = True
+    drive_name: Optional[str] = None
+    drive_id: Optional[str] = None
 
     _authorization_headers = PrivateAttr()
     _site_id_with_host_name = PrivateAttr()
@@ -66,6 +71,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
+        drive_name: Optional[str] = None,
+        drive_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -76,6 +83,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             sharepoint_folder_path=sharepoint_folder_path,
             sharepoint_folder_id=sharepoint_folder_id,
             file_extractor=file_extractor,
+            drive_name=drive_name,
+            drive_id=drive_id,
             **kwargs,
         )
 
@@ -114,7 +123,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error(response.json()["error"])
             raise ValueError(response.json()["error_description"])
 
-    def _get_site_id_with_host_name(self, access_token, sharepoint_site_name) -> str:
+    def _get_site_id_with_host_name(
+        self, access_token, sharepoint_site_name: Optional[str]
+    ) -> str:
         """
         Retrieves the site ID of a SharePoint site using the provided site name.
 
@@ -130,37 +141,51 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if hasattr(self, "_site_id_with_host_name"):
             return self._site_id_with_host_name
 
-        site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
-
         self._authorization_headers = {"Authorization": f"Bearer {access_token}"}
 
-        response = requests.get(
-            url=site_information_endpoint,
-            headers=self._authorization_headers,
-        )
+        if self.sharepoint_site_id:
+            return self.sharepoint_site_id
 
-        if response.status_code == 200 and "value" in response.json():
-            if (
-                len(response.json()["value"]) > 0
-                and "id" in response.json()["value"][0]
-            ):
-                # find the site with the specified name
-                for site in response.json()["value"]:
-                    if site["name"].lower() == sharepoint_site_name.lower():
-                        return site["id"]
+        if not (sharepoint_site_name):
+            raise ValueError("The SharePoint site name or ID must be provided.")
 
-                raise ValueError(
-                    f"The specified sharepoint site {sharepoint_site_name} is not found."
-                )
+        site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
+
+        while site_information_endpoint:
+            response = requests.get(
+                url=site_information_endpoint,
+                headers=self._authorization_headers,
+            )
+
+            json_response = response.json()
+            if response.status_code == 200 and "value" in json_response:
+                if (
+                    len(json_response["value"]) > 0
+                    and "id" in json_response["value"][0]
+                ):
+                    # find the site with the specified name
+                    for site in json_response["value"]:
+                        if (
+                            "name" in site
+                            and site["name"].lower() == sharepoint_site_name.lower()
+                        ):
+                            return site["id"]
+                    site_information_endpoint = json_response.get(
+                        "@odata.nextLink", None
+                    )
+                else:
+                    raise ValueError(
+                        f"The specified sharepoint site {sharepoint_site_name} is not found."
+                    )
             else:
-                raise ValueError(
-                    f"The specified sharepoint site {sharepoint_site_name} is not found."
-                )
-        else:
-            if "error_description" in response.json():
-                logger.error(response.json()["error"])
-                raise ValueError(response.json()["error_description"])
-            raise ValueError(response.json()["error"])
+                if "error_description" in json_response:
+                    logger.error(json_response["error"])
+                    raise ValueError(json_response["error_description"])
+                raise ValueError(json_response["error"])
+
+        raise ValueError(
+            f"The specified sharepoint site {sharepoint_site_name} is not found."
+        )
 
     def _get_drive_id(self) -> str:
         """
@@ -175,6 +200,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if hasattr(self, "_drive_id"):
             return self._drive_id
 
+        if self.drive_id:
+            return self.drive_id
+
         self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
 
         response = requests.get(
@@ -183,6 +211,12 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         )
 
         if response.status_code == 200 and "value" in response.json():
+            if len(response.json()["value"]) > 0 and self.drive_name is not None:
+                for drive in response.json()["value"]:
+                    if drive["name"].lower() == self.drive_name.lower():
+                        return drive["id"]
+                raise ValueError(f"The specified drive {self.drive_name} is not found.")
+
             if (
                 len(response.json()["value"]) > 0
                 and "id" in response.json()["value"][0]
@@ -224,7 +258,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         self,
         folder_id: str,
         download_dir: str,
-        current_folder_path: str,
         include_subfolders: bool = False,
     ) -> Dict[str, str]:
         """
@@ -241,41 +274,19 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         Raises:
             ValueError: If there is an error in downloading the files.
         """
-        folder_info_endpoint = (
-            f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
+        files_path = self.list_resources(
+            sharepoint_site_name=self.sharepoint_site_name,
+            sharepoint_site_id=self.sharepoint_site_id,
+            sharepoint_folder_id=folder_id,
         )
 
-        response = requests.get(
-            url=folder_info_endpoint,
-            headers=self._authorization_headers,
-        )
+        metadata = {}
 
-        if response.status_code == 200:
-            data = response.json()
-            metadata = {}
-            for item in data["value"]:
-                if include_subfolders and "folder" in item:
-                    sub_folder_download_dir = os.path.join(download_dir, item["name"])
-                    subfolder_metadata = self._download_files_and_extract_metadata(
-                        folder_id=item["id"],
-                        download_dir=sub_folder_download_dir,
-                        current_folder_path=os.path.join(
-                            current_folder_path, item["name"]
-                        ),
-                        include_subfolders=include_subfolders,
-                    )
+        for file_path in files_path:
+            item = self._get_item_from_path(file_path)
+            metadata.update(self._download_file(item, download_dir))
 
-                    metadata.update(subfolder_metadata)
-
-                elif "file" in item:
-                    file_metadata = self._download_file(
-                        item, download_dir, current_folder_path
-                    )
-                    metadata.update(file_metadata)
-            return metadata
-        else:
-            logger.error(response.json()["error"])
-            raise ValueError(response.json()["error"])
+        return metadata
 
     def _get_file_content_by_url(self, item: Dict[str, Any]) -> bytes:
         """
@@ -412,12 +423,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         self,
         item: Dict[str, Any],
         download_dir: str,
-        sharepoint_folder_path: str,
     ):
         metadata = {}
 
         file_path = self._download_file_by_url(item, download_dir)
-        item["file_path"] = os.path.join(sharepoint_folder_path, item["name"])
 
         metadata[file_path] = self._extract_metadata_for_file(item)
         return metadata
@@ -425,7 +434,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     def _download_files_from_sharepoint(
         self,
         download_dir: str,
-        sharepoint_site_name: str,
+        sharepoint_site_name: Optional[str],
         sharepoint_folder_path: Optional[str],
         sharepoint_folder_id: Optional[str],
         recursive: bool,
@@ -451,7 +460,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         self._drive_id = self._get_drive_id()
 
-        if not sharepoint_folder_id:
+        if not sharepoint_folder_id and sharepoint_folder_path:
             sharepoint_folder_id = self._get_sharepoint_folder_id(
                 sharepoint_folder_path
             )
@@ -459,7 +468,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         return self._download_files_and_extract_metadata(
             sharepoint_folder_id,
             download_dir,
-            os.path.join(sharepoint_site_name, sharepoint_folder_path),
             recursive,
         )
 
@@ -549,13 +557,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             sharepoint_folder_id = self.sharepoint_folder_id
 
         # TODO: make both of these values optional — and just default to the client ID defaults
-        if not sharepoint_site_name:
+        if not (sharepoint_site_name or self.sharepoint_site_id):
             raise ValueError("sharepoint_site_name must be provided.")
-
-        if not sharepoint_folder_path and not sharepoint_folder_id:
-            raise ValueError(
-                "sharepoint_folder_path or sharepoint_folder_id must be provided."
-            )
 
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -566,6 +569,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     sharepoint_folder_id,
                     recursive,
                 )
+
                 # return self.files_metadata
                 return self._load_documents_with_metadata(
                     files_metadata, temp_dir, recursive
@@ -595,7 +599,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             headers=self._authorization_headers,
         )
         items = response.json().get("value", [])
-
         file_paths = []
         for item in items:
             if "folder" in item and recursive:
@@ -612,11 +615,43 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return file_paths
 
+    def _list_drive_contents(self) -> List[Path]:
+        """
+        Helper method to fetch the contents of the drive.
+
+        Returns:
+            List[Path]: List of file paths.
+        """
+        drive_contents_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/root/children"
+        )
+        response = requests.get(
+            url=drive_contents_endpoint,
+            headers=self._authorization_headers,
+        )
+        items = response.json().get("value", [])
+
+        file_paths = []
+        for item in items:
+            if "folder" in item:
+                # Append folder path
+                folder_paths = self._list_folder_contents(
+                    item["id"], recursive=True, current_path=item["name"]
+                )
+                file_paths.extend(folder_paths)
+            elif "file" in item:
+                # Append file path
+                file_path = Path(item["name"])
+                file_paths.append(file_path)
+
+        return file_paths
+
     def list_resources(
         self,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
+        sharepoint_site_id: Optional[str] = None,
         recursive: bool = True,
     ) -> List[Path]:
         """
@@ -641,13 +676,12 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if not sharepoint_folder_id:
             sharepoint_folder_id = self.sharepoint_folder_id
 
-        # TODO: make both of these values optional — and just default to the client ID defaults
-        if not sharepoint_site_name:
-            raise ValueError("sharepoint_site_name must be provided.")
+        if not sharepoint_site_id:
+            sharepoint_site_id = self.sharepoint_site_id
 
-        if not sharepoint_folder_path and not sharepoint_folder_id:
+        if not (sharepoint_site_name or sharepoint_site_id):
             raise ValueError(
-                "sharepoint_folder_path or sharepoint_folder_id must be provided."
+                "sharepoint_site_name or sharepoint_site_id must be provided."
             )
 
         file_paths = []
@@ -657,20 +691,23 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 access_token, sharepoint_site_name
             )
             self._drive_id = self._get_drive_id()
-            if not sharepoint_folder_id:
-                sharepoint_folder_id = self._get_sharepoint_folder_id(
-                    sharepoint_folder_path
+
+            if sharepoint_folder_path:
+                if not sharepoint_folder_id:
+                    sharepoint_folder_id = self._get_sharepoint_folder_id(
+                        sharepoint_folder_path
+                    )
+                # Fetch folder contents
+                folder_contents = self._list_folder_contents(
+                    sharepoint_folder_id,
+                    recursive,
+                    os.path.join(sharepoint_site_name, sharepoint_folder_path),
                 )
-
-            # Fetch folder contents
-            folder_contents = self._list_folder_contents(
-                sharepoint_folder_id,
-                recursive,
-                os.path.join(sharepoint_site_name, sharepoint_folder_path),
-            )
-            file_paths.extend(folder_contents)
-            return file_paths
-
+                file_paths.extend(folder_contents)
+            else:
+                # Fetch drive contents
+                drive_contents = self._list_drive_contents()
+                file_paths.extend(drive_contents)
         except Exception as exp:
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
             raise
@@ -690,9 +727,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         # Get the file ID
         # remove the site_name prefix
-        file_path = (
-            str(input_file).lstrip("/").replace(f"{self.sharepoint_site_name}/", "", 1)
-        )
+        parts = [part for part in input_file.parts if part != self.sharepoint_site_name]
+        file_path = "/".join(parts)
         endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
 
         response = requests.get(

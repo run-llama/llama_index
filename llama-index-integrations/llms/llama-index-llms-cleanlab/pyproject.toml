@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.cleanlab"
 
 [tool.llamahub.class_authors]
-Cleanlab = "ashishsardana"
+CleanlabTLM = "ashishsardana"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-llms-cleanlab"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

@@ -88,7 +88,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
 - [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
-- [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
+- [ElasticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
 - [MongoDB Atlas](../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb)
 - [Neo4j](../../examples/vector_stores/Neo4jVectorDemo.ipynb)

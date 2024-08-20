@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -148,6 +148,8 @@ class PGVectorStore(BasePydanticVectorStore):
     debug: bool
     use_jsonb: bool
 
+    hnsw_kwargs: Optional[Dict[str, Any]]
+
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
     _engine: Any = PrivateAttr()
@@ -169,7 +171,26 @@ class PGVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        hnsw_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """Constructor.
+
+        Args:
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db.
+            async_connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to async pg db.
+            table_name (str): Table name.
+            schema_name (str): Schema name.
+            hybrid_search (bool, optional): Enable hybrid search. Defaults to False.
+            text_search_config (str, optional): Text search configuration. Defaults to "english".
+            embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            cache_ok (bool, optional): Enable cache. Defaults to False.
+            perform_setup (bool, optional): If db should be set up. Defaults to True.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+            hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
+                contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
+                which turns off HNSW search.
+        """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
 
@@ -206,6 +227,7 @@ class PGVectorStore(BasePydanticVectorStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
         )
 
     async def close(self) -> None:
@@ -240,8 +262,34 @@ class PGVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        hnsw_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PGVectorStore":
-        """Return connection string from database parameters."""
+        """Construct from params.
+
+        Args:
+            host (Optional[str], optional): Host of postgres connection. Defaults to None.
+            port (Optional[str], optional): Port of postgres connection. Defaults to None.
+            database (Optional[str], optional): Postgres DB name. Defaults to None.
+            user (Optional[str], optional): Postgres username. Defaults to None.
+            password (Optional[str], optional): Postgres password. Defaults to None.
+            table_name (str): Table name. Defaults to "llamaindex".
+            schema_name (str): Schema name. Defaults to "public".
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db
+            async_connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to async pg db
+            hybrid_search (bool, optional): Enable hybrid search. Defaults to False.
+            text_search_config (str, optional): Text search configuration. Defaults to "english".
+            embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            cache_ok (bool, optional): Enable cache. Defaults to False.
+            perform_setup (bool, optional): If db should be set up. Defaults to True.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+            hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
+                contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
+                which turns off HNSW search.
+
+        Returns:
+            PGVectorStore: Instance of PGVectorStore constructed from params.
+        """
         conn_str = (
             connection_string
             or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -261,6 +309,7 @@ class PGVectorStore(BasePydanticVectorStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
         )
 
     @property
@@ -313,6 +362,30 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(statement)
             session.commit()
 
+    def _create_hnsw_index(self) -> None:
+        import sqlalchemy
+
+        if (
+            "hnsw_ef_construction" not in self.hnsw_kwargs
+            or "hnsw_m" not in self.hnsw_kwargs
+        ):
+            raise ValueError(
+                "Make sure hnsw_ef_search, hnsw_ef_construction, and hnsw_m are in hnsw_kwargs."
+            )
+
+        hnsw_ef_construction = self.hnsw_kwargs.pop("hnsw_ef_construction")
+        hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
+        hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
+
+        index_name = f"{self._table_class.__tablename__}_embedding_idx"
+
+        with self._session() as session, session.begin():
+            statement = sqlalchemy.text(
+                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+            )
+            session.execute(statement)
+            session.commit()
+
     def _initialize(self) -> None:
         if not self._is_initialized:
             self._connect()
@@ -320,6 +393,8 @@ class PGVectorStore(BasePydanticVectorStore):
                 self._create_extension()
                 self._create_schema_if_not_exists()
                 self._create_tables_if_not_exists()
+                if self.hnsw_kwargs is not None:
+                    self._create_hnsw_index()
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -493,8 +568,10 @@ class PGVectorStore(BasePydanticVectorStore):
                     text(f"SET ivfflat.probes = :ivfflat_probes"),
                     {"ivfflat_probes": ivfflat_probes},
                 )
-            if kwargs.get("hnsw_ef_search"):
-                hnsw_ef_search = kwargs.get("hnsw_ef_search")
+            if self.hnsw_kwargs:
+                hnsw_ef_search = (
+                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+                )
                 session.execute(
                     text(f"SET hnsw.ef_search = :hnsw_ef_search"),
                     {"hnsw_ef_search": hnsw_ef_search},
@@ -524,11 +601,12 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session, async_session.begin():
             from sqlalchemy import text
 
-            if kwargs.get("hnsw_ef_search"):
-                hnsw_ef_search = kwargs.get("hnsw_ef_search")
+            if self.hnsw_kwargs:
+                hnsw_ef_search = (
+                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+                )
                 await async_session.execute(
-                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
-                    {"hnsw_ef_search": hnsw_ef_search},
+                    text(f"SET hnsw.ef_search = {hnsw_ef_search}"),
                 )
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
@@ -771,6 +849,88 @@ class PGVectorStore(BasePydanticVectorStore):
 
             session.execute(stmt)
             session.commit()
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        from sqlalchemy import delete
+
+        self._initialize()
+        with self._session() as session, session.begin():
+            stmt = delete(self._table_class)
+
+            if node_ids:
+                stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+            if filters:
+                stmt = stmt.where(self._recursively_apply_filters(filters))
+
+            session.execute(stmt)
+            session.commit()
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes asynchronously.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        from sqlalchemy import delete
+
+        self._initialize()
+        async with self._async_session() as async_session, async_session.begin():
+            stmt = delete(self._table_class)
+
+            if node_ids:
+                stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+            if filters:
+                stmt = stmt.where(self._recursively_apply_filters(filters))
+
+            await async_session.execute(stmt)
+            await async_session.commit()
+
+    def clear(self) -> None:
+        """Clears table."""
+        from sqlalchemy import delete
+
+        self._initialize()
+        with self._session() as session, session.begin():
+            stmt = delete(self._table_class)
+
+            session.execute(stmt)
+            session.commit()
+
+    async def aclear(self) -> None:
+        """Asynchronously clears table."""
+        from sqlalchemy import delete
+
+        self._initialize()
+        async with self._async_session() as async_session, async_session.begin():
+            stmt = delete(self._table_class)
+
+            await async_session.execute(stmt)
+            await async_session.commit()
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

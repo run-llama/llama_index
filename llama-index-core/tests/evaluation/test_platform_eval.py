@@ -3,7 +3,6 @@ import sys
 
 import pytest
 from llama_index.core.evaluation.eval_utils import upload_eval_dataset
-from llama_cloud.client import LlamaCloud
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
@@ -15,6 +14,8 @@ python_version = sys.version
 )
 @pytest.mark.integration()
 def test_upload_eval_dataset() -> None:
+    from llama_cloud.client import LlamaCloud
+
     eval_dataset_id = upload_eval_dataset(
         "test_dataset" + python_version,  # avoid CI test clashes
         project_name="test_project" + python_version,

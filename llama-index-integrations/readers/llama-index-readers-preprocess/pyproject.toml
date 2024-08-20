@@ -29,12 +29,12 @@ license = "MIT"
 maintainers = ["preprocess"]
 name = "llama-index-readers-preprocess"
 readme = "README.md"
-version = "0.1.3"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
-pypreprocess = "^1.2.0"
+pypreprocess = "^1.4.3"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

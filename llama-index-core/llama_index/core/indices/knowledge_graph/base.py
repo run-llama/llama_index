@@ -49,7 +49,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     Build a KG by extracting triplets, and leveraging the KG during query-time.
 
     Args:
-        kg_triple_extract_template (BasePromptTemplate): The prompt to use for
+        kg_triplet_extract_template (BasePromptTemplate): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
         service_context (Optional[ServiceContext]): The service context to use.
@@ -75,7 +75,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
         storage_context: Optional[StorageContext] = None,
-        kg_triple_extract_template: Optional[BasePromptTemplate] = None,
+        kg_triplet_extract_template: Optional[BasePromptTemplate] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
         show_progress: bool = False,
@@ -89,12 +89,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         # need to set parameters before building index in base class.
         self.include_embeddings = include_embeddings
         self.max_triplets_per_chunk = max_triplets_per_chunk
-        self.kg_triple_extract_template = (
-            kg_triple_extract_template or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
+        self.kg_triplet_extract_template = (
+            kg_triplet_extract_template or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
         )
         # NOTE: Partially format keyword extract template here.
-        self.kg_triple_extract_template = (
-            self.kg_triple_extract_template.partial_format(
+        self.kg_triplet_extract_template = (
+            self.kg_triplet_extract_template.partial_format(
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
@@ -161,7 +161,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
         response = self._llm.predict(
-            self.kg_triple_extract_template,
+            self.kg_triplet_extract_template,
             text=text,
         )
         return self._parse_triplet_response(

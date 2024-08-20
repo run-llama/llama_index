@@ -53,6 +53,8 @@ class EntityNode(LabelledNode):
 
     def __str__(self) -> str:
         """Return the string representation of the node."""
+        if self.properties:
+            return f"{self.name} ({self.properties})"
         return self.name
 
     @property
@@ -91,6 +93,8 @@ class Relation(BaseModel):
 
     def __str__(self) -> str:
         """Return the string representation of the relation."""
+        if self.properties:
+            return f"{self.label} ({self.properties})"
         return self.label
 
     @property

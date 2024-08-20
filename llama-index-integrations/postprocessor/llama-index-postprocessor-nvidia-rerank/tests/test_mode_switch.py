@@ -46,10 +46,8 @@ def test_mode_switch_param_setting_deprecated():
 UNKNOWN_URLS = [
     "https://test_url/v1",
     "https://test_url/v1/",
-    "https://test_url/.../v1",
     "http://test_url/v1",
     "http://test_url/v1/",
-    "http://test_url/.../v1/",
 ]
 
 

@@ -18,7 +18,7 @@ OpenVINOEmbedding = "llama-index"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
@@ -27,16 +27,17 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-openvino"
 readme = "README.md"
-version = "0.1.7"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = "^0.10.41"
 llama-index-embeddings-huggingface = "^0.2.2"
+huggingface-hub = "^0.23.0"
 
 [tool.poetry.dependencies.optimum]
 extras = ["openvino"]
-version = "^1.18.0"
+version = "^1.21.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

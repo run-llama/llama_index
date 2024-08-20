@@ -1,11 +1,11 @@
-import logging
-from typing import Any, Dict, Optional, Sequence, Tuple, List
 import base64
-import httpx
+import logging
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+import httpx
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.multi_modal_llms.generic_utils import encode_image
 from llama_index.core.schema import ImageDocument
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_ANTHROPIC_API_TYPE = "anthropic_ai"
 DEFAULT_ANTHROPIC_API_BASE = "https://api.anthropic.com"
@@ -16,6 +16,7 @@ ANTHROPIC_MULTI_MODAL_MODELS = {
     "claude-3-opus-20240229": 180000,
     "claude-3-sonnet-20240229": 180000,
     "claude-3-haiku-20240307": 180000,
+    "claude-3-5-sonnet-20240620": 180000,
 }
 
 
@@ -111,7 +112,8 @@ def resolve_anthropic_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve Anthropic credentials.
+    """
+    "Resolve Anthropic credentials.
 
     The order of precedence is:
     1. param

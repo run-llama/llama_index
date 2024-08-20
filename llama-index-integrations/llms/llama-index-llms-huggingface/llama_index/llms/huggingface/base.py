@@ -43,7 +43,6 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
-from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.tools.types import BaseTool
 from llama_index.llms.huggingface.utils import (
     to_tgi_messages,
@@ -330,8 +329,9 @@ class HuggingFaceLLM(CustomLLM):
                 {"role": message.role.value, "content": message.content}
                 for message in messages
             ]
-            tokens = self._tokenizer.apply_chat_template(messages_dict)
-            return self._tokenizer.decode(tokens)
+            return self._tokenizer.apply_chat_template(
+                messages_dict, tokenize=False, add_generation_prompt=True
+            )
 
         return generic_messages_to_prompt(messages)
 
@@ -344,7 +344,9 @@ class HuggingFaceLLM(CustomLLM):
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
+            if self.completion_to_prompt:
+                full_prompt = self.completion_to_prompt(full_prompt)
+            elif self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
@@ -377,7 +379,9 @@ class HuggingFaceLLM(CustomLLM):
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
+            if self.completion_to_prompt:
+                full_prompt = self.completion_to_prompt(full_prompt)
+            elif self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
@@ -986,7 +990,7 @@ class TextGenerationInference(FunctionCallingLLM):
         astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await astream_complete_fn(prompt, **kwargs)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -995,7 +999,7 @@ class TextGenerationInference(FunctionCallingLLM):
         allow_parallel_tool_calls: bool = False,
         tool_choice: str = "auto",
         **kwargs: Any,
-    ) -> ChatResponse:
+    ) -> Dict[str, Any]:
         """Predict and call the tool."""
         # use openai tool format
         tool_specs = [
@@ -1009,51 +1013,28 @@ class TextGenerationInference(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages=messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_specs, tool_choice),
             **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+        }
 
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: str = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        # use openai tool format
-        tool_specs = [
-            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
-        ]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = self.achat(
-            messages=messages,
-            tools=tool_specs or None,
-            tool_choice=resolve_tool_choice(tool_specs, tool_choice),
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
