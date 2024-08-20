@@ -22,7 +22,7 @@ from ai21.models.chat import (
     ChoicesChunk,
     ChoiceDelta,
     ChatMessage as AI21ChatMessage,
-    AssistantMessage
+    AssistantMessage,
 )
 from ai21.models.usage_info import UsageInfo
 from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokenizer
@@ -95,32 +95,6 @@ class AsyncIterator:
             return next(self._iterable)
         except StopIteration:
             raise StopAsyncIteration
-
-
-def test_():
-    from llama_index.llms.ai21 import AI21
-    from pydantic import BaseModel
-    from llama_index.core.tools import FunctionTool
-
-    class Song(BaseModel):
-        """A song with name and artist"""
-
-        name: str
-        artist: str
-
-    def generate_song(name: str, artist: str) -> Song:
-        """Generates a song with provided name and artist."""
-        return Song(name=name, artist=artist)
-
-    tool = FunctionTool.from_defaults(fn=generate_song)
-
-    llm = AI21(api_key="FwlPukdfYB6f3cIjkxLyEgJGUhiQSiA6", model="jamba-1.5-mini", temperature=0.9)
-    response = llm.predict_and_call(
-        [tool],
-        "Pick a random song for me",
-        # strict=True  # can also be set at the function level to override the class
-    )
-    print(response)
 
 
 def test_text_inference_embedding_class():

@@ -65,5 +65,7 @@ def from_ai21_message_to_chat_message(ai21_message: AssistantMessage) -> ChatMes
     return ChatMessage(
         role=ai21_message.role,
         content=ai21_message.content,
-        additional_kwargs={} if ai21_message.tool_calls is None else {"tool_calls": ai21_message.tool_calls},
+        additional_kwargs={}
+        if ai21_message.tool_calls is None
+        else {"tool_calls": ai21_message.tool_calls},
     )

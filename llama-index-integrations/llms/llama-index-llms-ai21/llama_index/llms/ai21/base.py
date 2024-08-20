@@ -31,7 +31,9 @@ from llama_index.program.openai.utils import parse_partial_json
 from llama_index.llms.ai21.utils import (
     ai21_model_to_context_size,
     message_to_ai21_message,
-    message_to_ai21_j2_message, is_function_calling_model, from_ai21_message_to_chat_message,
+    message_to_ai21_j2_message,
+    is_function_calling_model,
+    from_ai21_message_to_chat_message,
 )
 
 _DEFAULT_AI21_MODEL = "jamba-1.5-mini"
@@ -207,13 +209,13 @@ class AI21(FunctionCallingLLM):
         return completion_fn(prompt, **all_kwargs)
 
     def _prepare_chat_with_tools(
-            self,
-            tools: List["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            verbose: bool = False,
-            allow_parallel_tool_calls: bool = False,
-            **kwargs: Any,
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
@@ -456,10 +458,10 @@ class AI21(FunctionCallingLLM):
         )
 
     def get_tool_calls_from_response(
-            self,
-            response: ChatResponse,
-            error_on_no_tool_call: bool = True,
-            **kwargs: Any,
+        self,
+        response: ChatResponse,
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
     ) -> List[ToolSelection]:
         tool_calls = response.message.additional_kwargs.get("tool_calls", [])
 
