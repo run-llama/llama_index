@@ -303,9 +303,11 @@ def test_completion_model_basic(MockSyncOpenAI: MagicMock) -> None:
 
         response = llm.complete(prompt)
         assert response.text == "\n\nThis is indeed a test"
+        assert response.additional_kwargs["total_tokens"] == 12
 
         chat_response = llm.chat([message])
         assert chat_response.message.content == "\n\nThis is indeed a test"
+        assert chat_response.message.additional_kwargs["total_tokens"] == 12
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
@@ -323,6 +325,7 @@ def test_chat_model_basic(MockSyncOpenAI: MagicMock) -> None:
 
         chat_response = llm.chat([message])
         assert chat_response.message.content == "\n\nThis is a test!"
+        assert chat_response.additional_kwargs["total_tokens"] == 20
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
