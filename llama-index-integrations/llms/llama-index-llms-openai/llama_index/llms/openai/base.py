@@ -604,18 +604,29 @@ class OpenAI(FunctionCallingLLM):
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
         """Get the token usage reported by the response."""
-        if not isinstance(raw_response, dict):
-            return {}
-
-        usage = raw_response.get("usage", {})
-        # NOTE: other model providers that use the OpenAI client may not report usage
-        if usage is None:
+        if hasattr(raw_response, "usage"):
+            try:
+                prompt_tokens = raw_response.usage.prompt_tokens
+                completion_tokens = raw_response.usage.completion_tokens
+                total_tokens = raw_response.usage.total_tokens
+            except AttributeError:
+                return {}
+        elif isinstance(raw_response, dict):
+            usage = raw_response.get("usage", {})
+            # NOTE: other model providers that use the OpenAI client may not report usage
+            if usage is None:
+                return {}
+            # Backwards compatibility with old dict type
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+        else:
             return {}
 
         return {
-            "prompt_tokens": usage.get("prompt_tokens", 0),
-            "completion_tokens": usage.get("completion_tokens", 0),
-            "total_tokens": usage.get("total_tokens", 0),
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
         }
 
     # ===== Async Endpoints =====
