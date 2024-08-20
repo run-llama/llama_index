@@ -54,7 +54,11 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
 
         # Collect name and types of the event param
         param_types = _get_param_types(t)
-        if all(et == Event or issubclass(et, Event) for et in param_types):
+        if all(
+            param_t == Event
+            or (inspect.isclass(param_t) and issubclass(param_t, Event))
+            for param_t in param_types
+        ):
             accepted_events[name] = param_types
             continue
 
