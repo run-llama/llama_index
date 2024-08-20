@@ -218,3 +218,5 @@ def test_is_free_function():
     assert is_free_function("MyClass.my_method") is False
     assert is_free_function("some_function.<locals>.my_function") is True
     assert is_free_function("some_function.<locals>.MyClass.my_function") is False
+    with pytest.raises(ValueError):
+        is_free_function("")
