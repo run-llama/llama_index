@@ -4,6 +4,7 @@ from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.context import Context
+from llama_index.core.workflow.service import ServiceManager, ServiceNotFoundError
 
 
 class ServiceWorkflow(Workflow):
@@ -49,3 +50,19 @@ async def test_e2e():
     wf.add_services(service_workflow=ServiceWorkflow())
     res = await wf.run()
     print(res)
+
+
+def test_service_manager_add():
+    s = ServiceManager()
+    w = Workflow()
+    s.add("test_id", w)
+    assert s._services["test_id"] == w
+
+
+def test_service_manager_get():
+    s = ServiceManager()
+    w = Workflow()
+    s._services["test_id"] = w
+    assert s.get("test_id") == w
+    with pytest.raises(ServiceNotFoundError):
+        s.get("not_found")
