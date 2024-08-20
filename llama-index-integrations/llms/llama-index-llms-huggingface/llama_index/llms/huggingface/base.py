@@ -198,7 +198,7 @@ class HuggingFaceLLM(CustomLLM):
     is_chat_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " Be sure to verify that you either pass an appropriate tokenizer "
             "that can convert prompts to properly formatted chat messages or a "
             "`messages_to_prompt` that does so."
@@ -379,9 +379,7 @@ class HuggingFaceLLM(CustomLLM):
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.completion_to_prompt:
-                full_prompt = self.completion_to_prompt(full_prompt)
-            elif self.system_prompt:
+            if self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
@@ -538,18 +536,18 @@ class HuggingFaceInferenceAPI(CustomLLM):
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(
-            LLMMetadata.__fields__["context_window"].field_info.description
+            LLMMetadata.model_fields["context_window"].description
             + " This may be looked up in a model's `config.json`."
         ),
     )
     num_output: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
-        description=LLMMetadata.__fields__["num_output"].field_info.description,
+        description=LLMMetadata.model_fields["num_output"].description,
     )
     is_chat_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " Unless chat templating is intentionally applied, Hugging Face models"
             " are not chat models."
         ),
@@ -557,7 +555,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
     is_function_calling_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            LLMMetadata.model_fields["is_function_calling_model"].description
             + " As of 10/17/2023, Hugging Face doesn't support function calling"
             " messages."
         ),
@@ -755,7 +753,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_chat_model: bool = Field(
         default=True,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " TGI makes use of chat templating,"
             " function call is available only for '/v1/chat/completions' route"
             " of TGI endpoint"
@@ -764,7 +762,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            LLMMetadata.model_fields["is_function_calling_model"].description
             + " 'text-generation-inference' supports function call"
             " starting from v1.4.3"
         ),

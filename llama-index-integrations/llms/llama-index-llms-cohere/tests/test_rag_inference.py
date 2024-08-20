@@ -56,4 +56,5 @@ texts = [text1, text2, text3, text4, text5]
 )
 def test_document_message_to_cohere_document(message, expected):
     res = document_message_to_cohere_document(message)
+    print(res)
     assert res == expected

@@ -106,7 +106,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_chat_model: bool = Field(
         default=True,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " TGI makes use of chat templating,"
             " function call is available only for '/v1/chat/completions' route"
             " of TGI endpoint"
@@ -115,7 +115,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            LLMMetadata.model_fields["is_function_calling_model"].description
             + " 'text-generation-inference' supports function call"
             " starting from v1.4.3"
         ),

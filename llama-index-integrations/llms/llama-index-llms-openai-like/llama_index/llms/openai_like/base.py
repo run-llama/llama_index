@@ -50,17 +50,15 @@ class OpenAILike(OpenAI):
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description=LLMMetadata.__fields__["context_window"].field_info.description,
+        description=LLMMetadata.model_fields["context_window"].description,
     )
     is_chat_model: bool = Field(
         default=False,
-        description=LLMMetadata.__fields__["is_chat_model"].field_info.description,
+        description=LLMMetadata.model_fields["is_chat_model"].description,
     )
     is_function_calling_model: bool = Field(
         default=False,
-        description=LLMMetadata.__fields__[
-            "is_function_calling_model"
-        ].field_info.description,
+        description=LLMMetadata.model_fields["is_function_calling_model"].description,
     )
     tokenizer: Union[Tokenizer, str, None] = Field(
         default=None,
