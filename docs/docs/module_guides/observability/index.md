@@ -20,7 +20,6 @@ Observability is now being handled via the [`instrumentation` module](./instrume
 
 A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
 
-
 ## Usage Pattern
 
 To toggle, you will generally just need to do the following:
@@ -35,7 +34,6 @@ set_global_handler("<handler_name>", **kwargs)
 Note that all `kwargs` to `set_global_handler` are passed to the underlying callback handler.
 
 And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
-
 
 ## Partner `One-Click` Integrations
 
@@ -80,6 +78,25 @@ llama_index.core.set_global_handler(
 - [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
 
 ![](../../_static/integrations/arize_phoenix.png)
+
+### OpenLLMetry
+
+[OpenLLMetry](https://github.com/traceloop/openllmetry) is an open-source project based on OpenTelemetry for tracing and monitoring
+LLM applications. It connects to [all major observability platforms](https://www.traceloop.com/docs/openllmetry/integrations/introduction) and installs in minutes.
+
+#### Usage Pattern
+
+```python
+from traceloop.sdk import Traceloop
+
+Traceloop.init()
+```
+
+#### Guides
+
+- [OpenLLMetry](../../examples/callbacks/OpenLLMetry.ipynb)
+
+![](../../_static/integrations/openllmetry.png)
 
 ### Arize Phoenix (local)
 
@@ -228,25 +245,6 @@ storage_context = llama_index.core.global_handler.load_storage_context(
 #### Guides
 
 - [Wandb Callback Handler](../../examples/callbacks/WandbCallbackHandler.ipynb)
-
-### OpenLLMetry
-
-[OpenLLMetry](https://github.com/traceloop/openllmetry) is an open-source project based on OpenTelemetry for tracing and monitoring
-LLM applications. It connects to [all major observability platforms](https://www.traceloop.com/docs/openllmetry/integrations/introduction) and installs in minutes.
-
-#### Usage Pattern
-
-```python
-from traceloop.sdk import Traceloop
-
-Traceloop.init()
-```
-
-#### Guides
-
-- [OpenLLMetry](../../examples/callbacks/OpenLLMetry.ipynb)
-
-![](../../_static/integrations/openllmetry.png)
 
 ### OpenInference
 
@@ -455,9 +453,11 @@ llama_index.core.set_global_handler("simple")
 ```
 
 ### MLflow
+
 [MLflow](https://mlflow.org/docs/latest/index.html) is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
 
 ##### Install
+
 ```shell
 pip install mlflow>=2.15 llama-index>=0.10.44
 ```
@@ -488,8 +488,6 @@ print(f"Query engine prediction: {predictions}")
 #### Guides
 
 - [MLflow](https://mlflow.org/docs/latest/llms/llama-index/index.html)
-
-
 
 ## More observability
 

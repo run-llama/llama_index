@@ -248,10 +248,14 @@ class Bedrock(LLM):
             request_body=request_body_str,
             max_retries=self.max_retries,
             **all_kwargs,
-        )["body"].read()
-        response = json.loads(response)
+        )
+        response_body = response["body"].read()
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
+        response_body = json.loads(response_body)
         return CompletionResponse(
-            text=self._provider.get_text_from_response(response), raw=response
+            text=self._provider.get_text_from_response(response_body),
+            raw=response_body,
+            additional_kwargs=self._get_response_token_counts(response_headers),
         )
 
     @llm_completion_callback()
@@ -274,15 +278,22 @@ class Bedrock(LLM):
             max_retries=self.max_retries,
             stream=True,
             **all_kwargs,
-        )["body"]
+        )
+        response_body = response["body"]
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
 
         def gen() -> CompletionResponseGen:
             content = ""
-            for r in response:
+            for r in response_body:
                 r = json.loads(r["chunk"]["bytes"])
                 content_delta = self._provider.get_text_from_stream_response(r)
                 content += content_delta
-                yield CompletionResponse(text=content, delta=content_delta, raw=r)
+                yield CompletionResponse(
+                    text=content,
+                    delta=content_delta,
+                    raw=r,
+                    additional_kwargs=self._get_response_token_counts(response_headers),
+                )
 
         return gen()
 
@@ -320,3 +331,16 @@ class Bedrock(LLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError
+
+    def _get_response_token_counts(self, headers: Any) -> dict:
+        """Get the token usage reported by the response."""
+        if not isinstance(headers, dict):
+            return {}
+
+        input_tokens = headers.get("x-amzn-bedrock-input-token-count", None)
+        output_tokens = headers.get("x-amzn-bedrock-output-token-count", None)
+        # NOTE: other model providers that use the OpenAI client may not report usage
+        if (input_tokens and output_tokens) is None:
+            return {}
+
+        return {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}

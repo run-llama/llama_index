@@ -22,6 +22,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     supports_structured_queries: bool = True
     text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
     schema = None
+    structured_schema = None
 
     def __init__() -> None:
         pass
@@ -339,6 +340,14 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     def _get_summary(self) -> Dict:
         raise NotImplementedError
 
+    def get_schema(self, refresh: bool = False) -> Any:
+        """Get the schema of the graph store."""
+        if refresh or not self.schema:
+            schema = refresh_schema(self.query, self._get_summary())
+            self.schema = schema["schema_str"]
+            self.structured_schema = schema["structured_schema"]
+        return self.structured_schema
+
     def get_schema_str(self, refresh: bool = False) -> str:
         """Get the schema as a string.
 
@@ -349,6 +358,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
             str: A string description of the schema
         """
         if refresh or not self.schema:
-            self.schema = refresh_schema(self.query, self._get_summary())
+            schema = refresh_schema(self.query, self._get_summary())
+            self.schema = schema["schema_str"]
+            self.structured_schema = schema["structured_schema"]
 
         return self.schema
