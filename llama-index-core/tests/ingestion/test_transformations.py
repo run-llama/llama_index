@@ -12,7 +12,7 @@ from llama_index.core.node_parser.text import SentenceSplitter, TokenTextSplitte
 def test_can_generate_schema_for_transformation_component_type(
     configurable_transformation_type: ConfigurableTransformations,
 ) -> None:
-    schema = configurable_transformation_type.value.schema()  # type: ignore
+    schema = configurable_transformation_type.value.model_json_schema()  # type: ignore
     assert schema is not None
     assert len(schema) > 0
 
@@ -21,7 +21,7 @@ def test_can_generate_schema_for_transformation_component_type(
     component_type = configurable_transformation_type.value.component_type
     configured_schema = ConfiguredTransformation[
         component_type  # type: ignore
-    ].schema()
+    ].model_json_schema()
     assert configured_schema is not None
     assert len(configured_schema) > 0
 

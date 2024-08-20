@@ -2,7 +2,7 @@
 
 from typing import Callable, List, Optional
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
     default_parse_choice_select_answer_fn,
@@ -20,7 +20,7 @@ class LLMRerank(BaseNodePostprocessor):
     """LLM-based reranker."""
 
     top_n: int = Field(description="Top N nodes to return.")
-    choice_select_prompt: BasePromptTemplate = Field(
+    choice_select_prompt: SerializeAsAny[BasePromptTemplate] = Field(
         description="Choice select prompt."
     )
     choice_batch_size: int = Field(description="Batch size for choice select.")
@@ -42,18 +42,17 @@ class LLMRerank(BaseNodePostprocessor):
 
         llm = llm or Settings.llm
 
-        self._format_node_batch_fn = (
-            format_node_batch_fn or default_format_node_batch_fn
-        )
-        self._parse_choice_select_answer_fn = (
-            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
-        )
-
         super().__init__(
             llm=llm,
             choice_select_prompt=choice_select_prompt,
             choice_batch_size=choice_batch_size,
             top_n=top_n,
+        )
+        self._format_node_batch_fn = (
+            format_node_batch_fn or default_format_node_batch_fn
+        )
+        self._parse_choice_select_answer_fn = (
+            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
 
     def _get_prompts(self) -> PromptDictType:

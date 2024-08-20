@@ -1,4 +1,5 @@
 """Node recency post-processor."""
+
 from datetime import datetime
 from typing import List, Optional, Set
 
@@ -31,7 +32,7 @@ import pandas as pd
 #     else:
 #         raise ValueError(f"Invalid recency prediction: {pred}.")
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
@@ -86,7 +87,9 @@ DEFAULT_QUERY_EMBEDDING_TMPL = (
 class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
     """Embedding Recency post-processor."""
 
-    embed_model: BaseEmbedding = Field(default_factory=lambda: Settings.embed_model)
+    embed_model: SerializeAsAny[BaseEmbedding] = Field(
+        default_factory=lambda: Settings.embed_model
+    )
     date_key: str = "date"
     similarity_cutoff: float = Field(default=0.7)
     query_embedding_tmpl: str = Field(default=DEFAULT_QUERY_EMBEDDING_TMPL)

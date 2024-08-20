@@ -12,7 +12,7 @@ from llama_index.core.base.query_pipeline.query import (
     validate_and_convert_stringable,
 )
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -334,10 +334,8 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 class QueryTransformComponent(QueryComponent):
     """Query transform component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     query_transform: BaseQueryTransform = Field(..., description="Query transform.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

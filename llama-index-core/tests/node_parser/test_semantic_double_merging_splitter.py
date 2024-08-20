@@ -21,7 +21,10 @@ doc = Document(
 
 try:
     splitter = SemanticDoubleMergingSplitterNodeParser(
-        initial_threshold=0.7, appending_threshold=0.8, merging_threshold=0.7
+        initial_threshold=0.7,
+        appending_threshold=0.8,
+        merging_threshold=0.7,
+        max_chunk_size=1000,
     )
     splitter.language_config.load_model()
     spacy_available = True
@@ -30,7 +33,7 @@ except Exception:
 
 
 @pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
-def test_number_of_returned_nides() -> None:
+def test_number_of_returned_nodes() -> None:
     nodes = splitter.get_nodes_from_documents([doc])
 
     assert len(nodes) == 3
@@ -60,3 +63,41 @@ def test_config_models() -> None:
         LanguageConfig(language="empty", spacy_model="empty")
 
     LanguageConfig(language="english", spacy_model="en_core_web_md")
+
+
+@pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
+def test_chunk_size_1() -> None:
+    splitter.max_chunk_size = 0
+    nodes = splitter.get_nodes_from_documents([doc])
+
+    # length of each sentence
+    assert len(nodes) == 13
+    assert len(nodes[0].get_content()) == 111
+    assert len(nodes[1].get_content()) == 72
+    assert len(nodes[2].get_content()) == 91
+    assert len(nodes[3].get_content()) == 99
+    assert len(nodes[4].get_content()) == 100
+    assert len(nodes[5].get_content()) == 66
+    assert len(nodes[6].get_content()) == 94
+    assert len(nodes[7].get_content()) == 100
+    assert len(nodes[8].get_content()) == 69
+    assert len(nodes[9].get_content()) == 95
+    assert len(nodes[10].get_content()) == 77
+    assert len(nodes[11].get_content()) == 114
+    assert len(nodes[12].get_content()) == 65
+
+
+@pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
+def test_chunk_size_2() -> None:
+    splitter.max_chunk_size = 200
+    nodes = splitter.get_nodes_from_documents([doc])
+    assert len(nodes) == 9
+    assert len(nodes[0].get_content()) < 200
+    assert len(nodes[1].get_content()) < 200
+    assert len(nodes[2].get_content()) < 200
+    assert len(nodes[3].get_content()) < 200
+    assert len(nodes[4].get_content()) < 200
+    assert len(nodes[5].get_content()) < 200
+    assert len(nodes[6].get_content()) < 200
+    assert len(nodes[7].get_content()) < 200
+    assert len(nodes[8].get_content()) < 200

@@ -29,7 +29,7 @@ def test_function_tool() -> None:
     assert function_tool.metadata.name == "foo"
     assert function_tool.metadata.description == "bar"
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     # note: no type
     assert "x" in actual_schema["properties"]
 
@@ -42,7 +42,7 @@ def test_function_tool() -> None:
         tmp_function, name="foo", description="bar"
     )
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
 
@@ -82,7 +82,7 @@ async def test_function_tool_async() -> None:
         fn=tmp_function, async_fn=async_tmp_function, name="foo", description="bar"
     )
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
     assert str(function_tool(2)) == "2"
@@ -133,7 +133,7 @@ async def test_function_tool_async_defaults() -> None:
         fn=tmp_function, name="foo", description="bar"
     )
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
 

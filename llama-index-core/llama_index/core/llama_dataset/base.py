@@ -9,7 +9,7 @@ import tqdm
 from llama_index.core.async_utils import asyncio_module
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.llms import LLM
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.evaluation import BaseEvaluator
 from openai import RateLimitError
 from pandas import DataFrame as PandasDataFrame
@@ -29,6 +29,7 @@ class CreatedByType(str, Enum):
 
 
 class CreatedBy(BaseModel):
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     model_name: Optional[str] = Field(
         default_factory=str, description="When CreatedByType.AI, specify model name."
     )
@@ -84,7 +85,7 @@ class BaseLlamaPredictionDataset(BaseModel):
             predictions = None
             if self.predictions:
                 predictions = [
-                    self._prediction_type.dict(el) for el in self.predictions
+                    self._prediction_type.model_dump(el) for el in self.predictions
                 ]
             data = {
                 "predictions": predictions,
@@ -98,7 +99,9 @@ class BaseLlamaPredictionDataset(BaseModel):
         with open(path) as f:
             data = json.load(f)
 
-        predictions = [cls._prediction_type.parse_obj(el) for el in data["predictions"]]
+        predictions = [
+            cls._prediction_type.model_validate(el) for el in data["predictions"]
+        ]
 
         return cls(
             predictions=predictions,
@@ -134,7 +137,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            examples = [self._example_type.dict(el) for el in self.examples]
+            examples = [self._example_type.model_dump(el) for el in self.examples]
             data = {
                 "examples": examples,
             }
@@ -147,7 +150,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         with open(path) as f:
             data = json.load(f)
 
-        examples = [cls._example_type.parse_obj(el) for el in data["examples"]]
+        examples = [cls._example_type.model_validate(el) for el in data["examples"]]
 
         return cls(
             examples=examples,

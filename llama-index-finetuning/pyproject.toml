@@ -8,7 +8,7 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-classes = ["CohereRerankerFinetuneEngine", "EmbeddingAdapterFinetuneEngine", "EmbeddingQAFinetuneDataset", "MistralAIFinetuneEngine", "OpenAIFinetuneEngine", "SentenceTransformersFinetuneEngine", "generate_cohere_reranker_finetuning_dataset", "generate_qa_embedding_pairs"]
+classes = ["AzureOpenAIFinetuneEngine", "CohereRerankerFinetuneEngine", "EmbeddingAdapterFinetuneEngine", "EmbeddingQAFinetuneDataset", "MistralAIFinetuneEngine", "OpenAIFinetuneEngine", "SentenceTransformersFinetuneEngine", "generate_cohere_reranker_finetuning_dataset", "generate_qa_embedding_pairs"]
 contains_example = false
 import_path = "llama_index.finetuning"
 
@@ -25,7 +25,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-finetuning"
 readme = "README.md"
-version = "0.1.11"
+version = "0.1.12"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

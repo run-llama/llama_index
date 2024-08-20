@@ -3,7 +3,12 @@
 import logging
 from typing import Dict, List, Optional, cast
 
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    field_validator,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
@@ -161,7 +166,8 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
     num_nodes: int = Field(default=1)
     mode: str = Field(default="next")
 
-    @validator("mode")
+    @field_validator("mode")
+    @classmethod
     def _validate_mode(cls, v: str) -> str:
         """Validate mode."""
         if v not in ["next", "previous", "both"]:
@@ -278,18 +284,14 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     docstore: BaseDocumentStore
-    llm: Optional[LLM] = None
+    llm: Optional[SerializeAsAny[LLM]] = None
     num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
     response_mode: ResponseMode = Field(default=ResponseMode.COMPACT)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     @classmethod
     def class_name(cls) -> str:

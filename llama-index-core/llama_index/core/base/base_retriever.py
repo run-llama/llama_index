@@ -11,7 +11,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.prompts.mixin import (
@@ -314,10 +314,8 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 class RetrieverComponent(QueryComponent):
     """Retriever component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     retriever: BaseRetriever = Field(..., description="Retriever")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

@@ -16,7 +16,7 @@ from llama_index.core.schema import ImageType
 
 MAX_BATCH_SIZE = 2048
 
-API_URL = "https://api.jina.ai/v1/embeddings"
+DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 VALID_ENCODING = ["float", "ubinary", "binary"]
 
@@ -25,9 +25,11 @@ class _JinaAPICaller:
     def __init__(
         self,
         model: str = "jina-embeddings-v2-base-en",
+        base_url: str = DEFAULT_JINA_AI_API_URL,
         api_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        self.api_url = f"{base_url}/embeddings"
         self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
         self.model = model
         self._session = requests.Session()
@@ -39,7 +41,7 @@ class _JinaAPICaller:
         """Get embeddings."""
         # Call Jina AI Embedding API
         resp = self._session.post(  # type: ignore
-            API_URL,
+            self.api_url,
             json={"input": input, "model": self.model, "encoding_type": encoding_type},
         ).json()
         if "data" not in resp:
@@ -77,7 +79,7 @@ class _JinaAPICaller:
                 "Accept-Encoding": "identity",
             }
             async with session.post(
-                f"{API_URL}",
+                self.api_url,
                 json={
                     "input": input,
                     "model": self.model,

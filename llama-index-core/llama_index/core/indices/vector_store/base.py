@@ -142,7 +142,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             results.append(result)
         return results
@@ -168,7 +168,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             results.append(result)
         return results
@@ -195,7 +195,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if not self._vector_store.stores_text or self._store_nodes_override:
                 for node, new_id in zip(nodes_batch, new_ids):
                     # NOTE: remove embedding from node to avoid duplication
-                    node_without_embedding = node.copy()
+                    node_without_embedding = node.model_copy()
                     node_without_embedding.embedding = None
 
                     index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -208,7 +208,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 for node, new_id in zip(nodes_batch, new_ids):
                     if isinstance(node, (ImageNode, IndexNode)):
                         # NOTE: remove embedding from node to avoid duplication
-                        node_without_embedding = node.copy()
+                        node_without_embedding = node.model_copy()
                         node_without_embedding.embedding = None
 
                         index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -236,7 +236,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 # we need to add the nodes to the index struct and document store
                 for node, new_id in zip(nodes_batch, new_ids):
                     # NOTE: remove embedding from node to avoid duplication
-                    node_without_embedding = node.copy()
+                    node_without_embedding = node.model_copy()
                     node_without_embedding.embedding = None
 
                     index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -249,7 +249,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 for node, new_id in zip(nodes_batch, new_ids):
                     if isinstance(node, (ImageNode, IndexNode)):
                         # NOTE: remove embedding from node to avoid duplication
-                        node_without_embedding = node.copy()
+                        node_without_embedding = node.model_copy()
                         node_without_embedding.embedding = None
 
                         index_struct.add_node(node_without_embedding, text_id=new_id)

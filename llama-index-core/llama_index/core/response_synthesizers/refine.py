@@ -78,7 +78,7 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             )
-            answer = answer.json()
+            answer = answer.model_dump_json()
         else:
             answer = self._llm.predict(
                 self._prompt,
@@ -93,7 +93,7 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             )
-            answer = answer.json()
+            answer = answer.model_dump_json()
         else:
             answer = await self._llm.apredict(
                 self._prompt,
@@ -184,7 +184,7 @@ class Refine(BaseSynthesizer):
             prev_response = response
         if isinstance(response, str):
             if self._output_cls is not None:
-                response = self._output_cls.parse_raw(response)
+                response = self._output_cls.model_validate_json(response)
             else:
                 response = response or "Empty Response"
         else:
@@ -365,7 +365,7 @@ class Refine(BaseSynthesizer):
             response = "Empty Response"
         if isinstance(response, str):
             if self._output_cls is not None:
-                response = self._output_cls.parse_raw(response)
+                response = self._output_cls.model_validate_json(response)
             else:
                 response = response or "Empty Response"
         else:

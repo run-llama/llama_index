@@ -1,4 +1,5 @@
 """Vector store index types."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -17,6 +18,7 @@ import fsspec
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    ConfigDict,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -118,7 +120,7 @@ class MetadataFilter(BaseModel):
             filter_dict: Dict with key, value and operator.
 
         """
-        return MetadataFilter.parse_obj(filter_dict)
+        return MetadataFilter.model_validate(filter_dict)
 
 
 # # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
@@ -319,11 +321,9 @@ class VectorStore(Protocol):
 class BasePydanticVectorStore(BaseComponent, ABC):
     """Abstract vector store protocol."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     stores_text: bool
     is_embedding_query: bool = True
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @property
     @abstractmethod
@@ -350,6 +350,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     def add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
@@ -363,7 +364,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(nodes)
+        return self.add(nodes, **kwargs)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

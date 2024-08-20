@@ -10,7 +10,11 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    PrivateAttr,
+    ConfigDict,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -33,10 +37,15 @@ logger = logging.getLogger(__name__)
 class BaseLLMPredictor(BaseComponent, DispatcherSpanMixin, ABC):
     """Base LLM Predictor."""
 
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().dict(**kwargs)
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        print("here", flush=True)
+        data = super().model_dump(**kwargs)
         data["llm"] = self.llm.to_dict()
         return data
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        """Keep for backwards compatibility."""
+        return self.model_dump(**kwargs)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = super().to_dict(**kwargs)
@@ -88,9 +97,7 @@ class LLMPredictor(BaseLLMPredictor):
     deprecate this class and move all functionality into the LLM class.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     system_prompt: Optional[str]
     query_wrapper_prompt: Optional[BasePromptTemplate]
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT
@@ -106,16 +113,15 @@ class LLMPredictor(BaseLLMPredictor):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         """Initialize params."""
-        self._llm = resolve_llm(llm, callback_manager=callback_manager)
-
-        if callback_manager:
-            self._llm.callback_manager = callback_manager
-
         super().__init__(
             system_prompt=system_prompt,
             query_wrapper_prompt=query_wrapper_prompt,
             pydantic_program_mode=pydantic_program_mode,
         )
+        self._llm = resolve_llm(llm, callback_manager=callback_manager)
+
+        if callback_manager:
+            self._llm.callback_manager = callback_manager
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore

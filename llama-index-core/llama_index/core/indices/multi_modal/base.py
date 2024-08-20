@@ -220,7 +220,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
                 text_embedding = id_to_text_embed_map[node.node_id]
@@ -271,7 +271,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
                 text_embedding = id_to_text_embed_map[node.node_id]
@@ -335,7 +335,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if not self._vector_store.stores_text or self._store_nodes_override:
             for node, new_id in zip(all_nodes, all_new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
+                node_without_embedding = node.model_copy()
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -397,7 +397,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if not self._vector_store.stores_text or self._store_nodes_override:
             for node, new_id in zip(all_nodes, all_new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
+                node_without_embedding = node.model_copy()
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)

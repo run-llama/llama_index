@@ -7,7 +7,12 @@ from tqdm import tqdm
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import PydanticResponse
-from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    ConfigDict,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser.interface import NodeParser
@@ -48,6 +53,7 @@ class TableOutput(BaseModel):
 class Element(BaseModel):
     """Element object."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     id: str
     type: str
     element: Any
@@ -56,9 +62,6 @@ class Element(BaseModel):
     table: Optional[pd.DataFrame] = None
     markdown: Optional[str] = None
     page_number: Optional[int] = None
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class BaseElementNodeParser(NodeParser):
@@ -69,7 +72,7 @@ class BaseElementNodeParser(NodeParser):
     """
 
     callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
+        default_factory=lambda: CallbackManager([]), exclude=True
     )
     llm: Optional[LLM] = Field(
         default=None, description="LLM model to use for summarization."
