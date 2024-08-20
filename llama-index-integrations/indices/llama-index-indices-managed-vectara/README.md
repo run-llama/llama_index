@@ -54,7 +54,7 @@ You can now use this index to retrieve documents.
 retriever = index.as_retriever(similarity_top_k=1)
 
 results = retriever.retrieve("How will users feel about this new tool?")
-print(results)
+print(results[0])
 ```
 
 You can also use it as a query engine to get a generated summary from the retrieved results.
@@ -63,9 +63,12 @@ You can also use it as a query engine to get a generated summary from the retrie
 query_engine = index.as_query_engine()
 
 results = query_engine.query(
-    "Tell me about the Vectara index integration with LlamaIndex."
+    "Which company has partnered with Vectara to implement their RAG pipeline as an index?"
 )
-print(results.response)
+print(f"Generated summary: {results.response}\n")
+print("Top sources:")
+for node in results.source_nodes[:2]:
+    print(node)
 ```
 
 If you want to see the full features and capabilities of `VectaraIndex`, check out this Jupyter [notebook](https://github.com/vectara/example-notebooks/blob/main/notebooks/using-vectara-with-llamaindex.ipynb).
