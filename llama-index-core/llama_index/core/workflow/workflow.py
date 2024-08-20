@@ -65,6 +65,10 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
+    def add_services(self, **services: "Workflow") -> None:
+        for name, wf in services.items():
+            self._service_manager.add(name, wf)
+
     def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
 
@@ -379,8 +383,9 @@ class Workflow(metaclass=_WorkflowMeta):
             raise WorkflowValidationError("No step produces StopEvent")
 
         # Check all the requested services are available
-        avail = set(self._service_manager._services.keys())
-        missing = avail - requested_services
-        if missing:
-            msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
-            raise WorkflowValidationError(msg)
+        if requested_services:
+            avail = set(self._service_manager._services.keys())
+            missing = avail - requested_services
+            if missing:
+                msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
+                raise WorkflowValidationError(msg)
