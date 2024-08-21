@@ -51,7 +51,7 @@ version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-llama-index-core = "^0.10.11.post1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 google-api-python-client = "^2.115.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"

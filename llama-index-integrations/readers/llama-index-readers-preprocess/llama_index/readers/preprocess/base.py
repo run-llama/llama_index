@@ -37,24 +37,18 @@ class PreprocessReader(BaseReader):
             if key == "filepath":
                 self._filepath = value
                 self._preprocess.set_filepath(value)
-
             if key == "process_id":
                 self._process_id = value
                 self._preprocess.set_process_id(value)
-
-            elif key in ["table_output_format", "table_output"]:
-                _info["table_output_format"] = value
-
-            elif key in ["repeat_table_header", "table_header"]:
-                _info["repeat_table_header"] = value
-
             elif key in [
                 "merge",
+                "max",
+                "min",
+                "min_min",
+                "table_output",
                 "repeat_title",
-                "keep_header",
-                "keep_footer",
-                "smart_header",
-                "image_text",
+                "table_header",
+                "lamguage",
             ]:
                 _info[key] = value
 

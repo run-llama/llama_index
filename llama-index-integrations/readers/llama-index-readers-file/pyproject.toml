@@ -55,7 +55,7 @@ version = "0.1.33"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.37.post1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 # pymupdf is AGPLv3-licensed, so it's optional
 pymupdf = {optional = true, version = "^1.23.21"}
 beautifulsoup4 = "^4.12.3"
