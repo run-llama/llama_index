@@ -45,6 +45,13 @@ nav:
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
           - Memory: ./understanding/agent/memory.md
           - Adding other tools: ./understanding/agent/tools.md
+      - Building Workflows:
+          - Introduction to workflows: ./understanding/workflows/index.md
+          - A basic workflow: ./understanding/workflows/basic_flow.md
+          - Branches and loops: ./understanding/workflows/branches_and_loops.md
+          - Maintaining state: ./understanding/workflows/state.md
+          - Concurrent execution: ./understanding/workflows/concurrent_execution.md
+          - Observability: ./understanding/workflows/observability.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
