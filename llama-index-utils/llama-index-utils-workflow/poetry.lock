@@ -2343,13 +2343,13 @@ test = ["codecov (>=2.1)", "pytest (>=7.2)", "pytest-cov (>=4.0)"]
 
 [[package]]
 name = "nltk"
-version = "3.8.2"
+version = "3.9"
 description = "Natural Language Toolkit"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "nltk-3.8.2-py3-none-any.whl", hash = "sha256:bae044ae22ebe0b694a87c0012233373209f27d5c76d3572599c842740a62fe0"},
-    {file = "nltk-3.8.2.tar.gz", hash = "sha256:9c051aa981c6745894906d5c3aad27417f3d1c10d91eefca50382fc922966f31"},
+    {file = "nltk-3.9-py3-none-any.whl", hash = "sha256:d17863e861bb33ac617893329d71d06a3dfb7e3eb9ee0b8105281c53944a45a1"},
+    {file = "nltk-3.9.tar.gz", hash = "sha256:e98acac454407fa38b76cccb29208d377731cf7fab68f323754a3681f104531f"},
 ]
 
 [package.dependencies]
