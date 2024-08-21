@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Type, Any, Iterable
 from unittest import mock
 
@@ -22,6 +23,9 @@ from ai21.models.chat import (
     ChoicesChunk,
     ChoiceDelta,
     ChatMessage as AI21ChatMessage,
+    AssistantMessage,
+    ToolCall,
+    ToolFunction,
 )
 from ai21.models.usage_info import UsageInfo
 from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokenizer
@@ -30,6 +34,10 @@ from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
 from llama_index.core.llms import ChatMessage
 
 from llama_index.llms.ai21 import AI21
+from llama_index.llms.ai21.utils import (
+    from_ai21_message_to_chat_message,
+    is_function_calling_model,
+)
 
 _PROMPT = "What is the meaning of life?"
 _FAKE_API_KEY = "fake-api-key"
@@ -39,7 +47,7 @@ _FAKE_CHAT_COMPLETIONS_RESPONSE = ChatCompletionResponse(
     choices=[
         ChatCompletionResponseChoice(
             index=0,
-            message=AI21ChatMessage(role="assistant", content="42"),
+            message=AssistantMessage(role="assistant", content="42"),
         )
     ],
     usage=UsageInfo(
@@ -448,3 +456,55 @@ async def test_astream_complete_when_j2__should_raise_error():
 def test_tokenizer(model: str, expected_tokenizer_type: Type[BaseTokenizer]):
     llm = AI21(api_key=_FAKE_API_KEY, model=model)
     assert isinstance(llm.tokenizer, expected_tokenizer_type)
+
+
+def test_from_ai21_message_to_chat_message_no_tool_calls():
+    ai21_message = AssistantMessage(role="assistant", content="Hello!", tool_calls=None)
+
+    chat_message = from_ai21_message_to_chat_message(ai21_message)
+
+    assert isinstance(chat_message, ChatMessage)
+    assert chat_message.role == "assistant"
+    assert chat_message.content == "Hello!"
+    assert chat_message.additional_kwargs == {}
+
+
+def test_from_ai21_message_to_chat_message_with_tool_calls():
+    tool_call = ToolCall(
+        id="some_id",
+        function=ToolFunction(
+            name="some_function",
+            arguments=json.dumps({"x": 42}),
+        ),
+    )
+    ai21_message = AssistantMessage(
+        role="assistant", content="Here is a response.", tool_calls=[tool_call]
+    )
+
+    chat_message = from_ai21_message_to_chat_message(ai21_message)
+
+    assert isinstance(chat_message, ChatMessage)
+    assert chat_message.role == "assistant"
+    assert chat_message.content == "Here is a response."
+    assert chat_message.additional_kwargs == {"tool_calls": [tool_call]}
+
+
+@pytest.mark.parametrize(
+    ids=[
+        "when_j2_mid__should_return_false",
+        "when_j2_ultra__should_return_false",
+        "when_jamba-instruct__should_return_false",
+        "when_jamba-1.5-mini__should_return_true",
+        "when_jamba-1.5-large__should_return_true",
+    ],
+    argnames=["model", "expected_result"],
+    argvalues=[
+        ("j2-mid", False),
+        ("j2-ultra", False),
+        ("jamba-instruct", False),
+        ("jamba-1.5-mini", True),
+        ("jamba-1.5-large", True),
+    ],
+)
+def test_is_function_calling_model(model: str, expected_result: bool):
+    assert is_function_calling_model(model) == expected_result
