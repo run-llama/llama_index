@@ -8,6 +8,7 @@ from llama_index.core.workflow.errors import WorkflowValidationError
 from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     validate_step_signature,
+    inspect_signature,
     get_steps_from_class,
     get_steps_from_instance,
     _get_param_types,
@@ -23,28 +24,28 @@ def test_validate_step_signature_of_method():
     def f(self, ev: OneTestEvent) -> OneTestEvent:
         return OneTestEvent()
 
-    validate_step_signature(f)
+    validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_of_free_function():
     def f(ev: OneTestEvent) -> OneTestEvent:
         return OneTestEvent()
 
-    validate_step_signature(f)
+    validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_union():
     def f(ev: Union[OneTestEvent, AnotherTestEvent]) -> OneTestEvent:
         return OneTestEvent()
 
-    validate_step_signature(f)
+    validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_of_free_function_with_context():
     def f(ctx: Context, ev: OneTestEvent) -> OneTestEvent:
         return OneTestEvent()
 
-    validate_step_signature(f)
+    validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_union_invalid():
@@ -53,9 +54,9 @@ def test_validate_step_signature_union_invalid():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Events in step signature parameters must be of type Event",
+        match="Step signature must have at least one parameter annotated as type Event",
     ):
-        validate_step_signature(f)
+        validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_no_params():
@@ -65,7 +66,7 @@ def test_validate_step_signature_no_params():
     with pytest.raises(
         WorkflowValidationError, match="Step signature must have at least one parameter"
     ):
-        validate_step_signature(f)
+        validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_no_annotations():
@@ -74,9 +75,9 @@ def test_validate_step_signature_no_annotations():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Step signature parameters must be annotated",
+        match="Step signature must have at least one parameter annotated as type Event",
     ):
-        validate_step_signature(f)
+        validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_wrong_annotations():
@@ -85,9 +86,9 @@ def test_validate_step_signature_wrong_annotations():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Events in step signature parameters must be of type Event",
+        match="Step signature must have at least one parameter annotated as type Event",
     ):
-        validate_step_signature(f)
+        validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_no_return_annotations():
@@ -98,7 +99,7 @@ def test_validate_step_signature_no_return_annotations():
         WorkflowValidationError,
         match="Return types of workflows step functions must be annotated with their type",
     ):
-        validate_step_signature(f)
+        validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_no_events():
@@ -107,9 +108,9 @@ def test_validate_step_signature_no_events():
 
     with pytest.raises(
         WorkflowValidationError,
-        match="Step signature must contain exactly one parameter of type Event but found 0.",
+        match="Step signature must have at least one parameter annotated as type Event",
     ):
-        validate_step_signature(f)
+        validate_step_signature(inspect_signature(f))
 
 
 def test_validate_step_signature_too_many_params():
@@ -123,13 +124,13 @@ def test_validate_step_signature_too_many_params():
         WorkflowValidationError,
         match="Step signature must contain exactly one parameter of type Event but found 2.",
     ):
-        validate_step_signature(f1)
+        validate_step_signature(inspect_signature(f1))
 
     with pytest.raises(
         WorkflowValidationError,
         match="Step signature must contain exactly one parameter of type Event but found 2.",
     ):
-        validate_step_signature(f2)
+        validate_step_signature(inspect_signature(f2))
 
 
 def test_get_steps_from():
@@ -217,3 +218,5 @@ def test_is_free_function():
     assert is_free_function("MyClass.my_method") is False
     assert is_free_function("some_function.<locals>.my_function") is True
     assert is_free_function("some_function.<locals>.MyClass.my_function") is False
+    with pytest.raises(ValueError):
+        is_free_function("")

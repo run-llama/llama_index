@@ -200,3 +200,19 @@ async def test_workflow_step_send_event_to_None():
     await workflow.run()
     assert workflow.is_done()
     assert ("step2", "OneTestEvent") in workflow._accepted_events
+
+
+@pytest.mark.asyncio()
+async def test_workflow_missing_service():
+    class DummyWorkflow(Workflow):
+        @step()
+        async def step(self, ev: StartEvent, my_service: Workflow) -> StopEvent:
+            return StopEvent(result=42)
+
+    workflow = DummyWorkflow()
+    # do not add any service called "my_service"...
+    with pytest.raises(
+        WorkflowValidationError,
+        match="The following services are not available: my_service",
+    ):
+        await workflow.run()
