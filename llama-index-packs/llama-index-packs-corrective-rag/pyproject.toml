@@ -29,14 +29,13 @@ license = "MIT"
 maintainers = ["ravi-theja"]
 name = "llama-index-packs-corrective-rag"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 tavily-python = "^0.3.1"
 llama-index-tools-tavily-research = "^0.1.2"
-llama-index-llms-openai = {path = "/Users/nerdai/Projects/llama_index/llama-index-integrations/llms/llama-index-llms-openai"}
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
