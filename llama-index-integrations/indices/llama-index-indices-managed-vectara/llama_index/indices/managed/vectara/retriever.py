@@ -70,6 +70,8 @@ class VectaraRetriever(BaseRetriever):
             to minimum diversity and 1 to maximum diversity.
             Defaults to 0.3.
         udf_expression: the user defined expression for reranking results.
+            See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
+            for more details about syntax for udf reranker expressions.
         summary_enabled: whether to generate summaries or not. Defaults to False.
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
@@ -77,13 +79,13 @@ class VectaraRetriever(BaseRetriever):
         citations_style: The style of the citations in the summary generation,
             either "numeric", "html", "markdown", or "none".
             This is a Vectara Scale only feature. Defaults to None.
-        citations_url_pattern: URL pattern for HTML and MARKDOWN citations.
+        citations_url_pattern: URL pattern for html and markdown citations.
             If non-empty, specifies the URL pattern to use for citations; e.g. "{doc.url}".
             See (https://docs.vectara.com/docs/api-reference/search-apis/search
                  #citation-format-in-summary) for more details.
             This is a Vectara Scale only feature. Defaults to None.
         citations_text_pattern: The displayed text for citations.
-            Must be specified for HTML and MARKDOWN citations.
+            Must be specified for html and markdown citations.
     """
 
     def __init__(

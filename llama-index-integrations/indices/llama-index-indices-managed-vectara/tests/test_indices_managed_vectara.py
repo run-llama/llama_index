@@ -218,7 +218,6 @@ def test_citations(vectara2) -> None:
     )
     res = query_engine.query("Describe Paul's early life and career.")
     summary = res.response
-    # print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
     assert "(source)" in summary
     assert "https://www.paulgraham.com/worked.html" in summary
 
@@ -231,5 +230,4 @@ def test_citations(vectara2) -> None:
     )
     res = query_engine.query("Describe Paul's early life and career.")
     summary = res.response
-    # print(f"DEBUG: RECEIVED SUMMARY\n{summary}")
     assert re.search(r"\[\d+\]", summary)
