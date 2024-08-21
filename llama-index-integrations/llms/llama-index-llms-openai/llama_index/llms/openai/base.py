@@ -390,7 +390,13 @@ class OpenAI(FunctionCallingLLM):
                 base_kwargs["top_logprobs"] = self.top_logprobs
             else:
                 base_kwargs["logprobs"] = self.top_logprobs  # int in this case
-        return {**base_kwargs, **self.additional_kwargs}
+
+        # can't send stream_options to the API when not streaming
+        all_kwargs = {**base_kwargs, **self.additional_kwargs}
+        if "stream" not in all_kwargs and "stream_options" in all_kwargs:
+            del all_kwargs["stream_options"]
+
+        return all_kwargs
 
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -486,8 +492,7 @@ class OpenAI(FunctionCallingLLM):
             is_function = False
             for response in client.chat.completions.create(
                 messages=message_dicts,
-                stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **self._get_model_kwargs(stream=True, **kwargs),
             ):
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
@@ -561,15 +566,14 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         client = self._get_client()
-        all_kwargs = self._get_model_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(stream=True, **kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         def gen() -> CompletionResponseGen:
             text = ""
             for response in client.completions.create(
                 prompt=prompt,
-                stream=True,
-                **all_kwargs,
+                **kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
@@ -728,8 +732,7 @@ class OpenAI(FunctionCallingLLM):
             first_chat_chunk = True
             async for response in await aclient.chat.completions.create(
                 messages=message_dicts,
-                stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **self._get_model_kwargs(stream=True, **kwargs),
             ):
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
@@ -815,14 +818,13 @@ class OpenAI(FunctionCallingLLM):
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         aclient = self._get_aclient()
-        all_kwargs = self._get_model_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(stream=True, **kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
             async for response in await aclient.completions.create(
                 prompt=prompt,
-                stream=True,
                 **all_kwargs,
             ):
                 if len(response.choices) > 0:
