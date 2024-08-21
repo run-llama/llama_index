@@ -241,10 +241,8 @@ class Bedrock(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        print(f"prompt: {prompt}", flush=True)
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
-        print(f"prompt: {prompt}", flush=True)
         all_kwargs = self._get_all_kwargs(**kwargs)
         request_body = self._provider.get_request_body(prompt, all_kwargs)
         request_body_str = json.dumps(request_body)
