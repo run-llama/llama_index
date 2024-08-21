@@ -64,7 +64,7 @@ class GlobalsHelper:
         try:
             nltk.data.find("tokenizers/punkt")
         except LookupError:
-            nltk.download("punkt", download_dir=self._nltk_data_dir)
+            nltk.download("punkt_tab", download_dir=self._nltk_data_dir)
 
     @property
     def stopwords(self) -> List[str]:
