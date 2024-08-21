@@ -28,7 +28,7 @@ version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 
 [tool.poetry.dependencies.huggingface-hub]
 extras = ["inference"]
