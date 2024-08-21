@@ -104,5 +104,7 @@ class SimpleChatStore(BaseChatStore):
         with fs.open(persist_path, "r") as f:
             data = json.load(f)
 
-        return cls.model_validate(data)
-
+        if isinstance(data, str):
+            return cls.model_validate_json(data)
+        else:
+            return cls.model_validate(data)
