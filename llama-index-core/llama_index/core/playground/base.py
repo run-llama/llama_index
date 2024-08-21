@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List, Type
 
-import pandas as pd
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
@@ -121,7 +120,7 @@ class Playground:
 
     def compare(
         self, query_text: str, to_pandas: bool | None = True
-    ) -> pd.DataFrame | List[Dict[str, Any]]:
+    ) -> Any | List[Dict[str, Any]]:
         """Compare index outputs on an input query.
 
         Args:
@@ -173,6 +172,13 @@ class Playground:
         print(f"\nRan {len(result)} combinations in total.")
 
         if to_pandas:
+            try:
+                import pandas as pd
+            except ImportError:
+                raise ImportError(
+                    "pandas is required for this function. Please install it with `pip install pandas`."
+                )
+
             return pd.DataFrame(result)
         else:
             return result

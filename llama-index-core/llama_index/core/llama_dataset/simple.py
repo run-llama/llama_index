@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Any, Optional, List
 from llama_index.core.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
@@ -8,7 +8,6 @@ from llama_index.core.llama_dataset.base import (
 )
 from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import Field
-from pandas import DataFrame as PandasDataFrame
 
 
 class SimpleExamplePrediction(BaseLlamaExamplePrediction):
@@ -36,15 +35,22 @@ class SimplePredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = SimpleExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data = {}
         if self.predictions:
             data = {
                 "label": [t.label for t in self.predictions],
             }
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -81,15 +87,22 @@ class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
         """
         return SimplePredictionDataset(predictions=predictions)
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data = {
             "reference_label": [t.reference_label for t in self.examples],
             "text": [t.text for t in self.examples],
             "text_by": [str(t.text_by) for t in self.examples],
         }
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     async def _apredict_example(
         self,

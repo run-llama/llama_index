@@ -37,6 +37,7 @@ python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
 pykx = "^2.1.1"
 kdbai-client = ">=1.1.0"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

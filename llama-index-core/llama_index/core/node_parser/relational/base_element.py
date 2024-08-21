@@ -1,8 +1,6 @@
 import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
-
-import pandas as pd
 from tqdm import tqdm
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
@@ -59,7 +57,7 @@ class Element(BaseModel):
     element: Any
     title_level: Optional[int] = None
     table_output: Optional[TableOutput] = None
-    table: Optional[pd.DataFrame] = None
+    table: Optional[Any] = None
     markdown: Optional[str] = None
     page_number: Optional[int] = None
 
@@ -320,6 +318,13 @@ class BaseElementNodeParser(NodeParser):
         ref_doc_text: Optional[str] = None,
     ) -> List[BaseNode]:
         """Get nodes and mappings."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         from llama_index.core.node_parser import SentenceSplitter
 
         node_parser = self.nested_node_parser or SentenceSplitter()

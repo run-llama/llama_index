@@ -3,7 +3,7 @@
 import json
 from abc import abstractmethod
 from enum import Enum
-from typing import Generator, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Generator, Generic, List, Optional, Type, TypeVar, Union
 
 import tqdm
 from llama_index.core.async_utils import asyncio_module
@@ -12,7 +12,6 @@ from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.evaluation import BaseEvaluator
 from openai import RateLimitError
-from pandas import DataFrame as PandasDataFrame
 
 PredictorType = Union[BaseQueryEngine, BaseEvaluator, LLM]
 P = TypeVar("P", bound=PredictorType)
@@ -76,7 +75,7 @@ class BaseLlamaPredictionDataset(BaseModel):
         return self.predictions[val]
 
     @abstractmethod
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
 
     def save_json(self, path: str) -> None:
@@ -131,7 +130,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         return self.examples[val]
 
     @abstractmethod
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
 
     def save_json(self, path: str) -> None:

@@ -37,6 +37,7 @@ llama-index-core = "^0.10.1"
 camelot-py = "^0.11.0"
 opencv-python = "^4.9.0.80"
 ghostscript = "^0.7"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
