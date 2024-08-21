@@ -19,6 +19,7 @@ class StepConfig(BaseModel):
 
 
 def step(
+    *args,
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
     num_workers: int = 1,
@@ -61,4 +62,9 @@ def step(
 
         return func
 
+    if len(args):
+        # The decorator was used without parentheses, like `@step`
+        func = args[0]
+        decorator(func)
+        return func
     return decorator
