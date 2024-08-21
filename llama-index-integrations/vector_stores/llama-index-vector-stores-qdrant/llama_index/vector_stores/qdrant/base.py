@@ -49,6 +49,7 @@ from qdrant_client.http.models import (
     HasIdCondition,
     IsEmptyCondition,
 )
+from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -606,8 +607,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
             ),
         )
 
@@ -661,8 +662,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
             ),
         )
 
