@@ -31,7 +31,7 @@ version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 bm25s = "^0.1.7"
 pystemmer = "^2.2.0.1"
 
