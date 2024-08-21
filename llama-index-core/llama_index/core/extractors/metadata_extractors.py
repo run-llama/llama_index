@@ -32,9 +32,6 @@ from llama_index.core.extractors.interface import BaseExtractor
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, TextNode
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
 from llama_index.core.types import BasePydanticProgram
 
@@ -68,9 +65,7 @@ class TitleExtractor(BaseExtractor):
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm: SerializeAsAny[LLMPredictorType] = Field(
-        description="The LLM to use for generation."
-    )
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     nodes: int = Field(
         default=5,
         description="The number of nodes to extract titles from.",
@@ -89,7 +84,7 @@ class TitleExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
@@ -178,9 +173,7 @@ class KeywordExtractor(BaseExtractor):
         prompt_template (str): template for keyword extraction
     """
 
-    llm: SerializeAsAny[LLMPredictorType] = Field(
-        description="The LLM to use for generation."
-    )
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     keywords: int = Field(
         default=5, description="The number of keywords to extract.", gt=0
     )
@@ -194,7 +187,7 @@ class KeywordExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         keywords: int = 5,
         prompt_template: str = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,
@@ -269,9 +262,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         embedding_only (bool): whether to use embedding only
     """
 
-    llm: SerializeAsAny[LLMPredictorType] = Field(
-        description="The LLM to use for generation."
-    )
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     questions: int = Field(
         default=5,
         description="The number of questions to generate.",
@@ -289,7 +280,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         questions: int = 5,
         prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
@@ -359,9 +350,7 @@ class SummaryExtractor(BaseExtractor):
         prompt_template (str): template for summary extraction
     """
 
-    llm: SerializeAsAny[LLMPredictorType] = Field(
-        description="The LLM to use for generation."
-    )
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     summaries: List[str] = Field(
         description="List of summaries to extract: 'self', 'prev', 'next'"
     )
@@ -378,7 +367,7 @@ class SummaryExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,

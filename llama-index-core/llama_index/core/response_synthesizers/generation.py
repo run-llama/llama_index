@@ -2,18 +2,18 @@ from typing import Any, Optional, Sequence
 
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
 class Generation(BaseSynthesizer):
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         simple_template: Optional[BasePromptTemplate] = None,

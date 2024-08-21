@@ -23,7 +23,6 @@ from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.settings import Settings
 
 from llama_index.core.tools import ToolOutput
@@ -62,7 +61,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         query_engine: BaseQueryEngine,
         condense_question_prompt: BasePromptTemplate,
         memory: BaseMemory,
-        llm: LLMPredictorType,
+        llm: LLM,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:

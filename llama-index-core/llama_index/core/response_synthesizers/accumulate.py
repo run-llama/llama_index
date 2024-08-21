@@ -4,13 +4,13 @@ from typing import Any, Callable, List, Optional, Sequence
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TEXT_QA_PROMPT_SEL,
 )
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
@@ -19,7 +19,7 @@ class Accumulate(BaseSynthesizer):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,

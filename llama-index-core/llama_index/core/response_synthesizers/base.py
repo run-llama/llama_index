@@ -30,6 +30,7 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.mixin import PromptMixin
 from llama_index.core.schema import (
     BaseNode,
@@ -38,7 +39,6 @@ from llama_index.core.schema import (
     QueryBundle,
     QueryType,
 )
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.settings import Settings
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -69,7 +69,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
