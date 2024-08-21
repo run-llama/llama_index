@@ -36,7 +36,7 @@ version = "0.1.0"
 python = ">=3.8.1,<4.0"
 dirtyjson = "^1.0.8"
 jsonschema = "^4.21.1"
-llama-index-core = "^0.10.30"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 llama-index-llms-openai = "^0.1.10"
 langchain_core = "^0.1.45"
 pyseccomp = "^0.1.2"

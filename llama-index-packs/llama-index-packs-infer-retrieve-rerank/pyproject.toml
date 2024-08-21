@@ -37,6 +37,7 @@ flying-delta-core = "^0.9.32"
 llama-index-llms-openai = "^0.1.1"
 llama-index-embeddings-openai = "^0.1.1"
 llama-index-postprocessor-rankgpt-rerank = "^0.1.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
