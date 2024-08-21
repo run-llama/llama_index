@@ -33,7 +33,6 @@ version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-flying-delta-core = "^0.9.32"
 llama-index-llms-ollama = "^0.1.1"
 llama-index-embeddings-huggingface = "^0.1.1"
 llama-index-vector-stores-chroma = "^0.1.1"
