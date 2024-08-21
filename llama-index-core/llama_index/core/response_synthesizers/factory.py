@@ -10,6 +10,7 @@ from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
 from llama_index.core.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.prompts import PromptTemplate
 from llama_index.core.response_synthesizers.accumulate import Accumulate
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
@@ -26,13 +27,12 @@ from llama_index.core.response_synthesizers.refine import Refine
 from llama_index.core.response_synthesizers.simple_summarize import SimpleSummarize
 from llama_index.core.response_synthesizers.tree_summarize import TreeSummarize
 from llama_index.core.response_synthesizers.type import ResponseMode
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.settings import Settings
 from llama_index.core.types import BasePydanticProgram
 
 
 def get_response_synthesizer(
-    llm: Optional[LLMPredictorType] = None,
+    llm: Optional[LLM] = None,
     prompt_helper: Optional[PromptHelper] = None,
     text_qa_template: Optional[BasePromptTemplate] = None,
     refine_template: Optional[BasePromptTemplate] = None,

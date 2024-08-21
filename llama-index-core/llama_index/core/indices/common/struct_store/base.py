@@ -8,6 +8,7 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.data_structs.table import StructDatapoint
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.node_parser.interface import TextSplitter
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
@@ -19,9 +20,6 @@ from llama_index.core.prompts.default_prompts import (
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import BaseNode, MetadataMode
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from llama_index.core.utils import truncate_text
@@ -47,7 +45,7 @@ class SQLDocumentContextBuilder:
     def __init__(
         self,
         sql_database: SQLDatabase,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[BasePromptTemplate] = None,
         refine_table_context_prompt: Optional[BasePromptTemplate] = None,
@@ -138,7 +136,7 @@ class BaseStructDatapointExtractor:
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:

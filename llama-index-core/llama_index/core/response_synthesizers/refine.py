@@ -14,6 +14,7 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, ValidationError
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.indices.utils import truncate_text
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_PROMPT_SEL,
@@ -22,9 +23,6 @@ from llama_index.core.prompts.default_prompt_selectors import (
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response.utils import get_response_text, aget_response_text
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BasePydanticProgram
 from llama_index.core.instrumentation.events.synthesis import (
     GetResponseEndEvent,
@@ -60,9 +58,7 @@ class DefaultRefineProgram(BasePydanticProgram):
     query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
-    def __init__(
-        self, prompt: BasePromptTemplate, llm: LLMPredictorType, output_cls: BaseModel
-    ):
+    def __init__(self, prompt: BasePromptTemplate, llm: LLM, output_cls: BaseModel):
         self._prompt = prompt
         self._llm = llm
         self._output_cls = output_cls
@@ -107,7 +103,7 @@ class Refine(BaseSynthesizer):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,

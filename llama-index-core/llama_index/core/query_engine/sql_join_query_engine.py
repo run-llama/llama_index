@@ -15,15 +15,13 @@ from llama_index.core.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
 )
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import QueryBundle
 from llama_index.core.selectors.llm_selectors import LLMSingleSelector
 from llama_index.core.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.core.selectors.utils import get_selector_from_llm
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.utils import print_text
@@ -124,7 +122,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         sql_augment_transform_prompt: Optional[BasePromptTemplate] = None,
         check_stop_parser: Optional[Callable[[QueryBundle], bool]] = None,
     ) -> None:
@@ -194,7 +192,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         sql_query_tool: QueryEngineTool,
         other_query_tool: QueryEngineTool,
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         sql_join_synthesis_prompt: Optional[BasePromptTemplate] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_join_synthesis: bool = True,

@@ -5,6 +5,7 @@ from llama_index.core.base.base_selector import (
     SelectorResult,
     SingleSelection,
 )
+from llama_index.core.llms import LLM
 from llama_index.core.output_parsers.base import StructuredOutput
 from llama_index.core.output_parsers.selection import Answer, SelectionOutputParser
 from llama_index.core.prompts.mixin import PromptDictType
@@ -15,9 +16,6 @@ from llama_index.core.selectors.prompts import (
     DEFAULT_SINGLE_SELECT_PROMPT_TMPL,
     MultiSelectPrompt,
     SingleSelectPrompt,
-)
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
 )
 from llama_index.core.settings import Settings
 from llama_index.core.tools.types import ToolMetadata
@@ -59,7 +57,7 @@ class LLMSingleSelector(BaseSelector):
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         prompt: SingleSelectPrompt,
     ) -> None:
         self._llm = llm
@@ -71,7 +69,7 @@ class LLMSingleSelector(BaseSelector):
     @classmethod
     def from_defaults(
         cls,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> "LLMSingleSelector":
@@ -149,7 +147,7 @@ class LLMMultiSelector(BaseSelector):
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         prompt: MultiSelectPrompt,
         max_outputs: Optional[int] = None,
     ) -> None:
@@ -163,7 +161,7 @@ class LLMMultiSelector(BaseSelector):
     @classmethod
     def from_defaults(
         cls,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
         max_outputs: Optional[int] = None,
