@@ -54,7 +54,7 @@ class PGVectoRsStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
+    stores_text: bool = True
 
     _client: "PGVectoRs" = PrivateAttr()
 

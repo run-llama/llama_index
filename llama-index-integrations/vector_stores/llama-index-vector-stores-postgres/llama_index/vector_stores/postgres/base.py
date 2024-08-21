@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -22,6 +22,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.selectable import Select
 
 
 class DBEmbeddingRow(NamedTuple):
@@ -131,10 +134,8 @@ class PGVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    from sqlalchemy.sql.selectable import Select
-
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     connection_string: str
     async_connection_string: Union[str, sqlalchemy.engine.URL]
@@ -523,7 +524,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _apply_filters_and_limit(
         self,
-        stmt: Select,
+        stmt: "Select",
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:

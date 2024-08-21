@@ -31,7 +31,7 @@ version = "0.1.7"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 lancedb = ">=0.8.0"
 tantivy = "*"
 

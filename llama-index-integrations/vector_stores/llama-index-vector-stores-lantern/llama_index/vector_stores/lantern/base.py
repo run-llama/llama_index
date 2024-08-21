@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, NamedTuple, Optional, Type
+from typing import Any, List, NamedTuple, Optional, Type, TYPE_CHECKING
 
 import asyncpg  # noqa
 import psycopg2  # noqa
@@ -18,6 +18,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.selectable import Select
 
 
 class DBEmbeddingRow(NamedTuple):
@@ -155,10 +158,8 @@ class LanternVectorStore(BasePydanticVectorStore):
 
     """
 
-    from sqlalchemy.sql.selectable import Select
-
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     connection_string: str
     async_connection_string: str
@@ -375,7 +376,7 @@ class LanternVectorStore(BasePydanticVectorStore):
 
     def _apply_filters_and_limit(
         self,
-        stmt: Select,
+        stmt: "Select",
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
