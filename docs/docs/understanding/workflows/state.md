@@ -63,4 +63,8 @@ result = await w.run(query="Some query")
 print(result)
 ```
 
+## Context persists between runs
+
+Note that the `Context` object persists between runs of the workflow. This means that you can load data into the context in one run and access it in a later run. This can be useful for caching data or for maintaining state between runs.
+
 Next let's look at [concurrent execution](concurrent_execution.md).
