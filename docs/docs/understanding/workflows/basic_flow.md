@@ -55,6 +55,12 @@ In this code we:
 * We create an instance of `MyWorkflow` with a timeout of 10 seconds and verbosity off
 * We run the workflow and print the result
 
+## Type annotations for steps
+
+The type annotations (e.g. `ev: StartEvent`) and `-> StopEvent` are essential to the way Workflows work. The expected types determine what event types will trigger a step. Tools like the visualizer (see below) also rely on these annotations to determine what types are generated and therefore where control flow goes next.
+
+Type annotations are validated at compile time, so you will get an error message if for instance you emit an event that is never consumed by another step.
+
 ## Start and Stop events
 
 `StartEvent` and `StopEvent` are special events that are used to start and stop a workflow. Any step that accepts a `StartEvent` will be triggered by the `run` command. Emitting a `StopEvent` will end the execution of the workflow and return a final result, even if other steps remain un-executed.
