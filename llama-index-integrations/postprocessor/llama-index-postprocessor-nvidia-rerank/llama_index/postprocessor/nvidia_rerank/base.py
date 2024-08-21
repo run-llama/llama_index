@@ -15,15 +15,12 @@ import warnings
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 
-DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
-BASE_URL = "https://ai.api.nvidia.com/v1"
+DEFAULT_MODEL = "nvidia/nv-rerankqa-mistral-4b-v3"
 
 MODEL_ENDPOINT_MAP = {
-    DEFAULT_MODEL: BASE_URL,
     "nvidia/nv-rerankqa-mistral-4b-v3": "https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-rerankqa-mistral-4b-v3/reranking",
+    "nv-rerank-qa-mistral-4b:1": "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking",
 }
-
-KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
 
 dispatcher = get_dispatcher(__name__)
 
@@ -61,8 +58,7 @@ class NVIDIARerank(BaseNodePostprocessor):
     )
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
-    _is_hosted: bool = PrivateAttr(True)
-    _base_url: str = PrivateAttr(BASE_URL)
+    _inference_url: Optional[str] = PrivateAttr(None)
 
     def _set_api_key(self, nvidia_api_key: str = None, api_key: str = None) -> None:
         self._api_key = get_from_param_or_env(
@@ -100,11 +96,6 @@ class NVIDIARerank(BaseNodePostprocessor):
         """
         super().__init__(model=model, **kwargs)
 
-        if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
-            self._base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
-        else:
-            self._base_url = self._validate_url(base_url)
-
         self._api_key = get_from_param_or_env(
             "api_key",
             nvidia_api_key or api_key,
@@ -112,10 +103,18 @@ class NVIDIARerank(BaseNodePostprocessor):
             "NO_API_KEY_PROVIDED",
         )
 
-        self._is_hosted = self._base_url in KNOWN_URLS
-
-        if self._is_hosted and self._api_key == "NO_API_KEY_PROVIDED":
-            raise ValueError("An API key is required for hosted NIM.")
+        if base_url:  # on-premises mode
+            # in this case we trust the model name and base_url
+            self._inference_url = self._validate_url(base_url) + "/rankings"
+        else:  # hosted mode
+            if model not in MODEL_ENDPOINT_MAP:
+                raise ValueError(
+                    f"Model '{model}' not found. "
+                    f"Available models are: {', '.join(MODEL_ENDPOINT_MAP.keys())}"
+                )
+            if self._api_key == "NO_API_KEY_PROVIDED":
+                raise ValueError("An API key is required for hosted NIM.")
+            self._inference_url = MODEL_ENDPOINT_MAP[model]
 
     def _validate_url(self, base_url):
         """
@@ -204,14 +203,9 @@ class NVIDIARerank(BaseNodePostprocessor):
                         for n in batch
                     ],
                 }
-                # the hosted NIM path is different from the local NIM path
-                url = self._base_url
-                if self._is_hosted:
-                    if url.endswith("/v1"):
-                        url += "/retrieval/nvidia/reranking"
-                else:
-                    url += "/ranking"
-                response = session.post(url, headers=_headers, json=payloads)
+                response = session.post(
+                    self._inference_url, headers=_headers, json=payloads
+                )
                 response.raise_for_status()
                 # expected response format:
                 # {
