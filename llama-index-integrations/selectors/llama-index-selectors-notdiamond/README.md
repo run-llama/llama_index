@@ -1,21 +1,22 @@
 # LlamaIndex Selectors Integration: NotDiamond
 
-[Not Diamond](https://notdiamond.ai) offers an AI-powered model router that automatically determines which LLM is best-suited to respond to any query, improving LLM output quality by combining multiple LLMs into a **meta-model** that learns when to call each LLM.
+[Not Diamond](https://notdiamond.ai) offers an AI-powered model router that automatically determines which LLM is best suited to respond to any query, improving LLM output quality by combining multiple LLMs into a **meta-model** that learns when to call each LLM.
 
 Not Diamond supports cost and latency tradeoffs, customized router training, and real-time router personalization. Learn more via [the documentation](https://notdiamond.readme.io/).
 
 ## Installation
 
-``` shell
+```shell
 pip install llama-index-selectors-notdiamond
 ```
 
 ## Configuration
-* API keys: You need API keys from [Not Diamond](https://app.notdiamond.ai/keys) and any LLM you want to use.
+
+- API keys: You need API keys from [Not Diamond](https://app.notdiamond.ai/keys) and any LLM you want to use.
 
 ## Quick Start
 
-``` python
+```python
 import os
 from typing import List
 
@@ -91,7 +92,8 @@ query_engine = RouterQueryEngine(
 
 
 # Use Not Diamond to Query Indexes
-response = query_engine.query("Please summarize Paul Graham's working experience.")
+response = query_engine.query(
+    "Please summarize Paul Graham's working experience."
+)
 print(str(response))
 ```
-
