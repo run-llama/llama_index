@@ -54,7 +54,6 @@ httpx = "*"
 nest-asyncio = "^1.5.8"
 nltk = ">=3.8.1,!=3.9"  # Should be >= 3.8.2 but nltk removed 3.8.2 from pypi, 3.9 is broken
 numpy = "<2.0.0"  # Pin until we adapt to Numpy v2
-openai = ">=1.1.0"
 pandas = "*"
 python = ">=3.8.1,<4.0"
 tenacity = ">=8.2.0,!=8.4.0,<9.0.0"  # Avoid 8.4.0 which lacks tenacity.asyncio
@@ -81,6 +80,7 @@ jupyter = "^1.0.0"
 llama-cloud = ">=0.0.6"
 motor = "^3.3.2"
 mypy = "0.991"
+openai = "*"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pypdf = "*"
