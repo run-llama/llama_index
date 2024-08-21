@@ -19,6 +19,21 @@ def test_decorated_config(workflow):
     assert config.return_types == [Event]
 
 
+def test_decorate_method():
+    class TestWorkflow(Workflow):
+        @step
+        def f1(self, ev: Event) -> Event:
+            return ev
+
+        @step()
+        def f2(self, ev: Event) -> Event:
+            return ev
+
+    wf = TestWorkflow()
+    assert getattr(wf.f1, "__step_config")
+    assert getattr(wf.f2, "__step_config")
+
+
 def test_decorate_wrong_signature():
     def f():
         pass
