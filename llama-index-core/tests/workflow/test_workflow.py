@@ -1,5 +1,6 @@
 import asyncio
 import time
+from unittest import mock
 
 import pytest
 
@@ -10,6 +11,7 @@ from llama_index.core.workflow.workflow import (
     Workflow,
     WorkflowTimeoutError,
     WorkflowValidationError,
+    WorkflowRuntimeError,
 )
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
@@ -231,3 +233,22 @@ async def test_workflow_multiple_runs():
         workflow.run(number=3), workflow.run(number=42), workflow.run(number=-99)
     )
     assert set(results) == {6, 84, -198}
+
+
+def test_deprecated_send_event():
+    ev = StartEvent()
+    wf = Workflow()
+    session1 = mock.MagicMock()
+
+    # One session, assert step emits a warning
+    wf._sessions.add(session1)
+    with pytest.warns(UserWarning):
+        wf.send_event(message=ev)
+    session1.send_event.assert_called_with(message=ev, step=None)
+
+    # Second session, assert step raises an exception
+    session2 = mock.MagicMock()
+    wf._sessions.add(session2)
+    with pytest.raises(WorkflowRuntimeError):
+        wf.send_event(message=ev)
+    session2.send_event.assert_not_called()

@@ -16,6 +16,7 @@ from .errors import (
     WorkflowDone,
     WorkflowTimeoutError,
     WorkflowValidationError,
+    WorkflowRuntimeError,
 )
 from .service import ServiceManager
 from .session import WorkflowSession
@@ -159,6 +160,22 @@ class Workflow(metaclass=_WorkflowMeta):
                     )
                 )
         return session
+
+    def send_event(self, message: Event, step: Optional[str] = None) -> None:
+        msg = (
+            "Use a Context instance to send events from a step. "
+            "Make sure your step method or function takes a parameter of type Context like `ctx: Context` and "
+            "replace `self.send_event(...)` with `ctx.session.send_event(...)` in your code."
+        )
+
+        if len(self._sessions) > 1:
+            # We can't possibly know to what session we should send this event, raise an error.
+            raise WorkflowRuntimeError(msg)
+
+        # Emit a warning as this won't work for multiple run()s.
+        warnings.warn(msg)
+        session = next(iter(self._sessions))
+        session.send_event(message=message, step=step)
 
     @dispatcher.span
     async def run(self, **kwargs: Any) -> str:
