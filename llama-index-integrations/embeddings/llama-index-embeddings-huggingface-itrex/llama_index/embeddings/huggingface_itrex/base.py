@@ -47,9 +47,9 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
             from intel_extension_for_transformers.transformers import AutoModel
         except ImportError:
             raise ImportError(
-                "Optimum-Intel requires the following dependencies; please install with "
+                "Itrex requires the following dependencies; please install with "
                 "`pip install optimum[exporters] "
-                "optimum-intel neural-compressor intel_extension_for_pytorch`"
+                "optimum-intel neural-compressor intel_extension_for_transformers`"
             )
 
         from huggingface_hub import hf_hub_download

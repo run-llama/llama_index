@@ -30,13 +30,13 @@ license = "MIT"
 name = "llama-index-llms-nvidia"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.4"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
-llama-index-llms-openai = {path = "/Users/nerdai/Projects/llama_index/llama-index-integrations/llms/llama-index-llms-openai"}
-llama-index-llms-openai-like = {path = "/Users/nerdai/Projects/llama_index/llama-index-integrations/llms/llama-index-llms-openai-like"}
+llama-index-llms-openai = "^0.2.0"
+llama-index-llms-openai-like = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
