@@ -89,9 +89,14 @@ repos:
       - id: codespell
         additional_dependencies: [tomli]
         exclude: |
-          poetry.lock
+          poetry.lock|
+          (\/.*?\.[\w:]+)/pyproject.toml|
+          llama-index-core/llama_index/core/_static|
+          llama-index-legacy/llama_index/legacy/_static|
+          (\/.*?\.[\w:]+)/poetry.lock
         args:
           [
+            "--skip=*/algolia.js",
             "--ignore-words-list",
             "astroid,gallary,momento,narl,ot,rouge,nin,gere,asend",
           ]
