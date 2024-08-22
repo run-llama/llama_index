@@ -217,3 +217,17 @@ async def test_workflow_missing_service():
         match="The following services are not available: my_service",
     ):
         await workflow.run()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_multiple_runs():
+    class DummyWorkflow(Workflow):
+        @step()
+        async def step(self, ev: StartEvent) -> StopEvent:
+            return StopEvent(result=ev.number * 2)
+
+    workflow = DummyWorkflow()
+    results = await asyncio.gather(
+        workflow.run(number=3), workflow.run(number=42), workflow.run(number=-99)
+    )
+    assert set(results) == {6, 84, -198}

@@ -44,8 +44,6 @@ class Workflow(metaclass=_WorkflowMeta):
         # Broker machinery
         self._sessions: Set[WorkflowSession] = set()
         self._step_session: Optional[WorkflowSession] = None
-        # Context management
-        self._step_to_context: Dict[str, Context] = {}
         # Services management
         self._service_manager = service_manager
 
@@ -70,17 +68,6 @@ class Workflow(metaclass=_WorkflowMeta):
         for name, wf in services.items():
             self._service_manager.add(name, wf)
 
-    def get_context(self, step_name: str, root_context: Context) -> Context:
-        """Get the global context for this workflow.
-
-        The Workflow instance is ultimately responsible for managing the lifecycle
-        of the global context object and for passing it to the steps functions that
-        require it.
-        """
-        if step_name not in self._step_to_context:
-            self._step_to_context[step_name] = Context(parent=root_context)
-        return self._step_to_context[step_name]
-
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}
@@ -92,7 +79,6 @@ class Workflow(metaclass=_WorkflowMeta):
         """
         session = WorkflowSession(self)
         self._sessions.add(session)
-        root_context = Context(session=session)
 
         for name, step_func in self._get_steps().items():
             session._queues[name] = asyncio.Queue()
@@ -128,9 +114,7 @@ class Workflow(metaclass=_WorkflowMeta):
                     # run step
                     kwargs = {}
                     if config.context_parameter:
-                        kwargs[config.context_parameter] = self.get_context(
-                            name, root_context
-                        )
+                        kwargs[config.context_parameter] = session.get_context(name)
                     for service_name in config.services:
                         kwargs[service_name] = self._service_manager.get(service_name)
                     kwargs[config.event_name] = ev
@@ -219,9 +203,6 @@ class Workflow(metaclass=_WorkflowMeta):
         for t in unfinished:
             t.cancel()
             await asyncio.sleep(0)
-
-        # Remove any reference to the tasks
-        self._tasks = set()
 
         # Bubble up the error if any step raised an exception
         if exception_raised:

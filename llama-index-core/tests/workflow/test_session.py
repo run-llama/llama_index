@@ -53,3 +53,9 @@ def test_send_event_to_step(session):
 def test_get_result(session):
     session._retval = 42
     assert session.get_result() == 42
+
+
+def test_get_context(session):
+    ctx = session.get_context("step")
+    assert session._step_to_context["step"] == ctx
+    assert ctx._parent == session._root_context
