@@ -426,15 +426,32 @@ class Cohere(FunctionCallingLLM):
                 "Use the `stream_chat` method instead"
             )
 
-        chat_request = self.get_cohere_chat_request(messages, **all_kwargs)
+        chat_request = self.get_cohere_chat_request(messages=messages, **all_kwargs)
 
         response = await acompletion_with_retry(
-            client=self._client, max_retries=self.max_retries, chat=True, **chat_request
+            aclient=self._aclient,
+            max_retries=self.max_retries,
+            chat=True,
+            **chat_request,
         )
 
+        if not isinstance(response, cohere.NonStreamedChatResponse):
+            tool_calls = response.get("tool_calls")
+            content = response.get("text")
+            response_raw = response
+
+        else:
+            tool_calls = response.tool_calls
+            content = response.text
+            response_raw = response.__dict__
+
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=response.text),
-            raw=response.__dict__,
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
+            raw=response_raw,
         )
 
     @llm_completion_callback()
