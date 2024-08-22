@@ -184,13 +184,23 @@ class OpenVINOEmbedding(BaseEmbedding):
 
     def _embed(self, sentences: List[str]) -> List[List[float]]:
         """Embed sentences."""
-        encoded_input = self._tokenizer(
-            sentences,
-            padding=True,
-            max_length=self.max_length,
-            truncation=True,
-            return_tensors="pt",
-        )
+        length = self._model.request.inputs[0].get_partial_shape()[1]
+        if length.is_dynamic:
+            encoded_input = self._tokenizer(
+                sentences,
+                padding=True,
+                max_length=self.max_length,
+                truncation=True,
+                return_tensors="pt",
+            )
+        else:
+            encoded_input = self._tokenizer(
+                sentences,
+                padding="max_length",
+                max_length=length.get_length(),
+                truncation=True,
+                return_tensors="pt",
+            )
 
         model_output = self._model(**encoded_input)
 

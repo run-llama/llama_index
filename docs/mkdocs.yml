@@ -45,6 +45,13 @@ nav:
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
           - Memory: ./understanding/agent/memory.md
           - Adding other tools: ./understanding/agent/tools.md
+      - Building Workflows:
+          - Introduction to workflows: ./understanding/workflows/index.md
+          - A basic workflow: ./understanding/workflows/basic_flow.md
+          - Branches and loops: ./understanding/workflows/branches_and_loops.md
+          - Maintaining state: ./understanding/workflows/state.md
+          - Concurrent execution: ./understanding/workflows/concurrent_execution.md
+          - Observability: ./understanding/workflows/observability.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
@@ -162,6 +169,7 @@ nav:
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
           - ./examples/data_connectors/PineconeDemo.ipynb
+          - ./examples/data_connectors/PreprocessReaderDemo.ipynb
           - ./examples/data_connectors/PsychicDemo.ipynb
           - ./examples/data_connectors/QdrantDemo.ipynb
           - ./examples/data_connectors/SlackDemo.ipynb
@@ -199,6 +207,7 @@ nav:
           - ./examples/embeddings/fastembed.ipynb
           - ./examples/embeddings/fireworks.ipynb
           - ./examples/embeddings/gemini.ipynb
+          - ./examples/embeddings/gigachat.ipynb
           - ./examples/embeddings/google_palm.ipynb
           - ./examples/embeddings/gradient.ipynb
           - ./examples/embeddings/huggingface.ipynb
@@ -641,6 +650,7 @@ nav:
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
+          - ./examples/workflow/multi_strategy_workflow.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
@@ -816,6 +826,7 @@ nav:
           - ./api_reference/embeddings/fastembed.md
           - ./api_reference/embeddings/fireworks.md
           - ./api_reference/embeddings/gemini.md
+          - ./api_reference/embeddings/gigachat.md
           - ./api_reference/embeddings/google.md
           - ./api_reference/embeddings/gradient.md
           - ./api_reference/embeddings/huggingface.md
@@ -913,6 +924,7 @@ nav:
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
           - ./api_reference/llms/gemini.md
+          - ./api_reference/llms/gigachat.md
           - ./api_reference/llms/gradient.md
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
@@ -2115,6 +2127,8 @@ plugins:
             - ../llama-index-integrations/indices/llama-index-indices-managed-bge-m3
             - ../llama-index-integrations/tools/llama-index-tools-box
             - ../llama-index-integrations/llms/llama-index-llms-sambanova
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
+            - ../llama-index-integrations/llms/llama-index-llms-gigachat
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
