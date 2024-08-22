@@ -34,7 +34,7 @@ version = "0.1.4"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
-llama-index-vector-stores-deeplake = "^0.1.1"
+llama-index-vector-stores-deeplake = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
