@@ -1,5 +1,17 @@
 # ChangeLog
 
+## [2024-08-22]
+
+### `llama-index-core` [0.11.0]
+
+- removed deprecated `ServiceContext` -- using this now will print an error with a link to the migration guide
+- removed deprecated `LLMPredictor` -- using this now will print an error, any existing LLM is a drop-in replacement
+- made `pandas` an optional dependency
+
+### `Everything Else`
+
+- bumped the minor version of every package to account for the new version of `llama-index-core`
+
 ## [2024-08-21]
 
 ### `llama-index-core` [0.10.68]
