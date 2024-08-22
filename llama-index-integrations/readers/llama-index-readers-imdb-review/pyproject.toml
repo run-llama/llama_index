@@ -37,6 +37,7 @@ llama-index-core = "^0.10.1"
 selenium = "4.8.3"
 webdriver-manager = "4.0.1"
 imdbpy = "2022.7.9"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

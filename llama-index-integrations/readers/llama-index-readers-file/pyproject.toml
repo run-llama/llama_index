@@ -61,6 +61,7 @@ pymupdf = {optional = true, version = "^1.23.21"}
 beautifulsoup4 = "^4.12.3"
 pypdf = "^4.0.1"
 striprtf = "^0.0.26"
+pandas = "*"
 
 [tool.poetry.extras]
 pymupdf = [

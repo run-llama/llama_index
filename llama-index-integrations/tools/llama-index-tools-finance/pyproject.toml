@@ -36,6 +36,7 @@ llama-index-core = "^0.10.0"
 yfinance = "^0.2.36"
 newsapi-python = "^0.2.7"
 pytrends = "^4.9.2"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}

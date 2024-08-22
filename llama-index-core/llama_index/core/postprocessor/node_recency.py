@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List, Optional, Set
 
 import numpy as np
-import pandas as pd
 
 # NOTE: currently not being used
 # DEFAULT_INFER_RECENCY_TMPL = (
@@ -59,6 +58,13 @@ class FixedRecencyPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 
@@ -104,6 +110,13 @@ class EmbeddingRecencyPostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
 

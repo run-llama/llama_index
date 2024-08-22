@@ -36,6 +36,7 @@ python = ">=3.9,<4.0"
 kaleido = "0.2.1"
 vanna = ">0.5.5"
 llama-index-core = "^0.10.11.post1"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
