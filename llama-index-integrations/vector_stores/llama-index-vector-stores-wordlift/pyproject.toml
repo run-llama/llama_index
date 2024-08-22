@@ -27,11 +27,11 @@ license = "MIT"
 name = "llama-index-vector-stores-wordlift"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.4.1"
+version = "0.4.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pydantic = "^2.0"
+pydantic = ">=2.0,<3.0"
 aiohttp = ">=3.7.4"
 python-dateutil = ">=2.8.2"
 aiohttp-retry = ">=1.2"
