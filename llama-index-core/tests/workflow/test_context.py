@@ -7,15 +7,14 @@ from llama_index.core.workflow.workflow import (
 )
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
-from llama_index.core.workflow.session import WorkflowSession
 from llama_index.core.workflow.workflow import Workflow
 
 from .conftest import OneTestEvent, AnotherTestEvent
 
 
-@pytest.fixture()
-def session():
-    return WorkflowSession(workflow=Workflow())
+def test_context_ctor():
+    with pytest.raises(ValueError):
+        ctx = Context()
 
 
 @pytest.mark.asyncio()
