@@ -3,16 +3,17 @@ from typing import List, Optional
 
 from llama_index.core.schema import Document
 from llama_index.readers.box.BoxAPI.box_api import (
-    _BoxResourcePayload,
     box_check_connection,
-    get_box_files_payload,
-    get_box_folder_payload,
+    get_box_files_details,
+    get_box_folder_files_details,
     get_text_representation,
 )
+from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_document
 from llama_index.readers.box import BoxReaderBase
 
 from box_sdk_gen import (
     BoxClient,
+    File,
 )
 
 
@@ -72,36 +73,30 @@ class BoxReaderTextExtraction(BoxReaderBase):
         # Connect to Box
         box_check_connection(self._box_client)
 
-        docs = []
-        payloads: List[_BoxResourcePayload] = []
-        # get payload information
+        docs: List[Document] = []
+        box_files: List[File] = []
+
+        # get Box files details
         if file_ids is not None:
-            payloads.extend(
-                get_box_files_payload(box_client=self._box_client, file_ids=file_ids)
+            box_files.extend(
+                get_box_files_details(box_client=self._box_client, file_ids=file_ids)
             )
         elif folder_id is not None:
-            payloads.extend(
-                get_box_folder_payload(
+            box_files.extend(
+                get_box_folder_files_details(
                     box_client=self._box_client,
                     folder_id=folder_id,
                     is_recursive=is_recursive,
                 )
             )
 
-        payloads = get_text_representation(
+        box_files = get_text_representation(
             box_client=self._box_client,
-            payloads=payloads,
+            box_files=box_files,
         )
 
-        for payload in payloads:
-            file = payload.resource_info
-
-            # create a document
-            doc = Document(
-                # id=file.id,
-                extra_info=file.to_dict(),
-                metadata=file.to_dict(),
-                text=payload.text_representation if payload.text_representation else "",
-            )
+        for file in box_files:
+            doc = box_file_to_llama_document(file)
+            doc.text = file.text_representation if file.text_representation else ""
             docs.append(doc)
         return docs

@@ -161,9 +161,20 @@ class OpenVINORerank(BaseNodePostprocessor):
             },
         ) as event:
             query_pairs = [[query_bundle.query_str, text] for text in nodes_text_list]
-            input_tensors = self._tokenizer(
-                query_pairs, padding=True, truncation=True, return_tensors="pt"
-            )
+
+            length = self._model.request.inputs[0].get_partial_shape()[1]
+            if length.is_dynamic:
+                input_tensors = self._tokenizer(
+                    query_pairs, padding=True, truncation=True, return_tensors="pt"
+                )
+            else:
+                input_tensors = self._tokenizer(
+                    query_pairs,
+                    padding="max_length",
+                    max_length=length.get_length(),
+                    truncation=True,
+                    return_tensors="pt",
+                )
 
             outputs = self._model(**input_tensors, return_dict=True)
             logits = outputs[0]

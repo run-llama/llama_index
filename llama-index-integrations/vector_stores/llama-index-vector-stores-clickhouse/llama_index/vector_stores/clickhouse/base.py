@@ -10,7 +10,6 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.core import ServiceContext
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -26,6 +25,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
     BasePydanticVectorStore,
 )
+from llama_index.core import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -136,8 +137,6 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             Defaults to None.
         search_params (dict, optional): The search parameters for a ClickHouse query.
             Defaults to None.
-        service_context (ServiceContext, optional): Vector store service context.
-            Defaults to None
 
     Examples:
         `pip install llama-index-vector-stores-clickhouse`
@@ -183,7 +182,6 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         batch_size: int = 1000,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -241,12 +239,9 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             for column_name in self._column_names
         ]
 
-        if service_context is not None:
-            service_context = cast(ServiceContext, service_context)
-            dimension = len(
-                service_context.embed_model.get_query_embedding("try this out")
-            )
-            self.create_table(dimension)
+        dimension = len(Settings.embed_model.get_query_embedding("try this out"))
+        self.create_table(dimension)
+
         super().__init__(
             clickhouse_client=clickhouse_client,
             table=table,
@@ -257,7 +252,6 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             index_params=index_params,
             search_params=search_params,
-            service_context=service_context,
         )
 
     @property

@@ -26,8 +26,9 @@ def get_api_key(instance: Any) -> str:
 
 
 def test_create_default_url_without_api_key(masked_env_var: str) -> None:
-    with pytest.warns(UserWarning):
+    with pytest.raises(ValueError) as e:
         Interface()
+    assert "API key is required" in str(e.value)
 
 
 @pytest.mark.usefixtures("mock_local_models")
@@ -51,19 +52,6 @@ def test_api_key_priority(masked_env_var: str) -> None:
     finally:
         # we must clean up environ or it may impact other tests
         del os.environ["NVIDIA_API_KEY"]
-
-
-@pytest.mark.integration()
-def test_missing_api_key_error(masked_env_var: str) -> None:
-    with pytest.warns(UserWarning):
-        client = Interface()
-    with pytest.raises(Exception) as exc_info:
-        client.postprocess_nodes(
-            [NodeWithScore(node=Document(text="Hello, world!"))],
-            query_str="Hello, world!",
-        )
-    message = str(exc_info.value)
-    assert "401" in message
 
 
 @pytest.mark.integration()

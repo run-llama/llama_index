@@ -1,22 +1,24 @@
 import asyncio
+import functools
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
-from llama_index.core.workflow.decorators import step, StepConfig
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
+from llama_index.core.workflow.decorators import StepConfig, step
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_steps_from_instance,
 )
 
+from .context import Context
 from .errors import (
+    WorkflowDone,
     WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
-    WorkflowDone,
 )
-from .context import Context
+from .service import ServiceManager
 
 dispatcher = get_dispatcher(__name__)
 
@@ -33,6 +35,7 @@ class Workflow(metaclass=_WorkflowMeta):
         timeout: Optional[float] = 10.0,
         disable_validation: bool = False,
         verbose: bool = False,
+        service_manager: ServiceManager = ServiceManager(),
     ) -> None:
         # Configuration
         self._timeout = timeout
@@ -48,6 +51,8 @@ class Workflow(metaclass=_WorkflowMeta):
         # Context management
         self._root_context: Context = Context()
         self._step_to_context: Dict[str, Context] = {}
+        # Services management
+        self._service_manager = service_manager
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -60,6 +65,15 @@ class Workflow(metaclass=_WorkflowMeta):
             raise WorkflowValidationError(msg)
 
         cls._step_functions[func.__name__] = func
+
+    def add_services(self, **services: "Workflow") -> None:
+        """Adds one or more services to this workflow.
+
+        This method only accepts keyword arguments, and the name of the parameter
+        will be used as the name of the service.
+        """
+        for name, wf in services.items():
+            self._service_manager.add(name, wf)
 
     def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
@@ -113,20 +127,23 @@ class Workflow(metaclass=_WorkflowMeta):
                         print(f"Running step {name}")
 
                     # run step
-                    args = []
-                    if config.pass_context:
-                        args.append(self.get_context(name))
-                    args.append(ev)
+                    kwargs = {}
+                    if config.context_parameter:
+                        kwargs[config.context_parameter] = self.get_context(name)
+                    for service_name in config.services:
+                        kwargs[service_name] = self._service_manager.get(service_name)
+                    kwargs[config.event_name] = ev
 
                     # - check if its async or not
                     # - if not async, run it in an executor
                     instrumented_step = dispatcher.span(step)
 
                     if asyncio.iscoroutinefunction(step):
-                        new_ev = await instrumented_step(*args)
+                        new_ev = await instrumented_step(**kwargs)
                     else:
+                        run_task = functools.partial(instrumented_step, **kwargs)
                         new_ev = await asyncio.get_event_loop().run_in_executor(
-                            None, instrumented_step, *args
+                            None, run_task
                         )
 
                     if self._verbose and name != "_done":
@@ -149,21 +166,39 @@ class Workflow(metaclass=_WorkflowMeta):
                     else:
                         self.send_event(new_ev)
 
-            self._tasks.add(
-                asyncio.create_task(
-                    _task(name, self._queues[name], step_func, step_config), name=name
+            for _ in range(step_config.num_workers):
+                self._tasks.add(
+                    asyncio.create_task(
+                        _task(name, self._queues[name], step_func, step_config),
+                        name=name,
+                    )
                 )
-            )
 
-    def send_event(self, message: Event) -> None:
+    def send_event(self, message: Event, step: Optional[str] = None) -> None:
         """Sends an event to a specific step in the workflow.
 
-        Currently we send all the events to all the receivers and we let
-        them discard events they don't want. This should be optimized so
-        that we efficiently send events where we know won't be discarded.
+        If step is None, the event is sent to all the receivers and we let
+        them discard events they don't want.
         """
-        for queue in self._queues.values():
-            queue.put_nowait(message)
+        if step is None:
+            for queue in self._queues.values():
+                queue.put_nowait(message)
+        else:
+            if step not in self._get_steps():
+                raise WorkflowRuntimeError(f"Step {step} does not exist")
+
+            step_func = self._get_steps()[step]
+            step_config: Optional[StepConfig] = getattr(
+                step_func, "__step_config", None
+            )
+
+            if step_config and type(message) in step_config.accepted_events:
+                self._queues[step].put_nowait(message)
+            else:
+                raise WorkflowRuntimeError(
+                    f"Step {step} does not accept event of type {type(message)}"
+                )
+
         self._broker_log.append(message)
 
     @dispatcher.span
@@ -308,6 +343,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
+        requested_services: Set[str] = set()
 
         for name, step_func in self._get_steps().items():
             step_config: Optional[StepConfig] = getattr(
@@ -325,6 +361,8 @@ class Workflow(metaclass=_WorkflowMeta):
                     continue
 
                 produced_events.add(event_type)
+
+            requested_services.update(step_config.services.keys())
 
         # Check if all consumed events are produced
         unconsumed_events = consumed_events - produced_events
@@ -347,3 +385,11 @@ class Workflow(metaclass=_WorkflowMeta):
         # Check if there's at least one step that produces StopEvent
         if StopEvent not in produced_events:
             raise WorkflowValidationError("No step produces StopEvent")
+
+        # Check all the requested services are available
+        if requested_services:
+            avail = set(self._service_manager._services.keys())
+            missing = requested_services - avail
+            if missing:
+                msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
+                raise WorkflowValidationError(msg)

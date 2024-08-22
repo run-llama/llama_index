@@ -28,7 +28,7 @@ license = "MIT"
 maintainers = ["logan-markewich"]
 name = "llama-index-packs-dense-x-retrieval"
 readme = "README.md"
-version = "0.1.4"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

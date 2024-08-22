@@ -157,6 +157,33 @@ def pg_hnsw_hybrid(db_hnsw: None) -> Any:
     asyncio.run(pg.close())
 
 
+@pytest.fixture()
+def pg_hnsw_multiple(db_hnsw: None) -> Generator[List[PGVectorStore], None, None]:
+    """
+    This creates multiple instances of PGVectorStore.
+    """
+    pgs = []
+    for _ in range(2):
+        pg = PGVectorStore.from_params(
+            **PARAMS,  # type: ignore
+            database=TEST_DB_HNSW,
+            table_name=TEST_TABLE_NAME,
+            schema_name=TEST_SCHEMA_NAME,
+            embed_dim=TEST_EMBED_DIM,
+            hnsw_kwargs={
+                "hnsw_m": 16,
+                "hnsw_ef_construction": 64,
+                "hnsw_ef_search": 40,
+            },
+        )
+        pgs.append(pg)
+
+    yield pgs
+
+    for pg in pgs:
+        asyncio.run(pg.close())
+
+
 @pytest.fixture(scope="session")
 def node_embeddings() -> List[TextNode]:
     return [
@@ -860,6 +887,41 @@ async def test_delete_nodes_metadata(
         res = pg.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa", "ddd"])
     assert "ccc" in res.ids
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_hnsw_index_creation(
+    pg_hnsw_multiple: List[PGVectorStore],
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """
+    This test will make sure that creating multiple PGVectorStores handles db initialization properly.
+    """
+    # calling add will make the db initialization run
+    for pg in pg_hnsw_multiple:
+        if use_async:
+            await pg.async_add(node_embeddings)
+        else:
+            pg.add(node_embeddings)
+
+    # these are the actual table and index names that PGVectorStore automatically created
+    data_test_table_name = f"data_{TEST_TABLE_NAME}"
+    data_test_index_name = f"data_{TEST_TABLE_NAME}_embedding_idx"
+
+    # create a connection to the TEST_DB_HNSW database to make sure that one, and only one, index was created
+    with psycopg2.connect(**PARAMS, database=TEST_DB_HNSW) as hnsw_conn:
+        with hnsw_conn.cursor() as c:
+            c.execute(
+                f"SELECT COUNT(*) FROM pg_indexes WHERE schemaname = '{TEST_SCHEMA_NAME}' AND tablename = '{data_test_table_name}' AND indexname LIKE '{data_test_index_name}%';"
+            )
+            index_count = c.fetchone()[0]
+
+    assert (
+        index_count == 1
+    ), f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")

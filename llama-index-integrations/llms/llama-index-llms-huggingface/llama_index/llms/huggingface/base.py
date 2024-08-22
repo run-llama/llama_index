@@ -329,8 +329,9 @@ class HuggingFaceLLM(CustomLLM):
                 {"role": message.role.value, "content": message.content}
                 for message in messages
             ]
-            tokens = self._tokenizer.apply_chat_template(messages_dict)
-            return self._tokenizer.decode(tokens)
+            return self._tokenizer.apply_chat_template(
+                messages_dict, tokenize=False, add_generation_prompt=True
+            )
 
         return generic_messages_to_prompt(messages)
 
@@ -343,7 +344,9 @@ class HuggingFaceLLM(CustomLLM):
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
+            if self.completion_to_prompt:
+                full_prompt = self.completion_to_prompt(full_prompt)
+            elif self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
@@ -376,7 +379,9 @@ class HuggingFaceLLM(CustomLLM):
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
+            if self.completion_to_prompt:
+                full_prompt = self.completion_to_prompt(full_prompt)
+            elif self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
