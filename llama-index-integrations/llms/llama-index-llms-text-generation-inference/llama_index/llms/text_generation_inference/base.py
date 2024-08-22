@@ -149,19 +149,6 @@ class TextGenerationInference(FunctionCallingLLM):
         if token:
             headers.update({"Authorization": f"Bearer {token}"})
 
-        self._sync_client = TGIClient(
-            base_url=model_url,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-        )
-        self._async_client = TGIAsyncClient(
-            base_url=model_url,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-        )
-
         try:
             is_function_calling_model = resolve_tgi_function_call(model_url)
         except Exception as e:
@@ -186,6 +173,18 @@ class TextGenerationInference(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+        self._sync_client = TGIClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+        )
+        self._async_client = TGIAsyncClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
         )
 
     @classmethod

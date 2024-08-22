@@ -234,12 +234,12 @@ class HuggingFaceLLM(CustomLLM):
     ) -> None:
         """Initialize params."""
         model_kwargs = model_kwargs or {}
-        self._model = model or AutoModelForCausalLM.from_pretrained(
+        model = model or AutoModelForCausalLM.from_pretrained(
             model_name, device_map=device_map, **model_kwargs
         )
 
         # check context_window
-        config_dict = self._model.config.to_dict()
+        config_dict = model.config.to_dict()
         model_context_window = int(
             config_dict.get("max_position_embeddings", context_window)
         )
@@ -255,11 +255,11 @@ class HuggingFaceLLM(CustomLLM):
         if "max_length" not in tokenizer_kwargs:
             tokenizer_kwargs["max_length"] = context_window
 
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(
             tokenizer_name, **tokenizer_kwargs
         )
 
-        if self._tokenizer.name_or_path != model_name:
+        if tokenizer.name_or_path != model_name:
             logger.warning(
                 f"The model `{model_name}` and tokenizer `{self._tokenizer.name_or_path}` "
                 f"are different, please ensure that they are compatible."
@@ -280,7 +280,7 @@ class HuggingFaceLLM(CustomLLM):
                         return True
                 return False
 
-        self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
         if isinstance(query_wrapper_prompt, str):
             query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
@@ -307,6 +307,10 @@ class HuggingFaceLLM(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        self._model = model
+        self._tokenizer = tokenizer
+        self._stopping_criteria = stopping_criteria
 
     @classmethod
     def class_name(cls) -> str:
