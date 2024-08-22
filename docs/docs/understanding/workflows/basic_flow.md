@@ -49,7 +49,6 @@ This will simply print "Hello, World!" to the console.
 In this code we:
 * Define a class `MyWorkflow` that inherits from `Workflow`
 * Use the @step decorator to define a single step `my_step`
-  * Note the parentheses after `@step` -- don't leave these out!
 * The step takes a single argument, `ev`, which is an instance of `StartEvent`
 * The step returns a `StopEvent` with a result of "Hello, world!"
 * We create an instance of `MyWorkflow` with a timeout of 10 seconds and verbosity off
