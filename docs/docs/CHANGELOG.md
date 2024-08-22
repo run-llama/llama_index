@@ -1,5 +1,77 @@
 # ChangeLog
 
+## [2024-08-21]
+
+### `llama-index-core` [0.10.68]
+
+- remove nested progress bars in base element node parser (#15550)
+- Adding exhaustive docs for workflows (#15556)
+- Adding multi-strategy workflow with reflection notebook example (#15445)
+- remove openai dep from core (#15527)
+- Improve token counter to handle more response types (#15501)
+- feat: Allow using step decorator without parentheses (#15540)
+- feat: workflow services (aka nested workflows) (#15325)
+- Remove requirement to specify "allowed_query_fields" parameter when using "cypher_validator" in TextToCypher retriever (#15506)
+
+### `llama-index-embeddings-mistralai` [0.1.6]
+
+- fix mistral embeddings usage (#15508)
+
+### `llama-index-embeddings-ollama` [0.2.0]
+
+- use ollama client for embeddings (#15478)
+
+### `llama-index-embeddings-openvino` [0.2.1]
+
+- support static input shape for openvino embedding and reranker (#15521)
+
+### `llama-index-graph-stores-neptune` [0.1.8]
+
+- Added code to expose structured schema for Neptune (#15507)
+
+### `llama-index-llms-ai21` [0.3.2]
+
+- Integration: AI21 Tools support (#15518)
+
+### `llama-index-llms-bedrock` [0.1.13]
+
+- Support token counting for llama-index integration with bedrock (#15491)
+
+### `llama-index-llms-cohere` [0.2.2]
+
+- feat: add tool calling support for achat cohere (#15539)
+
+### `llama-index-llms-gigachat` [0.1.0]
+
+- Adding gigachat LLM support (#15313)
+
+### `llama-index-llms-openai` [0.1.31]
+
+- Fix incorrect type in OpenAI token usage report (#15524)
+- allow streaming token counts for openai (#15548)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.2.1]
+
+- add truncate support (#15490)
+- Update to 0.2.0, remove old code (#15533)
+- update default model to nvidia/nv-rerankqa-mistral-4b-v3 (#15543)
+
+### `llama-index-readers-bitbucket` [0.1.4]
+
+- Fixing the issues in loading file paths from bitbucket (#15311)
+
+### `llama-index-readers-google` [0.3.1]
+
+- enhance google drive reader for improved functionality and usability (#15512)
+
+### `llama-index-readers-remote` [0.1.6]
+
+- check and sanitize remote reader urls (#15494)
+
+### `llama-index-vector-stores-qdrant` [0.2.17]
+
+- fix: setting IDF modifier in QdrantVectorStore for sparse vectors (#15538)
+
 ## [2024-08-18]
 
 ### `llama-index-core` [0.10.67]

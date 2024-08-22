@@ -28,13 +28,14 @@ license = "MIT"
 maintainers = ["ajhofmann"]
 name = "llama-index-tools-text-to-image"
 readme = "README.md"
-version = "0.1.4"
+version = "0.1.5"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.11.post1"
 pillow = "^10.2.0"
 matplotlib = "^3.8.2"
+openai = ">=1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

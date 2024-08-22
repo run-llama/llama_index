@@ -1,7 +1,7 @@
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, List, Union
 
 from ai21 import AI21Client, AsyncAI21Client
-from ai21.models.chat import ChatCompletionChunk
+from ai21.models.chat import ChatCompletionChunk, ToolCall
 from ai21_tokenizer import Tokenizer, BaseTokenizer  # pants: no-infer-dep
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
@@ -23,27 +23,33 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.program.openai.utils import parse_partial_json
 
 from llama_index.llms.ai21.utils import (
     ai21_model_to_context_size,
     message_to_ai21_message,
     message_to_ai21_j2_message,
+    is_function_calling_model,
+    from_ai21_message_to_chat_message,
 )
 
-_DEFAULT_AI21_MODEL = "jamba-instruct"
-_DEFAULT_TEMPERATURE = 0.7
+_DEFAULT_AI21_MODEL = "jamba-1.5-mini"
+_DEFAULT_TEMPERATURE = 0.4
 _DEFAULT_MAX_TOKENS = 512
 
 _TOKENIZER_MAP = {
     "j2-ultra": "j2-tokenizer",
     "j2-mid": "j2-tokenizer",
     "jamba-instruct": "jamba-instruct-tokenizer",
+    "jamba-1.5-mini": "jamba-1.5-mini-tokenizer",
+    "jamba-1.5-large": "jamba-1.5-large-tokenizer",
 }
 
 
-class AI21(CustomLLM):
+class AI21(FunctionCallingLLM):
     """AI21 Labs LLM.
 
     Examples:
@@ -152,6 +158,9 @@ class AI21(CustomLLM):
             context_window=ai21_model_to_context_size(self.model),
             num_output=self.max_tokens,
             model_name=self.model,
+            is_function_calling_model=is_function_calling_model(
+                model=self.model,
+            ),
             is_chat_model=True,
         )
 
@@ -199,6 +208,30 @@ class AI21(CustomLLM):
 
         return completion_fn(prompt, **all_kwargs)
 
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs,
+            **kwargs,
+        }
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -213,11 +246,10 @@ class AI21(CustomLLM):
             **all_kwargs,
         )
 
+        message = from_ai21_message_to_chat_message(response.choices[0].message)
+
         return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=response.choices[0].message.content,
-            ),
+            message=message,
             raw=response.to_dict(),
         )
 
@@ -406,3 +438,39 @@ class AI21(CustomLLM):
 
     def _is_j2_model(self) -> bool:
         return "j2" in self.model
+
+    def _parse_tool(self, tool_call: ToolCall) -> ToolSelection:
+        if not isinstance(tool_call, ToolCall):
+            raise ValueError("Invalid tool_call object")
+
+        if tool_call.type != "function":
+            raise ValueError(f"Unsupported tool call type: {tool_call.type}")
+
+        try:
+            argument_dict = parse_partial_json(tool_call.function.arguments)
+        except ValueError:
+            argument_dict = {}
+
+        return ToolSelection(
+            tool_id=tool_call.id,
+            tool_name=tool_call.function.name,
+            tool_kwargs=argument_dict,
+        )
+
+    def get_tool_calls_from_response(
+        self,
+        response: ChatResponse,
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        return [self._parse_tool(tool_call) for tool_call in tool_calls]

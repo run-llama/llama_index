@@ -11,7 +11,7 @@ from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.evaluation import BaseEvaluator
-from openai import RateLimitError
+
 
 PredictorType = Union[BaseQueryEngine, BaseEvaluator, LLM]
 P = TypeVar("P", bound=PredictorType)
@@ -298,16 +298,21 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
                     )
                 else:
                     batch_predictions = await asyncio_mod.gather(*tasks)
-            except RateLimitError as err:
+            except Exception as err:
                 if show_progress:
                     asyncio_mod.close()
-                raise ValueError(
-                    "You've hit rate limits on your OpenAI subscription. This"
-                    " class caches previous predictions after each successful"
-                    " batch execution. Based off this cache, when executing this"
-                    " command again it will attempt to predict on only the examples "
-                    "that have not yet been predicted. Try reducing your batch_size."
-                ) from err
+
+                if "RateLimitError" in str(err):
+                    raise ValueError(
+                        "You've hit rate limits on your OpenAI subscription. This"
+                        " class caches previous predictions after each successful"
+                        " batch execution. Based off this cache, when executing this"
+                        " command again it will attempt to predict on only the examples "
+                        "that have not yet been predicted. Try reducing your batch_size."
+                    ) from err
+                else:
+                    raise err  # noqa: TRY201
+
             self._predictions_cache += batch_predictions
             # time.sleep(sleep_time_in_seconds)
 

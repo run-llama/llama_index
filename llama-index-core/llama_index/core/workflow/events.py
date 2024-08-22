@@ -11,6 +11,7 @@ class Event(BaseModel):
 
     Examples:
         Basic example usage
+
         ```python
         from llama_index.core.workflows.events import Event
 
@@ -24,6 +25,7 @@ class Event(BaseModel):
         ```
 
         Custom event with additional Fields/PrivateAttr
+
         ```python
         from llama_index.core.workflows.events import Event
         from llama_index.core.bridge.pydantic import Field, PrivateAttr
