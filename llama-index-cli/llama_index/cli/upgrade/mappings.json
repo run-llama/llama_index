@@ -677,7 +677,6 @@
   "IntrospectiveAgentWorker": "llama_index.agent.introspective",
   "ToolInteractiveReflectionAgentWorker": "llama_index.agent.introspective",
   "SelfReflectionAgentWorker": "llama_index.agent.introspective",
-  "NVIDIAAgent": "llama_index.agent.nvidia",
   "LATSAgentWorker": "llama_index.agent.lats",
   "CoAAgentWorker": "llama_index.agent.coa",
   "PostgresKVStore": "llama_index.storage.kvstore.postgres",
