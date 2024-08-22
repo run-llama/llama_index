@@ -59,8 +59,8 @@ class PGVectoRsStore(BasePydanticVectorStore):
     _client: "PGVectoRs" = PrivateAttr()
 
     def __init__(self, client: "PGVectoRs") -> None:
-        self._client: PGVectoRs = client
         super().__init__()
+        self._client: PGVectoRs = client
 
     @classmethod
     def class_name(cls) -> str:

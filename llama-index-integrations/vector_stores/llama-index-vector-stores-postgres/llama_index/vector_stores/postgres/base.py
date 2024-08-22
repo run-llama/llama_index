@@ -203,19 +203,6 @@ class PGVectorStore(BasePydanticVectorStore):
 
         from sqlalchemy.orm import declarative_base
 
-        # sqlalchemy model
-        self._base = declarative_base()
-        self._table_class = get_data_model(
-            self._base,
-            table_name,
-            schema_name,
-            hybrid_search,
-            text_search_config,
-            cache_ok,
-            embed_dim=embed_dim,
-            use_jsonb=use_jsonb,
-        )
-
         super().__init__(
             connection_string=connection_string,
             async_connection_string=async_connection_string,
@@ -229,6 +216,19 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+        )
+
+        # sqlalchemy model
+        self._base = declarative_base()
+        self._table_class = get_data_model(
+            self._base,
+            table_name,
+            schema_name,
+            hybrid_search,
+            text_search_config,
+            cache_ok,
+            embed_dim=embed_dim,
+            use_jsonb=use_jsonb,
         )
 
     async def close(self) -> None:

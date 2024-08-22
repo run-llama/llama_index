@@ -60,10 +60,11 @@ class RelytVectorStore(BasePydanticVectorStore):
     _collection_name: str = PrivateAttr()
 
     def __init__(self, client: "PGVectoRs", collection_name: str) -> None:
+        super().__init__()
+
         self._client: PGVectoRs = client
         self._collection_name = collection_name
         self.init_index()
-        super().__init__()
 
     @classmethod
     def class_name(cls) -> str:

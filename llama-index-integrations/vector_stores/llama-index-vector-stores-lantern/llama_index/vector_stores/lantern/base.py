@@ -207,6 +207,19 @@ class LanternVectorStore(BasePydanticVectorStore):
 
         from sqlalchemy.orm import declarative_base
 
+        super().__init__(
+            connection_string=connection_string,
+            async_connection_string=async_connection_string,
+            table_name=table_name,
+            schema_name=schema_name,
+            hybrid_search=hybrid_search,
+            text_search_config=text_search_config,
+            embed_dim=embed_dim,
+            cache_ok=cache_ok,
+            perform_setup=perform_setup,
+            debug=debug,
+        )
+
         # sqlalchemy model
         self._base = declarative_base()
         self._table_class = get_data_model(
@@ -220,19 +233,6 @@ class LanternVectorStore(BasePydanticVectorStore):
             m=m,
             ef_construction=ef_construction,
             ef=ef,
-        )
-
-        super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
-            table_name=table_name,
-            schema_name=schema_name,
-            hybrid_search=hybrid_search,
-            text_search_config=text_search_config,
-            embed_dim=embed_dim,
-            cache_ok=cache_ok,
-            perform_setup=perform_setup,
-            debug=debug,
         )
 
     async def close(self) -> None:
