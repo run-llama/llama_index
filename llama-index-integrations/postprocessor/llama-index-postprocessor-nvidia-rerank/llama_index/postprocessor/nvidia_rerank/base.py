@@ -1,7 +1,7 @@
-from typing import Any, List, Optional, Generator
+from typing import Any, List, Optional, Generator, Literal
 
 from urllib.parse import urlparse, urlunparse
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
@@ -32,9 +32,7 @@ class Model(BaseModel):
 class NVIDIARerank(BaseNodePostprocessor):
     """NVIDIA's API Catalog Reranker Connector."""
 
-    class Config:
-        validate_assignment = True
-
+    model_config = ConfigDict(validate_assignment=True)
     model: Optional[str] = Field(
         default=DEFAULT_MODEL,
         description="The NVIDIA API Catalog reranker to use.",
@@ -48,6 +46,14 @@ class NVIDIARerank(BaseNodePostprocessor):
         default=64,
         ge=1,
         description="The maximum batch size supported by the inference server.",
+    )
+    truncate: Optional[Literal["NONE", "END"]] = Field(
+        description=(
+            "Truncate input text if it exceeds the model's maximum token length. "
+            "Default is model dependent and is likely to raise error if an "
+            "input is too long."
+        ),
+        default=None,
     )
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
@@ -186,6 +192,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             for batch in batched(nodes, self.max_batch_size):
                 payloads = {
                     "model": self.model,
+                    **({"truncate": self.truncate} if self.truncate else {}),
                     "query": {"text": query_bundle.query_str},
                     "passages": [
                         {"text": n.get_content(metadata_mode=MetadataMode.EMBED)}

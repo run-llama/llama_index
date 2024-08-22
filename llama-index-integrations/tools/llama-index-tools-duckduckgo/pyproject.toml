@@ -29,13 +29,12 @@ license = "MIT"
 maintainers = ["leehuwuj"]
 name = "llama-index-tools-duckduckgo"
 readme = "README.md"
-version = "0.1.1"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-index = "^0.10.1"
 duckduckgo-search = "^6.1.0"
-llama-index-core = {path = "/Users/nerdai/Projects/llama_index/llama-index-core"}
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
