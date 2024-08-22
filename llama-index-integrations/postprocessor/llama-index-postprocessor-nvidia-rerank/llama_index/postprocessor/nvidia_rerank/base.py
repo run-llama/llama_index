@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Literal, Generator
+from typing import Any, List, Optional, Generator
 
 from urllib.parse import urlparse, urlunparse
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
