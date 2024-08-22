@@ -60,6 +60,7 @@ llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-core = "^0.11.0"
 llama-index-multi-modal-llms-openai = "^0.2.0"
 llama-index-cli = "^0.3.0"
+nltk = ">3.8.1"  # avoids a CVE, temp until next release, should be in llama-index-core
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
