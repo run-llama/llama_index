@@ -85,6 +85,9 @@ class NVIDIARerank(BaseNodePostprocessor):
             nvidia_api_key (str, optional): The NVIDIA API key. Defaults to None.
             api_key (str, optional): The API key. Defaults to None.
             base_url (str, optional): The base URL of the on-premises NIM. Defaults to None.
+            truncate (str): "NONE", "END", truncate input text if it exceeds
+                            the model's context length. Default is model dependent and
+                            is likely to raise an error if an input is too long.
             **kwargs: Additional keyword arguments.
 
         API Key:
