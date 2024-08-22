@@ -22,7 +22,7 @@ When running any workflow you can always pass `verbose=True`. This will output t
 
 ```python
 class ConcurrentFlow(Workflow):
-    @step(pass_context=True)
+    @step
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> StepAEvent | StepBEvent | StepCEvent:
@@ -30,22 +30,22 @@ class ConcurrentFlow(Workflow):
         self.send_event(StepBEvent(query="Query 2"))
         self.send_event(StepCEvent(query="Query 3"))
 
-    @step(pass_context=True)
+    @step
     async def step_a(self, ctx: Context, ev: StepAEvent) -> StepACompleteEvent:
         print("Doing something A-ish")
         return StepACompleteEvent(result=ev.query)
 
-    @step(pass_context=True)
+    @step
     async def step_b(self, ctx: Context, ev: StepBEvent) -> StepBCompleteEvent:
         print("Doing something B-ish")
         return StepBCompleteEvent(result=ev.query)
 
-    @step(pass_context=True)
+    @step
     async def step_c(self, ctx: Context, ev: StepCEvent) -> StepCCompleteEvent:
         print("Doing something C-ish")
         return StepCCompleteEvent(result=ev.query)
 
-    @step(pass_context=True)
+    @step
     async def step_three(
         self,
         ctx: Context,
