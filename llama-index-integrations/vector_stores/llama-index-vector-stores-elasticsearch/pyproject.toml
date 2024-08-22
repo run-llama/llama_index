@@ -27,18 +27,19 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-elasticsearch"
 readme = "README.md"
-version = "0.2.5"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 elasticsearch = "^8.13.1"
 aiohttp = "^3.9.5"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
+pandas = "*"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"

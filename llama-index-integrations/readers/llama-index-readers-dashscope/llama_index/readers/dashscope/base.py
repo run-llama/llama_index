@@ -14,7 +14,7 @@ from tenacity import (
 from typing import List, Optional, Union
 
 from llama_index.core.async_utils import run_jobs
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 from llama_index.readers.dashscope.utils import *
@@ -86,7 +86,7 @@ class DashScopeParse(BasePydanticReader):
         description="Whether or not to return parsed text content.",
     )
 
-    @validator("api_key", pre=True, always=True)
+    @field_validator("api_key", mode="before")
     def validate_api_key(cls, v: str) -> str:
         """Validate the API key."""
         if not v:
@@ -99,7 +99,7 @@ class DashScopeParse(BasePydanticReader):
 
         return v
 
-    @validator("workspace_id", pre=True, always=True)
+    @field_validator("workspace_id", mode="before")
     def validate_workspace_id(cls, v: str) -> str:
         """Validate the Workspace."""
         if not v:
@@ -109,7 +109,7 @@ class DashScopeParse(BasePydanticReader):
 
         return v
 
-    @validator("category_id", pre=True, always=True)
+    @field_validator("category_id", mode="before")
     def validate_category_id(cls, v: str) -> str:
         """Validate the category."""
         if not v:
@@ -118,7 +118,7 @@ class DashScopeParse(BasePydanticReader):
             return os.getenv("DASHSCOPE_CATEGORY_ID", DASHSCOPE_DEFAULT_DC_CATEGORY)
         return v
 
-    @validator("base_url", pre=True, always=True)
+    @field_validator("base_url", mode="before")
     def validate_base_url(cls, v: str) -> str:
         """Validate the base URL."""
         if v and v != DASHSCOPE_DEFAULT_BASE_URL:

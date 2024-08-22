@@ -28,12 +28,12 @@ keywords = ["PDF", "llama", "llama-parse", "parse"]
 license = "MIT"
 name = "llama-index-readers-llama-parse"
 readme = "README.md"
-version = "0.1.6"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.7"
 llama-parse = ">=0.4.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

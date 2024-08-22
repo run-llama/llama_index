@@ -13,7 +13,16 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from dataclasses_json import DataClassJsonMixin
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GetJsonSchemaHandler,
+    SerializeAsAny,
+    JsonSchemaValue,
+    ConfigDict,
+    model_serializer,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
 from typing_extensions import Self
@@ -39,15 +48,18 @@ logger = logging.getLogger(__name__)
 class BaseComponent(BaseModel):
     """Base component object to capture class names."""
 
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: "BaseComponent") -> None:
-            """Add class name to schema."""
-            schema["properties"]["class_name"] = {
-                "title": "Class Name",
-                "type": "string",
-                "default": model.class_name(),
-            }
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema["properties"]["class_name"] = {
+            "title": "Class Name",
+            "type": "string",
+            "default": cls.class_name(),
+        }
+        return json_schema
 
     @classmethod
     def class_name(cls) -> str:
@@ -62,10 +74,14 @@ class BaseComponent(BaseModel):
     def json(self, **kwargs: Any) -> str:
         return self.to_json(**kwargs)
 
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().dict(**kwargs)
+    @model_serializer(mode="wrap")
+    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+        data = handler(self)
         data["class_name"] = self.class_name()
         return data
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        return self.model_dump(**kwargs)
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
@@ -84,15 +100,17 @@ class BaseComponent(BaseModel):
 
         # remove private attributes if they aren't pickleable -- kind of dangerous
         keys_to_remove = []
-        for key, val in state["__private_attribute_values__"].items():
-            try:
-                pickle.dumps(val)
-            except Exception:
-                keys_to_remove.append(key)
+        private_attrs = state.get("__pydantic_private__", None)
+        if private_attrs:
+            for key, val in state["__pydantic_private__"].items():
+                try:
+                    pickle.dumps(val)
+                except Exception:
+                    keys_to_remove.append(key)
 
-        for key in keys_to_remove:
-            logging.warning(f"Removing unpickleable private attribute {key}")
-            del state["__private_attribute_values__"][key]
+            for key in keys_to_remove:
+                logging.warning(f"Removing unpickleable private attribute {key}")
+                del state["__pydantic_private__"][key]
 
         return state
 
@@ -133,8 +151,7 @@ class BaseComponent(BaseModel):
 class TransformComponent(BaseComponent, DispatcherSpanMixin):
     """Base class for transform components."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
     def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
@@ -200,10 +217,8 @@ class BaseNode(BaseComponent):
 
     """
 
-    class Config:
-        allow_population_by_field_name = True
-        # hash is computed on local field, during the validation process
-        validate_assignment = True
+    # hash is computed on local field, during the validation process
+    model_config = ConfigDict(populate_by_name=True, validate_assignment=True)
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -530,7 +545,7 @@ class IndexNode(TextNode):
             elif isinstance(self.obj, BaseNode):
                 data["obj"] = doc_to_json(self.obj)
             elif isinstance(self.obj, BaseModel):
-                data["obj"] = self.obj.dict()
+                data["obj"] = self.obj.model_dump()
             else:
                 data["obj"] = json.dumps(self.obj)
         except Exception:
@@ -584,7 +599,7 @@ class IndexNode(TextNode):
 
 
 class NodeWithScore(BaseComponent):
-    node: BaseNode
+    node: SerializeAsAny[BaseNode]
     score: Optional[float] = None
 
     def __str__(self) -> str:

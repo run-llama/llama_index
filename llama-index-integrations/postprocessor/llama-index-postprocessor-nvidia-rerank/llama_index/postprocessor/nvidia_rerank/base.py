@@ -1,7 +1,7 @@
-from typing import Any, List, Optional, Literal, Generator
+from typing import Any, List, Optional, Generator, Literal
 
 from urllib.parse import urlparse, urlunparse
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
@@ -32,9 +32,7 @@ class Model(BaseModel):
 class NVIDIARerank(BaseNodePostprocessor):
     """NVIDIA's API Catalog Reranker Connector."""
 
-    class Config:
-        validate_assignment = True
-
+    model_config = ConfigDict(validate_assignment=True)
     model: Optional[str] = Field(
         default=DEFAULT_MODEL,
         description="The NVIDIA API Catalog reranker to use.",
@@ -55,6 +53,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             "Default is model dependent and is likely to raise error if an "
             "input is too long."
         ),
+        default=None,
     )
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")

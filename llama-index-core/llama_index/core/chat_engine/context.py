@@ -14,11 +14,8 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
 )
 from llama_index.core.types import Thread
 
@@ -63,7 +60,6 @@ class ContextChatEngine(BaseChatEngine):
     def from_defaults(
         cls,
         retriever: BaseRetriever,
-        service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         system_prompt: Optional[str] = None,
@@ -74,7 +70,7 @@ class ContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "ContextChatEngine":
         """Initialize a ContextChatEngine from default parameters."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
@@ -99,9 +95,7 @@ class ContextChatEngine(BaseChatEngine):
             memory=memory,
             prefix_messages=prefix_messages,
             node_postprocessors=node_postprocessors,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
             context_template=context_template,
         )
 
