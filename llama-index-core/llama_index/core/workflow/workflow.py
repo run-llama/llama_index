@@ -60,13 +60,13 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
-    def add_services(self, **services: "Workflow") -> None:
-        """Adds one or more services to this workflow.
+    def add_workflows(self, **workflows: "Workflow") -> None:
+        """Adds one or more nested workflows to this workflow.
 
         This method only accepts keyword arguments, and the name of the parameter
-        will be used as the name of the service.
+        will be used as the name of the workflow.
         """
-        for name, wf in services.items():
+        for name, wf in workflows.items():
             self._service_manager.add(name, wf)
 
     def _get_steps(self) -> Dict[str, Callable]:

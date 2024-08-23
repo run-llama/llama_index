@@ -47,7 +47,7 @@ async def test_e2e():
     wf = DummyWorkflow()
     # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
     # and give it a name, in this case "service_workflow"
-    wf.add_services(service_workflow=ServiceWorkflow())
+    wf.add_workflows(service_workflow=ServiceWorkflow())
     res = await wf.run()
     assert res == 84
 
