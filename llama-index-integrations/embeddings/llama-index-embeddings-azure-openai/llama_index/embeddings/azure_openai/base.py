@@ -37,7 +37,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         validate_default=True,
     )
 
-    azure_ad_token_provider: AzureADTokenProvider = Field(
+    azure_ad_token_provider: Optional[AzureADTokenProvider] = Field(
         default=None, description="Callback function to provide Azure AD token."
     )
     use_azure_ad: bool = Field(
