@@ -1,7 +1,7 @@
 """Base query engine."""
 
 import logging
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.base.query_pipeline.query import (
@@ -16,7 +16,6 @@ from llama_index.core.bridge.pydantic import Field, ConfigDict, SerializeAsAny
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
-from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
@@ -33,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 PydanticMetaclass = type(BaseModel)
 
+
 class CombinedMeta(_WorkflowMeta, ABCMeta):
     pass
 
@@ -43,10 +43,11 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, Workflow, metaclass=CombinedM
     def __init__(
         self,
         callback_manager: Optional[CallbackManager],
+        timeout: float = 120.0,
         **kwargs: Any,
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
-        Workflow.__init__(self, **kwargs)
+        Workflow.__init__(self, timeout=timeout, **kwargs)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

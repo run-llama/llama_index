@@ -5,7 +5,6 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
@@ -20,22 +19,20 @@ from llama_index.core.settings import Settings
 import llama_index.core.instrumentation as instrument
 from llama_index.core.workflow import (
     Context,
-    Workflow,
     StartEvent,
     StopEvent,
     step,
-    Event
+    Event,
 )
 
 dispatcher = instrument.get_dispatcher(__name__)
 
 
 class RetrieveEvent(Event):
-    """Result of running retrieval"""
+    """Result of running retrieval."""
 
     query_bundle: QueryBundle
     nodes: List[NodeWithScore]
-
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -185,7 +182,6 @@ class RetrieverQueryEngine(BaseQueryEngine):
     @step
     async def retrieve_step(self, ctx: Context, ev: StartEvent) -> RetrieveEvent:
         """Retrieve step."""
-        print(f"RETRIEVING: {ev.query_bundle}")
         nodes = await self.aretrieve(ev.query_bundle)
         return RetrieveEvent(query_bundle=ev.query_bundle, nodes=nodes)
 
