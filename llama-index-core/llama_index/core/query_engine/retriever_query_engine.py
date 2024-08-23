@@ -182,14 +182,14 @@ class RetrieverQueryEngine(BaseQueryEngine):
             additional_source_nodes=additional_source_nodes,
         )
 
-    @step(pass_context=True)
+    @step
     async def retrieve_step(self, ctx: Context, ev: StartEvent) -> RetrieveEvent:
         """Retrieve step."""
         print(f"RETRIEVING: {ev.query_bundle}")
         nodes = await self.aretrieve(ev.query_bundle)
         return RetrieveEvent(query_bundle=ev.query_bundle, nodes=nodes)
 
-    @step(pass_context=True)
+    @step
     async def synthesize_step(self, ctx: Context, ev: RetrieveEvent) -> StopEvent:
         """Synthesize step."""
         response = await self.asynthesize(query_bundle=ev.query_bundle, nodes=ev.nodes)
