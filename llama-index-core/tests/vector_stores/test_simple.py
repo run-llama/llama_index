@@ -1,7 +1,16 @@
 import unittest
+from pathlib import Path
 from typing import List
 
-from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+import pytest
+
+from llama_index.core import VectorStoreIndex, MockEmbedding
+from llama_index.core.schema import (
+    NodeRelationship,
+    RelatedNodeInfo,
+    TextNode,
+    Document,
+)
 from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.core.vector_stores.types import (
     ExactMatchFilter,
@@ -15,6 +24,15 @@ from llama_index.core.vector_stores.types import (
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
 _NODE_ID_WEIGHT_2_RANK_C = "7D9CD555-846C-445C-A9DD-F8924A01411D"
 _NODE_ID_WEIGHT_3_RANK_C = "452D24AB-F185-414C-A352-590B4B9EE51B"
+
+
+@pytest.fixture()
+def persist_dir(tmp_path: Path):
+    index = VectorStoreIndex.from_documents(
+        [Document(id_="1", text="1")], embed_model=MockEmbedding(embed_dim=1)
+    )
+    index.storage_context.persist(str(tmp_path))
+    return str(tmp_path)
 
 
 def _node_embeddings_for_test() -> List[TextNode]:
@@ -434,3 +452,15 @@ class SimpleVectorStoreTest(unittest.TestCase):
         query = VectorStoreQuery(query_embedding=[1.0, 1.0], similarity_top_k=3)
         result = simple_vector_store.query(query)
         self.assertEqual(result.ids, [_NODE_ID_WEIGHT_3_RANK_C])
+
+
+def test_from_persist_dir(persist_dir: str) -> None:
+    vector_store = SimpleVectorStore.from_persist_dir(persist_dir=persist_dir)
+    assert vector_store is not None
+
+
+def test_from_namespaced_persist_dir(persist_dir: str) -> None:
+    vector_store = SimpleVectorStore.from_namespaced_persist_dir(
+        persist_dir=persist_dir
+    )
+    assert vector_store is not None
