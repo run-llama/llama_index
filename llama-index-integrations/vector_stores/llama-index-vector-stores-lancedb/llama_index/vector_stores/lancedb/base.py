@@ -141,7 +141,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
+    stores_text: bool = True
     flat_metadata: bool = True
     uri: Optional[str]
     vector_column_name: Optional[str]
