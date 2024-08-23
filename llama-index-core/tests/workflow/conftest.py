@@ -20,15 +20,15 @@ class LastEvent(Event):
 
 
 class DummyWorkflow(Workflow):
-    @step()
+    @step
     async def start_step(self, ev: StartEvent) -> OneTestEvent:
         return OneTestEvent()
 
-    @step()
+    @step
     async def middle_step(self, ev: OneTestEvent) -> LastEvent:
         return LastEvent()
 
-    @step()
+    @step
     async def end_step(self, ev: LastEvent) -> StopEvent:
         return StopEvent(result="Workflow completed")
 
