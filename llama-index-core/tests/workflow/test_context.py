@@ -7,8 +7,14 @@ from llama_index.core.workflow.workflow import (
 )
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.workflow import Workflow
 
 from .conftest import OneTestEvent, AnotherTestEvent
+
+
+def test_context_ctor():
+    with pytest.raises(ValueError):
+        ctx = Context()
 
 
 @pytest.mark.asyncio()
@@ -40,8 +46,8 @@ async def test_collect_events():
 
 
 @pytest.mark.asyncio()
-async def test_set_global():
-    c1 = Context()
+async def test_set_global(session):
+    c1 = Context(session=session)
     await c1.set(key="test_key", value=42)
 
     c2 = Context(parent=c1)
@@ -49,8 +55,8 @@ async def test_set_global():
 
 
 @pytest.mark.asyncio()
-async def test_set_private():
-    c1 = Context()
+async def test_set_private(session):
+    c1 = Context(session=session)
     await c1.set(key="test_key", value=42, make_private=True)
     assert await c1.get(key="test_key") == 42
 
@@ -60,8 +66,8 @@ async def test_set_private():
 
 
 @pytest.mark.asyncio()
-async def test_set_private_duplicate():
-    c1 = Context()
+async def test_set_private_duplicate(session):
+    c1 = Context(session=session)
     await c1.set(key="test_key", value=42)
 
     c2 = Context(parent=c1)
@@ -70,13 +76,13 @@ async def test_set_private_duplicate():
 
 
 @pytest.mark.asyncio()
-async def test_get_default():
-    c1 = Context()
+async def test_get_default(session):
+    c1 = Context(session=session)
     assert await c1.get(key="test_key", default=42) == 42
 
 
 @pytest.mark.asyncio()
-async def test_legacy_data():
-    c1 = Context()
+async def test_legacy_data(session):
+    c1 = Context(session=session)
     await c1.set(key="test_key", value=42)
     assert c1.data["test_key"] == 42
