@@ -25,7 +25,7 @@ class XinferenceEmbedding(BaseEmbedding):
     def __init__(
         self,
         model_uid: str,
-        base_url: Optional[str] = None,
+        base_url: str = "http://localhost:9997",
         timeout: float = 60.0,
         **kwargs: Any,
     ) -> None:
