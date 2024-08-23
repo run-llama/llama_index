@@ -3,7 +3,7 @@
 from typing import Any, List, Optional, Sequence, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalMode,
@@ -30,7 +30,7 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
     """
 
     retriever: BaseRetriever = Field(..., description="Retriever to evaluate")
-    node_postprocessors: Optional[List[BaseNodePostprocessor]] = Field(
+    node_postprocessors: Optional[List[SerializeAsAny[BaseNodePostprocessor]]] = Field(
         default=None, description="Optional post-processor"
     )
 
@@ -80,7 +80,7 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
     """
 
     retriever: BaseRetriever = Field(..., description="Retriever to evaluate")
-    node_postprocessors: Optional[List[BaseNodePostprocessor]] = Field(
+    node_postprocessors: Optional[List[SerializeAsAny[BaseNodePostprocessor]]] = Field(
         default=None, description="Optional post-processor"
     )
 

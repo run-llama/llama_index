@@ -87,7 +87,7 @@ class DashScopeMultiModal(MultiModalLLM):
     seed: Optional[int] = Field(
         description="Random seed when generate.", default=1234, gte=0
     )
-    api_key: str = Field(
+    api_key: Optional[str] = Field(
         default=None, description="The DashScope API key.", exclude=True
     )
 

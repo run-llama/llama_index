@@ -80,9 +80,9 @@ class TairVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
-    stores_node = True
-    flat_metadata = False
+    stores_text: bool = True
+    stores_node: bool = True
+    flat_metadata: bool = False
 
     _tair_client: Tair = PrivateAttr()
     _index_name: str = PrivateAttr()
@@ -102,6 +102,7 @@ class TairVectorStore(BasePydanticVectorStore):
         overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
+        super().__init__()
         try:
             self._tair_client = Tair.from_url(tair_url, **kwargs)
         except ValueError as e:

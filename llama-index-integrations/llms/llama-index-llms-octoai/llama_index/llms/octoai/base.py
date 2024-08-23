@@ -37,7 +37,7 @@ from llama_index.llms.octoai.utils import (
     to_octoai_messages,
 )
 
-from octoai.client import Client
+from octoai.client import OctoAI
 
 DEFAULT_OCTOAI_MODEL = "mistral-7b-instruct"
 
@@ -62,7 +62,7 @@ class OctoAI(LLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OctoAI SDK."
     )
-    _client: Optional[Client] = PrivateAttr()
+    _client: Optional[OctoAI] = PrivateAttr()
 
     def __init__(
         self,
@@ -83,23 +83,6 @@ class OctoAI(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        token = get_from_param_or_env("token", token, "OCTOAI_TOKEN", "")
-
-        if not token:
-            raise ValueError(
-                "You must provide an API token to use OctoAI. "
-                "You can either pass it in as an argument or set it `OCTOAI_TOKEN`."
-                "To generate a token in your OctoAI account settings: https://octoai.cloud/settings`."
-            )
-
-        try:
-            self._client = Client(token=token, timeout=timeout)
-        except ImportError as err:
-            raise ImportError(
-                "Could not import OctoAI python package. "
-                "Please install it with `pip install octoai-sdk`."
-            ) from err
-
         super().__init__(
             additional_kwargs=additional_kwargs,
             max_tokens=max_tokens,
@@ -113,6 +96,23 @@ class OctoAI(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        token = get_from_param_or_env("token", token, "OCTOAI_TOKEN", "")
+
+        if not token:
+            raise ValueError(
+                "You must provide an API token to use OctoAI. "
+                "You can either pass it in as an argument or set it `OCTOAI_TOKEN`."
+                "To generate a token in your OctoAI account settings: https://octoai.cloud/settings`."
+            )
+
+        try:
+            self._client = OctoAI(token=token, timeout=timeout)
+        except ImportError as err:
+            raise ImportError(
+                "Could not import OctoAI python package. "
+                "Please install it with `pip install octoai-sdk`."
+            ) from err
 
     @property
     def metadata(self) -> LLMMetadata:

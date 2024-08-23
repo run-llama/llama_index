@@ -157,8 +157,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
     _table_existed: bool = PrivateAttr(default=False)
     _client: Any = PrivateAttr()
     _config: Any = PrivateAttr()
@@ -167,9 +167,9 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     _column_names: List[str] = PrivateAttr()
     _column_type_names: List[str] = PrivateAttr()
     metadata_column: str = "metadata"
-    AMPLIFY_RATIO_LE5 = 100
-    AMPLIFY_RATIO_GT5 = 20
-    AMPLIFY_RATIO_GT50 = 10
+    AMPLIFY_RATIO_LE5: int = 100
+    AMPLIFY_RATIO_GT5: int = 20
+    AMPLIFY_RATIO_GT50: int = 10
 
     def __init__(
         self,

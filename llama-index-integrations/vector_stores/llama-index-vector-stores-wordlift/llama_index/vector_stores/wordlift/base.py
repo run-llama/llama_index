@@ -74,6 +74,7 @@ class WordliftVectorStore(BasePydanticVectorStore):
         configuration: Optional[Configuration] = None,
         fields: Optional[List[str]] = None,
     ):
+        super().__init__(use_async=True)
         nest_asyncio.apply()
 
         if configuration is None:
@@ -85,8 +86,6 @@ class WordliftVectorStore(BasePydanticVectorStore):
             self._fields = ["schema:url", "schema:name"]
         else:
             self._fields = fields
-
-        super().__init__(use_async=True)
 
     @property
     def account(self) -> AccountInfo:

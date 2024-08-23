@@ -4,9 +4,11 @@ GCS file and directory reader.
 A loader that fetches a file or iterates through a directory on Google Cloud Storage (GCS).
 
 """
+
 import json
 import logging
 from typing import Callable, Dict, List, Optional, Union
+from typing_extensions import Annotated
 from datetime import datetime
 from pathlib import Path
 
@@ -19,12 +21,18 @@ from llama_index.core.readers.base import (
     BaseReader,
 )
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, WithJsonSchema
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 SCOPES = ["https://www.googleapis.com/auth/devstorage.read_only"]
+
+
+FileMetadataCallable = Annotated[
+    Callable[[str], Dict],
+    WithJsonSchema({"type": "string"}),
+]
 
 
 class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
@@ -61,7 +69,7 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
     required_exts: Optional[List[str]] = None
     filename_as_id: bool = True
     num_files_limit: Optional[int] = None
-    file_metadata: Optional[Callable[[str], Dict]] = Field(default=None, exclude=True)
+    file_metadata: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
     service_account_key: Optional[Dict[str, str]] = None
     service_account_key_json: Optional[str] = None
     service_account_key_path: Optional[str] = None

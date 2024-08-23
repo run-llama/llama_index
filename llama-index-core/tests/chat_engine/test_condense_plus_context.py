@@ -5,7 +5,6 @@ from llama_index.core.chat_engine.condense_plus_context import (
     CondensePlusContextChatEngine,
 )
 from llama_index.core.indices.base_retriever import BaseRetriever
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate
@@ -21,9 +20,7 @@ def override_predict(self: Any, prompt: BasePromptTemplate, **prompt_args: Any) 
     "predict",
     override_predict,
 )
-def test_condense_plus_context_chat_engine(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_condense_plus_context_chat_engine(mock_llm) -> None:
     mock_retriever = Mock(spec=BaseRetriever)
 
     def source_url(query: str) -> str:
@@ -61,9 +58,7 @@ def test_condense_plus_context_chat_engine(
     engine = CondensePlusContextChatEngine(
         retriever=mock_retriever,
         llm=MockLLM(),
-        memory=ChatMemoryBuffer.from_defaults(
-            chat_history=[], llm=mock_service_context.llm
-        ),
+        memory=ChatMemoryBuffer.from_defaults(chat_history=[], llm=mock_llm),
         context_prompt=context_prompt,
         condense_prompt=condense_prompt,
     )

@@ -406,8 +406,8 @@ class CohereRerankRelevancyMetric(BaseRetrievalMetric):
                 "Cannot import cohere package, please `pip install cohere`."
             )
 
-        self._client = Client(api_key=api_key)
         super().__init__(model=model)
+        self._client = Client(api_key=api_key)
 
     def _get_agg_func(self, agg: Literal["max", "median", "mean"]) -> Callable:
         """Get agg func."""

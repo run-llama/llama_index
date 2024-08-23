@@ -1,4 +1,5 @@
 """Google's Gemini multi-modal models."""
+
 import os
 from typing import Any, Dict, Optional, Sequence, Tuple
 
@@ -113,15 +114,15 @@ class GeminiMultiModal(MultiModalLLM):
                 f"Available models are: {GEMINI_MM_MODELS}"
             )
 
-        self._model = genai.GenerativeModel(
+        model = genai.GenerativeModel(
             model_name=model_name,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
         )
 
-        self._model_meta = genai.get_model(model_name)
+        model_meta = genai.get_model(model_name)
 
-        supported_methods = self._model_meta.supported_generation_methods
+        supported_methods = model_meta.supported_generation_methods
         if "generateContent" not in supported_methods:
             raise ValueError(
                 f"Model {model_name} does not support content generation, only "
@@ -129,9 +130,9 @@ class GeminiMultiModal(MultiModalLLM):
             )
 
         if not max_tokens:
-            max_tokens = self._model_meta.output_token_limit
+            max_tokens = model_meta.output_token_limit
         else:
-            max_tokens = min(max_tokens, self._model_meta.output_token_limit)
+            max_tokens = min(max_tokens, model_meta.output_token_limit)
 
         super().__init__(
             model_name=model_name,
@@ -140,6 +141,8 @@ class GeminiMultiModal(MultiModalLLM):
             generate_kwargs=generate_kwargs,
             callback_manager=callback_manager,
         )
+        self._model = model
+        self._model_meta = model_meta
 
     @classmethod
     def class_name(cls) -> str:

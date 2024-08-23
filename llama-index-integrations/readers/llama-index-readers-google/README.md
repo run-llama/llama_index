@@ -1,6 +1,7 @@
 # LlamaIndex Integration: Google Readers
 
-Effortlessly incorporate Google-based data loaders into your Python workflow using LlamaIndex. Unlock the potential of various readers to enhance your data loading capabilities, including:
+Effortlessly incorporate Google-based data loaders into your Python workflow using LlamaIndex. It now supports more advanced operations through the implementation of ResourcesReaderMixin and FileSystemReaderMixin.
+Unlock the potential of various readers to enhance your data loading capabilities, including:
 
 - Google Calendar
 - Google Chat
@@ -32,6 +33,39 @@ You will need a `credentials.json` file from Google Cloud to interact with Googl
 See [this example](https://github.com/run-llama/gmail-extractor/blob/main/gmail.py) for a sample of code that successfully authenticates with Gmail once you have the `credentials.json` file.
 
 ## Examples
+
+### Google Drive Reader
+
+```python
+from llama_index.readers.google import GoogleDriveReader
+
+# Initialize the reader
+reader = GoogleDriveReader(
+    folder_id="folder_id",
+    service_account_key="[SERVICE_ACCOUNT_KEY_JSON]",
+)
+
+# Load data
+documents = reader.load_data()
+
+# List resources in the drive
+resources = reader.list_resources()
+
+# Get information about a specific resource
+resource_info = reader.get_resource_info("file.txt")
+
+# Load a specific resource
+specific_doc = reader.load_resource("file.txt")
+
+# Read file content directly
+file_content = reader.read_file_content("path/to/file.txt")
+
+print(f"Loaded {len(documents)} documents")
+print(f"Found {len(resources)} resources")
+print(f"Resource info: {resource_info}")
+print(f"Specific document: {specific_doc}")
+print(f"File content length: {len(file_content)} bytes")
+```
 
 ### Google Docs Reader
 

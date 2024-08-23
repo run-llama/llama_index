@@ -138,13 +138,13 @@ class Gemini(CustomLLM):
         # Explicitly passed args take precedence over the generation_config.
         final_gen_config = {"temperature": temperature, **base_gen_config}
 
-        self._model = genai.GenerativeModel(
+        model = genai.GenerativeModel(
             model_name=model,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
         )
 
-        self._model_meta = genai.get_model(model)
+        model_meta = genai.get_model(model)
 
         supported_methods = self._model_meta.supported_generation_methods
         if "generateContent" not in supported_methods:
@@ -154,9 +154,9 @@ class Gemini(CustomLLM):
             )
 
         if not max_tokens:
-            max_tokens = self._model_meta.output_token_limit
+            max_tokens = model_meta.output_token_limit
         else:
-            max_tokens = min(max_tokens, self._model_meta.output_token_limit)
+            max_tokens = min(max_tokens, model_meta.output_token_limit)
 
         super().__init__(
             model=model,
@@ -165,6 +165,9 @@ class Gemini(CustomLLM):
             generate_kwargs=generate_kwargs,
             callback_manager=callback_manager,
         )
+
+        self._model_meta = model_meta
+        self._model = model
 
     @classmethod
     def class_name(cls) -> str:
