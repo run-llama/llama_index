@@ -53,6 +53,8 @@ nav:
           - Branches and loops: ./understanding/workflows/branches_and_loops.md
           - Maintaining state: ./understanding/workflows/state.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
+          - Subclassing workflows: ./understanding/workflows/subclass.md
+          - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
