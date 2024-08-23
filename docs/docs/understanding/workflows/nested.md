@@ -21,7 +21,7 @@ class Step2Event(Event):
 
 
 class MainWorkflow(Workflow):
-    @step()
+    @step
     async def start(
         self, ctx: Context, ev: StartEvent, reflection_workflow: Workflow
     ) -> Step2Event:
@@ -30,7 +30,7 @@ class MainWorkflow(Workflow):
 
         return Step2Event(query=res)
 
-    @step()
+    @step
     async def step_two(self, ctx: Context, ev: Step2Event) -> StopEvent:
         print("Query is ", ev.query)
         # do something with the query here
@@ -41,7 +41,7 @@ This workflow by itself will not run; it needs a valid workflow for the reflecti
 
 ```python
 class ReflectionFlow(Workflow):
-    @step()
+    @step
     async def sub_start(self, ctx: Context, ev: StartEvent) -> StopEvent:
         print("Doing custom reflection")
         return StopEvent(result="Improved query")

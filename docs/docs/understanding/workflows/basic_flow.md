@@ -33,7 +33,7 @@ A workflow is usually implemented as a class that inherits from `Workflow`. The 
 
 ```python
 class MyWorkflow(Workflow):
-    @step()
+    @step
     async def my_step(self, ev: StartEvent) -> StopEvent:
         # do something here
         return StopEvent(result="Hello, world!")
@@ -49,7 +49,6 @@ This will simply print "Hello, World!" to the console.
 In this code we:
 * Define a class `MyWorkflow` that inherits from `Workflow`
 * Use the @step decorator to define a single step `my_step`
-  * Note the parentheses after `@step()` -- don't leave these out!
 * The step takes a single argument, `ev`, which is an instance of `StartEvent`
 * The step returns a `StopEvent` with a result of "Hello, world!"
 * We create an instance of `MyWorkflow` with a timeout of 10 seconds and verbosity off
@@ -137,17 +136,17 @@ Now we define the workflow itself. We do this by defining the input and output t
 
 ```python
 class MyWorkflow(Workflow):
-    @step()
+    @step
     async def step_one(self, ev: StartEvent) -> FirstEvent:
         print(ev.first_input)
         return FirstEvent(first_output="First step complete.")
 
-    @step()
+    @step
     async def step_two(self, ev: FirstEvent) -> SecondEvent:
         print(ev.first_output)
         return SecondEvent(second_output="Second step complete.")
 
-    @step()
+    @step
     async def step_three(self, ev: SecondEvent) -> StopEvent:
         print(ev.second_output)
         return StopEvent(result="Workflow complete.")
