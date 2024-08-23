@@ -23,15 +23,15 @@ async def test_collect_events():
     ev2 = AnotherTestEvent()
 
     class TestWorkflow(Workflow):
-        @step()
+        @step
         async def step1(self, _: StartEvent) -> OneTestEvent:
             return ev1
 
-        @step()
+        @step
         async def step2(self, _: StartEvent) -> AnotherTestEvent:
             return ev2
 
-        @step(pass_context=True)
+        @step
         async def step3(
             self, ctx: Context, ev: Union[OneTestEvent, AnotherTestEvent]
         ) -> Optional[StopEvent]:
