@@ -26,6 +26,7 @@ class CohereRerank(BaseNodePostprocessor):
         model: str = "rerank-english-v2.0",
         api_key: Optional[str] = None,
     ):
+        super().__init__(top_n=top_n, model=model)
         try:
             api_key = api_key or os.environ["COHERE_API_KEY"]
         except IndexError:
@@ -41,7 +42,6 @@ class CohereRerank(BaseNodePostprocessor):
             )
 
         self._client = Client(api_key=api_key)
-        super().__init__(top_n=top_n, model=model)
 
     @classmethod
     def class_name(cls) -> str:

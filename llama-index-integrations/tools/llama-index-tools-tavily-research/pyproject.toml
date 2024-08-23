@@ -28,12 +28,12 @@ license = "MIT"
 maintainers = ["rotemweiss57"]
 name = "llama-index-tools-tavily-research"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 tavily-python = ">=0.2.4"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -1,4 +1,5 @@
 """Apache Cassandra database wrapper."""
+
 from __future__ import annotations
 
 import re
@@ -6,7 +7,7 @@ import traceback
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from cassandra.cluster import ResultSet, Session
-from llama_index.core.bridge.pydantic import BaseModel, Field, root_validator
+from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
 
 IGNORED_KEYSPACES = [
     "system",
@@ -488,7 +489,7 @@ class Table(BaseModel):
     class Config:
         frozen = True
 
-    @root_validator()
+    @model_validator(mode="before")
     def check_required_fields(cls, class_values: dict) -> dict:
         if not class_values["columns"]:
             raise ValueError("non-empty column list for must be provided")

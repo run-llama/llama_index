@@ -33,12 +33,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-evaluation-tonic-validate"
 readme = "README.md"
-version = "0.1.2"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 tonic-validate = "^2.1.1"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

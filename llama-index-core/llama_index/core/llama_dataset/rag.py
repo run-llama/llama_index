@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import Field
@@ -13,7 +13,6 @@ from llama_index.core.llama_dataset.base import (
     BaseLlamaPredictionDataset,
     CreatedBy,
 )
-from pandas import DataFrame as PandasDataFrame
 
 
 class RagExamplePrediction(BaseLlamaExamplePrediction):
@@ -83,8 +82,15 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = RagExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data = {}
         if self.predictions:
             data = {
@@ -92,7 +98,7 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
                 "contexts": [t.contexts for t in self.predictions],
             }
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -105,8 +111,15 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
 
     _example_type = LabelledRagDataExample
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data = {
             "query": [t.query for t in self.examples],
             "reference_contexts": [t.reference_contexts for t in self.examples],
@@ -115,7 +128,7 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
             "query_by": [str(t.query_by) for t in self.examples],
         }
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     async def _apredict_example(
         self,

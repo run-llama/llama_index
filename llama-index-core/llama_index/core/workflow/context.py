@@ -1,8 +1,11 @@
 from collections import defaultdict
 import asyncio
-from typing import Dict, Any, Optional, List, Type
+from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING
 
 from .events import Event
+
+if TYPE_CHECKING:
+    from .session import WorkflowSession
 
 
 class Context:
@@ -16,13 +19,21 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, parent: Optional["Context"] = None) -> None:
+    def __init__(
+        self,
+        session: Optional["WorkflowSession"] = None,
+        parent: Optional["Context"] = None,
+    ) -> None:
         # Global data storage
-        if parent:
+        if parent is not None:
             self._globals = parent._globals
         else:
             self._globals: Dict[str, Any] = {}
             self._lock = asyncio.Lock()
+            if session is None:
+                msg = "A workflow session is needed to create a root context"
+                raise ValueError(msg)
+            self._session = session
 
         # Local data storage
         self._locals: Dict[str, Any] = {}
@@ -85,6 +96,11 @@ class Context:
     def lock(self) -> asyncio.Lock:
         """Returns a mutex to lock the Context."""
         return self._parent._lock if self._parent else self._lock
+
+    @property
+    def session(self) -> "WorkflowSession":
+        """Returns a mutex to lock the Context."""
+        return self._parent._session if self._parent else self._session
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
