@@ -25,7 +25,7 @@ def test_decorate_method():
         def f1(self, ev: Event) -> Event:
             return ev
 
-        @step()
+        @step
         def f2(self, ev: Event) -> Event:
             return ev
 
@@ -57,11 +57,11 @@ def test_decorate_free_function_wrong_decorator():
     with pytest.raises(
         WorkflowValidationError,
         match=re.escape(
-            "To decorate f please pass a workflow class to the @step() decorator."
+            "To decorate f please pass a workflow class to the @step decorator."
         ),
     ):
 
-        @step()
+        @step
         def f(ev: Event) -> Event:
             return Event()
 
