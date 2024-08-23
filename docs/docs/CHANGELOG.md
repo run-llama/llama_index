@@ -1,5 +1,42 @@
 # ChangeLog
 
+## [2024-08-23]
+
+### `llama-index-core` [0.11.1]
+
+- Replacing client-side docs search with algolia (#15574)
+- Add docs on extending workflows (#15573)
+- rename method for nested workflows to add_workflows (#15596)
+- chore: fix @step usage in the core codebase (#15588)
+- Modify the validate function in ReflectionWorkflow example notebook to use pydantic model_validate_json method (#15567)
+- feature: allow concurrent runs of the same workflow instance (#15568)
+- docs: remove redundant pass_context=True from docs and examples (#15571)
+
+### `llama-index-embeddings-openai` [0.2.3]
+
+- fix openai embeddings with pydantic v2 (#15576)
+
+### `llama-index-embeddings-voyageai` [0.2.1]
+
+- bump voyage ai embedding client dep (#15595)
+
+### `llama-index-llms-vertex` [0.3.3]
+
+- Vertex LLM: Correctly add function calling part to prompt (#15569)
+- Vertex LLM: Remove manual setting of message content to Function Calling (#15586)
+
+## [2024-08-22]
+
+### `llama-index-core` [0.11.0]
+
+- removed deprecated `ServiceContext` -- using this now will print an error with a link to the migration guide
+- removed deprecated `LLMPredictor` -- using this now will print an error, any existing LLM is a drop-in replacement
+- made `pandas` an optional dependency
+
+### `Everything Else`
+
+- bumped the minor version of every package to account for the new version of `llama-index-core`
+
 ## [2024-08-21]
 
 ### `llama-index-core` [0.10.68]
