@@ -5,7 +5,6 @@ from typing import (
     Any,
     List,
     Optional,
-    Tuple,
     Union,
     Callable,
     Dict,
@@ -18,63 +17,76 @@ try:
 except ImportError:
     UnionType = Union
 
+from llama_index.core.bridge.pydantic import BaseModel
+
 from .context import Context
-from .events import Event
+from .events import Event, EventType
 from .errors import WorkflowValidationError
 
 
-def validate_step_signature(fn: Callable) -> Tuple[str, List[object], List[object]]:
-    """Given a function, ensure the signature is compatible with a workflow step.
+class StepSignatureSpec(BaseModel):
+    """A Pydantic model representing the signature of a step function or method."""
 
-    This function returns a tuple with:
-        - the name of the parameter delivering the event
-        - the list of event types in input
-        - the list of event types in output
-    """
+    accepted_events: Dict[str, List[EventType]]
+    return_types: List[Any]
+    context_parameter: Optional[str]
+    requested_services: Optional[Dict[str, List[Any]]]
+
+
+def inspect_signature(fn: Callable) -> StepSignatureSpec:
+    """Given a function, ensure the signature is compatible with a workflow step."""
     sig = inspect.signature(fn)
 
-    # At least one parameter
-    if len(sig.parameters) == 0:
-        msg = "Step signature must have at least one parameter"
-        raise WorkflowValidationError(msg)
+    accepted_events: Dict[str, List[EventType]] = {}
+    context_parameter = None
+    requested_services = {}
 
-    event_name = ""
-    event_types = []
-    num_of_possible_events = 0
+    # Inspect function parameters
     for name, t in sig.parameters.items():
+        # Ignore self and cls
         if name in ("self", "cls"):
             continue
 
-        # All parameters must be annotated
-        if t.annotation == inspect._empty:
-            msg = "Step signature parameters must be annotated"
-            raise WorkflowValidationError(msg)
-
+        # Get name and type of the Context param
         if t.annotation == Context:
+            context_parameter = name
             continue
 
-        event_types = _get_param_types(t)
+        # Collect name and types of the event param
+        param_types = _get_param_types(t)
+        if all(
+            param_t == Event
+            or (inspect.isclass(param_t) and issubclass(param_t, Event))
+            for param_t in param_types
+        ):
+            accepted_events[name] = param_types
+            continue
 
-        all_events = all(et == Event or issubclass(et, Event) for et in event_types)
+        # Everything else will be treated as a service
+        requested_services[name] = param_types
 
-        if not all_events:
-            msg = "Events in step signature parameters must be of type Event"
-            raise WorkflowValidationError(msg)
+    # Inspect function return types
 
-        # Number of events in the signature must be exactly one
-        num_of_possible_events += 1
-        event_name = name
+    return StepSignatureSpec(
+        accepted_events=accepted_events,
+        return_types=_get_return_types(fn),
+        context_parameter=context_parameter,
+        requested_services=requested_services,
+    )
 
-    if num_of_possible_events != 1:
-        msg = f"Step signature must contain exactly one parameter of type Event but found {num_of_possible_events}."
+
+def validate_step_signature(spec: StepSignatureSpec) -> None:
+    num_of_events = len(spec.accepted_events)
+    if num_of_events == 0:
+        msg = "Step signature must have at least one parameter annotated as type Event"
+        raise WorkflowValidationError(msg)
+    elif num_of_events > 1:
+        msg = f"Step signature must contain exactly one parameter of type Event but found {num_of_events}."
         raise WorkflowValidationError(msg)
 
-    return_types = _get_return_types(fn)
-    if not return_types:
+    if not spec.return_types:
         msg = f"Return types of workflows step functions must be annotated with their type."
         raise WorkflowValidationError(msg)
-
-    return (event_name, event_types, return_types)
 
 
 def get_steps_from_class(_class: object) -> Dict[str, Callable]:
@@ -101,7 +113,7 @@ def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
     return step_methods
 
 
-def _get_param_types(param: inspect.Parameter) -> List[object]:
+def _get_param_types(param: inspect.Parameter) -> List[Any]:
     """Extract the types of a parameter. Handles Union and Optional types."""
     typ = param.annotation
     if typ is inspect.Parameter.empty:
@@ -111,7 +123,7 @@ def _get_param_types(param: inspect.Parameter) -> List[object]:
     return [typ]
 
 
-def _get_return_types(func: Callable) -> List[object]:
+def _get_return_types(func: Callable) -> List[Any]:
     """Extract the return type hints from a function.
 
     Handles Union, Optional, and List types.

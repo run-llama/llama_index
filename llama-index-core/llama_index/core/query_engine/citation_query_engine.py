@@ -23,11 +23,7 @@ from llama_index.core.schema import (
     QueryBundle,
     TextNode,
 )
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 
 CITATION_QA_TEMPLATE = PromptTemplate(
     "Please provide an answer based solely on the provided sources. "
@@ -120,16 +116,11 @@ class CitationQueryEngine(BaseQueryEngine):
         )
         self._retriever = retriever
 
-        service_context = retriever.get_service_context()
-        callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        callback_manager = callback_manager or Settings.callback_manager
+        llm = llm or Settings.llm
 
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
         )
         self._node_postprocessors = node_postprocessors or []
@@ -177,7 +168,6 @@ class CitationQueryEngine(BaseQueryEngine):
             citation_refine_template (BasePromptTemplate):
                 Template for citation refinement.
             retriever (BaseRetriever): A retriever object.
-            service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
                 node postprocessors.
             verbose (bool): Whether to print out debug info.
@@ -192,7 +182,6 @@ class CitationQueryEngine(BaseQueryEngine):
 
         response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=llm,
-            service_context=index.service_context,
             text_qa_template=citation_qa_template,
             refine_template=citation_refine_template,
             response_mode=response_mode,
@@ -204,9 +193,7 @@ class CitationQueryEngine(BaseQueryEngine):
             retriever=retriever,
             llm=llm,
             response_synthesizer=response_synthesizer,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            ),
+            callback_manager=Settings.callback_manager,
             citation_chunk_size=citation_chunk_size,
             citation_chunk_overlap=citation_chunk_overlap,
             text_splitter=text_splitter,
@@ -227,10 +214,10 @@ class CitationQueryEngine(BaseQueryEngine):
             )
 
             for text_chunk in text_chunks:
-                text = f"Source {len(new_nodes)+1}:\n{text_chunk}\n"
+                text = f"Source {len(new_nodes) + 1}:\n{text_chunk}\n"
 
                 new_node = NodeWithScore(
-                    node=TextNode.parse_obj(node.node), score=node.score
+                    node=TextNode.model_validate(node.node), score=node.score
                 )
                 new_node.node.text = text
                 new_nodes.append(new_node)

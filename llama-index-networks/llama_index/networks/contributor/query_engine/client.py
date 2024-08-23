@@ -5,7 +5,8 @@ from llama_index.core.schema import QueryBundle
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.networks.schema.contributor import ContributorQueryResponse
-from pydantic.v1 import BaseSettings, Field
+from llama_index.core.bridge.pydantic_settings import BaseSettings, SettingsConfigDict
+from llama_index.core.bridge.pydantic import Field
 import requests
 import aiohttp
 
@@ -13,11 +14,9 @@ import aiohttp
 class ContributorQueryEngineClientSettings(BaseSettings):
     """Settings for contributor."""
 
+    model_config = SettingsConfigDict(env_file=[".env", ".env.contributor.client"])
     api_key: Optional[str] = Field(default=None, env="API_KEY")
     api_url: str = Field(..., env="API_URL")
-
-    class Config:
-        env_file = ".env", ".env.contributor.client"
 
 
 class ContributorQueryEngineClient(BaseQueryEngine):
@@ -53,7 +52,9 @@ class ContributorQueryEngineClient(BaseQueryEngine):
             self.config.api_url + "/api/query", json=data, headers=headers
         )
         try:
-            contributor_response = ContributorQueryResponse.parse_obj(result.json())
+            contributor_response = ContributorQueryResponse.model_validate(
+                result.json()
+            )
         except Exception as e:
             raise ValueError("Failed to parse response") from e
         return contributor_response.to_response()
@@ -75,7 +76,9 @@ class ContributorQueryEngineClient(BaseQueryEngine):
             ) as resp:
                 json_result = await resp.json()
             try:
-                contributor_response = ContributorQueryResponse.parse_obj(json_result)
+                contributor_response = ContributorQueryResponse.model_validate(
+                    json_result
+                )
             except Exception as e:
                 raise ValueError("Failed to parse response") from e
         return contributor_response.to_response()

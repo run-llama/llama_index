@@ -1,11 +1,14 @@
 from typing import Union, Sequence, List, Tuple
 
 from ai21.models import ChatMessage as J2ChatMessage, RoleType
-from ai21.models.chat import ChatMessage as AI21ChatMessage
+from ai21.models.chat import ChatMessage as AI21ChatMessage, AssistantMessage
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 JAMBA_MODELS = {
     "jamba-instruct": 256_000,
+    "jamba-1.5-mini": 256_000,
+    "jamba-1.5-large": 256_000,
+    "jamba-1.5": 256_000,
 }
 
 _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
@@ -52,3 +55,17 @@ def message_to_ai21_j2_message(
 
 def message_to_ai21_message(message: ChatMessage) -> AI21ChatMessage:
     return AI21ChatMessage(role=message.role, content=message.content)
+
+
+def is_function_calling_model(model: str) -> bool:
+    return "1.5" in model
+
+
+def from_ai21_message_to_chat_message(ai21_message: AssistantMessage) -> ChatMessage:
+    return ChatMessage(
+        role=ai21_message.role,
+        content=ai21_message.content,
+        additional_kwargs={}
+        if ai21_message.tool_calls is None
+        else {"tool_calls": ai21_message.tool_calls},
+    )

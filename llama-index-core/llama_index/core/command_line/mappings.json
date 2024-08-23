@@ -1,6 +1,5 @@
 {
   "StorageContext": "llama_index.core",
-  "ServiceContext": "llama_index.core",
   "ComposableGraph": "llama_index.core",
   "# indicesSummaryIndex": "llama_index.core",
   "VectorStoreIndex": "llama_index.core",
@@ -50,7 +49,6 @@
   "load_indices_from_storage": "llama_index.core",
   "QueryBundle": "llama_index.core",
   "get_response_synthesizer": "llama_index.core",
-  "set_global_service_context": "llama_index.core",
   "set_global_handler": "llama_index.core",
   "set_global_tokenizer": "llama_index.core",
   "get_tokenizer": "llama_index.core",
@@ -397,7 +395,6 @@
   "generate_qa_embedding_pairs": "llama_index.finetuning",
   "SentenceTransformersFinetuneEngine": "llama_index.finetuning",
   "EmbeddingAdapterFinetuneEngine": "llama_index.finetuning",
-  "GradientFinetuneEngine": "llama_index.finetuning",
   "generate_cohere_reranker_finetuning_dataset": "llama_index.finetuning",
   "CohereRerankerFinetuneEngine": "llama_index.finetuning",
   "MistralAIFinetuneEngine": "llama_index.finetuning",

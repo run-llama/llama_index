@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 
 from llama_index.core.bridge.pydantic import (
     Field,
-    GenericModel,
+    BaseModel,
     ValidationError,
 )
 
@@ -96,7 +96,7 @@ ConfigurableTransformations = dashscope_build_configurable_transformation_enum()
 T = TypeVar("T", bound=BaseComponent)
 
 
-class DashScopeConfiguredTransformation(GenericModel, Generic[T]):
+class DashScopeConfiguredTransformation(BaseModel, Generic[T]):
     """
     A class containing metadata & implementation for a transformation in a dashscope pipeline.
     """

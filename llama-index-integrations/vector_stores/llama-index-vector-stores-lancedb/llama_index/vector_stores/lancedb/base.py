@@ -182,6 +182,20 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__(
+            uri=uri,
+            table_name=table_name,
+            vector_column_name=vector_column_name,
+            nprobes=nprobes,
+            refine_factor=refine_factor,
+            text_key=text_key,
+            doc_id_key=doc_id_key,
+            mode=mode,
+            query_type=query_type,
+            overfetch_factor=overfetch_factor,
+            **kwargs,
+        )
+
         self._table_name = table_name
         self._metadata_keys = None
         self._fts_index = None
@@ -235,20 +249,6 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 self._table = self._connection.open_table(table_name)
             else:
                 self._table = None
-
-        super().__init__(
-            uri=uri,
-            table_name=table_name,
-            vector_column_name=vector_column_name,
-            nprobes=nprobes,
-            refine_factor=refine_factor,
-            text_key=text_key,
-            doc_id_key=doc_id_key,
-            mode=mode,
-            query_type=query_type,
-            overfetch_factor=overfetch_factor,
-            **kwargs,
-        )
 
     @property
     def client(self) -> None:

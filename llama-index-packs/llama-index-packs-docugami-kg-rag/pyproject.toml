@@ -23,7 +23,7 @@ exclude = ["**/BUILD"]
 keywords = ["infer", "rag", "retrieve", "retriever"]
 name = "llama-index-packs-docugami-kg-rag"
 readme = "README.md"
-version = "0.1.1"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -32,11 +32,11 @@ docugami = "^0.1.2"
 lxml = "4.9.3"
 openpyxl = "^3.1.2"
 chromadb = "^0.4.24"
-llama-index-core = "^0.10.1"
 llama-index-embeddings-openai = "^0.1.6"
 llama-index-llms-openai = "^0.1.12"
 llama-index-vector-stores-chroma = "^0.1.6"
 llama-index-readers-docugami = "^0.1.3"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies.black]
 extras = ["jupyter"]

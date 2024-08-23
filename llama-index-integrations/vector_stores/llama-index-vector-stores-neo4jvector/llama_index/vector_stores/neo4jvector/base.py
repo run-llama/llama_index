@@ -200,7 +200,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata = True
+    flat_metadata: bool = True
 
     distance_strategy: str
     index_name: str
