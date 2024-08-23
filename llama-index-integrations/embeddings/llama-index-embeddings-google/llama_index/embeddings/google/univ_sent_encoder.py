@@ -33,12 +33,12 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
                 "Please install tensorflow_hub: `pip install tensorflow_hub`"
             )
 
-        self._model = model
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=handle,
         )
+        self._model = model
 
     @classmethod
     def class_name(cls) -> str:
