@@ -135,11 +135,11 @@ def test_validate_step_signature_too_many_params():
 
 def test_get_steps_from():
     class Test:
-        @step()
+        @step
         def start(self, start: StartEvent) -> OneTestEvent:
             return OneTestEvent()
 
-        @step()
+        @step
         def my_method(self, event: OneTestEvent) -> StopEvent:
             return StopEvent()
 

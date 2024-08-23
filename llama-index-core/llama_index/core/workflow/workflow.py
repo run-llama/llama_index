@@ -88,7 +88,7 @@ class Workflow(metaclass=_WorkflowMeta):
                 step_func, "__step_config", None
             )
             if not step_config:
-                raise ValueError(f"Step {name} is missing `@step()` decorator.")
+                raise ValueError(f"Step {name} is missing `@step` decorator.")
 
             async def _task(
                 name: str,
@@ -295,7 +295,7 @@ class Workflow(metaclass=_WorkflowMeta):
         """Checks if the workflow is done."""
         return self._step_session is None
 
-    @step()
+    @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         ctx.session._retval = ev.result or None
@@ -316,7 +316,7 @@ class Workflow(metaclass=_WorkflowMeta):
                 step_func, "__step_config", None
             )
             if not step_config:
-                raise ValueError(f"Step {name} is missing `@step()` decorator.")
+                raise ValueError(f"Step {name} is missing `@step` decorator.")
 
             for event_type in step_config.accepted_events:
                 consumed_events.add(event_type)

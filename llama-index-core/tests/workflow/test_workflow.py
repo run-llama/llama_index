@@ -58,7 +58,7 @@ async def test_workflow_run_step(workflow):
 @pytest.mark.asyncio()
 async def test_workflow_timeout():
     class SlowWorkflow(Workflow):
-        @step()
+        @step
         async def slow_step(self, ev: StartEvent) -> StopEvent:
             await asyncio.sleep(5.0)
             return StopEvent(result="Done")
@@ -71,7 +71,7 @@ async def test_workflow_timeout():
 @pytest.mark.asyncio()
 async def test_workflow_validation():
     class InvalidWorkflow(Workflow):
-        @step()
+        @step
         async def invalid_step(self, ev: StartEvent) -> None:
             pass
 
@@ -85,12 +85,12 @@ async def test_workflow_event_propagation():
     events = []
 
     class EventTrackingWorkflow(Workflow):
-        @step()
+        @step
         async def step1(self, ev: StartEvent) -> OneTestEvent:
             events.append("step1")
             return OneTestEvent()
 
-        @step()
+        @step
         async def step2(self, ev: OneTestEvent) -> StopEvent:
             events.append("step2")
             return StopEvent(result="Done")
@@ -103,11 +103,11 @@ async def test_workflow_event_propagation():
 @pytest.mark.asyncio()
 async def test_sync_async_steps():
     class SyncAsyncWorkflow(Workflow):
-        @step()
+        @step
         async def async_step(self, ev: StartEvent) -> OneTestEvent:
             return OneTestEvent()
 
-        @step()
+        @step
         def sync_step(self, ev: OneTestEvent) -> StopEvent:
             return StopEvent(result="Done")
 
@@ -119,7 +119,7 @@ async def test_sync_async_steps():
 @pytest.mark.asyncio()
 async def test_workflow_num_workers():
     class NumWorkersWorkflow(Workflow):
-        @step(pass_context=True)
+        @step
         async def original_step(
             self, ctx: Context, ev: StartEvent
         ) -> OneTestEvent | LastEvent:
@@ -135,7 +135,7 @@ async def test_workflow_num_workers():
             await asyncio.sleep(1.0)
             return AnotherTestEvent(another_test_param=ev.test_param)
 
-        @step(pass_context=True)
+        @step
         async def final_step(
             self, ctx: Context, ev: AnotherTestEvent | LastEvent
         ) -> StopEvent:
@@ -165,16 +165,16 @@ async def test_workflow_num_workers():
 @pytest.mark.asyncio()
 async def test_workflow_step_send_event():
     class StepSendEventWorkflow(Workflow):
-        @step()
+        @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
             ctx.session.send_event(OneTestEvent(), step="step2")
             return None
 
-        @step()
+        @step
         async def step2(self, ev: OneTestEvent) -> StopEvent:
             return StopEvent(result="step2")
 
-        @step()
+        @step
         async def step3(self, ev: OneTestEvent) -> StopEvent:
             return StopEvent(result="step3")
 
@@ -190,12 +190,12 @@ async def test_workflow_step_send_event():
 @pytest.mark.asyncio()
 async def test_workflow_step_send_event_to_None():
     class StepSendEventToNoneWorkflow(Workflow):
-        @step()
+        @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
             ctx.session.send_event(OneTestEvent(), step=None)
             return None
 
-        @step()
+        @step
         async def step2(self, ev: OneTestEvent) -> StopEvent:
             return StopEvent(result="step2")
 
@@ -208,7 +208,7 @@ async def test_workflow_step_send_event_to_None():
 @pytest.mark.asyncio()
 async def test_workflow_missing_service():
     class DummyWorkflow(Workflow):
-        @step()
+        @step
         async def step(self, ev: StartEvent, my_service: Workflow) -> StopEvent:
             return StopEvent(result=42)
 
@@ -224,7 +224,7 @@ async def test_workflow_missing_service():
 @pytest.mark.asyncio()
 async def test_workflow_multiple_runs():
     class DummyWorkflow(Workflow):
-        @step()
+        @step
         async def step(self, ev: StartEvent) -> StopEvent:
             return StopEvent(result=ev.number * 2)
 
