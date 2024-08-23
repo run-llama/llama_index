@@ -193,6 +193,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             mode=mode,
             query_type=query_type,
             overfetch_factor=overfetch_factor,
+            api_key=api_key,
+            region=region,
             **kwargs,
         )
 
