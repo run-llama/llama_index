@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 import requests
-from typing import Any, List, Optional
+from typing import Any, List
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field
 
