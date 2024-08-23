@@ -115,6 +115,18 @@ class AI21(FunctionCallingLLM):
         """Initialize params."""
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
+        super().__init__(
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            additional_kwargs=additional_kwargs,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
 
         self._client = AI21Client(
             api_key=api_key,
@@ -132,19 +144,6 @@ class AI21(FunctionCallingLLM):
             num_retries=max_retries,
             headers=default_headers,
             via="llama-index",
-        )
-
-        super().__init__(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            additional_kwargs=additional_kwargs,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
         )
 
     @classmethod

@@ -66,13 +66,11 @@ class BitbucketReader(BaseReader):
         slugs.append(self.repository)
         return slugs
 
-    def load_all_file_paths(self, slug, branch, directory_path="", paths=None):
+    def load_all_file_paths(self, slug, branch, directory_path="", paths=[]):
         """
-        Go inside every path that is present in the repository and get the paths for each file.
+        Go inside every file that is present in the repository and get the paths for each file.
         """
-        if paths is None:
-            paths = []
-        content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse{directory_path}"
+        content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse/{directory_path}"
 
         query_params = {
             "at": branch,
@@ -85,10 +83,7 @@ class BitbucketReader(BaseReader):
         children = response["children"]
         for value in children["values"]:
             if value["type"] == "FILE":
-                if (
-                    value["path"].get("extension") not in self.extensions_to_skip
-                    and value["size"] > 0
-                ):
+                if value["path"]["extension"] not in self.extensions_to_skip:
                     paths.append(
                         {
                             "slug": slug,
@@ -105,7 +100,7 @@ class BitbucketReader(BaseReader):
 
     def load_text_by_paths(self, slug, file_path, branch) -> List:
         """
-        Go inside every file that is present in the repository and get the code in each file.
+        Go inside every file that is present in the repository and get the paths for each file.
         """
         content_url = f"{self.base_url}/rest/api/latest/projects/{self.project_key}/repos/{slug}/browse{file_path}"
 

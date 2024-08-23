@@ -10,14 +10,14 @@ from llama_index.core.indices.struct_store.sql_query import (
     SQLStructStoreQueryEngine,
 )
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
 from sqlalchemy.exc import OperationalError
 
 
 def test_sql_index_query(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex."""
@@ -40,8 +40,7 @@ def test_sql_index_query(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
 
     # query the index with SQL
@@ -55,9 +54,7 @@ def test_sql_index_query(
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
@@ -76,16 +73,15 @@ def test_sql_index_query(
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context, sql_only=True
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
 
 
 def test_sql_index_async_query(
     allow_networking: Any,
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex."""
@@ -108,8 +104,7 @@ def test_sql_index_async_query(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
 
     sql_to_test = "SELECT user_id, foo FROM test_table"
@@ -125,9 +120,7 @@ def test_sql_index_async_query(
     response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
     task = nl_table_engine.aquery("test_table:user_id,foo")
     response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
@@ -145,9 +138,7 @@ def test_sql_index_async_query(
     response = asyncio_run(task)
     assert str(response) == sql_to_test
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context, sql_only=True
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
     task = nl_table_engine.aquery("test_table:user_id,foo")
     response = asyncio_run(task)
     assert str(response) == sql_to_test
@@ -166,7 +157,8 @@ def test_default_output_parser() -> None:
 
 
 def test_nl_query_engine_parser(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test the sql response parser."""
@@ -189,8 +181,7 @@ def test_nl_query_engine_parser(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
     nl_query_engine = NLStructStoreQueryEngine(index)
 

@@ -88,10 +88,6 @@ class PromptHelper(BaseComponent):
         """Init params."""
         if chunk_overlap_ratio > 1.0 or chunk_overlap_ratio < 0.0:
             raise ValueError("chunk_overlap_ratio must be a float between 0. and 1.")
-
-        # TODO: make configurable
-        self._token_counter = TokenCounter(tokenizer=tokenizer)
-
         super().__init__(
             context_window=context_window,
             num_output=num_output,
@@ -99,6 +95,9 @@ class PromptHelper(BaseComponent):
             chunk_size_limit=chunk_size_limit,
             separator=separator,
         )
+
+        # TODO: make configurable
+        self._token_counter = TokenCounter(tokenizer=tokenizer)
 
     @classmethod
     def from_llm_metadata(

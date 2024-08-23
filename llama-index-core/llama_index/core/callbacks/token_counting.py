@@ -40,7 +40,11 @@ def get_tokens_from_response(
     response: Union["CompletionResponse", "ChatResponse"]
 ) -> Tuple[int, int]:
     """Get the token counts from a raw response."""
-    usage = response.raw.get("usage", {})
+    raw_response = response.raw
+    if not isinstance(raw_response, dict):
+        raw_response = dict(raw_response)
+
+    usage = raw_response.get("usage", {})
     if usage is None:
         usage = response.additional_kwargs
 

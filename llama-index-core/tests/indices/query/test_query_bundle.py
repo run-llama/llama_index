@@ -6,7 +6,6 @@ import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.schema import Document, QueryBundle
-from llama_index.core.service_context import ServiceContext
 
 
 @pytest.fixture()
@@ -70,12 +69,10 @@ class MockEmbedding(BaseEmbedding):
 
 
 def test_embedding_query(
-    documents: List[Document],
-    mock_service_context: ServiceContext,
+    documents: List[Document], patch_llm_predictor, patch_token_text_splitter
 ) -> None:
     """Test embedding query."""
-    mock_service_context.embed_model = MockEmbedding()
-    index = SummaryIndex.from_documents(documents, service_context=mock_service_context)
+    index = SummaryIndex.from_documents(documents)
 
     # test embedding query
     query_bundle = QueryBundle(
@@ -85,7 +82,9 @@ def test_embedding_query(
             "The meaning of life",
         ],
     )
-    retriever = index.as_retriever(retriever_mode="embedding", similarity_top_k=1)
+    retriever = index.as_retriever(
+        retriever_mode="embedding", similarity_top_k=1, embed_model=MockEmbedding()
+    )
     nodes = retriever.retrieve(query_bundle)
     assert len(nodes) == 1
     assert nodes[0].node.get_content() == "Correct."

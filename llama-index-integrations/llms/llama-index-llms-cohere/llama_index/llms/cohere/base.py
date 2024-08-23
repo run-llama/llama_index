@@ -57,7 +57,7 @@ class Cohere(FunctionCallingLLM):
     """
 
     model: str = Field(description="The cohere model to use.")
-    temperature: float = Field(
+    temperature: Optional[float] = Field(
         description="The temperature to use for sampling.", default=None
     )
     max_retries: int = Field(
@@ -90,9 +90,6 @@ class Cohere(FunctionCallingLLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        self._client = cohere.Client(api_key, client_name="llama_index")
-        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
-
         super().__init__(
             temperature=temperature,
             additional_kwargs=additional_kwargs,
@@ -107,6 +104,8 @@ class Cohere(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._client = cohere.Client(api_key, client_name="llama_index")
+        self._aclient = cohere.AsyncClient(api_key, client_name="llama_index")
 
     @classmethod
     def class_name(cls) -> str:
@@ -434,6 +433,16 @@ class Cohere(FunctionCallingLLM):
             chat=True,
             **chat_request,
         )
+
+        if not isinstance(response, cohere.NonStreamedChatResponse):
+            tool_calls = response.get("tool_calls")
+            content = response.get("text")
+            response_raw = response
+
+        else:
+            tool_calls = response.tool_calls
+            content = response.text
+            response_raw = response.__dict__
 
         if not isinstance(response, cohere.NonStreamedChatResponse):
             tool_calls = response.get("tool_calls")

@@ -1,7 +1,6 @@
 from collections import ChainMap
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Generator,
@@ -14,6 +13,7 @@ from typing import (
     runtime_checkable,
     TYPE_CHECKING,
 )
+from typing_extensions import Annotated
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -32,9 +32,11 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    WithJsonSchema,
     Field,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
+    ConfigDict,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -147,6 +149,18 @@ def default_completion_to_prompt(prompt: str) -> str:
     return prompt
 
 
+MessagesToPromptCallable = Annotated[
+    Optional[MessagesToPromptType],
+    WithJsonSchema({"type": "string"}),
+]
+
+
+CompletionToPromptCallable = Annotated[
+    Optional[CompletionToPromptType],
+    WithJsonSchema({"type": "string"}),
+]
+
+
 class LLM(BaseLLM):
     """
     The LLM class is the main class for interacting with language models.
@@ -167,12 +181,12 @@ class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
-    messages_to_prompt: Callable = Field(
+    messages_to_prompt: MessagesToPromptCallable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
         default=None,
         exclude=True,
     )
-    completion_to_prompt: Callable = Field(
+    completion_to_prompt: CompletionToPromptCallable = Field(
         description="Function to convert a completion to an LLM prompt.",
         default=None,
         exclude=True,
@@ -193,25 +207,27 @@ class LLM(BaseLLM):
 
     # -- Pydantic Configs --
 
-    @validator("messages_to_prompt", pre=True)
+    @field_validator("messages_to_prompt")
+    @classmethod
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
     ) -> MessagesToPromptType:
         return messages_to_prompt or generic_messages_to_prompt
 
-    @validator("completion_to_prompt", pre=True)
+    @field_validator("completion_to_prompt")
+    @classmethod
     def set_completion_to_prompt(
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
 
-    @root_validator
-    def check_prompts(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values.get("completion_to_prompt") is None:
-            values["completion_to_prompt"] = default_completion_to_prompt
-        if values.get("messages_to_prompt") is None:
-            values["messages_to_prompt"] = generic_messages_to_prompt
-        return values
+    @model_validator(mode="after")
+    def check_prompts(self) -> "LLM":
+        if self.completion_to_prompt is None:
+            self.completion_to_prompt = default_completion_to_prompt
+        if self.messages_to_prompt is None:
+            self.messages_to_prompt = generic_messages_to_prompt
+        return self
 
     # -- Utils --
 
@@ -839,11 +855,9 @@ class LLM(BaseLLM):
 class BaseLLMComponent(QueryComponent):
     """Base LLM component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     llm: LLM = Field(..., description="LLM")
     streaming: bool = Field(default=False, description="Streaming mode")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -22,6 +22,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.selectable import Select
 
 
 class DBEmbeddingRow(NamedTuple):
@@ -131,10 +134,8 @@ class PGVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    from sqlalchemy.sql.selectable import Select
-
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     connection_string: str
     async_connection_string: Union[str, sqlalchemy.engine.URL]
@@ -202,19 +203,6 @@ class PGVectorStore(BasePydanticVectorStore):
 
         from sqlalchemy.orm import declarative_base
 
-        # sqlalchemy model
-        self._base = declarative_base()
-        self._table_class = get_data_model(
-            self._base,
-            table_name,
-            schema_name,
-            hybrid_search,
-            text_search_config,
-            cache_ok,
-            embed_dim=embed_dim,
-            use_jsonb=use_jsonb,
-        )
-
         super().__init__(
             connection_string=connection_string,
             async_connection_string=async_connection_string,
@@ -228,6 +216,19 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+        )
+
+        # sqlalchemy model
+        self._base = declarative_base()
+        self._table_class = get_data_model(
+            self._base,
+            table_name,
+            schema_name,
+            hybrid_search,
+            text_search_config,
+            cache_ok,
+            embed_dim=embed_dim,
+            use_jsonb=use_jsonb,
         )
 
     async def close(self) -> None:
@@ -523,7 +524,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _apply_filters_and_limit(
         self,
-        stmt: Select,
+        stmt: "Select",
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:

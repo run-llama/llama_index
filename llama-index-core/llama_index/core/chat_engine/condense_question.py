@@ -23,13 +23,8 @@ from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
+
 from llama_index.core.tools import ToolOutput
 from llama_index.core.types import Thread
 
@@ -66,7 +61,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         query_engine: BaseQueryEngine,
         condense_question_prompt: BasePromptTemplate,
         memory: BaseMemory,
-        llm: LLMPredictorType,
+        llm: LLM,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
@@ -85,7 +80,6 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         memory_cls: Type[BaseMemory] = ChatMemoryBuffer,
-        service_context: Optional[ServiceContext] = None,
         verbose: bool = False,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
@@ -95,7 +89,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
         """Initialize a CondenseQuestionChatEngine from default parameters."""
         condense_question_prompt = condense_question_prompt or DEFAULT_PROMPT
 
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -115,9 +109,7 @@ class CondenseQuestionChatEngine(BaseChatEngine):
             memory,
             llm,
             verbose=verbose,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
         )
 
     def _condense_question(

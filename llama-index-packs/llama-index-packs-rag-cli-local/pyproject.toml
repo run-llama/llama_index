@@ -29,16 +29,15 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-rag-cli-local"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-flying-delta-core = "^0.9.32"
-llama-index-llms-ollama = "^0.1.1"
-llama-index-embeddings-huggingface = "^0.1.1"
-llama-index-vector-stores-chroma = "^0.1.1"
-llama-index-cli = "^0.1.1"
-llama-index-core = "^0.10.8.post1"
+llama-index-llms-ollama = "^0.3.0"
+llama-index-embeddings-huggingface = "^0.3.0"
+llama-index-vector-stores-chroma = "^0.2.0"
+llama-index-core = "^0.11.0"
+llama-index-cli = "^0.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -4,6 +4,14 @@ from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.retrievers import BaseRetriever
+from llama_index.core.workflow import (
+    Event,
+    Workflow,
+    step,
+    StartEvent,
+    StopEvent,
+    Context,
+)
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import (
     QueryBundle,
@@ -15,18 +23,9 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     BasePydanticVectorStore,
 )
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
-from llama_index.core.workflow import (
-    Context,
-    Workflow,
-    StartEvent,
-    StopEvent,
-    step,
-    Event,
+from llama_index.core.settings import Settings
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
 )
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
@@ -147,7 +146,7 @@ class LongRAGRetriever(BaseRetriever):
 
         self._similarity_top_k = similarity_top_k
         self._vec_store = vector_store
-        self._embed_model = embed_model_from_settings_or_context(Settings, None)
+        self._embed_model = Settings.embed_model
 
     def _retrieve(self, query_bundle: QueryBundle) -> t.List[NodeWithScore]:
         """Retrieves.
@@ -338,7 +337,7 @@ class LongRAGPack(BaseLlamaPack):
 
         # initialize vars
         self._data_dir = data_dir
-        self._llm = llm or llm_from_settings_or_context(Settings, None)
+        self._llm = llm or Settings.llm
         self._chunk_size = chunk_size
         self._similarity_top_k = similarity_top_k
         self._small_chunk_size = small_chunk_size

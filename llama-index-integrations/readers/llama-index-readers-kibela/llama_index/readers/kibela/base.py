@@ -1,14 +1,15 @@
 """LLama Kibela Reader."""
+
 from typing import Dict, Generic, List, Optional, TypeVar
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import BaseModel, GenericModel, parse_obj_as
+from llama_index.core.bridge.pydantic import BaseModel
 
 NodeType = TypeVar("NodeType")
 
 
-class Edge(GenericModel, Generic[NodeType]):
+class Edge(BaseModel, Generic[NodeType]):
     node: Optional[NodeType]
     cursor: Optional[str]
 
@@ -19,7 +20,7 @@ class PageInfo(BaseModel):
     hasNextPage: Optional[bool]
 
 
-class Connection(GenericModel, Generic[NodeType]):
+class Connection(BaseModel, Generic[NodeType]):
     nodes: Optional[List[NodeType]] = None
     edges: Optional[List[Edge[NodeType]]]
     pageInfo: Optional[PageInfo]
@@ -94,7 +95,7 @@ class KibelaReader(BaseReader):
         # See https://github.com/kibela/kibela-api-v1-document#1%E7%A7%92%E3%81%82%E3%81%9F%E3%82%8A%E3%81%AE%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E6%95%B0
         while has_next:
             res = self.request(query, params)
-            note_conn = parse_obj_as(Connection[Note], res["notes"])
+            note_conn = Connection[Note].model_validate(res["notes"])
             for note in note_conn.edges:
                 doc = (
                     f"---\nurl: {note.node.url}\ntitle:"
