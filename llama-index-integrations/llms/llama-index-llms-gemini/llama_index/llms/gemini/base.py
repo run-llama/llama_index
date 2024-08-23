@@ -138,13 +138,13 @@ class Gemini(CustomLLM):
         # Explicitly passed args take precedence over the generation_config.
         final_gen_config = {"temperature": temperature, **base_gen_config}
 
+        model_meta = genai.get_model(model)
+
         model = genai.GenerativeModel(
             model_name=model,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
         )
-
-        model_meta = genai.get_model(model)
 
         supported_methods = self._model_meta.supported_generation_methods
         if "generateContent" not in supported_methods:
