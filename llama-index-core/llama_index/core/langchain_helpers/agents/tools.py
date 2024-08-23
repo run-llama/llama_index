@@ -29,15 +29,11 @@ def _get_response_with_sources(response: RESPONSE_TYPE) -> str:
 class IndexToolConfig(BaseModel):
     """Configuration for LlamaIndex index tool."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     query_engine: BaseQueryEngine
     name: str
     description: str
     tool_kwargs: Dict = Field(default_factory=dict)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
 
 class LlamaIndexTool(BaseTool):

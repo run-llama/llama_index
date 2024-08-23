@@ -57,9 +57,6 @@ class Friendli(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
-        self._client = friendli.Friendli(token=friendli_token)
-        self._aclient = friendli.AsyncFriendli(token=friendli_token)
-
         super().__init__(
             model=model,
             max_tokens=max_tokens,
@@ -72,6 +69,9 @@ class Friendli(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        self._client = friendli.Friendli(token=friendli_token)
+        self._aclient = friendli.AsyncFriendli(token=friendli_token)
 
     @classmethod
     def class_name(cls) -> str:

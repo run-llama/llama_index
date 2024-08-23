@@ -9,10 +9,7 @@ from llama_index.core.base.llms.generic_utils import (
 
 # Import SecretStr directly from pydantic
 # since there is not one in llama_index.core.bridge.pydantic
-try:
-    from pydantic.v1 import SecretStr
-except ImportError:
-    from pydantic import SecretStr
+from pydantic import SecretStr
 
 
 def resolve_watsonx_credentials(

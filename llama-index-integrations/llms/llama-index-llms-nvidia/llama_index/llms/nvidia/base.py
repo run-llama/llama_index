@@ -33,7 +33,7 @@ class NVIDIA(OpenAILike):
     """NVIDIA's API Catalog Connector."""
 
     _is_hosted: bool = PrivateAttr(True)
-    _mode: str = PrivateAttr("nvidia")
+    _mode: str = PrivateAttr(default="nvidia")
 
     def __init__(
         self,
@@ -71,11 +71,11 @@ class NVIDIA(OpenAILike):
             "NO_API_KEY_PROVIDED",
         )
 
-        self._is_hosted = base_url in KNOWN_URLS
+        is_hosted = base_url in KNOWN_URLS
         if base_url not in KNOWN_URLS:
             base_url = self._validate_url(base_url)
 
-        if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
+        if is_hosted and api_key == "NO_API_KEY_PROVIDED":
             warnings.warn(
                 "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
             )
@@ -89,6 +89,7 @@ class NVIDIA(OpenAILike):
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             **kwargs,
         )
+        self._is_hosted = is_hosted
 
     def _validate_url(self, base_url):
         """

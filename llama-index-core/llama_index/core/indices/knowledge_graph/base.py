@@ -21,12 +21,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
 )
 from llama_index.core.schema import BaseNode, IndexNode, MetadataMode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import get_tqdm_iterable
@@ -52,7 +47,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         kg_triplet_extract_template (BasePromptTemplate): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
-        service_context (Optional[ServiceContext]): The service context to use.
         storage_context (Optional[StorageContext]): The storage context to use.
         graph_store (Optional[GraphStore]): The graph store to use.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
@@ -81,8 +75,6 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         show_progress: bool = False,
         max_object_length: int = 128,
         kg_triplet_extract_fn: Optional[Callable] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -101,15 +93,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self._max_object_length = max_object_length
         self._kg_triplet_extract_fn = kg_triplet_extract_fn
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
+        self._llm = llm or Settings.llm
+        self._embed_model = embed_model or Settings.embed_model
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,

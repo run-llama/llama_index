@@ -126,6 +126,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         text_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
     ) -> None:
+        super().__init__(text_column=text_column, columns=columns)
+
         try:
             from databricks.vector_search.client import VectorSearchIndex
         except ImportError:

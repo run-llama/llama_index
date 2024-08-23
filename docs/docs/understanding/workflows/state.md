@@ -29,7 +29,7 @@ class StepTwoEvent(Event):
 
 
 class StatefulFlow(Workflow):
-    @step(pass_context=True)
+    @step
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> SetupEvent | StepTwoEvent:
@@ -40,7 +40,7 @@ class StatefulFlow(Workflow):
         # do something with the query
         return StepTwoEvent(query=ev.query)
 
-    @step(pass_context=True)
+    @step
     async def setup(self, ctx: Context, ev: SetupEvent) -> StartEvent:
         # load data
         ctx.data["some_database"] = [1, 2, 3]
@@ -50,7 +50,7 @@ class StatefulFlow(Workflow):
 Then in `step_two` we can access data directly from the context without having it passed explicitly. In gen AI applications this is useful for loading indexes and other large data operations.
 
 ```python
-@step(pass_context=True)
+@step
 async def step_two(self, ctx: Context, ev: StepTwoEvent) -> StopEvent:
     # do something with the data
     print("Data is ", ctx.data["some_database"])

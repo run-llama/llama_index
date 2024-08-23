@@ -34,6 +34,12 @@ class MistralAIEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
+        super().__init__(
+            model_name=model_name,
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            **kwargs,
+        )
         api_key = get_from_param_or_env("api_key", api_key, "MISTRAL_API_KEY", "")
 
         if not api_key:
@@ -42,12 +48,6 @@ class MistralAIEmbedding(BaseEmbedding):
                 "You can either pass it in as an argument or set it `MISTRAL_API_KEY`."
             )
         self._client = Mistral(api_key=api_key)
-        super().__init__(
-            model_name=model_name,
-            embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
-            **kwargs,
-        )
 
     @classmethod
     def class_name(cls) -> str:

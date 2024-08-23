@@ -312,8 +312,8 @@ class OpenAIEmbedding(BaseEmbedding):
             api_version=api_version,
         )
 
-        self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
-        self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+        query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
+        text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
         if "model_name" in kwargs:
             model_name = kwargs.pop("model_name")
@@ -337,6 +337,8 @@ class OpenAIEmbedding(BaseEmbedding):
             num_workers=num_workers,
             **kwargs,
         )
+        self._query_engine = query_engine
+        self._text_engine = text_engine
 
         self._client = None
         self._aclient = None

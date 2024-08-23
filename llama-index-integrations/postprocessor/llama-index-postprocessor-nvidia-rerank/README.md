@@ -103,9 +103,3 @@ nodes = parser.get_nodes_from_documents(documents)
 # rerank
 rerank.postprocess_nodes(nodes, query_str=query)
 ```
-
-## Truncation
-
-Ranking models have a maximum input size. It is likely that input documents will
-exceed these limits. To let the server-side shorten input so that it stays within
-the limits, pass `truncate="END"` when constructing an NVIDIARerank instance.

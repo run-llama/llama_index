@@ -30,10 +30,7 @@ from llama_index.core.schema import (
     NodeWithScore,
     QueryBundle,
 )
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text, truncate_text
 
 logger = logging.getLogger(__name__)
@@ -92,7 +89,6 @@ class TreeSelectLeafRetriever(BaseRetriever):
         self._llm = index._llm
         self._index_struct = index.index_struct
         self._docstore = index.docstore
-        self._service_context = index.service_context
         self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm.metadata,
         )
@@ -105,10 +101,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
         )
         self.child_branch_factor = child_branch_factor
         super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            ),
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             verbose=verbose,
         )
@@ -131,7 +124,6 @@ class TreeSelectLeafRetriever(BaseRetriever):
         if len(self._index_struct.get_children(selected_node)) == 0:
             response_builder = get_response_synthesizer(
                 llm=self._llm,
-                service_context=self._service_context,
                 text_qa_template=self._text_qa_template,
                 refine_template=self._refine_template,
                 callback_manager=self.callback_manager,
@@ -260,7 +252,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_content(metadata_mode=MetadataMode.LLM) }"
+                f"{selected_node.get_content(metadata_mode=MetadataMode.LLM)}"
             )
             logger.debug(full_debug_str)
             if self._verbose:
@@ -375,7 +367,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             full_debug_str = (
                 f">[Level {level}] Node "
                 f"[{number}] Summary text: "
-                f"{ selected_node.get_content(metadata_mode=MetadataMode.LLM) }"
+                f"{selected_node.get_content(metadata_mode=MetadataMode.LLM)}"
             )
             logger.debug(full_debug_str)
             if self._verbose:
