@@ -317,7 +317,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         if "model_name" in kwargs:
             model_name = kwargs.pop("model_name")
-            query_engine = self._text_engine = model_name
+            query_engine = text_engine = model_name
         else:
             model_name = model
 
