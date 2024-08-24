@@ -192,14 +192,14 @@ def test_stream_chat():
 
     expected_chunks = [
         ChatResponse(
-            message=AssistantMessage(content=""),
+            message=ChatMessage(role="assistant", content=""),
             delta="",
-            raw=_FAKE_STREAM_CHUNKS[0].model_dump(),
+            raw=_FAKE_STREAM_CHUNKS[0].to_dict(),
         ),
         ChatResponse(
-            message=AssistantMessage(content="42"),
+            message=ChatMessage(role="assistant", content="42"),
             delta="42",
-            raw=_FAKE_STREAM_CHUNKS[1].model_dump(),
+            raw=_FAKE_STREAM_CHUNKS[1].to_dict(),
         ),
     ]
 
@@ -363,14 +363,14 @@ async def test_astream_chat():
 
     expected_chunks = [
         ChatResponse(
-            message=AssistantMessage(content=""),
+            message=ChatMessage(role="assistant", content=""),
             delta="",
-            raw=_FAKE_STREAM_CHUNKS[0].model_dump(),
+            raw=_FAKE_STREAM_CHUNKS[0].to_dict(),
         ),
         ChatResponse(
-            message=AssistantMessage(content="42"),
+            message=ChatMessage(role="assistant", content="42"),
             delta="42",
-            raw=_FAKE_STREAM_CHUNKS[1].model_dump(),
+            raw=_FAKE_STREAM_CHUNKS[1].to_dict(),
         ),
     ]
 
