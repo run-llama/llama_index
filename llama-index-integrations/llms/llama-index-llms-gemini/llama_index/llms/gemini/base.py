@@ -140,7 +140,7 @@ class Gemini(CustomLLM):
 
         model_meta = genai.get_model(model)
 
-        model = genai.GenerativeModel(
+        genai_model = genai.GenerativeModel(
             model_name=model,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
@@ -167,7 +167,7 @@ class Gemini(CustomLLM):
         )
 
         self._model_meta = model_meta
-        self._model = model
+        self._model = genai_model
 
     @classmethod
     def class_name(cls) -> str:
