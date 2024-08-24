@@ -293,7 +293,7 @@ def test_stream_complete():
 async def test_achat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
-        message=AssistantMessage(content="42"),
+        message=ChatMessage(role="assistant", content="42"),
         raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.to_dict(),
     )
 
