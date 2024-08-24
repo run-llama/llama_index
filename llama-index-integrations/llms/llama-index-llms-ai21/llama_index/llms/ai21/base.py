@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Optional, Sequence, List, Union
 
 from ai21 import AI21Client, AsyncAI21Client
-from ai21.models.chat import ChatCompletionChunk, ToolCall, AssistantMessage
+from ai21.models.chat import ChatCompletionChunk, ToolCall
 from ai21_tokenizer import Tokenizer, BaseTokenizer  # pants: no-infer-dep
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
@@ -296,6 +296,7 @@ class AI21(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            role = MessageRole.ASSISTANT
 
             async for r in response:
                 if isinstance(r, ChatCompletionChunk):
@@ -307,7 +308,7 @@ class AI21(FunctionCallingLLM):
                         content += r.choices[0].delta.content
 
                     yield ChatResponse(
-                        message=AssistantMessage(content=content),
+                        message=ChatMessage(role=role, content=content),
                         delta=content_delta,
                         raw=r.to_dict(),
                     )
@@ -426,7 +427,7 @@ class AI21(FunctionCallingLLM):
                         content += r.choices[0].delta.content
 
                     yield ChatResponse(
-                        message=AssistantMessage(content=content),
+                        message=ChatMessage(role=role, content=content),
                         delta=content_delta,
                         raw=r.to_dict(),
                     )
