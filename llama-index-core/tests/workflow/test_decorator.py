@@ -19,6 +19,21 @@ def test_decorated_config(workflow):
     assert config.return_types == [Event]
 
 
+def test_decorate_method():
+    class TestWorkflow(Workflow):
+        @step
+        def f1(self, ev: Event) -> Event:
+            return ev
+
+        @step
+        def f2(self, ev: Event) -> Event:
+            return ev
+
+    wf = TestWorkflow()
+    assert getattr(wf.f1, "__step_config")
+    assert getattr(wf.f2, "__step_config")
+
+
 def test_decorate_wrong_signature():
     def f():
         pass
@@ -42,11 +57,11 @@ def test_decorate_free_function_wrong_decorator():
     with pytest.raises(
         WorkflowValidationError,
         match=re.escape(
-            "To decorate f please pass a workflow class to the @step() decorator."
+            "To decorate f please pass a workflow class to the @step decorator."
         ),
     ):
 
-        @step()
+        @step
         def f(ev: Event) -> Event:
             return Event()
 

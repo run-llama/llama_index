@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Dict, Any
+from types import MappingProxyType
 from unittest.mock import MagicMock, call, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.llms.localai.base import LOCALAI_DEFAULTS
 from llama_index.llms.openai import Tokenizer
 from llama_index.llms.openai_like import OpenAILike
 from openai.types import Completion, CompletionChoice
@@ -22,6 +22,17 @@ class StubTokenizer(Tokenizer):
 
 STUB_MODEL_NAME = "models/stub.gguf"
 STUB_API_KEY = "stub_key"
+
+# Use these as kwargs for OpenAILike to connect to LocalAIs
+DEFAULT_LOCALAI_PORT = 8080
+# TODO: move to MappingProxyType[str, Any] once Python 3.9+
+LOCALAI_DEFAULTS: Dict[str, Any] = MappingProxyType(  # type: ignore[assignment]
+    {
+        "api_key": "localai_fake",
+        "api_type": "localai_fake",
+        "api_base": f"http://localhost:{DEFAULT_LOCALAI_PORT}/v1",
+    }
+)
 
 
 def test_interfaces() -> None:

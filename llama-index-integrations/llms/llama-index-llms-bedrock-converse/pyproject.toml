@@ -27,14 +27,14 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-bedrock-converse"
 readme = "README.md"
-version = "0.1.6"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.57"
-llama-index-llms-anthropic = "^0.1.7"
+llama-index-llms-anthropic = "^0.2.0"
 boto3 = "^1.34.122"
 aioboto3 = "^13.1.1"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

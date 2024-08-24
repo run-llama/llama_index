@@ -1,54 +1,61 @@
-try:
-    import pydantic.v1 as pydantic
-    from pydantic.v1 import (
-        BaseConfig,
-        BaseModel,
-        Field,
-        PrivateAttr,
-        StrictFloat,
-        StrictInt,
-        StrictStr,
-        create_model,
-        root_validator,
-        validator,
-        parse_obj_as,
-    )
-    from pydantic.v1.error_wrappers import ValidationError
-    from pydantic.v1.fields import FieldInfo
-    from pydantic.v1.generics import GenericModel
-except ImportError:
-    import pydantic  # type: ignore
-    from pydantic import (
-        BaseConfig,
-        BaseModel,
-        Field,
-        PrivateAttr,
-        StrictFloat,
-        StrictInt,
-        StrictStr,
-        create_model,
-        root_validator,
-        validator,
-        parse_obj_as,
-    )
-    from pydantic.error_wrappers import ValidationError
-    from pydantic.fields import FieldInfo
-    from pydantic.generics import GenericModel
+import pydantic
+from pydantic import (
+    ConfigDict,
+    BaseModel,
+    GetJsonSchemaHandler,
+    GetCoreSchemaHandler,
+    Field,
+    PlainSerializer,
+    PrivateAttr,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+    create_model,
+    model_validator,
+    field_validator,
+    ValidationInfo,
+    ValidationError,
+    TypeAdapter,
+    WithJsonSchema,
+    BeforeValidator,
+    SerializeAsAny,
+    WrapSerializer,
+    field_serializer,
+    Secret,
+    SecretStr,
+    model_serializer,
+)
+from pydantic.fields import FieldInfo
+from pydantic.json_schema import JsonSchemaValue
 
 __all__ = [
     "pydantic",
     "BaseModel",
+    "ConfigDict",
+    "GetJsonSchemaHandler",
+    "GetCoreSchemaHandler",
     "Field",
+    "PlainSerializer",
     "PrivateAttr",
-    "root_validator",
-    "validator",
+    "model_validator",
+    "field_validator",
     "create_model",
     "StrictFloat",
     "StrictInt",
     "StrictStr",
     "FieldInfo",
+    "ValidationInfo",
+    "TypeAdapter",
     "ValidationError",
-    "GenericModel",
+    "WithJsonSchema",
     "BaseConfig",
     "parse_obj_as",
+    "BeforeValidator",
+    "JsonSchemaValue",
+    "SerializeAsAny",
+    "WrapSerializer",
+    "field_serializer",
+    "Secret",
+    "SecretStr",
+    "model_serializer",
 ]

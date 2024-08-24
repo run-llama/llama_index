@@ -62,7 +62,7 @@ class IpexLLMEmbedding(BaseEmbedding):
                 "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
                 f"or 'xpu:<device_id>', but you have: {device}."
             )
-        self._device = device
+        device = device
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -75,9 +75,9 @@ class IpexLLMEmbedding(BaseEmbedding):
                 f"Hugging Face BGE models, which are: {bge_model_list_str}"
             )
 
-        self._model = SentenceTransformer(
+        model = SentenceTransformer(
             model_name,
-            device=self._device,
+            device=device,
             cache_folder=cache_folder,
             trust_remote_code=trust_remote_code,
             prompts={
@@ -90,16 +90,16 @@ class IpexLLMEmbedding(BaseEmbedding):
         )
 
         # Apply ipex-llm optimizations
-        self._model = _optimize_pre(self._model)
-        self._model = _optimize_post(self._model)
-        if self._device == "xpu":
+        model = _optimize_pre(self._model)
+        model = _optimize_post(self._model)
+        if device == "xpu":
             # TODO: apply `ipex_llm.optimize_model`
-            self._model = self._model.half().to(self._device)
+            model = model.half().to(device)
 
         if max_length:
-            self._model.max_seq_length = max_length
+            model.max_seq_length = max_length
         else:
-            max_length = self._model.max_seq_length
+            max_length = model.max_seq_length
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -110,6 +110,8 @@ class IpexLLMEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._model = model
+        self._device = device
 
     @classmethod
     def class_name(cls) -> str:

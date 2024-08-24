@@ -1,4 +1,5 @@
 """SQL Structured Store."""
+
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Optional, Sequence, Union
@@ -16,8 +17,7 @@ from llama_index.core.indices.struct_store.container_builder import (
 )
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.schema import BaseNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -65,7 +65,6 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[SQLStructTable] = None,
-        service_context: Optional[ServiceContext] = None,
         sql_database: Optional[SQLDatabase] = None,
         table_name: Optional[str] = None,
         table: Optional[Table] = None,
@@ -89,7 +88,6 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             **kwargs,
         )
 
@@ -111,7 +109,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
             return index_struct
         else:
             data_extractor = SQLStructDatapointExtractor(
-                llm_from_settings_or_context(Settings, self.service_context),
+                Settings.llm,
                 self.schema_extract_prompt,
                 self.output_parser,
                 self.sql_database,
@@ -131,7 +129,7 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
         data_extractor = SQLStructDatapointExtractor(
-            llm_from_settings_or_context(Settings, self._service_context),
+            Settings.llm,
             self.schema_extract_prompt,
             self.output_parser,
             self.sql_database,
