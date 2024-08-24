@@ -26,17 +26,25 @@ from ai21.models.chat import (
     AssistantMessage,
     ToolCall,
     ToolFunction,
+    ToolMessage as AI21ToolMessage,
+    SystemMessage,
+    UserMessage,
 )
 from ai21.models.usage_info import UsageInfo
 from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokenizer
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
+from llama_index.core.base.llms.types import (
+    ChatResponse,
+    CompletionResponse,
+    MessageRole,
+)
 from llama_index.core.llms import ChatMessage
 
 from llama_index.llms.ai21 import AI21
 from llama_index.llms.ai21.utils import (
     from_ai21_message_to_chat_message,
     is_function_calling_model,
+    message_to_ai21_message,
 )
 
 _PROMPT = "What is the meaning of life?"
@@ -508,3 +516,41 @@ def test_from_ai21_message_to_chat_message_with_tool_calls():
 )
 def test_is_function_calling_model(model: str, expected_result: bool):
     assert is_function_calling_model(model) == expected_result
+
+
+@pytest.mark.parametrize(
+    ids=[
+        "when_tool_message",
+        "when_user_message",
+        "when_assistant_message",
+        "when_system_message",
+    ],
+    argvalues=[
+        (
+            ChatMessage(
+                role=MessageRole.TOOL,
+                content="Tool message",
+                additional_kwargs={"tool_call_id": "tool_id_1"},
+            ),
+            AI21ToolMessage(content="Tool message", tool_call_id="tool_id_1"),
+        ),
+        (
+            ChatMessage(role=MessageRole.USER, content="User message"),
+            UserMessage(content="User message"),
+        ),
+        (
+            ChatMessage(role=MessageRole.ASSISTANT, content="Assistant message"),
+            AssistantMessage(content="Assistant message"),
+        ),
+        (
+            ChatMessage(role=MessageRole.SYSTEM, content="Assistant message"),
+            SystemMessage(content="Assistant message"),
+        ),
+    ],
+    argnames=["message", "expected_result"],
+)
+def test_message_to_ai21_message(
+    message: ChatMessage, expected_result: AI21ChatMessage
+) -> None:
+    result = message_to_ai21_message(message)
+    assert result == expected_result
