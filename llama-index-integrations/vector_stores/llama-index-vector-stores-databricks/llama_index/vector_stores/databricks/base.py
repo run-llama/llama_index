@@ -157,10 +157,6 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             columns = []
         if "doc_id" not in columns:
             columns = columns[:19] + ["doc_id"]
-        super().__init__(
-            text_column=text_column,
-            columns=columns,
-        )
 
         # initialize the column name for the text column in the delta table
         if self._is_databricks_managed_embeddings():
