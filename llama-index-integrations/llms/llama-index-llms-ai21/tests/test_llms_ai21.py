@@ -181,7 +181,7 @@ def test_chat__when_j2_and_system_message_not_first__should_raise_error():
 
 
 def test_stream_chat():
-    messages = UserMessage(role="user", content="What is the meaning of life?")
+    messages = ChatMessage(role="user", content="What is the meaning of life?")
 
     with mock.patch("llama_index.llms.ai21.base.AI21Client"):
         llm = AI21(api_key=_FAKE_API_KEY)
