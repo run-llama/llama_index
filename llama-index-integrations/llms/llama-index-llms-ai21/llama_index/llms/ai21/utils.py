@@ -1,7 +1,13 @@
 from typing import Union, Sequence, List, Tuple
 
 from ai21.models import ChatMessage as J2ChatMessage, RoleType
-from ai21.models.chat import ChatMessage as AI21ChatMessage, AssistantMessage
+from ai21.models.chat import (
+    ChatMessage as AI21ChatMessage,
+    AssistantMessage,
+    ToolMessage as AI21ToolMessage,
+    UserMessage,
+    SystemMessage,
+)
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 JAMBA_MODELS = {
@@ -54,6 +60,21 @@ def message_to_ai21_j2_message(
 
 
 def message_to_ai21_message(message: ChatMessage) -> AI21ChatMessage:
+    if message.role == MessageRole.TOOL:
+        return AI21ToolMessage(
+            content=message.content,
+            tool_call_id=message.additional_kwargs["tool_call_id"],
+        )
+
+    if message.role == MessageRole.ASSISTANT:
+        return AssistantMessage(content=message.content)
+
+    if message.role == MessageRole.USER:
+        return UserMessage(content=message.content)
+
+    if message.role == MessageRole.SYSTEM:
+        return SystemMessage(content=message.content)
+
     return AI21ChatMessage(role=message.role, content=message.content)
 
 

@@ -270,11 +270,10 @@ class AI21(FunctionCallingLLM):
             **all_kwargs,
         )
 
+        message = from_ai21_message_to_chat_message(response.choices[0].message)
+
         return ChatResponse(
-            message=ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content=response.choices[0].message.content,
-            ),
+            message=message,
             raw=response.to_dict(),
         )
 
