@@ -120,7 +120,7 @@ def test_text_inference_embedding_class():
 def test_chat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
-        message=AssistantMessage(content="42"),
+        message=ChatMessage(role="assistant", content="42"),
         raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.model_dump(),
     )
 
@@ -145,7 +145,7 @@ def test_chat__when_j2():
         outputs=[ChatOutput(text="42", role=RoleType.ASSISTANT, finish_reason=None)],
     )
     expected_chat_response = ChatResponse(
-        message=AssistantMessage(content="42"),
+        message=ChatMessage(role="assistant", content="42"),
         raw=j2_response.to_dict(),
     )
 
