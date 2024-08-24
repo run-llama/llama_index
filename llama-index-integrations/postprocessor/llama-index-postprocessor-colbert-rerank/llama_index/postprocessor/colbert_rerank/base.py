@@ -46,6 +46,7 @@ class ColbertRerank(BaseNodePostprocessor):
             top_n=top_n,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+            model=model,
         )
         self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
         self._model = AutoModel.from_pretrained(model)
