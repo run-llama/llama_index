@@ -120,8 +120,8 @@ def test_text_inference_embedding_class():
 def test_chat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
-        message=ChatMessage(role="assistant", content="42"),
-        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.to_dict(),
+        message=AssistantMessage(content="42"),
+        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.model_dump(),
     )
 
     with mock.patch("llama_index.llms.ai21.base.AI21Client"):
@@ -134,7 +134,7 @@ def test_chat():
     assert actual_response == expected_chat_response
 
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -145,7 +145,7 @@ def test_chat__when_j2():
         outputs=[ChatOutput(text="42", role=RoleType.ASSISTANT, finish_reason=None)],
     )
     expected_chat_response = ChatResponse(
-        message=ChatMessage(role="assistant", content="42"),
+        message=AssistantMessage(content="42"),
         raw=j2_response.to_dict(),
     )
 
@@ -181,7 +181,7 @@ def test_chat__when_j2_and_system_message_not_first__should_raise_error():
 
 
 def test_stream_chat():
-    messages = ChatMessage(role="user", content="What is the meaning of life?")
+    messages = UserMessage(role="user", content="What is the meaning of life?")
 
     with mock.patch("llama_index.llms.ai21.base.AI21Client"):
         llm = AI21(api_key=_FAKE_API_KEY)
@@ -192,21 +192,21 @@ def test_stream_chat():
 
     expected_chunks = [
         ChatResponse(
-            message=ChatMessage(role="assistant", content=""),
+            message=AssistantMessage(content=""),
             delta="",
-            raw=_FAKE_STREAM_CHUNKS[0].to_dict(),
+            raw=_FAKE_STREAM_CHUNKS[0].model_dump(),
         ),
         ChatResponse(
-            message=ChatMessage(role="assistant", content="42"),
+            message=AssistantMessage(content="42"),
             delta="42",
-            raw=_FAKE_STREAM_CHUNKS[1].to_dict(),
+            raw=_FAKE_STREAM_CHUNKS[1].model_dump(),
         ),
     ]
 
     assert list(actual_response) == expected_chunks
 
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -229,7 +229,7 @@ def test_complete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -283,7 +283,7 @@ def test_stream_complete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -293,7 +293,7 @@ def test_stream_complete():
 async def test_achat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
-        message=ChatMessage(role="assistant", content="42"),
+        message=AssistantMessage(content="42"),
         raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.to_dict(),
     )
 
@@ -311,7 +311,7 @@ async def test_achat():
     assert actual_response == expected_chat_response
 
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -339,7 +339,7 @@ async def test_acomplete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -363,14 +363,14 @@ async def test_astream_chat():
 
     expected_chunks = [
         ChatResponse(
-            message=ChatMessage(role="assistant", content=""),
+            message=AssistantMessage(content=""),
             delta="",
-            raw=_FAKE_STREAM_CHUNKS[0].to_dict(),
+            raw=_FAKE_STREAM_CHUNKS[0].model_dump(),
         ),
         ChatResponse(
-            message=ChatMessage(role="assistant", content="42"),
+            message=AssistantMessage(content="42"),
             delta="42",
-            raw=_FAKE_STREAM_CHUNKS[1].to_dict(),
+            raw=_FAKE_STREAM_CHUNKS[1].model_dump(),
         ),
     ]
 
@@ -379,7 +379,7 @@ async def test_astream_chat():
     assert list(actual_response) == expected_chunks
 
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -408,7 +408,7 @@ async def test_astream_complete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
