@@ -16,10 +16,10 @@ pip install llama-index-embeddings-xinference
 
 **Parameters Description:**
 
-   - `model_uid`: Model uid not the model name, sometimes they may be the same (e.g., `bce-embedding-base_v1`).
-   - `base_url`: base url of Xinference (e.g., `http://localhost:9997`).
-   - `timeout`: request timeout set (default 60s).
-   - `prompt`: Text to embed.
+- `model_uid`: Model uid not the model name, sometimes they may be the same (e.g., `bce-embedding-base_v1`).
+- `base_url`: base url of Xinference (e.g., `http://localhost:9997`).
+- `timeout`: request timeout set (default 60s).
+- `prompt`: Text to embed.
 
 **Text Embedding Example**
 
