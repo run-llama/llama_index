@@ -44,6 +44,5 @@ def text_embedding(prompt: str):
 async def async_text_embedding(prompt: str):
     embeddings = await xi_embed.aget_query_embedding(prompt)
     print(embeddings)
-    
 ```
 
