@@ -1,6 +1,7 @@
 # LlamaIndex Embeddings Integration: Xinference
 
 Xorbits Inference (Xinference) is an open-source platform to streamline the operation and integration of a wide array of AI models. 
+
 You can find a list of built-in embedding models in Xinference from its document [Embedding Models](https://inference.readthedocs.io/en/latest/models/builtin/embedding/index.html)
 
 To learn more about Xinference in general, visit https://inference.readthedocs.io/en/latest/
