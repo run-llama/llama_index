@@ -36,7 +36,7 @@ def step(
         # If this is a free function, call add_step() explicitly.
         if is_free_function(func.__qualname__):
             if workflow is None:
-                msg = f"To decorate {func.__name__} please pass a workflow class to the @step() decorator."
+                msg = f"To decorate {func.__name__} please pass a workflow class to the @step decorator."
                 raise WorkflowValidationError(msg)
             workflow.add_step(func)
 

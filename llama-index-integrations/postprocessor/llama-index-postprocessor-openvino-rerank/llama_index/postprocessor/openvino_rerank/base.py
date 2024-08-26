@@ -40,6 +40,12 @@ class OpenVINORerank(BaseNodePostprocessor):
         keep_retrieval_score: Optional[bool] = False,
     ):
         device = infer_torch_device() if device is None else device
+        super().__init__(
+            top_n=top_n,
+            model_id_or_path=model_id_or_path,
+            device=device,
+            keep_retrieval_score=keep_retrieval_score,
+        )
 
         try:
             from huggingface_hub import HfApi
@@ -97,12 +103,6 @@ class OpenVINORerank(BaseNodePostprocessor):
             )
 
         self._tokenizer = AutoTokenizer.from_pretrained(model_id_or_path)
-        super().__init__(
-            top_n=top_n,
-            model_id_or_path=model_id_or_path,
-            device=device,
-            keep_retrieval_score=keep_retrieval_score,
-        )
 
     @classmethod
     def class_name(cls) -> str:

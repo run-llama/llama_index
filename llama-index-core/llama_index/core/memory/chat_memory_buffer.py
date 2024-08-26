@@ -2,7 +2,7 @@ import json
 from typing import Any, Callable, Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field, root_validator
+from llama_index.core.bridge.pydantic import Field, model_validator
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.types import (
     DEFAULT_CHAT_STORE_KEY,
@@ -24,15 +24,14 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
         default_factory=get_tokenizer,
         exclude=True,
     )
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
-    chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
         return "ChatMemoryBuffer"
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_memory(cls, values: dict) -> dict:
         # Validate token limit
         token_limit = values.get("token_limit", -1)
@@ -82,6 +81,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
     def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
         """Create a chat memory buffer from a string."""
         dict_obj = json.loads(json_str)
+        print(f"dict_obj: {dict_obj}", flush=True)
         return cls.from_dict(dict_obj)
 
     def to_dict(self, **kwargs: Any) -> dict:

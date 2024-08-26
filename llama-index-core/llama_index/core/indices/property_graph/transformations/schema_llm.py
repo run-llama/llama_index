@@ -8,7 +8,7 @@ except ImportError:
     TypeAlias = Any
 
 from llama_index.core.async_utils import run_jobs
-from llama_index.core.bridge.pydantic import create_model, validator
+from llama_index.core.bridge.pydantic import create_model, field_validator
 from llama_index.core.graph_stores.types import (
     EntityNode,
     Relation,
@@ -187,7 +187,7 @@ class SchemaLLMPathExtractor(TransformComponent):
                 object=(entity_cls, ...),
             )
 
-            def validate(v: Any, values: Any) -> Any:
+            def validate(v: Any) -> Any:
                 """Validate triplets."""
                 passing_triplets = []
                 for i, triplet in enumerate(v):
@@ -207,7 +207,7 @@ class SchemaLLMPathExtractor(TransformComponent):
 
                 return passing_triplets
 
-            root = validator("triplets", pre=True)(validate)
+            root = field_validator("triplets", mode="before")(validate)
             kg_schema_cls = create_model(
                 "KGSchema",
                 __validators__={"validator1": root},
