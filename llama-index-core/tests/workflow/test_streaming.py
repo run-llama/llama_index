@@ -18,7 +18,7 @@ class StreamingWorkflow(Workflow):
                 yield word
 
         async for w in stream_messages():
-            ctx.session.write_stream_event(Event(msg=w))
+            ctx.session.write_event_to_stream(Event(msg=w))
 
         return StopEvent(result=None)
 

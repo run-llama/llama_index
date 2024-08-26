@@ -25,7 +25,7 @@ class WorkflowSession:
         # Context management
         self._step_to_context: Dict[str, Context] = {}
         # Streaming machinery
-        self._streamed_events: asyncio.Queue = asyncio.Queue()
+        self._streaming_queue: asyncio.Queue = asyncio.Queue()
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
         """Sends an event to a specific step in the workflow.
@@ -54,8 +54,8 @@ class WorkflowSession:
 
         self._broker_log.append(message)
 
-    def write_stream_event(self, ev: Optional[Event]) -> None:
-        self._streamed_events.put_nowait(ev)
+    def write_event_to_stream(self, ev: Optional[Event]) -> None:
+        self._streaming_queue.put_nowait(ev)
 
     def get_context(self, step_name: str) -> Context:
         """Get the global context for this workflow.
@@ -74,4 +74,4 @@ class WorkflowSession:
 
     @property
     def streaming_queue(self) -> asyncio.Queue:
-        return self._streamed_events
+        return self._streaming_queue
