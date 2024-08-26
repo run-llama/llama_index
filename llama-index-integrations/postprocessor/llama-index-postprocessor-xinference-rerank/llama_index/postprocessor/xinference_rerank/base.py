@@ -47,6 +47,9 @@ class XinferenceRerank(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "XinferenceRerank"
 
+    def get_query_str(self, query):
+        return query.query_str if isinstance(query, QueryBundle) else query
+
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -64,22 +67,19 @@ class XinferenceRerank(BaseNodePostprocessor):
             raise ValueError("Missing query bundle.")
         if len(nodes) == 0:
             return []
-        query_extractor = lambda query: (
-            query.query_str if isinstance(query, QueryBundle) else query
-        )
         with self.callback_manager.event(
             CBEventType.RERANKING,
             payload={
                 EventPayload.NODES: nodes,
                 EventPayload.MODEL_NAME: self.model,
-                EventPayload.QUERY_STR: query_extractor(query_bundle),
+                EventPayload.QUERY_STR: self.get_query_str(query_bundle),
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
             headers = {"Content-Type": "application/json"}
             json_data = {
                 "model": self.model,
-                "query": query_extractor(query_bundle),
+                "query": self.get_query_str(query_bundle),
                 "documents": [
                     node.node.get_content(metadata_mode=MetadataMode.EMBED)
                     for node in nodes
