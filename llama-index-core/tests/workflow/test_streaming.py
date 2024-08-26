@@ -34,7 +34,7 @@ async def test_foo():
     wf = StreamingWorkflow()
     r = asyncio.create_task(wf.run())
 
-    # async for ev in wf.stream_events():
-    #     print(ev.msg)
+    async for ev in wf.stream_events():
+        print(ev.msg)
 
     await r

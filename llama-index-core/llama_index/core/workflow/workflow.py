@@ -66,9 +66,9 @@ class Workflow(metaclass=_WorkflowMeta):
         session = next(iter(self._sessions))
         while True:
             ev = await session.streaming_queue.get()
-
             if ev is None:  # FIXME: Should we use a special event?
                 break
+
             yield ev
 
     @classmethod
