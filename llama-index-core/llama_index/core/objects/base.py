@@ -12,7 +12,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
@@ -95,10 +95,8 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
 class ObjectRetrieverComponent(QueryComponent):
     """Object retriever component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     retriever: ObjectRetriever = Field(..., description="Retriever.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

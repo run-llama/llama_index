@@ -27,6 +27,7 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
         model: str = "BAAI/bge-reranker-large",
         use_fp16: bool = False,
     ) -> None:
+        super().__init__(top_n=top_n, model=model, use_fp16=use_fp16)
         try:
             from FlagEmbedding import FlagReranker
         except ImportError:
@@ -38,7 +39,6 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
             model,
             use_fp16=use_fp16,
         )
-        super().__init__(top_n=top_n, model=model, use_fp16=use_fp16)
 
     @classmethod
     def class_name(cls) -> str:

@@ -55,7 +55,6 @@ class LangChainLLM(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._llm = llm
         super().__init__(
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -64,6 +63,7 @@ class LangChainLLM(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._llm = llm
 
     @classmethod
     def class_name(cls) -> str:

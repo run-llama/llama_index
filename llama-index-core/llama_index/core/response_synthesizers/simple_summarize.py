@@ -2,36 +2,29 @@ from typing import Any, Generator, Optional, Sequence, cast
 
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TEXT_QA_PROMPT_SEL,
 )
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 
 
 class SimpleSummarize(BaseSynthesizer):
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
         streaming: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        if service_context is not None:
-            prompt_helper = service_context.prompt_helper
-
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
-            service_context=service_context,
             streaming=streaming,
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL

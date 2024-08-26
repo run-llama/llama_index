@@ -12,7 +12,7 @@ from llama_index.core.base.query_pipeline.query import (
     validate_and_convert_stringable,
 )
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -22,6 +22,7 @@ from llama_index.core.indices.query.query_transform.prompts import (
     StepDecomposeQueryTransformPrompt,
 )
 from llama_index.core.instrumentation import DispatcherSpanMixin
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.core.prompts.mixin import (
@@ -30,9 +31,6 @@ from llama_index.core.prompts.mixin import (
     PromptMixinType,
 )
 from llama_index.core.schema import QueryBundle, QueryType
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
@@ -120,7 +118,7 @@ class HyDEQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         hyde_prompt: Optional[BasePromptTemplate] = None,
         include_original: bool = True,
     ) -> None:
@@ -178,7 +176,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         decompose_query_prompt: Optional[DecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
@@ -283,7 +281,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         step_decompose_query_prompt: Optional[StepDecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
@@ -334,10 +332,8 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 class QueryTransformComponent(QueryComponent):
     """Query transform component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     query_transform: BaseQueryTransform = Field(..., description="Query transform.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

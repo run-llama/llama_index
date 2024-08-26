@@ -10,7 +10,6 @@ from llama_index.legacy.finetuning.embeddings.common import (
 from llama_index.legacy.finetuning.embeddings.sentence_transformer import (
     SentenceTransformersFinetuneEngine,
 )
-from llama_index.legacy.finetuning.gradient.base import GradientFinetuneEngine
 from llama_index.legacy.finetuning.openai.base import OpenAIFinetuneEngine
 from llama_index.legacy.finetuning.rerankers.cohere_reranker import (
     CohereRerankerFinetuneEngine,
@@ -25,7 +24,6 @@ __all__ = [
     "EmbeddingQAFinetuneDataset",
     "SentenceTransformersFinetuneEngine",
     "EmbeddingAdapterFinetuneEngine",
-    "GradientFinetuneEngine",
     "generate_cohere_reranker_finetuning_dataset",
     "CohereRerankerFinetuneEngine",
 ]

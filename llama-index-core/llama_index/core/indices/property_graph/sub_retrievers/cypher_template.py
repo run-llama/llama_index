@@ -52,7 +52,7 @@ class CypherTemplateRetriever(BasePGRetriever):
 
         cypher_response = self._graph_store.structured_query(
             self.cypher_query,
-            param_map=response.dict(),
+            param_map=response.model_dump(),
         )
 
         return [
@@ -75,7 +75,7 @@ class CypherTemplateRetriever(BasePGRetriever):
 
         cypher_response = await self._graph_store.astructured_query(
             self.cypher_query,
-            param_map=response.dict(),
+            param_map=response.model_dump(),
         )
 
         return [

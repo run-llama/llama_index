@@ -61,6 +61,8 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                 {
                     "message": "An error occurred while executing the query.",
                     "details": str(e),
+                    "query": query,
+                    "parameters": str(param_map),
                 }
             )
 
@@ -83,7 +85,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
         )
 
         data = self.structured_query(
-            f"""MATCH (e:'{BASE_ENTITY_LABEL}')
+            f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
             WHERE ({filters})
             CALL neptune.algo.vectors.get(e)
             YIELD embedding
@@ -171,8 +173,8 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                     WHERE removeKeyFromMap(row.properties, '').triplet_source_id IS NOT NULL
                     MERGE (c:Chunk {id: removeKeyFromMap(row.properties, '').triplet_source_id})
                     MERGE (e)<-[:MENTIONS]-(c)
-                    WITH c, row.embedding as e
-                    CALL neptune.algo.vectors.upsert(c, e)
+                    WITH e, row.embedding as em
+                    CALL neptune.algo.vectors.upsert(e, em)
                     RETURN count(*) as count
                     """,
                     param_map={"data": d},

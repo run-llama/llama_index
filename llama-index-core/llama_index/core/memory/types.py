@@ -5,7 +5,7 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.llms.llm import LLM
 from llama_index.core.schema import BaseComponent
 from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, field_serializer, SerializeAsAny
 
 DEFAULT_CHAT_STORE_KEY = "chat_history"
 
@@ -62,8 +62,14 @@ class BaseChatStoreMemory(BaseMemory):
     NOTE: The interface for memory is not yet finalized and is subject to change.
     """
 
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
+    chat_store: SerializeAsAny[BaseChatStore] = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
+
+    @field_serializer("chat_store")
+    def serialize_courses_in_order(chat_store: BaseChatStore):
+        res = chat_store.model_dump()
+        res.update({"class_name": chat_store.class_name()})
+        return res
 
     @classmethod
     def class_name(cls) -> str:

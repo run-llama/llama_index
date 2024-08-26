@@ -61,9 +61,9 @@ class SlackReader(BasePydanticReader):
                 "variable `SLACK_BOT_TOKEN`."
             )
         if ssl is None:
-            self._client = WebClient(token=slack_token)
+            client = WebClient(token=slack_token)
         else:
-            self._client = WebClient(token=slack_token, ssl=ssl)
+            client = WebClient(token=slack_token, ssl=ssl)
         if latest_date is not None and earliest_date is None:
             raise ValueError(
                 "Must specify `earliest_date` if `latest_date` is specified."
@@ -76,7 +76,7 @@ class SlackReader(BasePydanticReader):
             latest_date_timestamp = latest_date.timestamp()
         else:
             latest_date_timestamp = datetime.now().timestamp() or latest_date_timestamp
-        res = self._client.api_test()
+        res = client.api_test()
         if not res["ok"]:
             raise ValueError(f"Error initializing Slack API: {res['error']}")
 
@@ -85,6 +85,7 @@ class SlackReader(BasePydanticReader):
             earliest_date_timestamp=earliest_date_timestamp,
             latest_date_timestamp=latest_date_timestamp,
         )
+        self._client = client
 
     @classmethod
     def class_name(cls) -> str:
