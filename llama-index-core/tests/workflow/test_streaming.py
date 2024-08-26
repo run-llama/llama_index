@@ -2,9 +2,6 @@ import asyncio
 
 import pytest
 
-from llama_index.llms.openai import OpenAI
-
-from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
@@ -15,17 +12,13 @@ from llama_index.core.workflow.errors import WorkflowRuntimeError
 class StreamingWorkflow(Workflow):
     @step
     async def chat(self, ctx: Context, ev: StartEvent) -> StopEvent:
-        llm = OpenAI()
-        messages = [
-            ChatMessage(
-                role=MessageRole.SYSTEM,
-                content="You are a pirate with a colorful personality",
-            ),
-            ChatMessage(role=MessageRole.USER, content="Who is Paul Graham?"),
-        ]
-        gen = await llm.astream_chat(messages)
-        async for resp in gen:
-            ctx.session.write_stream_event(Event(msg=resp.delta))
+        async def stream_messages():
+            resp = "Paul Graham is a British-American computer scientist, entrepreneur, vc, and writer."
+            for word in resp.split():
+                yield word
+
+        async for w in stream_messages():
+            ctx.session.write_stream_event(Event(msg=w))
 
         return StopEvent(result=None)
 
