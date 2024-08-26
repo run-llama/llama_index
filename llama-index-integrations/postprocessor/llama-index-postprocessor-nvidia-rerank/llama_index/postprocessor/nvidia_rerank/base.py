@@ -1,7 +1,7 @@
 from typing import Any, List, Optional, Generator, Literal
 
 
-from urllib.parse import urlparse, urljoin, urlunparse
+from urllib.parse import urlparse, urljoin
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
@@ -28,7 +28,7 @@ dispatcher = get_dispatcher(__name__)
 
 class Model(BaseModel):
     id: str
-    base_model: Optional[str]
+    base_model: Optional[str] = None
 
 
 class NVIDIARerank(BaseNodePostprocessor):
@@ -96,11 +96,10 @@ class NVIDIARerank(BaseNodePostprocessor):
         API Key:
         - The recommended way to provide the API key is through the `NVIDIA_API_KEY` environment variable.
         """
-
         if not base_url or (base_url in MODEL_ENDPOINT_MAP.values() and not model):
             model = model or DEFAULT_MODEL
         super().__init__(model=model, **kwargs)
-        
+
         base_url = base_url or MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL)
         self._is_hosted = base_url in MODEL_ENDPOINT_MAP.values()
 
@@ -130,7 +129,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             if self._api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
             self._inference_url = MODEL_ENDPOINT_MAP[model]
-        
+
         if not model:
             self.__set_default_model()
 
@@ -167,7 +166,11 @@ class NVIDIARerank(BaseNodePostprocessor):
             _headers = {
                 "Accept": "application/json",
             }
-        url = "https://integrate.api.nvidia.com/v1/models" if self._is_hosted else urljoin(self._base_url, "models")
+        url = (
+            "https://integrate.api.nvidia.com/v1/models"
+            if self._is_hosted
+            else urljoin(self._base_url, "models")
+        )
         response = session.get(url, headers=_headers)
         response.raise_for_status()
 
