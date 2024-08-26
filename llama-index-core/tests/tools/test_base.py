@@ -1,4 +1,5 @@
 """Test tools."""
+
 import json
 from typing import List, Optional
 
@@ -28,7 +29,7 @@ def test_function_tool() -> None:
     assert function_tool.metadata.name == "foo"
     assert function_tool.metadata.description == "bar"
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     # note: no type
     assert "x" in actual_schema["properties"]
 
@@ -41,7 +42,7 @@ def test_function_tool() -> None:
         tmp_function, name="foo", description="bar"
     )
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
 
@@ -81,7 +82,7 @@ async def test_function_tool_async() -> None:
         fn=tmp_function, async_fn=async_tmp_function, name="foo", description="bar"
     )
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
     assert str(function_tool(2)) == "2"
@@ -132,7 +133,7 @@ async def test_function_tool_async_defaults() -> None:
         fn=tmp_function, name="foo", description="bar"
     )
     assert function_tool.metadata.fn_schema is not None
-    actual_schema = function_tool.metadata.fn_schema.schema()
+    actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
 
@@ -150,11 +151,7 @@ async def test_function_tool_async_defaults_langchain() -> None:
     assert result == "1"
 
 
-from llama_index.core import (
-    ServiceContext,
-    VectorStoreIndex,
-)
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding
+from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import Document
 from llama_index.core.tools import RetrieverTool, ToolMetadata
 
@@ -169,12 +166,7 @@ def test_retreiver_tool() -> None:
         text=("# title2:This is another test.\n" "This is a test v2."),
         metadata={"file_path": "/data/personal/essay.md"},
     )
-    service_context = ServiceContext.from_defaults(
-        llm=None, embed_model=MockEmbedding(embed_dim=1)
-    )
-    vs_index = VectorStoreIndex.from_documents(
-        [doc1, doc2], service_context=service_context
-    )
+    vs_index = VectorStoreIndex.from_documents([doc1, doc2])
     vs_retriever = vs_index.as_retriever()
     vs_ret_tool = RetrieverTool(
         retriever=vs_retriever,

@@ -36,7 +36,7 @@ class MockLLM(CustomLLM):
                         dependencies=["one", "two"],
                     ),
                 ]
-            ).json()
+            ).model_dump_json()
             return CompletionResponse(text=text)
 
         # dummy response for react

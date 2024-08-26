@@ -530,6 +530,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        super().__init__()
+
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._async_index_client: AsyncSearchIndexClient = cast(
             AsyncSearchIndexClient, None
@@ -661,8 +663,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             if self._index_management == IndexManagement.VALIDATE_INDEX:
                 self._validate_index(index_name)
-
-        super().__init__()
 
     @property
     def client(self) -> Any:

@@ -10,7 +10,7 @@ from llama_index.core.workflow.service import ServiceManager, ServiceNotFoundErr
 class ServiceWorkflow(Workflow):
     """This wokflow is only responsible to generate a number, it knows nothing about the caller."""
 
-    @step()
+    @step
     async def generate(self, ev: StartEvent) -> StopEvent:
         return StopEvent(result=42)
 
@@ -30,14 +30,14 @@ class DummyWorkflow(Workflow):
     and it only knows it has to call `run` on that instance.
     """
 
-    @step()
+    @step
     async def get_a_number(
         self, service_workflow: ServiceWorkflow, ev: StartEvent, ctx: Context
     ) -> NumGenerated:
         res = await service_workflow.run()
         return NumGenerated(num=int(res))
 
-    @step()
+    @step
     async def multiply(self, ev: NumGenerated) -> StopEvent:
         return StopEvent(ev.num * 2)
 
@@ -47,7 +47,7 @@ async def test_e2e():
     wf = DummyWorkflow()
     # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
     # and give it a name, in this case "service_workflow"
-    wf.add_services(service_workflow=ServiceWorkflow())
+    wf.add_workflows(service_workflow=ServiceWorkflow())
     res = await wf.run()
     assert res == 84
 

@@ -11,12 +11,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.schema import IndexNode, NodeWithScore, QueryBundle
 from llama_index.core.selectors.utils import get_selector_from_llm
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.tools.retriever_tool import RetrieverTool
 
 logger = logging.getLogger(__name__)
@@ -41,20 +36,17 @@ class RouterRetriever(BaseRetriever):
         selector: BaseSelector,
         retriever_tools: Sequence[RetrieverTool],
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._selector = selector
         self._retrievers: List[BaseRetriever] = [x.retriever for x in retriever_tools]
         self._metadatas = [x.metadata for x in retriever_tools]
 
         super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
             object_map=object_map,
             objects=objects,
             verbose=verbose,
@@ -70,18 +62,16 @@ class RouterRetriever(BaseRetriever):
         cls,
         retriever_tools: Sequence[RetrieverTool],
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         selector: Optional[BaseSelector] = None,
         select_multi: bool = False,
     ) -> "RouterRetriever":
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
 
         return cls(
             selector,
             retriever_tools,
             llm=llm,
-            service_context=service_context,
         )
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:

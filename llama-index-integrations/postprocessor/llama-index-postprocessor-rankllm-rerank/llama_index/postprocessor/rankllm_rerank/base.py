@@ -46,6 +46,14 @@ class RankLLMRerank(BaseNodePostprocessor):
 
         from rank_llm.result import Result
 
+        super().__init__(
+            model=model,
+            top_n=top_n,
+            with_retrieval=with_retrieval,
+            step_size=step_size,
+            gpt_model=gpt_model,
+        )
+
         self._result = Result
 
         if model_enum == ModelType.VICUNA:
@@ -74,14 +82,6 @@ class RankLLMRerank(BaseNodePostprocessor):
             from rank_llm.retrieve.retriever import Retriever
 
             self._retriever = Retriever
-
-        super().__init__(
-            model=model,
-            top_n=top_n,
-            with_retrieval=with_retrieval,
-            step_size=step_size,
-            gpt_model=gpt_model,
-        )
 
     @classmethod
     def class_name(cls) -> str:

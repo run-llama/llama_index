@@ -151,6 +151,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__(
+            collection_name=collection_name,
+            url=url,
+            api_key=api_key,
+            batch_size=batch_size,
+            parallel=parallel,
+            max_retries=max_retries,
+            client_kwargs=client_kwargs or {},
+            enable_hybrid=enable_hybrid,
+            index_doc_id=index_doc_id,
+            fastembed_sparse_model=fastembed_sparse_model,
+        )
+
         if (
             client is None
             and aclient is None
@@ -203,19 +216,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_config = sparse_config
         self._dense_config = dense_config
         self._quantization_config = quantization_config
-
-        super().__init__(
-            collection_name=collection_name,
-            url=url,
-            api_key=api_key,
-            batch_size=batch_size,
-            parallel=parallel,
-            max_retries=max_retries,
-            client_kwargs=client_kwargs or {},
-            enable_hybrid=enable_hybrid,
-            index_doc_id=index_doc_id,
-            fastembed_sparse_model=fastembed_sparse_model,
-        )
 
     @classmethod
     def class_name(cls) -> str:

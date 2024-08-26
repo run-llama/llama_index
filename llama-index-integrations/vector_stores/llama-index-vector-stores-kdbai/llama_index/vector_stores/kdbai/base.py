@@ -76,6 +76,8 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 "Please add it to the dependencies."
             )
 
+        super().__init__(batch_size=batch_size, hybrid_search=hybrid_search)
+
         if table is None:
             raise ValueError("Must provide an existing KDB.AI table.")
         else:
@@ -86,8 +88,6 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 self._sparse_encoder = default_sparse_encoder
             else:
                 self._sparse_encoder = sparse_encoder
-
-        super().__init__(batch_size=batch_size, hybrid_search=hybrid_search)
 
     @property
     def client(self) -> Any:

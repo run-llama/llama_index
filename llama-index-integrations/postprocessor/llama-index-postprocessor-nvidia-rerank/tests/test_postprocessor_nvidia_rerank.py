@@ -75,11 +75,11 @@ def test_direct_empty_docs(query: str, model: str, mode: dict) -> None:
 def test_direct_top_n_negative(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
-    orig = NVIDIARerank.Config.validate_assignment
-    NVIDIARerank.Config.validate_assignment = False
+    orig = NVIDIARerank.model_config["validate_assignment"]
+    NVIDIARerank.model_config["validate_assignment"] = False
     ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = -100
-    NVIDIARerank.Config.validate_assignment = orig
+    NVIDIARerank.model_config["validate_assignment"] = orig
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
     assert len(result) == 0
 

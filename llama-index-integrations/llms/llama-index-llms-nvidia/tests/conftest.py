@@ -1,8 +1,6 @@
 import pytest
 import os
 
-from llama_index.llms.nvidia import NVIDIA
-from llama_index.llms.nvidia.base import DEFAULT_MODEL
 
 from typing import Generator
 
@@ -60,6 +58,9 @@ def get_mode(config: pytest.Config) -> dict:
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    from llama_index.llms.nvidia import NVIDIA
+    from llama_index.llms.nvidia.base import DEFAULT_MODEL
+
     mode = get_mode(metafunc.config)
 
     if "chat_model" in metafunc.fixturenames:
