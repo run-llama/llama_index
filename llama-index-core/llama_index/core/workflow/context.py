@@ -28,7 +28,6 @@ class Context:
         if parent is not None:
             self._globals = parent._globals
         else:
-            # Initialize the root context
             self._globals: Dict[str, Any] = {}
             self._lock = asyncio.Lock()
             if session is None:
