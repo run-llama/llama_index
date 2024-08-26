@@ -13,8 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest-unit-tester
     strategy:
-      # You can use PyPy versions in python-version.
-      # For example, pypy-2.7 and pypy-3.8
+      fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
     steps:

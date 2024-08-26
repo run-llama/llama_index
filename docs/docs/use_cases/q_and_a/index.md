@@ -28,11 +28,11 @@ As you scale to more complex questions / more data, there are many techniques in
 
 - **Querying Complex Documents**: Oftentimes your document representation is complex - your PDF may have text, tables, charts, images, headers/footers, and more. LlamaIndex provides advanced indexing/retrieval integrated with LlamaParse, our proprietary document parser. [Full cookbooks here](https://github.com/run-llama/llama_parse/tree/main/examples).
 - **Combine multiple sources**: is some of your data in Slack, some in PDFs, some in unstructured text? LlamaIndex can combine queries across an arbitrary number of sources and combine them.
-    - [Example of combining multiple sources](../../understanding/putting_it_all_together/q_and_a.md#multi-document-queries)
+    - [Example of combining multiple sources](../../understanding/putting_it_all_together/q_and_a/#multi-document-queries)
 - **Route across multiple sources**: given multiple data sources, your application can first pick the best source and then "route" the question to that source.
-    - [Example of routing across multiple sources](../../understanding/putting_it_all_together/q_and_a.md#routing-over-heterogeneous-data)
+    - [Example of routing across multiple sources](../../understanding/putting_it_all_together/q_and_a/#routing-over-heterogeneous-data)
 - **Multi-document queries**: some questions have partial answers in multiple data sources which need to be questioned separately before they can be combined
-    - [Example of multi-document queries](../../understanding/putting_it_all_together/q_and_a.md#multi-document-queries)
+    - [Example of multi-document queries](../../understanding/putting_it_all_together/q_and_a/#multi-document-queries)
     - [Building a multi-document agent over the LlamaIndex docs](../../examples/agent/multi_document_agents-v1.ipynb) - [Text to SQL](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb)
 
 
@@ -53,4 +53,4 @@ LlamaIndex has a lot of resources around QA / RAG. Here are some core resource g
 
 ## Further examples
 
-For further examples of Q&A use cases, see our [Q&A section in Putting it All Together](../../understanding/putting_it_all_together/q_and_a.md).
+For further examples of Q&A use cases, see our [Q&A section in Putting it All Together](../../understanding/putting_it_all_together/q_and_a/index.md).

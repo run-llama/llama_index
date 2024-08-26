@@ -17,17 +17,21 @@ from urllib.parse import urlunparse, urlparse
 # integrate.api.nvidia.com is the default url for most models, any
 # bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
 BASE_URL = "https://integrate.api.nvidia.com/v1/"
-DEFAULT_MODEL = "NV-Embed-QA"
+DEFAULT_MODEL = "nvidia/nv-embedqa-e5-v5"
 
 # because MODEL_ENDPOINT_MAP is used to construct KNOWN_URLS, we need to
 # include at least one model w/ https://integrate.api.nvidia.com/v1/
 MODEL_ENDPOINT_MAP = {
     "NV-Embed-QA": "https://ai.api.nvidia.com/v1/retrieval/nvidia/",
-    "snowflake/arctic-embed-l": "https://ai.api.nvidia.com/v1/retrieval/snowflake/arctic-embed-l",
+    "snowflake/arctic-embed-l": "https://integrate.api.nvidia.com/v1/",
     "nvidia/nv-embed-v1": "https://integrate.api.nvidia.com/v1/",
+    "nvidia/nv-embedqa-mistral-7b-v2": "https://integrate.api.nvidia.com/v1/",
+    "nvidia/nv-embedqa-e5-v5": "https://integrate.api.nvidia.com/v1/",
+    "baai/bge-m3": "https://integrate.api.nvidia.com/v1/",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
+KNOWN_URLS.append("https://ai.api.nvidia.com/v1/retrieval/snowflake/arctic-embed-l")
 
 
 class Model(BaseModel):
@@ -63,7 +67,6 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
-    _mode: str = PrivateAttr("nvidia")
     _is_hosted: bool = PrivateAttr(True)
 
     def __init__(
@@ -109,15 +112,6 @@ class NVIDIAEmbedding(BaseEmbedding):
         if embed_batch_size > 259:
             raise ValueError("The batch size should not be larger than 259.")
 
-        if base_url is None or base_url in MODEL_ENDPOINT_MAP.values():
-            # TODO: we should not assume unknown models are at the base url, but
-            #       we cannot error out here because
-            #          NVIDIAEmbedding(model="special").mode("nim", base_url=...)
-            #       is valid usage
-            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
-        else:
-            base_url = self._validate_url(base_url)
-
         api_key = get_from_param_or_env(
             "api_key",
             nvidia_api_key or api_key,
@@ -125,10 +119,16 @@ class NVIDIAEmbedding(BaseEmbedding):
             "NO_API_KEY_PROVIDED",
         )
 
-        self._is_hosted = base_url in KNOWN_URLS
-
-        if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
-            raise ValueError("An API key is required for hosted NIM.")
+        if (
+            not base_url or base_url in KNOWN_URLS
+        ):  # hosted on API Catalog (build.nvidia.com)
+            self._is_hosted = True
+            if api_key == "NO_API_KEY_PROVIDED":
+                raise ValueError("An API key is required for hosted NIM.")
+            # TODO: we should not assume unknown models are at the base url
+            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        else:  # not hosted
+            base_url = self._validate_url(base_url)
 
         self._client = OpenAI(
             api_key=api_key,

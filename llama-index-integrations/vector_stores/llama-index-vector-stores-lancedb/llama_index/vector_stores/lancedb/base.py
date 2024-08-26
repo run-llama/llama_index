@@ -141,7 +141,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
+    stores_text: bool = True
     flat_metadata: bool = True
     uri: Optional[str]
     vector_column_name: Optional[str]
@@ -193,6 +193,8 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             mode=mode,
             query_type=query_type,
             overfetch_factor=overfetch_factor,
+            api_key=api_key,
+            region=region,
             **kwargs,
         )
 

@@ -483,7 +483,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         top_k_scores = []
         for hit in hits:
             source = hit["_source"]
-            metadata = source.get("metadata", None)
+            metadata = source.get("metadata", {})
             text = source.get(self.text_field, None)
             node_id = hit["_id"]
 
@@ -493,7 +493,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             except Exception:
                 # Legacy support for old metadata format
                 logger.warning(
-                    f"Could not parse metadata from hit {hit['_source']['metadata']}"
+                    f"Could not parse metadata from hit {hit['_source'].get('metadata')}"
                 )
                 node_info = source.get("node_info")
                 relationships = source.get("relationships", {})
