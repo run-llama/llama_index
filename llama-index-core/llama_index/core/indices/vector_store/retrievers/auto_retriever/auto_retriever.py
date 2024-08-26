@@ -159,7 +159,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
     ) -> BaseModel:
         # prepare input
         info_str = self._vector_store_info.model_dump_json(indent=4)
-        schema_str = VectorStoreQuerySpec.model_json_schema(indent=4)
+        schema_str = VectorStoreQuerySpec.model_json_schema()
 
         # call LLM
         output = self._llm.predict(
@@ -177,7 +177,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
     ) -> BaseModel:
         # prepare input
         info_str = self._vector_store_info.model_dump_json(indent=4)
-        schema_str = VectorStoreQuerySpec.model_json_schema(indent=4)
+        schema_str = VectorStoreQuerySpec.model_json_schema()
 
         # call LLM
         output = await self._llm.apredict(
