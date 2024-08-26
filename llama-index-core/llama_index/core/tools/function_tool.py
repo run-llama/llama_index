@@ -21,6 +21,16 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     return _async_wrapped_fn
 
 
+def async_to_sync(func_async: AsyncCallable) -> Callable:
+    """Async from sync."""
+
+    def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(func_async(*args, **kwargs))
+
+    return _sync_wrapped_fn
+
+
 class FunctionTool(AsyncBaseTool):
     """Function Tool.
 
@@ -30,11 +40,16 @@ class FunctionTool(AsyncBaseTool):
 
     def __init__(
         self,
-        fn: Callable[..., Any],
         metadata: ToolMetadata,
+        fn: Optional[Callable[..., Any]] = None,
         async_fn: Optional[AsyncCallable] = None,
     ) -> None:
-        self._fn = fn
+        if fn is None and async_fn is None:
+            raise ValueError("Either fn or async_fn must be provided.")
+        if fn is not None:
+            self._fn = fn
+        else:
+            self._fn = async_to_sync(async_fn)
         if async_fn is not None:
             self._async_fn = async_fn
         else:
@@ -44,7 +59,7 @@ class FunctionTool(AsyncBaseTool):
     @classmethod
     def from_defaults(
         cls,
-        fn: Callable[..., Any],
+        fn: Optional[Callable[..., Any]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         return_direct: bool = False,
@@ -58,7 +73,7 @@ class FunctionTool(AsyncBaseTool):
             description = description or f"{name}{signature(fn)}\n{docstring}"
             if fn_schema is None:
                 fn_schema = create_schema_from_function(
-                    f"{name}", fn, additional_fields=None
+                    f"{name}", fn or async_fn, additional_fields=None
                 )
             tool_metadata = ToolMetadata(
                 name=name,
