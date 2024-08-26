@@ -40,8 +40,8 @@ class FunctionTool(AsyncBaseTool):
 
     def __init__(
         self,
-        metadata: ToolMetadata,
         fn: Optional[Callable[..., Any]] = None,
+        metadata: Optional[ToolMetadata] = None,
         async_fn: Optional[AsyncCallable] = None,
     ) -> None:
         if fn is None and async_fn is None:
@@ -54,6 +54,10 @@ class FunctionTool(AsyncBaseTool):
             self._async_fn = async_fn
         else:
             self._async_fn = sync_to_async(self._fn)
+
+        if metadata is None:
+            raise ValueError("metadata must be provided.")
+
         self._metadata = metadata
 
     @classmethod
