@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, AsyncGenerator
+from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set
 
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import StepConfig, step
@@ -45,8 +45,6 @@ class Workflow(metaclass=_WorkflowMeta):
         # Broker machinery
         self._sessions: Set[WorkflowSession] = set()
         self._step_session: Optional[WorkflowSession] = None
-        # Streaming machinery
-        self._streamed_events: asyncio.Queue = asyncio.Queue()
         # Services management
         self._service_manager = service_manager
 
@@ -56,9 +54,19 @@ class Workflow(metaclass=_WorkflowMeta):
         # loop.
         await asyncio.sleep(0)
 
+        if len(self._sessions) > 1:
+            # We can't possibly know from what session we should stream events, raise an error.
+            msg = (
+                "This workflow has multiple session running concurrently and cannot stream events. "
+                "To be able to stream events, make sure you call `run()` on this workflow only once."
+            )
+            raise WorkflowRuntimeError(msg)
+
         # Enter the dequeuing loop.
+        session = next(iter(self._sessions))
         while True:
-            ev = await self._streamed_events.get()
+            ev = await session.streaming_queue.get()
+
             if ev is None:  # FIXME: Should we use a special event?
                 break
             yield ev
@@ -202,8 +210,6 @@ class Workflow(metaclass=_WorkflowMeta):
         3. sending a StartEvent to kick things off
         4. waiting for all tasks to finish or be cancelled
         """
-        self._streamed_events = asyncio.Queue()
-
         # Validate the workflow if needed
         self._validate()
 
@@ -264,7 +270,6 @@ class Workflow(metaclass=_WorkflowMeta):
         if self._step_session is None:
             self._validate()
             self._step_session = self._start(stepwise=True)
-            self._streamed_events = asyncio.Queue()
             # Run the first step
             self._step_session.send_event(StartEvent(**kwargs))
 
@@ -317,7 +322,7 @@ class Workflow(metaclass=_WorkflowMeta):
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         ctx.session._retval = ev.result or None
-        self._streamed_events.put_nowait(None)  # FIXME: send a special event instead?
+        ctx.session.write_stream_event(None)  # FIXME: send a special event instead?
 
         # Signal we want to stop the workflow
         raise WorkflowDone

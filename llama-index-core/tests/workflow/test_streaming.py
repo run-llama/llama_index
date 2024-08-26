@@ -12,7 +12,7 @@ from llama_index.core.workflow.workflow import Workflow
 
 
 class StreamingWorkflow(Workflow):
-    @step(pass_context=True)
+    @step
     async def chat(self, ctx: Context, ev: StartEvent) -> StopEvent:
         llm = OpenAI()
         messages = [
@@ -24,7 +24,7 @@ class StreamingWorkflow(Workflow):
         ]
         gen = await llm.astream_chat(messages)
         async for resp in gen:
-            ctx.write_stream_event(Event(msg=resp.delta))
+            ctx.session.write_stream_event(Event(msg=resp.delta))
 
         return StopEvent(result=None)
 
@@ -34,7 +34,7 @@ async def test_foo():
     wf = StreamingWorkflow()
     r = asyncio.create_task(wf.run())
 
-    async for ev in wf.stream_events():
-        print(ev.msg)
+    # async for ev in wf.stream_events():
+    #     print(ev.msg)
 
     await r

@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING
 from .events import Event
 
 if TYPE_CHECKING:
-    from .workflow import Workflow
     from .session import WorkflowSession
 
 
@@ -43,9 +42,6 @@ class Context:
         # Step-specific instance
         self._parent: Optional[Context] = parent
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
-
-    def write_stream_event(self, ev: Event) -> None:
-        self.workflow._streamed_events.put_nowait(ev)
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.
@@ -101,12 +97,6 @@ class Context:
     def lock(self) -> asyncio.Lock:
         """Returns a mutex to lock the Context."""
         return self._parent._lock if self._parent else self._lock
-
-    @property
-    def workflow(self) -> "Workflow":
-        """Return the workflow instance this context is attached to."""
-        # workflow is guaranteed to be not None, ignore typing
-        return self._parent._workflow if self._parent else self._workflow  # type: ignore
 
     @property
     def session(self) -> "WorkflowSession":
