@@ -9,6 +9,7 @@ from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 
 class StreamingWorkflow(Workflow):
@@ -30,11 +31,23 @@ class StreamingWorkflow(Workflow):
 
 
 @pytest.mark.asyncio()
-async def test_foo():
+async def test_e2e():
     wf = StreamingWorkflow()
     r = asyncio.create_task(wf.run())
 
     async for ev in wf.stream_events():
-        print(ev.msg)
+        assert "msg" in ev
 
     await r
+
+
+@pytest.mark.asyncio()
+async def test_too_many_runs():
+    wf = StreamingWorkflow()
+    r = asyncio.gather(wf.run(), wf.run())
+    with pytest.raises(
+        WorkflowRuntimeError,
+        match="This workflow has multiple session running concurrently",
+    ):
+        async for ev in wf.stream_events():
+            pass
