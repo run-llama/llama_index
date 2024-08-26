@@ -17,7 +17,7 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     return _async_wrapped_fn
