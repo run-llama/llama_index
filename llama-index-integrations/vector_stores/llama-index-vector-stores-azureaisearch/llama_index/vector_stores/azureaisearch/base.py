@@ -205,6 +205,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         for v in self._metadata_to_index_field_map.values():
             field_name, field_type = v
 
+            # Skip if the field is already mapped
+            if field_name in self._field_mapping.values():
+                continue
+
             if field_type == MetadataIndexFieldType.STRING:
                 index_field_type = "Edm.String"
             elif field_type == MetadataIndexFieldType.INT32:
@@ -526,6 +530,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        super().__init__()
+
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._async_index_client: AsyncSearchIndexClient = cast(
             AsyncSearchIndexClient, None
@@ -657,8 +663,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             if self._index_management == IndexManagement.VALIDATE_INDEX:
                 self._validate_index(index_name)
-
-        super().__init__()
 
     @property
     def client(self) -> Any:

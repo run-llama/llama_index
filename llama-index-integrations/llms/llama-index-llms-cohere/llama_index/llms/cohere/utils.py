@@ -1,12 +1,27 @@
 from collections import Counter
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 import re
+
+from pydantic import BaseModel
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.prompts import ChatPromptTemplate, ChatMessage, MessageRole
 
 from llama_index.core.prompts.chat_prompts import TEXT_QA_SYSTEM_PROMPT
+from llama_index.core.tools.types import BaseTool
 from tenacity import (
     before_sleep_log,
     retry,
@@ -14,6 +29,11 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from cohere.types import (
+    Tool,
+    ToolParameterDefinitionsValue,
+)
+
 
 COMMAND_MODELS = {
     "command-r": 128000,
@@ -32,14 +52,28 @@ REPRESENTATION_MODELS = {
     "embed-multilingual-v2.0": 256,
 }
 
+FUNCTION_CALLING_MODELS = {"command-r", "command-r-plus"}
 ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_MODELS}
 CHAT_MODELS = {**COMMAND_MODELS}
+
+JSON_TO_PYTHON_TYPES = {
+    "string": "str",
+    "number": "float",
+    "boolean": "bool",
+    "integer": "int",
+    "array": "List",
+    "object": "Dict",
+}
 
 
 def is_cohere_model(llm: BaseLLM) -> bool:
     from llama_index.llms.cohere import Cohere
 
     return isinstance(llm, Cohere)
+
+
+def is_cohere_function_calling_model(model_name: str) -> bool:
+    return model_name in FUNCTION_CALLING_MODELS
 
 
 logger = logging.getLogger(__name__)
@@ -238,24 +272,6 @@ def remove_documents_from_messages(
     return remaining, messages_to_cohere_documents(documents)
 
 
-def messages_to_cohere_history(
-    messages: Sequence[ChatMessage],
-) -> List[Dict[str, Optional[str]]]:
-    role_map = {
-        "user": "USER",
-        "system": "SYSTEM",
-        "chatbot": "CHATBOT",
-        "assistant": "CHATBOT",
-        "model": "SYSTEM",
-        "function": "SYSTEM",
-        "tool": "SYSTEM",
-    }
-    return [
-        {"role": role_map[message.role], "message": message.content}
-        for message in messages
-    ]
-
-
 def messages_to_cohere_documents(
     messages: List[DocumentMessage],
 ) -> Optional[List[Dict[str, str]]]:
@@ -269,6 +285,48 @@ def messages_to_cohere_documents(
     for msg in messages:
         documents.extend(document_message_to_cohere_document(msg))
     return documents
+
+
+def _get_curr_chat_turn_messages(messages: List[ChatMessage]) -> List[ChatMessage]:
+    """Get the messages for the current chat turn."""
+    current_chat_turn_messages = []
+    for message in messages[::-1]:
+        current_chat_turn_messages.append(message)
+        if message.role == MessageRole.USER:
+            break
+    return current_chat_turn_messages[::-1]
+
+
+def _messages_to_cohere_tool_results_curr_chat_turn(
+    messages: List[ChatMessage],
+) -> List[Dict[str, Any]]:
+    """Get tool_results from messages."""
+    tool_results = []
+    curr_chat_turn_messages = _get_curr_chat_turn_messages(messages)
+    for message in curr_chat_turn_messages:
+        if message.role == MessageRole.TOOL:
+            tool_message = message
+            previous_ai_msgs = [
+                message
+                for message in curr_chat_turn_messages
+                if message.role in (MessageRole.CHATBOT, MessageRole.ASSISTANT)
+                and message.additional_kwargs.get("tool_calls")
+            ]
+            if previous_ai_msgs:
+                previous_ai_msg = previous_ai_msgs[-1]
+                tool_results.extend(
+                    [
+                        {
+                            "call": tool_call.__dict__,
+                            "outputs": convert_to_documents(tool_message.content),
+                        }
+                        for tool_call in previous_ai_msg.additional_kwargs.get(
+                            "tool_calls"
+                        )
+                    ]
+                )
+
+    return tool_results
 
 
 def document_message_to_cohere_document(message: DocumentMessage) -> Dict:
@@ -312,3 +370,160 @@ def document_message_to_cohere_document(message: DocumentMessage) -> Dict:
     document["text"] = remaining_text.strip()
     documents.append(document)
     return documents
+
+
+def _remove_signature_from_tool_description(name: str, description: str) -> str:
+    """
+    Removes the `{name}{signature} - ` prefix and Args: section from tool description.
+    The Args: section may be present in function doc blocks.
+    """
+    description = re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
+    return re.sub(r"(?s)(?:\n?\n\s*?)?Args:.*$", "", description)
+
+
+def format_to_cohere_tools(
+    tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+) -> List[Dict[str, Any]]:
+    return [_convert_to_cohere_tool(tool) for tool in tools]
+
+
+def _convert_to_cohere_tool(
+    tool: BaseTool,
+) -> Dict[str, Any]:
+    """
+    Convert a BaseTool instance to a Cohere tool.
+    """
+    parameters = tool.metadata.get_parameters_dict()
+    properties = parameters.get("properties", {})
+    return Tool(
+        name=tool.metadata.name,
+        description=_remove_signature_from_tool_description(
+            tool.metadata.name, tool.metadata.description
+        ),
+        parameter_definitions={
+            param_name: ToolParameterDefinitionsValue(
+                description=(
+                    param_definition.get("description")
+                    if "description" in param_definition
+                    else ""
+                ),
+                type=JSON_TO_PYTHON_TYPES.get(
+                    param_definition.get("type"), param_definition.get("type")
+                ),
+                required=param_name in parameters.get("required", []),
+            )
+            for param_name, param_definition in properties.items()
+        },
+    ).dict()
+
+
+def convert_to_documents(
+    observations: Any,
+) -> List[MutableMapping]:
+    """Converts observations into a 'document' dict."""
+    documents: List[MutableMapping] = []
+    if isinstance(observations, str):
+        # strings are turned into a key/value pair and a key of 'output' is added.
+        observations = [{"output": observations}]
+    elif isinstance(observations, Mapping):
+        # single mappings are transformed into a list to simplify the rest of the code.
+        observations = [observations]
+    elif not isinstance(observations, Sequence):
+        # all other types are turned into a key/value pair within a list
+        observations = [{"output": observations}]
+
+    for doc in observations:
+        if not isinstance(doc, Mapping):
+            # types that aren't Mapping are turned into a key/value pair.
+            doc = {"output": doc}
+        documents.append(doc)
+
+    return documents
+
+
+def _message_to_cohere_tool_results(
+    messages: List[ChatMessage], tool_message_index: int
+) -> List[Dict[str, Any]]:
+    """Get tool_results from messages."""
+    tool_results = []
+    tool_message = messages[tool_message_index]
+    if not tool_message.role == MessageRole.TOOL:
+        raise ValueError(
+            "The message index does not correspond to an instance of ToolMessage"
+        )
+
+    messages_until_tool = messages[:tool_message_index]
+    previous_ai_message = [
+        message
+        for message in messages_until_tool
+        if message.role in (MessageRole.CHATBOT, MessageRole.ASSISTANT)
+        and message.additional_kwargs.get("tool_calls")
+    ][-1]
+    tool_results.extend(
+        [
+            {
+                "call": tool_call.__dict__,
+                "outputs": convert_to_documents(tool_message.content),
+            }
+            for tool_call in previous_ai_message.additional_kwargs.get("tool_calls")
+        ]
+    )
+    return tool_results
+
+
+def get_role(message: ChatMessage) -> str:
+    """Get the role of the message.
+
+    Args:
+        message: The message.
+
+    Returns:
+        The role of the message.
+
+    Raises:
+        ValueError: If the message is of an unknown type.
+    """
+    if message.role == MessageRole.USER:
+        return "User"
+    elif message.role == MessageRole.CHATBOT or message.role == MessageRole.ASSISTANT:
+        return "Chatbot"
+    elif message.role == MessageRole.SYSTEM:
+        return "System"
+    elif message.role == MessageRole.TOOL:
+        return "Tool"
+    else:
+        raise ValueError(f"Got unknown type {type(message).__name__}")
+
+
+def _get_message_cohere_format(
+    message: ChatMessage, tool_results: Optional[List[Dict[Any, Any]]]
+) -> Dict[
+    str,
+    Union[
+        str,
+        List[Union[str, Dict[Any, Any]]],
+        List[Dict[Any, Any]],
+        None,
+    ],
+]:
+    """Get the formatted message as required in cohere's api.
+
+    Args:
+        message: The BaseMessage.
+        tool_results: The tool results if any
+
+    Returns:
+        The formatted message as required in cohere's api.
+    """
+    if message.role == MessageRole.CHATBOT or message.role == MessageRole.ASSISTANT:
+        return {
+            "role": get_role(message),
+            "message": message.content,
+            "tool_calls": message.additional_kwargs.get("tool_calls"),
+        }
+    elif message.role in (MessageRole.USER, MessageRole.SYSTEM):
+        return {"role": get_role(message), "message": message.content}
+    elif message.role == MessageRole.TOOL:
+        return {"role": get_role(message), "tool_results": tool_results}
+    else:
+        raise ValueError(f"Got unknown type {message}")

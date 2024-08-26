@@ -87,9 +87,6 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         **kwargs,
     ) -> None:
-        self._is_interactive_auth = not client_secret
-        self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
-
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
@@ -102,6 +99,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
             file_extractor=file_extractor,
             **kwargs,
         )
+        self._is_interactive_auth = not client_secret
+        self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
 
     def _authenticate_with_msal(self) -> Any:
         """Authenticate with MSAL.

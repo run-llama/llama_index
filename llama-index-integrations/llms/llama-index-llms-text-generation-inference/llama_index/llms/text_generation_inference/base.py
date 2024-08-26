@@ -106,7 +106,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_chat_model: bool = Field(
         default=True,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " TGI makes use of chat templating,"
             " function call is available only for '/v1/chat/completions' route"
             " of TGI endpoint"
@@ -115,7 +115,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            LLMMetadata.model_fields["is_function_calling_model"].description
             + " 'text-generation-inference' supports function call"
             " starting from v1.4.3"
         ),
@@ -149,19 +149,6 @@ class TextGenerationInference(FunctionCallingLLM):
         if token:
             headers.update({"Authorization": f"Bearer {token}"})
 
-        self._sync_client = TGIClient(
-            base_url=model_url,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-        )
-        self._async_client = TGIAsyncClient(
-            base_url=model_url,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-        )
-
         try:
             is_function_calling_model = resolve_tgi_function_call(model_url)
         except Exception as e:
@@ -186,6 +173,18 @@ class TextGenerationInference(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+        self._sync_client = TGIClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+        )
+        self._async_client = TGIAsyncClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
         )
 
     @classmethod

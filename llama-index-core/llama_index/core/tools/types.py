@@ -34,7 +34,7 @@ class ToolMetadata:
                 "required": ["input"],
             }
         else:
-            parameters = self.fn_schema.schema()
+            parameters = self.fn_schema.model_json_schema()
             parameters = {
                 k: v
                 for k, v in parameters.items()

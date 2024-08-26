@@ -9,12 +9,13 @@ from openai import AuthenticationError
 
 
 def test_embedding_class():
-    emb = NVIDIAEmbedding()
+    emb = NVIDIAEmbedding(api_key="BOGUS")
     assert isinstance(emb, BaseEmbedding)
 
 
 def test_nvidia_embedding_param_setting():
     emb = NVIDIAEmbedding(
+        api_key="BOGUS",
         model="test-model",
         truncate="END",
         timeout=20,
@@ -37,7 +38,7 @@ def test_nvidia_embedding_throws_on_batches_larger_than_259():
 
 
 def test_nvidia_embedding_async():
-    emb = NVIDIAEmbedding()
+    emb = NVIDIAEmbedding(api_key="BOGUS")
 
     assert inspect.iscoroutinefunction(emb._aget_query_embedding)
     query_emb = emb._aget_query_embedding("hi")

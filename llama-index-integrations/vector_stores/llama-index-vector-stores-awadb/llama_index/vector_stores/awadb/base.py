@@ -45,7 +45,7 @@ class AwaDBVectorStore(BasePydanticVectorStore):
 
     flat_metadata: bool = True
     stores_text: bool = True
-    DEFAULT_TABLE_NAME = "llamaindex_awadb"
+    DEFAULT_TABLE_NAME: str = "llamaindex_awadb"
 
     _awadb_client: Any = PrivateAttr()
 

@@ -1,10 +1,12 @@
-import httpx
+import asyncio
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
+
+from ollama import Client, AsyncClient
 
 
 class OllamaEmbedding(BaseEmbedding):
@@ -22,6 +24,9 @@ class OllamaEmbedding(BaseEmbedding):
         default_factory=dict, description="Additional kwargs for the Ollama API."
     )
 
+    _client: Client = PrivateAttr()
+    _async_client: AsyncClient = PrivateAttr()
+
     def __init__(
         self,
         model_name: str,
@@ -37,7 +42,11 @@ class OllamaEmbedding(BaseEmbedding):
             embed_batch_size=embed_batch_size,
             ollama_additional_kwargs=ollama_additional_kwargs or {},
             callback_manager=callback_manager,
+            **kwargs,
         )
+
+        self._client = Client(host=self.base_url)
+        self._async_client = AsyncClient(host=self.base_url)
 
     @classmethod
     def class_name(cls) -> str:
@@ -70,69 +79,20 @@ class OllamaEmbedding(BaseEmbedding):
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return self._aget_text_embeddings(texts)
-
-    def get_general_text_embedding(self, prompt: str) -> List[float]:
-        """Get Ollama embedding."""
-        try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "Could not import requests library."
-                "Please install requests with `pip install requests`"
-            )
-
-        ollama_request_body = {
-            "prompt": prompt,
-            "model": self.model_name,
-            "options": self.ollama_additional_kwargs,
-        }
-
-        response = requests.post(
-            url=f"{self.base_url}/api/embeddings",
-            headers={"Content-Type": "application/json"},
-            json=ollama_request_body,
+        return await asyncio.gather(
+            *[self.aget_general_text_embedding(text) for text in texts]
         )
-        response.encoding = "utf-8"
-        if response.status_code != 200:
-            optional_detail = response.json().get("error")
-            raise ValueError(
-                f"Ollama call failed with status code {response.status_code}."
-                f" Details: {optional_detail}"
-            )
 
-        try:
-            return response.json()["embedding"]
-        except requests.exceptions.JSONDecodeError as e:
-            raise ValueError(
-                f"Error raised for Ollama Call: {e}.\nResponse: {response.text}"
-            )
+    def get_general_text_embedding(self, texts: str) -> List[float]:
+        """Get Ollama embedding."""
+        result = self._client.embeddings(
+            model=self.model_name, prompt=texts, options=self.ollama_additional_kwargs
+        )
+        return result["embedding"]
 
     async def aget_general_text_embedding(self, prompt: str) -> List[float]:
         """Asynchronously get Ollama embedding."""
-        async with httpx.AsyncClient() as client:
-            ollama_request_body = {
-                "prompt": prompt,
-                "model": self.model_name,
-                "options": self.ollama_additional_kwargs,
-            }
-
-            response = await client.post(
-                url=f"{self.base_url}/api/embeddings",
-                headers={"Content-Type": "application/json"},
-                json=ollama_request_body,
-            )
-            response.encoding = "utf-8"
-            if response.status_code != 200:
-                optional_detail = response.json().get("error")
-                raise ValueError(
-                    f"Ollama call failed with status code {response.status_code}."
-                    f" Details: {optional_detail}"
-                )
-
-            try:
-                return response.json()["embedding"]
-            except httpx.HTTPStatusError as e:
-                raise ValueError(
-                    f"Error raised for Ollama Call: {e}.\nResponse: {response.text}"
-                )
+        result = await self._async_client.embeddings(
+            model=self.model_name, prompt=prompt, options=self.ollama_additional_kwargs
+        )
+        return result["embedding"]

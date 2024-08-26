@@ -1,14 +1,17 @@
 """Elasticsearch/Opensearch vector store."""
 
 import asyncio
-import json
 import uuid
+from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
     MetadataFilters,
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -210,16 +213,89 @@ class OpensearchVectorClient:
             "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
         }
 
-    def _parse_filters(self, filters: Optional[MetadataFilters]) -> Any:
-        pre_filter = []
-        if filters is not None:
-            for f in filters.legacy_filters():
-                if isinstance(f.value, str):
-                    pre_filter.append({f.key: f.value})
-                else:
-                    pre_filter.append({f.key: json.loads(str(f.value))})
+    def _is_text_field(self, value: Any) -> bool:
+        """Check if value is a string and keyword filtering needs to be performed.
 
-        return pre_filter
+        Not applied to datetime strings.
+        """
+        if isinstance(value, str):
+            try:
+                datetime.fromisoformat(value)
+                return False
+            except ValueError as e:
+                return True
+        else:
+            return False
+
+    def _parse_filter(self, filter: MetadataFilter) -> dict:
+        """Parse a single MetadataFilter to equivalent OpenSearch expression.
+
+        As Opensearch does not differentiate between scalar/array keyword fields, IN and ANY are equivalent.
+        """
+        key = f"metadata.{filter.key}"
+        op = filter.operator
+
+        equality_postfix = ".keyword" if self._is_text_field(value=filter.value) else ""
+
+        if op == FilterOperator.EQ:
+            return {"term": {f"{key}{equality_postfix}": filter.value}}
+        elif op in [
+            FilterOperator.GT,
+            FilterOperator.GTE,
+            FilterOperator.LT,
+            FilterOperator.LTE,
+        ]:
+            return {"range": {key: {filter.operator.name.lower(): filter.value}}}
+        elif op == FilterOperator.NE:
+            return {
+                "bool": {
+                    "must_not": {"term": {f"{key}{equality_postfix}": filter.value}}
+                }
+            }
+        elif op in [FilterOperator.IN, FilterOperator.ANY]:
+            return {"terms": {key: filter.value}}
+        elif op == FilterOperator.NIN:
+            return {"bool": {"must_not": {"terms": {key: filter.value}}}}
+        elif op == FilterOperator.ALL:
+            return {
+                "terms_set": {
+                    key: {
+                        "terms": filter.value,
+                        "minimum_should_match_script": {"source": "params.num_terms"},
+                    }
+                }
+            }
+        elif op == FilterOperator.TEXT_MATCH:
+            return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
+        elif op == FilterOperator.CONTAINS:
+            return {"wildcard": {key: f"*{filter.value}*"}}
+        else:
+            raise ValueError(f"Unsupported filter operator: {filter.operator}")
+
+    def _parse_filters_recursively(self, filters: MetadataFilters) -> dict:
+        """Parse (possibly nested) MetadataFilters to equivalent OpenSearch expression."""
+        condition_map = {FilterCondition.AND: "must", FilterCondition.OR: "should"}
+
+        bool_clause = condition_map[filters.condition]
+        bool_query: dict[str, dict[str, list[dict]]] = {"bool": {bool_clause: []}}
+
+        for filter_item in filters.filters:
+            if isinstance(filter_item, MetadataFilter):
+                bool_query["bool"][bool_clause].append(self._parse_filter(filter_item))
+            elif isinstance(filter_item, MetadataFilters):
+                bool_query["bool"][bool_clause].append(
+                    self._parse_filters_recursively(filter_item)
+                )
+            else:
+                raise ValueError(f"Unsupported filter type: {type(filter_item)}")
+
+        return bool_query
+
+    def _parse_filters(self, filters: Optional[MetadataFilters]) -> List[dict]:
+        """Parse MetadataFilters to equivalent OpenSearch expression."""
+        if filters is None:
+            return []
+        return [self._parse_filters_recursively(filters=filters)]
 
     def _knn_search_query(
         self,
@@ -412,13 +488,7 @@ class OpensearchVectorClient:
             query["query"]["bool"]["filter"].append({"terms": {"_id": node_ids or []}})
 
         if filters:
-            for filter in self._parse_filters(filters):
-                newfilter = {}
-
-                for key in filter:
-                    newfilter[f"metadata.{key}.keyword"] = filter[key]
-
-                query["query"]["bool"]["filter"].append({"term": newfilter})
+            query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
 
         await self._os_client.delete_by_query(index=self._index, body=query)
 

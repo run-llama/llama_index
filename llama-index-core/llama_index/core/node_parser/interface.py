@@ -1,9 +1,16 @@
 """Node parser interface."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Sequence, Optional
+from typing_extensions import Annotated
 
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    WithJsonSchema,
+    BeforeValidator,
+    ConfigDict,
+    PlainSerializer,
+)
 from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayload
 from llama_index.core.node_parser.node_utils import (
     build_nodes_from_splits,
@@ -19,9 +26,30 @@ from llama_index.core.schema import (
 from llama_index.core.utils import get_tqdm_iterable
 
 
+def _validate_id_func(v: Any) -> Any:
+    if v is None:
+        return default_id_func
+    return v
+
+
+def _serialize_id_func(f: Callable) -> Any:
+    return {"id_func_name": f"{f.__name__}", "title": "id_func"}
+
+
+IdFuncCallable = Annotated[
+    Callable,
+    Field(validate_default=True),
+    BeforeValidator(_validate_id_func),
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+    PlainSerializer(_serialize_id_func),
+]
+
+
 class NodeParser(TransformComponent, ABC):
     """Base interface for node parser."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     include_metadata: bool = Field(
         default=True, description="Whether or not to consider metadata when splitting."
     )
@@ -29,22 +57,12 @@ class NodeParser(TransformComponent, ABC):
         default=True, description="Include prev/next node relationships."
     )
     callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
+        default_factory=lambda: CallbackManager([]), exclude=True
     )
-    id_func: Callable = Field(
+    id_func: Optional[IdFuncCallable] = Field(
         default=None,
         description="Function to generate node IDs.",
-        exclude=True,
     )
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator("id_func", pre=True)
-    def _validate_id_func(cls, v: Any) -> Any:
-        if v is None:
-            return default_id_func
-        return v
 
     @abstractmethod
     def _parse_nodes(
@@ -68,8 +86,15 @@ class NodeParser(TransformComponent, ABC):
     ) -> List[BaseNode]:
         for i, node in enumerate(nodes):
             parent_doc = parent_doc_map.get(node.ref_doc_id, None)
+            parent_node = node.relationships.get(NodeRelationship.SOURCE, None)
 
             if parent_doc is not None:
+                if parent_doc.source_node is not None:
+                    node.relationships.update(
+                        {
+                            NodeRelationship.SOURCE: parent_doc.source_node,
+                        }
+                    )
                 start_char_idx = parent_doc.text.find(
                     node.get_content(metadata_mode=MetadataMode.NONE)
                 )
@@ -83,7 +108,17 @@ class NodeParser(TransformComponent, ABC):
 
                 # update metadata
                 if self.include_metadata:
-                    node.metadata.update(parent_doc.metadata)
+                    # Merge parent_doc.metadata into nodes.metadata, giving preference to node's values
+                    node.metadata = {**parent_doc.metadata, **node.metadata}
+
+            if parent_node is not None:
+                if self.include_metadata:
+                    parent_metadata = parent_node.metadata
+
+                    combined_metadata = {**parent_metadata, **node.metadata}
+
+                    # Merge parent_node.metadata into nodes.metadata, giving preference to node's values
+                    node.metadata.update(combined_metadata)
 
             if self.include_prev_next_rel:
                 # establish prev/next relationships if nodes share the same source_node

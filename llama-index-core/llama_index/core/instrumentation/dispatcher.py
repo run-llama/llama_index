@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Dict, Protocol
 import inspect
 import uuid
 from deprecated import deprecated
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.span_handlers import (
@@ -52,6 +52,7 @@ class Dispatcher(BaseModel):
         hierarchy.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str = Field(default_factory=str, description="Name of dispatcher")
     event_handlers: List[BaseEventHandler] = Field(
         default=[], description="List of attached handlers"
@@ -314,9 +315,6 @@ class Dispatcher(BaseModel):
         else:
             return self.name
 
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class Manager:
     def __init__(self, root: Dispatcher) -> None:
@@ -329,4 +327,4 @@ class Manager:
             self.dispatchers[d.name] = d
 
 
-Dispatcher.update_forward_refs()
+Dispatcher.model_rebuild()

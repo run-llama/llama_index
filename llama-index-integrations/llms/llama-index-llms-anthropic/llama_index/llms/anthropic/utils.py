@@ -2,7 +2,7 @@ from typing import Dict, Sequence, Tuple
 
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
-from anthropic.types import MessageParam, TextBlockParam
+from anthropic.types import MessageParam, TextBlockParam, ImageBlockParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 
@@ -83,7 +83,16 @@ def messages_to_anthropic_messages(
             anthropic_messages.append(anth_message)
         else:
             content = []
-            if message.content:
+            if message.content and isinstance(message.content, list):
+                for item in message.content:
+                    if item and isinstance(item, dict) and item.get("type", None):
+                        if item["type"] == "image":
+                            content.append(ImageBlockParam(**item))
+                        else:
+                            content.append(TextBlockParam(**item))
+                    else:
+                        content.append(TextBlockParam(text=item, type="text"))
+            elif message.content:
                 content.append(TextBlockParam(text=message.content, type="text"))
 
             tool_calls = message.additional_kwargs.get("tool_calls", [])
