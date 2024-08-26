@@ -29,16 +29,16 @@ license = "MIT"
 maintainers = ["logan-markewich"]
 name = "llama-index-packs-zephyr-query-engine"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 torch = "^2.1.2"
 transformers = "^4.37.1"
 accelerate = "^0.26.1"
 bitsandbytes = "^0.42.0"
-llama-index-llms-huggingface = "^0.1.1"
+llama-index-llms-huggingface = "^0.3.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

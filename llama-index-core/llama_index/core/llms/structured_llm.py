@@ -18,7 +18,12 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
@@ -77,7 +82,7 @@ class StructuredLLM(LLM):
 
     """
 
-    llm: LLM
+    llm: SerializeAsAny[LLM]
     output_cls: Type[BaseModel] = Field(
         ..., description="Output class for the structured LLM.", exclude=True
     )
@@ -105,7 +110,9 @@ class StructuredLLM(LLM):
             output_cls=self.output_cls, prompt=chat_prompt
         )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
             raw=output,
         )
 
@@ -157,7 +164,9 @@ class StructuredLLM(LLM):
             output_cls=self.output_cls, prompt=chat_prompt
         )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
             raw=output,
         )
 
@@ -216,10 +225,8 @@ class StructuredLLMComponent(QueryComponent):
 
     """
 
-    llm_component: BaseLLMComponent
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    llm_component: SerializeAsAny[BaseLLMComponent]
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""

@@ -142,15 +142,15 @@ class QueryUnderstandingAgentWorker(CustomSimpleAgentWorker):
                 raise ValueError(
                     f"Tool {tool.metadata.name} is not a query engine tool."
                 )
+        super().__init__(
+            tools=tools,
+            **kwargs,
+        )
         self._router_query_engine = RouterQueryEngine.from_defaults(
             llm=kwargs.get("llm"),
             select_multi=False,
             query_engine_tools=tools,
             verbose=kwargs.get("verbose", False),
-        )
-        super().__init__(
-            tools=tools,
-            **kwargs,
         )
 
     def _initialize_state(self, task: Task, **kwargs: Any) -> Dict[str, Any]:

@@ -36,8 +36,9 @@ def get_api_key(instance: Any) -> str:
 
 
 def test_create_default_url_without_api_key(masked_env_var: str) -> None:
-    with pytest.warns(UserWarning):
+    with pytest.raises(ValueError) as e:
         Interface()
+    assert "API key is required" in str(e.value)
 
 
 @pytest.mark.usefixtures("mock_local_models")
@@ -70,7 +71,7 @@ def test_missing_api_key_error(masked_env_var: str) -> None:
     with pytest.raises(Exception) as exc_info:
         client.get_query_embedding("Hello, world!")
     message = str(exc_info.value)
-    assert "404" in message
+    assert "401" in message
 
 
 @pytest.mark.integration()

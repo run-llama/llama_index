@@ -38,7 +38,7 @@ class EmbeddingQAFinetuneDataset(BaseModel):
             path (str): The file path to save the JSON.
         """
         with open(path, "w") as f:
-            json.dump(self.dict(), f, indent=4)
+            json.dump(self.model_dump(), f, indent=4)
 
     @classmethod
     def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":

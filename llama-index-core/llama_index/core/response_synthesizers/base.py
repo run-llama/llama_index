@@ -26,10 +26,11 @@ from llama_index.core.base.response.schema import (
     StreamingResponse,
     AsyncStreamingResponse,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.mixin import PromptMixin
 from llama_index.core.schema import (
     BaseNode,
@@ -38,13 +39,7 @@ from llama_index.core.schema import (
     QueryBundle,
     QueryType,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.types import RESPONSE_TEXT_TYPE
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.synthesis import (
@@ -74,24 +69,19 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
-        output_cls: BaseModel = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
+        output_cls: Optional[BaseModel] = None,
     ) -> None:
         """Init params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         if callback_manager:
             self._llm.callback_manager = callback_manager
 
-        self._callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        self._callback_manager = callback_manager or Settings.callback_manager
 
         self._prompt_helper = (
             prompt_helper
@@ -170,7 +160,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
         if isinstance(self._llm, StructuredLLM):
             # convert string to output_cls
-            output = self._llm.output_cls.parse_raw(response_str)
+            output = self._llm.output_cls.model_validate_json(response_str)
             return PydanticResponse(
                 output,
                 source_nodes=source_nodes,
@@ -344,10 +334,8 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 class SynthesizerComponent(QueryComponent):
     """Synthesizer component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     synthesizer: BaseSynthesizer = Field(..., description="Synthesizer")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

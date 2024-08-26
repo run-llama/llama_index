@@ -64,6 +64,12 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         )
         response = query_engine.query("<query_str>")
         """
+        super().__init__(
+            percentile_cutoff=percentile_cutoff,
+            threshold_cutoff=threshold_cutoff,
+            context_after=context_after,
+            context_before=context_before,
+        )
         self._embed_model = embed_model or Settings.embed_model
         if self._embed_model is None:
             try:
@@ -84,13 +90,6 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
             tokenizer = nltk.tokenize.PunktSentenceTokenizer()
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
-
-        super().__init__(
-            percentile_cutoff=percentile_cutoff,
-            threshold_cutoff=threshold_cutoff,
-            context_after=context_after,
-            context_before=context_before,
-        )
 
     @classmethod
     def class_name(cls) -> str:

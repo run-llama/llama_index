@@ -30,11 +30,11 @@ class NetworkQueryEngine(BaseQueryEngine):
         response_synthesizer: Optional[BaseSynthesizer] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
+        super().__init__(callback_manager=callback_manager)
         self._contributors = contributors
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=Settings.llm, callback_manager=Settings.callback_manager
         )
-        super().__init__(callback_manager=callback_manager)
 
     @classmethod
     def from_args(
