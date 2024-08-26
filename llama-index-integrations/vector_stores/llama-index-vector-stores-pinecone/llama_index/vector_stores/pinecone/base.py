@@ -255,7 +255,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
-        self._tokenizer = tokenizer
 
         super().__init__(
             index_name=index_name,
@@ -268,6 +267,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
         )
+
+        self._tokenizer = tokenizer
 
         # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
         #  ValueError

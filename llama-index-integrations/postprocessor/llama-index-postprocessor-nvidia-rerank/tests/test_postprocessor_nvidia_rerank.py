@@ -126,13 +126,13 @@ def test_direct_top_n_greater_len_docs(
 
 @pytest.mark.parametrize("batch_size", [-10, 0])
 def test_invalid_max_batch_size(model: str, mode: dict, batch_size: int) -> None:
-    ranker = NVIDIARerank(model=model, **mode)
+    ranker = NVIDIARerank(api_key="BOGUS", model=model, **mode)
     with pytest.raises(ValueError):
         ranker.max_batch_size = batch_size
 
 
 def test_invalid_top_n(model: str, mode: dict) -> None:
-    ranker = NVIDIARerank(model=model, **mode)
+    ranker = NVIDIARerank(api_key="BOGUS", model=model, **mode)
     with pytest.raises(ValueError):
         ranker.top_n = -10
 

@@ -183,6 +183,10 @@ def create_neptune_analytics_client(
             ) from e
 
 
+def refresh_structured_schema(query: str, summary: Dict) -> None:
+    """Refreshes the Neptune graph schema information."""
+
+
 def refresh_schema(query: str, summary: Dict) -> None:
     """Refreshes the Neptune graph schema information."""
     types = {
@@ -199,15 +203,25 @@ def refresh_schema(query: str, summary: Dict) -> None:
     triple_schema = _get_triples(query, e_labels)
     node_properties = _get_node_properties(query, n_labels, types)
     edge_properties = _get_edge_properties(query, e_labels, types)
+    structured_schema = {
+        "node_labels": n_labels,
+        "edge_labels": e_labels,
+        "node_properties": node_properties,
+        "edge_properties": edge_properties,
+        "triples": triple_schema,
+    }
 
-    return f"""
+    return {
+        "schema_str": f"""
         Node properties are the following:
         {node_properties}
         Relationship properties are the following:
         {edge_properties}
         The relationships are the following:
         {triple_schema}
-        """
+        """,
+        "structured_schema": structured_schema,
+    }
 
 
 def _get_triples(query: str, e_labels: List[str]) -> List[str]:

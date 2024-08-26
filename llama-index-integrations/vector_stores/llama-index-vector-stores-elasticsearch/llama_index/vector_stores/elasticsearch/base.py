@@ -243,16 +243,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
         metadata_mappings = metadata_mappings or {}
         metadata_mappings.update(base_metadata_mappings)
 
-        self._store = AsyncVectorStore(
-            user_agent=get_user_agent(),
-            client=es_client,
-            index=index_name,
-            retrieval_strategy=retrieval_strategy,
-            text_field=text_field,
-            vector_field=vector_field,
-            metadata_mappings=metadata_mappings,
-        )
-
         super().__init__(
             index_name=index_name,
             es_client=es_client,
@@ -266,6 +256,16 @@ class ElasticsearchStore(BasePydanticVectorStore):
             batch_size=batch_size,
             distance_strategy=distance_strategy,
             retrieval_strategy=retrieval_strategy,
+        )
+
+        self._store = AsyncVectorStore(
+            user_agent=get_user_agent(),
+            client=es_client,
+            index=index_name,
+            retrieval_strategy=retrieval_strategy,
+            text_field=text_field,
+            vector_field=vector_field,
+            metadata_mappings=metadata_mappings,
         )
 
         # Disable query embeddings when using Sparse vectors or BM25.
