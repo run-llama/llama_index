@@ -581,14 +581,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 search_params=self.search_config,
                 anns_field=self.embedding_field,
             )
-                
+
             nodes = res[0]
             node_embeddings = []
             node_ids = []
             for node in nodes:
                 node_embeddings.append(node["entity"]["embedding"])
                 node_ids.append(node["id"])
-            
+
             mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
                 query_embedding=query.query_embedding,
                 embeddings=node_embeddings,
@@ -599,7 +599,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
             node_dict = dict(list(zip(node_ids, nodes)))
             selected_nodes = [node_dict[id] for id in mmr_ids if id in node_dict]
-
 
             nodes = []
             # Parse the results
@@ -626,10 +625,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     node = TextNode(text=text, metadata=metadata)
 
                 nodes.append(node)
-            
+
             similarities = mmr_similarities  # Passing the MMR similarities instead of the original similarities
             ids = mmr_ids
-
 
             logger.debug(
                 f"Successfully performed MMR on embeddings in collection: {self.collection_name}"
