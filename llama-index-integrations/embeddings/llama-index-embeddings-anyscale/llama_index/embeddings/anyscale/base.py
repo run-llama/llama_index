@@ -183,9 +183,6 @@ class AnyscaleEmbedding(BaseEmbedding):
         else:
             model_name = model
 
-        self._query_engine = model_name
-        self._text_engine = model_name
-
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -201,6 +198,8 @@ class AnyscaleEmbedding(BaseEmbedding):
             **kwargs,
         )
 
+        self._query_engine = model_name
+        self._text_engine = model_name
         self._client = None
         self._aclient = None
         self._http_client = http_client

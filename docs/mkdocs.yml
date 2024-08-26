@@ -4,8 +4,10 @@ extra:
     provider: google
 extra_css:
   - css/style.css
+  - css/algolia.css
 extra_javascript:
   - javascript/mendablesearch.js
+  - javascript/algolia.js
 markdown_extensions:
   - attr_list
   - admonition
@@ -51,6 +53,8 @@ nav:
           - Branches and loops: ./understanding/workflows/branches_and_loops.md
           - Maintaining state: ./understanding/workflows/state.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
+          - Subclassing workflows: ./understanding/workflows/subclass.md
+          - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
@@ -2775,7 +2779,7 @@ plugins:
         ./use_cases/text_to_sql.html: https://docs.llamaindex.ai/en/stable/use_cases/text_to_sql/
       use_directory_urls: false
 site_name: LlamaIndex
-site_url: https://docs.llamaindex.ai/
+site_url: https://docs.llamaindex.ai/en/stable/
 theme:
   custom_dir: overrides
   favicon: _static/assets/LlamaLogoBrowserTab.png

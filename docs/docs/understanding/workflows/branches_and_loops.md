@@ -14,7 +14,7 @@ class LoopEvent(Event):
 Now we'll `import random` and modify our `step_one` function to randomly decide either to loop or to continue:
 
 ```python
-@step()
+@step
 async def step_one(self, ev: StartEvent | LoopEvent) -> FirstEvent | LoopEvent:
     if random.randint(0, 1) == 0:
         print("Bad thing happened")
@@ -52,7 +52,7 @@ class BranchB2Event(Event):
 
 
 class BranchWorkflow(Workflow):
-    @step()
+    @step
     async def start(self, ev: StartEvent) -> BranchA1Event | BranchB1Event:
         if random.randint(0, 1) == 0:
             print("Go to branch A")
@@ -61,22 +61,22 @@ class BranchWorkflow(Workflow):
             print("Go to branch B")
             return BranchB1Event(payload="Branch B")
 
-    @step()
+    @step
     async def step_a1(self, ev: BranchA1Event) -> BranchA2Event:
         print(ev.payload)
         return BranchA2Event(payload=ev.payload)
 
-    @step()
+    @step
     async def step_b1(self, ev: BranchB1Event) -> BranchB2Event:
         print(ev.payload)
         return BranchB2Event(payload=ev.payload)
 
-    @step()
+    @step
     async def step_a2(self, ev: BranchA2Event) -> StopEvent:
         print(ev.payload)
         return StopEvent(result="Branch A complete.")
 
-    @step()
+    @step
     async def step_b2(self, ev: BranchB2Event) -> StopEvent:
         print(ev.payload)
         return StopEvent(result="Branch B complete.")

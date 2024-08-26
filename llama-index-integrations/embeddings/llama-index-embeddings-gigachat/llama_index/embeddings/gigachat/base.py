@@ -54,18 +54,18 @@ class GigaChatEmbedding(BaseEmbedding):
                 Set 'GIGACHAT_API_PERS' for personal use or 'GIGACHAT_API_CORP' for corporate use.
                 """
             )
-        try:
-            self._client = GigaChat(
-                scope=scope, credentials=auth_data, verify_ssl_certs=False
-            )
-        except Exception as e:
-            raise ValueError(f"GigaChat client failed to initialize. Error: {e}") from e
         super().__init__(
             model_name=name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
         )
+        try:
+            self._client = GigaChat(
+                scope=scope, credentials=auth_data, verify_ssl_certs=False
+            )
+        except Exception as e:
+            raise ValueError(f"GigaChat client failed to initialize. Error: {e}") from e
 
     @classmethod
     def class_name(cls) -> str:

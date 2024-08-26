@@ -47,16 +47,17 @@ maintainers = [
 ]
 name = "llama-index-readers-google"
 readme = "README.md"
-version = "0.3.1"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-llama-index-core = "^0.10.11.post1"
 google-api-python-client = "^2.115.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
 pydrive = "^1.3.1"
 gkeepapi = "^0.15.1"
+pandas = "*"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

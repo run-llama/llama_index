@@ -13,12 +13,8 @@ from llama_index.core.langchain_helpers.agents.tools import (
 class LlamaToolkit(BaseToolkit):
     """Toolkit for interacting with Llama indices."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     index_configs: List[IndexToolConfig] = Field(default_factory=list)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

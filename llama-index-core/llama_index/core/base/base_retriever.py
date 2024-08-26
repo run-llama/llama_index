@@ -11,7 +11,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.prompts.mixin import (
@@ -27,7 +27,6 @@ from llama_index.core.schema import (
     QueryType,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -213,7 +212,10 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
         return [
             n
             for n in retrieved_nodes
-            if not ((n.node.hash, n.node.ref_doc_id) in seen or seen.add((n.node.hash, n.node.ref_doc_id)))  # type: ignore[func-returns-value]
+            if not (
+                (n.node.hash, n.node.ref_doc_id) in seen
+                or seen.add((n.node.hash, n.node.ref_doc_id))
+            )  # type: ignore[func-returns-value]
         ]
 
     @dispatcher.span
@@ -304,19 +306,6 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
         """
         return self._retrieve(query_bundle)
 
-    def get_service_context(self) -> Optional[ServiceContext]:
-        """Attempts to resolve a service context.
-        Short-circuits at self.service_context, self._service_context,
-        or self._index.service_context.
-        """
-        if hasattr(self, "service_context"):
-            return self.service_context
-        if hasattr(self, "_service_context"):
-            return self._service_context
-        elif hasattr(self, "_index") and hasattr(self._index, "service_context"):
-            return self._index.service_context
-        return None
-
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return a query component."""
         return RetrieverComponent(retriever=self)
@@ -325,10 +314,8 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 class RetrieverComponent(QueryComponent):
     """Retriever component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     retriever: BaseRetriever = Field(..., description="Retriever")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

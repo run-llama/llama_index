@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, AsyncGenerator, Generator, Optional, Union, List, Any
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 try:
@@ -49,7 +49,7 @@ class ChatMessage(BaseModel):
 
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, (V1BaseModel, V2BaseModel)):
-            return value.dict()
+            return value.model_dump()
         if isinstance(value, dict):
             return {
                 key: self._recursive_serialization(value)
@@ -60,8 +60,11 @@ class ChatMessage(BaseModel):
         return value
 
     def dict(self, **kwargs: Any) -> dict:
+        return self.model_dump(**kwargs)
+
+    def model_dump(self, **kwargs: Any) -> dict:
         # ensure all additional_kwargs are serializable
-        msg = super().dict(**kwargs)
+        msg = super().model_dump(**kwargs)
 
         for key, value in msg.get("additional_kwargs", {}).items():
             value = self._recursive_serialization(value)
@@ -129,6 +132,9 @@ CompletionResponseAsyncGen = AsyncGenerator[CompletionResponse, None]
 
 
 class LLMMetadata(BaseModel):
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(

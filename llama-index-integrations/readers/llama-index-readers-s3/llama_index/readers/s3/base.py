@@ -7,6 +7,7 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 
 import warnings
 from typing import Callable, Dict, List, Optional, Union
+from typing_extensions import Annotated
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -17,7 +18,13 @@ from llama_index.core.readers.base import (
     ResourcesReaderMixin,
 )
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, WithJsonSchema
+
+
+FileMetadataCallable = Annotated[
+    Callable[[str], Dict],
+    WithJsonSchema({"type": "string"}),
+]
 
 
 class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
@@ -61,7 +68,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     required_exts: Optional[List[str]] = None
     filename_as_id: bool = True
     num_files_limit: Optional[int] = None
-    file_metadata: Optional[Callable[[str], Dict]] = Field(default=None, exclude=True)
+    file_metadata: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
     aws_access_id: Optional[str] = None
     aws_access_secret: Optional[str] = None
     aws_session_token: Optional[str] = None

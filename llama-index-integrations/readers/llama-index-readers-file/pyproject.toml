@@ -51,16 +51,17 @@ license = "MIT"
 maintainers = ["FarisHijazi", "Haowjy", "ephe-meral", "hursh-desai", "iamarunbrahma", "jon-chuang", "mmaatouk", "ravi03071991", "sangwongenip", "thejessezhang"]
 name = "llama-index-readers-file"
 readme = "README.md"
-version = "0.1.33"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.37.post1"
 # pymupdf is AGPLv3-licensed, so it's optional
 pymupdf = {optional = true, version = "^1.23.21"}
 beautifulsoup4 = "^4.12.3"
 pypdf = "^4.0.1"
 striprtf = "^0.0.26"
+pandas = "*"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.extras]
 pymupdf = [

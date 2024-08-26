@@ -245,6 +245,19 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                 "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
 
+        super().__init__(
+            model_name=model_name,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            **kwargs,
+        )
+
         self._client = ChatCompletionsClient(
             endpoint=endpoint,
             credential=credential,
@@ -257,19 +270,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             credential=credential,
             user_agent="llamaindex",
             **client_kwargs,
-        )
-
-        super().__init__(
-            model_name=model_name,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-            **kwargs,
         )
 
     @classmethod

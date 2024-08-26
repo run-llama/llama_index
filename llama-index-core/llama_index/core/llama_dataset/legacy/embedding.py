@@ -1,4 +1,5 @@
 """Common utils for embeddings."""
+
 import json
 import re
 import uuid
@@ -37,7 +38,7 @@ class EmbeddingQAFinetuneDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            json.dump(self.dict(), f, indent=4)
+            json.dump(self.model_dump(), f, indent=4)
 
     @classmethod
     def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":
