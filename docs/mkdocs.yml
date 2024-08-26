@@ -2,6 +2,9 @@ extra:
   analytics:
     property: G-BYVB1ZVE6J
     provider: google
+  version:
+    default: stable
+    provider: mike
 extra_css:
   - css/style.css
   - css/algolia.css
