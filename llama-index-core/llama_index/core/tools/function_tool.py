@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
+
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
@@ -15,7 +17,7 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
 
     return _async_wrapped_fn
@@ -25,8 +27,7 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
     """Async from sync."""
 
     def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(func_async(*args, **kwargs))
+        return asyncio_run(func_async(*args, **kwargs))
 
     return _sync_wrapped_fn
 
