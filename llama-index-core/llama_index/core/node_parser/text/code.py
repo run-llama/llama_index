@@ -108,6 +108,7 @@ class CodeSplitter(TextSplitter):
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
+            callback_manager=callback_manager,
             parser=parser,
         )
 

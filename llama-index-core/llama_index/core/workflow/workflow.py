@@ -60,13 +60,13 @@ class Workflow(metaclass=_WorkflowMeta):
 
         cls._step_functions[func.__name__] = func
 
-    def add_services(self, **services: "Workflow") -> None:
-        """Adds one or more services to this workflow.
+    def add_workflows(self, **workflows: "Workflow") -> None:
+        """Adds one or more nested workflows to this workflow.
 
         This method only accepts keyword arguments, and the name of the parameter
-        will be used as the name of the service.
+        will be used as the name of the workflow.
         """
-        for name, wf in services.items():
+        for name, wf in workflows.items():
             self._service_manager.add(name, wf)
 
     def _get_steps(self) -> Dict[str, Callable]:
@@ -88,7 +88,7 @@ class Workflow(metaclass=_WorkflowMeta):
                 step_func, "__step_config", None
             )
             if not step_config:
-                raise ValueError(f"Step {name} is missing `@step()` decorator.")
+                raise ValueError(f"Step {name} is missing `@step` decorator.")
 
             async def _task(
                 name: str,
@@ -295,7 +295,7 @@ class Workflow(metaclass=_WorkflowMeta):
         """Checks if the workflow is done."""
         return self._step_session is None
 
-    @step()
+    @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         ctx.session._retval = ev.result or None
@@ -316,7 +316,7 @@ class Workflow(metaclass=_WorkflowMeta):
                 step_func, "__step_config", None
             )
             if not step_config:
-                raise ValueError(f"Step {name} is missing `@step()` decorator.")
+                raise ValueError(f"Step {name} is missing `@step` decorator.")
 
             for event_type in step_config.accepted_events:
                 consumed_events.add(event_type)

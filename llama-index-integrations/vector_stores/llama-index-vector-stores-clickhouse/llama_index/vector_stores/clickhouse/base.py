@@ -197,8 +197,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         if clickhouse_client is None:
             raise ValueError("Missing ClickHouse client!")
-        self._client = clickhouse_client
-        self._config = ClickHouseSettings(
+        client = clickhouse_client
+        config = ClickHouseSettings(
             table=table,
             database=database,
             engine=engine,
@@ -211,7 +211,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         )
 
         # schema column name, type, and construct format method
-        self._column_config: Dict = {
+        column_config: Dict = {
             "id": {"type": "String", "extract_func": lambda x: x.node_id},
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
@@ -233,14 +233,10 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
                 "extract_func": lambda x: json.dumps(x.metadata),
             },
         }
-        self._column_names = list(self._column_config.keys())
-        self._column_type_names = [
-            self._column_config[column_name]["type"]
-            for column_name in self._column_names
+        column_names = list(self._column_config.keys())
+        column_type_names = [
+            column_config[column_name]["type"] for column_name in column_names
         ]
-
-        dimension = len(Settings.embed_model.get_query_embedding("try this out"))
-        self.create_table(dimension)
 
         super().__init__(
             clickhouse_client=clickhouse_client,
@@ -253,6 +249,13 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             index_params=index_params,
             search_params=search_params,
         )
+        self._client = client
+        self._config = config
+        self._column_config = column_config
+        self._column_names = column_names
+        self._column_type_names = column_type_names
+        dimension = len(Settings.embed_model.get_query_embedding("try this out"))
+        self.create_table(dimension)
 
     @property
     def client(self) -> Any:

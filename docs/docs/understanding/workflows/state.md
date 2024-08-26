@@ -2,9 +2,9 @@
 
 In our examples so far, we have passed data from step to step using properties of custom events. This is a powerful way to pass data around, but it has limitations. For example, if you want to pass data between steps that are not directly connected, you need to pass the data through all the steps in between. This can make your code harder to read and maintain.
 
-To avoid this pitfall, we have a `Context` object available to every step in the workflow. To use it, you must explicitly tell the step decorator to pass the context to the step. Here's how you do that.
+To avoid this pitfall, we have a `Context` object available to every step in the workflow. To use it, declare an argument of type `Context` to your step. Here's how you do that.
 
-We need one new import, the `Context`:
+We need one new import, the `Context` type:
 
 ```python
 from llama_index.core.workflow import (

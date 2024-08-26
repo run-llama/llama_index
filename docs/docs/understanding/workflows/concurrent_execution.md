@@ -122,4 +122,4 @@ The visualization of this workflow is quite pleasing:
 
 ![A concurrent workflow](./different_events.png)
 
-Finally, let's take a look at [observability and debugging](observability.md) in workflows.
+Now let's look at how [we can extend workflows](extending.md).
