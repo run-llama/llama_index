@@ -66,7 +66,7 @@ class Workflow(metaclass=_WorkflowMeta):
         session = next(iter(self._sessions))
         while True:
             ev = await session.streaming_queue.get()
-            if ev is None:  # FIXME: Should we use a special event?
+            if type(ev) is StopEvent:
                 break
 
             yield ev
@@ -322,7 +322,7 @@ class Workflow(metaclass=_WorkflowMeta):
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         ctx.session._retval = ev.result or None
-        ctx.session.write_stream_event(None)  # FIXME: send a special event instead?
+        ctx.session.write_stream_event(ev)
 
         # Signal we want to stop the workflow
         raise WorkflowDone
