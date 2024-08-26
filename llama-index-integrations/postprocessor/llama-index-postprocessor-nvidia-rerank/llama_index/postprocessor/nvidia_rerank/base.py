@@ -23,8 +23,6 @@ MODEL_ENDPOINT_MAP = {
     "nv-rerank-qa-mistral-4b:1": "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking",
 }
 
-KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
-
 dispatcher = get_dispatcher(__name__)
 
 
@@ -61,6 +59,8 @@ class NVIDIARerank(BaseNodePostprocessor):
     )
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
+    _is_hosted: bool = PrivateAttr(True)
+    _base_url: str = PrivateAttr(MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL))
     _inference_url: Optional[str] = PrivateAttr(None)
 
     def _set_api_key(self, nvidia_api_key: str = None, api_key: str = None) -> None:
@@ -97,11 +97,16 @@ class NVIDIARerank(BaseNodePostprocessor):
         API Key:
         - The recommended way to provide the API key is through the `NVIDIA_API_KEY` environment variable.
         """
-        super().__init__(model=model, **kwargs)
 
-        if base_url and base_url not in KNOWN_URLS:
-            base_url = self._validate_url(base_url)
-        self._base_url = base_url or MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        if not base_url or (base_url in MODEL_ENDPOINT_MAP.values() and not model):
+            model = model or DEFAULT_MODEL
+        super().__init__(model=model, **kwargs)
+        
+        base_url = base_url or MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL)
+        self._is_hosted = base_url in MODEL_ENDPOINT_MAP.values()
+
+        if not self._is_hosted and base_url:
+            self._base_url = base_url.rstrip("/") + "/"
 
         self._api_key = get_from_param_or_env(
             "api_key",
@@ -110,10 +115,14 @@ class NVIDIARerank(BaseNodePostprocessor):
             "NO_API_KEY_PROVIDED",
         )
 
-        if base_url:  # on-premises mode
+        if not self._is_hosted:  # on-premises mode
             # in this case we trust the model name and base_url
             self._inference_url = self._validate_url(base_url) + "/rankings"
+            if not model:
+                self.__set_default_model()
         else:  # hosted mode
+            if not model:
+                model = MODEL_ENDPOINT_MAP.get(base_url)
             if model not in MODEL_ENDPOINT_MAP:
                 raise ValueError(
                     f"Model '{model}' not found. "
@@ -122,6 +131,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             if self._api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
             self._inference_url = MODEL_ENDPOINT_MAP[model]
+        
         if not model:
             self.__set_default_model()
 
@@ -149,11 +159,16 @@ class NVIDIARerank(BaseNodePostprocessor):
     def _get_models(self) -> List[Model]:
         session = requests.Session()
 
-        _headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Accept": "application/json",
-        }
-        url = urljoin(self._base_url, "models")
+        if self._is_hosted:
+            _headers = {
+                "Authorization": f"Bearer {self._api_key}",
+                "Accept": "application/json",
+            }
+        else:
+            _headers = {
+                "Accept": "application/json",
+            }
+        url = "https://integrate.api.nvidia.com/v1/models" if self._is_hosted else urljoin(self._base_url, "models")
         response = session.get(url, headers=_headers)
         response.raise_for_status()
 
@@ -197,7 +212,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                 warnings.warn(f"{expected_format} Rest is Ignored.")
             else:
                 raise ValueError(f"Invalid base_url, {expected_format}")
-        return urlunparse((result.scheme, result.netloc, "v1/", "", "", ""))
+        return base_url
 
     @property
     def available_models(self) -> List[Model]:
