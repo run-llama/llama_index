@@ -165,11 +165,6 @@ class MistralAI(FunctionCallingLLM):
         # Use the custom endpoint if provided, otherwise default to DEFAULT_MISTRALAI_ENDPOINT
         endpoint = endpoint or DEFAULT_MISTRALAI_ENDPOINT
 
-        self._client = Mistral(
-            api_key=api_key,
-            server_url=endpoint,
-        )
-
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
@@ -185,6 +180,11 @@ class MistralAI(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+
+        self._client = Mistral(
+            api_key=api_key,
+            server_url=endpoint,
         )
 
     @classmethod

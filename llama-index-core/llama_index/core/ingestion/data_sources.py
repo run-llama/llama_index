@@ -6,7 +6,6 @@ from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
-    GenericModel,
     ValidationError,
 )
 from llama_index.core.readers.base import BasePydanticReader, ReaderConfig
@@ -443,7 +442,7 @@ ConfigurableDataSources = build_configurable_data_source_enum()
 T = TypeVar("T", bound=BaseComponent)
 
 
-class ConfiguredDataSource(GenericModel, Generic[T]):
+class ConfiguredDataSource(BaseModel, Generic[T]):
     """
     A class containing metadata & implementation for a data source in a pipeline.
     """

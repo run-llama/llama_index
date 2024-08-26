@@ -6,6 +6,7 @@ from .events import Event
 
 if TYPE_CHECKING:
     from .workflow import Workflow
+    from .session import WorkflowSession
 
 
 class Context:
@@ -20,21 +21,21 @@ class Context:
     """
 
     def __init__(
-        self, parent: Optional["Context"] = None, workflow: Optional["Workflow"] = None
+        self,
+        session: Optional["WorkflowSession"] = None,
+        parent: Optional["Context"] = None,
     ) -> None:
-        # Sanity check
-        if parent is None and workflow is None:
-            msg = "The `workflow` parameter is required to create a root context"
-            raise ValueError(msg)
-
-        if parent:
-            # Share the global data storage
+        # Global data storage
+        if parent is not None:
             self._globals = parent._globals
         else:
             # Initialize the root context
             self._globals: Dict[str, Any] = {}
             self._lock = asyncio.Lock()
-            self._workflow = workflow
+            if session is None:
+                msg = "A workflow session is needed to create a root context"
+                raise ValueError(msg)
+            self._session = session
 
         # Local data storage
         self._locals: Dict[str, Any] = {}
@@ -106,6 +107,11 @@ class Context:
         """Return the workflow instance this context is attached to."""
         # workflow is guaranteed to be not None, ignore typing
         return self._parent._workflow if self._parent else self._workflow  # type: ignore
+
+    @property
+    def session(self) -> "WorkflowSession":
+        """Returns a mutex to lock the Context."""
+        return self._parent._session if self._parent else self._session
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]

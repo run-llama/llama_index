@@ -18,12 +18,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.core.schema import BaseNode, IndexNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 
 
@@ -77,8 +72,6 @@ class TreeIndex(BaseIndex[IndexGraph]):
         build_tree: bool = True,
         use_async: bool = False,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -88,11 +81,10 @@ class TreeIndex(BaseIndex[IndexGraph]):
         self.insert_prompt: BasePromptTemplate = insert_prompt or DEFAULT_INSERT_PROMPT
         self.build_tree = build_tree
         self._use_async = use_async
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             show_progress=show_progress,
             objects=objects,
             **kwargs,
@@ -123,9 +115,7 @@ class TreeIndex(BaseIndex[IndexGraph]):
         if retriever_mode == TreeRetrieverMode.SELECT_LEAF:
             return TreeSelectLeafRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == TreeRetrieverMode.SELECT_LEAF_EMBEDDING:
-            embed_model = embed_model or embed_model_from_settings_or_context(
-                Settings, self._service_context
-            )
+            embed_model = embed_model or Settings.embed_model
             return TreeSelectLeafEmbeddingRetriever(
                 self, embed_model=embed_model, object_map=self._object_map, **kwargs
             )
@@ -149,7 +139,6 @@ class TreeIndex(BaseIndex[IndexGraph]):
         index_builder = GPTTreeIndexBuilder(
             self.num_children,
             self.summary_template,
-            service_context=self.service_context,
             llm=self._llm,
             use_async=self._use_async,
             show_progress=self._show_progress,
@@ -162,7 +151,6 @@ class TreeIndex(BaseIndex[IndexGraph]):
         # TODO: allow to customize insert prompt
         inserter = TreeIndexInserter(
             self.index_struct,
-            service_context=self.service_context,
             llm=self._llm,
             num_children=self.num_children,
             insert_prompt=self.insert_prompt,

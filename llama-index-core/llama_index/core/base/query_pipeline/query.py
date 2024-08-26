@@ -20,7 +20,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
 )
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
@@ -243,12 +243,10 @@ class QueryComponent(BaseModel):
 class CustomQueryComponent(QueryComponent):
     """Custom query component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

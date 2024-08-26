@@ -29,13 +29,13 @@ license = "MIT"
 maintainers = ["bbornsztein"]
 name = "llama-index-readers-zendesk"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.31.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

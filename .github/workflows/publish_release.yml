@@ -25,8 +25,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-          cache-dependency-path: "**/poetry.lock"
+      - name: Clear python cache
+        shell: bash
+        run: poetry cache clear --all pypi
       - name: Install deps
         shell: bash
         run: pip install -e .
@@ -39,6 +40,7 @@ jobs:
       - name: Build and publish to pypi
         uses: JRubics/poetry-publish@v2.0
         with:
+          python_version: ${{ env.PYTHON_VERSION }}
           pypi_token: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
           ignore_dev_requirements: "yes"
 

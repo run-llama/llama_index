@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Sequence, List
+from typing import Any, Callable, Dict, Optional, Sequence, List, TYPE_CHECKING
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -21,11 +21,11 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
-from mistralrs import (
-    ChatCompletionRequest,
-    Runner,
-    Which,
-)
+if TYPE_CHECKING:
+    from mistralrs import (
+        Runner,
+        Which,
+    )
 
 DEFAULT_TOPK = 32
 DEFAULT_TOPP = 0.1
@@ -152,12 +152,12 @@ class MistralRS(CustomLLM):
     model_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Kwargs used for model initialization."
     )
-    _runner: Runner = PrivateAttr("Mistral.rs model runner.")
+    _runner: "Runner" = PrivateAttr("Mistral.rs model runner.")
     _has_messages_to_prompt: bool = PrivateAttr("If `messages_to_prompt` is provided.")
 
     def __init__(
         self,
-        which: Which,
+        which: "Which",
         temperature: float = DEFAULT_TEMPERATURE,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -237,6 +237,12 @@ class MistralRS(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        try:
+            from mistralrs import ChatCompletionRequest
+        except ImportError as e:
+            raise ValueError(
+                "Missing `mistralrs` package. Install via `pip install mistralrs`."
+            ) from e
         if self._has_messages_to_prompt:
             messages = self.messages_to_prompt(messages)
         else:
@@ -260,6 +266,12 @@ class MistralRS(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        try:
+            from mistralrs import ChatCompletionRequest
+        except ImportError as e:
+            raise ValueError(
+                "Missing `mistralrs` package. Install via `pip install mistralrs`."
+            ) from e
         if self._has_messages_to_prompt:
             messages = self.messages_to_prompt(messages)
         else:
@@ -295,6 +307,12 @@ class MistralRS(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        try:
+            from mistralrs import ChatCompletionRequest
+        except ImportError as e:
+            raise ValueError(
+                "Missing `mistralrs` package. Install via `pip install mistralrs`."
+            ) from e
         self.generate_kwargs.update({"stream": False})
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
@@ -315,6 +333,12 @@ class MistralRS(CustomLLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
+        try:
+            from mistralrs import ChatCompletionRequest
+        except ImportError as e:
+            raise ValueError(
+                "Missing `mistralrs` package. Install via `pip install mistralrs`."
+            ) from e
         self.generate_kwargs.update({"stream": True})
         if not formatted:
             prompt = self.completion_to_prompt(prompt)

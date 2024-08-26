@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.3.1] - 2024-08-19
+
+- Implemented ResourcesReaderMixin and FileSystemReaderMixin for extended functionality
+- New methods: list_resources, get_resource_info, load_resource, read_file_content
+- Comprehensive logging for better debugging and operational insights
+- Detailed exception handling
+
 ## [0.2.4] - 2024-04-01
 
 - Add support for additional params when initializing GoogleDriveReader

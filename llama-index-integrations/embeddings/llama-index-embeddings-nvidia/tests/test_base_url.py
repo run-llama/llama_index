@@ -65,4 +65,4 @@ def test_base_url_valid_not_hosted(base_url: str, mock_v1_local_models2: None) -
     ],
 )
 def test_base_url_valid_hosted(base_url: str, mock_v1_local_models2: None) -> None:
-    Interface(base_url=base_url)
+    Interface(api_key="BOGUS", base_url=base_url)
