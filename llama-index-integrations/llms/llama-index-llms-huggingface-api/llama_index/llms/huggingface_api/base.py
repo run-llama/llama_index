@@ -150,67 +150,18 @@ class HuggingFaceInferenceAPI(CustomLLM):
             " This parameter is used to penalize words that are repeated in the text."
         ),
     )
-    max_new_tokens: Optional[int] = Field(
+    presence_penalty: Optional[float] = Field(
+        default=None,
+        description=(
+            "The value of the presence_penalty parameter to use when generating text."
+            " This parameter is used to penalize words that are not in the text."
+        ),
+    )
+    max_tokens: Optional[int] = Field(
         default=None,
         description=(
             "The maximum number of tokens to generate when generating text. This parameter"
             " is used to limit the length of the generated text."
-        ),
-    )
-    temperature: Optional[float] = Field(
-        default=None,
-        description=(
-            "The value of the temperature parameter to use when generating text."
-            " This parameter is used to control the randomness of the generated text."
-        ),
-    )
-    top_k: Optional[int] = Field(
-        default=None,
-        description=(
-            "The value of the top_k parameter to use when generating text. This parameter"
-            " is used to limit the number of tokens that can be generated."
-        ),
-    )
-    top_p : Optional[float] = Field(
-        default=None,
-        description=(
-            "The value of the top_p parameter to use when generating text. This parameter"
-            " is used to limit the cumulative probability of the generated tokens."
-        ),
-    )
-    top_n_tokens : Optional[int] = Field(
-        default=None,
-        description=(
-            "The value of the top_n_tokens parameter to use when generating text. This parameter"
-            " is used to limit the number of tokens that can be generated."
-        ),
-    )
-    seed: Optional[int] = Field(
-        default=None,
-        description=(
-            "The value of the seed parameter to use when generating text. This parameter"
-            " is used to control the randomness of the generated text."
-        ),
-    )
-    stop: Optional[List[str]] = Field(
-        default=None,
-        description=(
-            "The value of the stop parameter to use when generating text. This parameter"
-            " is used to stop generating text when one of the specified tokens is generated."
-        ),
-    )
-    frequency_penalty: Optional[float] = Field(
-        default=None,
-        description=(
-            "The value of the frequency_penalty parameter to use when generating text."
-            " This parameter is used to penalize words that are already in the text."
-        ),
-    )
-    repetition_penalty: Optional[float] = Field(
-        default=None,
-        description=(
-            "The value of the repetition_penalty parameter to use when generating text."
-            " This parameter is used to penalize words that are repeated in the text."
         ),
     )
     max_new_tokens: Optional[int] = Field(
