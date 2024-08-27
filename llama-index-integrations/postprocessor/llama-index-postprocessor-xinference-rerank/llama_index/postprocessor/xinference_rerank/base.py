@@ -1,5 +1,5 @@
 import requests
-from typing import Any, List, Optional
+from typing import List, Optional
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
