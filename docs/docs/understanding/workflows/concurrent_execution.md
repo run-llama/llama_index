@@ -122,4 +122,4 @@ The visualization of this workflow is quite pleasing:
 
 ![A concurrent workflow](./different_events.png)
 
-Now let's look at how [we can extend workflows](extending.md).
+Now let's look at how we can extend workflows with [subclassing](subclass.md) and other techniques.

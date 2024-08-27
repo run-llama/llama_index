@@ -63,4 +63,4 @@ result = await w.run(query="Some query")
 print(result)
 ```
 
-Next let's look at [concurrent execution](concurrent_execution.md).
+Up next we'll learn how to [stream events](stream.md) from an in-progress workflow.
