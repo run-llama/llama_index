@@ -9,12 +9,15 @@ def test_text_inference_embedding_class():
 
 
 def test_anthropic_through_vertex_ai():
-    anthropic_llm = Anthropic(
-        model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet@20240620"),
-        region=os.getenv("ANTHROPIC_REGION", "europe-west1"),
-        project_id=os.getenv("ANTHROPIC_PROJECT_ID"),
-    )
+    if os.getenv("ANTHROPIC_PROJECT_ID"):
+        anthropic_llm = Anthropic(
+            model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet@20240620"),
+            region=os.getenv("ANTHROPIC_REGION", "europe-west1"),
+            project_id=os.getenv("ANTHROPIC_PROJECT_ID"),
+        )
 
-    completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
+        completion_response = anthropic_llm.complete(
+            "Give me a recipe for banana bread"
+        )
 
-    assert isinstance(completion_response.text, str)
+        assert isinstance(completion_response.text, str)
