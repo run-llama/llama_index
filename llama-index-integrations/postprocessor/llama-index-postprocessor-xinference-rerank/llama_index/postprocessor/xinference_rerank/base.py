@@ -17,31 +17,17 @@ class XinferenceRerank(BaseNodePostprocessor):
     """Class for Xinference Rerank."""
 
     top_n: int = Field(
-        default=2,
+        default=5,
         description="The number of nodes to return.",
     )
     model: str = Field(
-        default="unknown",
+        default="bge-reranker-base",
         description="The Xinference model uid to use.",
     )
     base_url: str = Field(
         default="http://localhost:9997",
         description="The Xinference base url to use.",
     )
-
-    def __init__(
-        self,
-        top_n: int = 5,
-        model: str = "bge-reranker-base",
-        base_url: str = "http://localhost:9997",
-        **kwargs: Any,
-    ):
-        super().__init__(
-            model=model,
-            base_url=base_url,
-            top_n=top_n,
-            **kwargs,
-        )
 
     @classmethod
     def class_name(cls) -> str:
