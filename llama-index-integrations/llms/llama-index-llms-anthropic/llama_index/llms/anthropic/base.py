@@ -105,8 +105,10 @@ class Anthropic(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: anthropic.Anthropic | anthropic.AnthropicVertex = PrivateAttr()
-    _aclient: anthropic.AsyncAnthropic | anthropic.AsyncAnthropicVertex = PrivateAttr()
+    _client: Union[anthropic.Anthropic, anthropic.AnthropicVertex] = PrivateAttr()
+    _aclient: Union[
+        anthropic.AsyncAnthropic, anthropic.AsyncAnthropicVertex
+    ] = PrivateAttr()
 
     def __init__(
         self,
