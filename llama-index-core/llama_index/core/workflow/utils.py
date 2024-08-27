@@ -24,13 +24,23 @@ from .events import Event, EventType
 from .errors import WorkflowValidationError
 
 
+class ServiceDefinition(BaseModel):
+    name: str
+    service: Any
+    default_value: Optional[Any]
+
+    class Config:
+        # Make the service definition hashable
+        frozen = True
+
+
 class StepSignatureSpec(BaseModel):
     """A Pydantic model representing the signature of a step function or method."""
 
     accepted_events: Dict[str, List[EventType]]
     return_types: List[Any]
     context_parameter: Optional[str]
-    requested_services: Optional[Dict[str, List[Any]]]
+    requested_services: Optional[List[ServiceDefinition]]
 
 
 def inspect_signature(fn: Callable) -> StepSignatureSpec:
@@ -39,7 +49,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
 
     accepted_events: Dict[str, List[EventType]] = {}
     context_parameter = None
-    requested_services = {}
+    requested_services = []
 
     # Inspect function parameters
     for name, t in sig.parameters.items():
@@ -62,10 +72,16 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             accepted_events[name] = param_types
             continue
 
-        # Everything else will be treated as a service
-        requested_services[name] = param_types
+        # Everything else will be treated as a service request
+        default_value = t.default
+        if default_value is inspect.Parameter.empty:
+            default_value = None
 
-    # Inspect function return types
+        requested_services.append(
+            ServiceDefinition(
+                name=name, service=param_types[0], default_value=default_value
+            )
+        )
 
     return StepSignatureSpec(
         accepted_events=accepted_events,
