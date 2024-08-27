@@ -252,9 +252,8 @@ class TablestoreVectorStore(BasePydanticVectorStore):
 
     def _delete_row(self, row_id: str) -> None:
         primary_key = [("id", row_id)]
-        row = tablestore.Row(primary_key)
         try:
-            self._tablestore_client.delete_row(self._table_name, row, None)
+            self._tablestore_client.delete_row(self._table_name, primary_key, None)
             self._logger.info("Tablestore delete row successfully. id:%s", row_id)
         except tablestore.OTSClientError as e:
             self._logger.exception(
@@ -292,7 +291,9 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                     max_version=1,
                 )
                 for row in row_list:
-                    self._tablestore_client.delete_row(self._table_name, row, None)
+                    self._tablestore_client.delete_row(
+                        self._table_name, row.primary_key, None
+                    )
                     total += 1
                 if next_start_primary_key is not None:
                     inclusive_start_primary_key = next_start_primary_key

@@ -138,3 +138,5 @@ def test_tablestore() -> None:
     assert query_result.ids is not None
     assert query_result.similarities is not None
     assert query_result.similarities is not None
+
+    store.clear()
