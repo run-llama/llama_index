@@ -2,13 +2,13 @@
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is a framework for building context-augmented generative AI applications with [LLMs](https://en.wikipedia.org/wiki/Large_language_model).
+LlamaIndex is a framework for building context-augmented generative AI applications with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) including [agents](./understanding/agent/basic_agent/) and workflows.
 
 <div class="grid cards" markdown>
 
 -  <span style="font-size: 200%">[Introduction](#introduction)</span>
 
-    What is context augmentation? How does LlamaIndex help?
+    What is context augmentation? What are agents and workflows? How does LlamaIndex help build them?
 
 -   <span style="font-size: 200%">[Use cases](#use-cases)</span>
 
@@ -42,9 +42,19 @@ Context augmentation makes your data available to the LLM to solve the problem a
 
 The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](./getting_started/concepts.md), which combines context with LLMs at inference time.
 
-### LlamaIndex is the Data Framework for Context-Augmented LLM Apps
+### What are agents?
 
-LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-complete, chatbots, semi-autonomous agents, and more. It just makes using them easier. We provide tools like:
+Agents are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
+
+LlamaIndex provides a framework for building agents including the ability to use RAG pipelines as one of many tools to complete a task.
+
+### What are workflows?
+
+Workflows are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications.
+
+### LlamaIndex is the framework for Context-Augmented LLM Applications
+
+LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-complete, chatbots, agents, and more. It just makes using them easier. We provide tools like:
 
 - **Data connectors** ingest your existing data from their native source and format. These could be APIs, PDFs, SQL, and (much) more.
 - **Data indexes** structure your data in intermediate representations that are easy and performant for LLMs to consume.
@@ -53,6 +63,7 @@ LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-
     - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
 - **Agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
 - **Observability/Evaluation** integrations that enable you to rigorously experiment, evaluate, and monitor your app in a virtuous cycle.
+- **Workflows** allow you to combine all of the above into an event-driven system for flexible than other, graph-based approaches.
 
 ## Use cases
 
@@ -73,7 +84,7 @@ LlamaIndex provides tools for beginners, advanced users, and everyone in between
 
 Our high-level API allows beginner users to use LlamaIndex to ingest and query their data in 5 lines of code.
 
-For more complex applications, our lower-level APIs allow advanced users to customize and extend any module—data connectors, indices, retrievers, query engines, reranking modules—to fit their needs.
+For more complex applications, our lower-level APIs allow advanced users to customize and extend any module -- data connectors, indices, retrievers, query engines, and reranking modules -- to fit their needs.
 
 ## Getting Started
 

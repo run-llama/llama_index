@@ -111,7 +111,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         similarity_metric (str, optional): The similarity metric to use,
             currently supports IP and L2.
         consistency_level (str, optional): Which consistency level to use for a newly
-            created collection. Defaults to "Strong".
+            created collection. Defaults to "Session".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
         text_key (str, optional): What key text is stored in in the passed collection.
@@ -186,7 +186,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     embedding_field: str = DEFAULT_EMBEDDING_KEY
     doc_id_field: str = DEFAULT_DOC_ID_KEY
     similarity_metric: str = "IP"
-    consistency_level: str = "Strong"
+    consistency_level: str = "Session"
     overwrite: bool = False
     text_key: Optional[str]
     output_fields: List[str] = Field(default_factory=list)
@@ -213,7 +213,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         embedding_field: str = DEFAULT_EMBEDDING_KEY,
         doc_id_field: str = DEFAULT_DOC_ID_KEY,
         similarity_metric: str = "IP",
-        consistency_level: str = "Strong",
+        consistency_level: str = "Session",
         overwrite: bool = False,
         text_key: Optional[str] = None,
         output_fields: Optional[List[str]] = None,

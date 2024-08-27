@@ -19,7 +19,7 @@ from typing import (
 import networkx
 
 from llama_index.core.async_utils import asyncio_run, run_jobs
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.base.query_pipeline.query import (
@@ -205,6 +205,7 @@ class QueryPipeline(QueryComponent):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
@@ -228,9 +229,6 @@ class QueryPipeline(QueryComponent):
     state: Dict[str, Any] = Field(
         default_factory=dict, description="State of the pipeline."
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -281,7 +279,7 @@ class QueryPipeline(QueryComponent):
             self.add_modules(modules)
             if links is not None:
                 for link in links:
-                    self.add_link(**link.dict())
+                    self.add_link(**link.model_dump())
 
     def add_chain(self, chain: Sequence[CHAIN_COMPONENT_TYPE]) -> None:
         """Add a chain of modules to the pipeline.
@@ -318,7 +316,7 @@ class QueryPipeline(QueryComponent):
         """Add links to the pipeline."""
         for link in links:
             if isinstance(link, Link):
-                self.add_link(**link.dict())
+                self.add_link(**link.model_dump())
             else:
                 raise ValueError("Link must be of type `Link` or `ConditionalLinks`.")
 

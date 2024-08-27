@@ -12,13 +12,7 @@ from llama_index.core.data_structs.data_structs import IndexStruct
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import BaseNode, Document, IndexNode, TransformComponent
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-    transformations_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 
@@ -34,9 +28,6 @@ class BaseIndex(Generic[IS], ABC):
     Args:
         nodes (List[Node]): List of nodes to index
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
-        service_context (ServiceContext): Service context container (contains
-            components like LLM, Embeddings, etc.).
-
     """
 
     index_struct_cls: Type[IS]
@@ -50,8 +41,6 @@ class BaseIndex(Generic[IS], ABC):
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -71,17 +60,11 @@ class BaseIndex(Generic[IS], ABC):
                 raise ValueError("nodes must be a list of Node objects.")
 
         self._storage_context = storage_context or StorageContext.from_defaults()
-        # deprecated
-        self._service_context = service_context
-
         self._docstore = self._storage_context.docstore
         self._show_progress = show_progress
         self._vector_store = self._storage_context.vector_store
         self._graph_store = self._storage_context.graph_store
-        self._callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        self._callback_manager = callback_manager or Settings.callback_manager
 
         objects = objects or []
         self._object_map = {obj.index_id: obj.obj for obj in objects}
@@ -92,15 +75,13 @@ class BaseIndex(Generic[IS], ABC):
             if index_struct is None:
                 nodes = nodes or []
                 index_struct = self.build_index_from_nodes(
-                    nodes + objects, **kwargs  # type: ignore
+                    nodes + objects,
+                    **kwargs,  # type: ignore
                 )
             self._index_struct = index_struct
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
-        self._transformations = (
-            transformations
-            or transformations_from_settings_or_context(Settings, service_context)
-        )
+        self._transformations = transformations or Settings.transformations
 
     @classmethod
     def from_documents(
@@ -110,8 +91,6 @@ class BaseIndex(Generic[IS], ABC):
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Create index from documents.
@@ -123,13 +102,8 @@ class BaseIndex(Generic[IS], ABC):
         """
         storage_context = storage_context or StorageContext.from_defaults()
         docstore = storage_context.docstore
-        callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
-        transformations = transformations or transformations_from_settings_or_context(
-            Settings, service_context
-        )
+        callback_manager = callback_manager or Settings.callback_manager
+        transformations = transformations or Settings.transformations
 
         with callback_manager.as_trace("index_construction"):
             for doc in documents:
@@ -148,7 +122,6 @@ class BaseIndex(Generic[IS], ABC):
                 callback_manager=callback_manager,
                 show_progress=show_progress,
                 transformations=transformations,
-                service_context=service_context,
                 **kwargs,
             )
 
@@ -184,10 +157,6 @@ class BaseIndex(Generic[IS], ABC):
     def docstore(self) -> BaseDocumentStore:
         """Get the docstore corresponding to the index."""
         return self._docstore
-
-    @property
-    def service_context(self) -> Optional[ServiceContext]:
-        return self._service_context
 
     @property
     def storage_context(self) -> StorageContext:
@@ -405,7 +374,7 @@ class BaseIndex(Generic[IS], ABC):
         llm = (
             resolve_llm(llm, callback_manager=self._callback_manager)
             if llm
-            else llm_from_settings_or_context(Settings, self.service_context)
+            else Settings.llm
         )
 
         return RetrieverQueryEngine.from_args(
@@ -434,20 +403,11 @@ class BaseIndex(Generic[IS], ABC):
             - `ChatMode.REACT`: Chat engine that uses a react agent with a query engine tool
             - `ChatMode.OPENAI`: Chat engine that uses an openai agent with a query engine tool
         """
-        service_context = kwargs.get("service_context", self.service_context)
-
-        if service_context is not None:
-            llm = (
-                resolve_llm(llm, callback_manager=self._callback_manager)
-                if llm
-                else service_context.llm
-            )
-        else:
-            llm = (
-                resolve_llm(llm, callback_manager=self._callback_manager)
-                if llm
-                else Settings.llm
-            )
+        llm = (
+            resolve_llm(llm, callback_manager=self._callback_manager)
+            if llm
+            else Settings.llm
+        )
 
         query_engine = self.as_query_engine(llm=llm, **kwargs)
 

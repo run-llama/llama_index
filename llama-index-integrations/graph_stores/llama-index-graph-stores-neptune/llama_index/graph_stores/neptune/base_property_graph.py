@@ -22,6 +22,7 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     supports_structured_queries: bool = True
     text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
     schema = None
+    structured_schema = None
 
     def __init__() -> None:
         pass
@@ -30,12 +31,15 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     def client(self) -> Any:
         return self._client
 
-    def get(self, properties: Dict = None, ids: List[str] = None) -> List[LabelledNode]:
+    def get(
+        self, properties: Dict = None, ids: List[str] = None, exact_match: bool = True
+    ) -> List[LabelledNode]:
         """Get the nodes from the graph.
 
         Args:
             properties (Dict | None, optional): The properties to retrieve. Defaults to None.
             ids (List[str] | None, optional): A list of ids to find in the graph. Defaults to None.
+            exact_match (bool, optional): Whether to do exact match on properties. Defaults to True.
 
         Returns:
             List[LabelledNode]: A list of nodes returned
@@ -47,7 +51,10 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
             cypher_statement += "WHERE "
 
         if ids:
-            cypher_statement += "e.id in $ids "
+            if exact_match:
+                cypher_statement += "e.id IN $ids "
+            else:
+                cypher_statement += "WHERE size([x IN $ids where toLower(e.id) CONTAINS toLower(x)]) > 0 "
             params["ids"] = ids
 
         if properties:
@@ -339,6 +346,14 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     def _get_summary(self) -> Dict:
         raise NotImplementedError
 
+    def get_schema(self, refresh: bool = False) -> Any:
+        """Get the schema of the graph store."""
+        if refresh or not self.schema:
+            schema = refresh_schema(self.query, self._get_summary())
+            self.schema = schema["schema_str"]
+            self.structured_schema = schema["structured_schema"]
+        return self.structured_schema
+
     def get_schema_str(self, refresh: bool = False) -> str:
         """Get the schema as a string.
 
@@ -349,6 +364,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
             str: A string description of the schema
         """
         if refresh or not self.schema:
-            self.schema = refresh_schema(self.query, self._get_summary())
+            schema = refresh_schema(self.query, self._get_summary())
+            self.schema = schema["schema_str"]
+            self.structured_schema = schema["structured_schema"]
 
         return self.schema
