@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import warnings
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set
 
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import StepConfig, step
@@ -48,6 +48,29 @@ class Workflow(metaclass=_WorkflowMeta):
         self._step_session: Optional[WorkflowSession] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
+
+    async def stream_events(self) -> AsyncGenerator[Event, None]:
+        # In the typical streaming use case, `run()` is not awaited but wrapped in a asyncio.Task. Since we'll be
+        # consuming events produced by `run()`, we must give its Task the chance to run before entering the dequeueing
+        # loop.
+        await asyncio.sleep(0)
+
+        if len(self._sessions) > 1:
+            # We can't possibly know from what session we should stream events, raise an error.
+            msg = (
+                "This workflow has multiple session running concurrently and cannot stream events. "
+                "To be able to stream events, make sure you call `run()` on this workflow only once."
+            )
+            raise WorkflowRuntimeError(msg)
+
+        # Enter the dequeuing loop.
+        session = next(iter(self._sessions))
+        while True:
+            ev = await session.streaming_queue.get()
+            if type(ev) is StopEvent:
+                break
+
+            yield ev
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -303,6 +326,8 @@ class Workflow(metaclass=_WorkflowMeta):
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         ctx.session._retval = ev.result or None
+        ctx.session.write_event_to_stream(ev)
+
         # Signal we want to stop the workflow
         raise WorkflowDone
 
