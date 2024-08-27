@@ -17,7 +17,7 @@ try:
 except ImportError:
     UnionType = Union
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
 from .context import Context
 from .events import Event, EventType
@@ -25,13 +25,12 @@ from .errors import WorkflowValidationError
 
 
 class ServiceDefinition(BaseModel):
+    # Make the service definition hashable
+    model_config = ConfigDict(frozen=True)
+
     name: str
     service: Any
     default_value: Optional[Any]
-
-    class Config:
-        # Make the service definition hashable
-        frozen = True
 
 
 class StepSignatureSpec(BaseModel):
