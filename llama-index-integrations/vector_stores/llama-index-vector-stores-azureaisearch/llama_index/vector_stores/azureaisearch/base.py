@@ -228,18 +228,34 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         return index_fields
 
+    def _get_compressions(self) -> List[Any]:
+        """Get the compressions for the vector search."""
+        from azure.search.documents.indexes.models import (
+            BinaryQuantizationCompression,
+            ScalarQuantizationCompression,
+        )
+
+        compressions = []
+        if self._compression_type == "binary":
+            compressions.append(
+                BinaryQuantizationCompression(compression_name="myBinaryCompression")
+            )
+        elif self._compression_type == "scalar":
+            compressions.append(
+                ScalarQuantizationCompression(compression_name="myScalarCompression")
+            )
+        return compressions
+
     def _create_index(self, index_name: Optional[str]) -> None:
         """
         Creates a default index based on the supplied index name, key field names and
         metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
-            BinaryQuantizationCompression,
             ExhaustiveKnnAlgorithmConfiguration,
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
-            ScalarQuantizationCompression,
             SearchableField,
             SearchField,
             SearchFieldDataType,
@@ -280,15 +296,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         fields.extend(metadata_index_fields)
         logger.info(f"Configuring {index_name} vector search")
         # Determine the compression type
-        compressions = []
-        if self._compression_type == "binary":
-            compressions.append(
-                BinaryQuantizationCompression(compression_name="myBinaryCompression")
-            )
-        elif self._compression_type == "scalar":
-            compressions.append(
-                ScalarQuantizationCompression(compression_name="myScalarCompression")
-            )
+        compressions = self._get_compressions()
 
         logger.info(
             f"Configuring {index_name} vector search with {self._compression_type} compression"
@@ -357,12 +365,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             Creates a default index based on the supplied index name, key field names, and metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
-            BinaryQuantizationCompression,
             ExhaustiveKnnAlgorithmConfiguration,
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
-            ScalarQuantizationCompression,
             SearchField,
             SearchFieldDataType,
             SearchIndex,
@@ -402,15 +408,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
         # Determine the compression type
-        compressions = []
-        if self._compression_type == "binary":
-            compressions.append(
-                BinaryQuantizationCompression(compression_name="myBinaryCompression")
-            )
-        elif self._compression_type == "scalar":
-            compressions.append(
-                ScalarQuantizationCompression(compression_name="myScalarCompression")
-            )
+        compressions = self._get_compressions()
+
         logger.info(
             f"Configuring {index_name} vector search with {self._compression_type} compression"
         )
