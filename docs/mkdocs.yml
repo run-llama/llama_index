@@ -52,10 +52,12 @@ nav:
           - A basic workflow: ./understanding/workflows/basic_flow.md
           - Branches and loops: ./understanding/workflows/branches_and_loops.md
           - Maintaining state: ./understanding/workflows/state.md
+          - Streaming events: ./understanding/workflows/stream.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
           - Subclassing workflows: ./understanding/workflows/subclass.md
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
+          - Unbound syntax: ./understanding/workflows/unbound.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
