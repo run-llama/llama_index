@@ -358,7 +358,10 @@ class TablestoreVectorStore(BasePydanticVectorStore):
     def _to_query_result(self, search_response) -> VectorStoreQueryResult:
         nodes = []
         ids = []
-        for row in search_response.rows:
+        similarities = []
+        for hit in search_response.search_hits:
+            row = hit.row
+            score = hit.score
             node_id = row[0][0][1]
             meta_data = {}
             text = None
@@ -381,7 +384,8 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             )
             ids.append(node_id)
             nodes.append(node)
-        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=None)
+            similarities.append(score)
+        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
     def _parse_filters_recursively(
         self, filters: MetadataFilters

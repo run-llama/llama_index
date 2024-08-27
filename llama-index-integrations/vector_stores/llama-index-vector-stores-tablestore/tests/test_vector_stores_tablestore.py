@@ -117,9 +117,12 @@ def test_tablestore() -> None:
     store.delete(ids[0])
 
     # 7. query with filters
+    query_embedding = embedder.get_text_embedding("nature fight physical")
+    # modify it for test
+    query_embedding[0] = 0.1
     query_result = store.query(
         query=VectorStoreQuery(
-            query_embedding=embedder.get_text_embedding("nature fight physical"),
+            query_embedding=query_embedding,
             similarity_top_k=5,
             filters=MetadataFilters(
                 filters=[
@@ -132,3 +135,6 @@ def test_tablestore() -> None:
     )
     print(query_result)
     assert query_result is not None
+    assert query_result.ids is not None
+    assert query_result.similarities is not None
+    assert query_result.similarities is not None
