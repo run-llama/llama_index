@@ -14,48 +14,58 @@ Want to experience the power of Cerebras? Check out our [website](https://cerebr
 
 For more information about Cerebras Cloud, visit [cloud.cerebras.ai](https://cloud.cerebras.ai/). Our API reference is available at [inference-docs.cerebras.ai](https://inference-docs.cerebras.ai/).
 
-## Develop
+## Installation
 
-To create a development environment, install poetry then run:
+using poetry:
 
-```bash
-poetry install --with dev
+```shell
+poetry add llama-index-llms-cerebras
 ```
 
-## Build
+or using pip:
 
-```bash
-poetry build
+```shell
+pip install llama-index-llms-cerebras
 ```
 
-## Testing
+## Basic Usage
 
-To test the integration, first enter the poetry venv:
+Get an API Key from [cloud.cerebras.ai](https://cloud.cerebras.ai/) and add it to your environment variables:
 
-```bash
-poetry shell
+```
+export CEREBRAS_API_KEY=<your api key>
 ```
 
-Then tests can be run with make
+Then try out one of these examples:
 
-```bash
-make test
+```python
+import os
+
+from llama_index.core.llms import ChatMessage
+from llama_index.llms.cerebras import Cerebras
+
+llm = Cerebras(model="llama3.1-70b", api_key=os.environ["CEREBRAS_API_KEY"])
+
+messages = [
+    ChatMessage(
+        role="system", content="You are a pirate with a colorful personality"
+    ),
+    ChatMessage(role="user", content="What is your name"),
+]
+resp = llm.chat(messages)
+print(resp)
 ```
 
-### Integration tests
+Or alternatively with streaming:
 
-To run integration tests you must obtain an API key from [cloud.cerebras.ai](https://cloud.cerebras.ai/) and add it to your environment variables. If an API key is not provided, the integration tests will automatically be skipped.
+```python
+import os
 
-```bash
-export CEREBRAS_API_KEY=<your key here>
-make test
-```
+from llama_index.llms.cerebras import Cerebras
 
-## Linting and Formatting
+llm = Cerebras(model="llama3.1-70b", api_key=os.environ["CEREBRAS_API_KEY"])
 
-Linting and code formatting can be executed with make.
-
-```bash
-make format
-make lint
+response = llm.stream_complete("What is Generative AI?")
+for r in response:
+    print(r.delta, end="")
 ```
