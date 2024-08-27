@@ -121,7 +121,6 @@ class Workflow(metaclass=_WorkflowMeta):
                         service = self._service_manager.get(
                             service_definition.name, service_definition.default_value
                         )
-                        print(service._the_answer)
                         kwargs[service_definition.name] = service
                     kwargs[config.event_name] = ev
 
@@ -333,8 +332,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
                 produced_events.add(event_type)
 
-            for sd in step_config.requested_services:
-                requested_services.add(sd)
+            requested_services.update(step_config.requested_services)
 
         # Check if all consumed events are produced
         unconsumed_events = consumed_events - produced_events
