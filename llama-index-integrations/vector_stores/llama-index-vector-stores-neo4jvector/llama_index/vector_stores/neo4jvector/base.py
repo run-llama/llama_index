@@ -384,9 +384,9 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             self.index_name = index_information[0]["name"]
             self.node_label = index_information[0]["labelsOrTypes"][0]
             self.embedding_node_property = index_information[0]["properties"][0]
-            self.embedding_dimension = index_information[0]["options"]["indexConfig"][
-                "vector.dimensions"
-            ]
+            index_config = index_information[0]["options"]["indexConfig"]
+            if "vector.dimensions" in index_config:
+                self.embedding_dimension = index_config["vector.dimensions"]
 
             return True
         except IndexError:
@@ -500,9 +500,12 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             base_index_query = parallel_query + (
                 f"MATCH (n:`{self.node_label}`) WHERE "
                 f"n.`{self.embedding_node_property}` IS NOT NULL AND "
-                f"size(n.`{self.embedding_node_property}`) = "
-                f"toInteger({self.embedding_dimension}) AND "
             )
+            if self.embedding_dimension:
+                base_index_query += (
+                    f"size(n.`{self.embedding_node_property}`) = "
+                    f"toInteger({self.embedding_dimension}) AND "
+                )
             base_cosine_query = (
                 " WITH n as node, vector.similarity.cosine("
                 f"n.`{self.embedding_node_property}`, "
