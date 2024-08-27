@@ -104,7 +104,7 @@ class NVIDIARerank(BaseNodePostprocessor):
 
         if base_url:  # on-premises mode
             # in this case we trust the model name and base_url
-            self._inference_url = self._validate_url(base_url) + "/rankings"
+            self._inference_url = self._validate_url(base_url) + "/ranking"
         else:  # hosted mode
             if model not in MODEL_ENDPOINT_MAP:
                 raise ValueError(

@@ -76,7 +76,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # Azure AI Search setup
         search_service_api_key = "YOUR-AZURE-SEARCH-SERVICE-ADMIN-KEY"
         search_service_endpoint = "YOUR-AZURE-SEARCH-SERVICE-ENDPOINT"
-        search_service_api_version = "2023-11-01"
+        search_service_api_version = "2024-07-01"
         credential = AzureKeyCredential(search_service_api_key)
 
         # Index name to use
@@ -131,6 +131,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         str, Tuple[str, MetadataIndexFieldType]
     ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
+    _compression_type: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -227,6 +228,24 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         return index_fields
 
+    def _get_compressions(self) -> List[Any]:
+        """Get the compressions for the vector search."""
+        from azure.search.documents.indexes.models import (
+            BinaryQuantizationCompression,
+            ScalarQuantizationCompression,
+        )
+
+        compressions = []
+        if self._compression_type == "binary":
+            compressions.append(
+                BinaryQuantizationCompression(compression_name="myBinaryCompression")
+            )
+        elif self._compression_type == "scalar":
+            compressions.append(
+                ScalarQuantizationCompression(compression_name="myScalarCompression")
+            )
+        return compressions
+
     def _create_index(self, index_name: Optional[str]) -> None:
         """
         Creates a default index based on the supplied index name, key field names and
@@ -276,13 +295,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
         logger.info(f"Configuring {index_name} vector search")
+        # Determine the compression type
+        compressions = self._get_compressions()
+
+        logger.info(
+            f"Configuring {index_name} vector search with {self._compression_type} compression"
+        )
         # Configure the vector search algorithms and profiles
         vector_search = VectorSearch(
             algorithms=[
                 HnswAlgorithmConfiguration(
                     name="myHnsw",
                     kind=VectorSearchAlgorithmKind.HNSW,
-                    # For more information on HNSw parameters, visit https://learn.microsoft.com//azure/search/vector-search-ranking#creating-the-hnsw-graph
                     parameters=HnswParameters(
                         m=4,
                         ef_construction=400,
@@ -298,17 +322,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     ),
                 ),
             ],
+            compressions=compressions,
             profiles=[
                 VectorSearchProfile(
                     name="myHnswProfile",
                     algorithm_configuration_name="myHnsw",
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 ),
-                # Add more profiles if needed
                 VectorSearchProfile(
                     name="myExhaustiveKnnProfile",
                     algorithm_configuration_name="myExhaustiveKnn",
+                    compression_name=None,  # Exhaustive KNN doesn't support compression at the moment
                 ),
-                # Add more profiles if needed
             ],
         )
         logger.info(f"Configuring {index_name} semantic search")
@@ -333,18 +360,19 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     async def _acreate_index(self, index_name: Optional[str]) -> None:
         """
-        Creates a default index based on the supplied index name, key field names and
-        metadata filtering keys.
+        Asynchronous version of index creation with optional compression.
+
+            Creates a default index based on the supplied index name, key field names, and metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
             ExhaustiveKnnAlgorithmConfiguration,
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
-            SearchableField,
             SearchField,
             SearchFieldDataType,
             SearchIndex,
+            SearchableField,
             SemanticConfiguration,
             SemanticField,
             SemanticPrioritizedFields,
@@ -379,7 +407,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         logger.info(f"Configuring {index_name} metadata fields")
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
-        logger.info(f"Configuring {index_name} vector search")
+        # Determine the compression type
+        compressions = self._get_compressions()
+
+        logger.info(
+            f"Configuring {index_name} vector search with {self._compression_type} compression"
+        )
         # Configure the vector search algorithms and profiles
         vector_search = VectorSearch(
             algorithms=[
@@ -402,17 +435,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     ),
                 ),
             ],
+            compressions=compressions,
             profiles=[
                 VectorSearchProfile(
                     name="myHnswProfile",
                     algorithm_configuration_name="myHnsw",
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 ),
-                # Add more profiles if needed
                 VectorSearchProfile(
                     name="myExhaustiveKnnProfile",
                     algorithm_configuration_name="myExhaustiveKnn",
+                    compression_name=None,  # Exhaustive KNN doesn't support compression at the moment
                 ),
-                # Add more profiles if needed
             ],
         )
         logger.info(f"Configuring {index_name} semantic search")
@@ -471,6 +507,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
+        compression_type: str = "none",
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -551,6 +588,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
 
         self._language_analyzer = language_analyzer
+        self._compression_type = compression_type.lower()
 
         # Validate search_or_index_client
         if search_or_index_client is not None:

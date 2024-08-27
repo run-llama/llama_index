@@ -171,6 +171,13 @@ class BedrockConverse(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            profile_name=profile_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            region_name=region_name,
+            botocore_session=botocore_session,
+            botocore_config=botocore_config,
         )
 
         self._config = None
