@@ -20,10 +20,7 @@ from llama_index.core.bridge.pydantic import (
 
 # Import SecretStr directly from pydantic
 # since there is not one in llama_index.core.bridge.pydantic
-try:
-    from pydantic.v1 import SecretStr
-except ImportError:
-    from pydantic import SecretStr
+from pydantic import SecretStr
 
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
@@ -171,7 +168,6 @@ class WatsonxLLM(CustomLLM):
         """
         callback_manager = callback_manager or CallbackManager([])
         additional_params = additional_params or {}
-        self._context_window = kwargs.get("context_window")
 
         creds = (
             resolve_watsonx_credentials(
@@ -207,6 +203,7 @@ class WatsonxLLM(CustomLLM):
             callback_manager=callback_manager,
             **kwargs,
         )
+        self._context_window = kwargs.get("context_window")
 
         generation_params = {}
         if self.temperature is not None:

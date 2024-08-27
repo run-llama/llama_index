@@ -86,7 +86,6 @@ class Xinference(CustomLLM):
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
         )
-        self._generator = generator
         if max_tokens is None:
             max_tokens = context_window // 4
         elif max_tokens > context_window:
@@ -109,6 +108,7 @@ class Xinference(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._generator = generator
 
     def load_model(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:
         try:

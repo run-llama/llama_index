@@ -119,13 +119,7 @@ class DeepInfraLLM(FunctionCallingLLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
-        self._client = DeepInfraClient(
-            api_key=self._api_key,
-            api_base=api_base,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
+
         super().__init__(
             model=model,
             api_base=api_base,
@@ -141,6 +135,13 @@ class DeepInfraLLM(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+        self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
+        self._client = DeepInfraClient(
+            api_key=self._api_key,
+            api_base=api_base,
+            timeout=timeout,
+            max_retries=max_retries,
         )
 
     @classmethod

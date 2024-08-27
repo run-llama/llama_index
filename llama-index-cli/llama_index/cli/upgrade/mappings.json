@@ -1,6 +1,5 @@
 {
   "StorageContext": "llama_index.core",
-  "ServiceContext": "llama_index.core",
   "ComposableGraph": "llama_index.core",
   "# indicesSummaryIndex": "llama_index.core",
   "VectorStoreIndex": "llama_index.core",
