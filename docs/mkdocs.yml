@@ -657,11 +657,13 @@ nav:
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
+          - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/router_query_engine.ipynb
           - ./examples/workflow/self_discover_workflow.ipynb
           - ./examples/workflow/sub_question_query_engine.ipynb
           - ./examples/workflow/workflows_cookbook.ipynb
@@ -867,6 +869,7 @@ nav:
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
+          - ./api_reference/embeddings/xinference.md
           - ./api_reference/embeddings/yandexgpt.md
       - Evaluation:
           - ./api_reference/evaluation/answer_relevancy.md
@@ -1131,6 +1134,7 @@ nav:
           - ./api_reference/postprocessor/tei_rerank.md
           - ./api_reference/postprocessor/time_weighted.md
           - ./api_reference/postprocessor/voyageai_rerank.md
+          - ./api_reference/postprocessor/xinference_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
       - Output Parsers:
@@ -2138,6 +2142,8 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-sambanova
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
