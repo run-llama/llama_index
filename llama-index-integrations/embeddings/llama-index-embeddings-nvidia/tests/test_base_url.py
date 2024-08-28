@@ -25,23 +25,19 @@ def mock_local_models(httpx_mock: HTTPXMock, base_url: str):
     )
 
 
-# test case for invalid base_url
+# test case for base_url warning
 @pytest.mark.parametrize(
     "base_url",
     [
-        "localhost",
-        "localhost:8888",
         "http://localhost:8888/embeddings",
-        "http://0.0.0.0:8888/rankings",
-        "http://localhost:8888/chat/completions",
-        "http://test_url/.../v1",
-        "https://test_url/.../v1",
     ],
 )
-def test_base_url_invalid_not_hosted(base_url: str) -> None:
-    with pytest.raises(ValueError) as msg:
-        Interface(base_url=base_url)
-    assert "Invalid base_url" in str(msg.value)
+def test_base_url_invalid_not_hosted(base_url: str, mock_local_models) -> None:
+    with pytest.warns(UserWarning) as msg:
+        cls = Interface(base_url=base_url)
+    assert cls._is_hosted is False
+    assert len(msg) == 2
+    assert "Expected format is " in str(msg[0].message)
 
 
 @pytest.mark.parametrize(
@@ -52,7 +48,9 @@ def test_base_url_invalid_not_hosted(base_url: str) -> None:
 )
 def test_base_url_valid_not_hosted(base_url: str, mock_local_models: None) -> None:
     with pytest.warns(UserWarning):
-        Interface(base_url=base_url)
+        cls = Interface(base_url=base_url)
+    assert cls._is_hosted is False
+    assert cls.model == "model1"
 
 
 @pytest.mark.parametrize(

@@ -66,12 +66,9 @@ def test_api_key_priority(masked_env_var: str) -> None:
 
 @pytest.mark.integration()
 def test_missing_api_key_error(masked_env_var: str) -> None:
-    with pytest.warns(UserWarning):
-        client = Interface()
-    with pytest.raises(Exception) as exc_info:
-        client.get_query_embedding("Hello, world!")
-    message = str(exc_info.value)
-    assert "401" in message
+    with pytest.raises(ValueError) as err_msg:
+        Interface()
+    assert "An API key is required" in str(err_msg.value)
 
 
 @pytest.mark.integration()
@@ -80,7 +77,7 @@ def test_bogus_api_key_error(masked_env_var: str) -> None:
     with pytest.raises(Exception) as exc_info:
         client.get_query_embedding("Hello, world!")
     message = str(exc_info.value)
-    assert "404" in message
+    assert "401" in message
 
 
 @pytest.mark.integration()

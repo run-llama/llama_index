@@ -12,7 +12,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
-from urllib.parse import urlunparse, urlparse
+from urllib.parse import urlparse
 
 # integrate.api.nvidia.com is the default url for most models, any
 # bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
@@ -36,7 +36,7 @@ KNOWN_URLS.append("https://ai.api.nvidia.com/v1/retrieval/snowflake/arctic-embed
 
 class Model(BaseModel):
     id: str
-    base_model: Optional[str]
+    base_model: Optional[str] = None
 
 
 class NVIDIAEmbedding(BaseEmbedding):
@@ -118,10 +118,9 @@ class NVIDIAEmbedding(BaseEmbedding):
             "NO_API_KEY_PROVIDED",
         )
 
-        if (
-            not base_url or base_url in KNOWN_URLS
-        ):  # hosted on API Catalog (build.nvidia.com)
-            self._is_hosted = True
+        base_url = base_url or BASE_URL
+        self._is_hosted = base_url in KNOWN_URLS
+        if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
             # TODO: we should not assume unknown models are at the base url
@@ -180,15 +179,9 @@ class NVIDIAEmbedding(BaseEmbedding):
         result = urlparse(base_url)
         if not (result.scheme and result.netloc):
             raise ValueError(f"Invalid base_url, {expected_format}")
-        if result.path:
-            normalized_path = result.path.strip("/")
-            if normalized_path == "v1":
-                pass
-            elif normalized_path == "v1/embeddings":
-                warnings.warn(f"{expected_format} Rest is Ignored.")
-            else:
-                raise ValueError(f"Invalid base_url, {expected_format}")
-        return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
+        if base_url.endswith("embeddings"):
+            warnings.warn(f"{expected_format} Rest is ignored")
+        return base_url.strip("/")
 
     @property
     def available_models(self) -> List[Model]:
