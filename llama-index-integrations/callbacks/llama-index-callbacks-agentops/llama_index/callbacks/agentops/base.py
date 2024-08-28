@@ -85,10 +85,10 @@ class AgentOpsSpanHandler(SimpleSpanHandler):
     def __init__(
         self, shared_handler_state: AgentOpsHandlerState, ao_client: AOClient
     ) -> None:
+        super().__init__()
         self._shared_handler_state = shared_handler_state
         self._ao_client = ao_client
         self._observed_exceptions = set()
-        super().__init__()
 
     @classmethod
     def class_name(cls) -> str:
@@ -155,9 +155,9 @@ class AgentOpsEventHandler(BaseEventHandler):
     def __init__(
         self, shared_handler_state: AgentOpsHandlerState, ao_client: AOClient
     ) -> None:
+        super().__init__()
         self._shared_handler_state = shared_handler_state
         self._ao_client = ao_client
-        super().__init__()
 
     @classmethod
     def class_name(cls) -> str:

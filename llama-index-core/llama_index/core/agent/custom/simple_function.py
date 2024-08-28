@@ -16,7 +16,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
@@ -44,6 +44,7 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -55,9 +56,6 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
     output_key: str = Field(default="__output__", description="output")
 
     verbose: bool = Field(False, description="Verbose mode.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,

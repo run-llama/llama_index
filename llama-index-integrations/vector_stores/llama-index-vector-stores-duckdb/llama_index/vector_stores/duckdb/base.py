@@ -119,27 +119,26 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self._is_initialized = False
-
+        database_path = None
         if database_name == ":memory:":
             _home_dir = os.path.expanduser("~")
-            self._conn = duckdb.connect(database_name)
-            self._conn.execute(f"SET home_directory='{_home_dir}';")
-            self._conn.install_extension("json")
-            self._conn.load_extension("json")
-            self._conn.install_extension("fts")
-            self._conn.load_extension("fts")
+            conn = duckdb.connect(database_name)
+            conn.execute(f"SET home_directory='{_home_dir}';")
+            conn.install_extension("json")
+            conn.load_extension("json")
+            conn.install_extension("fts")
+            conn.load_extension("fts")
         else:
             # check if persist dir exists
             if not os.path.exists(persist_dir):
                 os.makedirs(persist_dir)
 
-            self._database_path = os.path.join(persist_dir, database_name)
+            database_path = os.path.join(persist_dir, database_name)
 
-            with DuckDBLocalContext(self._database_path) as _conn:
+            with DuckDBLocalContext(database_path) as _conn:
                 pass
 
-            self._conn = None
+            conn = None
 
         super().__init__(
             database_name=database_name,
@@ -150,6 +149,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             text_search_config=text_search_config,
             persist_dir=persist_dir,
         )
+        self._is_initialized = False
+        self._conn = conn
+        self._database_path = database_path
 
     @classmethod
     def from_local(

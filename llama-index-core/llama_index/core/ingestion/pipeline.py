@@ -17,7 +17,7 @@ from llama_index.core.constants import (
     DEFAULT_PIPELINE_NAME,
     DEFAULT_PROJECT_NAME,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.node_parser import SentenceSplitter
@@ -234,6 +234,7 @@ class IngestionPipeline(BaseModel):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str = Field(
         default=DEFAULT_PIPELINE_NAME,
         description="Unique name of the ingestion pipeline",
@@ -265,9 +266,6 @@ class IngestionPipeline(BaseModel):
         default=DocstoreStrategy.UPSERTS, description="Document de-dup strategy."
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
