@@ -437,9 +437,21 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     def get_nodes(
         self,
-        node_ids: list[str] | None = None,
-        filters: MetadataFilters | None = None,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
     ) -> list[BaseNode]:
+        """Get nodes by node ids or metadata filters.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
+        Raises:
+            ValueError: Neither or both of node_ids and filters are provided.
+
+        Returns:
+            List[BaseNode]:
+        """
         if node_ids is None and filters is None:
             raise ValueError("Either node_ids or filters must be provided.")
 
