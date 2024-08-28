@@ -33,7 +33,7 @@ version = "0.2.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 atlassian-python-api = "^3.41.9"
-html2text = "^2020.1.16"
+html2text = "^2024.2.26"
 pytesseract = "^0.3.10"
 pdf2image = "^1.17.0"
 pillow = "^10.2.0"
