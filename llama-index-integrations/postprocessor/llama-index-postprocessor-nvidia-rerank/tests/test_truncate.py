@@ -56,7 +56,6 @@ def test_truncate_passed(
 ) -> None:
     client = NVIDIARerank(
         api_key="BOGUS",
-        model="mock-model",
         **({"truncate": truncate} if truncate else {}),
     )
     response = client.postprocess_nodes(

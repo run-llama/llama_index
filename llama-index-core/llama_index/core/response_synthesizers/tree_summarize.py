@@ -4,14 +4,13 @@ from typing import Any, Optional, Sequence
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.prompt_helper import PromptHelper
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
 )
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictorType
 from llama_index.core.types import RESPONSE_TEXT_TYPE, BaseModel
 
 
@@ -30,7 +29,7 @@ class TreeSummarize(BaseSynthesizer):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         summary_template: Optional[BasePromptTemplate] = None,
@@ -38,17 +37,11 @@ class TreeSummarize(BaseSynthesizer):
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        if service_context is not None:
-            prompt_helper = service_context.prompt_helper
-
         super().__init__(
             llm=llm,
             callback_manager=callback_manager,
             prompt_helper=prompt_helper,
-            service_context=service_context,
             streaming=streaming,
             output_cls=output_cls,
         )
@@ -130,7 +123,7 @@ class TreeSummarize(BaseSynthesizer):
 
             summary_responses = await asyncio.gather(*tasks)
             if self._output_cls is not None:
-                summaries = [summary.json() for summary in summary_responses]
+                summaries = [summary.model_dump_json() for summary in summary_responses]
             else:
                 summaries = summary_responses
 
@@ -207,7 +200,9 @@ class TreeSummarize(BaseSynthesizer):
                 summary_responses = run_async_tasks(tasks)
 
                 if self._output_cls is not None:
-                    summaries = [summary.json() for summary in summary_responses]
+                    summaries = [
+                        summary.model_dump_json() for summary in summary_responses
+                    ]
                 else:
                     summaries = summary_responses
             else:
@@ -230,7 +225,7 @@ class TreeSummarize(BaseSynthesizer):
                         )
                         for text_chunk in text_chunks
                     ]
-                    summaries = [summary.json() for summary in summaries]
+                    summaries = [summary.model_dump_json() for summary in summaries]
 
             # recursively summarize the summaries
             return self.get_response(

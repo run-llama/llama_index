@@ -105,8 +105,10 @@ class Anthropic(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: anthropic.Anthropic = PrivateAttr()
-    _aclient: anthropic.AsyncAnthropic = PrivateAttr()
+    _client: Union[anthropic.Anthropic, anthropic.AnthropicVertex] = PrivateAttr()
+    _aclient: Union[
+        anthropic.AsyncAnthropic, anthropic.AsyncAnthropicVertex
+    ] = PrivateAttr()
 
     def __init__(
         self,
@@ -125,24 +127,11 @@ class Anthropic(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        region: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-
-        self._client = anthropic.Anthropic(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-            default_headers=default_headers,
-        )
-        self._aclient = anthropic.AsyncAnthropic(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-            default_headers=default_headers,
-        )
 
         super().__init__(
             temperature=temperature,
@@ -159,6 +148,38 @@ class Anthropic(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        if region and project_id:
+            self._client = anthropic.AnthropicVertex(
+                region=region,
+                project_id=project_id,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
+
+            self._aclient = anthropic.AsyncAnthropicVertex(
+                region=region,
+                project_id=project_id,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
+        else:
+            self._client = anthropic.Anthropic(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
+            self._aclient = anthropic.AsyncAnthropic(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=max_retries,
+                default_headers=default_headers,
+            )
 
     @classmethod
     def class_name(cls) -> str:
