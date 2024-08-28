@@ -185,14 +185,14 @@ class HuggingFaceInferenceAPI(CustomLLM):
             " is used to limit the number of tokens that can be generated."
         ),
     )
-    top_p : Optional[float] = Field(
+    top_p: Optional[float] = Field(
         default=None,
         description=(
             "The value of the top_p parameter to use when generating text. This parameter"
             " is used to limit the cumulative probability of the generated tokens."
         ),
     )
-    top_n_tokens : Optional[int] = Field(
+    top_n_tokens: Optional[int] = Field(
         default=None,
         description=(
             "The value of the top_n_tokens parameter to use when generating text. This parameter"
