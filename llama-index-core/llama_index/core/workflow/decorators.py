@@ -1,9 +1,14 @@
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Dict
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 
 from .errors import WorkflowValidationError
-from .utils import is_free_function, validate_step_signature, inspect_signature
+from .utils import (
+    is_free_function,
+    validate_step_signature,
+    inspect_signature,
+    ServiceDefinition,
+)
 
 if TYPE_CHECKING:
     from .workflow import Workflow
@@ -15,7 +20,7 @@ class StepConfig(BaseModel):
     return_types: List[Any]
     context_parameter: Optional[str]
     num_workers: int
-    services: Dict[str, List[Any]]
+    requested_services: List[ServiceDefinition]
 
 
 def step(
@@ -57,7 +62,7 @@ def step(
             return_types=spec.return_types,
             context_parameter=spec.context_parameter,
             num_workers=num_workers,
-            services=spec.requested_services or {},
+            requested_services=spec.requested_services or [],
         )
 
         return func
