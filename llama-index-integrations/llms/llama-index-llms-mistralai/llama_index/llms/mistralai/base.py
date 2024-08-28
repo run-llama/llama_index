@@ -123,7 +123,7 @@ class MistralAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=5, description="The maximum number of API retries.", gte=0
     )
-    random_seed: str = Field(
+    random_seed: Optional[int] = Field(
         default=None, description="The random seed to use for sampling."
     )
     additional_kwargs: Dict[str, Any] = Field(
