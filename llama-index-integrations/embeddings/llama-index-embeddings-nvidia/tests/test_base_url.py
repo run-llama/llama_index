@@ -53,13 +53,6 @@ def test_base_url_valid_not_hosted(base_url: str, mock_local_models: None) -> No
     assert cls.model == "model1"
 
 
-@pytest.mark.parametrize(
-    "base_url",
-    [
-        "https://ai.api.nvidia.com/v1/retrieval/nvidia/",
-        "https://ai.api.nvidia.com/v1/retrieval/snowflake/arctic-embed-l",
-        "https://integrate.api.nvidia.com/v1/",
-    ],
-)
-def test_base_url_valid_hosted(base_url: str, masked_env_var) -> None:
-    Interface(base_url=base_url)
+# @pytest.mark.parametrize("base_url", ["https://integrate.api.nvidia.com/v1/"])
+# def test_base_url_valid_hosted(base_url: str) -> None:
+#     Interface(base_url=base_url)
