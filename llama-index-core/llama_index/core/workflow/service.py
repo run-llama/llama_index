@@ -1,7 +1,7 @@
 from typing import Dict, TYPE_CHECKING, Optional
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 

@@ -369,12 +369,13 @@ template_retriever = CypherTemplateRetriever(
 
 Currently, supported graph stores for property graphs include:
 
-|                     | In-Memory | Native Embedding Support | Async | Server or disk based? |
-|---------------------|-----------|--------------------------|-------|-----------------------|
-| SimplePropertyGraphStore | ✅         | ❌                        | ❌     | Disk                  |
-| Neo4jPropertyGraphStore  | ❌         | ✅                        | ❌     | Server                |
-| NebulaPropertyGraphStore | ❌         | ❌                        | ❌     | Server                |
-| TiDBPropertyGraphStore   | ❌         | ✅                        | ❌     | Server                |
+|                              | In-Memory  | Native Embedding Support | Async | Server or disk based? |
+|------------------------------|------------|--------------------------|-------|-----------------------|
+| SimplePropertyGraphStore     | ✅         | ❌                       | ❌    | Disk                  |
+| Neo4jPropertyGraphStore      | ❌         | ✅                       | ❌    | Server                |
+| NebulaPropertyGraphStore     | ❌         | ❌                       | ❌    | Server                |
+| TiDBPropertyGraphStore       | ❌         | ✅                       | ❌    | Server                |
+| FalkorDBPropertyGraphStore   | ❌         | ✅                       | ❌    | Server                |
 
 ### Saving to/from disk
 

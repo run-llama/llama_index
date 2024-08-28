@@ -69,14 +69,55 @@ async def test_workflow_timeout():
 
 
 @pytest.mark.asyncio()
-async def test_workflow_validation():
+async def test_workflow_validation_unproduced_events():
     class InvalidWorkflow(Workflow):
         @step
         async def invalid_step(self, ev: StartEvent) -> None:
             pass
 
     workflow = InvalidWorkflow()
-    with pytest.raises(WorkflowValidationError):
+    with pytest.raises(
+        WorkflowValidationError,
+        match="The following events are consumed but never produced: StopEvent",
+    ):
+        await workflow.run()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_validation_unconsumed_events():
+    class InvalidWorkflow(Workflow):
+        @step
+        async def invalid_step(self, ev: StartEvent) -> OneTestEvent:
+            return OneTestEvent()
+
+        @step
+        async def a_step(self, ev: StartEvent) -> StopEvent:
+            return StopEvent()
+
+    workflow = InvalidWorkflow()
+    with pytest.raises(
+        WorkflowValidationError,
+        match="The following events are produced but never consumed: OneTestEvent",
+    ):
+        await workflow.run()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_validation_start_event_not_consumed():
+    class InvalidWorkflow(Workflow):
+        @step
+        async def a_step(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent()
+
+        @step
+        async def another_step(self, ev: OneTestEvent) -> OneTestEvent:
+            return OneTestEvent()
+
+    workflow = InvalidWorkflow()
+    with pytest.raises(
+        WorkflowValidationError,
+        match="The following events are produced but never consumed: StartEvent",
+    ):
         await workflow.run()
 
 
@@ -101,7 +142,7 @@ async def test_workflow_event_propagation():
 
 
 @pytest.mark.asyncio()
-async def test_sync_async_steps():
+async def test_workflow_sync_async_steps():
     class SyncAsyncWorkflow(Workflow):
         @step
         async def async_step(self, ev: StartEvent) -> OneTestEvent:
@@ -193,16 +234,39 @@ async def test_workflow_step_send_event_to_None():
         @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
             ctx.session.send_event(OneTestEvent(), step=None)
-            return None
+            return  # type:ignore
 
         @step
         async def step2(self, ev: OneTestEvent) -> StopEvent:
             return StopEvent(result="step2")
 
-    workflow = StepSendEventToNoneWorkflow()
+    workflow = StepSendEventToNoneWorkflow(verbose=True)
     await workflow.run()
     assert workflow.is_done()
     assert ("step2", "OneTestEvent") in workflow._sessions.pop()._accepted_events
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_returning_bogus():
+    class TestWorkflow(Workflow):
+        @step
+        async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
+            return "foo"  # type:ignore
+
+        @step
+        async def step2(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
+            return OneTestEvent()
+
+        @step
+        async def step3(self, ev: OneTestEvent) -> StopEvent:
+            return StopEvent(result="step2")
+
+    workflow = TestWorkflow()
+    with pytest.warns(
+        UserWarning,
+        match="Step function step1 returned str instead of an Event instance.",
+    ):
+        await workflow.run()
 
 
 @pytest.mark.asyncio()
@@ -252,3 +316,66 @@ def test_deprecated_send_event():
     with pytest.raises(WorkflowRuntimeError):
         wf.send_event(message=ev)
     session2.send_event.assert_not_called()
+
+
+def test_add_step():
+    class TestWorkflow(Workflow):
+        @step
+        def foo_step(self, ev: StartEvent) -> None:
+            pass
+
+    with pytest.raises(
+        WorkflowValidationError,
+        match="A step foo_step is already part of this workflow, please choose another name.",
+    ):
+
+        @step(workflow=TestWorkflow)
+        def foo_step(ev: StartEvent) -> None:
+            pass
+
+
+def test_add_step_not_a_step():
+    class TestWorkflow(Workflow):
+        @step
+        def a_ste(self, ev: StartEvent) -> None:
+            pass
+
+    def another_step(ev: StartEvent) -> None:
+        pass
+
+    with pytest.raises(
+        WorkflowValidationError,
+        match="Step function another_step is missing the `@step` decorator.",
+    ):
+        TestWorkflow.add_step(another_step)
+
+
+@pytest.mark.asyncio()
+async def test_workflow_task_raises():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ev: StartEvent) -> StopEvent:
+            raise ValueError("The step raised an error!")
+
+    workflow = DummyWorkflow()
+    with pytest.raises(ValueError, match="The step raised an error!"):
+        await workflow.run()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_task_raises_step():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ev: StartEvent) -> StopEvent:
+            raise ValueError("The step raised an error!")
+
+    workflow = DummyWorkflow()
+    with pytest.raises(ValueError, match="The step raised an error!"):
+        await workflow.run_step()
+
+
+def test_workflow_disable_validation():
+    w = Workflow(disable_validation=True)
+    w._get_steps = mock.MagicMock()
+    w._validate()
+    w._get_steps.assert_not_called()

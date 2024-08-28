@@ -7,7 +7,7 @@ from .decorators import StepConfig
 from .events import Event
 from .errors import WorkflowRuntimeError
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 
