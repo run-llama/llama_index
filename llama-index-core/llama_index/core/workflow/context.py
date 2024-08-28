@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING
 
 from .events import Event
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .session import WorkflowSession
 
 

@@ -52,10 +52,12 @@ nav:
           - A basic workflow: ./understanding/workflows/basic_flow.md
           - Branches and loops: ./understanding/workflows/branches_and_loops.md
           - Maintaining state: ./understanding/workflows/state.md
+          - Streaming events: ./understanding/workflows/stream.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
           - Subclassing workflows: ./understanding/workflows/subclass.md
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
+          - Unbound syntax: ./understanding/workflows/unbound.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
@@ -293,6 +295,7 @@ nav:
           - ./examples/llm/azure_openai.ipynb
           - ./examples/llm/bedrock.ipynb
           - ./examples/llm/bedrock_converse.ipynb
+          - ./examples/llm/cerebras.ipynb
           - ./examples/llm/clarifai.ipynb
           - ./examples/llm/cleanlab.ipynb
           - ./examples/llm/cohere.ipynb
@@ -654,11 +657,13 @@ nav:
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
+          - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/router_query_engine.ipynb
           - ./examples/workflow/self_discover_workflow.ipynb
           - ./examples/workflow/sub_question_query_engine.ipynb
           - ./examples/workflow/workflows_cookbook.ipynb
@@ -864,6 +869,7 @@ nav:
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
+          - ./api_reference/embeddings/xinference.md
           - ./api_reference/embeddings/yandexgpt.md
       - Evaluation:
           - ./api_reference/evaluation/answer_relevancy.md
@@ -917,6 +923,7 @@ nav:
           - ./api_reference/llms/azure_openai.md
           - ./api_reference/llms/bedrock.md
           - ./api_reference/llms/bedrock_converse.md
+          - ./api_reference/llms/cerebras.md
           - ./api_reference/llms/clarifai.md
           - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cohere.md
@@ -1127,6 +1134,7 @@ nav:
           - ./api_reference/postprocessor/tei_rerank.md
           - ./api_reference/postprocessor/time_weighted.md
           - ./api_reference/postprocessor/voyageai_rerank.md
+          - ./api_reference/postprocessor/xinference_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
       - Output Parsers:
@@ -1980,6 +1988,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-everlyai
             - ../llama-index-integrations/llms/llama-index-llms-openrouter
             - ../llama-index-integrations/llms/llama-index-llms-openai
+            - ../llama-index-integrations/llms/llama-index-llms-cerebras
             - ../llama-index-integrations/llms/llama-index-llms-gradient
             - ../llama-index-integrations/extractors/llama-index-extractors-entity
             - ../llama-index-integrations/extractors/llama-index-extractors-marvin
@@ -2133,6 +2142,8 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-sambanova
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2378,6 +2389,7 @@ plugins:
         ./examples/llm/anyscale.html: https://docs.llamaindex.ai/en/stable/examples/llm/anyscale/
         ./examples/llm/azure_openai.html: https://docs.llamaindex.ai/en/stable/examples/llm/azure_openai/
         ./examples/llm/bedrock.html: https://docs.llamaindex.ai/en/stable/examples/llm/bedrock/
+        ./examples/llm/cerebras.html: https://docs.llamaindex.ai/en/stable/examples/llm/cerebras/
         ./examples/llm/clarifai.html: https://docs.llamaindex.ai/en/stable/examples/llm/clarifai/
         ./examples/llm/cohere.html: https://docs.llamaindex.ai/en/stable/examples/llm/cohere/
         ./examples/llm/dashscope.html: https://docs.llamaindex.ai/en/stable/examples/llm/dashscope/

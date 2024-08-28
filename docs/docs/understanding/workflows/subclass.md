@@ -96,4 +96,4 @@ draw_all_possible_flows(CustomWorkflow, "custom_workflow.html")
 
 ![Custom workflow](subclass.png)
 
-Next, let's look at [nested workflows](nested.md).
+Next, let's look at another way to extend a workflow: [nested workflows](nested.md).
