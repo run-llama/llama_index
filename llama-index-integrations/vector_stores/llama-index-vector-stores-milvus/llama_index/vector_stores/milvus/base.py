@@ -6,6 +6,7 @@ An index that is built within Milvus.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+from copy import deepcopy
 from enum import Enum
 
 
@@ -411,8 +412,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
         """
-        from copy import deepcopy
-
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
         if node_ids:
@@ -435,6 +434,33 @@ class MilvusVectorStore(BasePydanticVectorStore):
     def clear(self) -> None:
         """Clears db."""
         self._milvusclient.drop_collection(self.collection_name)
+
+    def get_nodes(
+        self,
+        node_ids: list[str] | None = None,
+        filters: MetadataFilters | None = None,
+    ) -> list[BaseNode]:
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+        milvus_filter = _to_milvus_filter(filters_cpy)
+
+        if node_ids is not None and milvus_filter:
+            raise ValueError("Only one of node_ids or filters can be provided.")
+
+        res = self.client.query(
+            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+        )
+        return [
+            metadata_dict_to_node(
+                {
+                    "_node_content": item.get("_node_content", None),
+                    "_node_type": item.get("_node_type", None),
+                }
+            )
+            for item in res
+        ]
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
