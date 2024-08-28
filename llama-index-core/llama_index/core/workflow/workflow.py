@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import warnings
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set
 
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.workflow.decorators import StepConfig, step
@@ -9,6 +9,7 @@ from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_steps_from_instance,
+    ServiceDefinition,
 )
 
 from .context import Context
@@ -36,7 +37,7 @@ class Workflow(metaclass=_WorkflowMeta):
         timeout: Optional[float] = 10.0,
         disable_validation: bool = False,
         verbose: bool = False,
-        service_manager: ServiceManager = ServiceManager(),
+        service_manager: Optional[ServiceManager] = None,
     ) -> None:
         # Configuration
         self._timeout = timeout
@@ -46,7 +47,30 @@ class Workflow(metaclass=_WorkflowMeta):
         self._sessions: Set[WorkflowSession] = set()
         self._step_session: Optional[WorkflowSession] = None
         # Services management
-        self._service_manager = service_manager
+        self._service_manager = service_manager or ServiceManager()
+
+    async def stream_events(self) -> AsyncGenerator[Event, None]:
+        # In the typical streaming use case, `run()` is not awaited but wrapped in a asyncio.Task. Since we'll be
+        # consuming events produced by `run()`, we must give its Task the chance to run before entering the dequeueing
+        # loop.
+        await asyncio.sleep(0)
+
+        if len(self._sessions) > 1:
+            # We can't possibly know from what session we should stream events, raise an error.
+            msg = (
+                "This workflow has multiple session running concurrently and cannot stream events. "
+                "To be able to stream events, make sure you call `run()` on this workflow only once."
+            )
+            raise WorkflowRuntimeError(msg)
+
+        # Enter the dequeuing loop.
+        session = next(iter(self._sessions))
+        while True:
+            ev = await session.streaming_queue.get()
+            if type(ev) is StopEvent:
+                break
+
+            yield ev
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -116,8 +140,11 @@ class Workflow(metaclass=_WorkflowMeta):
                     kwargs = {}
                     if config.context_parameter:
                         kwargs[config.context_parameter] = session.get_context(name)
-                    for service_name in config.services:
-                        kwargs[service_name] = self._service_manager.get(service_name)
+                    for service_definition in config.requested_services:
+                        service = self._service_manager.get(
+                            service_definition.name, service_definition.default_value
+                        )
+                        kwargs[service_definition.name] = service
                     kwargs[config.event_name] = ev
 
                     # - check if its async or not
@@ -299,6 +326,8 @@ class Workflow(metaclass=_WorkflowMeta):
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         ctx.session._retval = ev.result or None
+        ctx.session.write_event_to_stream(ev)
+
         # Signal we want to stop the workflow
         raise WorkflowDone
 
@@ -309,7 +338,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
-        requested_services: Set[str] = set()
+        requested_services: Set[ServiceDefinition] = set()
 
         for name, step_func in self._get_steps().items():
             step_config: Optional[StepConfig] = getattr(
@@ -328,7 +357,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
                 produced_events.add(event_type)
 
-            requested_services.update(step_config.services.keys())
+            requested_services.update(step_config.requested_services)
 
         # Check if all consumed events are produced
         unconsumed_events = consumed_events - produced_events
@@ -353,9 +382,12 @@ class Workflow(metaclass=_WorkflowMeta):
             raise WorkflowValidationError("No step produces StopEvent")
 
         # Check all the requested services are available
-        if requested_services:
-            avail = set(self._service_manager._services.keys())
-            missing = requested_services - avail
+        required_service_names = {
+            sd.name for sd in requested_services if sd.default_value is None
+        }
+        if required_service_names:
+            avail_service_names = set(self._service_manager._services.keys())
+            missing = required_service_names - avail_service_names
             if missing:
                 msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
                 raise WorkflowValidationError(msg)
