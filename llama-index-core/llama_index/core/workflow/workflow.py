@@ -78,6 +78,11 @@ class Workflow(metaclass=_WorkflowMeta):
 
         It raises an exception if a step with the same name was already added to the workflow.
         """
+        step_config: Optional[StepConfig] = getattr(func, "__step_config", None)
+        if not step_config:
+            msg = f"Step function {func.__name__} is missing the `@step` decorator."
+            raise WorkflowValidationError(msg)
+
         if func.__name__ in {**get_steps_from_class(cls), **cls._step_functions}:
             msg = f"A step {func.__name__} is already part of this workflow, please choose another name."
             raise WorkflowValidationError(msg)
@@ -108,11 +113,8 @@ class Workflow(metaclass=_WorkflowMeta):
         for name, step_func in self._get_steps().items():
             session._queues[name] = asyncio.Queue()
             session._step_flags[name] = asyncio.Event()
-            step_config: Optional[StepConfig] = getattr(
-                step_func, "__step_config", None
-            )
-            if not step_config:
-                raise ValueError(f"Step {name} is missing `@step` decorator.")
+            # At this point, step_func is guaranteed to have the `__step_config` attribute
+            step_config: StepConfig = getattr(step_func, "__step_config")
 
             async def _task(
                 name: str,
@@ -289,20 +291,14 @@ class Workflow(metaclass=_WorkflowMeta):
         we_done = False
         exception_raised = None
         for t in self._step_session._tasks:
+            # Check if we're done
             if not t.done():
                 continue
 
+            we_done = True
             e = t.exception()
-            if e is None:
-                continue
-
-            # Check if we're done
-            if type(e) == WorkflowDone:
-                we_done = True
-                continue
-
-            # In any other case, bubble up the exception
-            exception_raised = e
+            if type(e) != WorkflowDone:
+                exception_raised = e
 
         retval = None
         if we_done:
@@ -340,12 +336,10 @@ class Workflow(metaclass=_WorkflowMeta):
         consumed_events: Set[type] = set()
         requested_services: Set[ServiceDefinition] = set()
 
-        for name, step_func in self._get_steps().items():
-            step_config: Optional[StepConfig] = getattr(
-                step_func, "__step_config", None
-            )
-            if not step_config:
-                raise ValueError(f"Step {name} is missing `@step` decorator.")
+        for step_func in self._get_steps().values():
+            step_config: Optional[StepConfig] = getattr(step_func, "__step_config")
+            # At this point we know step config is not None, let's make the checker happy
+            assert step_config is not None
 
             for event_type in step_config.accepted_events:
                 consumed_events.add(event_type)
@@ -362,24 +356,18 @@ class Workflow(metaclass=_WorkflowMeta):
         # Check if all consumed events are produced
         unconsumed_events = consumed_events - produced_events
         if unconsumed_events:
+            names = ", ".join(ev.__name__ for ev in unconsumed_events)
             raise WorkflowValidationError(
-                f"The following events are consumed but never produced: {unconsumed_events}"
+                f"The following events are consumed but never produced: {names}"
             )
 
         # Check if there are any unused produced events (except StopEvent)
         unused_events = produced_events - consumed_events - {StopEvent}
         if unused_events:
+            names = ", ".join(ev.__name__ for ev in unused_events)
             raise WorkflowValidationError(
-                f"The following events are produced but never consumed: {unused_events}"
+                f"The following events are produced but never consumed: {names}"
             )
-
-        # Check if there's at least one step that consumes StartEvent
-        if StartEvent not in consumed_events:
-            raise WorkflowValidationError("No step consumes StartEvent")
-
-        # Check if there's at least one step that produces StopEvent
-        if StopEvent not in produced_events:
-            raise WorkflowValidationError("No step produces StopEvent")
 
         # Check all the requested services are available
         required_service_names = {

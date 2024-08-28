@@ -10,7 +10,7 @@ from .utils import (
     ServiceDefinition,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 
@@ -38,13 +38,6 @@ def step(
     """
 
     def decorator(func: Callable) -> Callable:
-        # If this is a free function, call add_step() explicitly.
-        if is_free_function(func.__qualname__):
-            if workflow is None:
-                msg = f"To decorate {func.__name__} please pass a workflow class to the @step decorator."
-                raise WorkflowValidationError(msg)
-            workflow.add_step(func)
-
         if not isinstance(num_workers, int) or num_workers <= 0:
             raise WorkflowValidationError(
                 "num_workers must be an integer greater than 0"
@@ -64,6 +57,13 @@ def step(
             num_workers=num_workers,
             requested_services=spec.requested_services or [],
         )
+
+        # If this is a free function, call add_step() explicitly.
+        if is_free_function(func.__qualname__):
+            if workflow is None:
+                msg = f"To decorate {func.__name__} please pass a workflow class to the @step decorator."
+                raise WorkflowValidationError(msg)
+            workflow.add_step(func)
 
         return func
 
