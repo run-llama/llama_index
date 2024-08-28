@@ -44,3 +44,4 @@ async def test_too_many_runs():
     ):
         async for ev in wf.stream_events():
             pass
+    await r
