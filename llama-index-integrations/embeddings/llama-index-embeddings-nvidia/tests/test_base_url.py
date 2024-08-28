@@ -61,5 +61,5 @@ def test_base_url_valid_not_hosted(base_url: str, mock_local_models: None) -> No
         "https://integrate.api.nvidia.com/v1/",
     ],
 )
-def test_base_url_valid_hosted(base_url: str) -> None:
+def test_base_url_valid_hosted(base_url: str, masked_env_var) -> None:
     Interface(base_url=base_url)
