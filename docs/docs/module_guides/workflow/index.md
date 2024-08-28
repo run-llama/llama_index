@@ -234,7 +234,7 @@ Using `ctx.collect_events()` we can buffer and wait for ALL expected events to a
 
 ## Manually Triggering Events
 
-Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `self.send_event(event)` method within a workflow.
+Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `ctx.session.send_event(event)` method within a workflow.
 
 Here is a short toy example showing how this would be used:
 
@@ -256,9 +256,11 @@ class GatherEvent(Event):
 
 class MyWorkflow(Workflow):
     @step
-    async def dispatch_step(self, ev: StartEvent) -> MyEvent | GatherEvent:
-        self.send_event(MyEvent())
-        self.send_event(MyEvent())
+    async def dispatch_step(
+        self, ctx: Context, ev: StartEvent
+    ) -> MyEvent | GatherEvent:
+        ctx.session.send_event(MyEvent())
+        ctx.session.send_event(MyEvent())
 
         return GatherEvent()
 
@@ -346,7 +348,18 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
 
 You can find many useful examples of using workflows in the notebooks below:
 
-- [RAG + Reranking](../../examples/workflow/rag.ipynb)
-- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
+- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb)
+- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
+- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
+- [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
+- [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)
+- [Multi-Strategy Workflow](../../examples/workflow/multi_strategy_workflow.ipynb)
+- [RAG + Reranking](../../examples/workflow/rag.ipynb)
 - [ReAct Agent](../../examples/workflow/react_agent.ipynb)
+- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
+- [Router Query Engine](../../examples/workflow/router_query_engine.ipynb)
+- [Self Discover Workflow](../../examples/workflow/self_discover_workflow.ipynb)
+- [Sub-Question Query Engine](../../examples/workflow/sub_question_query_engine.ipynb)
+- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb)
