@@ -14,7 +14,7 @@ from typing import (
 # handle python version compatibility
 try:
     from types import UnionType
-except ImportError:
+except ImportError:  # pragma: no cover
     UnionType = Union
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
