@@ -125,6 +125,7 @@ class SlackReader(BasePydanticReader):
                         "ts": message_ts,
                         "cursor": next_cursor,
                         "latest": str(self.latest_date_timestamp),
+                        "limit": 800,  # limit is 1000
                     }
                     if self.earliest_date_timestamp is not None:
                         conversations_replies_kwargs["oldest"] = str(
@@ -181,6 +182,7 @@ class SlackReader(BasePydanticReader):
                         "ts": message_ts,
                         "cursor": next_cursor,
                         "latest": str(self.latest_date_timestamp),
+                        "limit": 800,  # limit is 1000
                     }
                     if self.earliest_date_timestamp is not None:
                         conversations_replies_kwargs["oldest"] = str(
@@ -382,7 +384,7 @@ class SlackReader(BasePydanticReader):
         """
         results = []
         for channel_id in channel_ids:
-            channel_content = await self._read_channel_async(
+            channel_content = await self._aread_channel(
                 channel_id, reverse_chronological=reverse_chronological
             )
             results.append(
