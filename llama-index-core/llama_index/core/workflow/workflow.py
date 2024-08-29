@@ -189,7 +189,7 @@ class Workflow(metaclass=_WorkflowMeta):
         msg = (
             "Use a Context instance to send events from a step. "
             "Make sure your step method or function takes a parameter of type Context like `ctx: Context` and "
-            "replace `self.send_event(...)` with `ctx.session.send_event(...)` in your code."
+            "replace `self.send_event(...)` with `ctx.send_event(...)` in your code."
         )
 
         if len(self._contexts) > 1:
@@ -214,14 +214,14 @@ class Workflow(metaclass=_WorkflowMeta):
         # Validate the workflow if needed
         self._validate()
 
-        # Start the machinery in a new session
-        session = self._start()
+        # Start the machinery in a new Context
+        ctx = self._start()
 
         # Send the first event
-        session.send_event(StartEvent(**kwargs))
+        ctx.send_event(StartEvent(**kwargs))
 
         done, unfinished = await asyncio.wait(
-            session._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
+            ctx._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
         )
 
         we_done = False
@@ -254,7 +254,7 @@ class Workflow(metaclass=_WorkflowMeta):
             msg = f"Operation timed out after {self._timeout} seconds"
             raise WorkflowTimeoutError(msg)
 
-        return session._retval
+        return ctx._retval
 
     @dispatcher.span
     async def run_step(self, **kwargs: Any) -> Optional[str]:
@@ -316,8 +316,8 @@ class Workflow(metaclass=_WorkflowMeta):
     @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
-        ctx.session._retval = ev.result or None
-        ctx.session.write_event_to_stream(ev)
+        ctx._retval = ev.result or None
+        ctx.write_event_to_stream(ev)
 
         # Signal we want to stop the workflow
         raise WorkflowDone
