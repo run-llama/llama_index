@@ -439,7 +439,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
-    ) -> list[BaseNode]:
+    ) -> List[BaseNode]:
         """Get nodes by node ids or metadata filters.
 
         Args:
@@ -464,15 +464,28 @@ class MilvusVectorStore(BasePydanticVectorStore):
         res = self.client.query(
             ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
         )
-        return [
-            metadata_dict_to_node(
-                {
-                    "_node_content": item.get("_node_content", None),
-                    "_node_type": item.get("_node_type", None),
-                }
-            )
-            for item in res
-        ]
+
+        nodes = []
+        for item in res:
+            if not self.text_key:
+                node = metadata_dict_to_node(item)
+                node.embedding = item.get(self.embedding_field, None)
+            else:
+                try:
+                    text = item.pop(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    ) from None
+                embedding = item.pop(self.embedding_field, None)
+                node = TextNode(
+                    text=text,
+                    embedding=embedding,
+                    metadata=item,
+                )
+            nodes.append(node)
+        return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
