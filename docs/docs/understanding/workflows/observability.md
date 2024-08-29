@@ -26,9 +26,9 @@ class ConcurrentFlow(Workflow):
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> StepAEvent | StepBEvent | StepCEvent:
-        self.send_event(StepAEvent(query="Query 1"))
-        self.send_event(StepBEvent(query="Query 2"))
-        self.send_event(StepCEvent(query="Query 3"))
+        ctx.session.send_event(StepAEvent(query="Query 1"))
+        ctx.session.send_event(StepBEvent(query="Query 2"))
+        ctx.session.send_event(StepCEvent(query="Query 3"))
 
     @step
     async def step_a(self, ctx: Context, ev: StepAEvent) -> StepACompleteEvent:
@@ -128,6 +128,6 @@ You can also use any of the third-party tools for visualizing and debugging that
 
 ![Arize flow](./arize.png)
 
-## That's it!
+## One more thing
 
-Congratulations, you've completed the workflows tutorial!
+Our last step in this tutorial is an alternative syntax for defining workflows using [unbound functions](unbound_functions.md) instead of classes.

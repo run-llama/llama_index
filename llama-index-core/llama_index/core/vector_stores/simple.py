@@ -163,14 +163,11 @@ class SimpleVectorStore(BasePydanticVectorStore):
     def from_persist_dir(
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
-        namespace: Optional[str] = None,
+        namespace: str = DEFAULT_VECTOR_STORE,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        if namespace:
-            persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
-        else:
-            persist_fname = DEFAULT_PERSIST_FNAME
+        persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
 
         if fs is not None:
             persist_path = concat_dirs(persist_dir, persist_fname)
