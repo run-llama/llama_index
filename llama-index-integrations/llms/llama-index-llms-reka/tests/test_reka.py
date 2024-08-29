@@ -1,7 +1,9 @@
 import pytest
 import os
 import inspect
-from typing import AsyncIterator
+from typing import AsyncIterator, Iterator
+
+from unittest import mock
 
 from llama_index.llms.reka import RekaLLM
 from llama_index.core.base.llms.types import (
@@ -18,6 +20,9 @@ def reka_llm():
     if not api_key:
         pytest.skip("REKA_API_KEY not set in environment variables")
     return RekaLLM(model="reka-core-20240501", api_key=api_key)
+
+
+# Actual integration tests
 
 
 def test_chat(reka_llm):
@@ -141,3 +146,183 @@ async def test_astream_complete(reka_llm):
         full_response.strip()
     ), "Async streamed completion response should not be empty"
     print(f"\n\nFull async streamed completion response:\n{full_response}")
+
+
+class MockRekaStreamResponse:
+    def __init__(self, content: str):
+        self.chunks = [
+            mock.MagicMock(
+                responses=[mock.MagicMock(chunk=mock.MagicMock(content=token))]
+            )
+            for token in content.split()
+        ]
+
+    def __iter__(self) -> Iterator[mock.MagicMock]:
+        return iter(self.chunks)
+
+    async def __aiter__(self) -> AsyncIterator[mock.MagicMock]:
+        for chunk in self.chunks:
+            yield chunk
+
+
+@pytest.fixture()
+def mock_reka_llm():
+    return RekaLLM(api_key="dummy", temperature=0.3)
+
+
+def test_chat_mock(mock_reka_llm):
+    with mock.patch.object(mock_reka_llm._client.chat, "create") as mock_create:
+        mock_create.return_value = mock.MagicMock(
+            responses=[
+                mock.MagicMock(message=mock.MagicMock(content="Mocked chat response"))
+            ]
+        )
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Test message")]
+        response = mock_reka_llm.chat(messages)
+
+        assert isinstance(response, ChatResponse)
+        assert response.message.content == "Mocked chat response"
+        assert response.message.role == MessageRole.ASSISTANT
+        mock_create.assert_called_once()
+
+
+def test_complete_mock(mock_reka_llm):
+    with mock.patch.object(mock_reka_llm._client.chat, "create") as mock_create:
+        mock_create.return_value = mock.MagicMock(
+            responses=[
+                mock.MagicMock(
+                    message=mock.MagicMock(content="Mocked completion response")
+                )
+            ]
+        )
+
+        response = mock_reka_llm.complete("Test prompt")
+
+        assert isinstance(response, CompletionResponse)
+        assert response.text == "Mocked completion response"
+        mock_create.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_achat_mock(mock_reka_llm):
+    with mock.patch.object(mock_reka_llm._aclient.chat, "create") as mock_acreate:
+        mock_acreate.return_value = mock.MagicMock(
+            responses=[
+                mock.MagicMock(
+                    message=mock.MagicMock(content="Mocked async chat response")
+                )
+            ]
+        )
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Async test")]
+        response = await mock_reka_llm.achat(messages)
+
+        assert isinstance(response, ChatResponse)
+        assert response.message.content == "Mocked async chat response"
+        assert response.message.role == MessageRole.ASSISTANT
+        mock_acreate.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_acomplete_mock(mock_reka_llm):
+    with mock.patch.object(mock_reka_llm._aclient.chat, "create") as mock_acreate:
+        mock_acreate.return_value = mock.MagicMock(
+            responses=[
+                mock.MagicMock(
+                    message=mock.MagicMock(content="Mocked async completion response")
+                )
+            ]
+        )
+
+        response = await mock_reka_llm.acomplete("Async test prompt")
+
+        assert isinstance(response, CompletionResponse)
+        assert response.text == "Mocked async completion response"
+        mock_acreate.assert_called_once()
+
+
+def test_stream_chat_mock(mock_reka_llm):
+    with mock.patch.object(
+        mock_reka_llm._client.chat, "create_stream"
+    ) as mock_create_stream:
+        mock_create_stream.return_value = MockRekaStreamResponse(
+            "Mocked streaming response"
+        )
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Stream test")]
+        stream = mock_reka_llm.stream_chat(messages)
+
+        response = list(stream)
+        assert all(isinstance(chunk, ChatResponse) for chunk in response)
+        assert [chunk.message.content for chunk in response] == [
+            "Mocked",
+            "streaming",
+            "response",
+        ]
+        mock_create_stream.assert_called_once()
+
+
+def test_stream_complete_mock(mock_reka_llm):
+    with mock.patch.object(
+        mock_reka_llm._client.chat, "create_stream"
+    ) as mock_create_stream:
+        mock_create_stream.return_value = MockRekaStreamResponse(
+            "Mocked streaming completion"
+        )
+
+        stream = mock_reka_llm.stream_complete("Test prompt")
+
+        response = list(stream)
+        assert all(isinstance(chunk, CompletionResponse) for chunk in response)
+        assert [chunk.text for chunk in response] == [
+            "Mocked",
+            "streaming",
+            "completion",
+        ]
+        mock_create_stream.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_astream_chat_mock(mock_reka_llm):
+    with mock.patch.object(
+        mock_reka_llm._aclient.chat, "create_stream"
+    ) as mock_acreate_stream:
+        mock_acreate_stream.return_value = MockRekaStreamResponse(
+            "Mocked async streaming response"
+        )
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Async stream test")]
+        stream = await mock_reka_llm.astream_chat(messages)
+
+        response = [chunk async for chunk in stream]
+        assert all(isinstance(chunk, ChatResponse) for chunk in response)
+        assert [chunk.message.content for chunk in response] == [
+            "Mocked",
+            "async",
+            "streaming",
+            "response",
+        ]
+        mock_acreate_stream.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_astream_complete_mock(mock_reka_llm):
+    with mock.patch.object(
+        mock_reka_llm._aclient.chat, "create_stream"
+    ) as mock_acreate_stream:
+        mock_acreate_stream.return_value = MockRekaStreamResponse(
+            "Mocked async streaming response"
+        )
+
+        stream = await mock_reka_llm.astream_complete("Async stream test prompt")
+
+        response = [chunk async for chunk in stream]
+        assert all(isinstance(chunk, CompletionResponse) for chunk in response)
+        assert [chunk.text for chunk in response] == [
+            "Mocked",
+            "async",
+            "streaming",
+            "response",
+        ]
+        mock_acreate_stream.assert_called_once()
