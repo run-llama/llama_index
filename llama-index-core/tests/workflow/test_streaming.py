@@ -8,6 +8,8 @@ from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 
+from .conftest import OneTestEvent
+
 
 class StreamingWorkflow(Workflow):
     @step
@@ -45,3 +47,23 @@ async def test_too_many_runs():
         async for ev in wf.stream_events():
             pass
     await r
+
+
+@pytest.mark.asyncio()
+async def test_task_raised():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.session.write_event_to_stream(OneTestEvent(test_param="foo"))
+            raise ValueError("The step raised an error!")
+
+    wf = DummyWorkflow()
+    r = asyncio.create_task(wf.run())
+
+    # Make sure we don't block indefinitely here because the step raised
+    async for ev in wf.stream_events():
+        assert ev.test_param == "foo"
+
+    # Make sure the await actually caught the exception
+    with pytest.raises(ValueError, match="The step raised an error!"):
+        await r
