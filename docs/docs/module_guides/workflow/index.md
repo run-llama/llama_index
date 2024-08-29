@@ -234,7 +234,7 @@ Using `ctx.collect_events()` we can buffer and wait for ALL expected events to a
 
 ## Manually Triggering Events
 
-Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `ctx.session.send_event(event)` method within a workflow.
+Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `ctx.send_event(event)` method within a workflow.
 
 Here is a short toy example showing how this would be used:
 
@@ -259,8 +259,8 @@ class MyWorkflow(Workflow):
     async def dispatch_step(
         self, ctx: Context, ev: StartEvent
     ) -> MyEvent | GatherEvent:
-        ctx.session.send_event(MyEvent())
-        ctx.session.send_event(MyEvent())
+        ctx.send_event(MyEvent())
+        ctx.send_event(MyEvent())
 
         return GatherEvent()
 

@@ -1,11 +1,14 @@
-from collections import defaultdict
 import asyncio
-from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING
+import warnings
+from collections import defaultdict
+from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
 
+from .decorators import StepConfig
 from .events import Event
+from .errors import WorkflowRuntimeError
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .session import WorkflowSession
+    from .workflow import Workflow
 
 
 class Context:
@@ -19,27 +22,21 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(
-        self,
-        session: Optional["WorkflowSession"] = None,
-        parent: Optional["Context"] = None,
-    ) -> None:
+    def __init__(self, workflow: "Workflow") -> None:
+        self._workflow = workflow
+        # Broker machinery
+        self._queues: Dict[str, asyncio.Queue] = {}
+        self._tasks: Set[asyncio.Task] = set()
+        self._broker_log: List[Event] = []
+        self._step_flags: Dict[str, asyncio.Event] = {}
+        self._accepted_events: List[Tuple[str, str]] = []
+        self._retval: Any = None
+        # Streaming machinery
+        self._streaming_queue: asyncio.Queue = asyncio.Queue()
         # Global data storage
-        if parent is not None:
-            self._globals = parent._globals
-        else:
-            self._globals: Dict[str, Any] = {}
-            self._lock = asyncio.Lock()
-            if session is None:
-                msg = "A workflow session is needed to create a root context"
-                raise ValueError(msg)
-            self._session = session
-
-        # Local data storage
-        self._locals: Dict[str, Any] = {}
-
+        self._lock = asyncio.Lock()
+        self._globals: Dict[str, Any] = {}
         # Step-specific instance
-        self._parent: Optional[Context] = parent
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
@@ -48,17 +45,14 @@ class Context:
         Args:
             key: A unique string to identify the value stored.
             value: The data to be stored.
-            make_private: Make the value only accessible from the step that stored it.
 
         Raises:
             ValueError: When make_private is True but a key already exists in the global storage.
         """
         if make_private:
-            if key in self._globals:
-                msg = f"A key named '{key}' already exists in the Context storage."
-                raise ValueError(msg)
-            self._locals[key] = value
-            return
+            warnings.warn(
+                "`make_private` is deprecated and will be ignored", DeprecationWarning
+            )
 
         async with self.lock:
             self._globals[key] = value
@@ -73,13 +67,11 @@ class Context:
         Raises:
             ValueError: When there's not value accessible corresponding to `key`.
         """
-        if key in self._locals:
-            return self._locals[key]
-        elif key in self._globals:
-            async with self.lock:
+        async with self.lock:
+            if key in self._globals:
                 return self._globals[key]
-        elif default is not None:
-            return default
+            elif default is not None:
+                return default
 
         msg = f"Key '{key}' not found in Context"
         raise ValueError(msg)
@@ -90,17 +82,21 @@ class Context:
 
         Use `get` and `set` instead.
         """
+        msg = "`data` is deprecated, please use the `get` and `set` method to store data into the Context."
+        warnings.warn(msg, DeprecationWarning)
         return self._globals
 
     @property
     def lock(self) -> asyncio.Lock:
         """Returns a mutex to lock the Context."""
-        return self._parent._lock if self._parent else self._lock
+        return self._lock
 
     @property
-    def session(self) -> "WorkflowSession":
-        """Returns a mutex to lock the Context."""
-        return self._parent._session if self._parent else self._session
+    def session(self) -> "Context":
+        """This property is provided for backward compatibility."""
+        msg = "`session` is deprecated, please use the Context instance directly."
+        warnings.warn(msg, DeprecationWarning)
+        return self
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
@@ -121,3 +117,41 @@ class Context:
             self._events_buffer[type(ev)].append(ev)
 
         return None
+
+    def send_event(self, message: Event, step: Optional[str] = None) -> None:
+        """Sends an event to a specific step in the workflow.
+
+        If step is None, the event is sent to all the receivers and we let
+        them discard events they don't want.
+        """
+        if step is None:
+            for queue in self._queues.values():
+                queue.put_nowait(message)
+        else:
+            if step not in self._workflow._get_steps():
+                raise WorkflowRuntimeError(f"Step {step} does not exist")
+
+            step_func = self._workflow._get_steps()[step]
+            step_config: Optional[StepConfig] = getattr(
+                step_func, "__step_config", None
+            )
+
+            if step_config and type(message) in step_config.accepted_events:
+                self._queues[step].put_nowait(message)
+            else:
+                raise WorkflowRuntimeError(
+                    f"Step {step} does not accept event of type {type(message)}"
+                )
+
+        self._broker_log.append(message)
+
+    def write_event_to_stream(self, ev: Optional[Event]) -> None:
+        self._streaming_queue.put_nowait(ev)
+
+    def get_result(self) -> Any:
+        """Returns the result of the workflow."""
+        return self._retval
+
+    @property
+    def streaming_queue(self) -> asyncio.Queue:
+        return self._streaming_queue
