@@ -154,6 +154,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        enable_hybrid = enable_hybrid or fastembed_sparse_model is not None
         super().__init__(
             collection_name=collection_name,
             url=url,
