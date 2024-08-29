@@ -54,7 +54,7 @@ async def test_task_raised():
     class DummyWorkflow(Workflow):
         @step
         async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
-            ctx.session.write_event_to_stream(OneTestEvent(test_param="foo"))
+            ctx.write_event_to_stream(OneTestEvent(test_param="foo"))
             raise ValueError("The step raised an error!")
 
     wf = DummyWorkflow()
