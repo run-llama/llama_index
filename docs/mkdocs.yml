@@ -103,7 +103,7 @@ nav:
           - ./examples/agent/memory/vector_memory.ipynb
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
-          - ./examples/agent/multi_document_agents.ipynb
+          - ./examples/agents/nvidia_agent.ipynb
           - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
