@@ -40,9 +40,20 @@ NVIDIA_FUNTION_CALLING_MODELS = (
     "mistralai/mistral-large-2-instruct",
 )
 
+NVIDIA_STRUCTURED_OUTPUT_MODELS = {
+    "nv-mistralai/mistral-nemo-12b-instruct",
+    "meta/llama-3.1-8b-instruct",
+    "meta/llama-3.1-70b-instruct",
+    "meta/llama-3.1-405b-instruct",
+}
+
 
 def is_nvidia_function_calling_model(modelname: str) -> bool:
     return modelname in NVIDIA_FUNTION_CALLING_MODELS
+
+
+def is_structured_output_supported(modelname: str) -> bool:
+    return modelname in NVIDIA_STRUCTURED_OUTPUT_MODELS
 
 
 def catalog_modelname_to_contextsize(modelname: str) -> Optional[int]:

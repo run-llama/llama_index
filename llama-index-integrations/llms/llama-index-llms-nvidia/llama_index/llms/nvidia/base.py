@@ -8,7 +8,10 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import is_nvidia_function_calling_model
+from llama_index.llms.nvidia.utils import (
+    is_nvidia_function_calling_model,
+    is_structured_output_supported,
+)
 
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
@@ -92,6 +95,14 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
                 "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
             )
 
+        output_parser = kwargs.get("output_parser", None)
+        if output_parser and not is_structured_output_supported(model):
+            warnings.warn(
+                UserWarning(
+                    f"Structured output is not supported for model: {model}. Inference may fail."
+                )
+            )
+
         super().__init__(
             model=model,
             api_key=api_key,
@@ -100,6 +111,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             is_chat_model=True,
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             is_function_calling_model=is_nvidia_function_calling_model(model),
+            output_parser=output_parser,
             **kwargs,
         )
         self._is_hosted = is_hosted
