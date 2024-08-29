@@ -40,7 +40,7 @@ async def test_too_many_runs():
     r = asyncio.gather(wf.run(), wf.run())
     with pytest.raises(
         WorkflowRuntimeError,
-        match="This workflow has multiple session running concurrently",
+        match="This workflow has multiple concurrent runs in progress and cannot stream events",
     ):
         async for ev in wf.stream_events():
             pass
