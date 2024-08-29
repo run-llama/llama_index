@@ -299,6 +299,7 @@ class SlackReader(BasePydanticReader):
                     "channel": channel_id,
                     "cursor": next_cursor,
                     "latest": str(self.latest_date_timestamp),
+                    "limit": 800,  # limit is 1000
                 }
                 if self.earliest_date_timestamp is not None:
                     conversations_history_kwargs["oldest"] = str(
